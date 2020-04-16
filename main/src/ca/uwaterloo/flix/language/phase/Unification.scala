@@ -298,7 +298,7 @@ object Unification {
           return Result.Ok(Substitution.singleton(y, x))
         }
         // If x and y are rigid report an error.
-        if (x.rigidity == Rigidity.Rigid && y.rigidity == Rigidity.Rigid){
+        if (x.rigidity == Rigidity.Rigid && y.rigidity == Rigidity.Rigid) {
           return Result.Err(UnificationError.RigidVar(x, tpe))
         }
       }
@@ -491,7 +491,7 @@ object Unification {
     val query = mkEq(eff1, eff2)
 
     // The free type (effect) variables in the query.
-    val freeVars = query.typeVars.toList
+    val freeVars = query.typeVars.toList // TODO: Only use flexible variables here.
 
     // Eliminate all variables.
     try {
@@ -522,10 +522,12 @@ object Unification {
     * Performs success variable elimination on the given boolean expression `eff`.
     */
   private def successiveVariableElimination(eff: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
+    // TODO: Optimization: Variables might disappear from fvs.
     case Nil =>
       if (eff == Type.Impure)
-        Substitution.empty
-      else
+      // TODO: Instead making all variables flexible and solve a SAT instance that asks if the formula unsatisfiable.
+      Substitution.empty
+        else
         throw BooleanUnificationException
 
     case x :: xs =>
