@@ -17,23 +17,13 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
-import ca.uwaterloo.flix.language.ast.{Rigidity, Scheme, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Rigidity, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.unification.UnificationError
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, UnificationError}
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
-import scala.annotation.tailrec
-
 object Unification {
-
-
-  /**
-    * Aliases to make the success variable elimination easier to understand.
-    */
-  private val True: Type = Type.Pure
-  private val False: Type = Type.Impure
 
   /**
     * Companion object for the [[Substitution]] class.
@@ -90,9 +80,9 @@ object Unification {
           case Type.Apply(t1, t2) =>
             (visit(t1), visit(t2)) match {
               // Simplify boolean equations.
-              case (Type.Cst(TypeConstructor.Not), x) => mkNot(x)
-              case (Type.Apply(Type.Cst(TypeConstructor.And), x), y) => mkAnd(x, y)
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => mkOr(x, y)
+              case (Type.Cst(TypeConstructor.Not), x) => BoolUnification.mkNot(x)
+              case (Type.Apply(Type.Cst(TypeConstructor.And), x), y) => BoolUnification.mkAnd(x, y)
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => BoolUnification.mkOr(x, y)
               case (x, y) => Type.Apply(x, y)
             }
           case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
@@ -255,7 +245,7 @@ object Unification {
           case Result.Err(e) => Result.Err(e)
         }
 
-      case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => unifyEffects(eff1, eff2)
+      case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => BoolUnification.unifyEffects(eff1, eff2)
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
@@ -387,85 +377,6 @@ object Unification {
     unifyTypes(tpe1, tpe2)
   }
 
-  /**
-    * Returns the most general unifier of the two given effects `eff1` and `eff2`.
-    */
-  def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    // Determine if effect checking is enabled.
-    if (flix.options.xnoeffects)
-      return Ok(Substitution.empty)
-
-    // The boolean expression we want to show is 0.
-    val query = mkEq(eff1, eff2)
-
-    // The free and flexible type (effect) variables in the query.
-    val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
-
-    // Eliminate all variables.
-    try {
-      val subst = successiveVariableElimination(query, freeVars)
-
-      // TODO: Debugging
-      //    if (!subst.isEmpty) {
-      //      val s = subst.toString
-      //      val len = s.length
-      //      if (len > 50) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //        println()
-      //      }
-      //    }
-
-      Ok(subst)
-    } catch {
-      case BooleanUnificationException => Err(UnificationError.MismatchedEffects(eff1, eff2))
-    }
-  }
-
-  /**
-    * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
-    */
-  private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
-
-  /**
-    * Performs success variable elimination on the given boolean expression `f`.
-    */
-  private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
-    case Nil =>
-      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      val q = Scheme.instantiate(Scheme(f.typeVars.toList, f), InstantiateMode.Flexible)
-      if (!sat(q))
-        Substitution.empty
-      else
-        throw BooleanUnificationException
-
-    case x :: xs =>
-      val t0 = Substitution.singleton(x, False)(f)
-      val t1 = Substitution.singleton(x, True)(f)
-      val se = successiveVariableElimination(mkAnd(t0, t1), xs)
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
-      st ++ se
-  }
-
-  /**
-    * An exception thrown to indicate that boolean unification failed.
-    */
-  private case object BooleanUnificationException extends RuntimeException
-
-  /**
-    * Returns `true` if the given boolean formula `f` is satisfiable.
-    */
-  private def sat(f: Type)(implicit flix: Flix): Boolean = f match {
-    case Type.Pure => true
-    case Type.Impure => false
-    case _ =>
-      val q = mkEq(f, Type.Pure)
-      try {
-        successiveVariableElimination(q, q.typeVars.toList)
-        true
-      } catch {
-        case BooleanUnificationException => false
-      }
-  }
 
   /**
     * Returns `true` if `tpe1` is an instance of `tpe2`.
@@ -587,7 +498,7 @@ object Unification {
     InferMonad((s: Substitution) => {
       val effect1 = s(eff1)
       val effect2 = s(eff2)
-      unifyEffects(effect1, effect2) match {
+      BoolUnification.unifyEffects(effect1, effect2) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(eff1))
@@ -639,212 +550,5 @@ object Unification {
     }
   }
 
-  /**
-    * Returns the negation of the effect `eff0`.
-    */
-  // NB: The order of cases has been determined by code coverage analysis.
-  private def mkNot(eff0: Type): Type = eff0 match {
-    case Type.Pure =>
-      Type.Impure
-
-    case Type.Impure =>
-      Type.Pure
-
-    case NOT(x) =>
-      x
-
-    // ¬(¬x ∨ y) => x ∧ ¬y
-    case OR(NOT(x), y) =>
-      mkAnd(x, mkNot(y))
-
-    // ¬(x ∨ ¬y) => ¬x ∧ y
-    case OR(x, NOT(y)) =>
-      mkAnd(mkNot(x), y)
-
-    case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
-  }
-
-  /**
-    * Returns the conjunction of the two effects `eff1` and `eff2`.
-    */
-  // NB: The order of cases has been determined by code coverage analysis.
-  @tailrec
-  private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
-    // T ∧ x => x
-    case (Type.Pure, _) =>
-      eff2
-
-    // x ∧ T => x
-    case (_, Type.Pure) =>
-      eff1
-
-    // F ∧ x => F
-    case (Type.Impure, _) =>
-      Type.Impure
-
-    // x ∧ F => F
-    case (_, Type.Impure) =>
-      Type.Impure
-
-    // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
-      mkAnd(mkNot(x1), y)
-
-    // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 =>
-      Type.Impure
-
-    // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 =>
-      Type.Impure
-
-    // x ∧ (x ∧ y) => (x ∧ y)
-    case (x1, AND(x2, y)) if x1 == x2 =>
-      mkAnd(x1, y)
-
-    // x ∧ (y ∧ x) => (x ∧ y)
-    case (x1, AND(y, x2)) if x1 == x2 =>
-      mkAnd(x1, y)
-
-    // (x ∧ y) ∧ x) => (x ∧ y)
-    case (AND(x1, y), x2) if x1 == x2 =>
-      mkAnd(x1, y)
-
-    // (x ∧ y) ∧ y) => (x ∧ y)
-    case (AND(x, y1), y2) if y1 == y2 =>
-      mkAnd(x, y1)
-
-    // x ∧ (x ∨ y) => x
-    case (x1, OR(x2, _)) if x1 == x2 =>
-      x1
-
-    // (x ∨ y) ∧ x => x
-    case (OR(x1, _), x2) if x1 == x2 =>
-      x1
-
-    // x ∧ (y ∧ ¬x) => F
-    case (x1, AND(_, NOT(x2))) if x1 == x2 =>
-      Type.Impure
-
-    // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.Impure
-
-    // x ∧ ¬(x ∨ y) => F
-    case (x1, NOT(OR(x2, _))) if x1 == x2 =>
-      Type.Impure
-
-    // ¬(x ∨ y) ∧ x => F
-    case (NOT(OR(x1, _)), x2) if x1 == x2 =>
-      Type.Impure
-
-    // x ∧ (¬x ∧ y) => F
-    case (x1, AND(NOT(x2), _)) if x1 == x2 =>
-      Type.Impure
-
-    // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.Impure
-
-    // x ∧ x => x
-    case _ if eff1 == eff2 => eff1
-
-    case _ =>
-      //      val s = s"And($eff1, $eff2)"
-      //      val len = s.length
-      //      if (true) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //      }
-
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
-  }
-
-  /**
-    * Returns the disjunction of the two effects `eff1` and `eff2`.
-    */
-  // NB: The order of cases has been determined by code coverage analysis.
-  @tailrec
-  private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
-    // T ∨ x => T
-    case (Type.Pure, _) =>
-      Type.Pure
-
-    // F ∨ y => y
-    case (Type.Impure, _) =>
-      eff2
-
-    // x ∨ T => T
-    case (_, Type.Pure) =>
-      Type.Pure
-
-    // x ∨ F => x
-    case (_, Type.Impure) =>
-      eff1
-
-    // x ∨ (y ∨ x) => x ∨ y
-    case (x1, OR(y, x2)) if x1 == x2 =>
-      mkOr(x1, y)
-
-    // (x ∨ y) ∨ x => x ∨ y
-    case (OR(x1, y), x2) if x1 == x2 =>
-      mkOr(x1, y)
-
-    // ¬x ∨ x => T
-    case (NOT(x), y) if x == y =>
-      Type.Pure
-
-    // x ∨ ¬x => T
-    case (x, NOT(y)) if x == y =>
-      Type.Pure
-
-    // (¬x ∨ y) ∨ x) => T
-    case (OR(NOT(x), _), y) if x == y =>
-      Type.Pure
-
-    // x ∨ (¬x ∨ y) => T
-    case (x, OR(NOT(y), _)) if x == y =>
-      Type.Pure
-
-    // x ∨ (y ∧ x) => x
-    case (x1, AND(_, x2)) if x1 == x2 => x1
-
-    // (y ∧ x) ∨ x => x
-    case (AND(_, x1), x2) if x1 == x2 => x1
-
-    // x ∨ x => x
-    case _ if eff1 == eff2 =>
-      eff1
-
-    case _ =>
-
-      //              val s = s"Or($eff1, $eff2)"
-      //              val len = s.length
-      //              if (len > 30) {
-      //                println(s.substring(0, Math.min(len, 300)))
-      //              }
-
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
-  }
-
-  object NOT {
-    def unapply(eff: Type): Option[Type] = eff match {
-      case Type.Apply(Type.Cst(TypeConstructor.Not), x) => Some(x)
-      case _ => None
-    }
-  }
-
-  object AND {
-    def unapply(eff: Type): Option[(Type, Type)] = eff match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x), y) => Some((x, y))
-      case _ => None
-    }
-  }
-
-  object OR {
-    def unapply(eff: Type): Option[(Type, Type)] = eff match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => Some((x, y))
-      case _ => None
-    }
-  }
 
 }
