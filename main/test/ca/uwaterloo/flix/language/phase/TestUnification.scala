@@ -376,22 +376,6 @@ class TestUnification extends FunSuite {
     assertResult(C)(result(A))
   }
 
-  test("liftM.01") {
-    val subst0 = Substitution.empty
-    val result = Unification.liftM(Type.Bool, subst0).run(subst0)
-    val (_, tpe) = result.get
-    assertResult(Type.Bool)(tpe)
-  }
-
-  test("liftM.02") {
-    val tpe1 = Type.Var(1, Kind.Star)
-    val tpe2 = Type.Bool
-    val subst0 = Substitution.singleton(tpe1, tpe2)
-    val result = Unification.liftM(tpe1, subst0).run(subst0)
-    val (subst, _) = result.get
-    assertResult(Type.Bool)(subst.m(tpe1))
-  }
-
   test("unifyM.01") {
     val subst0 = Substitution.empty
     val result = Unification.unifyTypM(Type.Bool, Type.Bool, SL).run(subst0)

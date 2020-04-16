@@ -272,7 +272,6 @@ object Unification {
     unifyTypes(tpe1, tpe2)
   }
 
-
   /**
     * Returns `true` if `tpe1` is an instance of `tpe2`.
     */
@@ -286,16 +285,6 @@ object Unification {
     * Lifts the given value `a` into the type inference monad
     */
   def liftM[A](a: A): InferMonad[A] = InferMonad(s => Ok((s, a)))
-
-  /**
-    * Lifts the given value `a` and substitution `s` into the type inference monad..
-    */
-  def liftM[A](a: A, s: Substitution): InferMonad[A] = InferMonad(_ => Ok(s, a))
-
-  /**
-    * Lifts the given error `e` into the type inference monad.
-    */
-  def failM[A](e: TypeError): InferMonad[A] = InferMonad(_ => Err(e))
 
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
