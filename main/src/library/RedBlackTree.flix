@@ -92,7 +92,7 @@ namespace RedBlackTree {
     ///
     /// Otherwise, updates `tree` with `k -> v`.
     ///
-    pub def insertWith(f: (k, v, v) -> v, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] =
+    pub def insertWith(f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e =
         blacken(insertWithHelper(f, k, v, tree))
 
     ///
@@ -100,7 +100,7 @@ namespace RedBlackTree {
     ///
     /// Otherwise, returns `tree`.
     ///
-    pub def updateWith(f: (k, v) -> Option[v], k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] =
+    pub def updateWith(f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e =
         blacken(updateWithHelper(f, k, tree))
 
     ///
@@ -271,7 +271,7 @@ namespace RedBlackTree {
     ///
     /// Helper function for `insertWith`.
     ///
-    def insertWithHelper(f: (k, v, v) -> v, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
+    def insertWithHelper(f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e = match tree {
         case Leaf => Node(Red, Leaf, k, v, Leaf)
         case Node(color, a, k1, v1, b) =>
             let cmp = k <=> k1;
@@ -287,7 +287,7 @@ namespace RedBlackTree {
     ///
     /// Helper function for `updateWith`.
     ///
-    def updateWithHelper(f: (k, v) -> Option[v], k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
+    def updateWithHelper(f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e = match tree {
         case Leaf => tree
         case Node(color, a, k1, v1, b) =>
             let cmp = k <=> k1;

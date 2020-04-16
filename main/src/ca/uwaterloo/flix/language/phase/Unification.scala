@@ -492,8 +492,8 @@ object Unification {
     val query = mkEq(eff1, eff2)
 
     // The free and flexible type (effect) variables in the query.
-    //    val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
-    val freeVars = query.typeVars.toList // TODO
+        val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
+    //val freeVars = query.typeVars.toList // TODO
 
     // Eliminate all variables.
     try {
