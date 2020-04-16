@@ -3165,6 +3165,83 @@ def splitOn10(): Bool = String.splitOn("a:b::c", "::") == "a:b" :: "c" :: Nil
 def splitOn11(): Bool = String.splitOn("a::b:c", "::") == "a" :: "b:c" :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// indexOfLeftWithOffset                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def indexOfLeftWithOffset01(): Bool = String.indexOfLeftWithOffset("", 0, "") == None
+
+@test
+def indexOfLeftWithOffset02(): Bool = String.indexOfLeftWithOffset("", 0, "a") == None
+
+@test
+def indexOfLeftWithOffset03(): Bool = String.indexOfLeftWithOffset("a", 0, "a") == Some(0)
+
+@test
+def indexOfLeftWithOffset04(): Bool = String.indexOfLeftWithOffset("a", 1, "a") == None
+
+@test
+def indexOfLeftWithOffset05(): Bool = String.indexOfLeftWithOffset("a", 0, "ab") == Some(0)
+
+@test
+def indexOfLeftWithOffset06(): Bool = String.indexOfLeftWithOffset("a", 1, "aa") == Some(1)
+
+@test
+def indexOfLeftWithOffset07(): Bool = String.indexOfLeftWithOffset("ab", 0, "ab") == Some(0)
+
+@test
+def indexOfLeftWithOffset08(): Bool = String.indexOfLeftWithOffset("ab", 0, "abab") == Some(0)
+
+@test
+def indexOfLeftWithOffset09(): Bool = String.indexOfLeftWithOffset("ab", 1, "abab") == Some(2)
+
+@test
+def indexOfLeftWithOffset10(): Bool = String.indexOfLeftWithOffset("ab", 2, "abab") == Some(2)
+
+@test
+def indexOfLeftWithOffset11(): Bool = String.indexOfLeftWithOffset("ab", 3, "abab") == None
+
+/////////////////////////////////////////////////////////////////////////////
+// indexOfRightWithOffset                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def indexOfRightWithOffset01(): Bool = String.indexOfRightWithOffset("", 0, "") == None
+
+@test
+def indexOfRightWithOffset02(): Bool = String.indexOfRightWithOffset("", 0, "a") == None
+
+@test
+def indexOfRightWithOffset03(): Bool = String.indexOfRightWithOffset("a", 0, "a") == Some(0)
+
+@test
+def indexOfRightWithOffset04(): Bool = String.indexOfRightWithOffset("a", 1, "a") == Some(0)
+
+@test
+def indexOfRightWithOffset05(): Bool = String.indexOfRightWithOffset("a", 2, "ab") == Some(0)
+
+@test
+def indexOfRightWithOffset06(): Bool = String.indexOfRightWithOffset("a", 2, "aa") == Some(1)
+
+@test
+def indexOfRightWithOffset07(): Bool = String.indexOfRightWithOffset("ab", 2, "ab") == Some(0)
+
+@test
+def indexOfRightWithOffset08(): Bool = String.indexOfRightWithOffset("ab", 3, "abab") == Some(2)
+
+@test
+def indexOfRightWithOffset09(): Bool = String.indexOfRightWithOffset("ab", 2, "abab") == Some(2)
+
+@test
+def indexOfRightWithOffset10(): Bool = String.indexOfRightWithOffset("ab", 1, "abab") == Some(0)
+
+@test
+def indexOfRightWithOffset11(): Bool = String.indexOfRightWithOffset("ab", 0, "abab") == Some(0)
+
+@test
+def indexOfRightWithOffset12(): Bool = String.indexOfRightWithOffset("ab", -1, "abab") == None
+
+/////////////////////////////////////////////////////////////////////////////
 // toChunks                                                                //
 /////////////////////////////////////////////////////////////////////////////
 

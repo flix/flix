@@ -1127,7 +1127,7 @@ namespace String {
     ///
     /// Uses a collator to be accurate with the locale of the JVM.
     ///
-    pub def equalsCIHelper(s1: String, s2: String): Bool & Impure =
+    def equalsCIHelper(s1: String, s2: String): Bool & Impure =
          import java.text.Collator:getInstance();
          import java.text.Collator.setStrength(Int32) as setStrength!;
          import java.text.Collator.compare(String, String);
