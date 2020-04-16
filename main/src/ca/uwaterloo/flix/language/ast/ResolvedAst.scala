@@ -138,9 +138,9 @@ object ResolvedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Unary(op: UnaryOperator, exp: ResolvedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Unary(op: UnaryOperator, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Binary(op: BinaryOperator, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Binary(op: BinaryOperator, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class IfThenElse(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -148,11 +148,11 @@ object ResolvedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class LetRec(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class LetRec(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

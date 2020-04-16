@@ -267,13 +267,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Unary(op, exp, tvar, evar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Unary(op, e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Unary(op, e, tvar, loc)
 
         case NamedAst.Expression.Binary(op, exp1, exp2, tvar, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Binary(op, e1, e2, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Binary(op, e1, e2, tvar, loc)
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, evar, loc) =>
           for {
@@ -298,7 +298,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.LetRec(sym, e1, e2, tvar, evar, loc)
+          } yield ResolvedAst.Expression.LetRec(sym, e1, e2, tvar, loc)
 
         case NamedAst.Expression.Match(exp, rules, tvar, evar, loc) =>
           val rulesVal = traverse(rules) {
@@ -330,7 +330,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 if (isUnitType(caze.tpe)) {
                   // Case 1.1: The tag value has Unit type. Construct the Unit expression.
                   val e = ResolvedAst.Expression.Unit(loc)
-                  ResolvedAst.Expression.Tag(decl.sym, tag.name, e, tvar, evar, loc)
+                  ResolvedAst.Expression.Tag(decl.sym, tag.name, e, tvar, loc)
                 } else {
                   // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
@@ -345,7 +345,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), evar, loc)
+                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), loc)
 
                   // Assemble the lambda expressions.
                   ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVar(), loc)
@@ -356,7 +356,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             for {
               d <- lookupEnumByTag(enum, tag, ns0, prog0)
               e <- visit(exp, tenv0)
-            } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, evar, loc)
+            } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, loc)
         }
 
         case NamedAst.Expression.Tuple(elms, tvar, evar, loc) =>
