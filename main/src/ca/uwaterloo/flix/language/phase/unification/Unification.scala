@@ -134,26 +134,6 @@ object Unification {
       case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
     }
 
-    /**
-      * Unifies the two given lists of types `ts1` and `ts2`.
-      */
-    def unifyAll(ts1: List[Type], ts2: List[Type]): Result[Substitution, UnificationError] = {
-      def visit(x: List[Type], y: List[Type]): Result[Substitution, UnificationError] = (x, y) match {
-        case (Nil, Nil) => Result.Ok(Substitution.empty)
-        case (t1 :: rs1, t2 :: rs2) => unifyTypes(t1, t2) match {
-          case Result.Ok(subst1) => visit(subst1(rs1), subst1(rs2)) match {
-            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
-            case Result.Err(e) => Result.Err(e)
-          }
-          case Result.Err(e) => Result.Err(e)
-        }
-        case _ => Result.Err(UnificationError.MismatchedArity(ts1, ts2))
-      }
-
-      visit(ts1, ts2)
-    }
-
-
     unifyTypes(tpe1, tpe2)
   }
 
