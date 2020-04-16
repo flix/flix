@@ -492,8 +492,7 @@ object Unification {
     val query = mkEq(eff1, eff2)
 
     // The free and flexible type (effect) variables in the query.
-        val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
-    //val freeVars = query.typeVars.toList // TODO
+    val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
 
     // Eliminate all variables.
     try {
@@ -524,7 +523,6 @@ object Unification {
     * Performs success variable elimination on the given boolean expression `f`.
     */
   private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
-    // TODO: It is possible that a variable is eliminated from f during SVE. If so, we dont have to split on it.
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       val q = Scheme.instantiate(Scheme(f.typeVars.toList, f), InstantiateMode.Flexible)
