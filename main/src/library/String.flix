@@ -109,12 +109,12 @@ namespace String {
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
-    pub def init(f: Int32 -> Char, len: Int32): String = initHelper(f, len) as & Pure
+    pub def init(f: Int32 -> Char & e, len: Int32): String & e = initHelper(f, len) as & e
 
     ///
     /// Helper function for `init`.
     ///
-    def initHelper(f: Int32 -> Char, len: Int32): String & Impure =
+    def initHelper(f: Int32 -> Char & e , len: Int32): String & Impure =
         if (len <= 0)
             ""
         else {
@@ -126,11 +126,12 @@ namespace String {
     ///
     /// Helper function for `init`.
     ///
-    def initWorker(sb: StringBuilder, f: Int32 -> Char, len: Int32, i: Int32): Unit & Impure =
+    def initWorker(sb: StringBuilder, f: Int32 -> Char & e, len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
-            StringBuilder.appendChar!(sb, f(i));
+            let c = f(i) as & e;
+            StringBuilder.appendChar!(sb, c);
             initWorker(sb, f, len, i+1)
         }
 

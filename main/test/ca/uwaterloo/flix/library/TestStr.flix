@@ -2658,7 +2658,7 @@ def indexOfRight09(): Bool = String.indexOfRight("bc", "abc") == Some(1)
 def isPrefixOf01(): Bool = String.isPrefixOf("", "") == true
 
 @test
-def isPrefixOf02(): rBool = String.isPrefixOf("", "a") == true
+def isPrefixOf02(): Bool = String.isPrefixOf("", "a") == true
 
 @test
 def isPrefixOf03(): Bool = String.isPrefixOf("", "abc") == true
@@ -2689,7 +2689,7 @@ def isPrefixOf09(): Bool = String.isPrefixOf("bc", "abc") == false
 def isInfixOf01(): Bool = String.isInfixOf("", "") == true
 
 @test
-def isInfixOf02(): rBool = String.isInfixOf("", "a") == true
+def isInfixOf02(): Bool = String.isInfixOf("", "a") == true
 
 @test
 def isInfixOf03(): Bool = String.isInfixOf("", "abc") == true
@@ -2720,7 +2720,7 @@ def isInfixOf09(): Bool = String.isInfixOf("bc", "abc") == true
 def isSuffixOf01(): Bool = String.isSuffixOf("", "") == true
 
 @test
-def isSuffixOf02(): rBool = String.isSuffixOf("", "a") == true
+def isSuffixOf02(): Bool = String.isSuffixOf("", "a") == true
 
 @test
 def isSuffixOf03(): Bool = String.isSuffixOf("", "abc") == true
