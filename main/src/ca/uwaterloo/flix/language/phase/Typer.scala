@@ -458,14 +458,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (lhsType, resultEff)
       }
 
-      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, evar, loc) =>
+      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           (tpe3, eff3) <- visitExp(exp3)
           condType <- unifyTypM(Type.Bool, tpe1, loc)
-          resultTyp <- unifyTypM(tvar, tpe2, tpe3, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2, eff3), loc)
+          resultTyp <- unifyTypM(tpe2, tpe3, loc)
+          resultEff = mkAnd(eff1, eff2, eff3)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Stm(exp1, exp2, tvar, evar, loc) =>
@@ -1229,11 +1229,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, evar, loc) =>
+      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
-        TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), subst0(evar), loc)
+        val tpe = e2.tpe
+        val eff = mkAnd(e1.eff, e2.eff, e3.eff)
+        TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
       case ResolvedAst.Expression.Stm(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
