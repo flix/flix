@@ -468,21 +468,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = mkAnd(eff1, eff2, eff3)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Stm(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           resultTyp <- unifyTypM(tvar, tpe2, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          resultEff = mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           boundVar <- unifyTypM(sym.tvar, tpe1, loc)
           resultTyp <- unifyTypM(tvar, tpe2, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          resultEff = mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.LetRec(sym, exp1, exp2, tvar, evar, loc) =>
@@ -1237,15 +1237,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Stm(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.Stm(e1, e2, subst0(tvar), subst0(evar), loc)
+        val eff = mkAnd(e1.eff, e2.eff)
+        TypedAst.Expression.Stm(e1, e2, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), subst0(evar), loc)
+        val eff = mkAnd(e1.eff, e2.eff)
+        TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.LetRec(sym, exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
