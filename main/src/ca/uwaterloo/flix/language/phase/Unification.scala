@@ -19,116 +19,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Rigidity, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, Substitution, UnificationError}
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Unification {
-
-  /**
-    * Companion object for the [[Substitution]] class.
-    */
-  object Substitution {
-    /**
-      * Returns the empty substitution.
-      */
-    val empty: Substitution = Substitution(Map.empty)
-
-    /**
-      * Returns the singleton substitution mapping the type variable `x` to `tpe`.
-      */
-    def singleton(x: Type.Var, tpe: Type): Substitution = {
-      // Ensure that we do not add any x -> x mappings.
-      tpe match {
-        case y: Type.Var if x.id == y.id => empty
-        case _ => Substitution(Map(x -> tpe))
-      }
-    }
-
-  }
-
-  /**
-    * A substitution is a map from type variables to types.
-    */
-  case class Substitution(m: Map[Type.Var, Type]) {
-
-    /**
-      * Returns `true` if `this` is the empty substitution.
-      */
-    val isEmpty: Boolean = m.isEmpty
-
-    /**
-      * Applies `this` substitution to the given type `tpe0`.
-      */
-    def apply(tpe0: Type): Type = {
-      def visit(t: Type): Type =
-        t match {
-          case x: Type.Var =>
-            m.get(x) match {
-              case None => x
-              case Some(y) if x.kind == t.kind => y
-              case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
-            }
-          case Type.Cst(tc) => Type.Cst(tc)
-          case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
-          case Type.RecordEmpty => Type.RecordEmpty
-          case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, visit(field), visit(rest))
-          case Type.SchemaEmpty => Type.SchemaEmpty
-          case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
-          case Type.Zero => Type.Zero
-          case Type.Succ(n, t) => Type.Succ(n, visit(t))
-          case Type.Apply(t1, t2) =>
-            (visit(t1), visit(t2)) match {
-              // Simplify boolean equations.
-              case (Type.Cst(TypeConstructor.Not), x) => BoolUnification.mkNot(x)
-              case (Type.Apply(Type.Cst(TypeConstructor.And), x), y) => BoolUnification.mkAnd(x, y)
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => BoolUnification.mkOr(x, y)
-              case (x, y) => Type.Apply(x, y)
-            }
-          case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
-        }
-
-      // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
-      if (isEmpty) tpe0 else visit(tpe0)
-    }
-
-    /**
-      * Applies `this` substitution to the given types `ts`.
-      */
-    def apply(ts: List[Type]): List[Type] = if (isEmpty) ts else ts map apply
-
-    /**
-      * Returns the left-biased composition of `this` substitution with `that` substitution.
-      */
-    def ++(that: Substitution): Substitution = {
-      if (this.isEmpty) {
-        that
-      } else if (that.isEmpty) {
-        this
-      } else {
-        Substitution(
-          this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
-        )
-      }
-    }
-
-    /**
-      * Returns the composition of `this` substitution with `that` substitution.
-      */
-    def @@(that: Substitution): Substitution = {
-      if (this.isEmpty) {
-        that
-      } else if (that.isEmpty) {
-        this
-      } else {
-        val newTypeMap = that.m.foldLeft(Map.empty[Type.Var, Type]) {
-          case (macc, (x, t)) => macc.updated(x, this.apply(t))
-        }
-        Substitution(newTypeMap) ++ this
-      }
-    }
-
-  }
 
   /**
     * A type inference state monad that maintains the current substitution.
@@ -327,7 +222,7 @@ object Unification {
         // Introduce a fresh type variable to represent one more level of the row.
         val restRow2 = Type.freshTypeVar()
         val type2 = Type.RecordExtend(label1, fieldType1, restRow2)
-        val subst = Unification.Substitution.singleton(tvar, type2)
+        val subst = Substitution.singleton(tvar, type2)
         Ok((subst, restRow2))
 
       case Type.RecordEmpty =>
@@ -362,7 +257,7 @@ object Unification {
         // Introduce a fresh type variable to represent one more level of the row.
         val restRow2 = Type.freshTypeVar()
         val type2 = Type.SchemaExtend(label1, fieldType1, restRow2)
-        val subst = Unification.Substitution.singleton(tvar, type2)
+        val subst = Substitution.singleton(tvar, type2)
         Ok((subst, restRow2))
 
       case Type.SchemaEmpty =>
