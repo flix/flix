@@ -21,59 +21,57 @@ import java.io.PrintWriter
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
+import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.Unification._
+import ca.uwaterloo.flix.language.phase.unification.Unification._
+import ca.uwaterloo.flix.language.phase.unification.{InferMonad, Substitution}
+import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
-object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
+object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
   /**
-    * Type checks the given program.
+    * Type checks the given AST root.
     */
-  def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
-    val result = for {
-      defs <- typeDefs(program)
-      enums <- typeEnums(program)
-      latticeComponents <- typeLatticeComponents(program)
-      properties <- typeProperties(program)
-    } yield {
-      val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, enums, latticeComponents, properties, specialOps, program.reachable, program.sources)
-    }
+  def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
+    val defsVal = visitDefs(root)
+    val enumsVal = visitEnums(root)
+    val latticeOpsVal = visitLatticeOps(root)
+    val propertiesVal = visitProperties(root)
 
-    result match {
-      case Ok(p) => p.toSuccess
-      case Err(e) => e.toFailure
+    Validation.mapN(defsVal, enumsVal, latticeOpsVal, propertiesVal) {
+      case (defs, enums, latticeOps, properties) =>
+        val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
+        TypedAst.Root(defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
     }
   }
 
   /**
-    * Performs type inference and reassembly on all definitions in the given program.
+    * Performs type inference and reassembly on all definitions in the given AST root.
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def typeDefs(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
+  private def visitDefs(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
     /**
       * Performs type inference and reassembly on the given definition `defn`.
       */
-    def visitDefn(defn: ResolvedAst.Def): Result[((Symbol.DefnSym, TypedAst.Def), (Symbol.DefnSym, Substitution)), TypeError] = defn match {
+    def visitDefn(defn: ResolvedAst.Def): Validation[((Symbol.DefnSym, TypedAst.Def), (Symbol.DefnSym, Substitution)), TypeError] = defn match {
       case ResolvedAst.Def(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) =>
-        typeCheckDef(defn, program) map {
+        typeCheckDef(defn, root) map {
           case (defn, subst) => ((sym, defn), (sym, subst))
         }
     }
 
-    // Every definition in the program.
-    val defs = program.defs.values.toList
+    // Every definition in the ast.
+    val defs = root.defs.values.toList
 
     // Visit every definition in parallel.
     val results = ParOps.parMap(visitDefn, defs)
 
     // Sequence the results
-    Result.sequence(results).map(_.unzip).map {
+    Validation.sequence(results).map(_.unzip).map {
       case (m, m2) =>
         if (flix.options.xstatistics) {
           printStatistics(m2.toMap)
@@ -83,13 +81,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Performs type inference and reassembly on all enums in the given program.
+    * Performs type inference and reassembly on all enums in the given AST root.
     */
-  private def typeEnums(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] = {
+  private def visitEnums(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] = {
     /**
       * Performs type resolution on the given enum and its cases.
       */
-    def visitEnum(enum: ResolvedAst.Enum): Result[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
+    def visitEnum(enum: ResolvedAst.Enum): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
       case ResolvedAst.Enum(doc, mod, enumSym, tparams, cases0, tpe, loc) =>
         val tparams = getTypeParams(enum.tparams)
         val cases = cases0 map {
@@ -97,29 +95,29 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             name -> TypedAst.Case(enumSym, tagName, tagType, tagName.loc)
         }
 
-        Ok(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, cases, enum.tpe, loc))
+        Validation.Success(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, cases, enum.tpe, loc))
     }
 
-    // Visit every enum in the program.
-    val result = program.enums.toList.map {
+    // Visit every enum in the ast.
+    val result = root.enums.toList.map {
       case (_, enum) => visitEnum(enum)
     }
 
     // Sequence the results and convert them back to a map.
-    Result.sequence(result).map(_.toMap)
+    Validation.sequence(result).map(_.toMap)
   }
 
   /**
-    * Performs type inference and reassembly on all lattices in the given program.
+    * Performs type inference and reassembly on all lattices in the given AST root.
     *
     * Returns [[Err]] if a type error occurs.
     */
-  private def typeLatticeComponents(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Type, TypedAst.LatticeOps], TypeError] = {
+  private def visitLatticeOps(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Type, TypedAst.LatticeOps], TypeError] = {
 
     /**
       * Performs type inference and reassembly on the given `lattice`.
       */
-    def visitLatticeOps(lattice: ResolvedAst.LatticeOps): Result[(Type, TypedAst.LatticeOps), TypeError] = lattice match {
+    def visitLatticeOps(lattice: ResolvedAst.LatticeOps): Validation[(Type, TypedAst.LatticeOps), TypeError] = lattice match {
       case ResolvedAst.LatticeOps(tpe, e1, e2, e3, e4, e5, e6, ns, loc) =>
         // Perform type resolution on the declared type.
         val declaredType = lattice.tpe
@@ -127,12 +125,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // Perform type inference on each of the lattice components.
         val m = for {
           // Type check each expression:
-          (botType, botEff) <- inferExp(e1, program)
-          (topType, topEff) <- inferExp(e2, program)
-          (equType, equEff) <- inferExp(e3, program)
-          (leqType, leqEff) <- inferExp(e4, program)
-          (lubType, lubEff) <- inferExp(e5, program)
-          (glbType, glbEff) <- inferExp(e6, program)
+          (botType, botEff) <- inferExp(e1, root)
+          (topType, topEff) <- inferExp(e2, root)
+          (equType, equEff) <- inferExp(e3, root)
+          (leqType, leqEff) <- inferExp(e4, root)
+          (lubType, lubEff) <- inferExp(e5, root)
+          (glbType, glbEff) <- inferExp(e6, root)
           // Enforce that each component is pure:
           _______ <- unifyEffM(botEff, Type.Pure, loc)
           _______ <- unifyEffM(topEff, Type.Pure, loc)
@@ -150,62 +148,61 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield declaredType
 
         // Evaluate the type inference monad with the empty substitution
-        m.run(Substitution.empty) map {
-          case (subst, _) =>
+        m.run(Substitution.empty) match {
+          case Result.Ok((subst, _)) =>
             // Reassemble the lattice components.
-            val bot = reassembleExp(e1, program, subst)
-            val top = reassembleExp(e2, program, subst)
-            val equ = reassembleExp(e3, program, subst)
-            val leq = reassembleExp(e4, program, subst)
-            val lub = reassembleExp(e5, program, subst)
-            val glb = reassembleExp(e6, program, subst)
+            val bot = reassembleExp(e1, root, subst)
+            val top = reassembleExp(e2, root, subst)
+            val equ = reassembleExp(e3, root, subst)
+            val leq = reassembleExp(e4, root, subst)
+            val lub = reassembleExp(e5, root, subst)
+            val glb = reassembleExp(e6, root, subst)
+            Validation.Success(declaredType -> TypedAst.LatticeOps(declaredType, bot, top, equ, leq, lub, glb, loc))
 
-            declaredType -> TypedAst.LatticeOps(declaredType, bot, top, equ, leq, lub, glb, loc)
+          case Result.Err(e) => Validation.Failure(LazyList(e))
         }
 
     }
 
 
-    // Visit every lattice in the program.
-    val result = program.latticeOps.toList.map {
+    // Visit every lattice in the ast.
+    val result = root.latticeOps.toList.map {
       case (_, lattice) => visitLatticeOps(lattice)
     }
 
     // Sequence the results and convert them back to a map.
-    Result.sequence(result).map(_.toMap)
+    Validation.sequence(result).map(_.toMap)
   }
 
   /**
-    * Infers the types of all the properties in the given program `prog0`.
+    * Infers the types of all the properties in the given AST `root`.
     */
-  private def typeProperties(prog0: ResolvedAst.Program)(implicit flix: Flix): Result[List[TypedAst.Property], TypeError] = {
+  private def visitProperties(root: ResolvedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.Property], TypeError] = {
 
     /**
       * Infers the type of the given property `p0`.
       */
     def visitProperty(p0: ResolvedAst.Property): Result[TypedAst.Property, TypeError] = p0 match {
       case ResolvedAst.Property(law, defn, exp0, loc) =>
-        val result = inferExp(exp0, prog0)
+        val result = inferExp(exp0, root)
         result.run(Substitution.empty) map {
           case (subst, tpe) =>
-            val exp = reassembleExp(exp0, prog0, subst)
+            val exp = reassembleExp(exp0, root, subst)
             TypedAst.Property(law, defn, exp, loc)
         }
     }
 
-    // Visit every property in the program.
-    val results = prog0.properties.map {
-      case property => visitProperty(property)
-    }
+    // Visit every property in the ast.
+    val results = root.properties.map(visitProperty).map(_.toValidation)
 
     // Sequence the results and sort the properties by their source location.
-    Result.sequence(results).map(_.sortBy(_.loc))
+    Validation.sequence(results)
   }
 
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, program: ResolvedAst.Program)(implicit flix: Flix): Result[(TypedAst.Def, Substitution), TypeError] = {
+  private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = {
     // Resolve the declared scheme.
     val declaredScheme = defn0.sc
 
@@ -220,8 +217,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     // TODO: Use resultEff
     val result = for {
-      (inferredTyp, inferredEff) <- inferExp(defn0.exp, program)
-      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, expectedEff, inferredTyp), defn0.loc)
+      (inferredTyp, inferredEff) <- inferExp(defn0.exp, root)
+      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme, InstantiateMode.Flexible), Type.mkArrow(argumentTypes, expectedEff, inferredTyp), defn0.loc)
       unifiedEff <- unifyEffM(inferredEff, expectedEff, defn0.loc)
     } yield unifiedTyp
 
@@ -231,13 +228,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val initialSubst = getSubstFromParams(defn0.fparams)
         run(initialSubst) match {
           case Ok((subst, resultType)) =>
-            val exp = reassembleExp(defn0.exp, program, subst)
+            val inferredScheme = Scheme.generalize(resultType)
+            val leq = Scheme.lessThanEqual(inferredScheme, declaredScheme)
+            if (!leq) {
+              return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, inferredScheme, defn0.loc)))
+            }
+
+            val exp = reassembleExp(defn0.exp, root, subst)
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
             // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
-            Ok((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, resultType, defn0.eff, defn0.loc), subst))
+            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, resultType, defn0.eff, defn0.loc), subst))
 
-          case Err(e) => Err(e)
+          case Err(e) => Validation.Failure(LazyList(e))
         }
     }
   }
@@ -245,7 +248,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: ResolvedAst.Expression, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[(Type, Type)] = {
+  private def inferExp(exp0: ResolvedAst.Expression, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
@@ -261,9 +264,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
-        val defn = program.defs(sym)
+        val defn = root.defs(sym)
         for {
-          resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc), loc)
+          resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc, InstantiateMode.Flexible), loc)
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
@@ -498,7 +501,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         for {
           (tpe, eff) <- visitExp(exp)
-          patternTypes <- inferPatterns(patterns, program)
+          patternTypes <- inferPatterns(patterns, root)
           patternType <- unifyTypM(tpe :: patternTypes, loc)
           (guardTypes, guardEffects) <- seqM(guards map visitExp).map(_.unzip)
           guardType <- unifyTypM(Type.Bool :: guardTypes, loc)
@@ -511,7 +514,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: Use a type scheme?
 
         // Lookup the enum declaration.
-        val decl = program.enums(sym)
+        val decl = root.enums(sym)
 
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
@@ -1151,8 +1154,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //  A_0 :- A_1, ..., A_n : tpe
       //
       for {
-        headPredicateType <- inferHeadPredicate(head0, program)
-        bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, program)))
+        headPredicateType <- inferHeadPredicate(head0, root)
+        bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, root)))
         bodyPredicateType <- unifyTypAllowEmptyM(bodyPredicateTypes, loc)
         resultType <- unifyTypM(headPredicateType, bodyPredicateType, loc)
       } yield resultType
@@ -1164,7 +1167,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Applies the given substitution `subst0` to the given expression `exp0`.
     */
-  private def reassembleExp(exp0: ResolvedAst.Expression, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Expression = {
+  private def reassembleExp(exp0: ResolvedAst.Expression, root: ResolvedAst.Root, subst0: Substitution): TypedAst.Expression = {
     /**
       * Applies the given substitution `subst0` to the given expression `exp0`.
       */
@@ -1251,7 +1254,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val rs = rules map {
           case ResolvedAst.MatchRule(pat, guard, exp) =>
-            val p = reassemblePattern(pat, program, subst0)
+            val p = reassemblePattern(pat, root, subst0)
             val g = visitExp(guard, subst0)
             val b = visitExp(exp, subst0)
             TypedAst.MatchRule(p, g, b)
@@ -1478,8 +1481,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val ResolvedAst.Constraint(cparams0, head0, body0, loc) = c0
 
       // Unification was successful. Reassemble the head and body predicates.
-      val head = reassembleHeadPredicate(head0, program, subst0)
-      val body = body0.map(b => reassembleBodyPredicate(b, program, subst0))
+      val head = reassembleHeadPredicate(head0, root, subst0)
+      val body = body0.map(b => reassembleBodyPredicate(b, root, subst0))
 
       // Reassemble the constraint parameters.
       val cparams = cparams0.map {
@@ -1505,7 +1508,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given pattern `pat0`.
     */
-  private def inferPattern(pat0: ResolvedAst.Pattern, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = {
+  private def inferPattern(pat0: ResolvedAst.Pattern, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
     /**
       * Local pattern visitor.
       */
@@ -1526,7 +1529,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Str)
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) =>
         // Lookup the enum declaration.
-        val decl = program.enums(sym)
+        val decl = root.enums(sym)
 
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
@@ -1587,14 +1590,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferPatterns(pats0: List[ResolvedAst.Pattern], program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[List[Type]] = {
-    seqM(pats0.map(p => inferPattern(p, program)))
+  private def inferPatterns(pats0: List[ResolvedAst.Pattern], root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+    seqM(pats0.map(p => inferPattern(p, root)))
   }
 
   /**
     * Applies the substitution `subst0` to the given pattern `pat0`.
     */
-  private def reassemblePattern(pat0: ResolvedAst.Pattern, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Pattern = {
+  private def reassemblePattern(pat0: ResolvedAst.Pattern, root: ResolvedAst.Root, subst0: Substitution): TypedAst.Pattern = {
     /**
       * Local pattern visitor.
       */
@@ -1626,7 +1629,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given head predicate.
     */
-  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = head match {
+  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = head match {
     case ResolvedAst.Predicate.Head.Atom(name, den, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
@@ -1635,9 +1638,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //
 
       for {
-        (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
+        (termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip)
         pureTermEffects <- unifyEffM(Type.Pure, mkAnd(termEffects), loc)
-        predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, program), loc)
+        predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
       } yield Type.SchemaExtend(name, predicateType, Type.freshTypeVar())
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -1647,7 +1650,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //  union exp : #{ ... }
       //
       for {
-        (typ, eff) <- inferExp(exp, program)
+        (typ, eff) <- inferExp(exp, root)
         pureEff <- unifyEffM(Type.Pure, eff, loc)
         resultType <- unifyTypM(tvar, typ, loc)
       } yield resultType
@@ -1656,20 +1659,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
-  private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
+  private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, root: ResolvedAst.Root, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
     case ResolvedAst.Predicate.Head.Atom(name, den0, terms, tvar, loc) =>
-      val ts = terms.map(t => reassembleExp(t, program, subst0))
+      val ts = terms.map(t => reassembleExp(t, root, subst0))
       TypedAst.Predicate.Head.Atom(name, den0, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
-      val e = reassembleExp(exp, program, subst0)
+      val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Head.Union(e, subst0(tvar), loc)
   }
 
   /**
     * Infers the type of the given body predicate.
     */
-  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = body0 match {
+  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = body0 match {
     //
     //  t_1 : tpe_1, ..., t_n: tpe_n
     //  ------------------------------------------------------------
@@ -1677,8 +1680,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //
     case ResolvedAst.Predicate.Body.Atom(name, den, polarity, terms, tvar, loc) =>
       for {
-        termTypes <- seqM(terms.map(inferPattern(_, program)))
-        predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, program), loc)
+        termTypes <- seqM(terms.map(inferPattern(_, root)))
+        predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
       } yield Type.SchemaExtend(name, predicateType, Type.freshTypeVar())
 
     //
@@ -1689,7 +1692,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       // Infer the types of the terms.
       for {
-        (tpe, eff) <- inferExp(exp, program)
+        (tpe, eff) <- inferExp(exp, root)
         expEff <- unifyEffM(Type.Pure, eff, loc)
         expTyp <- unifyTypM(Type.Bool, tpe, loc)
       } yield mkAnySchemaType()
@@ -1698,20 +1701,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Applies the given substitution `subst0` to the given body predicate `body0`.
     */
-  private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
+  private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
     case ResolvedAst.Predicate.Body.Atom(name, den0, polarity, terms, tvar, loc) =>
-      val ts = terms.map(t => reassemblePattern(t, program, subst0))
+      val ts = terms.map(t => reassemblePattern(t, root, subst0))
       TypedAst.Predicate.Body.Atom(name, den0, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
-      val e = reassembleExp(exp, program, subst0)
+      val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
   }
 
   /**
     * Returns the relation or lattice type of `name` with the term types `ts`.
     */
-  private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = den match {
+  private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], root: ResolvedAst.Root)(implicit flix: Flix): Type = den match {
     case Denotation.Relational =>
       val base = Type.Cst(TypeConstructor.Relation): Type
       val args = ts match {
@@ -1742,7 +1745,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     *
     * Performs type resolution of the declared type of each formal parameters.
     */
-  private def getSubstFromParams(params: List[ResolvedAst.FormalParam])(implicit flix: Flix): Unification.Substitution = {
+  private def getSubstFromParams(params: List[ResolvedAst.FormalParam])(implicit flix: Flix): Substitution = {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
@@ -1773,7 +1776,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns the typed version of the given formal parameters `fparams0`.
     */
-  private def getFormalParams(fparams0: List[ResolvedAst.FormalParam], subst0: Unification.Substitution): List[TypedAst.FormalParam] = fparams0.map {
+  private def getFormalParams(fparams0: List[ResolvedAst.FormalParam], subst0: Substitution): List[TypedAst.FormalParam] = fparams0.map {
     case ResolvedAst.FormalParam(sym, mod, tpe, loc) => TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
   }
 

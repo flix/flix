@@ -85,13 +85,13 @@ namespace Array {
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
-    pub def append(a: Array[a], b: Array[b]): Array[a] & Impure =
+    pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
         appendHelper(a, b)
 
     ///
     /// Helper function for `append`.
     ///
-    def appendHelper(a: Array[a], b: Array[b]): Array[a] & Impure =
+    def appendHelper(a: Array[a], b: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
@@ -1240,7 +1240,7 @@ namespace Array {
     ///
     /// Helper function for `init`.
     ///
-    def initHelper(a: Array[a], f: i -> a & e, len: Int32, i: Int32): Unit & Impure =
+    def initHelper(a: Array[a], f: Int32 -> a & e, len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1265,7 +1265,7 @@ namespace Array {
     ///
     /// Helper function for `init2`.
     ///
-    def init2Helper(a: Array[a], b: Array[b], f: i -> (a,b) & e, len: Int32, i: Int32): Unit & Impure =
+    def init2Helper(a: Array[a], b: Array[b], f: Int32 -> (a,b) & e, len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1278,7 +1278,7 @@ namespace Array {
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: Array[a], b: Array[b]): Bool & Impure =
+    pub def sameElements(a: Array[a], b: Array[a]): Bool & Impure =
         let alen = length(a);
         let blen = length(b);
         if (alen == blen)
@@ -1289,7 +1289,7 @@ namespace Array {
     ///
     /// Helper function for `sameElements`.
     ///
-    def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool & Impure =
+    def sameElementsHelper(a: Array[a], b: Array[a], len: Int32, i: Int32): Bool & Impure =
         if (i >= len)
             true
         else
@@ -1435,7 +1435,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swap!(a: mut Array[Int32], i: Int32, j: Int32): Unit & Impure =
+    def swap!(a: mut Array[a], i: Int32, j: Int32): Unit & Impure =
         let x = a[i];
         let y = a[j];
         a[i] = y;
@@ -1458,7 +1458,7 @@ namespace Array {
         i
 
     ///
-    /// A forloop with an accumulator (helper for sorting).
+    /// A for loop with an accumulator (helper for sorting).
     /// This function is not array specific so is not necessarily Impure.
     ///
     /// precondition: lo <= hi

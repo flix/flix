@@ -478,7 +478,7 @@ object SimplifiedAstOps {
       * Checks invariants of the given type `tpe0`.
       */
     def checkType(tpe0: Type): Unit = tpe0 match {
-      case Type.Var(id, kind) =>
+      case Type.Var(id, kind, _) =>
         assert(assertion = false, "Unexpected type variable.")
       case Type.Apply(tpe1, tpe2) =>
         checkType(tpe1)

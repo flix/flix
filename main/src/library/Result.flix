@@ -178,7 +178,7 @@ namespace Result {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~> Unit, r: Result[t, e]): Unit & Impure = match r {
+    pub def foreach(f: t ~> Unit, r: Result[t, e]): Unit & Impure = match r {
         case Ok(v)  => f(v)
         case Err(_) => ()
     }

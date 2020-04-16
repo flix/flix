@@ -587,7 +587,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Succ(l, t) => MonoType.Unit
 
-      case Type.Var(id, kind) => MonoType.Var(id) // TODO: Should never happen.
+      case Type.Var(id, _, _) => MonoType.Var(id) // TODO: Should never happen.
 
       case Type.Cst(TypeConstructor.Pure) => MonoType.Unit
 

@@ -17,30 +17,74 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
 
   /**
-    * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
+    * A common super-type that controls how quantified and free variables are instantiated.
     */
-  def instantiate(sc: Scheme)(implicit flix: Flix): Type = refreshTypeVars(sc.quantifiers, sc.base)
+  sealed trait InstantiateMode
+
+  object InstantiateMode {
+
+    /**
+      * Instantiated variables are marked as flexible. Free variables are left unchanged.
+      */
+    case object Flexible extends InstantiateMode
+
+    /**
+      * Instantiated variables are marked as rigid. Free variables are marked as rigid (regardless of their prior rigidity).
+      */
+    case object Rigid extends InstantiateMode
+
+    /**
+      * Instantiated variables are marked as flexible. Free variables are marked as rigid (regardless of their prior rigidity).
+      */
+    case object Mixed extends InstantiateMode
+
+  }
 
   /**
-    * Replaces every free occurrence of a type variable in `typeVars`
-    * with a fresh type variable in the given type `tpe`.
+    * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
+    *
+    * The `mode` control the rigidity of quantified and free variables.
     */
-  private def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit flix: Flix): Type = {
-    val freshVars = typeVars.foldLeft(Map.empty[Int, Type.Var]) {
-      case (macc, tvar) => macc + (tvar.id -> Type.freshTypeVar(tvar.kind))
+  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): Type = {
+    // Compute the base type.
+    val baseType = sc.base
+
+    //
+    // Compute the fresh variables taking the instantiation mode into account.
+    //
+    val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.Var]) {
+      case (macc, tvar) =>
+        // Determine the rigidity of the fresh type variable.
+        val rigidity = mode match {
+          case InstantiateMode.Flexible => Rigidity.Flexible
+          case InstantiateMode.Rigid => Rigidity.Rigid
+          case InstantiateMode.Mixed => Rigidity.Flexible
+        }
+        macc + (tvar.id -> Type.freshTypeVar(tvar.kind, rigidity))
     }
 
     /**
-      * Replaces every variable occurrence in the given type using the map `freeVars`.
+      * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
     def visitType(t0: Type): Type = t0 match {
-      case Type.Var(x, k) => freshVars.getOrElse(x, t0)
+      case Type.Var(x, k, rigidity) => freshVars.get(x) match {
+        case None =>
+          // Determine the rigidity of the free type variable.
+          val newRigidity = mode match {
+            case InstantiateMode.Flexible => rigidity
+            case InstantiateMode.Rigid => Rigidity.Rigid
+            case InstantiateMode.Mixed => Rigidity.Rigid
+          }
+          Type.Var(x, k, newRigidity)
+        case Some(tvar) => tvar
+      }
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
       case Type.RecordEmpty => Type.RecordEmpty
@@ -53,7 +97,43 @@ object Scheme {
       case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
     }
 
-    visitType(tpe)
+    visitType(baseType)
+  }
+
+  /**
+    * Generalizes the given type `tpe0` with respect to the empty type environment.
+    */
+  def generalize(tpe0: Type): Scheme = {
+    val quantifiers = tpe0.typeVars
+    Scheme(quantifiers.toList, tpe0)
+  }
+
+  /**
+    * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
+    */
+  def lessThanEqual(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
+    ///
+    /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
+    ///
+    if (sc1 == sc2) {
+      return true
+    }
+
+    //
+    // General Case: Compute if `sc1` <= `sc2`.
+    //
+
+    // Instantiate every variable in `sc1` as flexible and make every free variable rigid.
+    val tpe1 = instantiate(sc1, InstantiateMode.Mixed)
+
+    // Instantiate every variable in `sc2` as rigid and make every free variable rigid.
+    val tpe2 = instantiate(sc2, InstantiateMode.Rigid)
+
+    // Attempt to unify the two instantiated types.
+    Unification.unifyTypes(tpe1, tpe2) match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
+    }
   }
 
 }
@@ -66,6 +146,11 @@ case class Scheme(quantifiers: List[Type.Var], base: Type) {
   /**
     * Returns a human readable representation of the polytype.
     */
-  override def toString: String = s"∀(${quantifiers.mkString(", ")}). ${base.show}"
+  override def toString: String = {
+    if (quantifiers.isEmpty)
+      base.show
+    else
+      s"∀(${quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${base.show}"
+  }
 
 }
