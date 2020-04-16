@@ -453,18 +453,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Ref(exp, tvar, evar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Ref(e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Ref(e, tvar, loc)
 
         case NamedAst.Expression.Deref(exp, tvar, evar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Deref(e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Deref(e, tvar, loc)
 
         case NamedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Assign(e1, e2, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Assign(e1, e2, tvar, loc)
 
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {

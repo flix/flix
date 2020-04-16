@@ -806,7 +806,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             } yield (resultTyp, resultEff)
         }
 
-      case ResolvedAst.Expression.Ref(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
         //
         //  exp : t @ eff
         //  -------------------------
@@ -815,10 +815,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe, _) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, mkRefType(tpe), loc)
-          resultEff <- unifyEffM(evar, Type.Impure, loc)
+          resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
         //
         //  exp : Ref[t] @ eff
         //  -------------------
@@ -829,10 +829,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (typ, _) <- visitExp(exp)
           refType <- unifyTypM(typ, mkRefType(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
-          resultEff <- unifyEffM(evar, Type.Impure, loc)
+          resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Assign(exp1, exp2, tvar, loc) =>
         //
         //  exp1 : Ref[t] @ eff1   exp2: t @ eff2
         //  -------------------------------------
@@ -843,7 +843,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe2, _) <- visitExp(exp2)
           refType <- unifyTypM(tpe1, mkRefType(tpe2), loc)
           resultTyp <- unifyTypM(tvar, Type.Unit, loc)
-          resultEff <- unifyEffM(evar, Type.Impure, loc)
+          resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
@@ -1355,18 +1355,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), subst0(evar), loc)
         }
 
-      case ResolvedAst.Expression.Ref(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Ref(e, subst0(tvar), subst0(evar), loc)
+        val eff = Type.Impure
+        TypedAst.Expression.Ref(e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Deref(e, subst0(tvar), subst0(evar), loc)
+        val eff = Type.Impure
+        TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Assign(exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.Assign(e1, e2, subst0(tvar), subst0(evar), loc)
+        val eff = Type.Impure
+        TypedAst.Expression.Assign(e1, e2, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
         val e = visitExp(exp, subst0)
