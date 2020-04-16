@@ -1557,6 +1557,219 @@ def unfold08(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, -1) == "aaaaaa"
 
 /////////////////////////////////////////////////////////////////////////////
+// unfoldWithIter                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfoldWithIter01(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (true)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 97);
+            x := deref x + 1;
+            Some(c)
+        };
+    String.unfoldWithIter(step) == ""
+
+@test
+def unfoldWithIter02(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 0)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 97);
+            x := deref x + 1;
+            Some(c)
+        };
+    String.unfoldWithIter(step) == "a"
+
+@test
+def unfoldWithIter03(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 1)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 97);
+            x := deref x + 1;
+            Some(c)
+        };
+    String.unfoldWithIter(step) == "ab"
+
+@test
+def unfoldWithIter04(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 97);
+            x := deref x + 1;
+            Some(c)
+        };
+    String.unfoldWithIter(step) == "abcdefghij"
+
+@test
+def unfoldWithIter05(): Bool & Impure =
+    let x = ref 5;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 97);
+            x := deref x + 1;
+            Some(c)
+        };
+    String.unfoldWithIter(step) == "fghij"
+
+@test
+def unfoldWithIter06(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 97);
+            x := deref x + 2;
+            Some(c)
+        };
+    String.unfoldWithIter(step) == "acegi"
+
+/////////////////////////////////////////////////////////////////////////////
+// unfoldString                                                            //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfoldString01(): Bool =
+    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 0) == "ab.ab.ab.ab.ab."
+
+@test
+def unfoldString02(): Bool =
+    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 1) == "ab.ab.ab.ab."
+
+@test
+def unfoldString03(): Bool =
+    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 2) == "ab.ab.ab."
+
+@test
+def unfoldString04(): Bool =
+    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 3) == "ab.ab."
+
+@test
+def unfoldString05(): Bool =
+    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 4) == "ab."
+
+@test
+def unfoldString06(): Bool =
+    String.unfoldString(x -> if (x < 5) Some("", x+1) else None, 5) == ""
+
+@test
+def unfoldString07(): Bool =
+    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 6) == ""
+
+@test
+def unfoldString08(): Bool =
+    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, -1) == "ab.ab.ab.ab.ab.ab."
+
+
+/////////////////////////////////////////////////////////////////////////////
+// unfoldStringWithIter                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfoldStringWithIter01(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (true)
+            None
+        else {
+            let c1 = Char.fromInt32(deref x + 65);
+            let c2 = Char.fromInt32(deref x + 97);
+            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            x := deref x + 1;
+            Some(s)
+        };
+    String.unfoldStringWithIter(step) == ""
+
+@test
+def unfoldStringWithIter02(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 0)
+            None
+        else {
+            let c1 = Char.fromInt32(deref x + 65);
+            let c2 = Char.fromInt32(deref x + 97);
+            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            x := deref x + 1;
+            Some(s)
+        };
+    String.unfoldStringWithIter(step) == "Aa."
+
+@test
+def unfoldStringWithIter03(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 1)
+            None
+        else {
+            let c1 = Char.fromInt32(deref x + 65);
+            let c2 = Char.fromInt32(deref x + 97);
+            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            x := deref x + 1;
+            Some(s)
+        };
+    String.unfoldStringWithIter(step) == "Aa.Bb."
+
+@test
+def unfoldStringWithIter04(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c1 = Char.fromInt32(deref x + 65);
+            let c2 = Char.fromInt32(deref x + 97);
+            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            x := deref x + 1;
+            Some(s)
+        };
+    String.unfoldStringWithIter(step) == "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj."
+
+@test
+def unfoldStringWithIter05(): Bool & Impure =
+    let x = ref 5;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c1 = Char.fromInt32(deref x + 65);
+            let c2 = Char.fromInt32(deref x + 97);
+            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            x := deref x + 1;
+            Some(s)
+        };
+    String.unfoldStringWithIter(step) == "Ff.Gg.Hh.Ii.Jj."
+
+@test
+def unfoldStringWithIter06(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c1 = Char.fromInt32(deref x + 65);
+            let c2 = Char.fromInt32(deref x + 97);
+            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            x := deref x + 2;
+            Some(s)
+        };
+    String.unfoldStringWithIter(step) == "Aa.Cc.Ee.Gg.Ii."
+
+/////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2932,5 +3145,60 @@ def toChunks13(): Bool = String.toChunks(4, "aaabbbc") == "aaab" :: "bbc" :: Nil
 @test
 def toChunks14(): Bool = String.toChunks(10, "aaabbbc") == "aaabbbc" :: Nil
 
+/////////////////////////////////////////////////////////////////////////////
+// breakOnLeft                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def breakOnLeft01(): Bool = String.breakOnLeft("", "") == ("", "")
+
+@test
+def breakOnLeft02(): Bool = String.breakOnLeft("", "aaa") == ("aaa", "")
+
+@test
+def breakOnLeft03(): Bool = String.breakOnLeft("::", "") == ("", "")
+
+@test
+def breakOnLeft04(): Bool = String.breakOnLeft("::", "aaa") == ("aaa", "")
+
+@test
+def breakOnLeft05(): Bool = String.breakOnLeft("::", "aaa:") == ("aaa:", "")
+
+@test
+def breakOnLeft06(): Bool = String.breakOnLeft("::", "aaa::") == ("aaa", "::")
+
+@test
+def breakOnLeft07(): Bool = String.breakOnLeft("::", "aaa::bbb") == ("aaa", "::bbb")
+
+@test
+def breakOnLeft08(): Bool = String.breakOnLeft("::", "aaa::bbb::ccc") == ("aaa", "::bbb::ccc")
+
+/////////////////////////////////////////////////////////////////////////////
+// breakOnRight                                                            //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def breakOnRight01(): Bool = String.breakOnRight("", "") == ("", "")
+
+@test
+def breakOnRight02(): Bool = String.breakOnRight("", "aaa") == ("aaa", "")
+
+@test
+def breakOnRight03(): Bool = String.breakOnRight("::", "") == ("", "")
+
+@test
+def breakOnRight04(): Bool = String.breakOnRight("::", "aaa") == ("aaa", "")
+
+@test
+def breakOnRight05(): Bool = String.breakOnRight("::", "aaa:") == ("aaa:", "")
+
+@test
+def breakOnRight06(): Bool = String.breakOnRight("::", "aaa::") == ("aaa::", "")
+
+@test
+def breakOnRight07(): Bool = String.breakOnRight("::", "aaa::bbb") == ("aaa::", "bbb")
+
+@test
+def breakOnRight08(): Bool = String.breakOnRight("::", "aaa::bbb::ccc") == ("aaa::bbb::", "ccc")
 }
 

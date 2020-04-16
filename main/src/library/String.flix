@@ -636,6 +636,72 @@ namespace String {
     }
 
     ///
+    /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(c)` to signal a new char `c`.
+    ///
+    /// `next` should return `None` to signal the end of building the string.
+    ///
+    pub def unfoldWithIter(f: () -> Option[Char] & Impure) : String =
+        let sb = StringBuilder.new() as & Pure;
+        unfoldWithIterHelper(f, sb) as & Pure
+
+    ///
+    /// Helper function for `unfoldWithIter`.
+    ///
+    def unfoldWithIterHelper(next: () ~> Option[Char], sb: StringBuilder): String & Impure = match next() {
+        case None => StringBuilder.toString(sb)
+        case Some(c) => {
+            StringBuilder.appendChar!(sb, c);
+            unfoldWithIterHelper(next, sb)
+        }
+    }
+
+    ///
+    /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
+    ///
+    /// This is a version of `unfold` where `f` generates substrings rather than chars.
+    ///
+    pub def unfoldString(f: b -> Option[(String, b)], x: b) : String =
+        let sb = StringBuilder.new() as & Pure;
+        unfoldStringHelper(f, sb, x) as & Pure
+
+    ///
+    /// Helper function for `unfoldString`.
+    ///
+    def unfoldStringHelper(f: b -> Option[(String, b)], sb: StringBuilder, x: b) : String & Impure = match f(x) {
+        case None => StringBuilder.toString(sb)
+        case Some(s, st1) => {
+            StringBuilder.appendString!(sb, s);
+            unfoldStringHelper(f, sb, st1)
+        }
+    }
+
+    ///
+    /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(s)` to signal a new substring `s`.
+    ///
+    /// `next` should return `None` to signal the end of building the string.
+    ///
+    pub def unfoldStringWithIter(f: () -> Option[String] & Impure) : String =
+        let sb = StringBuilder.new() as & Pure;
+        unfoldStringWithIterHelper(f, sb) as & Pure
+
+    ///
+    /// Helper function for `unfoldStringWithIter`.
+    ///
+    def unfoldStringWithIterHelper(next: () ~> Option[String], sb: StringBuilder): String & Impure = match next() {
+        case None => StringBuilder.toString(sb)
+        case Some(s) => {
+            StringBuilder.appendString!(sb, s);
+            unfoldStringWithIterHelper(next, sb)
+        }
+    }
+
+    ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
     ///
     /// Returns `false` if `a` is empty.
@@ -1147,6 +1213,26 @@ namespace String {
         };
         List.unfold(step, 0)
 
+    ///
+    /// Find the first instance of `sub` in string `s`, return a pair of the
+    /// prefix of string `s` up to `sub` and the rest of string `s` including `sub`.
+    ///
+    pub def breakOnLeft(sub: String, s: String): (String, String) =
+        match indexOfLeft(sub, s) {
+            case None => (s, "")
+            case Some(i) => (sliceLeft(s, i), sliceRight(s, i))
+        }
+
+    ///
+    /// Find the last instance of `sub` in string `s`, return a pair of the
+    /// initial string including `sub` and suffix from `sub`.
+    ///
+    pub def breakOnRight(sub: String, s: String): (String, String) =
+        let sublen = length(sub);
+        match indexOfRight(sub, s) {
+            case None => (s, "")
+            case Some(i) => (sliceLeft(s, i + sublen), sliceRight(s, i + sublen))
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints                                                                   //
