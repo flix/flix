@@ -279,12 +279,31 @@ object Unification {
       * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
       */
     def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, UnificationError] = {
-      // The type variable and type are in fact the same.
-      if (x == tpe) {
-        return Result.Ok(Substitution.empty)
+      // TODO: Fix it.
+
+      // Check if `tpe` is a type variable.
+      if (tpe.isInstanceOf[Type.Var]) {
+        val y = tpe.asInstanceOf[Type.Var]
+        // Check if the two type variables are the same.
+        if (x.id == y.id) {
+          // The type variables are exactly the same.
+          return Result.Ok(Substitution.empty)
+        }
+        // If x is non-rigid it can be unified.
+        if (x.rigidity == Rigidity.Flexible) {
+          return Result.Ok(Substitution.singleton(x, y))
+        }
+        // If y is non-rigid it can be unified.
+        if (y.rigidity == Rigidity.Flexible) {
+          return Result.Ok(Substitution.singleton(y, x))
+        }
+        // If x and y are rigid report an error.
+        if (x.rigidity == Rigidity.Rigid && y.rigidity == Rigidity.Rigid){
+          return Result.Err(UnificationError.RigidVar(x, tpe))
+        }
       }
 
-      // The type variable is rigid (i.e. must be treated as a constant and cannot be unified).
+      // If x is rigid report an error.
       if (x.rigidity == Rigidity.Rigid) {
         return Result.Err(UnificationError.RigidVar(x, tpe))
       }
