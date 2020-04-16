@@ -358,11 +358,6 @@ object Unification {
   def unifyEffM(eff1: Type, eff2: Type, eff3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyEffM(List(eff1, eff2, eff3), loc)
 
   /**
-    * Unifies the four given effects `eff1`, `eff2`, `eff3`, and `eff4`.
-    */
-  def unifyEffM(eff1: Type, eff2: Type, eff3: Type, eff4: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyEffM(List(eff1, eff2, eff3, eff4), loc)
-
-  /**
     * Unifies all the effects in the given non-empty list `fs`.
     */
   def unifyEffM(fs: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
