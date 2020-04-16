@@ -1119,12 +1119,21 @@ namespace String {
     ///
     /// Test equality of strings `s1` and `s2` ignoring case.
     ///
-    /// TODO - name?
-    /// TODO - should we use Collator?
-    ///
     pub def equalsCI(s1: String, s2: String): Bool =
-         import java.lang.String.equalsIgnoreCase(String);
-         s1.equalsIgnoreCase(s2) as & Pure
+        equalsCIHelper(s1, s2) as & Pure
+
+    ///
+    /// Helper function for `equalsCI`.
+    ///
+    /// Uses a collator to be accurate with the locale of the JVM.
+    ///
+    pub def equalsCIHelper(s1: String, s2: String): Bool & Impure =
+         import java.text.Collator:getInstance();
+         import java.text.Collator.setStrength(Int32) as setStrength!;
+         import java.text.Collator.compare(String, String);
+         let coll = getInstance();
+         coll.setStrength!(0);
+         if (coll.compare(s1, s2) == 0) true else false
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
