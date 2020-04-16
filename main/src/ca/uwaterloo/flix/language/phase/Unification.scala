@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Rigidity, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
+import ca.uwaterloo.flix.language.ast.{Rigidity, Scheme, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -490,8 +491,9 @@ object Unification {
     // The boolean expression we want to show is 0.
     val query = mkEq(eff1, eff2)
 
-    // The free type (effect) variables in the query.
-    val freeVars = query.typeVars.toList // TODO: Only use flexible variables here.
+    // The free and flexible type (effect) variables in the query.
+    //    val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
+    val freeVars = query.typeVars.toList // TODO
 
     // Eliminate all variables.
     try {
@@ -519,20 +521,21 @@ object Unification {
   private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
   /**
-    * Performs success variable elimination on the given boolean expression `eff`.
+    * Performs success variable elimination on the given boolean expression `f`.
     */
-  private def successiveVariableElimination(eff: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
-    // TODO: Optimization: Variables might disappear from fvs.
+  private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
+    // TODO: It is possible that a variable is eliminated from f during SVE. If so, we dont have to split on it.
     case Nil =>
-      if (eff == Type.Impure)
-      // TODO: Instead making all variables flexible and solve a SAT instance that asks if the formula unsatisfiable.
-      Substitution.empty
-        else
+      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
+      val q = Scheme.instantiate(Scheme(f.typeVars.toList, f), InstantiateMode.Flexible)
+      if (!sat(q))
+        Substitution.empty
+      else
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x, False)(eff)
-      val t1 = Substitution.singleton(x, True)(eff)
+      val t0 = Substitution.singleton(x, False)(f)
+      val t1 = Substitution.singleton(x, True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
       val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
       st ++ se
@@ -542,6 +545,22 @@ object Unification {
     * An exception thrown to indicate that boolean unification failed.
     */
   private case object BooleanUnificationException extends RuntimeException
+
+  /**
+    * Returns `true` if the given boolean formula `f` is satisfiable.
+    */
+  private def sat(f: Type)(implicit flix: Flix): Boolean = f match {
+    case Type.Pure => true
+    case Type.Impure => false
+    case _ =>
+      val q = mkEq(f, Type.Pure)
+      try {
+        successiveVariableElimination(q, q.typeVars.toList)
+        true
+      } catch {
+        case BooleanUnificationException => false
+      }
+  }
 
   /**
     * Returns `true` if `tpe1` is an instance of `tpe2`.
