@@ -112,7 +112,6 @@ object Scheme {
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def lessThanEqual(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
-    // TODO: What about boolean variables?
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
