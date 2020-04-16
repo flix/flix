@@ -266,9 +266,6 @@ object Unification {
 
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
-    *
-    * If `unifyRight` is true then unification is bi-direction.
-    * If `unifyRight` is false then only type variables on the left are unified.
     */
   def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
@@ -277,6 +274,8 @@ object Unification {
       */
     def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, UnificationError] = {
       // NB: The `tpe` type must be a non-var.
+      if (tpe.isInstanceOf[Type.Var])
+        throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
 
       // Check if `x` is rigid.
       if (x.rigidity == Rigidity.Rigid) {
