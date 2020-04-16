@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Rigidity, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
+import ca.uwaterloo.flix.language.ast.{Rigidity, Scheme, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -265,42 +266,36 @@ object Unification {
 
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
-    *
-    * If `unifyRight` is true then unification is bi-direction.
-    * If `unifyRight` is false then only type variables on the left are unified.
     */
   def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
-    // NB: Uses a closure to capture the source location `loc`.
-
     /**
-      * Unifies the given variable `x` with the given type `tpe`.
-      *
-      * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
+      * Unifies the given variable `x` with the given non-variable type `tpe`.
       */
     def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, UnificationError] = {
-      // The type variable and type are in fact the same.
-      if (x == tpe) {
-        return Result.Ok(Substitution.empty)
-      }
+      // NB: The `tpe` type must be a non-var.
+      if (tpe.isInstanceOf[Type.Var])
+        throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
 
-      // The type variable is rigid (i.e. must be treated as a constant and cannot be unified).
+      // Check if `x` is rigid.
       if (x.rigidity == Rigidity.Rigid) {
         return Result.Err(UnificationError.RigidVar(x, tpe))
       }
 
-      // The type variable occurs inside the type.
+      // Check if `x` occurs within `tpe`.
       if (tpe.typeVars contains x) {
         return Result.Err(UnificationError.OccursCheck(x, tpe))
       }
 
-      // TODO: Kinds disabled for now. Requires changed to the previous phase to associated type variables with their kinds.
+      // Check if the kind of `x` matches the kind of `tpe`.
+
       //if (x.kind != tpe.kind) {
       //  return Result.Err(TypeError.KindError())
       //}
 
       // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
       if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
+        // TODO: Get rid of this insanity.
         tpe.asInstanceOf[Type.Var].setText(x.getText.get)
       }
       Result.Ok(Substitution.singleton(x, tpe))
@@ -311,7 +306,18 @@ object Unification {
       */
     // NB: The order of cases has been determined by code coverage analysis.
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
-      case (x: Type.Var, y: Type.Var) if x.id == y.id => Result.Ok(Substitution.empty)
+      case (x: Type.Var, y: Type.Var) =>
+        // Case 1: Check if the type variables are syntactically the same.
+        if (x.id == y.id && x.kind == y.kind)
+          return Result.Ok(Substitution.empty)
+        // Case 2: The left type variable is flexible.
+        if (x.rigidity == Rigidity.Flexible)
+          return Result.Ok(Substitution.singleton(x, y))
+        // Case 3: The right type variable is flexible.
+        if (y.rigidity == Rigidity.Flexible)
+          return Result.Ok(Substitution.singleton(y, x))
+        // Case 4: Both type variables are rigid.
+        Result.Err(UnificationError.RigidVar(x, y))
 
       case (x: Type.Var, _) => unifyVar(x, tpe2)
 
@@ -471,8 +477,8 @@ object Unification {
     // The boolean expression we want to show is 0.
     val query = mkEq(eff1, eff2)
 
-    // The free type (effect) variables in the query.
-    val freeVars = query.typeVars.toList
+    // The free and flexible type (effect) variables in the query.
+    val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
 
     // Eliminate all variables.
     try {
@@ -500,18 +506,20 @@ object Unification {
   private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
   /**
-    * Performs success variable elimination on the given boolean expression `eff`.
+    * Performs success variable elimination on the given boolean expression `f`.
     */
-  private def successiveVariableElimination(eff: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
+  private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
-      if (eff == Type.Impure)
+      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
+      val q = Scheme.instantiate(Scheme(f.typeVars.toList, f), InstantiateMode.Flexible)
+      if (!sat(q))
         Substitution.empty
       else
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x, False)(eff)
-      val t1 = Substitution.singleton(x, True)(eff)
+      val t0 = Substitution.singleton(x, False)(f)
+      val t1 = Substitution.singleton(x, True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
       val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
       st ++ se
@@ -521,6 +529,22 @@ object Unification {
     * An exception thrown to indicate that boolean unification failed.
     */
   private case object BooleanUnificationException extends RuntimeException
+
+  /**
+    * Returns `true` if the given boolean formula `f` is satisfiable.
+    */
+  private def sat(f: Type)(implicit flix: Flix): Boolean = f match {
+    case Type.Pure => true
+    case Type.Impure => false
+    case _ =>
+      val q = mkEq(f, Type.Pure)
+      try {
+        successiveVariableElimination(q, q.typeVars.toList)
+        true
+      } catch {
+        case BooleanUnificationException => false
+      }
+  }
 
   /**
     * Returns `true` if `tpe1` is an instance of `tpe2`.

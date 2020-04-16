@@ -29,7 +29,7 @@ import scala.collection.mutable
 /**
   * The Resolver phase performs name resolution on the program.
   */
-object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
+object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
   /**
     * The maximum depth to which type aliases are unfolded.
@@ -39,7 +39,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given program `prog0`.
     */
-  def run(prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = flix.phase("Resolver") {
+  def run(prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
     val definitionsVal = prog0.defs.flatMap {
       case (ns0, defs) => defs.map {
@@ -94,7 +94,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       enums <- sequence(enumsVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
-    } yield ResolvedAst.Program(
+    } yield ResolvedAst.Root(
       definitions.toMap ++ named.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }

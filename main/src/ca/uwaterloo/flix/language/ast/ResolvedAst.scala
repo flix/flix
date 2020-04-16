@@ -25,12 +25,12 @@ import scala.collection.immutable.List
 
 object ResolvedAst {
 
-  case class Program(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
-                     enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
-                     latticeOps: Map[Type, ResolvedAst.LatticeOps],
-                     properties: List[ResolvedAst.Property],
-                     reachable: Set[Symbol.DefnSym],
-                     sources: Map[Source, SourceLocation])
+  case class Root(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
+                  enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
+                  latticeOps: Map[Type, ResolvedAst.LatticeOps],
+                  properties: List[ResolvedAst.Property],
+                  reachable: Set[Symbol.DefnSym],
+                  sources: Map[Source, SourceLocation])
 
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Type, loc: SourceLocation)
 
