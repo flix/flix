@@ -425,6 +425,45 @@ def appendLinesWith04!(): Bool & Impure =
     StringBuilder.toString(sb) == s1
 
 /////////////////////////////////////////////////////////////////////////////
+// intercalate!                                                            //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def intercalate01!(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.intercalate!(sb, "", []);
+    StringBuilder.toString(sb) == ""
+
+@test
+def intercalate02!(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.intercalate!(sb, "::", []);
+    StringBuilder.toString(sb) == ""
+
+@test
+def intercalate03!(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.intercalate!(sb, "", ["abc", "def"]);
+    StringBuilder.toString(sb) == "abcdef"
+
+@test
+def intercalate04!(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.intercalate!(sb, "::", ["abc"]);
+    StringBuilder.toString(sb) == "abc"
+
+@test
+def intercalate05!(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.intercalate!(sb, "::", ["abc", "def"]);
+    StringBuilder.toString(sb) == "abc::def"
+
+@test
+def intercalate06!(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.intercalate!(sb, "::", ["abc", "def", "ghi"]);
+    StringBuilder.toString(sb) == "abc::def::ghi"
+
+/////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -460,5 +499,25 @@ def length05(): Bool & Impure =
     StringBuilder.appendString!(sb, "World");
     StringBuilder.appendChar!(sb, '!');
     StringBuilder.length(sb) == 12
+
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toString01(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.toString(sb) == ""
+
+@test
+def toString02(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.appendString!(sb, "");
+    StringBuilder.toString(sb) == ""
+
+@test
+def toString03(): Bool & Impure =
+    let sb = StringBuilder.new();
+    StringBuilder.appendString!(sb, "abcdefghijklmnopqrstuvwxyz");
+    StringBuilder.toString(sb) == "abcdefghijklmnopqrstuvwxyz"
 
 }
