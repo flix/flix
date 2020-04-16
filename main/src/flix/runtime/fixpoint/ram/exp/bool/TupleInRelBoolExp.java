@@ -10,8 +10,8 @@ public final class TupleInRelBoolExp implements BoolExp {
     private final RelationExp exp;
 
     public TupleInRelBoolExp(RamTerm[] terms, RelationExp exp) {
-        if (terms == null || terms.length == 0)
-            throw new IllegalArgumentException("'terms' must be non-null and non-empty");
+        if (terms == null)
+            throw new IllegalArgumentException("'terms' must be non-null");
         if (exp == null) throw new IllegalArgumentException("'table' must be non-null");
         this.terms = terms;
         this.exp = exp;

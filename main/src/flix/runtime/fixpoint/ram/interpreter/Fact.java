@@ -8,8 +8,8 @@ public final class Fact {
     private final ProxyObject[] elements;
 
     public Fact(ProxyObject[] elements) {
-        if (elements == null || elements.length < 1)
-            throw new IllegalArgumentException("'elements' must be non-null and non-empty");
+        if (elements == null)
+            throw new IllegalArgumentException("'elements' must be non-null");
         this.elements = elements;
     }
 
