@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Unification._
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
 
@@ -34,106 +35,106 @@ class TestUnification extends FunSuite {
 
   test("Substitution.Empty.01") {
     val tpe = Type.Unit
-    val subst = Unification.Substitution.empty
+    val subst = Substitution.empty
     assertResult(Type.Unit)(subst(tpe))
   }
 
   test("Substitution.Empty.02") {
     val tpe = Type.Bool
-    val subst = Unification.Substitution.empty
+    val subst = Substitution.empty
     assertResult(Type.Bool)(subst(tpe))
   }
 
   test("Substitution.Empty.03") {
     val tpe = Type.Var(1, Kind.Star)
-    val subst = Unification.Substitution.empty
+    val subst = Substitution.empty
     assertResult(Type.Var(1, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.Empty.04") {
     val tpe = Type.mkPureArrow(Type.Bool, Type.Unit)
-    val subst = Unification.Substitution.empty
+    val subst = Substitution.empty
     assertResult(Type.mkPureArrow(Type.Bool, Type.Unit))(subst(tpe))
   }
 
   test("Substitution.Singleton.01") {
     val tpe = Type.Var(1, Kind.Star)
-    val subst = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
+    val subst = Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
     assertResult(Type.Var(1, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.Singleton.02") {
     val tpe = Type.Var(1, Kind.Star)
-    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst = Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.Bool)(subst(tpe))
   }
 
   test("Substitution.Singleton.05") {
     val tpe = Type.Var(1, Kind.Star)
-    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst = Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.Var(2, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.++.01") {
-    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst1 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.02") {
-    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst1 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     val tpe = Type.Var(2, Kind.Star)
     assertResult(Type.Char)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.03") {
-    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
+    val subst1 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.04") {
-    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst1 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     val tpe = Type.mkPureArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.mkPureArrow(Type.Bool, Type.Char))((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.@@.01") {
-    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst1 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     val tpe = Type.mkPureArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.mkPureArrow(Type.Bool, Type.Char))((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.02") {
-    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
+    val subst1 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.03") {
-    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
+    val subst1 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst2 = Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.04") {
-    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Var(3, Kind.Star))
-    val subst3 = Unification.Substitution.singleton(Type.Var(3, Kind.Star), Type.Bool)
+    val subst1 = Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst2 = Substitution.singleton(Type.Var(2, Kind.Star), Type.Var(3, Kind.Star))
+    val subst3 = Substitution.singleton(Type.Var(3, Kind.Star), Type.Bool)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst3 @@ (subst2 @@ subst1)) (tpe))
