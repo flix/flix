@@ -59,7 +59,7 @@ object Scheme {
     //
     // Compute the fresh variables taking the instantiation mode into account.
     //
-    val freshVars = baseType.typeVars.foldLeft(Map.empty[Int, Type.Var]) {
+    val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
         val rigidity = mode match {
