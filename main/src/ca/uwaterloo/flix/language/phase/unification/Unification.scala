@@ -320,9 +320,10 @@ object Unification {
   /**
     * Pairwise unifies the two given lists of types `xs` and `ys`.
     */
-  def unifyTypM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[List[Type]] = seqM((xs zip ys).map {
-    case (x, y) => unifyTypM(x, y, loc)
-  })
+  def unifyTypM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[List[Type]] =
+    InferMonad.seqM((xs zip ys).map {
+      case (x, y) => unifyTypM(x, y, loc)
+    })
 
   /**
     * Unifies the two given effects `eff1` and `eff2`.
@@ -374,18 +375,5 @@ object Unification {
 
     visit(liftM(fs.head), fs.tail)
   }
-
-  /**
-    * Collects the result of each type inference monad in `ts` going left to right.
-    */
-  def seqM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
-    case Nil => liftM(Nil)
-    case y :: ys => y flatMap {
-      case r => seqM(ys) map {
-        case rs => r :: rs
-      }
-    }
-  }
-
 
 }
