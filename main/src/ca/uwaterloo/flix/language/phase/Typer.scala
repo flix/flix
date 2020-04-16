@@ -35,19 +35,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Type checks the given program.
     */
   def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
-    val result = for {
-      defs <- typeDefs(program)
-      enums <- typeEnums(program)
-      latticeComponents <- typeLatticeComponents(program)
-      properties <- typeProperties(program)
-    } yield {
-      val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, enums, latticeComponents, properties, specialOps, program.reachable, program.sources)
-    }
+    val defsVal = typeDefs(program)
+    val enumsVal = typeEnums(program)
+    val latticeOpsVal = typeLatticeComponents(program)
+    val propertiesVal = typeProperties(program)
 
-    result match {
-      case Ok(p) => p.toSuccess
-      case Err(e) => e.toFailure
+    Validation.mapN(defsVal, enumsVal, latticeOpsVal, propertiesVal) {
+      case (defs, enums, latticeOps, properties) =>
+        val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
+        TypedAst.Root(defs, enums, latticeOps, properties, specialOps, program.reachable, program.sources)
     }
   }
 
@@ -56,7 +52,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def typeDefs(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
+  private def typeDefs(program: ResolvedAst.Program)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
     /**
       * Performs type inference and reassembly on the given definition `defn`.
       */
@@ -71,10 +67,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val defs = program.defs.values.toList
 
     // Visit every definition in parallel.
-    val results = ParOps.parMap(visitDefn, defs)
+    val results = ParOps.parMap(visitDefn, defs).map(_.toValidation)
 
     // Sequence the results
-    Result.sequence(results).map(_.unzip).map {
+    Validation.sequence(results).map(_.unzip).map {
       case (m, m2) =>
         if (flix.options.xstatistics) {
           printStatistics(m2.toMap)
@@ -86,7 +82,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Performs type inference and reassembly on all enums in the given program.
     */
-  private def typeEnums(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] = {
+  private def typeEnums(program: ResolvedAst.Program)(implicit flix: Flix): Validation[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] = {
     /**
       * Performs type resolution on the given enum and its cases.
       */
@@ -103,11 +99,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     // Visit every enum in the program.
     val result = program.enums.toList.map {
-      case (_, enum) => visitEnum(enum)
+      case (_, enum) => visitEnum(enum).toValidation
     }
 
     // Sequence the results and convert them back to a map.
-    Result.sequence(result).map(_.toMap)
+    Validation.sequence(result).map(_.toMap)
   }
 
   /**
@@ -115,7 +111,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     *
     * Returns [[Err]] if a type error occurs.
     */
-  private def typeLatticeComponents(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Type, TypedAst.LatticeOps], TypeError] = {
+  private def typeLatticeComponents(program: ResolvedAst.Program)(implicit flix: Flix): Validation[Map[Type, TypedAst.LatticeOps], TypeError] = {
 
     /**
       * Performs type inference and reassembly on the given `lattice`.
@@ -169,17 +165,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     // Visit every lattice in the program.
     val result = program.latticeOps.toList.map {
-      case (_, lattice) => visitLatticeOps(lattice)
+      case (_, lattice) => visitLatticeOps(lattice).toValidation
     }
 
     // Sequence the results and convert them back to a map.
-    Result.sequence(result).map(_.toMap)
+    Validation.sequence(result).map(_.toMap)
   }
 
   /**
     * Infers the types of all the properties in the given program `prog0`.
     */
-  private def typeProperties(prog0: ResolvedAst.Program)(implicit flix: Flix): Result[List[TypedAst.Property], TypeError] = {
+  private def typeProperties(prog0: ResolvedAst.Program)(implicit flix: Flix): Validation[List[TypedAst.Property], TypeError] = {
 
     /**
       * Infers the type of the given property `p0`.
@@ -195,12 +191,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     }
 
     // Visit every property in the program.
-    val results = prog0.properties.map {
-      case property => visitProperty(property)
-    }
+    val results = prog0.properties.map(visitProperty).map(_.toValidation)
 
     // Sequence the results and sort the properties by their source location.
-    Result.sequence(results).map(_.sortBy(_.loc))
+    Validation.sequence(results)
   }
 
   /**
@@ -234,8 +228,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case Ok((subst, resultType)) =>
             val inferredScheme = Scheme.generalize(resultType)
             val leq = Scheme.lessThanEqual(inferredScheme, declaredScheme)
-            if(!leq) {
-              return Err(TypeError.GeneralizationError(declaredScheme,inferredScheme, defn0.loc))
+            if (!leq) {
+              return Err(TypeError.GeneralizationError(declaredScheme, inferredScheme, defn0.loc))
             }
 
             val exp = reassembleExp(defn0.exp, program, subst)
