@@ -1043,7 +1043,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
         //
         //  exp: t @ _
         //  -------------------------
@@ -1052,7 +1052,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe, _) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, Type.Unit, loc)
-          resultEff <- unifyEffM(evar, Type.Impure, loc)
+          resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
@@ -1474,9 +1474,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val d = default.map(visitExp(_, subst0))
         TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.ProcessSpawn(e, subst0(tvar), subst0(evar), loc)
+        val eff = e.eff
+        TypedAst.Expression.ProcessSpawn(e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
         TypedAst.Expression.ProcessPanic(msg, subst0(tvar), subst0(evar), loc)

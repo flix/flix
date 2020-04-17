@@ -617,7 +617,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, loc)
 
         case NamedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
           ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc).toSuccess
