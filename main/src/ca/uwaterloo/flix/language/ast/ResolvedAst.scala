@@ -120,17 +120,17 @@ object ResolvedAst {
 
     case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLit(elms: List[ResolvedAst.Expression], tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLit(elms: List[ResolvedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorNew(elm: ResolvedAst.Expression, len: Int, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorNew(elm: ResolvedAst.Expression, len: Int, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLoad(base: ResolvedAst.Expression, index: Int, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLoad(base: ResolvedAst.Expression, index: Int, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorStore(base: ResolvedAst.Expression, index: Int, elm: ResolvedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorStore(base: ResolvedAst.Expression, index: Int, elm: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLength(base: ResolvedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLength(base: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ref(exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

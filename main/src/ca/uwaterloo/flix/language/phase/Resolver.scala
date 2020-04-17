@@ -422,33 +422,33 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.VectorLit(elms, tvar, evar, loc) =>
           for {
             es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.VectorLit(es, tvar, evar, loc)
+          } yield ResolvedAst.Expression.VectorLit(es, tvar, loc)
 
         case NamedAst.Expression.VectorNew(elm, len, tvar, evar, loc) =>
           for {
             e <- visit(elm, tenv0)
-          } yield ResolvedAst.Expression.VectorNew(e, len, tvar, evar, loc)
+          } yield ResolvedAst.Expression.VectorNew(e, len, tvar, loc)
 
         case NamedAst.Expression.VectorLoad(base, index, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.VectorLoad(b, index, tvar, evar, loc)
+          } yield ResolvedAst.Expression.VectorLoad(b, index, tvar, loc)
 
         case NamedAst.Expression.VectorStore(base, index, elm, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
             e <- visit(elm, tenv0)
-          } yield ResolvedAst.Expression.VectorStore(b, index, e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.VectorStore(b, index, e, tvar, loc)
 
         case NamedAst.Expression.VectorLength(base, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.VectorLength(b, tvar, evar, loc)
+          } yield ResolvedAst.Expression.VectorLength(b, tvar, loc)
 
         case NamedAst.Expression.VectorSlice(base, startIndex, optEndIndex, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.VectorSlice(b, startIndex, optEndIndex, tvar, evar, loc)
+          } yield ResolvedAst.Expression.VectorSlice(b, startIndex, optEndIndex, tvar, loc)
 
         case NamedAst.Expression.Ref(exp, tvar, evar, loc) =>
           for {
