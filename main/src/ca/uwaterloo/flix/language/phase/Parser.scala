@@ -1260,7 +1260,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Formula: Rule1[ParsedAst.Type] = {
       def Primary: Rule1[ParsedAst.Type] = rule {
-        Or | "(" ~ optWS ~ Primary ~ optWS ~ ")"
+       Or
       }
 
       def Or: Rule1[ParsedAst.Type] = rule {
@@ -1272,7 +1272,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Not: Rule1[ParsedAst.Type] = rule {
-        (atomic("not") ~ WS ~ Primary ~> ParsedAst.Type.Not) | Type
+        (atomic("not") ~ WS ~ Parens ~> ParsedAst.Type.Not) | Parens
+      }
+
+      def Parens: Rule1[ParsedAst.Type] = rule {
+        "(" ~ optWS ~ Primary ~ optWS ~ ")" | One
       }
 
       rule {
