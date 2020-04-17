@@ -398,21 +398,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val e2 = visitExp(exp2, env0, uenv0, tenv0)
       val e3 = visitExp(exp3, env0, uenv0, tenv0)
       mapN(e1, e2, e3) {
-        NamedAst.Expression.IfThenElse(_, _, _, Type.freshTypeVar(), loc)
+        NamedAst.Expression.IfThenElse(_, _, _, loc)
       }
 
     case WeededAst.Expression.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1, env0, uenv0, tenv0)
       val e2 = visitExp(exp2, env0, uenv0, tenv0)
       mapN(e1, e2) {
-        NamedAst.Expression.Stm(_, _, Type.freshTypeVar(), loc)
+        NamedAst.Expression.Stm(_, _, loc)
       }
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, loc)
       }
 
     case WeededAst.Expression.LetRec(ident, exp1, exp2, loc) =>
@@ -420,7 +420,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.freshVarSym(ident)
       val env1 = env0 + (ident.name -> sym)
       mapN(visitExp(exp1, env1, uenv0, tenv0), visitExp(exp2, env1, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.LetRec(sym, e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.LetRec(sym, e1, e2, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>

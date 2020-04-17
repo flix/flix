@@ -275,30 +275,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Binary(op, e1, e2, tvar, loc)
 
-        case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
             e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.IfThenElse(e1, e2, e3, loc)
 
-        case NamedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.Stm(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Stm(e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.Stm(e1, e2, loc)
 
-        case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.Let(sym, exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Let(sym, e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.Let(sym, e1, e2, loc)
 
-        case NamedAst.Expression.LetRec(sym, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.LetRec(sym, exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.LetRec(sym, e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.LetRec(sym, e1, e2, loc)
 
         case NamedAst.Expression.Match(exp, rules, tvar, loc) =>
           val rulesVal = traverse(rules) {
