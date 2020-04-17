@@ -30,6 +30,15 @@ namespace Test/Eff/Advanced {
     @test
     def testAdvanced09(): Unit = requiresAtmostOnePure1(impure, pure)
 
+    @test
+    def testAdvanced10(): Unit = requiresAtmostOnePure2(impure, impure)
+
+    @test
+    def testAdvanced11(): Unit = requiresAtmostOnePure2(pure, impure)
+
+    @test
+    def testAdvanced12(): Unit = requiresAtmostOnePure2(impure, pure)
+
     /// A pure function from Unit -> Unit.
     def pure(): Unit = ()
 
@@ -50,5 +59,8 @@ namespace Test/Eff/Advanced {
 
     /// A function that requires at most one pure function.
     def requiresAtmostOnePure1(_f: a -> b & e1, _g: a -> b & {{not e1 /\ e2}}): Unit = ()
+
+    /// A function that requires at most one pure function.
+    def requiresAtmostOnePure2(_f: a -> b & {{not e1 /\ e2}}, _g: a -> b & e1): Unit = ()
 
 }
