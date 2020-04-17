@@ -1258,8 +1258,30 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         ((s: Seq[ParsedAst.Type]) => s.reduce(ParsedAst.Type.And.apply))
     }
 
+    def Formula: Rule1[ParsedAst.Type] = {
+      def Primary: Rule1[ParsedAst.Type] = rule {
+        Or | "(" ~ optWS ~ Primary ~ optWS ~ ")"
+      }
+
+      def Or: Rule1[ParsedAst.Type] = rule {
+        And ~ zeroOrMore(optWS ~ atomic("\\/" ~ optWS ~ And) ~> ParsedAst.Type.Or)
+      }
+
+      def And: Rule1[ParsedAst.Type] = rule {
+        Not ~ zeroOrMore(optWS ~ atomic("/\\" ~ optWS ~ Not) ~> ParsedAst.Type.And)
+      }
+
+      def Not: Rule1[ParsedAst.Type] = rule {
+        (atomic("not") ~ WS ~ Primary ~> ParsedAst.Type.Not) | Type
+      }
+
+      rule {
+        "{{" ~ optWS ~ Primary ~ optWS ~ "}}"
+      }
+    }
+
     rule {
-      One | Seq
+      One | Seq | Formula
     }
   }
 

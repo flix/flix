@@ -86,7 +86,7 @@ object BenchmarkCompiler {
     */
   private def newFlix(): Flix = {
     val flix = new Flix()
-    flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
+    flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false, xnoeffects = true))
 
     addCompilerTests(flix)
     addLibraryTests(flix)
