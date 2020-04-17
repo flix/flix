@@ -313,7 +313,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             e <- visit(exp, tenv0)
             rs <- rulesVal
-          } yield ResolvedAst.Expression.Match(e, rs, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Match(e, rs, tvar, loc)
 
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, evar, loc) => expOpt match {
           case None =>

@@ -494,7 +494,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Match(exp, rules, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Match(exp, rules, tvar, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.map(_.guard)
         val bodies = rules.map(_.exp)
@@ -507,7 +507,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           guardType <- unifyTypM(Type.Bool :: guardTypes, loc)
           (bodyTypes, bodyEffects) <- seqM(bodies map visitExp).map(_.unzip)
           resultTyp <- unifyTypM(tvar :: bodyTypes, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff :: guardEffects ::: bodyEffects), loc)
+          resultEff = mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
@@ -1258,8 +1258,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.LetRec(sym, e1, e2, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Match(exp1, rules, tvar, evar, loc) =>
-        val e1 = visitExp(exp1, subst0)
+      case ResolvedAst.Expression.Match(matchExp, rules, tvar, loc) =>
+        val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
           case ResolvedAst.MatchRule(pat, guard, exp) =>
             val p = reassemblePattern(pat, root, subst0)
@@ -1267,7 +1267,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val b = visitExp(exp, subst0)
             TypedAst.MatchRule(p, g, b)
         }
-        TypedAst.Expression.Match(e1, rs, subst0(tvar), subst0(evar), loc)
+        val eff = rs.foldLeft(e1.eff) {
+          case (acc, TypedAst.MatchRule(_, g, b)) => mkAnd(g.eff, b.eff, acc)
+        }
+        TypedAst.Expression.Match(e1, rs, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
