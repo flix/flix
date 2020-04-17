@@ -215,7 +215,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case _ => defn0.eff
     }
 
-    // TODO: Use resultEff
+    // TODO: Cleanup
     val result = for {
       (inferredTyp, inferredEff) <- inferExp(defn0.exp, root)
       unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme, InstantiateMode.Flexible), Type.mkArrow(argumentTypes, expectedEff, inferredTyp), defn0.loc)
@@ -228,9 +228,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val initialSubst = getSubstFromParams(defn0.fparams)
         run(initialSubst) match {
           case Ok((subst, resultType)) =>
+            ///
+            /// Check that the inferred type is at least as general as the declared type.
+            ///
             val inferredScheme = Scheme.generalize(resultType)
-            val leq = Scheme.lessThanEqual(inferredScheme, declaredScheme)
-            if (!leq) {
+            if (!Scheme.lessThanEqual(inferredScheme, declaredScheme)) {
               return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, inferredScheme, defn0.loc)))
             }
 
