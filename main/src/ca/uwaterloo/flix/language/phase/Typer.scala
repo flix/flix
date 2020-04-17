@@ -227,11 +227,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case InferMonad(run) =>
         val initialSubst = getSubstFromParams(defn0.fparams)
         run(initialSubst) match {
-          case Ok((subst, resultType)) =>
+          case Ok((subst, partialType)) =>
             ///
             /// Check that the inferred type is at least as general as the declared type.
             ///
-            val inferredScheme = Scheme.generalize(resultType)
+            val inferredScheme = Scheme.generalize(partialType)
             if (!Scheme.lessThanEqual(inferredScheme, declaredScheme)) {
               return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, inferredScheme, defn0.loc)))
             }
@@ -240,7 +240,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
             // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
-            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, resultType, defn0.eff, defn0.loc), subst))
+            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, partialType, defn0.eff, defn0.loc), subst))
 
           case Err(e) => Validation.Failure(LazyList(e))
         }
@@ -258,7 +258,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     def visitExp(e0: ResolvedAst.Expression): InferMonad[(Type, Type)] = e0 match {
 
       case ResolvedAst.Expression.Wild(tvar, loc) =>
-        liftM((tvar, Type.Pure))
+        liftM(tvar, Type.Pure)
 
       case ResolvedAst.Expression.Var(sym, tpe, loc) =>
         for {
@@ -272,43 +272,43 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
-        liftM((tvar, evar))
+        liftM(tvar, evar)
 
       case ResolvedAst.Expression.Unit(loc) =>
-        liftM((Type.Unit, Type.Pure))
+        liftM(Type.Unit, Type.Pure)
 
       case ResolvedAst.Expression.True(loc) =>
-        liftM((Type.Bool, Type.Pure))
+        liftM(Type.Bool, Type.Pure)
 
       case ResolvedAst.Expression.False(loc) =>
-        liftM((Type.Bool, Type.Pure))
+        liftM(Type.Bool, Type.Pure)
 
       case ResolvedAst.Expression.Char(lit, loc) =>
-        liftM((Type.Char, Type.Pure))
+        liftM(Type.Char, Type.Pure)
 
       case ResolvedAst.Expression.Float32(lit, loc) =>
-        liftM((Type.Float32, Type.Pure))
+        liftM(Type.Float32, Type.Pure)
 
       case ResolvedAst.Expression.Float64(lit, loc) =>
-        liftM((Type.Float64, Type.Pure))
+        liftM(Type.Float64, Type.Pure)
 
       case ResolvedAst.Expression.Int8(lit, loc) =>
-        liftM((Type.Int8, Type.Pure))
+        liftM(Type.Int8, Type.Pure)
 
       case ResolvedAst.Expression.Int16(lit, loc) =>
-        liftM((Type.Int16, Type.Pure))
+        liftM(Type.Int16, Type.Pure)
 
       case ResolvedAst.Expression.Int32(lit, loc) =>
-        liftM((Type.Int32, Type.Pure))
+        liftM(Type.Int32, Type.Pure)
 
       case ResolvedAst.Expression.Int64(lit, loc) =>
-        liftM((Type.Int64, Type.Pure))
+        liftM(Type.Int64, Type.Pure)
 
       case ResolvedAst.Expression.BigInt(lit, loc) =>
-        liftM((Type.BigInt, Type.Pure))
+        liftM(Type.BigInt, Type.Pure)
 
       case ResolvedAst.Expression.Str(lit, loc) =>
-        liftM((Type.Str, Type.Pure))
+        liftM(Type.Str, Type.Pure)
 
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
@@ -1024,14 +1024,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
 
         // check that default case has same type as bodies (the same as result type)
-        def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.Expression]): InferMonad[Unit] = {
+        def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.Expression]): InferMonad[Type] = {
           defaultCase match {
-            case None => liftM(Type.Cst(TypeConstructor.Unit))
+            case None => liftM(Type.Unit)
             case Some(exp) =>
               for {
                 (tpe, _) <- visitExp(exp)
                 _ <- unifyTypM(rtpe, tpe, loc)
-              } yield liftM(Type.Unit)
+              } yield Type.Unit
           }
         }
 
@@ -1059,7 +1059,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
         // A panic is, by nature, not type safe.
-        liftM((tvar, Type.Pure))
+        liftM(tvar, Type.Pure)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {

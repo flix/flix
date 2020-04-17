@@ -208,9 +208,14 @@ object Unification {
     }
 
   /**
-    * Lifts the given value `a` into the type inference monad
+    * Lifts the given type `tpe` into the inference monad.
     */
-  def liftM[A](a: A): InferMonad[A] = InferMonad(s => Ok((s, a)))
+  def liftM(tpe: Type): InferMonad[Type] = InferMonad(s => Ok((s, s(tpe))))
+
+  /**
+    * Lifts the given type `tpe` and effect `eff` into the inference monad.
+    */
+  def liftM(tpe: Type, eff: Type): InferMonad[(Type, Type)] = InferMonad(s => Ok((s, (s(tpe), s(eff)))))
 
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
