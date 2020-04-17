@@ -539,11 +539,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Tuple(elms, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
         for {
           (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
           resultTyp <- unifyTypM(tvar, Type.mkTuple(elementTypes), loc)
-          resultEff <- unifyEffM(evar, mkAnd(elementEffects), loc)
+          resultEff = mkAnd(elementEffects)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
@@ -1274,9 +1274,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.Tag(sym, tag, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Tuple(elms, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
         val es = elms.map(e => visitExp(e, subst0))
-        TypedAst.Expression.Tuple(es, subst0(tvar), subst0(evar), loc)
+        val eff = mkAnd(es.map(_.eff))
+        TypedAst.Expression.Tuple(es, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
         TypedAst.Expression.RecordEmpty(subst0(tvar), loc)

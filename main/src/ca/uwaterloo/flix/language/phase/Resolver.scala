@@ -362,7 +362,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Tuple(elms, tvar, evar, loc) =>
           for {
             es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.Tuple(es, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
         case NamedAst.Expression.RecordEmpty(tvar, loc) =>
           ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
