@@ -228,10 +228,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val initialSubst = getSubstFromParams(defn0.fparams)
         run(initialSubst) match {
           case Ok((subst, partialType)) =>
+            // Apply the substitution to the partial type.
+            val inferredType = subst(partialType)
+
             ///
             /// Check that the inferred type is at least as general as the declared type.
             ///
-            val inferredScheme = Scheme.generalize(partialType)
+            val inferredScheme = Scheme.generalize(inferredType)
             if (!Scheme.lessThanEqual(inferredScheme, declaredScheme)) {
               return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, inferredScheme, defn0.loc)))
             }
@@ -240,7 +243,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
             // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
-            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, partialType, defn0.eff, defn0.loc), subst))
+            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, inferredType, defn0.eff, defn0.loc), subst))
 
           case Err(e) => Validation.Failure(LazyList(e))
         }
