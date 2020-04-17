@@ -998,7 +998,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       /*
        * Select Channel Expression.
        */
-      case ResolvedAst.Expression.SelectChannel(rules, default, tvar, evar, loc) =>
+      case ResolvedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
         //  SelectChannelRule
         //
         //  chan: Channel[t1],   exp: t2
@@ -1040,7 +1040,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           actualResultType <- unifyTypM(bodyTypes, loc)
           _ <- inferSelectChannelDefault(actualResultType, default)
           resultTyp <- unifyTypM(tvar, actualResultType, loc)
-          resultEff <- unifyEffM(evar, Type.Impure, loc)
+          resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
@@ -1468,7 +1468,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.Impure
         TypedAst.Expression.PutChannel(e1, e2, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.SelectChannel(rules, default, tvar, evar, loc) =>
+      case ResolvedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
         val rs = rules map {
           case ResolvedAst.SelectChannelRule(sym, chan, exp) =>
             val c = visitExp(chan, subst0)
@@ -1476,7 +1476,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             TypedAst.SelectChannelRule(sym, c, b)
         }
         val d = default.map(visitExp(_, subst0))
-        TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), subst0(evar), loc)
+        val eff = Type.Impure
+        TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

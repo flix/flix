@@ -612,7 +612,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             rs <- rulesVal
             d <- defaultVal
-          } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, evar, loc)
+          } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
 
         case NamedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
           for {
