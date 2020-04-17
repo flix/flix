@@ -861,23 +861,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypM(typ, Type.Bool, loc)
         } yield (resultTyp, Type.Pure)
 
-      case ResolvedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
           (actualTyp, actualEff) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, actualTyp, expectedTyp.getOrElse(tvar), loc)
-          resultEff <- unifyEffM(evar, actualEff, expectedEff.getOrElse(evar), loc)
+          resultEff <- unifyEffM(actualEff, expectedEff.getOrElse(Type.freshEffectVar()), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
         for {
           (actualTyp, actualEff) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, declaredTyp.getOrElse(actualTyp), loc)
-          resultEff <- unifyEffM(evar, declaredEff.getOrElse(actualEff), loc)
+          resultEff = declaredEff.getOrElse(actualEff)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.TryCatch(exp, rules, tvar, evar, loc) =>
+      case ResolvedAst.Expression.TryCatch(exp, rules, tvar, loc) =>
         val rulesType = rules map {
           case ResolvedAst.CatchRule(sym, clazz, body) =>
             visitExp(body)
@@ -888,7 +888,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (ruleTypes, ruleEffects) <- seqM(rulesType).map(_.unzip)
           ruleType <- unifyTypM(ruleTypes, loc)
           resultTyp <- unifyTypM(tvar, tpe, ruleType, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff :: ruleEffects), loc)
+          resultEff = mkAnd(eff :: ruleEffects)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, tvar, loc) =>
@@ -1055,9 +1055,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
         // A panic is, by nature, not type safe.
-        liftM((tvar, evar))
+        liftM((tvar, Type.Pure))
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
@@ -1396,22 +1396,25 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.Universal(visitParam(fparam), e, loc)
 
-      case ResolvedAst.Expression.Ascribe(exp, _, _, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Ascribe(exp, _, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Ascribe(e, subst0(tvar), subst0(evar), loc)
+        val eff = e.eff
+        TypedAst.Expression.Ascribe(e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Cast(exp, _, _, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Cast(exp, _, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Cast(e, subst0(tvar), subst0(evar), loc)
+        val eff = declaredEff.getOrElse(e.eff)
+        TypedAst.Expression.Cast(e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.TryCatch(exp, rules, tvar, evar, loc) =>
+      case ResolvedAst.Expression.TryCatch(exp, rules, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules map {
           case ResolvedAst.CatchRule(sym, clazz, body) =>
             val b = visitExp(body, subst0)
             TypedAst.CatchRule(sym, clazz, b)
         }
-        TypedAst.Expression.TryCatch(e, rs, subst0(tvar), subst0(evar), loc)
+        val eff = mkAnd(rs.map(_.exp.eff))
+        TypedAst.Expression.TryCatch(e, rs, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         val as = args.map(visitExp(_, subst0))
@@ -1480,8 +1483,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.ProcessSpawn(e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
-        TypedAst.Expression.ProcessPanic(msg, subst0(tvar), subst0(evar), loc)
+      case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
+        val eff = Type.Pure
+        TypedAst.Expression.ProcessPanic(msg, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)

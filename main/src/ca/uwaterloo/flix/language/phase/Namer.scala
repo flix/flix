@@ -463,12 +463,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.RecordExtend(label, value, rest, loc) =>
       mapN(visitExp(value, env0, uenv0, tenv0), visitExp(rest, env0, uenv0, tenv0)) {
-        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.RecordRestrict(label, rest, loc) =>

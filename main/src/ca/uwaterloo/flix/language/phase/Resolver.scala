@@ -367,12 +367,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.RecordEmpty(tvar, loc) =>
           ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
 
-        case NamedAst.Expression.RecordSelect(base, label, tvar, evar, loc) =>
+        case NamedAst.Expression.RecordSelect(base, label, tvar, loc) =>
           for {
             b <- visit(base, tenv0)
           } yield ResolvedAst.Expression.RecordSelect(b, label.name, tvar, loc)
 
-        case NamedAst.Expression.RecordExtend(label, value, rest, tvar, evar, loc) =>
+        case NamedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
           for {
             v <- visit(value, tenv0)
             r <- visit(rest, tenv0)
@@ -492,7 +492,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- expectedTypVal
             f <- expectedEffVal
-          } yield ResolvedAst.Expression.Ascribe(e, t, f, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Ascribe(e, t, f, tvar, loc)
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, evar, loc) =>
           val declaredTypVal = declaredType match {
@@ -508,7 +508,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- declaredTypVal
             f <- declaredEffVal
-          } yield ResolvedAst.Expression.Cast(e, t, f, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Cast(e, t, f, tvar, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, tpe, evar, loc) =>
           val rulesVal = traverse(rules) {
@@ -522,7 +522,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             e <- visit(exp, tenv0)
             rs <- rulesVal
-          } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, evar, loc)
+          } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, loc)
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, tvar, evar, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
@@ -620,7 +620,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, loc)
 
         case NamedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
-          ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc).toSuccess
+          ResolvedAst.Expression.ProcessPanic(msg, tvar, loc).toSuccess
 
         case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
           for {
