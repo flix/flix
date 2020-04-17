@@ -45,7 +45,6 @@ namespace Test/Eff/Advanced {
     @test
     def testAdvanced14(): Unit = requiresTwoAndOne(impure, pure, impure)
 
-
     /// A pure function from Unit -> Unit.
     def pure(): Unit = ()
 
@@ -72,5 +71,11 @@ namespace Test/Eff/Advanced {
 
     // First and last must be the same. Middle must be the inverse.
     def requiresTwoAndOne(_f: a -> b & e, _g: a -> b & {{not e}}, _h: a -> b & e): Unit = ()
+
+    // A unSAT instance.
+    //pub def yikes(_f: a -> b & {{(x \/ y \/ z) /\ (x \/ y \/ not z) /\ (x \/ not y \/ z) /\ (x \/ not y \/ not z) /\ (not x \/ y \/ z) /\ (not x \/ y \/ not z) /\ (not x \/ not y \/ z) /\ (not x \/ not y \/ not z)}}): Unit = ()
+
+    //@test
+    //def testYikes(): Unit = yikes(pure)
 
 }
