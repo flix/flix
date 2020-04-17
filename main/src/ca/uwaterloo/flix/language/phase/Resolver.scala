@@ -386,38 +386,38 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.ArrayLit(elms, tvar, evar, loc) =>
           for {
             es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.ArrayLit(es, tvar, evar, loc)
+          } yield ResolvedAst.Expression.ArrayLit(es, tvar, loc)
 
         case NamedAst.Expression.ArrayNew(elm, len, tvar, evar, loc) =>
           for {
             e <- visit(elm, tenv0)
             ln <- visit(len, tenv0)
-          } yield ResolvedAst.Expression.ArrayNew(e, ln, tvar, evar, loc)
+          } yield ResolvedAst.Expression.ArrayNew(e, ln, tvar, loc)
 
         case NamedAst.Expression.ArrayLoad(base, index, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
             i <- visit(index, tenv0)
-          } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, evar, loc)
+          } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, loc)
 
         case NamedAst.Expression.ArrayStore(base, index, elm, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
             i <- visit(index, tenv0)
             e <- visit(elm, tenv0)
-          } yield ResolvedAst.Expression.ArrayStore(b, i, e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.ArrayStore(b, i, e, tvar, loc)
 
         case NamedAst.Expression.ArrayLength(base, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.ArrayLength(b, tvar, evar, loc)
+          } yield ResolvedAst.Expression.ArrayLength(b, tvar, loc)
 
         case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
             i1 <- visit(startIndex, tenv0)
             i2 <- visit(endIndex, tenv0)
-          } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, tvar, evar, loc)
+          } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, tvar, loc)
 
         case NamedAst.Expression.VectorLit(elms, tvar, evar, loc) =>
           for {
