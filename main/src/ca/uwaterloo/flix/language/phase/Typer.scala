@@ -218,9 +218,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     // TODO: Cleanup
     val result = for {
       (inferredTyp, inferredEff) <- inferExp(defn0.exp, root)
-      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme, InstantiateMode.Flexible), Type.mkArrow(argumentTypes, expectedEff, inferredTyp), defn0.loc)
       unifiedEff <- unifyEffM(inferredEff, expectedEff, defn0.loc)
-    } yield unifiedTyp
+    } yield Type.mkArrow(argumentTypes, expectedEff, inferredTyp)
 
     // TODO: See if this can be rewritten nicer
     result match {
