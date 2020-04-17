@@ -530,7 +530,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
               mapN(lookupJvmConstructor(className, ts, loc)) {
-                case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, tvar, evar, loc)
+                case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, tvar, loc)
               }
           }
 
@@ -541,7 +541,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           flatMapN(sigVal, expVal, argsVal) {
             case (ts, e, as) =>
               mapN(lookupJvmMethod(className, methodName, ts, static = false, loc)) {
-                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, tvar, evar, loc)
+                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, tvar, loc)
               }
           }
 
@@ -551,46 +551,46 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
               mapN(lookupJvmMethod(className, methodName, ts, static = true, loc)) {
-                case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, tvar, evar, loc)
+                case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, tvar, loc)
               }
           }
 
         case NamedAst.Expression.GetField(className, fieldName, exp, tvar, evar, loc) =>
           mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp, tenv0)) {
-            case (field, e) => ResolvedAst.Expression.GetField(field, e, tvar, evar, loc)
+            case (field, e) => ResolvedAst.Expression.GetField(field, e, tvar, loc)
           }
 
         case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, tvar, evar, loc) =>
           mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp1, tenv0), visit(exp2, tenv0)) {
-            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, tvar, evar, loc)
+            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, tvar, loc)
           }
 
         case NamedAst.Expression.GetStaticField(className, fieldName, tvar, evar, loc) =>
           mapN(lookupJvmField(className, fieldName, static = true, loc)) {
-            case field => ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc)
+            case field => ResolvedAst.Expression.GetStaticField(field, tvar, loc)
           }
 
         case NamedAst.Expression.PutStaticField(className, fieldName, exp, tvar, evar, loc) =>
           mapN(lookupJvmField(className, fieldName, static = true, loc), visit(exp, tenv0)) {
-            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, tvar, evar, loc)
+            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, tvar, loc)
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
           for {
             t <- lookupType(tpe, ns0, prog0)
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.NewChannel(e, t, evar, loc)
+          } yield ResolvedAst.Expression.NewChannel(e, t, loc)
 
         case NamedAst.Expression.GetChannel(exp, tvar, evar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.GetChannel(e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.GetChannel(e, tvar, loc)
 
         case NamedAst.Expression.PutChannel(exp1, exp2, tvar, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, evar, loc)
+          } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, loc)
 
         case NamedAst.Expression.SelectChannel(rules, default, tvar, evar, loc) =>
           val rulesVal = traverse(rules) {
