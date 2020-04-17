@@ -15,6 +15,12 @@ namespace Test/Eff/Advanced {
     @test
     def testAdvanced04(): Unit = requiresPureAndImpure1(impure, pure)
 
+    @test
+    def testAdvanced05(): Unit = requiresPureAndImpure2(pure, impure)
+
+    @test
+    def testAdvanced06(): Unit = requiresPureAndImpure2(impure, pure)
+
 //
 //    pub def foo(_f: a -> b & e1, _g: b -> b & {{not e1}}): Unit = ()
 //
@@ -30,7 +36,6 @@ namespace Test/Eff/Advanced {
     /// An impure function from Unit -> Unit.
     def impure(): Unit & Impure = [1, 2, 3]; ()
 
-
     /// A function that requires a pure function
     def requiresPure(_f: a -> b): Unit = ()
 
@@ -39,5 +44,8 @@ namespace Test/Eff/Advanced {
 
     /// A function that requires a pure and an impure function.
     def requiresPureAndImpure1(_f: a -> b & e, _g: a -> b & {{not e}}): Unit = ()
+
+    /// A function that requires a pure and an impure function.
+    def requiresPureAndImpure2(_f: a -> b & {{not e}}, _g: a -> b & e): Unit = ()
 
 }
