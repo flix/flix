@@ -370,18 +370,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.RecordSelect(base, label, tvar, evar, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.RecordSelect(b, label.name, tvar, evar, loc)
+          } yield ResolvedAst.Expression.RecordSelect(b, label.name, tvar, loc)
 
         case NamedAst.Expression.RecordExtend(label, value, rest, tvar, evar, loc) =>
           for {
             v <- visit(value, tenv0)
             r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordExtend(label.name, v, r, tvar, evar, loc)
+          } yield ResolvedAst.Expression.RecordExtend(label.name, v, r, tvar, loc)
 
         case NamedAst.Expression.RecordRestrict(label, rest, tvar, evar, loc) =>
           for {
             r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordRestrict(label.name, r, tvar, evar, loc)
+          } yield ResolvedAst.Expression.RecordRestrict(label.name, r, tvar, loc)
 
         case NamedAst.Expression.ArrayLit(elms, tvar, evar, loc) =>
           for {

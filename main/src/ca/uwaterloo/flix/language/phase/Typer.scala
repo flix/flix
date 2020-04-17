@@ -555,7 +555,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultType <- unifyTypM(tvar, Type.RecordEmpty, loc)
         } yield (resultType, Type.Pure)
 
-      case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
+      case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
         //
         // r : { label = tpe | row }
         // -------------------------
@@ -566,10 +566,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe, eff) <- visitExp(exp)
           recordType <- unifyTypM(tpe, expectedType, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff = eff
         } yield (tvar, resultEff)
 
-      case ResolvedAst.Expression.RecordExtend(label, exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.RecordExtend(label, exp1, exp2, tvar, loc) =>
         //
         // exp1 : tpe
         // ---------------------------------------------
@@ -579,10 +579,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           resultTyp <- unifyTypM(tvar, Type.RecordExtend(label, tpe1, tpe2), loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          resultEff = mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.RecordRestrict(label, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.RecordRestrict(label, exp, tvar, loc) =>
         //
         // ----------------------
         // { -label | r } : { r }
@@ -593,7 +593,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe, eff) <- visitExp(exp)
           recordType <- unifyTypM(tpe, Type.RecordExtend(label, freshFieldType, freshRowVar), loc)
           resultTyp <- unifyTypM(tvar, freshRowVar, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff = eff
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.ArrayLit(elms, tvar, evar, loc) =>
@@ -1280,18 +1280,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
         TypedAst.Expression.RecordEmpty(subst0(tvar), loc)
 
-      case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
+      case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.RecordSelect(e, label, subst0(tvar), subst0(evar), loc)
+        val eff = e.eff
+        TypedAst.Expression.RecordSelect(e, label, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, evar, loc) =>
+      case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
         val v = visitExp(value, subst0)
         val r = visitExp(rest, subst0)
-        TypedAst.Expression.RecordExtend(label, v, r, subst0(tvar), subst0(evar), loc)
+        val eff = mkAnd(v.eff, r.eff)
+        TypedAst.Expression.RecordExtend(label, v, r, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, evar, loc) =>
+      case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
         val r = visitExp(rest, subst0)
-        TypedAst.Expression.RecordRestrict(label, r, subst0(tvar), subst0(evar), loc)
+        val eff = r.eff
+        TypedAst.Expression.RecordRestrict(label, r, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.ArrayLit(elms, tvar, evar, loc) =>
         val es = elms.map(e => visitExp(e, subst0))
