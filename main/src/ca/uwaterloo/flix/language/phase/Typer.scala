@@ -242,8 +242,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val exp = reassembleExp(defn0.exp, root, subst)
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
+
             // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
-            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, inferredType, defn0.eff, defn0.loc), subst))
+            // TODO: It is mucho importanta that the type scheme PRESERVES the same TYPE VARIABLES that occur in the expression body.
+            // TODO: Problem with types that are underspecified, e.g. Array[] or Nil.
+            val scheme = Scheme(inferredType.typeVars.toList, inferredType)
+            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, scheme, defn0.eff, defn0.loc), subst))
 
           case Err(e) => Validation.Failure(LazyList(e))
         }
