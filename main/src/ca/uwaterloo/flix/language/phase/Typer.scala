@@ -219,7 +219,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val result = for {
       (inferredTyp, inferredEff) <- inferExp(defn0.exp, root)
       unifiedEff <- unifyEffM(inferredEff, expectedEff, defn0.loc)
-    } yield Type.mkArrow(argumentTypes, expectedEff, inferredTyp)
+    } yield Type.mkArrow(argumentTypes, inferredEff, inferredTyp)
 
     // TODO: See if this can be rewritten nicer
     result match {
