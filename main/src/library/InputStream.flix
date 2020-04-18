@@ -1,4 +1,11 @@
 namespace InputStream {
+    pub def fromBuffer(buffer: Array[Int8]): InputStream & Impure = {
+        import new java.io.ByteArrayInputStream(Array[Int8]) as newByteArrayInputStream;
+
+        let byteStream = newByteArrayInputStream(buffer);
+        InputStream(byteStream as ##java.io.InputStream)
+    }
+
     ///
     /// Wraps the `java.io.InputStream.available()` method that returns the number of available bytes
     ///
