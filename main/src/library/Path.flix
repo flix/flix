@@ -126,6 +126,9 @@ namespace Path {
         javaFile.canWrite()
     })
 
+    ///
+    /// Read the specified path into an array of bytes
+    ///
     pub def readBuffer(p: Path): Result[Array[Int8], IOError] & Impure = try {
         use InputStream.{available, Error, readBuffer};
 
