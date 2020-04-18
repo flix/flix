@@ -519,7 +519,8 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool)
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, Scheme(Nil, lambdaType), lambdaType, Type.Pure, sl)
+      val sc = Scheme(Nil, lambdaType)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, sc, sc, Type.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -764,7 +765,8 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe), Type.Pure, Type.Int32)
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, Type.Pure, sl)
+      val sc = Scheme(Nil, lambdaType)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, sc, sc, Type.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -1010,7 +1012,8 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe), Type.Pure, Type.Str)
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, Type.Pure, sl)
+      val sc = Scheme(Nil, lambdaType)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, sc, sc, Type.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)

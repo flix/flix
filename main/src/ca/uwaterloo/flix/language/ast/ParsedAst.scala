@@ -1333,12 +1333,27 @@ object ParsedAst {
     case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Not Effect.
+      *
+      * @param eff the negated effect.
+      */
+    case class Not(eff: ParsedAst.Type) extends ParsedAst.Type
+
+    /**
       * And Effect.
       *
       * @param eff1 the 1st effect.
       * @param eff2 the 2nd effect.
       */
     case class And(eff1: ParsedAst.Type, eff2: ParsedAst.Type) extends ParsedAst.Type
+
+    /**
+      * Or Effect.
+      *
+      * @param eff1 the 1st effect.
+      * @param eff2 the 2nd effect.
+      */
+    case class Or(eff1: ParsedAst.Type, eff2: ParsedAst.Type) extends ParsedAst.Type
 
   }
 

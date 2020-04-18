@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Scheme, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -661,8 +662,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       // Unify the declared and actual type to obtain the substitution map.
-      val declaredType = defn.tpe
-      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
+      val subst = StrictSubstitution(Unification.unifyTypes(defn.inferredScheme.base, tpe).get)
 
       // Check whether the function definition has already been specialized.
       def2def.get((sym, tpe)) match {
@@ -794,7 +794,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       for (defn <- defns) {
         val sym = defn.sym
         if (name == sym.name) {
-          if (Unification.unifyTypes(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
+          val declaredType = Scheme.instantiate(defn.inferredScheme, InstantiateMode.Flexible)
+          if (Unification.unifyTypes(declaredType, tpe).isInstanceOf[Result.Ok[_, _]]) {
             matches += sym
           }
         }
@@ -875,7 +876,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
+        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, inferredScheme = Scheme(Nil, subst(defn.inferredScheme.base)), tparams = Nil)
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)

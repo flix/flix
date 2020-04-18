@@ -13,6 +13,7 @@ class LangSuite extends Suites(
   //
   // Effects.
   //
+  new FlixTest("Test.Eff.Advanced", "main/test/flix/Test.Eff.Advanced.flix"),
   new FlixTest("Test.Eff.Polymorphism", "main/test/flix/Test.Eff.Polymorphism.flix")(Options.TestWithLibrary),
 
   //
