@@ -73,7 +73,7 @@ object BoolUnification {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       val q = Scheme.instantiate(Scheme(f.typeVars.toList, f), InstantiateMode.Flexible)
-      if (!sat(q))
+      if (!satisfiable(q))
         Substitution.empty
       else
         throw BooleanUnificationException
@@ -94,7 +94,7 @@ object BoolUnification {
   /**
     * Returns `true` if the given boolean formula `f` is satisfiable.
     */
-  private def sat(f: Type)(implicit flix: Flix): Boolean = f match {
+  private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
     case Type.Pure => true
     case Type.Impure => false
     case _ =>
