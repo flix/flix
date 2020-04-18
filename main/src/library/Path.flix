@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 namespace Path {
 
     ///
@@ -127,10 +128,23 @@ namespace Path {
     })
 
     ///
+    ///
+    ///
+    def mapInputStreamError(err: Core/Io/InputStream.Error): IOError = {
+        use Core/Io/InputStream.Error;
+
+        match err {
+            case Error.IOException => Generic("I/O Error in InputStream")
+            case Error.IndexOutOfBoundsException => Generic("Index Out Of Bounds in InputStream")
+        }
+    }
+
+    ///
     /// Read the specified path into an array of bytes
     ///
     pub def readBuffer(p: Path): Result[Array[Int8], IOError] & Impure = try {
-        use InputStream.{available, Error, readBuffer};
+        use Core/Io/InputStream.{available, readBuffer};
+        use Core/Io/InputStream.InputStream.InputStream;
 
         import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
 
@@ -143,9 +157,8 @@ namespace Path {
                     let read = readBuffer(arr, inputStream);
                     Result.map(_ -> arr, read)
                 })
-            |> Result.mapErr(_ -> Generic("InputStream error (swallowed)"))
+            |> Result.mapErr(mapInputStreamError)
     } catch {
-        case _: ##java.lang.SecurityException => Err(Generic("Security Error"))
         case _: ##java.io.FileNotFoundException => Err(Generic("File Not Found Error"))
     }
 
