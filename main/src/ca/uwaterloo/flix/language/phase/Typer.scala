@@ -224,7 +224,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     // TODO: See if this can be rewritten nicer
     result match {
       case InferMonad(run) =>
-        val initialSubst = getSubstFromParams(defn0.fparams)
+        val initialSubst = getSubstFromParams(defn0.fparams.head :: Nil)
         run(initialSubst) match {
           case Ok((subst, partialType)) =>
             // Apply the substitution to the partial type.
