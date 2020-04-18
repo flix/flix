@@ -799,6 +799,9 @@ object GenExpression {
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         // Cast the argument to the right type.
         arg.tpe match {
+            // TODO: Add other types and add in other places.
+          case MonoType.Array(MonoType.Int8) =>
+            visitor.visitTypeInsn(CHECKCAST, "[B")
           case MonoType.Native(clazz) =>
             val argType = asm.Type.getInternalName(clazz)
             visitor.visitTypeInsn(CHECKCAST, argType)
