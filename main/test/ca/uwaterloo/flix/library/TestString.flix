@@ -624,28 +624,6 @@ def isSubmatch10(): Bool = String.isSubmatch("[b]+", "bbbc") == true
 def isSubmatch11(): Bool = String.isSubmatch("[b]+", "aabbbc") == true
 
 /////////////////////////////////////////////////////////////////////////////
-// hashCode                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def hashCode01(): Bool = String.hashCode("") == 0
-
-@test
-def hashCode02(): Bool = String.hashCode("a") == String.hashCode("a")
-
-@test
-def hashCode03(): Bool = String.hashCode("ab") == String.hashCode("ab")
-
-@test
-def hashCode04(): Bool = String.hashCode("a") < String.hashCode("ab")
-
-@test
-def hashCode05(): Bool = String.hashCode("abc") == String.hashCode("abc")
-
-@test
-def hashCode06(): Bool = String.hashCode("ab") < String.hashCode("abc")
-
-/////////////////////////////////////////////////////////////////////////////
 // slice                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
