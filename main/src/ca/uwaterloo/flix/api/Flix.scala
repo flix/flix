@@ -70,6 +70,7 @@ class Flix {
     "Console.flix" -> LocalResource.get("/library/Console.flix"),
     "Float32.flix" -> LocalResource.get("/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/library/Float64.flix"),
+    "InputStream.flix" -> LocalResource.get("/library/InputStream.flix"),
     "Int8.flix" -> LocalResource.get("/library/Int8.flix"),
     "Int16.flix" -> LocalResource.get("/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/library/Int32.flix"),
@@ -84,6 +85,7 @@ class Flix {
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
     "String.flix" -> LocalResource.get("/library/String.flix"),
+    "Zip.flix" -> LocalResource.get("/library/Zip.flix"),
 
     "MutSet.flix" -> LocalResource.get("/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/library/MutMap.flix"),
