@@ -1,5 +1,18 @@
 namespace InputStream {
     ///
+    ///
+    ///
+    pub def available(stream: InputStream): Result[Int32, Error] & Impure = try {
+        import java.io.InputStream.available();
+
+        let InputStream(javaStream) = stream;
+
+        Ok(javaStream.available())
+    } catch {
+        case _: ##java.io.IOException => Err(IOException)
+    }
+
+    ///
     /// Wraps the `java.io.InputStream.read()` method that reads a single byte from the stream.
     ///
     /// See the Java documentation for more details

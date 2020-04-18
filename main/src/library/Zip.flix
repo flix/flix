@@ -12,7 +12,7 @@ namespace Zip {
         Ok(Zip(zipFile))
     } catch {
         case _: ##java.io.IOException => Err(IOException)
-        case _: ##java.io.ZipException => Err(ZipException)
+        case _: ##java.util.zip.ZipException => Err(ZipException)
     }
 
     ///
