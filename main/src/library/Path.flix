@@ -126,6 +126,26 @@ namespace Path {
         javaFile.canWrite()
     })
 
+    pub def readBuffer(p: Path): Result[Array[Int8], IOError] & Impure = try {
+        use InputStream.{available, Error, readBuffer};
+
+        import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
+
+        let Path(javaFile) = p;
+        let javaInputStream = newFileInputStream(javaFile);
+        let inputStream = InputStream(javaInputStream as ##java.io.InputStream);
+        inputStream.available()
+            |> Result.flatMap(a -> {
+                    let arr = [0 as Int8; a];
+                    let read = readBuffer(arr, inputStream);
+                    Result.map(_ -> arr, read)
+                })
+            |> Result.mapErr(_ -> Generic("InputStream error (swallowed)"))
+    } catch {
+        case _: ##java.lang.SecurityException => Err(Generic("Security Error"))
+        case _: ##java.io.FileNotFoundException => Err(Generic("File Not Found Error"))
+    }
+
     ///
     /// Returns a list of all the lines in the given path `p`.
     ///
@@ -174,6 +194,22 @@ namespace Path {
                 println(w, x);
                 writeAll(xs, w)
         }
+
+    ///
+    /// Writes an array of bytes to the specified file
+    ///
+    pub def writeBuffer(buffer: Array[Int8], p: Path): Result[Unit, IOError] & Impure = try {
+        import new java.io.FileOutputStream(##java.io.File) as newFileOutputStream;
+        import java.io.FileOutputStream.write(Array[Int8]);
+
+        let Path(javaFile) = p;
+        let outputStream = newFileOutputStream(javaFile);
+        outputStream.write(buffer);
+        Ok(())
+    } catch {
+        case _: ##java.lang.SecurityException => Err(Generic("Security Error"))
+        case _: ##java.io.FileNotFoundException => Err(Generic("File Not Found Error"))
+    }
 
     ///
     /// Evaluates the given function `f` trapping any exception and returning a Result.

@@ -34,7 +34,7 @@ namespace InputStream {
     ///
     /// See the Java documentation for more details
     ///
-    pub def readToBuffer(buffer: Array[Int8], stream: InputStream): Result[Int32, Error] & Impure = try {
+    pub def readBuffer(buffer: Array[Int8], stream: InputStream): Result[Int32, Error] & Impure = try {
         import java.io.InputStream.read(Array[Int8]);
 
         let InputStream(javaStream) = stream;
@@ -68,7 +68,7 @@ namespace InputStream {
     ///
     /// See the Java documentation for more details
     ///
-    pub def close(stream: InputStream): Result[(), Error] & Impure = try {
+    pub def close(stream: InputStream): Result[Unit, Error] & Impure = try {
         import java.io.InputStream.close();
         let InputStream(javaStream) = stream;
         Ok(javaStream.close())

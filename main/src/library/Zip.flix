@@ -51,7 +51,7 @@ namespace Zip {
     ///
     /// See the Java documentation for `java.util.zip.ZipFile` for more details
     ///
-    pub def close(zip: Zip): Result[(), Error] & Impure = try {
+    pub def close(zip: Zip): Result[Unit, Error] & Impure = try {
         import java.util.zip.ZipFile.close();
 
         let Zip(javaZip) = zip;
