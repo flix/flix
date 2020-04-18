@@ -25,12 +25,7 @@ import org.scalatest.FunSuite
 
 class TestPatExhaustiveness extends FunSuite with TestUtils {
 
-  /**
-    * Runs Flix on the given input string `s`.
-    */
-  def run(s: String, core: Boolean = true): CompilationResult = {
-    new Flix().setOptions(Options.DefaultTest.copy(core = core)).addStr(s).compile().get
-  }
+  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
   test("Pattern.Literal.Char.01") {
     val input =
@@ -40,7 +35,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 'c' => 3
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Int32.01") {
@@ -51,7 +47,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 3 => 3
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Int64.01") {
@@ -62,7 +59,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 3i64 => 3
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Str.01") {
@@ -73,7 +71,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case "baz" => 3
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Tuples.01") {
@@ -88,7 +87,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (_, Color.Blu) => 2
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Tuples.02") {
@@ -99,7 +99,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (7i8, (_,_)) => 7
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Tuples.03") {
@@ -113,7 +114,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (1,2,3,4,_) => 1
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Lists.01") {
@@ -127,7 +129,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (p, Lst(x, rs)) => x
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Lists.02") {
@@ -141,7 +144,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (Lst(x,xs), Lst(y,ys)) => 1
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Lists.03") {
@@ -154,7 +158,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case Empty => 42
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Expression.LetMatch01") {
@@ -165,14 +170,16 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |
         |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Expression.LetMatch02") {
     val input =
       """def f(e: (Int8, Int8)): Int8 = let (a,1i8) = e; a
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Deep.01") {
@@ -186,22 +193,44 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, _))))))) => Evil(Good, Good)
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Expression.MatchLambda.01") {
-    val input = "def f(): Option[Int] -> Int = match None -> 42"
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val input =
+      """
+        |enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |def f(): Option[Int] -> Int = match None -> 42
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Expression.MatchLambda.02") {
-    val input = "def f(): Option[Int] -> Int = match Some(x) -> x"
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val input =
+      """
+        |enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |def f(): Option[Int] -> Int = match Some(x) -> x
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Nested.01") {
     val input =
-      """ enum IntList {
+      """
+        |enum IntList {
         |   case Lst(Int32, IntList),
         |   case Empty
         |}
@@ -215,17 +244,25 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  }
         |}
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Nested.02") {
     val input =
-      """ def f(l: List[Int]): Int = let foo = 42 ;
+      """
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def f(l: List[Int]): Int = let foo = 42 ;
         |     match l with {
         |         case Nil => 42
         |     }
       """.stripMargin
-    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
   }
 
 }
