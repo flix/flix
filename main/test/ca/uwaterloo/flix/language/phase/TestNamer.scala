@@ -19,9 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.NameError
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
+
+  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
   test("AmbiguousVarOrUse.01") {
     val input =
@@ -32,7 +35,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    f(123)
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.AmbiguousVarOrUse](result)
   }
 
@@ -47,7 +50,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    f(g(123))
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.AmbiguousVarOrUse](result)
   }
 
@@ -57,7 +60,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(): Int = 42
          |def f(): Int = 21
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateDef](result)
   }
 
@@ -68,7 +71,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(): Int = 21
          |def f(): Int = 11
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateDef](result)
   }
 
@@ -79,7 +82,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Int): Int = 21
          |def f(x: Int): Int = 11
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateDef](result)
   }
 
@@ -90,7 +93,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Int): Int = 21
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateDef](result)
   }
 
@@ -105,7 +108,7 @@ class TestNamer extends FunSuite with TestUtils {
          |  def f(): Int = 21
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateDef](result)
   }
 
@@ -124,7 +127,7 @@ class TestNamer extends FunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateDef](result)
   }
 
@@ -144,7 +147,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    def f(): Int = 1
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseDef](result)
   }
 
@@ -165,7 +168,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    pub def f(): Int = 1
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseDef](result)
   }
 
@@ -186,7 +189,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    pub def f(): Int = 1
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseDef](result)
   }
 
@@ -201,7 +204,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    pub def f(): Int = 1
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseDef](result)
   }
 
@@ -225,7 +228,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseTyp](result)
   }
 
@@ -250,7 +253,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseTyp](result)
   }
 
@@ -275,7 +278,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseTag](result)
   }
 
@@ -299,7 +302,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseTag](result)
   }
 
@@ -324,7 +327,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseTag](result)
   }
 
@@ -343,7 +346,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateUseTag](result)
   }
 
@@ -353,7 +356,7 @@ class TestNamer extends FunSuite with TestUtils {
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateTypeAlias](result)
   }
 
@@ -364,7 +367,7 @@ class TestNamer extends FunSuite with TestUtils {
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateTypeAlias](result)
   }
 
@@ -379,7 +382,7 @@ class TestNamer extends FunSuite with TestUtils {
          |  type alias USD = Int
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.DuplicateTypeAlias](result)
   }
 
@@ -388,7 +391,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |def f(_x: List[unit]): Unit = ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -397,7 +400,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |def f(_x: List[Result[Unit, bool]]): Unit = ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -406,7 +409,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |def f(): List[char] = ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -417,7 +420,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    let x: int = 42;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -428,25 +431,25 @@ class TestNamer extends FunSuite with TestUtils {
          |    case X(string)
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
   test("UndefinedTypeVar.Def.01") {
     val input = "def f[a](): b = 123"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Def.02") {
     val input = "def f[a](x: b): Int = 123"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Def.03") {
     val input = "def f[a, b, c](x: Option[d]): Int = 123"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
