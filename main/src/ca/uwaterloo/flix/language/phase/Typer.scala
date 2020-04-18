@@ -207,7 +207,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val declaredScheme = defn0.sc
 
     // TODO: Some duplication
-    val argumentTypes = defn0.fparams.map(_.tpe).map(openSchemaType)
+    val argumentTypes = defn0.fparams.map(_.tpe)
 
     // TODO: Very ugly hack.
     val expectedEff = defn0.exp match {
@@ -1813,20 +1813,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (ResolvedAst.FormalParam(sym, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar, openSchemaType(declaredType))
+        macc ++ Substitution.singleton(sym.tvar, declaredType)
     }
-  }
-
-  /**
-    * Opens the given schema type `tpe0`.
-    */
-  // TODO: Open nested schema types?
-  // TODO: Replace by a more robust solution once we check type signatures more correctly.
-  def openSchemaType(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
-    case Type.SchemaEmpty => Type.freshTypeVar()
-    case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, tpe, openSchemaType(rest))
-    case Type.Apply(tpe1, tpe2) => Type.Apply(openSchemaType(tpe1), openSchemaType(tpe2))
-    case _ => tpe0
   }
 
   /**

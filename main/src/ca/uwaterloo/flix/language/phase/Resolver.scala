@@ -197,9 +197,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Var(sym, loc) => tenv0.get(sym) match {
           case None => ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
-          case Some(tpe) =>
-            // We always open schema types.
-            ResolvedAst.Expression.Var(sym, Typer.openSchemaType(tpe), loc).toSuccess
+          case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
         }
 
         case NamedAst.Expression.Def(qname, tvar, loc) =>
