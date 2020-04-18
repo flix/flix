@@ -1,6 +1,8 @@
 namespace InputStream {
     ///
+    /// Wraps the `java.io.InputStream.available()` method that returns the number of available bytes
     ///
+    /// See the Java documentation for more details
     ///
     pub def available(stream: InputStream): Result[Int32, Error] & Impure = try {
         import java.io.InputStream.available();
