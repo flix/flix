@@ -2315,40 +2315,40 @@ def indent01(): Bool =
     String.indent(3, "") == ""
 
 @test
-def indent02(): Bool & Impure =
-    String.indent(3, String.unlines(["abc"])) == String.unlines(["   abc"])
+def indent02(): Bool =
+    String.indent(3, String.unlines("abc" :: Nil)) == String.unlines("   abc" :: Nil)
 
 @test
-def indent03(): Bool & Impure =
-    String.indent(3, String.unlines(["abc", "def"])) == String.unlines(["   abc", "   def"])
+def indent03(): Bool =
+    String.indent(3, String.unlines("abc" :: "def" :: Nil)) == String.unlines("   abc" :: "   def" :: Nil)
 
 @test
-def indent04(): Bool & Impure =
-    String.indent(3, String.unlines(["ab", "cd", "ef"])) == String.unlines(["   ab", "   cd", "   ef"])
+def indent04(): Bool =
+    String.indent(3, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)
 
 @test
-def indent05(): Bool & Impure =
-    String.indent(1, String.unlines(["abc"])) == String.unlines([" abc"])
+def indent05(): Bool =
+    String.indent(1, String.unlines("abc" :: Nil)) == String.unlines(" abc" :: Nil)
 
 @test
-def indent06(): Bool & Impure =
-    String.indent(1, String.unlines(["abc", "def"])) == String.unlines([" abc", " def"])
+def indent06(): Bool =
+    String.indent(1, String.unlines("abc" :: "def" :: Nil)) == String.unlines(" abc" :: " def" :: Nil)
 
 @test
-def indent07(): Bool & Impure =
-    String.indent(1, String.unlines(["ab", "cd", "ef"])) == String.unlines([" ab", " cd", " ef"])
+def indent07(): Bool =
+    String.indent(1, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines(" ab" :: " cd" :: " ef" :: Nil)
 
 @test
-def indent08(): Bool & Impure =
-    String.indent(0, String.unlines(["abc"])) == String.unlines(["abc"])
+def indent08(): Bool =
+    String.indent(0, String.unlines("abc" :: Nil)) == String.unlines("abc" :: Nil)
 
 @test
-def indent09(): Bool & Impure =
-    String.indent(0, String.unlines(["abc", "def"])) == String.unlines(["abc", "def"])
+def indent09(): Bool =
+    String.indent(0, String.unlines("abc" :: "def" :: Nil)) == String.unlines("abc" :: "def" :: Nil)
 
 @test
-def indent10(): Bool & Impure =
-    String.indent(0, String.unlines(["ab", "cd", "ef"])) == String.unlines(["ab", "cd", "ef"])
+def indent10(): Bool =
+    String.indent(0, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines("ab" :: "cd" :: "ef" :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // stripIndent                                                             //
@@ -2359,181 +2359,153 @@ def stripIndent01(): Bool =
     String.stripIndent(3, "") == ""
 
 @test
-def stripIndent02(): Bool & Impure =
-    String.stripIndent(3, String.unlines(["   abc"])) == String.unlines(["abc"])
+def stripIndent02(): Bool =
+    String.stripIndent(3, String.unlines("   abc" :: Nil)) == String.unlines("abc" :: Nil)
 
 @test
-def stripIndent03(): Bool & Impure =
-    String.stripIndent(3, String.unlines(["   abc", "   def"])) == String.unlines(["abc", "def"])
+def stripIndent03(): Bool =
+    String.stripIndent(3, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("abc" :: "def" :: Nil)
 
 @test
-def stripIndent04(): Bool & Impure =
-    String.stripIndent(3, String.unlines(["   ab", "   cd", "   ef"])) == String.unlines(["ab", "cd", "ef"])
+def stripIndent04(): Bool =
+    String.stripIndent(3, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("ab" :: "cd" :: "ef" :: Nil)
 
 @test
-def stripIndent05(): Bool & Impure =
-    String.stripIndent(1, String.unlines(["   abc"])) == String.unlines(["  abc"])
+def stripIndent05(): Bool =
+    String.stripIndent(1, String.unlines("   abc" :: Nil)) == String.unlines("  abc" :: Nil)
 
 @test
-def stripIndent06(): Bool & Impure =
-    String.stripIndent(1, String.unlines(["   abc", "   def"])) == String.unlines(["  abc", "  def"])
+def stripIndent06(): Bool =
+    String.stripIndent(1, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("  abc" :: "  def" :: Nil)
 
 @test
-def stripIndent07(): Bool & Impure =
-    String.stripIndent(1, String.unlines(["   ab", "   cd", "   ef"])) == String.unlines(["  ab", "  cd", "  ef"])
+def stripIndent07(): Bool =
+    String.stripIndent(1, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("  ab" :: "  cd" :: "  ef" :: Nil)
 
 @test
-def stripIndent08(): Bool & Impure =
-    String.stripIndent(0, String.unlines(["   abc"])) == String.unlines(["   abc"])
+def stripIndent08(): Bool =
+    String.stripIndent(0, String.unlines("   abc" :: Nil)) == String.unlines("   abc" :: Nil)
 
 @test
-def stripIndent09(): Bool & Impure =
-    String.stripIndent(0, String.unlines(["   abc", "   def"])) == String.unlines(["   abc", "   def"])
+def stripIndent09(): Bool =
+    String.stripIndent(0, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("   abc" :: "   def" :: Nil)
 
 @test
-def stripIndent10(): Bool & Impure =
-    String.stripIndent(0, String.unlines(["   ab", "   cd", "   ef"])) == String.unlines(["   ab", "   cd", "   ef"])
+def stripIndent10(): Bool  =
+    String.stripIndent(0, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // lines                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lines01(): Bool & Impure =
-    let a = String.lines("");
-    Array.sameElements(a, []: Array[String])
+def lines01(): Bool = String.lines("") == Nil
 
 @test
-def lines02(): Bool & Impure =
-    let a = String.lines("a");
-    Array.sameElements(a, ["a"])
+def lines02(): Bool = String.lines("a")  == "a" :: Nil
 
 @test
-def lines03(): Bool & Impure =
-    let a = String.lines("a" + String.lineSeparator());
-    Array.sameElements(a, ["a"])
+def lines03(): Bool = String.lines("a" + String.lineSeparator()) == "a" :: Nil
 
 @test
-def lines04(): Bool & Impure =
-    let a = String.lines(String.lineSeparator() + "a");
-    Array.sameElements(a, ["", "a"])
+def lines04(): Bool = String.lines(String.lineSeparator() + "a") == "" :: "a" :: Nil
 
 @test
-def lines05(): Bool & Impure =
-    let a = String.lines("a" + String.lineSeparator() + "b");
-    Array.sameElements(a, ["a", "b"])
+def lines05(): Bool = String.lines("a" + String.lineSeparator() + "b") == "a" :: "b" :: Nil
 
 @test
-def lines06(): Bool & Impure =
-    let a = String.lines("a" + Char.toString('\n') + "b");
-    Array.sameElements(a, ["a", "b"])
+def lines06(): Bool = String.lines("a" + Char.toString('\n') + "b") == "a" :: "b" :: Nil
 
 @test
-def lines07(): Bool & Impure =
-    let a = String.lines("a" + Char.toString('\r') + Char.toString('\n') + "b");
-    Array.sameElements(a, ["a", "b"])
+def lines07(): Bool = String.lines("a" + Char.toString('\r') + Char.toString('\n') + "b") ==  "a" :: "b" :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // unlines                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unlines01(): Bool & Impure = String.unlines([]) == ""
+def unlines01(): Bool = String.unlines(Nil) == ""
 
 @test
-def unlines02(): Bool & Impure =
-    String.unlines([""]) == String.lineSeparator()
+def unlines02(): Bool =
+    String.unlines("" :: Nil) == String.lineSeparator()
 
 @test
-def unlines03(): Bool & Impure =
-    String.unlines(["a"]) == "a" + String.lineSeparator()
+def unlines03(): Bool =
+    String.unlines("a" :: Nil) == "a" + String.lineSeparator()
 
 @test
-def unlines04(): Bool & Impure =
-    String.unlines(["a", ""]) == "a" + String.lineSeparator() + String.lineSeparator()
+def unlines04(): Bool =
+    String.unlines("a" :: "" :: Nil) == "a" + String.lineSeparator() + String.lineSeparator()
 
 @test
-def unlines05(): Bool & Impure =
-    String.unlines(["", "b"]) == String.lineSeparator() + "b" + String.lineSeparator()
+def unlines05(): Bool =
+    String.unlines("" :: "b" :: Nil) == String.lineSeparator() + "b" + String.lineSeparator()
 
 @test
-def unlines06(): Bool & Impure =
-    String.unlines(["a", "b"]) == "a" + String.lineSeparator() + "b" + String.lineSeparator()
+def unlines06(): Bool =
+    String.unlines("a" :: "b" :: Nil) == "a" + String.lineSeparator() + "b" + String.lineSeparator()
 
 @test
-def unlines07(): Bool & Impure =
-    String.unlines(["a", String.lineSeparator()]) == "a" + String.lineSeparator() + String.lineSeparator() + String.lineSeparator()
+def unlines07(): Bool =
+    String.unlines("a" :: String.lineSeparator() :: Nil) == "a" + String.lineSeparator() + String.lineSeparator() + String.lineSeparator()
 
 @test
-def unlines08(): Bool & Impure =
-    String.unlines([String.lineSeparator(), "b"]) ==  String.lineSeparator() + String.lineSeparator() + "b" + String.lineSeparator()
+def unlines08(): Bool =
+    String.unlines(String.lineSeparator() :: "b" :: Nil) ==  String.lineSeparator() + String.lineSeparator() + "b" + String.lineSeparator()
 
 /////////////////////////////////////////////////////////////////////////////
 // words                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def words01(): Bool & Impure =
-    let a = String.words("");
-    Array.sameElements(a, []: Array[String])
+def words01(): Bool = String.words("") == Nil
 
 @test
-def words02(): Bool & Impure =
-    let a = String.words("a");
-    Array.sameElements(a, ["a"])
+def words02(): Bool = String.words("a") == "a" :: Nil
 
 @test
-def words03(): Bool & Impure =
-    let a = String.words("a ");
-    Array.sameElements(a, ["a"])
+def words03(): Bool = String.words("a ") == "a" :: Nil
 
 @test
-def words04(): Bool & Impure =
-    let a = String.words(" a");
-    Array.sameElements(a, ["a"])
+def words04(): Bool = String.words(" a") == "a" :: Nil
 
 @test
-def words05(): Bool & Impure =
-    let a = String.words("a b");
-    Array.sameElements(a, ["a", "b"])
+def words05(): Bool = String.words("a b") == "a" :: "b" :: Nil
 
 @test
-def words06(): Bool & Impure =
-    let a = String.words("a  b");
-    Array.sameElements(a, ["a", "b"])
+def words06(): Bool = String.words("a  b") == "a" :: "b" :: Nil
 
 @test
-def words07(): Bool & Impure =
-    let a = String.words("a" + Char.toString('\t') + "b");
-    Array.sameElements(a, ["a", "b"])
+def words07(): Bool = String.words("a" + Char.toString('\t') + "b") == "a" :: "b" :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // unwords                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unwords01(): Bool & Impure = String.unwords([]) == ""
+def unwords01(): Bool = String.unwords(Nil) == ""
 
 @test
-def unwords02(): Bool & Impure = String.unwords([""]) == ""
+def unwords02(): Bool = String.unwords("" :: Nil) == ""
 
 @test
-def unwords03(): Bool & Impure = String.unwords(["a"]) == "a"
+def unwords03(): Bool = String.unwords("a" :: Nil) == "a"
 
 @test
-def unwords04(): Bool & Impure = String.unwords(["a", ""]) == "a "
+def unwords04(): Bool = String.unwords("a" :: "" :: Nil) == "a "
 
 @test
-def unwords05(): Bool & Impure = String.unwords(["", "b"]) == " b"
+def unwords05(): Bool = String.unwords("" :: "b" :: Nil) == " b"
 
 @test
-def unwords06(): Bool & Impure = String.unwords(["a", "b"]) == "a b"
+def unwords06(): Bool = String.unwords("a" :: "b" :: Nil) == "a b"
 
 @test
-def unwords07(): Bool & Impure = String.unwords(["a", String.lineSeparator()]) == "a " + String.lineSeparator()
+def unwords07(): Bool = String.unwords("a" :: String.lineSeparator() :: Nil) == "a " + String.lineSeparator()
 
 @test
-def unwords08(): Bool & Impure = String.unwords([String.lineSeparator(), "b"]) ==  String.lineSeparator() + " b"
+def unwords08(): Bool = String.unwords(String.lineSeparator() :: "b" :: Nil) ==  String.lineSeparator() + " b"
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOf                                                                 //

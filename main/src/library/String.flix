@@ -892,49 +892,59 @@ namespace String {
     ///
     /// Split the string `s` into an array of lines, breaking on newline.
     ///
-    /// Newline is recognized as either Windows (carriage return, line feed) or Unix (line feed).
+    /// Newline is recognized as any Unicode linebreak sequence including
+    /// Windows (carriage return, line feed) or Unix (line feed).
     ///
-    pub def lines(s: String): Array[String] & Impure =
+    pub def lines(s: String): List[String] =
         if (isEmpty(s))
-            []
+            Nil
         else
-            split(s, "\r?\n")
+            Array.toList(split(s, "\R")) as & Pure
 
     ///
     /// Join the array of strings `a` separating each pair of strings and
     /// ending the result string with the system dependent line separator.
     ///
-    pub def unlines(a: Array[String]): String = unlinesHelper(a) as & Pure
+    pub def unlines(a: List[String]): String = unlinesHelper(a) as & Pure
 
     ///
     /// Helper function for `unlines`.
     ///
-    def unlinesHelper(a: Array[String]): String & Impure =
+    def unlinesHelper(a: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        Array.foreach(StringBuilder.appendLine!(sb), a);
+        List.foreach(StringBuilder.appendLine!(sb), a);
         StringBuilder.toString(sb)
 
     ///
-    /// Split the string `s` into an array of words, dividing on one or more white space characters.
+    /// Split the string `s` into an list of words, dividing on one or more white space characters.
     /// Leading and trailing spaces are trimmed.
     ///
-    pub def words(s: String): Array[String] & Impure = match trim(s) {
-        case s1 if isEmpty(s1) => []
-        case s1 => split(s1, "\s+")
+    pub def words(s: String): List[String] = match trim(s) {
+        case s1 if isEmpty(s1) => Nil
+        case s1 => Array.toList(split(s1, "\s+")) as & Pure
     }
 
     ///
     /// Join the array of strings `a` separating each pair of strings with a
     /// single space character.
     ///
-    pub def unwords(a: Array[String]): String = unwordsHelper(a) as & Pure
+    pub def unwords(a: List[String]): String = unwordsHelper(a) as & Pure
 
     ///
     /// Helper function for `unlines`.
     ///
-    def unwordsHelper(a: Array[String]): String & Impure =
+    def unwordsHelper(xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        StringBuilder.intercalate!(sb, " ", a);
+        let first = ref true;
+        let step = s ->
+            if (deref first == true) {
+                first := false;
+                StringBuilder.appendString!(sb, s)
+            } else {
+                StringBuilder.appendChar!(sb, ' ');
+                StringBuilder.appendString!(sb, s)
+            };
+        List.foreach(step, xs);
         StringBuilder.toString(sb)
 
     ///
@@ -1137,7 +1147,7 @@ namespace String {
     ///
     /// Helper function for `equalsCI`.
     ///
-    /// Uses a collator to be accurate with the locale of the JVM.
+    /// Uses a Collator to be accurate with the locale of the JVM.
     ///
     def equalsCIHelper(s1: String, s2: String): Bool & Impure =
          import java.text.Collator:getInstance();
