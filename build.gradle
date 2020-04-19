@@ -51,6 +51,22 @@ sourceSets {
     }
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'ca.uwaterloo.flix.Main'
+    }
+
+    from {
+        // This line has to come before the next
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    from('main/src') {
+        include 'library/**/*.flix'
+    }
+}
+
 task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     main = 'org.scalatest.tools.Runner'
     args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
@@ -59,3 +75,4 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
 }
 
 test.dependsOn testAll
+

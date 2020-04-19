@@ -19,40 +19,62 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
+
+  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
   test("TestLeq01") {
     val input =
       """
         |def f(): a = 21
       """.stripMargin
-    expectError[TypeError.GeneralizationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("TestLeq02") {
     val input =
       """
         |def f(): List[a] = 21 :: Nil
+        |
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
       """.stripMargin
-    expectError[TypeError.GeneralizationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("TestLeq03") {
     val input =
       """
         |def f(): Result[a, Int] = Ok(21)
+        |
+        |enum Result[t, e] {
+        |    case Ok(t),
+        |    case Err(e)
+        |}
       """.stripMargin
-    expectError[TypeError.GeneralizationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("TestLeq04") {
     val input =
       """
         |def f(): Result[Int, a] = Err(21)
+        |
+        |enum Result[t, e] {
+        |    case Ok(t),
+        |    case Err(e)
+        |}
       """.stripMargin
-    expectError[TypeError.GeneralizationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("TestLeq05") {
@@ -60,7 +82,8 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def f(): a -> a = x -> 21
       """.stripMargin
-    expectError[TypeError.GeneralizationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("TestLeq06") {
@@ -68,7 +91,8 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def f(): a -> a = (x: Int32) -> x
       """.stripMargin
-    expectError[TypeError.GeneralizationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("TestLeq07") {
@@ -76,7 +100,8 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def f(): {x: Int | r} = {x = 21}
       """.stripMargin
-    expectError[TypeError.GeneralizationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("TestLeq08") {
@@ -84,7 +109,8 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def f(): {x: Int, y: Int | r} = {y = 42, x = 21}
       """.stripMargin
-    expectError[TypeError.GeneralizationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
 }

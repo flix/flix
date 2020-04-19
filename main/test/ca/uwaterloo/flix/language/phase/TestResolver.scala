@@ -19,9 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
+
+  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
   test("AmbiguousTag.01") {
     val input =
@@ -36,7 +39,7 @@ class TestResolver extends FunSuite with TestUtils {
          |
          |def f(): A = Foo
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.AmbiguousTag](result)
   }
 
@@ -53,7 +56,7 @@ class TestResolver extends FunSuite with TestUtils {
          |
          |def f(): A = Foo(42)
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.AmbiguousTag](result)
   }
 
@@ -68,7 +71,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def g(): Int = A.f()
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
@@ -83,7 +86,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
@@ -101,7 +104,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def g(): A.Color = A/Color.Red
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -119,7 +122,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -137,7 +140,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def g(): A.Color = ???
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -155,7 +158,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -167,7 +170,7 @@ class TestResolver extends FunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.RecursionLimit](result)
   }
 
@@ -180,7 +183,7 @@ class TestResolver extends FunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.RecursionLimit](result)
   }
 
@@ -194,38 +197,48 @@ class TestResolver extends FunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.RecursionLimit](result)
   }
 
   test("RecursionLimit.04") {
     val input =
       s"""
+         |enum Option[t] {
+         |    case None,
+         |    case Some(t)
+         |}
+         |
          |type alias Foo = Option[Foo]
          |
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.RecursionLimit](result)
   }
 
   test("RecursionLimit.05") {
     val input =
       s"""
+         |enum Option[t] {
+         |    case None,
+         |    case Some(t)
+         |}
+         |
          |type alias Foo = Option[Bar]
          |type alias Bar = Option[Foo]
          |
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.RecursionLimit](result)
   }
 
   test("UndefinedName.01") {
     val input = "def f(): Int = x"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -236,7 +249,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def f(x: Int, y: Int): Int = x + y + z
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -245,7 +258,7 @@ class TestResolver extends FunSuite with TestUtils {
       s"""
          |def main(): #{ R } = #{}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -256,7 +269,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import new java.io.File() as _;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
@@ -267,7 +280,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import new java.io.File(Int32) as _;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
@@ -278,7 +291,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import new java.lang.String(Bool) as _;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
@@ -289,7 +302,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import new java.lang.String(Bool, Char, String) as _;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
@@ -300,7 +313,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import new foo.bar.Baz() as newObject;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -311,7 +324,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import foo.bar.Baz.f();
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -322,7 +335,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import foo.bar.Baz:f();
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -333,7 +346,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import get foo.bar.Baz.f as getF;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -344,7 +357,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import set foo.bar.Baz.f as setF;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -355,7 +368,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import get foo.bar.Baz:f as getF;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -366,7 +379,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import set foo.bar.Baz:f as setF;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -377,7 +390,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import java.lang.String.getFoo();
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -388,7 +401,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import java.lang.String.charAt();
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -399,7 +412,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import java.lang.String.charAt(Int32, Int32);
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -410,7 +423,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import java.lang.String.isEmpty(Bool);
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -421,7 +434,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import java.lang.String:isEmpty();
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -432,7 +445,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import java.lang.String.valueOf(Bool);
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -444,7 +457,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    ()
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmField](result)
   }
 
@@ -455,7 +468,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import set java.lang.Character.foo as setFoo;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmField](result)
   }
 
@@ -466,7 +479,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import get java.lang.Character:foo as getFoo;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmField](result)
   }
 
@@ -477,7 +490,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    import set java.lang.Character:foo as setFoo;
          |    ()
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedJvmField](result)
   }
 
@@ -491,7 +504,7 @@ class TestResolver extends FunSuite with TestUtils {
          |def f(): A = A.Qux
          |
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedTag](result)
   }
 
@@ -507,7 +520,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def f(): B = B.Qux(1 + 2)
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedTag](result)
   }
 
@@ -525,13 +538,13 @@ class TestResolver extends FunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UndefinedType.01") {
     val input = "def x(): Foo = 42"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -541,7 +554,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def foo(bar: Baz, baz: Baz): Qux = bar
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -552,7 +565,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def f(): Int = Foo.Bar
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -563,7 +576,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def f(): Int = Foo/Bar.Qux(true)
          |}
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedType](result)
   }
 

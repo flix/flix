@@ -224,7 +224,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     val defn = this.root.defs(this.sym)
 
     // Compute the result type, i.e. the last type argument.
-    val tpe = defn.tpe.typeArguments.last
+    val tpe = defn.inferredScheme.base.typeArguments.last
 
     // Print the type to the terminal.
     val vt = new VirtualTerminal
@@ -246,7 +246,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     val defn = this.root.defs(this.sym)
 
     // Retrieve the kind.
-    val kind = defn.tpe.kind
+    val kind = defn.inferredScheme.base.kind
 
     // Print the kind to the terminal.
     val vt = new VirtualTerminal
@@ -663,7 +663,7 @@ class Shell(initialPaths: List[Path], options: Options) {
         vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.show)
       }
     }
-    vt << "): " << Cyan(defn.tpe.typeArguments.last.show) << NewLine
+    vt << "): " << Cyan(defn.inferredScheme.base.typeArguments.last.show) << NewLine
   }
 
   /**
