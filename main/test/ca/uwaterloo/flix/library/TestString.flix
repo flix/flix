@@ -2953,47 +2953,6 @@ def levenshteinDistance06(): Bool =
 def levenshteinDistance07(): Bool =
     String.levenshteinDistance("Gumbo", "Gambol") == 2
 
-
-/////////////////////////////////////////////////////////////////////////////
-// equalsCI                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def equalsCI01(): Bool =
-    String.equalsCI("", "") == true
-
-@test
-def equalsCI02(): Bool =
-    String.equalsCI("Hello World", "") == false
-
-@test
-def equalsCI03(): Bool =
-    String.equalsCI("", "Hello World") == false
-
-@test
-def equalsCI04(): Bool =
-    String.equalsCI("Hello World", "Hello World") == true
-
-@test
-def equalsCI05(): Bool =
-    String.equalsCI("Hello World", "HELLO WORLD") == true
-
-@test
-def equalsCI06(): Bool =
-    String.equalsCI("Hello World", "hello world") == true
-
-@test
-def equalsCI07(): Bool =
-    String.equalsCI("Hello World", "hELLO wORLD") == true
-
-@test
-def equalsCI08(): Bool =
-    String.equalsCI("hello world", "HELLO WORLD") == true
-
-@test
-def equalsCI09(): Bool =
-    String.equalsCI("hello world", "HELLO WORLD!") == false
-
 /////////////////////////////////////////////////////////////////////////////
 // zip                                                                     //
 /////////////////////////////////////////////////////////////////////////////

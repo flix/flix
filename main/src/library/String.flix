@@ -1137,26 +1137,6 @@ namespace String {
     def arraySwap(a: Array[Int32], b : Array[Int32]): Unit & Impure =
         forIndex(0, Array.length(a) - 1, {i ->  a[i] = b[i]})
 
-
-    ///
-    /// Test equality of strings `s1` and `s2` ignoring case.
-    ///
-    pub def equalsCI(s1: String, s2: String): Bool =
-        equalsCIHelper(s1, s2) as & Pure
-
-    ///
-    /// Helper function for `equalsCI`.
-    ///
-    /// Uses a Collator to be accurate with the locale of the JVM.
-    ///
-    def equalsCIHelper(s1: String, s2: String): Bool & Impure =
-         import java.text.Collator:getInstance();
-         import java.text.Collator.setStrength(Int32) as setStrength!;
-         import java.text.Collator.compare(String, String);
-         let coll = getInstance();
-         coll.setStrength!(0);
-         if (coll.compare(s1, s2) == 0) true else false
-
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
     /// `x` is the element at index `i` in `a` and `y` is the element at index `i` in `b`.
