@@ -251,145 +251,144 @@ namespace TestFloat64 {
     def fromString11(): Bool = Float64.fromString("-Infinity") == Ok(Float64.negativeInfinity())
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt8                                                                  //
+    // tryToInt8                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt801(): Bool = Float64.toInt8(0.0f64) == Some(0i8)
+    def tryToInt801(): Bool = Float64.tryToInt8(0.0f64) == Some(0i8)
 
     @test
-    def toInt802(): Bool = Float64.toInt8(1.0f64) == Some(1i8)
+    def tryToInt802(): Bool = Float64.tryToInt8(1.0f64) == Some(1i8)
 
     @test
-    def toInt803(): Bool = Float64.toInt8(-1.0f64) == Some(-1i8)
+    def tryToInt803(): Bool = Float64.tryToInt8(-1.0f64) == Some(-1i8)
 
     @test
-    def toInt804(): Bool = Float64.toInt8(127.0f64) == Some(127i8)
+    def tryToInt804(): Bool = Float64.tryToInt8(127.0f64) == Some(127i8)
 
     @test
-    def toInt805(): Bool = Float64.toInt8(128.0f64) == None
+    def tryToInt805(): Bool = Float64.tryToInt8(128.0f64) == None
 
     @test
-    def toInt806(): Bool = Float64.toInt8(-128.0f64) == Some(-128i8)
+    def tryToInt806(): Bool = Float64.tryToInt8(-128.0f64) == Some(-128i8)
 
     @test
-    def toInt807(): Bool = Float64.toInt8(-129.0f64) == None
+    def tryToInt807(): Bool = Float64.tryToInt8(-129.0f64) == None
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt16                                                                 //
+    // tryToInt16                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt1601(): Bool = Float64.toInt16(0.0f64) == Some(0i16)
+    def tryToInt1601(): Bool = Float64.tryToInt16(0.0f64) == Some(0i16)
 
     @test
-    def toInt1602(): Bool = Float64.toInt16(1.0f64) == Some(1i16)
+    def tryToInt1602(): Bool = Float64.tryToInt16(1.0f64) == Some(1i16)
 
     @test
-    def toInt1603(): Bool = Float64.toInt16(-1.0f64) == Some(-1i16)
+    def tryToInt1603(): Bool = Float64.tryToInt16(-1.0f64) == Some(-1i16)
 
     @test
-    def toInt1604(): Bool = Float64.toInt16(32767.0f64) == Some(32767i16)
+    def tryToInt1604(): Bool = Float64.tryToInt16(32767.0f64) == Some(32767i16)
 
     @test
-    def toInt1605(): Bool = Float64.toInt16(32768.0f64) == None
+    def tryToInt1605(): Bool = Float64.tryToInt16(32768.0f64) == None
 
     @test
-    def toInt1606(): Bool = Float64.toInt16(-32768.0f64) == Some(-32768i16)
+    def tryToInt1606(): Bool = Float64.tryToInt16(-32768.0f64) == Some(-32768i16)
 
     @test
-    def toInt1607(): Bool = Float64.toInt16(-32769.0f64) == None
+    def tryToInt1607(): Bool = Float64.tryToInt16(-32769.0f64) == None
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt32                                                                 //
+    // tryToInt32                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt3201(): Bool = Float64.toInt32(0.0f64) == Some(0)
+    def tryToInt3201(): Bool = Float64.tryToInt32(0.0f64) == Some(0)
 
     @test
-    def toInt3202(): Bool = Float64.toInt32(1.0f64) == Some(1)
+    def tryToInt3202(): Bool = Float64.tryToInt32(1.0f64) == Some(1)
 
     @test
-    def toInt3203(): Bool = Float64.toInt32(-1.0f64) == Some(-1)
+    def tryToInt3203(): Bool = Float64.tryToInt32(-1.0f64) == Some(-1)
 
     @test
-    def toInt3204(): Bool = Float64.toInt32(2147483647.0f64) != None
+    def tryToInt3204(): Bool = Float64.tryToInt32(2147483647.0f64) != None
 
     @test
-    def toInt3205(): Bool = Float64.toInt32(2147483648.0f64) == None
+    def tryToInt3205(): Bool = Float64.tryToInt32(2147483648.0f64) == None
 
     @test
-    def toInt3206(): Bool = Float64.toInt32(-2147483648.0f64) != None
+    def tryToInt3206(): Bool = Float64.tryToInt32(-2147483648.0f64) != None
 
     @test
-    def toInt3207(): Bool = Float64.toInt32(-2147483649.0f64) == None
+    def tryToInt3207(): Bool = Float64.tryToInt32(-2147483649.0f64) == None
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt64                                                                 //
+    // tryToInt64                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt6401(): Bool = Float64.toInt64(0.0f64) == Some(0i64)
+    def tryToInt6401(): Bool = Float64.tryToInt64(0.0f64) == Some(0i64)
 
     @test
-    def toInt6402(): Bool = Float64.toInt64(1.0f64) == Some(1i64)
+    def tryToInt6402(): Bool = Float64.tryToInt64(1.0f64) == Some(1i64)
 
     @test
-    def toInt6403(): Bool = Float64.toInt64(-1.0f64) == Some(-1i64)
+    def tryToInt6403(): Bool = Float64.tryToInt64(-1.0f64) == Some(-1i64)
 
     @test
-    def toInt6404(): Bool = Float64.toInt64(9223372036854775807.0f64) != None
+    def tryToInt6404(): Bool = Float64.tryToInt64(9223372036854775807.0f64) != None
 
     @test
-    def toInt6405(): Bool = Float64.toInt64(9223372036854780000.0f64) == None        // Allow some imprecision
+    def tryToInt6405(): Bool = Float64.tryToInt64(9223372036854780000.0f64) == None        // Allow some imprecision
 
     @test
-    def toInt6406(): Bool = Float64.toInt64(-9223372036854775808.0f64) != None
+    def tryToInt6406(): Bool = Float64.tryToInt64(-9223372036854775808.0f64) != None
 
     @test
-    def toInt6407(): Bool = Float64.toInt64(-9223372036854780000.0f64) == None       // Allow some imprecision
+    def tryToInt6407(): Bool = Float64.tryToInt64(-9223372036854780000.0f64) == None       // Allow some imprecision
 
     /////////////////////////////////////////////////////////////////////////////
-    // toBigInt                                                                //
+    // tryToBigInt                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toBigInt01(): Bool = Float64.toBigInt(0.0f64) == Some(0ii)
+    def tryToBigInt01(): Bool = Float64.tryToBigInt(0.0f64) == Some(0ii)
 
     @test
-    def toBigInt02(): Bool = Float64.toBigInt(1.0f64) == Some(1ii)
+    def tryToBigInt02(): Bool = Float64.tryToBigInt(1.0f64) == Some(1ii)
 
     @test
-    def toBigInt03(): Bool = Float64.toBigInt(-1.0f64) == Some(-1ii)
+    def tryToBigInt03(): Bool = Float64.tryToBigInt(-1.0f64) == Some(-1ii)
 
     @test
-    def toBigInt04(): Bool =
-        let step = () -> Float64.maxValue() |> Float64.toBigInt;
+    def tryToBigInt04(): Bool =
+        let step = () -> Float64.maxValue() |> Float64.tryToBigInt;
         step() != None
 
     @test
-    def toBigInt05(): Bool =
-        let step = () -> Float64.minValue() |> Float64.toBigInt;
+    def tryToBigInt05(): Bool =
+        let step = () -> Float64.minValue() |> Float64.tryToBigInt;
         step() != None
 
     /////////////////////////////////////////////////////////////////////////////
-    // toFloat32                                                                //
+    // tryToFloat32                                                            //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toFloat3201(): Bool = Float64.toFloat32(0.0f64) == Some(0.0f32)
+    def tryToFloat3201(): Bool = Float64.tryToFloat32(0.0f64) == Some(0.0f32)
 
     @test
-    def toFloat3202(): Bool = Float64.toFloat32(1.0f64) == Some(1.0f32)
+    def tryToFloat3202(): Bool = Float64.tryToFloat32(1.0f64) == Some(1.0f32)
 
     @test
-    def toFloat3203(): Bool = Float64.toFloat32(-1.0f64) == Some(-1.0f32)
+    def tryToFloat3203(): Bool = Float64.tryToFloat32(-1.0f64) == Some(-1.0f32)
 
     @test
-    def toFloat3204(): Bool = match Float64.toFloat32(123456789.10f64) {
+    def tryToFloat3204(): Bool = match Float64.tryToFloat32(123456789.10f64) {
         case None => false
         case Some(d) => d >= 123456700.0f32 && d <= 123456800.0f32       // Allow imprecision
     }
 
-
     @test
-    def toFloat3205(): Bool = match Float64.toFloat32(-123456789.10f64) {
+    def tryToFloat3205(): Bool = match Float64.tryToFloat32(-123456789.10f64) {
         case None => false
         case Some(d) => d <= -123456700.0f32 && d >= -123456800.0f32     // Allow imprecision
     }

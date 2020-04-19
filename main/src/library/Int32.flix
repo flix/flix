@@ -262,7 +262,7 @@ namespace Int32 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127).
     ///
-    pub def toInt8(x: Int32): Option[Int8] =
+    pub def tryToInt8(x: Int32): Option[Int8] =
         import java.lang.Integer:valueOf(Int32);
         import java.lang.Integer.byteValue();
         if (x < Int8.toInt32(Int8.minValue()) || x > Int8.toInt32(Int8.maxValue()))
@@ -278,7 +278,7 @@ namespace Int32 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767).
     ///
-    pub def toInt16(x: Int32): Option[Int16] =
+    pub def tryToInt16(x: Int32): Option[Int16] =
         import java.lang.Integer:valueOf(Int32);
         import java.lang.Integer.shortValue();
         if (x < Int16.toInt32(Int16.minValue()) || x > Int16.toInt32(Int16.maxValue()))

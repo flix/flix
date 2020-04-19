@@ -707,28 +707,28 @@ namespace TestInt16 {
     def fromString08(): Bool = Int16.fromString("-32768") == Ok(-32768i16)
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt8                                                                  //
+    // tryToInt8                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt801(): Bool = Int16.toInt8(0i16) == Some(0i8)
+    def tryToInt801(): Bool = Int16.tryToInt8(0i16) == Some(0i8)
 
     @test
-    def toInt802(): Bool = Int16.toInt8(1i16) == Some(1i8)
+    def tryToInt802(): Bool = Int16.tryToInt8(1i16) == Some(1i8)
 
     @test
-    def toInt803(): Bool = Int16.toInt8(-1i16) == Some(-1i8)
+    def tryToInt803(): Bool = Int16.tryToInt8(-1i16) == Some(-1i8)
 
     @test
-    def toInt804(): Bool = Int16.toInt8(127i16) == Some(127i8)
+    def tryToInt804(): Bool = Int16.tryToInt8(127i16) == Some(127i8)
 
     @test
-    def toInt805(): Bool = Int16.toInt8(128i16) == None
+    def tryToInt805(): Bool = Int16.tryToInt8(128i16) == None
 
     @test
-    def toInt806(): Bool = Int16.toInt8(-128i16) == Some(-128i8)
+    def tryToInt806(): Bool = Int16.tryToInt8(-128i16) == Some(-128i8)
 
     @test
-    def toInt807(): Bool = Int16.toInt8(-129i16) == None
+    def tryToInt807(): Bool = Int16.tryToInt8(-129i16) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt32                                                                 //

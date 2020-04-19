@@ -641,52 +641,52 @@ namespace TestInt32 {
     def fromString08(): Bool = Int32.fromString("-2147483648") == Ok(-2147483648)
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt8                                                                  //
+    // tryToInt8                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt801(): Bool = Int32.toInt8(0) == Some(0i8)
+    def tryToInt801(): Bool = Int32.tryToInt8(0) == Some(0i8)
 
     @test
-    def toInt802(): Bool = Int32.toInt8(1) == Some(1i8)
+    def tryToInt802(): Bool = Int32.tryToInt8(1) == Some(1i8)
 
     @test
-    def toInt803(): Bool = Int32.toInt8(-1) == Some(-1i8)
+    def tryToInt803(): Bool = Int32.tryToInt8(-1) == Some(-1i8)
 
     @test
-    def toInt804(): Bool = Int32.toInt8(127) == Some(127i8)
+    def tryToInt804(): Bool = Int32.tryToInt8(127) == Some(127i8)
 
     @test
-    def toInt805(): Bool = Int32.toInt8(128) == None
+    def tryToInt805(): Bool = Int32.tryToInt8(128) == None
 
     @test
-    def toInt806(): Bool = Int32.toInt8(-128) == Some(-128i8)
+    def tryToInt806(): Bool = Int32.tryToInt8(-128) == Some(-128i8)
 
     @test
-    def toInt807(): Bool = Int32.toInt8(-129) == None
+    def tryToInt807(): Bool = Int32.tryToInt8(-129) == None
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt16                                                                 //
+    // tryToInt16                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt1601(): Bool = Int32.toInt16(0) == Some(0i16)
+    def tryToInt1601(): Bool = Int32.tryToInt16(0) == Some(0i16)
 
     @test
-    def toInt1602(): Bool = Int32.toInt16(1) == Some(1i16)
+    def tryToInt1602(): Bool = Int32.tryToInt16(1) == Some(1i16)
 
     @test
-    def toInt1603(): Bool = Int32.toInt16(-1) == Some(-1i16)
+    def tryToInt1603(): Bool = Int32.tryToInt16(-1) == Some(-1i16)
 
     @test
-    def toInt1604(): Bool = Int32.toInt16(32767) == Some(32767i16)
+    def tryToInt1604(): Bool = Int32.tryToInt16(32767) == Some(32767i16)
 
     @test
-    def toInt1605(): Bool = Int32.toInt16(32768) == None
+    def tryToInt1605(): Bool = Int32.tryToInt16(32768) == None
 
     @test
-    def toInt1606(): Bool = Int32.toInt16(-32768) == Some(-32768i16)
+    def tryToInt1606(): Bool = Int32.tryToInt16(-32768) == Some(-32768i16)
 
     @test
-    def toInt1607(): Bool = Int32.toInt16(-32769) == None
+    def tryToInt1607(): Bool = Int32.tryToInt16(-32769) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt64                                                                 //

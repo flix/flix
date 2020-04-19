@@ -120,7 +120,7 @@ namespace Float32 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127), or it is NaN or infinity.
     ///
-    pub def toInt8(x: Float32): Option[Int8] =
+    pub def tryToInt8(x: Float32): Option[Int8] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.byteValue();
         if (x < Int8.toFloat32(Int8.minValue()) || x > Int8.toFloat32(Int8.maxValue()) || isNan(x) || isInfinite(x))
@@ -137,7 +137,7 @@ namespace Float32 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767), or it is NaN or infinity.
     ///
-    pub def toInt16(x: Float32): Option[Int16] =
+    pub def tryToInt16(x: Float32): Option[Int16] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.shortValue();
         if (x < Int16.toFloat32(Int16.minValue()) || x > Int16.toFloat32(Int16.maxValue()) || isNan(x) || isInfinite(x))
@@ -157,7 +157,7 @@ namespace Float32 {
     /// Note: while the range of an Int32 is precisely defined using Int32 values, converting this range to
     /// Float32 values is imprecise.
     ///
-    pub def toInt32(x: Float32): Option[Int32] =
+    pub def tryToInt32(x: Float32): Option[Int32] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.intValue();
         if (x < Int32.toFloat32(Int32.minValue()) || x > Int32.toFloat32(Int32.maxValue()) || isNan(x) || isInfinite(x))
@@ -177,7 +177,7 @@ namespace Float32 {
     /// Note: while the range of an Int64 is precisely defined using Int64 values, converting
     /// this range to Float32 values is imprecise.
     ///
-    pub def toInt64(x: Float32): Option[Int64] =
+    pub def tryToInt64(x: Float32): Option[Int64] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.longValue();
         if (x < Int64.toFloat32(Int64.minValue()) || x > Int64.toFloat32(Int64.maxValue()) || isNan(x) || isInfinite(x))
@@ -192,8 +192,8 @@ namespace Float32 {
     ///
     /// Returns `None` if the value of `x` is NaN or infinity.
     ///
-    pub def toBigInt(x: Float32): Option[BigInt] =
-        Float64.toBigInt(toFloat64(x))
+    pub def tryToBigInt(x: Float32): Option[BigInt] =
+        Float64.tryToBigInt(toFloat64(x))
 
     ///
     /// Convert `x` to an Float64.

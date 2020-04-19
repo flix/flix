@@ -266,7 +266,7 @@ namespace Int16 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127).
     ///
-    pub def toInt8(x: Int16): Option[Int8] =
+    pub def tryToInt8(x: Int16): Option[Int8] =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.byteValue();
         if (x < Int8.toInt16(Int8.minValue()) || x > Int8.toInt16(Int8.maxValue()))

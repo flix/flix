@@ -132,7 +132,7 @@ namespace Float64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127), or it is NaN or infinity.
     ///
-    pub def toInt8(x: Float64): Option[Int8] =
+    pub def tryToInt8(x: Float64): Option[Int8] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.byteValue();
         if (x < Int8.toFloat64(Int8.minValue()) || x > Int8.toFloat64(Int8.maxValue()) || isNan(x) || isInfinite(x))
@@ -149,7 +149,7 @@ namespace Float64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767), or it is NaN or infinity.
     ///
-    pub def toInt16(x: Float64): Option[Int16] =
+    pub def tryToInt16(x: Float64): Option[Int16] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.shortValue();
         if (x < Int16.toFloat64(Int16.minValue()) || x > Int16.toFloat64(Int16.maxValue()) || isNan(x) || isInfinite(x))
@@ -166,7 +166,7 @@ namespace Float64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int32
     /// (i.e. -2147483648 to 2147483647), or it is NaN or infinity.
     ///
-    pub def toInt32(x: Float64): Option[Int32] =
+    pub def tryToInt32(x: Float64): Option[Int32] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.intValue();
         if (x < Int32.toFloat64(Int32.minValue()) || x > Int32.toFloat64(Int32.maxValue()) || isNan(x) || isInfinite(x))
@@ -186,7 +186,7 @@ namespace Float64 {
     /// Note: while the range of an Int64 is precisely defined using Int64 values,
     /// converting this range to Float64 values is imprecise.
     ///
-    pub def toInt64(x: Float64): Option[Int64] =
+    pub def tryToInt64(x: Float64): Option[Int64] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.longValue();
         if (x < Int64.toFloat64(Int64.minValue()) || x > Int64.toFloat64(Int64.maxValue()) || isNan(x) || isInfinite(x))
@@ -201,7 +201,7 @@ namespace Float64 {
     ///
     /// Returns `None` if the value of `x` is NaN or infinity.
     ///
-    pub def toBigInt(x: Float64): Option[BigInt] =
+    pub def tryToBigInt(x: Float64): Option[BigInt] =
         import java.math.BigDecimal:valueOf(Float64);
         import java.math.BigDecimal.toBigInteger();
         try {
@@ -223,7 +223,7 @@ namespace Float64 {
     /// If `x` is NaN return `Some(Float32.NaN)``, if `x` is positive or negative infinity return
     /// `Some` wrapping the corresponding Float32 infinity.
     ///
-    pub def toFloat32(x: Float64): Option[Float32] =
+    pub def tryToFloat32(x: Float64): Option[Float32] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.floatValue();
         if (x < Float32.toFloat64(Float32.minValue()) || x > Float32.toFloat64(Float32.maxValue()))

@@ -262,7 +262,7 @@ namespace Int64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127).
     ///
-    pub def toInt8(x: Int64): Option[Int8] =
+    pub def tryToInt8(x: Int64): Option[Int8] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.byteValue();
         if (x < Int8.toInt64(Int8.minValue()) || x > Int8.toInt64(Int8.maxValue()))
@@ -278,7 +278,7 @@ namespace Int64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767).
     ///
-    pub def toInt16(x: Int64): Option[Int16] =
+    pub def tryToInt16(x: Int64): Option[Int16] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.shortValue();
         if (x < Int16.toInt64(Int16.minValue()) || x > Int16.toInt64(Int16.maxValue()))
@@ -294,7 +294,7 @@ namespace Int64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int32
     /// (i.e. -2147483648 to 2147483647).
     ///
-    pub def toInt32(x: Int64): Option[Int32] =
+    pub def tryToInt32(x: Int64): Option[Int32] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.intValue();
         if (x < Int32.toInt64(Int32.minValue()) || x > Int32.toInt64(Int32.maxValue()))

@@ -410,195 +410,231 @@ namespace TestBigInt {
     def fromString08(): Bool = BigInt.fromString("-3498457932459234592873452983453245") == Ok(-3498457932459234592873452983453245ii)
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt8                                                                  //
+    // tryToInt8                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt801(): Bool = BigInt.toInt8(0ii) == Some(0i8)
+    def tryToInt801(): Bool = BigInt.tryToInt8(0ii) == Some(0i8)
 
     @test
-    def toInt802(): Bool = BigInt.toInt8(1ii) == Some(1i8)
+    def tryToInt802(): Bool = BigInt.tryToInt8(1ii) == Some(1i8)
 
     @test
-    def toInt803(): Bool = BigInt.toInt8(-1ii) == Some(-1i8)
+    def tryToInt803(): Bool = BigInt.tryToInt8(-1ii) == Some(-1i8)
 
     @test
-    def toInt804(): Bool = BigInt.toInt8(127ii) == Some(127i8)
+    def tryToInt804(): Bool = BigInt.tryToInt8(127ii) == Some(127i8)
 
     @test
-    def toInt805(): Bool = BigInt.toInt8(128ii) == None
+    def tryToInt805(): Bool = BigInt.tryToInt8(128ii) == None
 
     @test
-    def toInt806(): Bool = BigInt.toInt8(-128ii) == Some(-128i8)
+    def tryToInt806(): Bool = BigInt.tryToInt8(-128ii) == Some(-128i8)
 
     @test
-    def toInt807(): Bool = BigInt.toInt8(-129ii) == None
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toInt16                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toInt1601(): Bool = BigInt.toInt16(0ii) == Some(0i16)
-
-    @test
-    def toInt1602(): Bool = BigInt.toInt16(1ii) == Some(1i16)
-
-    @test
-    def toInt1603(): Bool = BigInt.toInt16(-1ii) == Some(-1i16)
-
-    @test
-    def toInt1604(): Bool = BigInt.toInt16(32767ii) == Some(32767i16)
-
-    @test
-    def toInt1605(): Bool = BigInt.toInt16(32768ii) == None
-
-    @test
-    def toInt1606(): Bool = BigInt.toInt16(-32768ii) == Some(-32768i16)
-
-    @test
-    def toInt1607(): Bool = BigInt.toInt16(-32769ii) == None
+    def tryToInt807(): Bool = BigInt.tryToInt8(-129ii) == None
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt32                                                                 //
+    // tryToInt16                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt3201(): Bool = BigInt.toInt32(0ii) == Some(0)
+    def tryToInt1601(): Bool = BigInt.tryToInt16(0ii) == Some(0i16)
 
     @test
-    def toInt3202(): Bool = BigInt.toInt32(1ii) == Some(1)
+    def tryToInt1602(): Bool = BigInt.tryToInt16(1ii) == Some(1i16)
 
     @test
-    def toInt3203(): Bool = BigInt.toInt32(-1ii) == Some(-1)
+    def tryToInt1603(): Bool = BigInt.tryToInt16(-1ii) == Some(-1i16)
 
     @test
-    def toInt3204(): Bool = BigInt.toInt32(2147483647ii) == Some(2147483647)
+    def tryToInt1604(): Bool = BigInt.tryToInt16(32767ii) == Some(32767i16)
 
     @test
-    def toInt3205(): Bool = BigInt.toInt32(2147483648ii) == None
+    def tryToInt1605(): Bool = BigInt.tryToInt16(32768ii) == None
 
     @test
-    def toInt3206(): Bool = BigInt.toInt32(-2147483648ii) == Some(-2147483648)
+    def tryToInt1606(): Bool = BigInt.tryToInt16(-32768ii) == Some(-32768i16)
 
     @test
-    def toInt3207(): Bool = BigInt.toInt32(-2147483649ii) == None
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toInt64                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toInt6401(): Bool = BigInt.toInt64(0ii) == Some(0i64)
-
-    @test
-    def toInt6402(): Bool = BigInt.toInt64(1ii) == Some(1i64)
-
-    @test
-    def toInt6403(): Bool = BigInt.toInt64(-1ii) == Some(-1i64)
-
-    @test
-    def toInt6404(): Bool = BigInt.toInt64(9223372036854775807ii) == Some(9223372036854775807i64)
-
-    @test
-    def toInt6405(): Bool = BigInt.toInt64(9223372036854775808ii) == None
-
-    @test
-    def toInt6406(): Bool = BigInt.toInt64(-9223372036854775808ii) == Some(-9223372036854775808i64)
-
-    @test
-    def toInt6407(): Bool = BigInt.toInt64(-9223372036854775809ii) == None
+    def tryToInt1607(): Bool = BigInt.tryToInt16(-32769ii) == None
 
     /////////////////////////////////////////////////////////////////////////////
-    // toFloat32                                                               //
+    // tryToInt32                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toFloat3201(): Bool = BigInt.toFloat32(0ii) == Some(0.0f32)
+    def tryToInt3201(): Bool = BigInt.tryToInt32(0ii) == Some(0)
 
     @test
-    def toFloat3202(): Bool = BigInt.toFloat32(1ii) == Some(1.0f32)
+    def tryToInt3202(): Bool = BigInt.tryToInt32(1ii) == Some(1)
 
     @test
-    def toFloat3203(): Bool = BigInt.toFloat32(-1ii) == Some(-1.0f32)
+    def tryToInt3203(): Bool = BigInt.tryToInt32(-1ii) == Some(-1)
 
     @test
-    def toFloat3204(): Bool =
+    def tryToInt3204(): Bool = BigInt.tryToInt32(2147483647ii) == Some(2147483647)
+
+    @test
+    def tryToInt3205(): Bool = BigInt.tryToInt32(2147483648ii) == None
+
+    @test
+    def tryToInt3206(): Bool = BigInt.tryToInt32(-2147483648ii) == Some(-2147483648)
+
+    @test
+    def tryToInt3207(): Bool = BigInt.tryToInt32(-2147483649ii) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // tryToInt64                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def tryToInt6401(): Bool = BigInt.tryToInt64(0ii) == Some(0i64)
+
+    @test
+    def tryToInt6402(): Bool = BigInt.tryToInt64(1ii) == Some(1i64)
+
+    @test
+    def tryToInt6403(): Bool = BigInt.tryToInt64(-1ii) == Some(-1i64)
+
+    @test
+    def tryToInt6404(): Bool = BigInt.tryToInt64(9223372036854775807ii) == Some(9223372036854775807i64)
+
+    @test
+    def tryToInt6405(): Bool = BigInt.tryToInt64(9223372036854775808ii) == None
+
+    @test
+    def tryToInt6406(): Bool = BigInt.tryToInt64(-9223372036854775808ii) == Some(-9223372036854775808i64)
+
+    @test
+    def tryToInt6407(): Bool = BigInt.tryToInt64(-9223372036854775809ii) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // tryToFloat32                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def tryToFloat3201(): Bool = BigInt.tryToFloat32(0ii) == Some(0.0f32)
+
+    @test
+    def tryToFloat3202(): Bool = BigInt.tryToFloat32(1ii) == Some(1.0f32)
+
+    @test
+    def tryToFloat3203(): Bool = BigInt.tryToFloat32(-1ii) == Some(-1.0f32)
+
+    @test
+    def tryToFloat3204(): Bool =
         use Option.flatMap;
         let step = () -> {
-            let* max = Float32.maxValue() |> Float32.toBigInt;
-            BigInt.toFloat32(max)
+            let* max = Float32.maxValue() |> Float32.tryToBigInt;
+            BigInt.tryToFloat32(max)
         };
         step() != None
 
     @test
-    def toFloat3205(): Bool =
+    def tryToFloat3205(): Bool =
         use Option.flatMap;
         let step = () -> {
-            let* max = Float32.maxValue() |> Float32.toBigInt;
-            BigInt.toFloat32(max + 1ii)
+            let* max = Float32.maxValue() |> Float32.tryToBigInt;
+            BigInt.tryToFloat32(max + 1ii)
         };
         step() == None
 
     @test
-    def toFloat3206(): Bool =
+    def tryToFloat3206(): Bool =
         use Option.flatMap;
         let step = () -> {
-            let* min = Float32.minValue() |> Float32.toBigInt;
-            BigInt.toFloat32(min)
+            let* min = Float32.minValue() |> Float32.tryToBigInt;
+            BigInt.tryToFloat32(min)
         };
         step() != None
 
     @test
-    def toFloat3207(): Bool =
+    def tryToFloat3207(): Bool =
         use Option.flatMap;
         let step = () -> {
-            let* min = Float32.minValue() |> Float32.toBigInt;
-            BigInt.toFloat32(min - 1ii)
+            let* min = Float32.minValue() |> Float32.tryToBigInt;
+            BigInt.tryToFloat32(min - 1ii)
         };
         step() == None
 
     /////////////////////////////////////////////////////////////////////////////
-    // toFloat64                                                               //
+    // tryToFloat64                                                            //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toFloat6401(): Bool = BigInt.toFloat64(0ii) == Some(0.0f64)
+    def tryToFloat6401(): Bool = BigInt.tryToFloat64(0ii) == Some(0.0f64)
 
     @test
-    def toFloat6402(): Bool = BigInt.toFloat64(1ii) == Some(1.0f64)
+    def tryToFloat6402(): Bool = BigInt.tryToFloat64(1ii) == Some(1.0f64)
 
     @test
-    def toFloat6403(): Bool = BigInt.toFloat64(-1ii) == Some(-1.0f64)
+    def tryToFloat6403(): Bool = BigInt.tryToFloat64(-1ii) == Some(-1.0f64)
 
     @test
-    def toFloat6404(): Bool =
+    def tryToFloat6404(): Bool =
         use Option.flatMap;
         let step = () -> {
-            let* max = Float64.maxValue() |> Float64.toBigInt;
-            BigInt.toFloat64(max)
+            let* max = Float64.maxValue() |> Float64.tryToBigInt;
+            BigInt.tryToFloat64(max)
         };
         step() != None
 
     @test
-    def toFloat6405(): Bool =
+    def tryToFloat6405(): Bool =
         use Option.flatMap;
         let step = () -> {
-            let* max = Float64.maxValue() |> Float64.toBigInt;
-            BigInt.toFloat64(max + 1ii)
+            let* max = Float64.maxValue() |> Float64.tryToBigInt;
+            BigInt.tryToFloat64(max + 1ii)
         };
         step() == None
 
     @test
-    def toFloat6406(): Bool =
+    def tryToFloat6406(): Bool =
         use Option.flatMap;
         let step = () -> {
-            let* min = Float64.minValue() |> Float64.toBigInt;
-            BigInt.toFloat64(min)
+            let* min = Float64.minValue() |> Float64.tryToBigInt;
+            BigInt.tryToFloat64(min)
         };
         step() != None
 
     @test
-    def toFloat6407(): Bool =
+    def tryToFloat6407(): Bool =
         use Option.flatMap;
         let step = () -> {
-            let* min = Float64.minValue() |> Float64.toBigInt;
-            BigInt.toFloat64(min - 1ii)
+            let* min = Float64.minValue() |> Float64.tryToBigInt;
+            BigInt.tryToFloat64(min - 1ii)
         };
         step() == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt8                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt801(): Bool = BigInt.clampToInt8(0ii, -100i8, 100i8) == 0i8
+
+    @test
+    def clampToInt802(): Bool = BigInt.clampToInt8(100ii, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt803(): Bool = BigInt.clampToInt8(101ii, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt804(): Bool = BigInt.clampToInt8(-100ii, -100i8, 100i8) == -100i8
+
+    @test
+    def clampToInt805(): Bool = BigInt.clampToInt8(-101ii, -100i8, 100i8) == -100i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt16                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt1601(): Bool = BigInt.clampToInt16(0ii, -100i16, 100i16) == 0i16
+
+    @test
+    def clampToInt1602(): Bool = BigInt.clampToInt16(100ii, -100i16, 100i16) == 100i16
+
+    @test
+    def clampToInt1603(): Bool = BigInt.clampToInt16(101ii, -100i16, 100i16) == 100i16
+
+    @test
+    def clampToInt1604(): Bool = BigInt.clampToInt16(-100ii, -100i16, 100i16) == -100i16
+
+    @test
+    def clampToInt1605(): Bool = BigInt.clampToInt16(-101ii, -100i16, 100i16) == -100i16
 
 }

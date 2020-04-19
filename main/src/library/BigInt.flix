@@ -105,7 +105,7 @@ namespace BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127).
     ///
-    pub def toInt8(x: BigInt): Option[Int8] =
+    pub def tryToInt8(x: BigInt): Option[Int8] =
         import java.math.BigInteger.byteValueExact();
         try {
             Some(byteValueExact(x)) as & Pure
@@ -121,7 +121,7 @@ namespace BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767).
     ///
-    pub def toInt16(x: BigInt): Option[Int16] =
+    pub def tryToInt16(x: BigInt): Option[Int16] =
         import java.math.BigInteger.shortValueExact();
         try {
             Some(shortValueExact(x)) as & Pure
@@ -137,7 +137,7 @@ namespace BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Int32
     /// (i.e. -2147483648 to 2147483647).
     ///
-    pub def toInt32(x: BigInt): Option[Int32] =
+    pub def tryToInt32(x: BigInt): Option[Int32] =
         import java.math.BigInteger.intValueExact();
         try {
             Some(intValueExact(x)) as & Pure
@@ -153,7 +153,7 @@ namespace BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Int64
     /// (i.e. -9223372036854775808 to 9223372036854775807).
     ///
-    pub def toInt64(x: BigInt): Option[Int64] =
+    pub def tryToInt64(x: BigInt): Option[Int64] =
         import java.math.BigInteger.longValueExact();
         try {
             Some(longValueExact(x)) as & Pure
@@ -171,14 +171,14 @@ namespace BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Float32
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
-    pub def toFloat32(x: BigInt): Option[Float32] =
+    pub def tryToFloat32(x: BigInt): Option[Float32] =
         use Option.flatMap;
         import new java.math.BigDecimal(BigInt) as newBigDecimal;
         import java.math.BigDecimal.floatValue();
         let xd = newBigDecimal(x) as & Pure;
         let d = xd.floatValue() as & Pure;
-        let* f32min = Float32.toBigInt(Float32.minValue());
-        let* f32max = Float32.toBigInt(Float32.maxValue());
+        let* f32min = Float32.tryToBigInt(Float32.minValue());
+        let* f32max = Float32.tryToBigInt(Float32.maxValue());
         if (x < f32min || x > f32max)
             None
         else
@@ -194,18 +194,94 @@ namespace BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Float64
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
-    pub def toFloat64(x: BigInt): Option[Float64] =
+    pub def tryToFloat64(x: BigInt): Option[Float64] =
         use Option.flatMap;
         import new java.math.BigDecimal(BigInt) as newBigDecimal;
         import java.math.BigDecimal.doubleValue();
         let xd = newBigDecimal(x) as & Pure;
         let d = xd.doubleValue() as & Pure;
-        let* f64min = Float64.toBigInt(Float64.minValue());
-        let* f64max = Float64.toBigInt(Float64.maxValue());
+        let* f64min = Float64.tryToBigInt(Float64.minValue());
+        let* f64max = Float64.tryToBigInt(Float64.maxValue());
         if (x < f64min || x > f64max)
             None
         else
             Some(d)
+
+    ///
+    /// Helper function for the `clamp` conversion functions.
+    ///
+    def clamp(x: BigInt, minimum: BigInt, maximum: BigInt): BigInt =
+        if (x < minimum)
+             minimum
+        else
+            if (x > maximum)
+                maximum
+            else
+                x
+
+    ///
+    /// Convert `x` to an `Int8`.
+    ///
+    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt8(x: BigInt, minimum: Int8, maximum: Int8): Int8 =
+        import java.math.BigInteger.byteValueExact();
+        let minii = Int8.toBigInt(minimum);
+        let maxii = Int8.toBigInt(maximum);
+        try {
+            byteValueExact(clamp(x, minii, maxii)) as & Pure
+        } catch {
+            // This should be impossible!
+            case _ : ##java.lang.ArithmeticException => minimum
+        }
+
+    ///
+    /// Convert `x` to an `Int16`.
+    ///
+    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt16(x: BigInt, minimum: Int16, maximum: Int16): Int16 =
+        import java.math.BigInteger.shortValueExact();
+        let minii = Int16.toBigInt(minimum);
+        let maxii = Int16.toBigInt(maximum);
+        try {
+            shortValueExact(clamp(x, minii, maxii)) as & Pure
+        } catch {
+            // This should be impossible!
+            case _ : ##java.lang.ArithmeticException => minimum
+        }
+
+    ///
+    /// Convert `x` to an `Int32`.
+    ///
+    /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt32(x: BigInt, minimum: Int32, maximum: Int32): Int32 =
+        import java.math.BigInteger.intValueExact();
+        let minii = Int32.toBigInt(minimum);
+        let maxii = Int32.toBigInt(maximum);
+        try {
+            intValueExact(clamp(x, minii, maxii)) as & Pure
+        } catch {
+            // This should be impossible!
+            case _ : ##java.lang.ArithmeticException => minimum
+        }
+
+    ///
+    /// Convert `x` to an `Int64`.
+    ///
+    /// Returns `x` clamped within the Int64 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt64(x: BigInt, minimum: Int64, maximum: Int64): Int64 =
+        import java.math.BigInteger.longValueExact();
+        let minii = Int64.toBigInt(minimum);
+        let maxii = Int64.toBigInt(maximum);
+        try {
+            longValueExact(clamp(x, minii, maxii)) as & Pure
+        } catch {
+            // This should be impossible!
+            case _ : ##java.lang.ArithmeticException => minimum
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
