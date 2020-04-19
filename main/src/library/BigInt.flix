@@ -172,15 +172,12 @@ namespace BigInt {
         import java.math.BigDecimal.floatValue();
         let xd = newBigDecimal(x) as & Pure;
         let d = xd.floatValue() as & Pure;
-        if (Float32.isInfinite(d) || Float32.isNan(d))
+        let* f32min = Float32.toBigInt(Float32.minValue());
+        let* f32max = Float32.toBigInt(Float32.maxValue());
+        if (x < f32min || x > f32max)
             None
         else
-            let* f32min = Float32.toBigInt(Float32.minValue());
-            let* f32max = Float32.toBigInt(Float32.maxValue());
-            if (x < f32min || x > f32max)
-                None
-            else
-                Some(d)
+            Some(d)
 
     ///
     /// Convert `x` to an `Option[Float64]`.
@@ -197,15 +194,12 @@ namespace BigInt {
         import java.math.BigDecimal.doubleValue();
         let xd = newBigDecimal(x) as & Pure;
         let d = xd.doubleValue() as & Pure;
-        if (Float64.isInfinite(d) || Float64.isNan(d))
+        let* f64min = Float64.toBigInt(Float64.minValue());
+        let* f64max = Float64.toBigInt(Float64.maxValue());
+        if (x < f64min || x > f64max)
             None
         else
-            let* f64min = Float64.toBigInt(Float64.minValue());
-            let* f64max = Float64.toBigInt(Float64.maxValue());
-            if (x < f64min || x > f64max)
-                None
-            else
-                Some(d)
+            Some(d)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
