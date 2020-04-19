@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.unification.Unification.liftM
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
@@ -26,10 +25,15 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 object InferMonad {
 
   /**
+    * Lifts the given value `a` into the type inference monad.
+    */
+  def point[a](x: a): InferMonad[a] = InferMonad(s => Ok((s, x)))
+
+  /**
     * Collects the result of each type inference monad in `ts` going left to right.
     */
   def seqM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
-    case Nil => liftM(Nil)
+    case Nil => point(Nil)
     case y :: ys => y flatMap {
       case r => seqM(ys) map {
         case rs => r :: rs

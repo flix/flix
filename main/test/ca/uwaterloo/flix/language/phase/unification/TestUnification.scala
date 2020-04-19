@@ -14,18 +14,15 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
 
 class TestUnification extends FunSuite {
-
-  val SL: SourceLocation = SourceLocation.Unknown
 
   implicit val flix: Flix = new Flix()
 
@@ -378,13 +375,13 @@ class TestUnification extends FunSuite {
 
   test("unifyM.01") {
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypM(Type.Bool, Type.Bool, SL).run(subst0)
+    val result = Unification.unifyTypM(Type.Bool, Type.Bool, loc).run(subst0)
     assert(isOk(result))
   }
 
   test("unifyM.02") {
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypM(Type.Bool, Type.Char, SL).run(subst0)
+    val result = Unification.unifyTypM(Type.Bool, Type.Char, loc).run(subst0)
     assert(!isOk(result))
   }
 
@@ -392,7 +389,7 @@ class TestUnification extends FunSuite {
     val tpe1 = Type.Var(1, Kind.Star)
     val tpe2 = Type.Bool
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypM(tpe1, tpe2, SL).run(subst0)
+    val result = Unification.unifyTypM(tpe1, tpe2, loc).run(subst0)
     val (subst, tpe) = result.get
     assertResult(Type.Bool)(subst(tpe1))
     assertResult(Type.Bool)(subst(tpe2))
@@ -401,25 +398,25 @@ class TestUnification extends FunSuite {
 
   test("seqM.01") {
     val subst0 = Substitution.empty
-    val res1 = Unification.unifyTypM(Type.Bool, Type.Bool, SL)
-    val res2 = Unification.unifyTypM(Type.Char, Type.Char, SL)
+    val res1 = Unification.unifyTypM(Type.Bool, Type.Bool, loc)
+    val res2 = Unification.unifyTypM(Type.Char, Type.Char, loc)
     val result = seqM(List(res1, res2)).run(subst0)
     assert(isOk(result))
   }
 
   test("seqM.02") {
     val subst0 = Substitution.empty
-    val res1 = Unification.unifyTypM(Type.Bool, Type.Char, SL)
-    val res2 = Unification.unifyTypM(Type.Bool, Type.Char, SL)
+    val res1 = Unification.unifyTypM(Type.Bool, Type.Char, loc)
+    val res2 = Unification.unifyTypM(Type.Bool, Type.Char, loc)
     val result = seqM(List(res1, res2)).run(subst0)
     assert(!isOk(result))
   }
 
   test("seqM.03") {
     val subst0 = Substitution.empty
-    val res1 = Unification.unifyTypM(Type.Var(1, Kind.Star), Type.Bool, SL)
-    val res2 = Unification.unifyTypM(Type.Var(2, Kind.Star), Type.Char, SL)
-    val res3 = Unification.unifyTypM(Type.Var(3, Kind.Star), Type.mkTuple(List(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))), SL)
+    val res1 = Unification.unifyTypM(Type.Var(1, Kind.Star), Type.Bool, loc)
+    val res2 = Unification.unifyTypM(Type.Var(2, Kind.Star), Type.Char, loc)
+    val res3 = Unification.unifyTypM(Type.Var(3, Kind.Star), Type.mkTuple(List(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))), loc)
     val result = seqM(List(res1, res2, res3)).run(subst0)
     val (subst, tpe) = result.get
     assertResult(Type.Bool)(subst.m(Type.Var(1, Kind.Star)))
@@ -431,5 +428,7 @@ class TestUnification extends FunSuite {
     case Result.Ok(_) => true
     case Result.Err(_) => false
   }
+
+  val loc: SourceLocation = SourceLocation.Unknown
 
 }

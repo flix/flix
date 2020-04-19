@@ -95,7 +95,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkUnusedTypeParameters(used: Used): Used = {
       val unusedParams = defn.tparams.collect {
-        case tparam if deadTypeVar(tparam.tpe, defn.sc.base.typeVars) => UnusedTypeParam(tparam.name)
+        case tparam if deadTypeVar(tparam.tpe, defn.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
       }
       used ++ unusedParams
     }
@@ -119,7 +119,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Finds the arity of the Def.
     */
-  private def arity(defn: Def): Int = arity(defn.tpe)
+  private def arity(defn: Def): Int = arity(defn.inferredScheme.base)
 
   /**
     * Finds the arity of the Type

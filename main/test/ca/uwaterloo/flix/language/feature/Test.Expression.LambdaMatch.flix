@@ -8,13 +8,13 @@ opaque type US = Fahrenheit
 def testMatchLambda01(): Int -> Int = match x -> x
 
 @test
-def testMatchLambda02(): ((Int, Int)) -> Int = match (x, y) -> x + y
+def testMatchLambda02(): ((Int, Int)) -> Int = match (x, y) -> (x + y) : Int32
 
 @test
-def testMatchLambda03(): ((Int, Int, Int)) -> Int = match (x, y, z) -> x + y + z
+def testMatchLambda03(): ((Int, Int, Int)) -> Int = match (x, y, z) -> (x + y + z) : Int32
 
 @test
-def testMatchLambda04(): (((Int, Int), (Int, Int))) -> Int = match ((x, y), (z, w)) -> x + y + z + w
+def testMatchLambda04(): (((Int, Int), (Int, Int))) -> Int = match ((x, y), (z, w)) -> (x + y + z + w) : Int32
 
 @test
 def testMatchLambda05(): Celsius -> Int = match Celsius(x) -> x

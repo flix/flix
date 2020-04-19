@@ -19,9 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.StratificationError
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestStratifier extends FunSuite with TestUtils {
+
+  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
@@ -31,7 +34,8 @@ class TestStratifier extends FunSuite with TestUtils {
       """
         |A(c) :- X(c), !A(c).
       """.stripMargin
-    expectError[StratificationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
   }
 
   test("Stratification.02") {
@@ -40,7 +44,8 @@ class TestStratifier extends FunSuite with TestUtils {
         |A(c) :- X(c), B(c).
         |B(c) :- X(c), !A(c).
       """.stripMargin
-    expectError[StratificationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
   }
 
   test("Stratification.03") {
@@ -49,7 +54,8 @@ class TestStratifier extends FunSuite with TestUtils {
         |A(c) :- X(c), !B(c).
         |B(c) :- X(c), A(c).
       """.stripMargin
-    expectError[StratificationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
   }
 
   test("Stratification.04") {
@@ -67,7 +73,8 @@ class TestStratifier extends FunSuite with TestUtils {
         |J(c) :- K(c).
         |K(c) :- X(c), !A(c).
       """.stripMargin
-    expectError[StratificationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
   }
 
   test("Stratification.05") {
@@ -76,7 +83,8 @@ class TestStratifier extends FunSuite with TestUtils {
         |C(c) :- X(c), !A(c).
         |A(c) :- B(c), C(c).
       """.stripMargin
-    expectError[StratificationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
   }
 
   test("Stratification.06") {
@@ -85,7 +93,8 @@ class TestStratifier extends FunSuite with TestUtils {
         |A(c) :- X(c), !A(c).
         |B(c) :- X(c), !B(c).
       """.stripMargin
-    expectError[StratificationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
   }
 
   test("Stratification.07") {
@@ -97,6 +106,8 @@ class TestStratifier extends FunSuite with TestUtils {
         |B(c) :- X(c), D(c).
         |D(c) :- X(c), !A(c).
       """.stripMargin
-    expectError[StratificationError](new Flix().addStr(input).compile())
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
   }
+
 }

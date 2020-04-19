@@ -19,58 +19,61 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.WeederError
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite with TestUtils {
+
+  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
   test("DuplicateAnnotation.01") {
     val input =
       """@test @test
         |def foo(x: Int): Int = 42
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
   test("DuplicateFormal.01") {
     val input = "def f(x: Int, x: Int): Int = 42"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.02") {
     val input = "def f(x: Int, y: Int, x: Int): Int = 42"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.03") {
     val input = "def f(x: Bool, x: Int, x: Str): Int = 42"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.04") {
     val input = "def f(): (Int, Int) -> Int = (x, x) -> x"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.05") {
     val input = "def f(): (Int, Int, Int) -> Int = (x, y, x) -> x"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.06") {
     val input = "def f(): Bool = ∀(x: E, x: E). true"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.07") {
     val input = "def f(): Bool = ∃(x: E, x: E). true"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
@@ -81,7 +84,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case Red
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateTag](result)
   }
 
@@ -93,79 +96,79 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case Red
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateTag](result)
   }
 
   test("IllegalExistential.01") {
     val input = "def f(): Bool = ∃(). true"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalExistential](result)
   }
 
   test("IllegalInt8.01") {
     val input = "def f(): Int8 = -1000i8"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt8.02") {
     val input = "def f(): Int8 = 1000i8"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt16.01") {
     val input = "def f(): Int16 = -100000i16"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt16.02") {
     val input = "def f(): Int16 = 100000i16"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt32.01") {
     val input = "def f(): Int32 = -10000000000i32"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt32.02") {
     val input = "def f(): Int32 = 10000000000i32"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt64.01") {
     val input = "def f(): Int64 = -100000000000000000000i64"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt64.02") {
     val input = "def f(): Int64 = 100000000000000000000i64"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalLattice.01") {
     val input = "let Foo<> = (1, 2)"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalLattice](result)
   }
 
   test("IllegalLattice.02") {
     val input = "let Foo<> = (1, 2, 3, 4, 5, 6, 7, 8, 9)"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalLattice](result)
   }
 
   test("IllegalUniversal.01") {
     val input = "def f(): Prop = ∀(). true"
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalUniversal](result)
   }
 
@@ -176,7 +179,7 @@ class TestWeeder extends FunSuite with TestUtils {
          |    import foo() as bar;
          |    ()
          |""".stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
 
@@ -186,7 +189,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case (x, x) => true
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.NonLinearPattern](result)
   }
 
@@ -196,7 +199,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case (x, x, x) => true
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.NonLinearPattern](result)
   }
 
@@ -206,7 +209,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case (x, (y, (z, x))) => true
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.NonLinearPattern](result)
   }
 
@@ -215,7 +218,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """@abc
         |def foo(x: Int): Int = 42
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
@@ -224,7 +227,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """@foobarbaz
         |def foo(x: Int): Int = 42
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
