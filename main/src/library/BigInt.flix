@@ -100,9 +100,10 @@ namespace BigInt {
     ///
     /// Convert `x` to an `Option[Int8]`.
     ///
-    /// If the numeric value of `x` can be represented exactly return `Some(x as Int8)`.
+    /// Returns `Some(x as Int8)` if the numeric value of `x` can be represented exactly.
     ///
-    /// If the numeric value of `x` is outside the range of Int8 (i.e. -128 to 127) return `None`.
+    /// Returns `None` if the numeric value of `x` is outside the range of Int8
+    /// (i.e. -128 to 127).
     ///
     pub def toInt8(x: BigInt): Option[Int8] =
         import java.math.BigInteger.byteValueExact();
@@ -115,10 +116,10 @@ namespace BigInt {
     ///
     /// Convert `x` to an `Option[Int16]`.
     ///
-    /// If the numeric value of `x` can be represented exactly return `Some(x as Int16)`.
+    /// Returns `Some(x as Int16)` if the numeric value of `x` can be represented exactly.
     ///
-    /// If the numeric value of `x` is outside the range of Int16 (i.e. -32768 to 32767)
-    /// return `None`.
+    /// Returns `None` if the numeric value of `x` is outside the range of Int16
+    /// (i.e. -32768 to 32767).
     ///
     pub def toInt16(x: BigInt): Option[Int16] =
         import java.math.BigInteger.shortValueExact();
@@ -131,10 +132,10 @@ namespace BigInt {
     ///
     /// Convert `x` to an `Option[Int32]`.
     ///
-    /// If the numeric value of `x` can be represented exactly return `Some(x as Int32)`.
+    /// Returns `Some(x as Int32)` if the numeric value of `x` can be represented exactly.
     ///
-    /// If the numeric value of `x` is outside the range of Int32 (i.e. -2147483648 to
-    /// 2147483647) return `None`.
+    /// Returns `None` if the numeric value of `x` is outside the range of Int32
+    /// (i.e. -2147483648 to 2147483647).
     ///
     pub def toInt32(x: BigInt): Option[Int32] =
         import java.math.BigInteger.intValueExact();
@@ -147,10 +148,10 @@ namespace BigInt {
     ///
     /// Convert `x` to an `Option[Int64]`.
     ///
-    /// If the numeric value of `x` can be represented exactly return `Some(x as Int64)`.
+    /// Returns `Some(x as Int64)` if the numeric value of `x` can be represented exactly.
     ///
-    /// If the numeric value of `x` is outside the range of Int64 (i.e. -9223372036854775808
-    /// to 9223372036854775807) return `None`.
+    /// Returns `None` if the numeric value of `x` is outside the range of Int64
+    /// (i.e. -9223372036854775808 to 9223372036854775807).
     ///
     pub def toInt64(x: BigInt): Option[Int64] =
         import java.math.BigInteger.longValueExact();
@@ -163,12 +164,12 @@ namespace BigInt {
     ///
     /// Convert `x` to an `Option[Float32]`.
     ///
-    /// If the numeric value of `x` is within the range of Float32 return `Some(x as Float32)`.
+    /// Returns `Some(x as Float32)` if the numeric value of `x` is within the range of Float32.
     ///
     /// Warning: even if `x` is in the range of Float32 it may lose precision.
     ///
-    /// If the numeric value of `x` is outside the range of Float32 (i.e. 1.4E-45
-    /// to 3.4028235E38) return `None`.
+    /// Returns `None` if the numeric value of `x` is outside the range of Float32
+    /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def toFloat32(x: BigInt): Option[Float32] =
         use Option.flatMap;
@@ -186,12 +187,12 @@ namespace BigInt {
     ///
     /// Convert `x` to an `Option[Float64]`.
     ///
-    /// If the numeric value of `x` is within the range of Float32 return `Some(x as Float64)`.
+    /// Returns `Some(x as Float64)` if the numeric value of `x` is within the range of Float32.
     ///
     /// Warning: even if `x` is in the range of Float64 it may lose precision.
     ///
-    /// If the numeric value of `x` is outside the range of Float64 (i.e 4.9E-324 to
-    /// 1.7976931348623157E308) return `None`.
+    /// Returns `None` if the numeric value of `x` is outside the range of Float64
+    /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def toFloat64(x: BigInt): Option[Float64] =
         use Option.flatMap;
