@@ -259,7 +259,7 @@ namespace Int32 {
     ///
     /// If the numeric value of `x` can be represented exactly return `Some(x as Int8)`.
     ///
-    /// If the numeric value of `x` is outside the range of Int8 return `None`.
+    /// If the numeric value of `x` is outside the range of Int8 (i.e. -128 to 127) return `None`.
     ///
     pub def toInt8(x: Int32): Option[Int8] =
         import java.lang.Integer:valueOf(Int32);
@@ -274,7 +274,8 @@ namespace Int32 {
     ///
     /// If the numeric value of `x` can be represented exactly return `Some(x as Int16)`.
     ///
-    /// If the numeric value of `x` is outside the range of Int16 return `None`.
+    /// If the numeric value of `x` is outside the range of Int16 (i.e. -32768 to 32767)
+    /// return `None`.
     ///
     pub def toInt16(x: Int32): Option[Int16] =
         import java.lang.Integer:valueOf(Int32);
@@ -306,11 +307,9 @@ namespace Int32 {
         i16ValueOf(x).longValue().asBigInt() as & Pure
 
     ///
-    /// Convert `x` to an `Option[Int32]`.
+    /// Convert `x` to an Float32.
     ///
-    /// If the numeric value of `x` can be represented exactly return `Some(x as Int32)`.
-    ///
-    /// If the numeric value of `x` is outside the range of Int32 return `None`.
+    /// The numeric value of `x` may lose precision.
     ///
     pub def toFloat32(x: Int32): Float32 =
         import java.lang.Integer:valueOf(Int32);

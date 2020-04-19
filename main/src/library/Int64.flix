@@ -259,7 +259,7 @@ namespace Int64 {
     ///
     /// If the numeric value of `x` can be represented exactly return `Some(x as Int8)`.
     ///
-    /// If the numeric value of `x` is outside the range of Int8 return `None`.
+    /// If the numeric value of `x` is outside the range of Int8 (i.e. -128 to 127) return `None`.
     ///
     pub def toInt8(x: Int64): Option[Int8] =
         import java.lang.Long:valueOf(Int64);
@@ -274,7 +274,8 @@ namespace Int64 {
     ///
     /// If the numeric value of `x` can be represented exactly return `Some(x as Int16)`.
     ///
-    /// If the numeric value of `x` is outside the range of Int16 return `None`.
+    /// If the numeric value of `x` is outside the range of Int16 (i.e. -32768 to 32767)
+    /// return `None`.
     ///
     pub def toInt16(x: Int64): Option[Int16] =
         import java.lang.Long:valueOf(Int64);
@@ -289,7 +290,8 @@ namespace Int64 {
     ///
     /// If the numeric value of `x` can be represented exactly return `Some(x as Int32)`.
     ///
-    /// If the numeric value of `x` is outside the range of Int32 return `None`.
+    /// If the numeric value of `x` is outside the range of Int32 (i.e. -2147483648 to
+    /// 2147483647) return `None`.
     ///
     pub def toInt32(x: Int64): Option[Int32] =
         import java.lang.Long:valueOf(Int64);

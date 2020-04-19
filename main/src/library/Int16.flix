@@ -263,7 +263,7 @@ namespace Int16 {
     ///
     /// If the numeric value of `x` can be represented exactly return `Some(x as Int8)`.
     ///
-    /// If the numeric value of `x` is outside the range of Int8 return `None`.
+    /// If the numeric value of `x` is outside the range of Int8 (i.e. -128 to 127) return `None`.
     ///
     pub def toInt8(x: Int16): Option[Int8] =
         import java.lang.Short:valueOf(Int16);
