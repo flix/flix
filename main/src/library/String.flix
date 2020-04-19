@@ -649,7 +649,7 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit ~> Option[Char]) : String =
+    pub def unfoldWithIter(f: Unit ~> Option[Char]): String =
         let sb = StringBuilder.new() as & Pure;
         unfoldWithIterHelper(f, sb) as & Pure
 
@@ -694,7 +694,7 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit ~> Option[String]) : String =
+    pub def unfoldStringWithIter(f: Unit ~> Option[String]): String =
         let sb = StringBuilder.new() as & Pure;
         unfoldStringWithIterHelper(f, sb) as & Pure
 
@@ -1270,20 +1270,20 @@ namespace String {
     ///
     /// Count the occurences of `sub` in string `s`.
     ///
-    pub def count(sub: String, s: String): Int32 =
+    pub def countSubstring(sub: String, s: String): Int32 =
         let sublen = length(sub);
         if (sublen <= 0)
             0
         else
-            countHelper(sub, sublen, s, 0, 0)
+            countSubstringHelper(sub, sublen, s, 0, 0)
 
     ///
     /// Helper function for `count``.
     ///
-    def countHelper(sub: String, sublen: Int32, s: String, offset: Int32, count: Int32): Int32 =
+    def countSubstringHelper(sub: String, sublen: Int32, s: String, offset: Int32, count: Int32): Int32 =
         match indexOfLeftWithOffset(sub, offset, s) {
             case None => count
-            case Some(i) => countHelper(sub, sublen, s, i + sublen, count + 1)
+            case Some(i) => countSubstringHelper(sub, sublen, s, i + sublen, count + 1)
         }
 
     ///

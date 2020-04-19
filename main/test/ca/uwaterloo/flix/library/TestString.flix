@@ -3322,44 +3322,44 @@ def breakOnRight07(): Bool = String.breakOnRight("::", "aaa::bbb") == ("aaa::", 
 def breakOnRight08(): Bool = String.breakOnRight("::", "aaa::bbb::ccc") == ("aaa::bbb::", "ccc")
 
 /////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
+// countSubstring                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def count01(): Bool = String.count("", "") == 0
+def countSubstring01(): Bool = String.countSubstring("", "") == 0
 
 @test
-def count02(): Bool = String.count("", "abc abc") == 0
+def countSubstring02(): Bool = String.countSubstring("", "abc abc") == 0
 
 @test
-def count03(): Bool = String.count("abc", "") == 0
+def countSubstring03(): Bool = String.countSubstring("abc", "") == 0
 
 @test
-def count04(): Bool = String.count("abc", "abc") == 1
+def countSubstring04(): Bool = String.countSubstring("abc", "abc") == 1
 
 @test
-def count05(): Bool = String.count("abc", "aabc") == 1
+def countSubstring05(): Bool = String.countSubstring("abc", "aabc") == 1
 
 @test
-def count06(): Bool = String.count("abc", "abcc") == 1
+def countSubstring06(): Bool = String.countSubstring("abc", "abcc") == 1
 
 @test
-def count07(): Bool = String.count("abc", "abc def ") == 1
+def countSubstring07(): Bool = String.countSubstring("abc", "abc def ") == 1
 
 @test
-def count08(): Bool = String.count("abc", " abc def") == 1
+def countSubstring08(): Bool = String.countSubstring("abc", " abc def") == 1
 
 @test
-def count09(): Bool = String.count("abc", " abc abc") == 2
+def countSubstring09(): Bool = String.countSubstring("abc", " abc abc") == 2
 
 @test
-def count10(): Bool = String.count("abc", " abc ABC abc") == 2
+def countSubstring10(): Bool = String.countSubstring("abc", " abc ABC abc") == 2
 
 @test
-def count11(): Bool = String.count("abc", "ABC abc def abc") == 2
+def countSubstring11(): Bool = String.countSubstring("abc", "ABC abc def abc") == 2
 
 @test
-def count12(): Bool = String.count("abc", "aBC::abc::AbC::abc::Abc") == 2
+def countSubstring12(): Bool = String.countSubstring("abc", "aBC::abc::AbC::abc::Abc") == 2
 
 /////////////////////////////////////////////////////////////////////////////
 // stripPrefix                                                             //
