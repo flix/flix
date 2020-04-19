@@ -162,17 +162,17 @@ namespace StringBuilder {
     ///
     /// Return the length of the StringBuilder `sb`.
     ///
-    pub def length(sb: StringBuilder): Int32 =
+    pub def length(sb: StringBuilder): Int32 & Impure =
         import java.lang.StringBuilder.length();
         let StringBuilder(msb) = sb;
-        msb.length() as & Pure
+        msb.length()
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
-    pub def toString(sb: StringBuilder): String =
+    pub def toString(sb: StringBuilder): String & Impure =
         import java.lang.StringBuilder.toString();
         let StringBuilder(msb) = sb;
-        msb.toString() as & Pure
+        msb.toString()
 
 }
