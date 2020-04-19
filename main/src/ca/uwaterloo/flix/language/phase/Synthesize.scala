@@ -1302,8 +1302,8 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a schema type.
       */
     def isSchema(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.SchemaEmpty => true
-      case Type.SchemaExtend(_, _, _) => true
+      case Type.Cst(TypeConstructor.SchemaEmpty) => true
+      case Type.Cst(TypeConstructor.SchemaExtend(_)) => true
       case _ => false
     }
 

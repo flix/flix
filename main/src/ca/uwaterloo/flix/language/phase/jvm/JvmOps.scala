@@ -833,7 +833,7 @@ object JvmOps {
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.mkRecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty
-    case MonoType.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
+    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
   }
 
   // TODO: Remove

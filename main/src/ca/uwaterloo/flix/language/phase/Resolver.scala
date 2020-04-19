@@ -1169,8 +1169,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
               // Determine the type of predicate symbol.
               s.typeConstructor match {
-                case Type.Cst(TypeConstructor.Relation(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
-                case Type.Cst(TypeConstructor.Lattice(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
+                case Type.Cst(TypeConstructor.Relation(sym)) => Type.mkSchemaExtend(sym, s, acc).toSuccess
+                case Type.Cst(TypeConstructor.Lattice(sym)) => Type.mkSchemaExtend(sym, s, acc).toSuccess
                 case nonRelationOrLatticeType => ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
               }
           }
@@ -1507,15 +1507,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       case Type.Arrow(l, eff) => Type.Arrow(l, eval(eff, subst))
 
-      case Type.RecordEmpty => t
-
-      case Type.SchemaEmpty => t
-
-      case Type.SchemaExtend(sym, tpe, rest) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.SchemaExtend(sym, t1, t2)
-
       case Type.Zero => t
 
       case Type.Succ(len, t) => Type.Succ(len, eval(t, subst))
@@ -1649,6 +1640,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case Type.Cst(TypeConstructor.RecordExtend(_)) => Class.forName("java.lang.Object").toSuccess
 
+    case Type.Cst(TypeConstructor.SchemaExtend(_)) => Class.forName("java.lang.Object").toSuccess
+
     case Type.Cst(TypeConstructor.Array) =>
       tpe.typeArguments match {
         case elmTyp :: Nil =>
@@ -1673,11 +1666,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
 
-    case Type.RecordEmpty => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.RecordEmpty) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
-
-    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.SchemaEmpty) => Class.forName("java.lang.Object").toSuccess
 
     case _ => ResolutionError.IllegalType(tpe, loc).toFailure
   }

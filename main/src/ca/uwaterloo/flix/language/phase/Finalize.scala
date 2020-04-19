@@ -576,6 +576,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case Type.Cst(TypeConstructor.Relation(sym)) => MonoType.Relation(sym, args)
       case Type.Cst(TypeConstructor.Lattice(sym)) => MonoType.Lattice(sym, args)
       case Type.Cst(TypeConstructor.RecordEmpty) => MonoType.RecordEmpty()
+      case Type.Cst(TypeConstructor.SchemaEmpty) => MonoType.SchemaEmpty()
 
       // Compound Types.
       case Type.Cst(TypeConstructor.Array) => MonoType.Array(args.head)
@@ -594,13 +595,9 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Cst(TypeConstructor.RecordExtend(label)) => MonoType.RecordExtend(label, args(0), args(1))
 
+      case Type.Cst(TypeConstructor.SchemaExtend(sym)) => MonoType.SchemaExtend(sym, args(0), args(1))
+
       case Type.Arrow(l, _) => MonoType.Arrow(args.init, args.last)
-
-      case Type.RecordEmpty => MonoType.RecordEmpty()
-
-      case Type.SchemaEmpty => MonoType.SchemaEmpty()
-
-      case Type.SchemaExtend(sym, tpe, rest) => MonoType.SchemaExtend(sym, visitType(tpe), visitType(rest))
 
       case Type.Zero => MonoType.Unit
 

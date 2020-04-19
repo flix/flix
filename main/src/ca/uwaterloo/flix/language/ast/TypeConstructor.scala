@@ -149,7 +149,7 @@ object TypeConstructor {
     /**
       * The shape of a vector is Array[t;n].
       */
-    def kind: Kind = (Kind.Star ->: Kind.Nat) ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Nat ->: Kind.Star
   }
 
   /**
@@ -167,6 +167,17 @@ object TypeConstructor {
       * The shape of an extended record is Record[t;r]
       */
     def kind: Kind = Kind.Star ->: Kind.Record ->: Kind.Record
+  }
+
+  // MATT docs
+  case object SchemaEmpty extends TypeConstructor {
+    def kind: Kind = Kind.Schema
+  }
+
+  // MATT docs
+  case class SchemaExtend(sym: Symbol.PredSym) extends TypeConstructor {
+    // MATT docs
+    def kind: Kind = Kind.Star ->: Kind.Schema ->: Kind.Schema
   }
 
   /**

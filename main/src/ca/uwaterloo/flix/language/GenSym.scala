@@ -29,6 +29,9 @@ final class GenSym() {
     * Returns a freshly generated unique id.
     */
   def freshId(): Int = {
+    if (counter.get() == 87) {
+      System.err.println("hello")
+    }
     counter.getAndIncrement()
   }
 

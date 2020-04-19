@@ -210,7 +210,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) =>
       val tparams = tparams0 match {
         case TypeParams.Elided => getImplicitTypeParams(attr, loc)
-        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+        case TypeParams.Explicit(tps) => getImplicitTypeParams(attr, loc) // MATT
       }
 
       // check if the table already exists.
@@ -252,7 +252,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) =>
       val tparams = tparams0 match {
         case TypeParams.Elided => getImplicitTypeParams(attr, loc)
-        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+        case TypeParams.Explicit(tps) => getImplicitTypeParams(attr, loc) // MATT
       }
 
       // check if the table already exists.
@@ -400,7 +400,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Hole(name, loc) =>
       val tpe = Type.freshTypeVar()
-      NamedAst.Expression.Hole(name, tpe, Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.Hole(name, tpe, Type.freshEffectVar(), loc).toSuccess
 
     case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
     case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
@@ -882,12 +882,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVarWithKind(Kind.Schema), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
         e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0)
-      } yield NamedAst.Predicate.Head.Union(e, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Union(e, Type.freshTypeVarWithKind(Kind.Schema), loc)
   }
 
   /**
@@ -896,7 +896,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
-      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVarWithKind(Kind.Schema), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -1144,6 +1144,27 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
   }
 
+  // MATT hack
+  private def hackFreeVarsWithKind(tpe0: WeededAst.Type, varKind: Kind = Kind.Star): List[(Name.Ident, Kind)] = tpe0 match {
+    case WeededAst.Type.Var(ident, loc) => List(ident -> varKind)
+    case WeededAst.Type.Ambiguous(qname, loc) => Nil
+    case WeededAst.Type.Unit(loc) => Nil
+    case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(hackFreeVarsWithKind(_))
+    case WeededAst.Type.RecordEmpty(loc) => Nil
+    case WeededAst.Type.RecordExtend(l, t, r, loc) => hackFreeVarsWithKind(t) ::: hackFreeVarsWithKind(r, Kind.Record)
+    case WeededAst.Type.SchemaEmpty(loc) => Nil
+    case WeededAst.Type.Schema(ts, r, loc) => ts.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(r)
+    case WeededAst.Type.Nat(n, loc) => Nil
+    case WeededAst.Type.Native(fqm, loc) => Nil
+    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(eff, Kind.Effect) ::: hackFreeVarsWithKind(tresult)
+    case WeededAst.Type.Apply(tpe1, tpe2, loc) => hackFreeVarsWithKind(tpe1) ++ hackFreeVarsWithKind(tpe2)
+    case WeededAst.Type.Pure(loc) => Nil
+    case WeededAst.Type.Impure(loc) => Nil
+    case WeededAst.Type.Not(tpe, loc) => hackFreeVarsWithKind(tpe, Kind.Effect)
+    case WeededAst.Type.And(tpe1, tpe2, loc) => hackFreeVarsWithKind(tpe1, Kind.Effect) ++ hackFreeVarsWithKind(tpe2, Kind.Effect)
+    case WeededAst.Type.Or(tpe1, tpe2, loc) => hackFreeVarsWithKind(tpe1, Kind.Effect) ++ hackFreeVarsWithKind(tpe2, Kind.Effect)
+  }
+
   /**
     * Returns the free variables in the given constraint `c0`.
     */
@@ -1239,13 +1260,25 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-      case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0)
+      case WeededAst.TypeParams.Explicit(tparams0) => getImplicitTypeParams(fparams0, tpe, loc) // MATT ignoring explicit tparams for now; need to validate against implicits
     }
   }
+
+//  /**
+//    * Performs naming on the given type parameters parameters `tparam0` under the given type environment `tenv0`.
+//    */
+//  private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+//    val implicits = getImplicitTypeParams(fparams0, tpe, loc)
+//    tparams0 match {
+//      case WeededAst.TypeParams.Elided => implicits.toSuccess
+//      case WeededAst.TypeParams.Explicit(tparams) => unifyTypeParams(tparams, implicits)
+//    }
+//  }
 
   /**
     * Returns the explicit type parameters from the given type parameters.
     */
+    @deprecated
   private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
     case p =>
       // Generate a fresh type variable for the type parameter.
@@ -1255,30 +1288,46 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       NamedAst.TypeParam(p, tvar, p.loc)
   }
 
+  // make sure all implicit names are defined explicitly, then use their types
+  // MATT docs
+  private def unifyTypeParams(explicitIdents: List[Name.Ident], implicitTypes: List[NamedAst.TypeParam])(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+    def checkDeclared(explicitIdents: Set[String], implicitType: NamedAst.TypeParam): Validation[NamedAst.TypeParam, NameError] = {
+      if (explicitIdents.contains(implicitType.name.name)) {
+        implicitType.toSuccess
+      } else {
+        NameError.UndefinedTypeVar(implicitType.name.name, implicitType.loc).toFailure
+      }
+    }
+    val explicitNames = explicitIdents.map(_.name).toSet
+    traverse(implicitTypes)(checkDeclared(explicitNames, _))
+  }
+
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and return type.
     */
   private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], returnType: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
-    val typeVarsArgs = fparams.foldLeft(Set.empty[String]) {
+    val typeVarsArgs = fparams.foldLeft(Set.empty[(String, Kind)]) {
       case (acc, WeededAst.FormalParam(_, _, None, _)) => acc
       case (acc, WeededAst.FormalParam(_, _, Some(tpe), _)) =>
-        freeVars(tpe).foldLeft(acc) {
-          case (innerAcc, ident) => innerAcc + ident.name
+        hackFreeVarsWithKind(tpe).foldLeft(acc) {
+          case (innerAcc, (ident, kind)) => innerAcc + (ident.name -> kind)
         }
     }
 
     // Compute the type variables that occur in the return type.
-    val typeVarsReturnType = freeVars(returnType).map(_.name)
+    val typeVarsReturnType = hackFreeVarsWithKind(returnType).map {
+      case (ident, kind) => (ident.name, kind)
+    }
 
     // Compute the set of type variables.
     val typeVars = typeVarsArgs ++ typeVarsReturnType
 
     // Construct a (sorted) list of type parameters.
-    typeVars.toList.sorted.map {
-      case name =>
+    typeVars.toList.sortBy(_._1).map {
+      case (name, kind) =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        val tvar = Type.freshTypeVar() // MATT these contain effect types. Need to handle these separately
+        val tvar = Type.freshTypeVarWithKind(kind)
         tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, loc)
     }
@@ -1289,18 +1338,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getImplicitTypeParams(attrs: List[WeededAst.Attribute], loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
-    val typeVars = attrs.foldLeft(Set.empty[String]) {
+    val typeVars = attrs.foldLeft(Set.empty[(String, Kind)]) {
       case (acc, WeededAst.Attribute(_, tpe, _)) =>
-        freeVars(tpe).foldLeft(acc) {
-          case (innerAcc, ident) => innerAcc + ident.name
+        hackFreeVarsWithKind(tpe).foldLeft(acc) {
+          case (innerAcc, (ident, kind)) => innerAcc + (ident.name -> kind)
         }
     }
 
     // Construct a (sorted) list of type parameters.
-    typeVars.toList.sorted.map {
-      case name =>
+    typeVars.toList.sortBy(_._1).map {
+      case (name, kind) =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        val tvar = Type.freshTypeVar()
+        val tvar = Type.freshTypeVarWithKind(kind)
         tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, loc)
     }

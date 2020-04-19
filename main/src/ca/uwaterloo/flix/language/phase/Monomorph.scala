@@ -78,14 +78,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Var(_, _) => Type.Unit
         case Type.Cst(tc) => Type.Cst(tc)
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
-        case Type.RecordEmpty => Type.RecordEmpty
         case record @ Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_)), _), _) =>
           visitRecord(record)
-        case Type.SchemaEmpty => Type.SchemaEmpty
-        case Type.SchemaExtend(sym, tt, rest) => rest match {
-          case Type.Var(_, _) => Type.SchemaExtend(sym, visit(tt), Type.SchemaEmpty)
-          case _ => Type.SchemaExtend(sym, visit(tt), visit(rest))
-        }
+        case schema @ Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(_)), _), _) =>
+          visitSchema(schema)
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
@@ -93,10 +89,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       def visitRecord(t: Type): Type = t match {
-        case Type.RecordEmpty => Type.RecordEmpty
+        case Type.Cst(TypeConstructor.RecordEmpty) => Type.RecordEmpty
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
           Type.mkRecordExtend(label, visit(tpe), visitRecord(rest))
         case Type.Var(_, _) => Type.RecordEmpty
+        case _ => throw InternalCompilerException(s"Unexpected type: '$t'.")
+      }
+
+      def visitSchema(t: Type): Type = t match {
+        case Type.Cst(TypeConstructor.SchemaEmpty) => Type.SchemaEmpty
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) =>
+          Type.mkSchemaExtend(sym, visit(tpe), visitSchema(rest))
+        case Type.Var(_, _) => Type.SchemaEmpty
         case _ => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 
