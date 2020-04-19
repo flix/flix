@@ -820,4 +820,22 @@ namespace TestInt16 {
     @test
     def toFloat6405(): Bool = Int16.toFloat64(-32768i16) == -32768.0f64
 
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt8                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt801(): Bool = Int16.clampToInt8(0i16, -100i8, 100i8) == 0i8
+
+    @test
+    def clampToInt802(): Bool = Int16.clampToInt8(100i16, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt803(): Bool = Int16.clampToInt8(101i16, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt804(): Bool = Int16.clampToInt8(-100i16, -100i8, 100i8) == -100i8
+
+    @test
+    def clampToInt805(): Bool = Int16.clampToInt8(-101i16, -100i8, 100i8) == -100i8
+
 }

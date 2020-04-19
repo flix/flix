@@ -327,6 +327,44 @@ namespace Int32 {
         import java.lang.Integer.doubleValue();
         valueOf(x).doubleValue() as & Pure
 
+    ///
+    /// Helper function for the `clamp` conversion functions.
+    ///
+    def clamp(x: Int32, minimum: Int32, maximum: Int32): Int32 =
+        if (x < minimum)
+             minimum
+        else
+            if (x > maximum)
+                maximum
+            else
+                x
+
+    ///
+    /// Convert `x` to an `Int8`.
+    ///
+    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt8(x: Int32, minimum: Int8, maximum: Int8): Int8 =
+        import java.lang.Integer:valueOf(Int32);
+        import java.lang.Integer.byteValue();
+        let mini32 = Int8.toInt32(minimum);
+        let maxi32 = Int8.toInt32(maximum);
+        valueOf(clamp(x, mini32, maxi32)).byteValue() as & Pure
+
+
+    ///
+    /// Convert `x` to an `Int16`.
+    ///
+    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt16(x: Int32, minimum: Int16, maximum: Int16): Int16 =
+        import java.lang.Integer:valueOf(Int32);
+        import java.lang.Integer.shortValue();
+        let mini32 = Int16.toInt32(minimum);
+        let maxi32 = Int16.toInt32(maximum);
+        valueOf(clamp(x, mini32, maxi32)).shortValue() as & Pure
+
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////

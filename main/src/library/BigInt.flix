@@ -283,6 +283,48 @@ namespace BigInt {
             case _ : ##java.lang.ArithmeticException => minimum
         }
 
+    ///
+    /// Convert `x` to a `Float32`.
+    ///
+    /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
+    ///
+    pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
+        use Option.flatMap;
+        import new java.math.BigDecimal(BigInt) as newBigDecimal;
+        import java.math.BigDecimal.floatValue();
+        let step = () -> {
+            let* f32min = Float32.tryToBigInt(minimum);
+            let* f32max = Float32.tryToBigInt(maximum);
+            let x1 = clamp(x, f32min, f32max);
+            let xd = newBigDecimal(x1) as & Pure;
+            Some(xd.floatValue()) as & Pure
+        };
+        match step() {
+            case None => Float32.nan()
+            case Some(d) => d
+        }
+
+    ///
+    /// Convert `x` to a `Float64`.
+    ///
+    /// Returns `x` clamped within the Float64 range `minimum` to `maximum`.
+    ///
+    pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
+        use Option.flatMap;
+        import new java.math.BigDecimal(BigInt) as newBigDecimal;
+        import java.math.BigDecimal.doubleValue();
+        let step = () -> {
+            let* f64min = Float64.tryToBigInt(minimum);
+            let* f64max = Float64.tryToBigInt(maximum);
+            let x1 = clamp(x, f64min, f64max);
+            let xd = newBigDecimal(x1) as & Pure;
+            Some(xd.doubleValue()) as & Pure
+        };
+        match step() {
+            case None => Float64.nan()
+            case Some(d) => d
+        }
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////

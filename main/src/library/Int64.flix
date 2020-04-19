@@ -332,6 +332,56 @@ namespace Int64 {
         import java.lang.Long.doubleValue();
         valueOf(x).doubleValue() as & Pure
 
+    ///
+    /// Helper function for the `clamp` conversion functions.
+    ///
+    def clamp(x: Int64, minimum: Int64, maximum: Int64): Int64 =
+        if (x < minimum)
+             minimum
+        else
+            if (x > maximum)
+                maximum
+            else
+                x
+
+    ///
+    /// Convert `x` to an `Int8`.
+    ///
+    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt8(x: Int64, minimum: Int8, maximum: Int8): Int8 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.byteValue();
+        let mini64 = Int8.toInt64(minimum);
+        let maxi64 = Int8.toInt64(maximum);
+        valueOf(clamp(x, mini64, maxi64)).byteValue() as & Pure
+
+    ///
+    /// Convert `x` to an `Int16`.
+    ///
+    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt16(x: Int64, minimum: Int16, maximum: Int16): Int16 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.shortValue();
+        let mini64 = Int16.toInt64(minimum);
+        let maxi64 = Int16.toInt64(maximum);
+        valueOf(clamp(x, mini64, maxi64)).shortValue() as & Pure
+
+
+    ///
+    /// Convert `x` to an `Int32`.
+    ///
+    /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt32(x: Int64, minimum: Int32, maximum: Int32): Int32 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.intValue();
+        let mini64 = Int32.toInt64(minimum);
+        let maxi64 = Int32.toInt64(maximum);
+        valueOf(clamp(x, mini64, maxi64)).intValue() as & Pure
+
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////

@@ -620,7 +620,7 @@ namespace TestBigInt {
     def clampToInt805(): Bool = BigInt.clampToInt8(-101ii, -100i8, 100i8) == -100i8
 
     /////////////////////////////////////////////////////////////////////////////
-    // clampToInt16                                                             //
+    // clampToInt16                                                            //
     /////////////////////////////////////////////////////////////////////////////
     @test
     def clampToInt1601(): Bool = BigInt.clampToInt16(0ii, -100i16, 100i16) == 0i16
@@ -636,5 +636,41 @@ namespace TestBigInt {
 
     @test
     def clampToInt1605(): Bool = BigInt.clampToInt16(-101ii, -100i16, 100i16) == -100i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt32                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt3201(): Bool = BigInt.clampToInt32(0ii, -100, 100) == 0
+
+    @test
+    def clampToInt3202(): Bool = BigInt.clampToInt32(100ii, -100, 100) == 100
+
+    @test
+    def clampToInt3203(): Bool = BigInt.clampToInt32(101ii, -100, 100) == 100
+
+    @test
+    def clampToInt3204(): Bool = BigInt.clampToInt32(-100ii, -100, 100) == -100
+
+    @test
+    def clampToInt3205(): Bool = BigInt.clampToInt32(-101ii, -100, 100) == -100
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt64                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt6401(): Bool = BigInt.clampToInt64(0ii, -100i64, 100i64) == 0i64
+
+    @test
+    def clampToInt6402(): Bool = BigInt.clampToInt64(100ii, -100i64, 100i64) == 100i64
+
+    @test
+    def clampToInt6403(): Bool = BigInt.clampToInt64(101ii, -100i64, 100i64) == 100i64
+
+    @test
+    def clampToInt6404(): Bool = BigInt.clampToInt64(-100ii, -100i64, 100i64) == -100i64
+
+    @test
+    def clampToInt6405(): Bool = BigInt.clampToInt64(-101ii, -100i64, 100i64) == -100i64
 
 }

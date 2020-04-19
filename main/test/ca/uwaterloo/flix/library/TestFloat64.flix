@@ -393,4 +393,26 @@ namespace TestFloat64 {
         case Some(d) => d <= -123456700.0f32 && d >= -123456800.0f32     // Allow imprecision
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt8                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt801(): Bool = Float64.clampToInt8(0.0f64, -100i8, 100i8, -127i8) == 0i8
+
+    @test
+    def clampToInt802(): Bool = Float64.clampToInt8(100.0f64, -100i8, 100i8, -127i8) == 100i8
+
+    @test
+    def clampToInt803(): Bool = Float64.clampToInt8(101.0f64, -100i8, 100i8, -127i8) == 100i8
+
+    @test
+    def clampToInt804(): Bool = Float64.clampToInt8(-100.0f64, -100i8, 100i8, -127i8) == -100i8
+
+    @test
+    def clampToInt805(): Bool = Float64.clampToInt8(-101.0f64, -100i8, 100i8, -127i8) == -100i8
+
+    @test
+    def clampToInt806(): Bool = Float64.clampToInt8(Float64.nan(), -100i8, 100i8, -127i8) == -127i8
+
+
 }

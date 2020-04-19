@@ -231,4 +231,103 @@ namespace Float64 {
         else
             Some(valueOf(x).floatValue()) as & Pure
 
+    ///
+    /// Helper function for the `clamp` conversion functions.
+    ///
+    def clamp(x: Float64, minimum: Float64, maximum: Float64): Float64 =
+        if (x < minimum)
+             minimum
+        else
+            if (x > maximum)
+                maximum
+            else
+                x
+
+    ///
+    /// Convert `x` to an `Int8`.
+    ///
+    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    ///
+    /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
+    /// function. Relying on `nanValue` to convert NaN to a permissable Int8 risks masking it.
+    ///
+    pub def clampToInt8(x: Float64, minimum: Int8, maximum: Int8, nanValue: Int8): Int8 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.byteValue();
+        let minf64 = Int8.toFloat64(minimum);
+        let maxf64 = Int8.toFloat64(maximum);
+        if (x.isNan())
+            nanValue
+        else
+            valueOf(clamp(x, minf64, maxf64)).byteValue() as & Pure
+
+    ///
+    /// Convert `x` to an `Int16`.
+    ///
+    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    ///
+    /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
+    /// function. Relying on `nanValue` to convert NaN to a permissable Int16 risks masking it.
+    ///
+    pub def clampToInt16(x: Float64, minimum: Int16, maximum: Int16, nanValue: Int16): Int16 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.shortValue();
+        let minf64 = Int16.toFloat64(minimum);
+        let maxf64 = Int16.toFloat64(maximum);
+        if (x.isNan())
+            nanValue
+        else
+            valueOf(clamp(x, minf64, maxf64)).shortValue() as & Pure
+
+    ///
+    /// Convert `x` to an `Int32`.
+    ///
+    /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
+    ///
+    /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
+    /// function. Relying on `nanValue` to convert NaN to a permissable Int32 risks masking it.
+    ///
+    pub def clampToInt32(x: Float64, minimum: Int32, maximum: Int32, nanValue: Int32): Int32 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.intValue();
+        let minf64 = Int32.toFloat64(minimum);
+        let maxf64 = Int32.toFloat64(maximum);
+        if (x.isNan())
+            nanValue
+        else
+            valueOf(clamp(x, minf64, maxf64)).intValue() as & Pure
+
+    ///
+    /// Convert `x` to an `Int64`.
+    ///
+    /// Returns `x` clamped within the Int64 range `minimum` to `maximum`.
+    ///
+    /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
+    /// function. Relying on `nanValue` to convert NaN to a permissable Int64 risks masking it.
+    ///
+    pub def clampToInt64(x: Float64, minimum: Int64, maximum: Int64, nanValue: Int64): Int64 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.longValue();
+        let minf64 = Int64.toFloat64(minimum);
+        let maxf64 = Int64.toFloat64(maximum);
+        if (x.isNan())
+            nanValue
+        else
+            valueOf(clamp(x, minf64, maxf64)).longValue() as & Pure
+
+    ///
+    /// Convert `x` to a `Float32`.
+    ///
+    /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
+    ///
+    pub def clampToFloat32(x: Float64, minimum: Float32, maximum: Float32): Float32 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.floatValue();
+        let minf64 = Float32.toFloat64(minimum);
+        let maxf64 = Float32.toFloat64(maximum);
+        if (x.isNan())
+            Float32.nan()
+        else
+            valueOf(clamp(x, minf64, maxf64)).floatValue() as & Pure
+
 }

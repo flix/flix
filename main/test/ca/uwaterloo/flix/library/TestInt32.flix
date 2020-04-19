@@ -760,4 +760,40 @@ namespace TestInt32 {
     @test
     def toFloat6405(): Bool = Int32.toFloat64(-2147483648) == -2147483648.0f64
 
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt8                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt801(): Bool = Int32.clampToInt8(0, -100i8, 100i8) == 0i8
+
+    @test
+    def clampToInt802(): Bool = Int32.clampToInt8(100, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt803(): Bool = Int32.clampToInt8(101, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt804(): Bool = Int32.clampToInt8(-100, -100i8, 100i8) == -100i8
+
+    @test
+    def clampToInt805(): Bool = Int32.clampToInt8(-101, -100i8, 100i8) == -100i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt16                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt1601(): Bool = Int32.clampToInt16(0, -100i16, 100i16) == 0i16
+
+    @test
+    def clampToInt1602(): Bool = Int32.clampToInt16(100, -100i16, 100i16) == 100i16
+
+    @test
+    def clampToInt1603(): Bool = Int32.clampToInt16(101, -100i16, 100i16) == 100i16
+
+    @test
+    def clampToInt1604(): Bool = Int32.clampToInt16(-100, -100i16, 100i16) == -100i16
+
+    @test
+    def clampToInt1605(): Bool = Int32.clampToInt16(-101, -100i16, 100i16) == -100i16
+
 }

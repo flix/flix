@@ -325,6 +325,31 @@ namespace Int16 {
         import java.lang.Short.doubleValue();
         valueOf(x).doubleValue() as & Pure
 
+    ///
+    /// Helper function for the `clamp` conversion function.
+    ///
+    def clamp(x: Int16, minimum: Int16, maximum: Int16): Int16 =
+        if (x < minimum)
+             minimum
+        else
+            if (x > maximum)
+                maximum
+            else
+                x
+
+    ///
+    /// Convert `x` to an `Int8`.
+    ///
+    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt8(x: Int16, minimum: Int8, maximum: Int8): Int8 =
+        import java.lang.Short:valueOf(Int16);
+        import java.lang.Short.byteValue();
+        let mini16 = Int8.toInt16(minimum);
+        let maxi16 = Int8.toInt16(maximum);
+        valueOf(clamp(x, mini16, maxi16)).byteValue() as & Pure
+
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////
