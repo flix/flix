@@ -147,19 +147,32 @@ namespace StringBuilder {
         Array.foreach(appendLineWith!(sb, f), a)
 
     ///
+    /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
+    ///
+    pub def intercalate!(sb: StringBuilder, sep: String, a: Array[String]): Unit & Impure =
+        let append1! = (s,i) ->
+            if (i > 0) {
+                appendString!(sb, sep);
+                appendString!(sb, s)
+            } else {
+                appendString!(sb, s)
+            };
+       Array.foreachWithIndex(append1!, a)
+
+    ///
     /// Return the length of the StringBuilder `sb`.
     ///
-    pub def length(sb: StringBuilder): Int32 =
+    pub def length(sb: StringBuilder): Int32 & Impure =
         import java.lang.StringBuilder.length();
         let StringBuilder(msb) = sb;
-        msb.length() as & Pure
+        msb.length()
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
-    pub def toString(sb: StringBuilder): String =
+    pub def toString(sb: StringBuilder): String & Impure =
         import java.lang.StringBuilder.toString();
         let StringBuilder(msb) = sb;
-        msb.toString() as & Pure
+        msb.toString()
 
 }
