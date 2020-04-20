@@ -24,9 +24,9 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification.{InferMonad, Substitution}
-import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
 
@@ -202,55 +202,54 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = {
-    // Resolve the declared scheme.
-    val declaredScheme = defn0.sc
+  private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
+    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp, declaredScheme, declaredEff, loc) =>
 
-    // TODO: Some duplication
-    val argumentTypes = defn0.fparams.map(_.tpe)
+      // TODO: Some duplication
+      val argumentTypes = fparams0.map(_.tpe)
 
-    // TODO: Very ugly hack.
-    val expectedEff = defn0.exp match {
-      case ResolvedAst.Expression.Lambda(_, _, _, _) => Type.Pure
-      case _ => defn0.eff
-    }
+      // TODO: Very ugly hack.
+      val expectedEff = defn0.exp match {
+        case ResolvedAst.Expression.Lambda(_, _, _, _) => Type.Pure
+        case _ => defn0.eff
+      }
 
-    // TODO: Cleanup
-    val result = for {
-      (inferredTyp, inferredEff) <- inferExp(defn0.exp, root)
-      unifiedEff <- unifyEffM(inferredEff, expectedEff, defn0.loc)
-    } yield Type.mkArrow(argumentTypes, inferredEff, inferredTyp)
+      // TODO: Cleanup
+      val result = for {
+        (inferredTyp, inferredEff) <- inferExp(exp, root)
+        unifiedEff <- unifyEffM(inferredEff, expectedEff, loc)
+      } yield Type.mkArrow(argumentTypes, inferredEff, inferredTyp)
 
-    // TODO: See if this can be rewritten nicer
-    result match {
-      case InferMonad(run) =>
-        val initialSubst = getSubstFromParams(defn0.fparams.head :: Nil)
-        run(initialSubst) match {
-          case Ok((subst, partialType)) =>
-            // Apply the substitution to the partial type.
-            val inferredType = subst(partialType)
+      // TODO: See if this can be rewritten nicer
+      result match {
+        case InferMonad(run) =>
+          val initialSubst = getSubstFromParams(fparams0.head :: Nil)
+          run(initialSubst) match {
+            case Ok((subst, partialType)) =>
+              // Apply the substitution to the partial type.
+              val inferredType = subst(partialType)
 
-            ///
-            /// Check that the inferred type is at least as general as the declared type.
-            ///
-            val inferredScheme = Scheme.generalize(inferredType)
-            if (!Scheme.lessThanEqual(inferredScheme, declaredScheme)) {
-              return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, inferredScheme, defn0.loc)))
-            }
+              ///
+              /// Check that the inferred type is at least as general as the declared type.
+              ///
+              val inferredScheme = Scheme.generalize(inferredType)
+              if (!Scheme.lessThanEqual(inferredScheme, declaredScheme)) {
+                return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, inferredScheme, loc)))
+              }
 
-            val exp = reassembleExp(defn0.exp, root, subst)
-            val tparams = getTypeParams(defn0.tparams)
-            val fparams = getFormalParams(defn0.fparams, subst)
+              val exp = reassembleExp(exp, root, subst)
+              val tparams = getTypeParams(tparams0)
+              val fparams = getFormalParams(fparams0, subst)
 
-            // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
-            // TODO: It is mucho importanta that the type scheme PRESERVES the same TYPE VARIABLES that occur in the expression body.
-            // TODO: Problem with types that are underspecified, e.g. Array[] or Nil.
-            val scheme = Scheme(inferredType.typeVars.toList, inferredType)
-            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, scheme, defn0.eff, defn0.loc), subst))
+              // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
+              // TODO: It is mucho importanta that the type scheme PRESERVES the same TYPE VARIABLES that occur in the expression body.
+              // TODO: Problem with types that are underspecified, e.g. Array[] or Nil.
+              val scheme = Scheme(inferredType.typeVars.toList, inferredType)
+              Validation.Success((TypedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, defn0.sc, scheme, declaredEff, loc), subst))
 
-          case Err(e) => Validation.Failure(LazyList(e))
-        }
-    }
+            case Err(e) => Validation.Failure(LazyList(e))
+          }
+      }
   }
 
   /**
