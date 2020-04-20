@@ -2,7 +2,7 @@ use Core/Io/InputStream.{available, close, fromBuffer, InputStream, readByte, re
 use Core/Io/InputStream.InputStream.InputStream;
 use Core/Io/IOError.IOError;
 
-namespace TestInputStream {
+namespace Core/Io/TestInputStream {
     def testBuffer(): InputStream & Impure = fromBuffer([0 as Int8, 1 as Int8, 2 as Int8])
 
     @test
