@@ -114,7 +114,7 @@ namespace Core/Io/TestInputStream {
         let a = [-1 as Int8; 4];
         let r = readBufferWithLength(a, 1, -1, b);
         let s = resultSwap(r);
-        let m = Result.map(e -> e == IOError.IndexOutOfBoundsException, s);
+        let m = Result.map(e -> e == IOError.IncorrectBufferSize, s);
         Result.isErr(r) && Result.getWithDefault(m, false)
     }
 

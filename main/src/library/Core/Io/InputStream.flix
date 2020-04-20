@@ -73,7 +73,7 @@ namespace Core/Io/InputStream {
         Ok(readBytes)
     } catch {
         case _: ##java.io.IOException => Err(IOError.IOException)
-        case _: ##java.lang.IndexOutOfBoundsException => Err(IOError.IndexOutOfBoundsException)
+        case _: ##java.lang.IndexOutOfBoundsException => Err(IOError.IncorrectBufferSize)
     }
 
     ///

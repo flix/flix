@@ -5,12 +5,12 @@ namespace Core/Io/IOError {
     pub enum IOError {
         // Generalized
         case FileNotFound
+        case IncorrectBufferSize
 
         // Exceptions
         case IOException
         case ZipException
         case IllegalStateException
-        case IndexOutOfBoundsException
         case NoSuchElementException
     }
 }
