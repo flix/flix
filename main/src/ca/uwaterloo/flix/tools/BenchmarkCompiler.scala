@@ -173,7 +173,7 @@ object BenchmarkCompiler {
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestPrelude.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestResult.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestSet.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestStr.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestString.flix")
   }
 
   /**
