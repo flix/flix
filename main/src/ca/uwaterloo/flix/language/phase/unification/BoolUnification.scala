@@ -26,19 +26,36 @@ import scala.annotation.tailrec
 object BoolUnification {
 
   /**
-    * Aliases to make the success variable elimination easier to understand.
+    * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
-  private val True: Type = Type.Pure
-  private val False: Type = Type.Impure
+  def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+    ///
+    /// Return immediately if effects are disabled.
+    ///
+    if (flix.options.xnoeffects)
+      return Ok(Substitution.empty)
+
+    ///
+    /// Perform aggressive matching to optimize for common cases.
+    ///
+    val pure = Type.Pure
+    if ((eff1 == pure) && !(eff1 eq pure)) {
+      println("hit")
+      return Ok(Substitution.empty)
+    }
+
+    //println(s"$eff1 --- $eff2")
+
+    ///
+    /// Run the expensive boolean unification algorithm.
+    ///
+    booleanUnification(eff1, eff2)
+  }
 
   /**
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
-  def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    // Determine if effect checking is enabled.
-    if (flix.options.xnoeffects)
-      return Ok(Substitution.empty)
-
+  private def booleanUnification(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(eff1, eff2)
 
@@ -65,7 +82,6 @@ object BoolUnification {
     }
   }
 
-
   /**
     * Performs success variable elimination on the given boolean expression `f`.
     */
@@ -79,8 +95,8 @@ object BoolUnification {
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x, False)(f)
-      val t1 = Substitution.singleton(x, True)(f)
+      val t0 = Substitution.singleton(x, Type.Impure)(f)  // impure == false
+      val t1 = Substitution.singleton(x, Type.Pure)(f)    // pure   == true
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
       val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
       st ++ se

@@ -78,7 +78,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         */
       def visit(t: Type): Type = t match {
         case Type.Var(_, _, _) => Type.Unit
-        case Type.Cst(tc) => Type.Cst(tc)
+        case Type.Cst(_) => t
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
