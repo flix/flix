@@ -3,15 +3,19 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.ParseError
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite with TestUtils {
+
+  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
+
   test("ParseError.Int.01") {
     val input =
       s"""
          |def f(): Int = 1_
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -20,7 +24,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int = 1_000_
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -29,7 +33,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int = 0b_1
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -38,7 +42,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int = 0b1_
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -47,7 +51,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int = 0x_1
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -56,7 +60,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int = 0x1_
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -65,7 +69,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int8 = 1_i8
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -74,7 +78,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int8 = 1_000_i8
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -83,7 +87,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int8 = 0b_1i8
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -92,7 +96,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int8 = 0b1_i8
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -101,7 +105,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int8 = 0x_1i8
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -110,7 +114,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int8 = 0x1_i8
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -119,7 +123,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int16 = 1_i16
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -128,7 +132,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int16 = 1_000_i16
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -137,7 +141,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int16 = 0b_1i16
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -146,7 +150,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int16 = 0b1_i16
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -155,7 +159,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int16 = 0x_1i16
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -164,7 +168,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int16 = 0x1_i16
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -173,7 +177,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int32 = 1_i32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -182,7 +186,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int32 = 1_000_i32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -191,7 +195,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int32 = 0b_1i32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -200,7 +204,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int32 = 0b1_i32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -209,7 +213,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int32 = 0x_1i32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -218,7 +222,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int32 = 0x1_i32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -227,7 +231,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int64 = 1_i64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -236,7 +240,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int64 = 1_000_i64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -245,7 +249,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int64 = 0b_1i64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -254,7 +258,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int64 = 0b1_i64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -263,7 +267,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int64 = 0x_1i64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -272,7 +276,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Int64 = 0x1_i64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -281,7 +285,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): BigInt = 1_ii
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -290,7 +294,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): BigInt = 1_000_ii
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -299,7 +303,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): BigInt = 0b_1ii
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -308,7 +312,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): BigInt = 0b1_ii
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -317,7 +321,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): BigInt = 0x_1ii
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -326,7 +330,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): BigInt = 0x1_ii
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -335,7 +339,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float = 1_.0
        """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -344,7 +348,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float = 1_000_.0
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -353,7 +357,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float = 1.0_
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -362,7 +366,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float32 = 1_.0f32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -371,7 +375,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float32 = 1_000_.0f32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -380,7 +384,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float32 = 1.0_f32
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -389,7 +393,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float64 = 1_.0f64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -398,7 +402,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float64 = 1_000_.0f64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
@@ -407,7 +411,7 @@ class TestParser extends FunSuite with TestUtils {
       s"""
          |def f(): Float64 = 1.0_f64
          """.stripMargin
-    val result = new Flix().addStr(input).compile()
+    val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 }

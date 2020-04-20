@@ -799,6 +799,13 @@ object GenExpression {
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         // Cast the argument to the right type.
         arg.tpe match {
+          // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
+          case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
+          case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
+          case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
+          case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
+          case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
+          case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
           case MonoType.Native(clazz) =>
             val argType = asm.Type.getInternalName(clazz)
             visitor.visitTypeInsn(CHECKCAST, argType)
@@ -826,6 +833,17 @@ object GenExpression {
         if (!argType.isPrimitive) {
           // NB: Really just a hack because the backend does not support array JVM types properly.
           visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        } else {
+          arg.tpe match {
+            // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
+            case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
+            case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
+            case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
+            case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
+            case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
+            case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
+            case _ => // nop
+          }
         }
       }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
@@ -846,6 +864,17 @@ object GenExpression {
         if (!argType.isPrimitive) {
           // NB: Really just a hack because the backend does not support array JVM types properly.
           visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        } else {
+          arg.tpe match {
+            // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
+            case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
+            case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
+            case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
+            case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
+            case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
+            case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
+            case _ => // nop
+          }
         }
       }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
