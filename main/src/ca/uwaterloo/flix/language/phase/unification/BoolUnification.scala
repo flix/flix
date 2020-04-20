@@ -38,13 +38,25 @@ object BoolUnification {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
-    val pure = Type.Pure
-    if ((eff1 == pure) && !(eff1 eq pure)) {
-      println("hit")
+    if (eff1 eq eff2) {
       return Ok(Substitution.empty)
     }
 
-    //println(s"$eff1 --- $eff2")
+    eff1 match {
+      case x: Type.Var if eff2 eq Type.Pure =>
+        return Ok(Substitution.singleton(x, Type.Pure))
+      case x: Type.Var if eff2 eq Type.Impure =>
+        return Ok(Substitution.singleton(x, Type.Impure))
+      case _ => // nop
+    }
+
+    eff2 match {
+      case y: Type.Var if eff1 eq Type.Pure =>
+        return Ok(Substitution.singleton(y, Type.Pure))
+      case y: Type.Var if eff1 eq Type.Impure =>
+        return Ok(Substitution.singleton(y, Type.Impure))
+      case _ => // nop
+    }
 
     ///
     /// Run the expensive boolean unification algorithm.
@@ -95,8 +107,8 @@ object BoolUnification {
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x, Type.Impure)(f)  // impure == false
-      val t1 = Substitution.singleton(x, Type.Pure)(f)    // pure   == true
+      val t0 = Substitution.singleton(x, Type.Impure)(f) // impure == false
+      val t1 = Substitution.singleton(x, Type.Pure)(f) // pure   == true
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
       val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
       st ++ se
