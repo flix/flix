@@ -619,6 +619,12 @@ namespace TestBigInt {
     @test
     def clampToInt805(): Bool = BigInt.clampToInt8(-101ii, -100i8, 100i8) == -100i8
 
+    @test
+    def clampToInt806(): Bool = BigInt.clampToInt8(8982741234134123419879712341ii, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt807(): Bool = BigInt.clampToInt8(-8982741234134123419879712341ii, -100i8, 100i8) == -100i8
+
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt16                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -636,6 +642,12 @@ namespace TestBigInt {
 
     @test
     def clampToInt1605(): Bool = BigInt.clampToInt16(-101ii, -100i16, 100i16) == -100i16
+
+    @test
+    def clampToInt1606(): Bool = BigInt.clampToInt16(8982741234134123419879712341ii, -100i16, 100i16) == 100i16
+
+    @test
+    def clampToInt1607(): Bool = BigInt.clampToInt16(-8982741234134123419879712341ii, -100i16, 100i16) == -100i16
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt32                                                            //
@@ -655,6 +667,12 @@ namespace TestBigInt {
     @test
     def clampToInt3205(): Bool = BigInt.clampToInt32(-101ii, -100, 100) == -100
 
+    @test
+    def clampToInt3206(): Bool = BigInt.clampToInt32(8982741234134123419879712341ii, -100i32, 100i32) == 100i32
+
+    @test
+    def clampToInt3207(): Bool = BigInt.clampToInt32(-8982741234134123419879712341ii, -100i32, 100i32) == -100i32
+
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt64                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -672,5 +690,59 @@ namespace TestBigInt {
 
     @test
     def clampToInt6405(): Bool = BigInt.clampToInt64(-101ii, -100i64, 100i64) == -100i64
+
+    @test
+    def clampToInt6406(): Bool = BigInt.clampToInt64(8982741234134123419879712341ii, -100i64, 100i64) == 100i64
+
+    @test
+    def clampToInt6407(): Bool = BigInt.clampToInt64(-8982741234134123419879712341ii, -100i64, 100i64) == -100i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToFloat32                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToFloat3201(): Bool = BigInt.clampToFloat32(0ii, -100.0f32, 100.0f32) == 0.0f32
+
+    @test
+    def clampToFloat3202(): Bool = BigInt.clampToFloat32(100ii, -100.0f32, 100.0f32) == 100.0f32
+
+    @test
+    def clampToFloat3203(): Bool = BigInt.clampToFloat32(101ii, -100.0f32, 100.0f32) == 100.0f32
+
+    @test
+    def clampToFloat3204(): Bool = BigInt.clampToFloat32(-100ii, -100.0f32, 100.0f32) == -100.0f32
+
+    @test
+    def clampToFloat3205(): Bool = BigInt.clampToFloat32(-101ii, -100.0f32, 100.0f32) == -100.0f32
+
+    @test
+    def clampToFloat3206(): Bool = BigInt.clampToFloat32(8982741234134123419879712341ii, -100.0f32, 100.0f32) == 100.0f32
+
+    @test
+    def clampToFloat3207(): Bool = BigInt.clampToFloat32(-8982741234134123419879712341ii, -100.0f32, 100.0f32) == -100.0f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToFloat64                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToFloat6401(): Bool = BigInt.clampToFloat64(0ii, -100.0f64, 100.0f64) == 0.0f64
+
+    @test
+    def clampToFloat6402(): Bool = BigInt.clampToFloat64(100ii, -100.0f64, 100.0f64) == 100.0f64
+
+    @test
+    def clampToFloat6403(): Bool = BigInt.clampToFloat64(101ii, -100.0f64, 100.0f64) == 100.0f64
+
+    @test
+    def clampToFloat6404(): Bool = BigInt.clampToFloat64(-100ii, -100.0f64, 100.0f64) == -100.0f64
+
+    @test
+    def clampToFloat6405(): Bool = BigInt.clampToFloat64(-101ii, -100.0f64, 100.0f64) == -100.0f64
+
+    @test
+    def clampToFloat6406(): Bool = BigInt.clampToFloat64(8982741234134123419879712341ii, -100.0f64, 100.0f64) == 100.0f64
+
+    @test
+    def clampToFloat6407(): Bool = BigInt.clampToFloat64(-8982741234134123419879712341ii, -100.0f64, 100.0f64) == -100.0f64
 
 }

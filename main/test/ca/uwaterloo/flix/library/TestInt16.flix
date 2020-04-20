@@ -838,4 +838,12 @@ namespace TestInt16 {
     @test
     def clampToInt805(): Bool = Int16.clampToInt8(-101i16, -100i8, 100i8) == -100i8
 
+    @test
+    def clampToInt806(): Bool = Int16.clampToInt8(Int16.maxValue(), -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt807(): Bool = Int16.clampToInt8(Int16.minValue(), -100i8, 100i8) == -100i8
+
+    @test
+    def clampToInt808(): Bool = Int16.clampToInt8(5i16, 10i8, 0i8) == 10i8      // Bad range
 }

@@ -778,6 +778,12 @@ namespace TestInt32 {
     @test
     def clampToInt805(): Bool = Int32.clampToInt8(-101, -100i8, 100i8) == -100i8
 
+    @test
+    def clampToInt806(): Bool = Int32.clampToInt8(Int32.maxValue(), -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt807(): Bool = Int32.clampToInt8(Int32.minValue(), -100i8, 100i8) == -100i8
+
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt16                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -795,5 +801,11 @@ namespace TestInt32 {
 
     @test
     def clampToInt1605(): Bool = Int32.clampToInt16(-101, -100i16, 100i16) == -100i16
+
+    @test
+    def clampToInt1606(): Bool = Int32.clampToInt16(Int32.maxValue(), -100i16, 100i16) == 100i16
+
+    @test
+    def clampToInt1607(): Bool = Int32.clampToInt16(Int32.minValue(), -100i16, 100i16) == -100i16
 
 }

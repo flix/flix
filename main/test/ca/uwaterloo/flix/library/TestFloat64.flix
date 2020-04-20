@@ -412,7 +412,122 @@ namespace TestFloat64 {
     def clampToInt805(): Bool = Float64.clampToInt8(-101.0f64, -100i8, 100i8, -127i8) == -100i8
 
     @test
-    def clampToInt806(): Bool = Float64.clampToInt8(Float64.nan(), -100i8, 100i8, -127i8) == -127i8
+    def clampToInt806(): Bool = Float64.clampToInt8(Float64.maxValue(), -100i8, 100i8, -127i8) == 100i8
 
+    @test
+    def clampToInt807(): Bool = Float64.clampToInt8(Float64.minValue(), -100i8, 100i8, -127i8) == -100i8
+
+    @test
+    def clampToInt808(): Bool = Float64.clampToInt8(Float64.nan(), -100i8, 100i8, -127i8) == -127i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt16                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt1601(): Bool = Float64.clampToInt16(0.0f64, -100i16, 100i16, -127i16) == 0i16
+
+    @test
+    def clampToInt1602(): Bool = Float64.clampToInt16(100.0f64, -100i16, 100i16, -127i16) == 100i16
+
+    @test
+    def clampToInt1603(): Bool = Float64.clampToInt16(101.0f64, -100i16, 100i16, -127i16) == 100i16
+
+    @test
+    def clampToInt1604(): Bool = Float64.clampToInt16(-100.0f64, -100i16, 100i16, -127i16) == -100i16
+
+    @test
+    def clampToInt1605(): Bool = Float64.clampToInt16(-101.0f64, -100i16, 100i16, -127i16) == -100i16
+
+    @test
+    def clampToInt1606(): Bool = Float64.clampToInt16(Float64.maxValue(), -100i16, 100i16, -127i16) == 100i16
+
+    @test
+    def clampToInt1607(): Bool = Float64.clampToInt16(Float64.minValue(), -100i16, 100i16, -127i16) == -100i16
+
+    @test
+    def clampToInt1608(): Bool = Float64.clampToInt16(Float64.nan(), -100i16, 100i16, -127i16) == -127i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt32                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt3201(): Bool = Float64.clampToInt32(0.0f64, -100i32, 100i32, -127i32) == 0i32
+
+    @test
+    def clampToInt3202(): Bool = Float64.clampToInt32(100.0f64, -100i32, 100i32, -127i32) == 100i32
+
+    @test
+    def clampToInt3203(): Bool = Float64.clampToInt32(101.0f64, -100i32, 100i32, -127i32) == 100i32
+
+    @test
+    def clampToInt3204(): Bool = Float64.clampToInt32(-100.0f64, -100i32, 100i32, -127i32) == -100i32
+
+    @test
+    def clampToInt3205(): Bool = Float64.clampToInt32(-101.0f64, -100i32, 100i32, -127i32) == -100i32
+
+    @test
+    def clampToInt3206(): Bool = Float64.clampToInt32(Float64.maxValue(), -100i32, 100i32, -127i32) == 100i32
+
+    @test
+    def clampToInt3207(): Bool = Float64.clampToInt32(Float64.minValue(), -100i32, 100i32, -127i32) == -100i32
+
+    @test
+    def clampToInt3208(): Bool = Float64.clampToInt32(Float64.nan(), -100i32, 100i32, -127i32) == -127i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt64                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt6401(): Bool = Float64.clampToInt64(0.0f64, -100i64, 100i64, -127i64) == 0i64
+
+    @test
+    def clampToInt6402(): Bool = Float64.clampToInt64(100.0f64, -100i64, 100i64, -127i64) == 100i64
+
+    @test
+    def clampToInt6403(): Bool = Float64.clampToInt64(101.0f64, -100i64, 100i64, -127i64) == 100i64
+
+    @test
+    def clampToInt6404(): Bool = Float64.clampToInt64(-100.0f64, -100i64, 100i64, -127i64) == -100i64
+
+    @test
+    def clampToInt6405(): Bool = Float64.clampToInt64(-101.0f64, -100i64, 100i64, -127i64) == -100i64
+
+    @test
+    def clampToInt6406(): Bool = Float64.clampToInt64(Float64.maxValue(), -100i64, 100i64, -127i64) == 100i64
+
+    @test
+    def clampToInt6407(): Bool = Float64.clampToInt64(Float64.minValue(), -100i64, 100i64, -127i64) == -100i64
+
+    @test
+    def clampToInt6408(): Bool = Float64.clampToInt64(Float64.nan(), -100i64, 100i64, -127i64) == -127i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToFloat32                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToFloat3201(): Bool = Float64.clampToFloat32(0.0f64, -100.0f32, 100.0f32) == 0.0f32
+
+    @test
+    def clampToFloat3202(): Bool = Float64.clampToFloat32(100.0f64, -100.0f32, 100.0f32) == 100.0f32
+
+    @test
+    def clampToFloat3203(): Bool = Float64.clampToFloat32(101.0f64, -100.0f32, 100.0f32) == 100.0f32
+
+    @test
+    def clampToFloat3204(): Bool = Float64.clampToFloat32(-100.0f64, -100.0f32, 100.0f32) == -100.0f32
+
+    @test
+    def clampToFloat3205(): Bool = Float64.clampToFloat32(-101.0f64, -100.0f32, 100.0f32) == -100.0f32
+
+    @test
+    def clampToFloat3206(): Bool = Float64.clampToFloat32(Float64.maxValue(), -100.0f32, 100.0f32) == 100.0f32
+
+    @test
+    def clampToFloat3207(): Bool = Float64.clampToFloat32(Float64.minValue(), -100.0f32, 100.0f32) == -100.0f32
+
+    @test
+    def clampToFloat3208(): Bool =
+        let ans = Float64.clampToFloat32(Float64.nan(), -100.0f32, 100.0f32);
+        Float32.isNan(ans) == true
 
 }
