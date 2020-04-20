@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Core/Io/IOError.IOError;
+
 namespace Path {
 
     ///
@@ -128,26 +130,12 @@ namespace Path {
     })
 
     ///
-    ///
-    ///
-    def mapInputStreamError(err: Core/Io/InputStream.Error): IOError = {
-        use Core/Io/InputStream.Error;
-
-        match err {
-            case Error.IOException => Generic("I/O Error in InputStream")
-            case Error.IndexOutOfBoundsException => Generic("Index Out Of Bounds in InputStream")
-        }
-    }
-
-    ///
-    /// Read the specified path into an array of bytes
+    /// Read the specified path into an array of bytes.
     ///
     pub def readBuffer(p: Path): Result[Array[Int8], IOError] & Impure = try {
         use Core/Io/InputStream.{available, readBuffer};
         use Core/Io/InputStream.InputStream.InputStream;
-
         import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
-
         let Path(javaFile) = p;
         let javaInputStream = newFileInputStream(javaFile);
         let inputStream = InputStream(javaInputStream as ##java.io.InputStream);
@@ -157,9 +145,8 @@ namespace Path {
                     let read = readBuffer(arr, inputStream);
                     Result.map(_ -> arr, read)
                 })
-            |> Result.mapErr(mapInputStreamError)
     } catch {
-        case _: ##java.io.FileNotFoundException => Err(Generic("File Not Found Error"))
+        case _: ##java.io.FileNotFoundException => Err(IOError.IOException)
     }
 
     ///
@@ -212,19 +199,17 @@ namespace Path {
         }
 
     ///
-    /// Writes an array of bytes to the specified file
+    /// Writes an array of bytes to the specified file.
     ///
     pub def writeBuffer(buffer: Array[Int8], p: Path): Result[Unit, IOError] & Impure = try {
         import new java.io.FileOutputStream(##java.io.File) as newFileOutputStream;
         import java.io.FileOutputStream.write(Array[Int8]);
-
         let Path(javaFile) = p;
         let outputStream = newFileOutputStream(javaFile);
         outputStream.write(buffer);
         Ok(())
     } catch {
-        case _: ##java.lang.SecurityException => Err(Generic("Security Error"))
-        case _: ##java.io.FileNotFoundException => Err(Generic("File Not Found Error"))
+        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound)
     }
 
     ///
@@ -234,14 +219,7 @@ namespace Path {
         let res = f();
         Ok(res)
     } catch {
-        case _: ##java.io.IOException => Err(Generic("I/O Error"))
-    }
-
-    ///
-    /// Represents an input/output error.
-    ///
-    pub enum IOError {
-        case Generic(String)
+        case _: ##java.io.IOException => Err(IOError.IOException)
     }
 }
 

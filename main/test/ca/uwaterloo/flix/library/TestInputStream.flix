@@ -1,5 +1,6 @@
 use Core/Io/InputStream.{available, close, fromBuffer, InputStream, readByte, readBuffer, readBufferWithLength};
 use Core/Io/InputStream.InputStream.InputStream;
+use Core/Io/IOError.IOError;
 
 namespace TestInputStream {
     def testBuffer(): InputStream & Impure = fromBuffer([0 as Int8, 1 as Int8, 2 as Int8])
@@ -68,6 +69,21 @@ namespace TestInputStream {
         let a2 = a[2] == 1 as Int8;
         let a3 = a[3] == 2 as Int8;
         g && a0 && a1 && a2 && a3
+    }
+
+    def resultSwap(r: Result[a, b]): Result[b, a] = match r {
+        case Ok(x) => Err(x)
+        case Err(x) => Ok(x)
+    }
+
+    @test
+    def readBufferWithLength02(): Bool & Impure = {
+        let b = testBuffer();
+        let a = [-1 as Int8; 4];
+        let r = readBufferWithLength(a, 1, -1, b);
+        let s = resultSwap(r);
+        let m = Result.map(e -> e == IOError.IndexOutOfBoundsException, s);
+        Result.isErr(r) && Result.getWithDefault(m, false)
     }
 
     @test
