@@ -2,6 +2,8 @@
 
 HEAD:
 
+Version 0.12.0:
+
 - Sets and Maps are now backed by Red-Black Trees. 
 - Added mutable sets and maps (backed by immutable sets and maps for now).
 - Added NonEmptyList (Nel) and Validation.
@@ -12,6 +14,7 @@ HEAD:
 - Added a check for poorly named type variables.
 - Reworked relation and lattice types. They now work more like type aliases.
 - Improved the performance of the compiler.
+- Extended the standard library.
 
 Version 0.11.0:
 

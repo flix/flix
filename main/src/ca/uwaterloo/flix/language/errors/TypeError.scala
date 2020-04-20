@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -34,6 +33,29 @@ sealed trait TypeError extends CompilationError {
 object TypeError {
 
   /**
+    * Generalization Error.
+    *
+    * @param declared the declared type scheme.
+    * @param inferred the inferred type scheme.
+    * @param loc      the location where the error occurred.
+    */
+  case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> The type scheme: '" << Red(inferred.toString) << "' cannot be generalized to '" << Red(declared.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unable to generalize the type scheme.") << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1) The function is declared as too polymorphic. Remove some type variables." << NewLine
+      vt << "  (2) The expression body of the function is incorrect." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
     * Mismatched Types.
     *
     * @param baseType1 the first base type.
@@ -43,7 +65,6 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -64,7 +85,6 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedEffects(eff1: Type, eff2: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -73,9 +93,9 @@ object TypeError {
       vt << Code(loc, "mismatched effects.") << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
-      vt << "  (1)  Did you forget to mark the function as impure?" << NewLine
-      vt << "  (2)  Are you trying to pass a pure function where an impure is required?" << NewLine
-      vt << "  (3)  Are you trying to pass an impure function where a pure is required?" << NewLine
+      vt << "  (1) Did you forget to mark the function as impure?" << NewLine
+      vt << "  (2) Are you trying to pass a pure function where an impure is required?" << NewLine
+      vt << "  (3) Are you trying to pass an impure function where a pure is required?" << NewLine
       vt << NewLine
       vt
     }
@@ -89,7 +109,6 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -109,7 +128,6 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -132,7 +150,6 @@ object TypeError {
     * @param loc        the location where the error occurred.
     */
   case class UndefinedField(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -156,7 +173,6 @@ object TypeError {
     * @param loc        the location where the error occurred.
     */
   case class UndefinedPredicate(name: String, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -178,7 +194,6 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -195,7 +210,6 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class NonSchemaType(tpe: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -209,8 +223,8 @@ object TypeError {
     * Returns a string that represents the type difference between the two given types.
     */
   private def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {
-    case (Type.Var(_, _), _) => TypeDiff.Star(TyCon.Other)
-    case (_, Type.Var(_, _)) => TypeDiff.Star(TyCon.Other)
+    case (Type.Var(_, _, _), _) => TypeDiff.Star(TyCon.Other)
+    case (_, Type.Var(_, _, _)) => TypeDiff.Star(TyCon.Other)
     case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
     case (Type.Zero, Type.Zero) => TypeDiff.Star(TyCon.Other)
     case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TyCon.Other)

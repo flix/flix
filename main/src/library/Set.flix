@@ -335,6 +335,41 @@ namespace Set {
         RedBlackTree.foreach((x, _) -> f(x), es)
 
     ///
+    /// Build a set by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a,st1)` to signal a new set element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the set.
+    ///
+    pub def unfold(f: s -> Option[(a, s)] & e, st: s): Set[a] & e = unfoldHelper(f, st, empty())
+
+    ///
+    /// Helper function for `unfold`.
+    ///
+    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e = match f(st) {
+        case None => ac
+        case Some((a, st1)) => unfoldHelper(f, st1, insert(a, ac))
+    }
+
+    ///
+    /// Build a set by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(a)` to signal a value pair `a`.
+    ///
+    /// `next` should return `None` to signal the end of building the set.
+    ///
+    pub def unfoldWithIter(next: () ~> Option[a]): Set[a] & Impure = unfoldWithIterHelper(next, empty())
+
+    ///
+    /// Helper function for `unfoldWithIter`.
+    ///
+    def unfoldWithIterHelper(next: () ~> Option[a], ac: Set[a]): Set[a] & Impure = match next() {
+        case None => ac
+        case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
+    }
+
+    ///
     /// Helper function for `cmp`.
     ///
     def __cmpHelper(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {

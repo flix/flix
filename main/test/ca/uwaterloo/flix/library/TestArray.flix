@@ -3415,7 +3415,7 @@ def sameElements07(): Bool & Impure =
 def foreach01(): Bool & Impure =
     let a = []: Array[Int32];
     let sb = StringBuilder.new();
-    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreach(fn, a);
     StringBuilder.toString(sb) == ""
 
@@ -3423,7 +3423,7 @@ def foreach01(): Bool & Impure =
 def foreach02(): Bool & Impure =
     let a = [0];
     let sb = StringBuilder.new();
-    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreach(fn, a);
     StringBuilder.toString(sb) == "F"
 
@@ -3431,7 +3431,7 @@ def foreach02(): Bool & Impure =
 def foreach03(): Bool & Impure =
     let a = [1];
     let sb = StringBuilder.new();
-    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreach(fn, a);
     StringBuilder.toString(sb) == "T"
 
@@ -3439,7 +3439,7 @@ def foreach03(): Bool & Impure =
 def foreach04(): Bool & Impure =
     let a = [0,1];
     let sb = StringBuilder.new();
-    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreach(fn, a);
     StringBuilder.toString(sb) == "FT"
 
@@ -3451,7 +3451,7 @@ def foreach04(): Bool & Impure =
 def foreachWithIndex01(): Bool & Impure =
     let a = []: Array[Float32];
     let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == ""
 
@@ -3459,7 +3459,7 @@ def foreachWithIndex01(): Bool & Impure =
 def foreachWithIndex02(): Bool & Impure =
     let a = [0.0];
     let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "F"
 
@@ -3467,7 +3467,7 @@ def foreachWithIndex02(): Bool & Impure =
 def foreachWithIndex03(): Bool & Impure =
     let a = [0.0, 0.1];
     let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FT"
 
@@ -3475,7 +3475,7 @@ def foreachWithIndex03(): Bool & Impure =
 def foreachWithIndex04(): Bool & Impure =
     let a = [0.0, 0.1, 0.2];
     let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTT"
 
@@ -3483,7 +3483,7 @@ def foreachWithIndex04(): Bool & Impure =
 def foreachWithIndex05(): Bool & Impure =
     let a = [0.0, 0.1, 0.2, 0.3];
     let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTTT"
 
@@ -3496,7 +3496,7 @@ def foreachAccum01(): Bool & Impure =
     let a = []: Array[Int32];
     let sb = StringBuilder.new();
     let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
         st+1
     };
     let n = Array.foreachAccum(fn, 0, a);
@@ -3507,7 +3507,7 @@ def foreachAccum02(): Bool & Impure =
     let a = [0];
     let sb = StringBuilder.new();
     let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
         st+1
     };
     let n = Array.foreachAccum(fn, 0, a);
@@ -3518,7 +3518,7 @@ def foreachAccum03(): Bool & Impure =
     let a = [1];
     let sb = StringBuilder.new();
     let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
         st+1
     };
     let n = Array.foreachAccum(fn, 0, a);
@@ -3529,7 +3529,7 @@ def foreachAccum04(): Bool & Impure =
     let a = [0,1];
     let sb = StringBuilder.new();
     let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
         st+1
     };
     let n = Array.foreachAccum(fn, 0, a);
@@ -3892,154 +3892,154 @@ def formatWith06(): Bool & Impure =
     s == "1..2..3"
 
 /////////////////////////////////////////////////////////////////////////////
-// sortBy                                                                  //
+// sortWith                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def sortBy01(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, []: Array[Int32]);
+def sortWith01(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, []: Array[Int32]);
     Array.sameElements(a, []: Array[Int32])
 
 @test
-def sortBy02(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [0]);
+def sortWith02(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, [0]);
     Array.sameElements(a, [0])
 
 @test
-def sortBy03(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [0,1]);
+def sortWith03(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, [0,1]);
     Array.sameElements(a, [0,1])
 
 @test
-def sortBy04(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [1,0]);
+def sortWith04(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, [1,0]);
     Array.sameElements(a, [0,1])
 
 @test
-def sortBy05(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [1,1]);
+def sortWith05(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, [1,1]);
     Array.sameElements(a, [1,1])
 
 @test
-def sortBy06(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [0,1,2,3,4,5]);
+def sortWith06(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, [0,1,2,3,4,5]);
     Array.sameElements(a, [0,1,2,3,4,5])
 
 @test
-def sortBy07(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [5,4,3,2,1,0]);
+def sortWith07(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, [5,4,3,2,1,0]);
     Array.sameElements(a, [0,1,2,3,4,5])
 
 @test
-def sortBy08(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [5,3,0,4,1,2]);
+def sortWith08(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, [5,3,0,4,1,2]);
     Array.sameElements(a, [0,1,2,3,4,5])
 
 @test
-def sortBy09(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [2,3,0,4,1,2]);
+def sortWith09(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x < y) -1 else 1, [2,3,0,4,1,2]);
     Array.sameElements(a, [0,1,2,2,3,4])
 
 @test
-def sortBy10(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x > y) -1 else 1, [0,1,2,3,4,5]);
+def sortWith10(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x > y) -1 else 1, [0,1,2,3,4,5]);
     Array.sameElements(a, [5,4,3,2,1,0])
 
 @test
-def sortBy11(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x > y) -1 else 1, [5,4,3,2,1,0]);
+def sortWith11(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x > y) -1 else 1, [5,4,3,2,1,0]);
     Array.sameElements(a, [5,4,3,2,1,0])
 
 @test
-def sortBy12(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x > y) -1 else 1, [5,3,0,4,1,2]);
+def sortWith12(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x > y) -1 else 1, [5,3,0,4,1,2]);
     Array.sameElements(a, [5,4,3,2,1,0])
 
 @test
-def sortBy13(): Bool & Impure =
-    let a = Array.sortBy((x,y) -> if (x > y) -1 else 1, [2,3,0,4,1,2]);
+def sortWith13(): Bool & Impure =
+    let a = Array.sortWith((x,y) -> if (x > y) -1 else 1, [2,3,0,4,1,2]);
     Array.sameElements(a, [4,3,2,2,1,0])
 
 /////////////////////////////////////////////////////////////////////////////
-// sortBy!                                                           //
+// sortWith!                                                           //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def sortBy01!(): Bool & Impure =
+def sortWith01!(): Bool & Impure =
     let a = []: Array[Int32];
-    Array.sortBy((x,y) -> if (x < y) -1 else 1, a);
+    Array.sortWith((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, []: Array[Int32])
 
 @test
-def sortBy02!(): Bool & Impure =
+def sortWith02!(): Bool & Impure =
     let a = [0];
-     Array.sortBy!((x,y) -> if (x < y) -1 else 1, a);
+     Array.sortWith!((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, [0])
 
 @test
-def sortBy03!(): Bool & Impure =
+def sortWith03!(): Bool & Impure =
     let a = [0,1];
-    Array.sortBy!((x,y) -> if (x < y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, [0,1])
 
 @test
-def sortBy04!(): Bool & Impure =
+def sortWith04!(): Bool & Impure =
     let a = [1,0];
-    Array.sortBy!((x,y) -> if (x < y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, [0,1])
 
 @test
-def sortBy05!(): Bool & Impure =
+def sortWith05!(): Bool & Impure =
     let a = [1,1];
-    Array.sortBy!((x,y) -> if (x < y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, [1,1])
 
 @test
-def sortBy06!(): Bool & Impure =
+def sortWith06!(): Bool & Impure =
     let a = [0,1,2,3,4,5];
-    Array.sortBy!((x,y) -> if (x < y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, [0,1,2,3,4,5])
 
 @test
-def sortBy07!(): Bool & Impure =
+def sortWith07!(): Bool & Impure =
     let a = [5,4,3,2,1,0];
-    Array.sortBy!((x,y) -> if (x < y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, [0,1,2,3,4,5])
 
 @test
-def sortBy08!(): Bool & Impure =
+def sortWith08!(): Bool & Impure =
     let a = [5,3,0,4,1,2];
-    Array.sortBy!((x,y) -> if (x < y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, [0,1,2,3,4,5])
 
 @test
-def sortBy09!(): Bool & Impure =
+def sortWith09!(): Bool & Impure =
     let a = [2,3,0,4,1,2];
-    Array.sortBy!((x,y) -> if (x < y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x < y) -1 else 1, a);
     Array.sameElements(a, [0,1,2,2,3,4])
 
 @test
-def sortBy10!(): Bool & Impure =
+def sortWith10!(): Bool & Impure =
     let a = [0,1,2,3,4,5];
-    Array.sortBy!((x,y) -> if (x > y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x > y) -1 else 1, a);
     Array.sameElements(a, [5,4,3,2,1,0])
 
 @test
-def sortBy11!(): Bool & Impure =
+def sortWith11!(): Bool & Impure =
     let a = [5,4,3,2,1,0];
-    Array.sortBy!((x,y) -> if (x > y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x > y) -1 else 1, a);
     Array.sameElements(a, [5,4,3,2,1,0])
 
 @test
-def sortBy12!(): Bool & Impure =
+def sortWith12!(): Bool & Impure =
     let a = [5,3,0,4,1,2];
-    Array.sortBy!((x,y) -> if (x > y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x > y) -1 else 1, a);
     Array.sameElements(a, [5,4,3,2,1,0])
 
 @test
-def sortBy13!(): Bool & Impure =
+def sortWith13!(): Bool & Impure =
     let a = [2,3,0,4,1,2];
-    Array.sortBy!((x,y) -> if (x > y) -1 else 1, a);
+    Array.sortWith!((x,y) -> if (x > y) -1 else 1, a);
     Array.sameElements(a, [4,3,2,2,1,0])
 
 }

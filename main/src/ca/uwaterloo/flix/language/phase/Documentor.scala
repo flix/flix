@@ -102,7 +102,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type.
-    val returnType = getReturnType(defn0.tpe)
+    val returnType = getReturnType(defn0.inferredScheme.base)
 
     // Construct the JSON object.
     JObject(List(

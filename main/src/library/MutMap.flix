@@ -87,11 +87,42 @@ namespace MutMap {
         Map.getWithDefault(k, d, deref mm)
 
     ///
+    /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.
+    ///
+    pub def put!(k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.insert(k, v, deref mm)
+
+    ///
+    /// Updates the mutable map `m` with `k -> f(v)` if `k -> v` is in `m`.
+    ///
+    /// Otherwise leaves the map is unchanged.
+    ///
+    pub def adjust!(f: v -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
+        adjustWithKey!((_, v1) -> f(v1), k, m)
+
+    ///
+    /// Updates the mutable map `m` with `k -> f(k, v)` if `k -> v` is in `m`.
+    ///
+    /// Otherwise leaves the map is unchanged.
+    ///
+    pub def adjustWithKey!(f: (k, v) -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.adjustWithKey(f, k, deref mm)
+
+    ///
+    /// Removes all mappings from the mutable map `m`.
+    ///
+    pub def clear!(m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.empty()
+
+    ///
     /// Returns `v` if `k -> v` is in the mutable map `m`.
     ///
     /// Otherwise updates the mutable map `m` with a new mapping `k -> d` and returns d.
     ///
-    pub def getOrElsePut(k: k, d: v, m: mut MutMap[k, v]): v & Impure =
+    pub def getOrElsePut!(k: k, d: v, m: mut MutMap[k, v]): v & Impure =
         let MutMap(mm) = m;
         match Map.get(k, deref mm) {
             case None    => mm := Map.insert(k, d, deref mm); d
@@ -99,90 +130,66 @@ namespace MutMap {
         }
 
     ///
-    /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.
+    /// Merges the mutable map `m1` into the mutable map `m2` in a left-biased manner.
     ///
-    pub def put(k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.insert(k, v, deref mm)
+    /// That is, key collisions are resolved by taking the mapping from `m1`.
+    ///
+    pub def merge!(m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+        mergeWithKey!((_, v1, _) -> v1, m1, m2)
 
     ///
-    /// Removes all mappings from the mutable map `m`.
+    /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def clear(m: mut MutMap[k, v]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.empty()
+    pub def mergeWith!(f: (v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+        mergeWithKey!((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
-    /// Returns a shallow copy of the mutable map `m`.
+    /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def copy(m: mut MutMap[k, v]): MutMap[k, v] & Impure =
-        let MutMap(mm) = m;
-        MutMap(ref (deref mm))
-
-    ///
-    /// Updates the mutable map `m` with `k -> f(v)` if `k -> v` is in `m`.
-    ///
-    /// Otherwise leaves the map is unchanged.
-    ///
-    pub def adjust(f: v -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
-        adjustWithKey((_, v1) -> f(v1), k, m)
-
-    ///
-    /// Updates the mutable map `m` with `k -> f(k, v)` if `k -> v` is in `m`.
-    ///
-    /// Otherwise leaves the map is unchanged.
-    ///
-    pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.adjustWithKey(f, k, deref mm)
-
-    ///
-    /// Removes the mapping `k` from the mutable map `m`.
-    ///
-    /// Leaves the map unchanged if the mutable map `m` does not contain any mapping for `k`.
-    ///
-    pub def remove(k: k, m: MutMap[k, v]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.delete(k, deref mm)
+    pub def mergeWithKey!(f: (k, v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm1) = m1;
+        let MutMap(mm2) = m2;
+        mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
 
     ///
     /// Removes all mappings `k -> v` from the mutable map `m` where `v` does not satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def refine(f: v -> Bool, m: mut MutMap[k, v]): Unit & Impure =
-        refineWithKey((_, v) -> f(v), m)
+    pub def refine!(f: v -> Bool, m: mut MutMap[k, v]): Unit & Impure =
+        refineWithKey!((_, v) -> f(v), m)
 
     ///
     /// Removes all mappings `k -> v` from the mutable map `m` where `(k, v)` does not satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def refineWithKey(f: (k, v) -> Bool, m: mut MutMap[k, v]): Unit & Impure =
+    pub def refineWithKey!(f: (k, v) -> Bool, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.filterWithKey(f, deref mm)
 
     ///
-    /// Merges the mutable map `m1` into the mutable map `m2` in a left-biased manner.
+    /// Removes the mapping `k` from the mutable map `m`.
     ///
-    /// That is, key collisions are resolved by taking the mapping from `m1`.
+    /// Leaves the map unchanged if the mutable map `m` does not contain any mapping for `k`.
     ///
-    pub def merge(m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
-        mergeWithKey((_, v1, _) -> v1, m1, m2)
+    pub def remove!(k: k, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.delete(k, deref mm)
 
     ///
-    /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
+    /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def mergeWith(f: (v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
-        mergeWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+    pub def transform!(f: v -> v & e, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.map(f, deref mm)
 
     ///
-    /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
+    /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def mergeWithKey(f: (k, v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
-        let MutMap(mm1) = m1;
-        let MutMap(mm2) = m2;
-        mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
+    pub def transformWithKey!(f: (k, v) -> v & e, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.mapWithKey(f, deref mm)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2`.
@@ -227,20 +234,6 @@ namespace MutMap {
         Map.findRight(f, deref mm)
 
     ///
-    /// Applies the function `f` to every value in the mutable map `m`.
-    ///
-    pub def transform(f: v1 -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.map(f, deref mm)
-
-    ///
-    /// Applies the function `f` to every value in the mutable map `m`.
-    ///
-    pub def transformWithKey(f: (k, v1) -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.mapWithKey(f, deref mm)
-
-    ///
     /// Alias for `foldLeft`.
     ///
     pub def fold(f: (b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
@@ -249,7 +242,7 @@ namespace MutMap {
     ///
     /// Alias for `foldLeftWithKey`.
     ///
-    pub def foldWithKey(f: (k, b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure  =
+    pub def foldWithKey(f: (b, k, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure  =
         foldLeftWithKey(f, i, m)
 
     ///
@@ -266,7 +259,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, i, v1), v2)..., vn)`.
     ///
-    pub def foldLeftWithKey(f: (k, b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
+    pub def foldLeftWithKey(f: (b, k, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
         let MutMap(mm) = m;
         Map.foldLeftWithKey(f, i, deref mm)
 
@@ -373,6 +366,13 @@ namespace MutMap {
     pub def forall(f: (k, v) -> Bool, m: MutMap[k, v]): Bool & Impure =
         let MutMap(mm) = m;
         Map.forall(f, deref mm)
+
+    ///
+    /// Returns a shallow copy of the mutable map `m`.
+    ///
+    pub def copy(m: MutMap[k, v]): MutMap[k, v] & Impure =
+        let MutMap(mm) = m;
+        MutMap(ref (deref mm))
 
     ///
     /// Returns the mutable map `m` as an immutable map.

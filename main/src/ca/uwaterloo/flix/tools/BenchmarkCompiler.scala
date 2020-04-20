@@ -129,6 +129,7 @@ object BenchmarkCompiler {
     flix.addPath("main/test/flix/Test.Exp.Reference.Deref.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Precedence.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Ref.flix")
+    flix.addPath("main/test/flix/Test.Exp.Record.Polymorphism.flix")
     flix.addPath("main/test/flix/Test.Exp.Stm.flix")
     flix.addPath("main/test/flix/Test.Exp.Tag.flix")
     flix.addPath("main/test/flix/Test.Exp.Tag.Lambda.flix")
@@ -144,7 +145,6 @@ object BenchmarkCompiler {
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix")
@@ -173,7 +173,7 @@ object BenchmarkCompiler {
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestPrelude.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestResult.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestSet.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestStr.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestString.flix")
   }
 
   /**

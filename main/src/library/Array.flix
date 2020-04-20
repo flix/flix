@@ -85,13 +85,13 @@ namespace Array {
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
-    pub def append(a: Array[a], b: Array[b]): Array[a] & Impure =
+    pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
         appendHelper(a, b)
 
     ///
     /// Helper function for `append`.
     ///
-    def appendHelper(a: Array[a], b: Array[b]): Array[a] & Impure =
+    def appendHelper(a: Array[a], b: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
@@ -1240,7 +1240,7 @@ namespace Array {
     ///
     /// Helper function for `init`.
     ///
-    def initHelper(a: Array[a], f: i -> a & e, len: Int32, i: Int32): Unit & Impure =
+    def initHelper(a: Array[a], f: Int32 -> a & e, len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1265,7 +1265,7 @@ namespace Array {
     ///
     /// Helper function for `init2`.
     ///
-    def init2Helper(a: Array[a], b: Array[b], f: i -> (a,b) & e, len: Int32, i: Int32): Unit & Impure =
+    def init2Helper(a: Array[a], b: Array[b], f: Int32 -> (a,b) & e, len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1278,7 +1278,7 @@ namespace Array {
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: Array[a], b: Array[b]): Bool & Impure =
+    pub def sameElements(a: Array[a], b: Array[a]): Bool & Impure =
         let alen = length(a);
         let blen = length(b);
         if (alen == blen)
@@ -1289,7 +1289,7 @@ namespace Array {
     ///
     /// Helper function for `sameElements`.
     ///
-    def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool & Impure =
+    def sameElementsHelper(a: Array[a], b: Array[a], len: Int32, i: Int32): Bool & Impure =
         if (i >= len)
             true
         else
@@ -1387,10 +1387,10 @@ namespace Array {
         let sb = StringBuilder.new();
         let step = (x,i) ->
             if (i == 0)
-                StringBuilder.appendString(sb, f(x))
+                StringBuilder.appendString!(sb, f(x))
             else {
-                StringBuilder.appendString(sb, sep);
-                StringBuilder.appendString(sb, f(x))
+                StringBuilder.appendString!(sb, sep);
+                StringBuilder.appendString!(sb, f(x))
             };
         foreachWithIndex(step, a);
         StringBuilder.toString(sb)
@@ -1400,10 +1400,10 @@ namespace Array {
     ///
     /// The sort implementation is quicksort.
     ///
-    pub def sortBy(cmp: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
+    pub def sortWith(cmp: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let b = slice(a, 0, len);
-        sortBy!(cmp, b);
+        sortWith!(cmp, b);
         b
 
     ///
@@ -1411,23 +1411,23 @@ namespace Array {
     ///
     /// The sort implementation is quicksort.
     ///
-    pub def sortBy!(cmp: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
+    pub def sortWith!(cmp: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
         let len = length(a);
         if (len == 0)
             ()
         else
-            sortByHelper!(cmp, a, 0, len-1)
+            sortWithHelper!(cmp, a, 0, len-1)
 
     ///
-    /// Helper function for `sortBy!`.
+    /// Helper function for `sortWith!`.
     ///
-    def sortByHelper!(cmp: (a,a) -> Int32, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    def sortWithHelper!(cmp: (a,a) -> Int32, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
         if (lo >= hi)
             ()
         else {
-            let p = sortByPartition(cmp, a, lo, hi);
-            sortByHelper!(cmp, a, lo, p-1);
-            sortByHelper!(cmp, a, p+1, hi)
+            let p = sortWithPartition(cmp, a, lo, hi);
+            sortWithHelper!(cmp, a, lo, p-1);
+            sortWithHelper!(cmp, a, p+1, hi)
         }
 
     ///
@@ -1435,7 +1435,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swap!(a: mut Array[Int32], i: Int32, j: Int32): Unit & Impure =
+    def swap!(a: mut Array[a], i: Int32, j: Int32): Unit & Impure =
         let x = a[i];
         let y = a[j];
         a[i] = y;
@@ -1445,7 +1445,7 @@ namespace Array {
     ///
     /// Partition step of the quicksort algorithm (helper for sorting).
     ///
-    def sortByPartition(cmp: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    def sortWithPartition(cmp: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (cmp(a[j], pivot) >= 0)
@@ -1458,7 +1458,7 @@ namespace Array {
         i
 
     ///
-    /// A forloop with an accumulator (helper for sorting).
+    /// A for loop with an accumulator (helper for sorting).
     /// This function is not array specific so is not necessarily Impure.
     ///
     /// precondition: lo <= hi

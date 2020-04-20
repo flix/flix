@@ -65,9 +65,10 @@ object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, String]), ParsedA
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), source).toFailure
+        val loc = SourceLocation(source, e.position.line, e.position.column, e.position.line, e.position.column, _ => "")
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), loc).toFailure
       case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, source).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
   }
 
@@ -80,9 +81,10 @@ object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, String]), ParsedA
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), source).toFailure
+        val loc = SourceLocation(source, e.position.line, e.position.column, e.position.line, e.position.column, _ => "")
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), loc).toFailure
       case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, source).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
   }
 
@@ -1256,8 +1258,34 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         ((s: Seq[ParsedAst.Type]) => s.reduce(ParsedAst.Type.And.apply))
     }
 
+    def Formula: Rule1[ParsedAst.Type] = {
+      def Primary: Rule1[ParsedAst.Type] = rule {
+       Or
+      }
+
+      def Or: Rule1[ParsedAst.Type] = rule {
+        And ~ zeroOrMore(optWS ~ atomic("\\/" ~ optWS ~ And) ~> ParsedAst.Type.Or)
+      }
+
+      def And: Rule1[ParsedAst.Type] = rule {
+        Not ~ zeroOrMore(optWS ~ atomic("/\\" ~ optWS ~ Not) ~> ParsedAst.Type.And)
+      }
+
+      def Not: Rule1[ParsedAst.Type] = rule {
+        (atomic("not") ~ WS ~ Parens ~> ParsedAst.Type.Not) | Parens
+      }
+
+      def Parens: Rule1[ParsedAst.Type] = rule {
+        "(" ~ optWS ~ Primary ~ optWS ~ ")" | One
+      }
+
+      rule {
+        "{{" ~ optWS ~ Primary ~ optWS ~ "}}"
+      }
+    }
+
     rule {
-      One | Seq
+      One | Seq | Formula
     }
   }
 

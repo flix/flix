@@ -587,17 +587,17 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Succ(l, t) => MonoType.Unit
 
-      case Type.Var(id, kind) => MonoType.Var(id) // TODO: Should never happen.
+      case Type.Var(id, _, _) => MonoType.Var(id) // TODO: Should never happen.
 
-      case Type.Cst(TypeConstructor.Pure) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+      case Type.Cst(TypeConstructor.Pure) => MonoType.Unit
 
-      case Type.Cst(TypeConstructor.Impure) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+      case Type.Cst(TypeConstructor.Impure) => MonoType.Unit
 
-      case Type.Cst(TypeConstructor.Not) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+      case Type.Cst(TypeConstructor.Not) => MonoType.Unit
 
-      case Type.Cst(TypeConstructor.And) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+      case Type.Cst(TypeConstructor.And) => MonoType.Unit
 
-      case Type.Cst(TypeConstructor.Or) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+      case Type.Cst(TypeConstructor.Or) => MonoType.Unit
 
       case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
 

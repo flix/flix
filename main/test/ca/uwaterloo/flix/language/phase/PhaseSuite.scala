@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.phase.unification.TestUnification
 import org.scalatest.Suites
 
 class PhaseSuite extends Suites(
@@ -25,6 +26,7 @@ class PhaseSuite extends Suites(
   new TestRedundancy,
   new TestResolver,
   new TestSafety,
+  new TestTyper,
   new TestStratifier,
   new TestUnification,
   new TestWeeder

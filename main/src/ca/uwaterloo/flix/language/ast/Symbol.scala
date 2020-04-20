@@ -31,6 +31,14 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh def symbol with the given text in the given namespace.
+    */
+  def freshDefnSym(ns: List[String], text: String)(implicit flix: Flix): DefnSym = {
+    val id = Some(flix.genSym.freshId())
+    new DefnSym(id, ns, text, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {

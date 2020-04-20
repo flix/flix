@@ -18,8 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Scheme, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -59,7 +61,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
-  case class StrictSubstitution(s: Unification.Substitution) {
+  case class StrictSubstitution(s: Substitution) {
     /**
       * Returns `true` if this substitution is empty.
       */
@@ -75,17 +77,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Recursively replaces every type variable with the unit type.
         */
       def visit(t: Type): Type = t match {
-        case Type.Var(_, _) => Type.Unit
-        case Type.Cst(tc) => Type.Cst(tc)
+        case Type.Var(_, _, _) => Type.Unit
+        case Type.Cst(_) => t
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
-          case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
+          case Type.Var(_, _, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
           case _ => Type.RecordExtend(label, visit(value), visit(rest))
         }
         case Type.SchemaEmpty => Type.SchemaEmpty
         case Type.SchemaExtend(sym, tt, rest) => rest match {
-          case Type.Var(_, _) => Type.SchemaExtend(sym, visit(tt), Type.SchemaEmpty)
+          case Type.Var(_, _, _) => Type.SchemaExtend(sym, visit(tt), Type.SchemaEmpty)
           case _ => Type.SchemaExtend(sym, visit(tt), visit(rest))
         }
         case Type.Zero => Type.Zero
@@ -660,8 +662,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       // Unify the declared and actual type to obtain the substitution map.
-      val declaredType = defn.tpe
-      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
+      val subst = StrictSubstitution(Unification.unifyTypes(defn.inferredScheme.base, tpe).get)
 
       // Check whether the function definition has already been specialized.
       def2def.get((sym, tpe)) match {
@@ -793,7 +794,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       for (defn <- defns) {
         val sym = defn.sym
         if (name == sym.name) {
-          if (Unification.unifyTypes(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
+          val declaredType = Scheme.instantiate(defn.inferredScheme, InstantiateMode.Flexible)
+          if (Unification.unifyTypes(declaredType, tpe).isInstanceOf[Result.Ok[_, _]]) {
             matches += sym
           }
         }
@@ -825,7 +827,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      */
     for ((sym, defn) <- nonParametricDefns) {
       // Specialize the function definition under the empty substitution (it has no type parameters).
-      val subst0 = StrictSubstitution(Unification.Substitution.empty)
+      val subst0 = StrictSubstitution(Substitution.empty)
 
       // Specialize the formal parameters to obtain fresh local variable symbols for them.
       val (fparams, env0) = specializeFormalParams(defn.fparams, subst0)
@@ -842,7 +844,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      */
     for (TypedAst.Property(law, defn, exp0, loc) <- root.properties) {
       // Specialize the property under the empty substitution.
-      val subst0 = StrictSubstitution(Unification.Substitution.empty)
+      val subst0 = StrictSubstitution(Substitution.empty)
 
       // A property has no formal parameters and hence the initial environment is empty.
       val env0 = Map.empty[Symbol.VarSym, Symbol.VarSym]
@@ -874,7 +876,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
+        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, inferredScheme = Scheme(Nil, subst(defn.inferredScheme.base)), tparams = Nil)
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)
