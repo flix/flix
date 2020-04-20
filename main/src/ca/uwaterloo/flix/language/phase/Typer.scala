@@ -205,20 +205,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
     case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, declaredScheme, declaredEff, loc) =>
 
-      // TODO: Some duplication
-      val argumentTypes = fparams0.map(_.tpe)
-
       // TODO: Very ugly hack.
       val expectedEff = exp0 match {
         case ResolvedAst.Expression.Lambda(_, _, _, _) => Type.Pure
         case _ => declaredEff
       }
 
-      // TODO: Cleanup
+      ///
+      /// Infer the type of the expression `exp0`.
+      ///
       val result = for {
         (inferredTyp, inferredEff) <- inferExp(exp0, root)
         unifiedEff <- unifyEffM(inferredEff, expectedEff, loc)
-      } yield Type.mkArrow(argumentTypes, inferredEff, inferredTyp)
+      } yield Type.mkArrow(fparams0.map(_.tpe), inferredEff, inferredTyp)
 
       // TODO: See if this can be rewritten nicer
       result match {
@@ -226,7 +225,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           val initialSubst = getSubstFromParams(fparams0.head :: Nil)
           run(initialSubst) match {
             case Ok((subst, partialType)) =>
-              // Apply the substitution to the partial type.
+              ///
+              /// The partial type returned by the inference monad does not have the substitution applied.
+              ///
               val inferredType = subst(partialType)
 
               ///
@@ -237,14 +238,25 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                 return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
               }
 
+              ///
+              /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
+              ///
               val exp = reassembleExp(exp0, root, subst)
               val tparams = getTypeParams(tparams0)
               val fparams = getFormalParams(fparams0, subst)
 
-              // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
-              // TODO: It is mucho importanta that the type scheme PRESERVES the same TYPE VARIABLES that occur in the expression body.
-              // TODO: Problem with types that are underspecified, e.g. Array[] or Nil.
+              ///
+              /// Compute a type scheme that matches the type variables that appear in the expression body.
+              ///
+              /// NB: It is very important to understand that: The type scheme a function is declared with must match the inferred type scheme.
+              /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
+              /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
+              ///
               val inferredScheme = Scheme(inferredType.typeVars.toList, inferredType)
+
+              ///
+              /// Reassemble everything.
+              ///
               Validation.Success((TypedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, declaredScheme, inferredScheme, declaredEff, loc), subst))
 
             case Err(e) => Validation.Failure(LazyList(e))
