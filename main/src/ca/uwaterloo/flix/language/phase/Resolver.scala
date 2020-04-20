@@ -1116,7 +1116,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       Type.Pure.toSuccess
 
     case NamedAst.Type.Impure(loc) =>
-      Type.Cst(TypeConstructor.Impure).toSuccess
+      Type.Impure.toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
