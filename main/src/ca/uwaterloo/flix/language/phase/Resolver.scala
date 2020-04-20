@@ -63,7 +63,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val sc = Scheme(Nil, Type.freshTypeVar())
           val eff = Type.freshTypeVar()
           val loc = SourceLocation.Unknown
-          val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)
+          val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, sc, eff, loc)
           sym -> defn
       }
     }
@@ -135,7 +135,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
         eff <- lookupType(eff0, ns0, prog0)
-      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
+      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, scheme, eff, loc)
   }
 
   /**
@@ -197,9 +197,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Var(sym, loc) => tenv0.get(sym) match {
           case None => ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
-          case Some(tpe) =>
-            // We always open schema types.
-            ResolvedAst.Expression.Var(sym, Typer.openSchemaType(tpe), loc).toSuccess
+          case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
         }
 
         case NamedAst.Expression.Def(qname, tvar, loc) =>
@@ -1118,7 +1116,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       Type.Pure.toSuccess
 
     case NamedAst.Type.Impure(loc) =>
-      Type.Cst(TypeConstructor.Impure).toSuccess
+      Type.Impure.toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
