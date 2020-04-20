@@ -24,9 +24,9 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification.{InferMonad, Substitution}
-import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
 
@@ -78,6 +78,76 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         m.toMap
     }
+  }
+
+  /**
+    * Infers the type of the given definition `defn0`.
+    */
+  private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
+    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparam0, exp0, declaredScheme, declaredEff, loc) =>
+
+      ///
+      /// Infer the type of the expression `exp0`.
+      ///
+      val result = for {
+        (inferredTyp, inferredEff) <- inferExp(exp0, root)
+      } yield Type.mkArrow(fparam0.tpe, inferredEff, inferredTyp)
+
+      ///
+      /// Pattern match on the result to determine if type inference was successful.
+      ///
+      result match {
+        case InferMonad(run) =>
+
+          ///
+          /// NB: We *DO NOT* run the type inference under the empty environment (as you would expect).
+          /// Instead, we pre-populate the environment with the types from the formal parameters.
+          /// This is required because we have expressions such as `x + y` where we must know the type of `x`
+          /// (or y) to determine the type of floating-point or integer operations.
+          ///
+          val initialSubst = getSubstFromParams(fparam0 :: Nil)
+
+          run(initialSubst) match {
+            case Ok((subst, partialType)) =>
+              ///
+              /// The partial type returned by the inference monad does not have the substitution applied.
+              ///
+              val inferredType = subst(partialType)
+
+              ///
+              /// Check that the inferred type is at least as general as the declared type.
+              ///
+              /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
+              ///
+              val sc = Scheme.generalize(inferredType)
+              if (!Scheme.lessThanEqual(sc, declaredScheme)) {
+                return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
+              }
+
+              ///
+              /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
+              ///
+              val exp = reassembleExp(exp0, root, subst)
+              val tparams = getTypeParams(tparams0)
+              val fparams = getFormalParams(fparam0 :: Nil, subst)
+
+              ///
+              /// Compute a type scheme that matches the type variables that appear in the expression body.
+              ///
+              /// NB: It is very important to understand that: The type scheme a function is declared with must match the inferred type scheme.
+              /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
+              /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
+              ///
+              val inferredScheme = Scheme(inferredType.typeVars.toList, inferredType)
+
+              ///
+              /// Reassemble everything.
+              ///
+              Validation.Success((TypedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, declaredScheme, inferredScheme, declaredEff, loc), subst))
+
+            case Err(e) => Validation.Failure(LazyList(e))
+          }
+      }
   }
 
   /**
@@ -197,60 +267,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
     // Sequence the results and sort the properties by their source location.
     Validation.sequence(results)
-  }
-
-  /**
-    * Infers the type of the given definition `defn0`.
-    */
-  private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = {
-    // Resolve the declared scheme.
-    val declaredScheme = defn0.sc
-
-    // TODO: Some duplication
-    val argumentTypes = defn0.fparams.map(_.tpe).map(openSchemaType)
-
-    // TODO: Very ugly hack.
-    val expectedEff = defn0.exp match {
-      case ResolvedAst.Expression.Lambda(_, _, _, _) => Type.Pure
-      case _ => defn0.eff
-    }
-
-    // TODO: Cleanup
-    val result = for {
-      (inferredTyp, inferredEff) <- inferExp(defn0.exp, root)
-      unifiedEff <- unifyEffM(inferredEff, expectedEff, defn0.loc)
-    } yield Type.mkArrow(argumentTypes, expectedEff, inferredTyp)
-
-    // TODO: See if this can be rewritten nicer
-    result match {
-      case InferMonad(run) =>
-        val initialSubst = getSubstFromParams(defn0.fparams)
-        run(initialSubst) match {
-          case Ok((subst, partialType)) =>
-            // Apply the substitution to the partial type.
-            val inferredType = subst(partialType)
-
-            ///
-            /// Check that the inferred type is at least as general as the declared type.
-            ///
-            val inferredScheme = Scheme.generalize(inferredType)
-            if (!Scheme.lessThanEqual(inferredScheme, declaredScheme)) {
-              return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, inferredScheme, defn0.loc)))
-            }
-
-            val exp = reassembleExp(defn0.exp, root, subst)
-            val tparams = getTypeParams(defn0.tparams)
-            val fparams = getFormalParams(defn0.fparams, subst)
-
-            // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
-            // TODO: It is mucho importanta that the type scheme PRESERVES the same TYPE VARIABLES that occur in the expression body.
-            // TODO: Problem with types that are underspecified, e.g. Array[] or Nil.
-            val scheme = Scheme(inferredType.typeVars.toList, inferredType)
-            Validation.Success((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, scheme, defn0.eff, defn0.loc), subst))
-
-          case Err(e) => Validation.Failure(LazyList(e))
-        }
-    }
   }
 
   /**
@@ -1813,20 +1829,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (ResolvedAst.FormalParam(sym, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar, openSchemaType(declaredType))
+        macc ++ Substitution.singleton(sym.tvar, declaredType)
     }
-  }
-
-  /**
-    * Opens the given schema type `tpe0`.
-    */
-  // TODO: Open nested schema types?
-  // TODO: Replace by a more robust solution once we check type signatures more correctly.
-  def openSchemaType(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
-    case Type.SchemaEmpty => Type.freshTypeVar()
-    case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, tpe, openSchemaType(rest))
-    case Type.Apply(tpe1, tpe2) => Type.Apply(openSchemaType(tpe1), openSchemaType(tpe2))
-    case _ => tpe0
   }
 
   /**

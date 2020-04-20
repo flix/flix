@@ -73,7 +73,7 @@ object Scheme {
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
-    def visitType(t0: Type): Type = t0 match {
+    def visitType(tpe0: Type): Type = tpe0 match {
       case Type.Var(x, k, rigidity) => freshVars.get(x) match {
         case None =>
           // Determine the rigidity of the free type variable.
@@ -85,7 +85,7 @@ object Scheme {
           Type.Var(x, k, newRigidity)
         case Some(tvar) => tvar
       }
-      case Type.Cst(tc) => Type.Cst(tc)
+      case Type.Cst(_) => tpe0
       case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visitType(value), visitType(rest))
@@ -94,7 +94,7 @@ object Scheme {
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visitType(tpe1), visitType(tpe2))
-      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
     visitType(baseType)
