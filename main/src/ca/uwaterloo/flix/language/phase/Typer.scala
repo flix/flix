@@ -239,6 +239,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               }
 
               ///
+              /// Check that the inferred effect is at
+              ///
+              // TODO
+
+              ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
               val exp = reassembleExp(exp0, root, subst)
