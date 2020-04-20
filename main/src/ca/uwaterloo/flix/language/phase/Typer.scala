@@ -203,26 +203,29 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
-    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, declaredScheme, declaredEff, loc) =>
-
-      // TODO: Very ugly hack.
-      val expectedEff = exp0 match {
-        case ResolvedAst.Expression.Lambda(_, _, _, _) => Type.Pure
-        case _ => declaredEff
-      }
+    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparam0, exp0, declaredScheme, declaredEff, loc) =>
 
       ///
       /// Infer the type of the expression `exp0`.
       ///
       val result = for {
         (inferredTyp, inferredEff) <- inferExp(exp0, root)
-        unifiedEff <- unifyEffM(inferredEff, expectedEff, loc)
-      } yield Type.mkArrow(fparams0.map(_.tpe), inferredEff, inferredTyp)
+      } yield Type.mkArrow(fparam0.tpe, inferredEff, inferredTyp)
 
-      // TODO: See if this can be rewritten nicer
+      ///
+      /// Pattern match on the result to determine if type inference was successful.
+      ///
       result match {
         case InferMonad(run) =>
-          val initialSubst = getSubstFromParams(fparams0.head :: Nil)
+
+          ///
+          /// NB: We *DO NOT* run the type inference under the empty environment (as you would expect).
+          /// Instead, we pre-populate the environment with the types from the formal parameters.
+          /// This is required because we have expressions such as `x + y` where we must know the type of `x`
+          /// (or y) to determine the type of floating-point or integer operations.
+          ///
+          val initialSubst = getSubstFromParams(fparam0 :: Nil)
+
           run(initialSubst) match {
             case Ok((subst, partialType)) =>
               ///
@@ -233,22 +236,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               ///
               /// Check that the inferred type is at least as general as the declared type.
               ///
+              /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
+              ///
               val sc = Scheme.generalize(inferredType)
               if (!Scheme.lessThanEqual(sc, declaredScheme)) {
                 return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
               }
 
               ///
-              /// Check that the inferred effect is at
-              ///
-              // TODO
-
-              ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
               val exp = reassembleExp(exp0, root, subst)
               val tparams = getTypeParams(tparams0)
-              val fparams = getFormalParams(fparams0, subst)
+              val fparams = getFormalParams(fparam0 :: Nil, subst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.

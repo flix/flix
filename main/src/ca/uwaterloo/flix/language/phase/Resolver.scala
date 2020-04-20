@@ -63,7 +63,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val sc = Scheme(Nil, Type.freshTypeVar())
           val eff = Type.freshTypeVar()
           val loc = SourceLocation.Unknown
-          val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)
+          val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, sc, eff, loc)
           sym -> defn
       }
     }
@@ -135,7 +135,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
         eff <- lookupType(eff0, ns0, prog0)
-      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
+      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, scheme, eff, loc)
   }
 
   /**
