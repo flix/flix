@@ -96,8 +96,9 @@ namespace Float32 {
     ///
     /// Return a decimal representation of `x`.
     ///
-    pub def toDecimalString(decimalPlaces: Int32, x: Float32): String =
-        Float64.toDecimalString(decimalPlaces, toFloat64(x))
+    // TODO
+//    pub def toDecimalString(decimalPlaces: Int32, x: Float32): String =
+//        Float64.toDecimalString(decimalPlaces, toFloat64(x))
 
     ///
     /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.

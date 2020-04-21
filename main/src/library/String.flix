@@ -852,11 +852,11 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
-    pub def indent(n: Int32, s: String): String =
-        if (n <= 0 || length(s) == 0)
-            s
-        else
-            indentHelper(n, s)
+//    pub def indent(n: Int32, s: String): String =
+//        if (n <= 0 || length(s) == 0)
+//            s
+//        else
+//            indentHelper(n, s)
 
     ///
     /// Helper function for `indent` and `stripIndent`.
@@ -868,10 +868,11 @@ namespace String {
     /// `indentHelper` calls replaceMatches to change the result to use the System
     /// lineSeparator.
     ///
-    def indentHelper(n: Int32, s: String): String =
-        import java.lang.String.indent(Int32);
-        let s1 = s.indent(n) as & Pure;
-        replaceMatches("\r?\n", lineSeparator(), s1)
+    // TODO
+//    def indentHelper(n: Int32, s: String): String =
+//        import java.lang.String.indent(Int32);
+//        let s1 = s.indent(n) as & Pure;
+//        replaceMatches("\r?\n", lineSeparator(), s1)
 
     ///
     /// Strip every indented line in string `s` by `n` spaces. `n` must be greater than `0`.
@@ -883,11 +884,12 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
-    pub def stripIndent(n: Int32, s: String): String =
-        if (n <= 0 || length(s) == 0)
-            s
-        else
-            indentHelper(-n, s)
+    // TODO
+//    pub def stripIndent(n: Int32, s: String): String =
+//        if (n <= 0 || length(s) == 0)
+//            s
+//        else
+//            indentHelper(-n, s)
 
     ///
     /// Split the string `s` into an array of lines, breaking on newline.
