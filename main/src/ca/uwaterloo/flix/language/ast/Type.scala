@@ -316,6 +316,18 @@ object Type {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(sym)), List(tpe, rest))
   }
 
+  // MATT docs
+  def mkRelation(sym: Symbol.RelSym, tuple: Type): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Relation(sym)), tuple)
+  }
+
+  // MATT docs
+  // MATT could merge with relations since sym knows if it is  rel or lat
+  def mkLattice(sym: Symbol.LatSym, tuple: Type): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Lattice(sym)), tuple)
+  }
+
+
   /**
     * Constructs an arrow with the given effect type A ->eff B.
     */

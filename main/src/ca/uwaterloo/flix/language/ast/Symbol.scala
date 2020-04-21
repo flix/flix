@@ -346,7 +346,7 @@ object Symbol {
   /**
     * A common super-type for predicate symbols.
     */
-  trait PredSym
+  sealed trait PredSym
 
   /**
     * Relation Symbol.

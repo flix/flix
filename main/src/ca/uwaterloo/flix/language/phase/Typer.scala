@@ -1143,14 +1143,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  -------------------------------------------
         //  project P exp2 : #{ P : a | c }
         //
-        val freshPredicateTypeVar = Type.freshTypeVar()
+        val freshTupleTypeVar = Type.freshTypeVar()
+        val predicateType = sym match {
+          case sym: Symbol.LatSym => Type.mkLattice(sym, freshTupleTypeVar)
+          case sym: Symbol.RelSym => Type.mkRelation(sym, freshTupleTypeVar)
+        }
         val freshRestSchemaTypeVar = Type.freshTypeVarWithKind(Kind.Schema)
         val freshResultSchemaTypeVar = Type.freshTypeVarWithKind(Kind.Schema)
 
         for {
           (tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypM(tpe, Type.mkSchemaExtend(sym, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.mkSchemaExtend(sym, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypM(tpe, Type.mkSchemaExtend(sym, predicateType, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkSchemaExtend(sym, predicateType, freshResultSchemaTypeVar), loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 

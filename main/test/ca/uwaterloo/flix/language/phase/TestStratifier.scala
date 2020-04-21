@@ -135,11 +135,10 @@ class TestStratifier extends FunSuite with TestUtils {
   test("HackTest.01") { // MATT
     val input =
     """
-      |def testRecordDuplicateExtend04(): Bool =
-      |  let r0 = { +x = 123 | {} };
-      |  let r1 = { +x = "abc" | r0 };
-      |  let r2 = { +x = "def" | r0 };
-      |    r1.x != r2.x
+      |rel A(x: Int, y: Int, z: Int)
+      |def testProject01(): Bool =
+      |    let c1 = A(1, 1, 1).;
+      |    (project A c1) |= A(1, 1, 1).
     """.stripMargin
     new Flix().addStr(input).compile()
   }

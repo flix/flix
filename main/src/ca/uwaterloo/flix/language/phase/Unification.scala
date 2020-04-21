@@ -76,6 +76,7 @@ object Unification {
       def canSubstituteKind(varKind: Kind, trueKind: Kind): Boolean = (varKind, trueKind) match {
         case (vkind, tkind) if vkind == tkind => true
         case (Kind.Star, Kind.Record) => true
+        case (Kind.Star, Kind.Schema) => true
         case _ => false
       }
 
@@ -85,7 +86,10 @@ object Unification {
             m.get(x) match {
               case None => x
               case Some(y) if canSubstituteKind(x.kind, y.kind) => y
-              case Some(y) => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${y.kind}'.")
+              case Some(y) =>
+                val xx = x
+                val yy = y
+                throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${y.kind}'.")
             }
           case Type.Cst(tc) => Type.Cst(tc)
           case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
@@ -296,10 +300,21 @@ object Unification {
       Result.Ok(Substitution.singleton(x, tpe))
     }
 
+    // MATT docs
+    // MATT more validation?
+    def orderVars(tpe1: Type.Var, tpe2: Type.Var): (Type.Var, Type.Var) = (tpe1.kind, tpe2.kind) match {
+      case (Kind.Record, _) => (tpe2, tpe1)
+      case (Kind.Schema, _) => (tpe2, tpe1)
+      case _ => (tpe1, tpe2)
+    }
     /**
       * Unifies the two given types `tpe1` and `tpe2`.
       */
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+      case (x: Type.Var, y: Type.Var) =>
+        val (a, b) = orderVars(x, y)
+        unifyVar(a, b)
+
       case (x: Type.Var, _) => unifyVar(x, tpe2)
 
       case (_, x: Type.Var) => unifyVar(x, tpe1)
