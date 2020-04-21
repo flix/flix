@@ -17,7 +17,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val BenchmarkIterations = 10
+  val BenchmarkIterations = 25
 
   /**
     * Outputs statistics about time spent in each compiler phase.
@@ -64,7 +64,7 @@ object BenchmarkCompiler {
     val currentTime = System.currentTimeMillis() / 1000
     val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
 
-    println(s"$currentTime, $throughput")
+    println(s"$totalLines, $throughput")
   }
 
   /**
@@ -88,8 +88,8 @@ object BenchmarkCompiler {
     val flix = new Flix()
     flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
 
-    addCompilerTests(flix)
-    addLibraryTests(flix)
+    //addCompilerTests(flix)
+    //addLibraryTests(flix)
     //addAbstractDomains(flix)
 
     flix
