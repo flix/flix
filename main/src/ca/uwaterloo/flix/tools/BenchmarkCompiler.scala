@@ -91,7 +91,8 @@ object BenchmarkCompiler {
     //addCompilerTests(flix)
     //addLibraryTests(flix)
     //addAbstractDomains(flix)
-    addPuppetMaster(flix)
+    //addPuppetMaster(flix)
+    addPyAnalysis(flix)
 
     flix
   }
@@ -208,6 +209,14 @@ object BenchmarkCompiler {
     flix.addPath("../actors/src/main/actor/Ready.flix")
     flix.addPath("../actors/src/main/actor/State.flix")
     flix.addPath("../actors/src/main/actor/SystemEvent.flix")
+  }
+
+
+  /**
+    * Adds the PyAnalysis source code.
+    */
+  private def addPyAnalysis(flix: Flix): Unit = {
+    flix.addPath("../../magnus-madsen/PyAnalysis/flix/andersen.flix")
   }
 
 }
