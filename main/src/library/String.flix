@@ -852,27 +852,25 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
-//    pub def indent(n: Int32, s: String): String =
-//        if (n <= 0 || length(s) == 0)
-//            s
-//        else
-//            indentHelper(n, s)
+    pub def indent(n: Int32, s: String): String =
+        if (n <= 0 || length(s) == 0)
+            s
+        else
+            indentHelper(n, s) as & Pure
 
     ///
-    /// Helper function for `indent` and `stripIndent`.
+    /// Helper function for `indent`.
     ///
-    /// if n > 0 the Java function `indent` indents with spaces.
-    /// if n < 0 the Java function `indent` strips spaces.
-    ///
-    /// Note, Java indent appears to use only line feed (0x000A) as a terminator.
-    /// `indentHelper` calls replaceMatches to change the result to use the System
-    /// lineSeparator.
-    ///
-    // TODO
-//    def indentHelper(n: Int32, s: String): String =
-//        import java.lang.String.indent(Int32);
-//        let s1 = s.indent(n) as & Pure;
-//        replaceMatches("\r?\n", lineSeparator(), s1)
+    def indentHelper(n: Int32, s: String): String & Impure =
+        let sb = StringBuilder.new();
+        let prefix = repeat(" ", n);
+        let step = x -> {
+            StringBuilder.appendString!(sb, prefix);
+            StringBuilder.appendLine!(sb, x)
+        };
+        List.foreach(step, lines(s));
+        StringBuilder.toString(sb)
+
 
     ///
     /// Strip every indented line in string `s` by `n` spaces. `n` must be greater than `0`.
