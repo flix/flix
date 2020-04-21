@@ -289,23 +289,4 @@ namespace Result {
         case (Err(_), Ok(_))    =>  +1
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Lints: Simplifications                                                  //
-    /////////////////////////////////////////////////////////////////////////////
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Lints: Use Cases                                                        //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @lint
-    def useExists(): Bool =
-        forall [t, e] (f: t -> Bool, r: Result[t, e]).
-            getWithDefault(map(f, r), false) === exists(f, r)
-
-    @lint
-    def useForall(): Bool =
-        forall [t, e] (f: t -> Bool, r: Result[t, e]).
-            getWithDefault(map(f, r), true) === forall(f, r)
-
 }
