@@ -201,7 +201,7 @@ law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool =
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.
 ///
-def ===(x: a, y: a): Bool = ???
+pub def ===(x: a, y: a): Bool = ???
 
 namespace Tuple2 {
 
