@@ -254,6 +254,134 @@ namespace Int64 {
         case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
     }
 
+    ///
+    /// Convert `x` to an `Option[Int8]`.
+    ///
+    /// Returns `Some(x as Int8)` if the numeric value of `x` can be represented exactly.
+    ///
+    /// Returns `None` if the numeric value of `x` is outside the range of Int8
+    /// (i.e. -128 to 127).
+    ///
+    pub def tryToInt8(x: Int64): Option[Int8] =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.byteValue();
+        if (x < Int8.toInt64(Int8.minValue()) || x > Int8.toInt64(Int8.maxValue()))
+            None
+        else
+            Some(valueOf(x).byteValue()) as & Pure
+
+    ///
+    /// Convert `x` to an `Option[Int16]`.
+    ///
+    /// Returns `Some(x as Int16)` if the numeric value of `x` can be represented exactly.
+    ///
+    /// Returns `None` if the numeric value of `x` is outside the range of Int16
+    /// (i.e. -32768 to 32767).
+    ///
+    pub def tryToInt16(x: Int64): Option[Int16] =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.shortValue();
+        if (x < Int16.toInt64(Int16.minValue()) || x > Int16.toInt64(Int16.maxValue()))
+            None
+        else
+            Some(valueOf(x).shortValue()) as & Pure
+
+    ///
+    /// Convert `x` to an `Option[Int32]`.
+    ///
+    /// Returns `Some(x as Int32)` if the numeric value of `x` can be represented exactly.
+    ///
+    /// Returns `None` if the numeric value of `x` is outside the range of Int32
+    /// (i.e. -2147483648 to 2147483647).
+    ///
+    pub def tryToInt32(x: Int64): Option[Int32] =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.intValue();
+        if (x < Int32.toInt64(Int32.minValue()) || x > Int32.toInt64(Int32.maxValue()))
+            None
+        else
+            Some(valueOf(x).intValue()) as & Pure
+    ///
+    /// Convert `x` to a BigInt.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
+    pub def toBigInt(x: Int64): BigInt =
+        import java.lang.Long:valueOf(Int64) as i64ValueOf;
+        import java.lang.Long.longValue();
+        import java.math.BigInteger:valueOf(Int64) as asBigInt;
+        i64ValueOf(x).longValue().asBigInt() as & Pure
+
+    ///
+    /// Convert `x` to a Float32.
+    ///
+    /// Warning: The numeric value of `x` may lose precision.
+    ///
+    pub def toFloat32(x: Int64): Float32 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.floatValue();
+        valueOf(x).floatValue() as & Pure
+
+    ///
+    /// Convert `x` to a Float32.
+    ///
+    /// Warning: The numeric value of `x` may lose precision.
+    ///
+    pub def toFloat64(x: Int64): Float64 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.doubleValue();
+        valueOf(x).doubleValue() as & Pure
+
+    ///
+    /// Helper function for the `clamp` conversion functions.
+    ///
+    def clamp(x: Int64, minimum: Int64, maximum: Int64): Int64 =
+        if (x < minimum)
+             minimum
+        else
+            if (x > maximum)
+                maximum
+            else
+                x
+
+    ///
+    /// Convert `x` to an `Int8`.
+    ///
+    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt8(x: Int64, minimum: Int8, maximum: Int8): Int8 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.byteValue();
+        let mini64 = Int8.toInt64(minimum);
+        let maxi64 = Int8.toInt64(maximum);
+        valueOf(clamp(x, mini64, maxi64)).byteValue() as & Pure
+
+    ///
+    /// Convert `x` to an `Int16`.
+    ///
+    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt16(x: Int64, minimum: Int16, maximum: Int16): Int16 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.shortValue();
+        let mini64 = Int16.toInt64(minimum);
+        let maxi64 = Int16.toInt64(maximum);
+        valueOf(clamp(x, mini64, maxi64)).shortValue() as & Pure
+
+
+    ///
+    /// Convert `x` to an `Int32`.
+    ///
+    /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
+    ///
+    pub def clampToInt32(x: Int64, minimum: Int32, maximum: Int32): Int32 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.intValue();
+        let mini64 = Int32.toInt64(minimum);
+        let maxi64 = Int32.toInt64(maximum);
+        valueOf(clamp(x, mini64, maxi64)).intValue() as & Pure
+
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////

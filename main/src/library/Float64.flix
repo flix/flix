@@ -94,6 +94,24 @@ namespace Float64 {
         x.toString() as & Pure
 
     ///
+    /// Return a decimal representation of `x`.
+    ///
+    pub def toDecimalString(decimalPlaces: Int32, x: Float64): String =
+        toDecimalStringHelper(decimalPlaces, x) as & Pure
+
+    ///
+    /// Helper function for `toDecimalString`.
+    ///
+    pub def toDecimalStringHelper(decimalPlaces: Int32, x: Float64): String & Impure =
+        import new java.text.DecimalFormat() as newDecimalFormat;
+        import java.text.DecimalFormat.setMaximumFractionDigits(Int32);
+        import java.text.NumberFormat.format(Float64);
+        let df = newDecimalFormat();
+        df.setMaximumFractionDigits(decimalPlaces);
+        let nf = df as ##java.text.NumberFormat;
+        nf.format(x)
+
+    ///
     /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
@@ -101,7 +119,215 @@ namespace Float64 {
         import java.lang.String.strip();
         import java.lang.Double:parseDouble(String);
         Ok(s.strip().parseDouble()) as & Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
-     }
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
+    }
+
+    ///
+    /// Convert `x` to an `Option[Int8]`.
+    ///
+    /// Returns `Some(x as Int8)` if the numeric value of `x` is within the range
+    /// of Int8, rounding `x` towards 0`.
+    ///
+    /// Returns `None` if the numeric value of `x` is outside the range of Int8
+    /// (i.e. -128 to 127), or it is NaN or infinity.
+    ///
+    pub def tryToInt8(x: Float64): Option[Int8] =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.byteValue();
+        if (x < Int8.toFloat64(Int8.minValue()) || x > Int8.toFloat64(Int8.maxValue()) || isNan(x) || isInfinite(x))
+            None
+        else
+            Some(valueOf(x).byteValue()) as & Pure
+
+    ///
+    /// Convert `x` to an `Option[Int16]`.
+    ///
+    /// Returns `Some(x as Int16)` if the numeric value of `x` is within the range
+    /// of Int16, rounding `x` towards 0`.
+    ///
+    /// Returns `None` if the numeric value of `x` is outside the range of Int16
+    /// (i.e. -32768 to 32767), or it is NaN or infinity.
+    ///
+    pub def tryToInt16(x: Float64): Option[Int16] =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.shortValue();
+        if (x < Int16.toFloat64(Int16.minValue()) || x > Int16.toFloat64(Int16.maxValue()) || isNan(x) || isInfinite(x))
+            None
+        else
+            Some(valueOf(x).shortValue()) as & Pure
+
+    ///
+    /// Convert `x` to an `Option[Int32]`.
+    ///
+    /// Returns `Some(x as Int32)` if the numeric value of `x` is within the range
+    /// of Int32, rounding `x` towards 0`.
+    ///
+    /// Returns `None` if the numeric value of `x` is outside the range of Int32
+    /// (i.e. -2147483648 to 2147483647), or it is NaN or infinity.
+    ///
+    pub def tryToInt32(x: Float64): Option[Int32] =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.intValue();
+        if (x < Int32.toFloat64(Int32.minValue()) || x > Int32.toFloat64(Int32.maxValue()) || isNan(x) || isInfinite(x))
+            None
+        else
+            Some(valueOf(x).intValue()) as & Pure
+
+    ///
+    /// Convert `x` to an `Option[Int64]`.
+    ///
+    /// Returns `Some(x as Int64)` if the numeric value of `x` is within the range
+    /// of Int64, rounding `x` towards 0`.
+    ///
+    /// Returns `None` if the numeric value of `x` is outside the range of Int64
+    /// (i.e. -9223372036854775808 to 9223372036854775807), or it is NaN or infinity.
+    ///
+    /// Note: while the range of an Int64 is precisely defined using Int64 values,
+    /// converting this range to Float64 values is imprecise.
+    ///
+    pub def tryToInt64(x: Float64): Option[Int64] =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.longValue();
+        if (x < Int64.toFloat64(Int64.minValue()) || x > Int64.toFloat64(Int64.maxValue()) || isNan(x) || isInfinite(x))
+            None
+        else
+            Some(valueOf(x).longValue()) as & Pure
+
+    ///
+    /// Convert `x` to an `Option[BigInt]`.
+    ///
+    /// Returns `Some(x as BigInt)` if the numeric value of `x` is representable as a BigInt.
+    ///
+    /// Returns `None` if the value of `x` is NaN or infinity.
+    ///
+    pub def tryToBigInt(x: Float64): Option[BigInt] =
+        import java.math.BigDecimal:valueOf(Float64);
+        import java.math.BigDecimal.toBigInteger();
+        try {
+            Some(x.valueOf().toBigInteger()) as & Pure
+        } catch {
+            // Catch NaN, isInfinite.
+            case _: ##java.lang.NumberFormatException => None
+        }
+
+    ///
+    /// Convert `x` to an `Option[Float32]`.
+    ///
+    /// Returns `Some(x as Float32)` if the numeric value of `x` is within the range
+    /// of Float32, loss of precision may occur.
+    ///
+    /// Returns `None` if the numeric value of `x` is outside the range of Float32
+    /// (i.e. 1.4E-45 to 3.4028235E38).
+    ///
+    /// If `x` is NaN return `Some(Float32.NaN)``, if `x` is positive or negative infinity return
+    /// `Some` wrapping the corresponding Float32 infinity.
+    ///
+    pub def tryToFloat32(x: Float64): Option[Float32] =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.floatValue();
+        if (x < Float32.toFloat64(Float32.minValue()) || x > Float32.toFloat64(Float32.maxValue()))
+            None
+        else
+            Some(valueOf(x).floatValue()) as & Pure
+
+    ///
+    /// Helper function for the `clamp` conversion functions.
+    ///
+    def clamp(x: Float64, minimum: Float64, maximum: Float64): Float64 =
+        if (x < minimum)
+             minimum
+        else
+            if (x > maximum)
+                maximum
+            else
+                x
+
+    ///
+    /// Convert `x` to an `Int8`.
+    ///
+    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    ///
+    /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
+    /// function. Relying on `nanValue` to convert NaN to a permissable Int8 risks masking it.
+    ///
+    pub def clampToInt8(x: Float64, minimum: Int8, maximum: Int8, nanValue: Int8): Int8 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.byteValue();
+        let minf64 = Int8.toFloat64(minimum);
+        let maxf64 = Int8.toFloat64(maximum);
+        if (x.isNan())
+            nanValue
+        else
+            valueOf(clamp(x, minf64, maxf64)).byteValue() as & Pure
+
+    ///
+    /// Convert `x` to an `Int16`.
+    ///
+    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    ///
+    /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
+    /// function. Relying on `nanValue` to convert NaN to a permissable Int16 risks masking it.
+    ///
+    pub def clampToInt16(x: Float64, minimum: Int16, maximum: Int16, nanValue: Int16): Int16 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.shortValue();
+        let minf64 = Int16.toFloat64(minimum);
+        let maxf64 = Int16.toFloat64(maximum);
+        if (x.isNan())
+            nanValue
+        else
+            valueOf(clamp(x, minf64, maxf64)).shortValue() as & Pure
+
+    ///
+    /// Convert `x` to an `Int32`.
+    ///
+    /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
+    ///
+    /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
+    /// function. Relying on `nanValue` to convert NaN to a permissable Int32 risks masking it.
+    ///
+    pub def clampToInt32(x: Float64, minimum: Int32, maximum: Int32, nanValue: Int32): Int32 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.intValue();
+        let minf64 = Int32.toFloat64(minimum);
+        let maxf64 = Int32.toFloat64(maximum);
+        if (x.isNan())
+            nanValue
+        else
+            valueOf(clamp(x, minf64, maxf64)).intValue() as & Pure
+
+    ///
+    /// Convert `x` to an `Int64`.
+    ///
+    /// Returns `x` clamped within the Int64 range `minimum` to `maximum`.
+    ///
+    /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
+    /// function. Relying on `nanValue` to convert NaN to a permissable Int64 risks masking it.
+    ///
+    pub def clampToInt64(x: Float64, minimum: Int64, maximum: Int64, nanValue: Int64): Int64 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.longValue();
+        let minf64 = Int64.toFloat64(minimum);
+        let maxf64 = Int64.toFloat64(maximum);
+        if (x.isNan())
+            nanValue
+        else
+            valueOf(clamp(x, minf64, maxf64)).longValue() as & Pure
+
+    ///
+    /// Convert `x` to a `Float32`.
+    ///
+    /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
+    ///
+    pub def clampToFloat32(x: Float64, minimum: Float32, maximum: Float32): Float32 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.floatValue();
+        let minf64 = Float32.toFloat64(minimum);
+        let maxf64 = Float32.toFloat64(maximum);
+        if (x.isNan())
+            Float32.nan()
+        else
+            valueOf(clamp(x, minf64, maxf64)).floatValue() as & Pure
+
 }

@@ -706,4 +706,144 @@ namespace TestInt16 {
     @test
     def fromString08(): Bool = Int16.fromString("-32768") == Ok(-32768i16)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // tryToInt8                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def tryToInt801(): Bool = Int16.tryToInt8(0i16) == Some(0i8)
+
+    @test
+    def tryToInt802(): Bool = Int16.tryToInt8(1i16) == Some(1i8)
+
+    @test
+    def tryToInt803(): Bool = Int16.tryToInt8(-1i16) == Some(-1i8)
+
+    @test
+    def tryToInt804(): Bool = Int16.tryToInt8(127i16) == Some(127i8)
+
+    @test
+    def tryToInt805(): Bool = Int16.tryToInt8(128i16) == None
+
+    @test
+    def tryToInt806(): Bool = Int16.tryToInt8(-128i16) == Some(-128i8)
+
+    @test
+    def tryToInt807(): Bool = Int16.tryToInt8(-129i16) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt32                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt3201(): Bool = Int16.toInt32(0i16) == 0
+
+    @test
+    def toInt3202(): Bool = Int16.toInt32(1i16) == 1
+
+    @test
+    def toInt3203(): Bool = Int16.toInt32(-1i16) == -1
+
+    @test
+    def toInt3204(): Bool = Int16.toInt32(32767i16) == 32767
+
+    @test
+    def toInt3205(): Bool = Int16.toInt32(-32768i16) == -32768
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt64                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt6401(): Bool = Int16.toInt64(0i16) == 0i64
+
+    @test
+    def toInt6402(): Bool = Int16.toInt64(1i16) == 1i64
+
+    @test
+    def toInt6403(): Bool = Int16.toInt64(-1i16) == -1i64
+
+    @test
+    def toInt6404(): Bool = Int16.toInt64(32767i16) == 32767i64
+
+    @test
+    def toInt6405(): Bool = Int16.toInt64(-32768i16) == -32768i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toBigInt                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toBigInt01(): Bool = Int16.toBigInt(0i16) == 0ii
+
+    @test
+    def toBigInt02(): Bool = Int16.toBigInt(1i16) == 1ii
+
+    @test
+    def toBigInt03(): Bool = Int16.toBigInt(-1i16) == -1ii
+
+    @test
+    def toBigInt04(): Bool = Int16.toBigInt(32767i16) == 32767ii
+
+    @test
+    def toBigInt05(): Bool = Int16.toBigInt(-32768i16) == -32768ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toFloat32                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toFloat3201(): Bool = Int16.toFloat32(0i16) == 0.0f32
+
+    @test
+    def toFloat3202(): Bool = Int16.toFloat32(1i16) == 1.0f32
+
+    @test
+    def toFloat3203(): Bool = Int16.toFloat32(-1i16) == -1.0f32
+
+    @test
+    def toFloat3204(): Bool = Int16.toFloat32(32767i16) == 32767.0f32
+
+    @test
+    def toFloat3205(): Bool = Int16.toFloat32(-32768i16) == -32768.0f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toFloat64                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toFloat6401(): Bool = Int16.toFloat64(0i16) == 0.0f64
+
+    @test
+    def toFloat6402(): Bool = Int16.toFloat64(1i16) == 1.0f64
+
+    @test
+    def toFloat6403(): Bool = Int16.toFloat64(-1i16) == -1.0f64
+
+    @test
+    def toFloat6404(): Bool = Int16.toFloat64(32767i16) == 32767.0f64
+
+    @test
+    def toFloat6405(): Bool = Int16.toFloat64(-32768i16) == -32768.0f64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // clampToInt8                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def clampToInt801(): Bool = Int16.clampToInt8(0i16, -100i8, 100i8) == 0i8
+
+    @test
+    def clampToInt802(): Bool = Int16.clampToInt8(100i16, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt803(): Bool = Int16.clampToInt8(101i16, -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt804(): Bool = Int16.clampToInt8(-100i16, -100i8, 100i8) == -100i8
+
+    @test
+    def clampToInt805(): Bool = Int16.clampToInt8(-101i16, -100i8, 100i8) == -100i8
+
+    @test
+    def clampToInt806(): Bool = Int16.clampToInt8(Int16.maxValue(), -100i8, 100i8) == 100i8
+
+    @test
+    def clampToInt807(): Bool = Int16.clampToInt8(Int16.minValue(), -100i8, 100i8) == -100i8
+
+    @test
+    def clampToInt808(): Bool = Int16.clampToInt8(5i16, 10i8, 0i8) == 10i8      // Bad range
 }

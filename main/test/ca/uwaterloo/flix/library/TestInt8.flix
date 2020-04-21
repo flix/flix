@@ -703,4 +703,111 @@ namespace TestInt8 {
     @test
     def fromString08(): Bool = Int8.fromString("-128") == Ok(-128i8)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt16                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt1601(): Bool = Int8.toInt16(0i8) == 0i16
+
+    @test
+    def toInt1602(): Bool = Int8.toInt16(1i8) == 1i16
+
+    @test
+    def toInt1603(): Bool = Int8.toInt16(-1i8) == -1i16
+
+    @test
+    def toInt1604(): Bool = Int8.toInt16(127i8) == 127i16
+
+    @test
+    def toInt1605(): Bool = Int8.toInt16(-128i8) == -128i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt32                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt3201(): Bool = Int8.toInt32(0i8) == 0
+
+    @test
+    def toInt3202(): Bool = Int8.toInt32(1i8) == 1
+
+    @test
+    def toInt3203(): Bool = Int8.toInt32(-1i8) == -1
+
+    @test
+    def toInt3204(): Bool = Int8.toInt32(127i8) == 127
+
+    @test
+    def toInt3205(): Bool = Int8.toInt32(-128i8) == -128
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt64                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt6401(): Bool = Int8.toInt64(0i8) == 0i64
+
+    @test
+    def toInt6402(): Bool = Int8.toInt64(1i8) == 1i64
+
+    @test
+    def toInt6403(): Bool = Int8.toInt64(-1i8) == -1i64
+
+    @test
+    def toInt6404(): Bool = Int8.toInt64(127i8) == 127i64
+
+    @test
+    def toInt6405(): Bool = Int8.toInt64(-128i8) == -128i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toBigInt                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toBigInt01(): Bool = Int8.toBigInt(0i8) == 0ii
+
+    @test
+    def toBigInt02(): Bool = Int8.toBigInt(1i8) == 1ii
+
+    @test
+    def toBigInt03(): Bool = Int8.toBigInt(-1i8) == -1ii
+
+    @test
+    def toBigInt04(): Bool = Int8.toBigInt(127i8) == 127ii
+
+    @test
+    def toBigInt05(): Bool = Int8.toBigInt(-128i8) == -128ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toFloat32                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toFloat3201(): Bool = Int8.toFloat32(0i8) == 0.0f32
+
+    @test
+    def toFloat3202(): Bool = Int8.toFloat32(1i8) == 1.0f32
+
+    @test
+    def toFloat3203(): Bool = Int8.toFloat32(-1i8) == -1.0f32
+
+    @test
+    def toFloat3204(): Bool = Int8.toFloat32(127i8) == 127.0f32
+
+    @test
+    def toFloat3205(): Bool = Int8.toFloat32(-128i8) == -128.0f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toFloat64                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toFloat6401(): Bool = Int8.toFloat64(0i8) == 0.0f64
+
+    @test
+    def toFloat6402(): Bool = Int8.toFloat64(1i8) == 1.0f64
+
+    @test
+    def toFloat6403(): Bool = Int8.toFloat64(-1i8) == -1.0f64
+
+    @test
+    def toFloat6404(): Bool = Int8.toFloat64(127i8) == 127.0f64
+
+    @test
+    def toFloat6405(): Bool = Int8.toFloat64(-128i8) == -128.0f64
 }
