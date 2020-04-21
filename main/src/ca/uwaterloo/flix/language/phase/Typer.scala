@@ -1688,11 +1688,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       // Lookup the declared type of the relation/lattice (if it exists).
       val declaredType = sym match {
         case x: Symbol.RelSym => program.relations.get(x) match {
-          case None => Type.freshTypeVarWithKind(Kind.Schema)
+          case None => Type.freshTypeVarWithKind(Kind.Relation)
           case Some(rel) => Scheme.instantiate(rel.sc)
         }
         case x: Symbol.LatSym => program.lattices.get(x) match {
-          case None => Type.freshTypeVarWithKind(Kind.Schema)
+          case None => Type.freshTypeVarWithKind(Kind.Lattice)
           case Some(lat) => Scheme.instantiate(lat.sc)
         }
       }
@@ -1751,11 +1751,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       // Lookup the declared type of the relation/lattice (if it exists).
       val declaredType = sym match {
         case x: Symbol.RelSym => program.relations.get(x) match {
-          case None => Type.freshTypeVarWithKind(Kind.Schema)
+          case None => Type.freshTypeVarWithKind(Kind.Relation)
           case Some(rel) => Scheme.instantiate(rel.sc)
         }
         case x: Symbol.LatSym => program.lattices.get(x) match {
-          case None => Type.freshTypeVarWithKind(Kind.Schema)
+          case None => Type.freshTypeVarWithKind(Kind.Lattice)
           case Some(lat) => Scheme.instantiate(lat.sc)
         }
       }

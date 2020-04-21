@@ -131,4 +131,16 @@ class TestStratifier extends FunSuite with TestUtils {
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
+
+  test("HackTest.01") { // MATT
+    val input =
+    """
+      |def testRecordDuplicateExtend04(): Bool =
+      |  let r0 = { +x = 123 | {} };
+      |  let r1 = { +x = "abc" | r0 };
+      |  let r2 = { +x = "def" | r0 };
+      |    r1.x != r2.x
+    """.stripMargin
+    new Flix().addStr(input).compile()
+  }
 }

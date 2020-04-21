@@ -29,7 +29,7 @@ final class GenSym() {
     * Returns a freshly generated unique id.
     */
   def freshId(): Int = {
-    if (counter.get() == 87) {
+    if (List(3, 17, 14319).contains(counter.get())) {
       System.err.println("hello")
     }
     counter.getAndIncrement()

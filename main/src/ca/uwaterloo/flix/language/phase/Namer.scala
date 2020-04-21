@@ -752,32 +752,32 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, env0, tenv0))) {
         case cs =>
-          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVar(), loc)
+          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVarWithKind(Kind.Schema), loc)
       }
 
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, Type.freshTypeVarWithKind(Kind.Schema), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointSolve(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVarWithKind(Kind.Schema), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointProject(qname, exp, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProject(qname, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case e => NamedAst.Expression.FixpointProject(qname, e, Type.freshTypeVarWithKind(Kind.Schema), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVarWithKind(Kind.Schema), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointFold(qname, init, f, constraints, loc) =>
       mapN(visitExp(init, env0, tenv0), visitExp(f, env0, tenv0), visitExp(constraints, env0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname, e1, e2, e3, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname, e1, e2, e3, Type.freshTypeVarWithKind(Kind.Schema), Type.freshEffectVar(), loc)
       }
   }
 
@@ -882,12 +882,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVarWithKind(Kind.Schema), loc)
+      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVarWithKind(Kind.Relation), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
         e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0)
-      } yield NamedAst.Predicate.Head.Union(e, Type.freshTypeVarWithKind(Kind.Schema), loc)
+      } yield NamedAst.Predicate.Head.Union(e, Type.freshTypeVarWithKind(Kind.Relation), loc)
   }
 
   /**
@@ -896,7 +896,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
-      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVarWithKind(Kind.Schema), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVarWithKind(Kind.Relation), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
