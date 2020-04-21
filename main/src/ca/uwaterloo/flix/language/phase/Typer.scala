@@ -58,10 +58,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       * Performs type inference and reassembly on the given definition `defn`.
       */
     def visitDefn(defn: ResolvedAst.Def): Validation[((Symbol.DefnSym, TypedAst.Def), (Symbol.DefnSym, Substitution)), TypeError] = defn match {
-      case ResolvedAst.Def(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) =>
+      case ResolvedAst.Def(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) => {
+
+//        val a = new Array[Long](1000)
+//        var i = 0
+//        while (i < 1000) {
+//          val t = System.nanoTime()
+//          typeCheckDef(defn, root)
+//          a(i) = System.nanoTime() - t
+//          i = i + 1
+//        }
+//
+//        println(sym.toString + ", " + StatUtils.median(a.toList))
+
         typeCheckDef(defn, root) map {
           case (defn, subst) => ((sym, defn), (sym, subst))
         }
+      }
     }
 
     // Every definition in the ast.
