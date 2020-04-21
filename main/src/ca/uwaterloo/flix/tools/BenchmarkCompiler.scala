@@ -92,7 +92,7 @@ object BenchmarkCompiler {
     //addLibraryTests(flix)
     //addAbstractDomains(flix)
     //addPuppetMaster(flix)
-    addPyAnalysis(flix)
+    addFlixTime(flix)
 
     flix
   }
@@ -211,12 +211,32 @@ object BenchmarkCompiler {
     flix.addPath("../actors/src/main/actor/SystemEvent.flix")
   }
 
-
   /**
     * Adds the PyAnalysis source code.
     */
   private def addPyAnalysis(flix: Flix): Unit = {
     flix.addPath("../../magnus-madsen/PyAnalysis/flix/andersen.flix")
+  }
+
+  /**
+    * Adds the flix-time source code.
+    */
+  private def addFlixTime(flix: Flix): Unit = {
+    flix.addPath("../../misc/flix-time/src/ChronoUnit.flix")
+    flix.addPath("../../misc/flix-time/src/DateFormatter.flix")
+    flix.addPath("../../misc/flix-time/src/DateTimeFormatter.flix")
+    flix.addPath("../../misc/flix-time/src/Duration.flix")
+    flix.addPath("../../misc/flix-time/src/Instant.flix")
+    flix.addPath("../../misc/flix-time/src/LocalDate.flix")
+    flix.addPath("../../misc/flix-time/src/LocalDateTime.flix")
+    flix.addPath("../../misc/flix-time/src/LocalTime.flix")
+    flix.addPath("../../misc/flix-time/src/OffsetDateTime.flix")
+    flix.addPath("../../misc/flix-time/src/OffsetTime.flix")
+    flix.addPath("../../misc/flix-time/src/Period.flix")
+    flix.addPath("../../misc/flix-time/src/TimeFormatter.flix")
+    flix.addPath("../../misc/flix-time/src/ZonedDateTime.flix")
+    flix.addPath("../../misc/flix-time/src/ZoneId.flix")
+    flix.addPath("../../misc/flix-time/src/ZoneOffset.flix")
   }
 
 }
