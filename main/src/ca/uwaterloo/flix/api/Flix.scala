@@ -64,47 +64,49 @@ class Flix {
     * A sequence of internal inputs to be parsed into Flix ASTs.
     */
   private val library = List(
-    "Array.flix" -> LocalResource.get("/library/Array.flix"),
+    // Core - Primitives
     "BigInt.flix" -> LocalResource.get("/library/BigInt.flix"),
     "Char.flix" -> LocalResource.get("/library/Char.flix"),
-    "Console.flix" -> LocalResource.get("/library/Console.flix"),
     "Float32.flix" -> LocalResource.get("/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/library/Float64.flix"),
     "Int8.flix" -> LocalResource.get("/library/Int8.flix"),
     "Int16.flix" -> LocalResource.get("/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/library/Int64.flix"),
+    "String.flix" -> LocalResource.get("/library/String.flix"),
+
+    // Core - Data Types
+    "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
+    "Array.flix" -> LocalResource.get("/library/Array.flix"),
     "List.flix" -> LocalResource.get("/library/List.flix"),
     "Map.flix" -> LocalResource.get("/library/Map.flix"),
     "Nel.flix" -> LocalResource.get("/library/Nel.flix"),
     "Option.flix" -> LocalResource.get("/library/Option.flix"),
-    "Path.flix" -> LocalResource.get("/library/Path.flix"),
-    "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
-    "Random.flix" -> LocalResource.get("/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
-    "String.flix" -> LocalResource.get("/library/String.flix"),
-
+    "Validation.flix" -> LocalResource.get("/library/Validation.flix"),
     "MutSet.flix" -> LocalResource.get("/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/library/MutMap.flix"),
 
+    // Other
+    "StringBuilder.flix" -> LocalResource.get("/library/StringBuilder.flix"),
+    "RedBlackTree.flix" -> LocalResource.get("/library/RedBlackTree.flix"),
+
+    // Rest
+    "Console.flix" -> LocalResource.get("/library/Console.flix"),
     "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
+    "Random.flix" -> LocalResource.get("/library/Random.flix"),
+    "Path.flix" -> LocalResource.get("/library/Path.flix"),
     "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
     "MeetLattice.flix" -> LocalResource.get("/library/MeetLattice.flix"),
     "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
-    "Validation.flix" -> LocalResource.get("/library/Validation.flix"),
 
     "flix/channel/Channel.flix" -> LocalResource.get("/library/flix/channel/Channel.flix"),
     "flix/channel/Ticker.flix" -> LocalResource.get("/library/flix/channel/Ticker.flix"),
     "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
     "flix/time/Duration.flix" -> LocalResource.get("/library/flix/time/Duration.flix"),
     "flix/time/Instant.flix" -> LocalResource.get("/library/flix/time/Instant.flix"),
-
-
-    "StringBuilder.flix" -> LocalResource.get("/library/StringBuilder.flix"),
-
-    "RedBlackTree.flix" -> LocalResource.get("/library/RedBlackTree.flix"),
 
     //"CodePatterns.flix" -> LocalResource.get("/library/CodePatterns.flix"),
     // "Vec.flix" -> LocalResource.get("/library/Vec.flix"),
