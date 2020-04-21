@@ -2354,46 +2354,45 @@ def indent10(): Bool =
 // stripIndent                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-// TODO
-//@test
-//def stripIndent01(): Bool =
-//    String.stripIndent(3, "") == ""
-//
-//@test
-//def stripIndent02(): Bool =
-//    String.stripIndent(3, String.unlines("   abc" :: Nil)) == String.unlines("abc" :: Nil)
-//
-//@test
-//def stripIndent03(): Bool =
-//    String.stripIndent(3, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("abc" :: "def" :: Nil)
-//
-//@test
-//def stripIndent04(): Bool =
-//    String.stripIndent(3, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("ab" :: "cd" :: "ef" :: Nil)
-//
-//@test
-//def stripIndent05(): Bool =
-//    String.stripIndent(1, String.unlines("   abc" :: Nil)) == String.unlines("  abc" :: Nil)
-//
-//@test
-//def stripIndent06(): Bool =
-//    String.stripIndent(1, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("  abc" :: "  def" :: Nil)
-//
-//@test
-//def stripIndent07(): Bool =
-//    String.stripIndent(1, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("  ab" :: "  cd" :: "  ef" :: Nil)
-//
-//@test
-//def stripIndent08(): Bool =
-//    String.stripIndent(0, String.unlines("   abc" :: Nil)) == String.unlines("   abc" :: Nil)
-//
-//@test
-//def stripIndent09(): Bool =
-//    String.stripIndent(0, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("   abc" :: "   def" :: Nil)
-//
-//@test
-//def stripIndent10(): Bool  =
-//    String.stripIndent(0, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)
+@test
+def stripIndent01(): Bool =
+    String.stripIndent(3, "") == ""
+
+@test
+def stripIndent02(): Bool =
+    String.stripIndent(3, String.unlines("   abc" :: Nil)) == String.unlines("abc" :: Nil)
+
+@test
+def stripIndent03(): Bool =
+    String.stripIndent(3, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("abc" :: "def" :: Nil)
+
+@test
+def stripIndent04(): Bool =
+    String.stripIndent(3, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("ab" :: "cd" :: "ef" :: Nil)
+
+@test
+def stripIndent05(): Bool =
+    String.stripIndent(1, String.unlines("   abc" :: Nil)) == String.unlines("  abc" :: Nil)
+
+@test
+def stripIndent06(): Bool =
+    String.stripIndent(1, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("  abc" :: "  def" :: Nil)
+
+@test
+def stripIndent07(): Bool =
+    String.stripIndent(1, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("  ab" :: "  cd" :: "  ef" :: Nil)
+
+@test
+def stripIndent08(): Bool =
+    String.stripIndent(0, String.unlines("   abc" :: Nil)) == String.unlines("   abc" :: Nil)
+
+@test
+def stripIndent09(): Bool =
+    String.stripIndent(0, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("   abc" :: "   def" :: Nil)
+
+@test
+def stripIndent10(): Bool  =
+    String.stripIndent(0, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // lines                                                                   //
