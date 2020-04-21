@@ -91,6 +91,7 @@ object BenchmarkCompiler {
     //addCompilerTests(flix)
     //addLibraryTests(flix)
     //addAbstractDomains(flix)
+    addPuppetMaster(flix)
 
     flix
   }
@@ -191,6 +192,22 @@ object BenchmarkCompiler {
     flix.addPath("examples/domains/PrefixSuffix.flix")
     flix.addPath("examples/domains/Sign.flix")
     flix.addPath("examples/domains/StrictSign.flix")
+  }
+
+  /**
+    * Adds the puppet master source code.
+    */
+  private def addPuppetMaster(flix: Flix): Unit = {
+    flix.addPath("../actors/src/main/actor/ActorBehavior.flix")
+    flix.addPath("../actors/src/main/actor/ActorDirectory.flix")
+    flix.addPath("../actors/src/main/actor/ActorPolicy.flix")
+    flix.addPath("../actors/src/main/actor/ActorResult.flix")
+    flix.addPath("../actors/src/main/actor/ActorSystem.flix")
+    flix.addPath("../actors/src/main/actor/Mailbox.flix")
+    flix.addPath("../actors/src/main/actor/Message.flix")
+    flix.addPath("../actors/src/main/actor/Ready.flix")
+    flix.addPath("../actors/src/main/actor/State.flix")
+    flix.addPath("../actors/src/main/actor/SystemEvent.flix")
   }
 
 }
