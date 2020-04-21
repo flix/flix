@@ -852,27 +852,25 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
-//    pub def indent(n: Int32, s: String): String =
-//        if (n <= 0 || length(s) == 0)
-//            s
-//        else
-//            indentHelper(n, s)
+    pub def indent(n: Int32, s: String): String =
+        if (n <= 0 || length(s) == 0)
+            s
+        else
+            indentHelper(n, s) as & Pure
 
     ///
-    /// Helper function for `indent` and `stripIndent`.
+    /// Helper function for `indent`.
     ///
-    /// if n > 0 the Java function `indent` indents with spaces.
-    /// if n < 0 the Java function `indent` strips spaces.
-    ///
-    /// Note, Java indent appears to use only line feed (0x000A) as a terminator.
-    /// `indentHelper` calls replaceMatches to change the result to use the System
-    /// lineSeparator.
-    ///
-    // TODO
-//    def indentHelper(n: Int32, s: String): String =
-//        import java.lang.String.indent(Int32);
-//        let s1 = s.indent(n) as & Pure;
-//        replaceMatches("\r?\n", lineSeparator(), s1)
+    def indentHelper(n: Int32, s: String): String & Impure =
+        let sb = StringBuilder.new();
+        let prefix = repeat(" ", n);
+        let step = x -> {
+            StringBuilder.appendString!(sb, prefix);
+            StringBuilder.appendLine!(sb, x)
+        };
+        List.foreach(step, lines(s));
+        StringBuilder.toString(sb)
+
 
     ///
     /// Strip every indented line in string `s` by `n` spaces. `n` must be greater than `0`.
@@ -884,12 +882,38 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
-    // TODO
-//    pub def stripIndent(n: Int32, s: String): String =
-//        if (n <= 0 || length(s) == 0)
-//            s
-//        else
-//            indentHelper(-n, s)
+    pub def stripIndent(n: Int32, s: String): String =
+        if (n <= 0 || length(s) == 0)
+            s
+        else
+            stripIndentHelper(n, s) as & Pure
+
+    ///
+    /// Helper function for `stripIndent`.
+    ///
+    def stripIndentHelper(n: Int32, s: String): String & Impure =
+        let sb = StringBuilder.new();
+        let limit = Int32.min(n, length(s));
+        let step = s1 -> {
+            let line = stripIndentDropWhiteSpace(s1, limit, 0);
+            StringBuilder.appendLine!(sb, line)
+        };
+        List.foreach(step, lines(s));
+        StringBuilder.toString(sb)
+
+    ///
+    /// Helper function for `stripIndent`.
+    ///
+    /// Tab is counted as a single space like Java's `strip`.
+    ///
+    def stripIndentDropWhiteSpace(s: String, limit: Int32, ix: Int32): String =
+        if (ix >= limit)
+            sliceRight(s, ix)
+        else
+            if (!Char.isWhiteSpace(charAt(ix, s)))
+                sliceRight(s, ix)
+            else
+                stripIndentDropWhiteSpace(s, limit, ix+1)
 
     ///
     /// Split the string `s` into an array of lines, breaking on newline.
