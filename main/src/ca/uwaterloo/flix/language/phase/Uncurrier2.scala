@@ -422,6 +422,7 @@ object Uncurrier2 extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             case Type.Impure => Type.Impure
             case Type.Pure => eff0
             case Type.Unit => Type.Unit //TODO: What does this mean?
+            case Type.Var(id, kind, rigidity) => Type.Var(id, kind, rigidity) //TODO: What does this mean?
             case _ => throw InternalCompilerException(s"Unexpected effect: '${eff1.getClass}'.")
           }
           Type.Arrow(arity0 + 1, eff2)
