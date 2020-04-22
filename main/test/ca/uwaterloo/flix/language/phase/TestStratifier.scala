@@ -133,13 +133,36 @@ class TestStratifier extends FunSuite with TestUtils {
   }
 
   test("HackTest.01") { // MATT
+//    val input =
+//    """
+//      |
+//      |rel Parent(p1: Str, p2: Str)
+//      |rel GrandParent(p1: Str, p2: Str)
+//      |rel Ancestor(p1: Str, p2: Str)
+//      |
+//      |Parent("Magnus", "Inger").
+//      |Parent("Magnus", "Frits").
+//      |Parent("Bjarke", "Inger").
+//      |Parent("Bjarke", "Frits").
+//      |Parent("Frits", "Orla").
+//      |
+//      |GrandParent(x, z) :- Parent(x, y), Parent(y, z).
+//      |Ancestor(x, z) :- Parent(x, y), Parent(y, z).
+//      |
+//      |
+//    """.stripMargin
+
     val input =
-    """
-      |rel A(x: Int, y: Int, z: Int)
-      |def testProject01(): Bool =
-      |    let c1 = A(1, 1, 1).;
-      |    (project A c1) |= A(1, 1, 1).
+      """
+        |
+        |rel Parent(p1: Str, p2: Str)
+        |rel GrandParent(p1: Str, p2: Str)
+        |
+        |Parent("Magnus", "Inger").
+        |GrandParent(x, z) :- Parent(x, y), Parent(y, z).
+        |
     """.stripMargin
-    new Flix().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 }

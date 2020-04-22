@@ -1144,7 +1144,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  project P exp2 : #{ P : a | c }
         //
         val freshTupleTypeVar = Type.freshTypeVar()
-        val predicateType = sym match {
+        val predicateType = sym match { // MATT needed?
           case sym: Symbol.LatSym => Type.mkLattice(sym, freshTupleTypeVar)
           case sym: Symbol.RelSym => Type.mkRelation(sym, freshTupleTypeVar)
         }
@@ -1153,8 +1153,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         for {
           (tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypM(tpe, Type.mkSchemaExtend(sym, predicateType, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.mkSchemaExtend(sym, predicateType, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypM(tpe, Type.mkSchemaExtend(sym, freshTupleTypeVar, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkSchemaExtend(sym, freshTupleTypeVar, freshResultSchemaTypeVar), loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
@@ -1181,6 +1181,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         val freshPredicateNameTypeVar = Type.freshTypeVar()
         val tupleType = Type.freshTypeVar()
+        val predicateType = sym match {
+          case sym: Symbol.LatSym => Type.mkLattice(sym, tupleType)
+          case sym: Symbol.RelSym => Type.mkRelation(sym, tupleType)
+        }
         val freshRestTypeVar = Type.freshTypeVarWithKind(Kind.Schema)
         for {
           (initType, eff1) <- visitExp(exp1)
@@ -1701,13 +1705,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
       }
 
+      val tupleType = Type.freshTypeVar()
+      val predicateType = sym match {
+        case sym: Symbol.LatSym => Type.mkLattice(sym, tupleType)
+        case sym: Symbol.RelSym => Type.mkRelation(sym, tupleType)
+      }
+      val restType = Type.freshTypeVarWithKind(Kind.Schema)
       for {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
+        _ <- unifyTypM(Type.mkTupleSmart(termTypes), tupleType, loc)
         pureTermEffects <- unifyEffM(Type.Pure, mkAnd(termEffects), loc)
-        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
-      } yield Type.mkSchemaExtend(sym, predicateType, Type.freshTypeVarWithKind(Kind.Schema))
+        _ <- unifyTypM(declaredType, predicateType, loc)
+        resultType <- unifyTypM(tvar, Type.mkSchemaExtend(sym, tupleType, restType), loc)
+      } yield resultType
 
-    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) => // MATT to do?
       //
       //  exp : typ
       //  ------------------------------------------------------------
@@ -1764,10 +1776,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
       }
 
+      val tupleType = Type.freshTypeVar()
+      val predicateType = sym match {
+        case sym: Symbol.RelSym => Type.mkRelation(sym, tupleType)
+        case sym: Symbol.LatSym => Type.mkLattice(sym, tupleType)
+      }
+      val restType = Type.freshTypeVarWithKind(Kind.Schema) // MATT needed?
       for {
         termTypes <- seqM(terms.map(inferPattern(_, program)))
-        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
-      } yield Type.mkSchemaExtend(sym, predicateType, Type.freshTypeVarWithKind(Kind.Schema))
+        _ <- unifyTypM(declaredType, predicateType, loc)
+        _ <- unifyTypM(Type.mkTupleSmart(termTypes), tupleType, loc)
+        resultType <- unifyTypM(tvar, Type.mkSchemaExtend(sym, tupleType, restType), loc)
+      } yield resultType
 
     //
     //  exp : Bool

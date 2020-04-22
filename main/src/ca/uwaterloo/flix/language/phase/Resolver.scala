@@ -1168,9 +1168,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
               val s = simplify(t)
 
               // Determine the type of predicate symbol.
-              s.typeConstructor match {
-                case Type.Cst(TypeConstructor.Relation(sym)) => Type.mkSchemaExtend(sym, s, acc).toSuccess
-                case Type.Cst(TypeConstructor.Lattice(sym)) => Type.mkSchemaExtend(sym, s, acc).toSuccess
+              s match {
+                case Type.Apply(Type.Cst(TypeConstructor.Relation(sym)), tuple) => Type.mkSchemaExtend(sym, tuple, acc).toSuccess
+                case Type.Apply(Type.Cst(TypeConstructor.Lattice(sym)), tuple) => Type.mkSchemaExtend(sym, tuple, acc).toSuccess
                 case nonRelationOrLatticeType => ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
               }
           }

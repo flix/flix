@@ -882,12 +882,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVarWithKind(Kind.Relation), loc)
+      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVarWithKind(Kind.Schema), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
         e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0)
-      } yield NamedAst.Predicate.Head.Union(e, Type.freshTypeVarWithKind(Kind.Relation), loc)
+      } yield NamedAst.Predicate.Head.Union(e, Type.freshTypeVarWithKind(Kind.Schema), loc)
   }
 
   /**
@@ -896,7 +896,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
-      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVarWithKind(Kind.Relation), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVarWithKind(Kind.Schema), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {

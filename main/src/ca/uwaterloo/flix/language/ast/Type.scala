@@ -376,10 +376,19 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
+    require(ts.lengthIs > 1) // MATT change to internalcompilerexcpetion
     val tuple = Type.Cst(TypeConstructor.Tuple(ts.length))
     ts.foldLeft(tuple: Type) {
       case (acc, x) => Apply(acc, x)
     }
+  }
+
+  // MATT rename or replace mkTuple or something
+  // MATT docs
+  def mkTupleSmart(ts: List[Type]): Type = ts match {
+    case Nil => Type.Unit
+    case List(elem) => elem
+    case _ => mkTuple(ts)
   }
 
   /**
