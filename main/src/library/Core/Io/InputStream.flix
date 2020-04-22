@@ -36,7 +36,7 @@ namespace Core/Io/InputStream {
         let InputStream(javaStream) = s;
         Ok(javaStream.available())
     } catch {
-        case _: ##java.io.IOException => Err(IOError.IOException)
+        case _: ##java.io.IOException => Err(IOError.Generic)
     }
 
     ///
@@ -47,7 +47,7 @@ namespace Core/Io/InputStream {
         let InputStream(javaStream) = s;
         Ok(javaStream.read())
     } catch {
-        case _: ##java.io.IOException => Err(IOError.IOException)
+        case _: ##java.io.IOException => Err(IOError.Generic)
     }
 
     ///
@@ -59,7 +59,7 @@ namespace Core/Io/InputStream {
         let readBytes = javaStream.read(b);
         Ok(readBytes)
     } catch {
-        case _: ##java.io.IOException => Err(IOError.IOException)
+        case _: ##java.io.IOException => Err(IOError.Generic)
     }
 
     ///
@@ -72,7 +72,7 @@ namespace Core/Io/InputStream {
         let readBytes = javaStream.read(b, o, l);
         Ok(readBytes)
     } catch {
-        case _: ##java.io.IOException => Err(IOError.IOException)
+        case _: ##java.io.IOException => Err(IOError.Generic)
         case _: ##java.lang.IndexOutOfBoundsException => Err(IOError.IncorrectBufferSize)
     }
 
@@ -84,7 +84,7 @@ namespace Core/Io/InputStream {
         let InputStream(javaStream) = stream;
         Ok(javaStream.close())
     } catch {
-        case _: ##java.io.IOException => Err(IOError.IOException)
+        case _: ##java.io.IOException => Err(IOError.Generic)
     }
 }
 

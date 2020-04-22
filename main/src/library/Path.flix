@@ -146,7 +146,7 @@ namespace Path {
                     Result.map(_ -> arr, read)
                 })
     } catch {
-        case _: ##java.io.FileNotFoundException => Err(IOError.IOException)
+        case _: ##java.io.FileNotFoundException => Err(IOError.Generic)
     }
 
     ///
@@ -219,7 +219,7 @@ namespace Path {
         let res = f();
         Ok(res)
     } catch {
-        case _: ##java.io.IOException => Err(IOError.IOException)
+        case _: ##java.io.IOException => Err(IOError.Generic)
     }
 }
 

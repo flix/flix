@@ -21,17 +21,7 @@ namespace Core/Io/Zip {
     pub opaque type Zip = ##java.util.zip.ZipFile
 
     pub type alias ZipEntry = {
-        comment: String,
-        compressedSize: Int64,
-        crc: Int64,
-        // creationTime: ##java.nio.file.attribute.FileTime
-        extra: Array[Int8],
-        // lastAccessTime: ##java.nio.file.attribute.FileTime
-        // lastModifiedTime: ##java.nio.file.attribute.FileTime
-        method: Int32, // TODO: enum?
         name: String,
-        size: Int64,
-        time: Int64,
         isDirectory: Bool,
         stream: InputStream
     }
@@ -45,8 +35,8 @@ namespace Core/Io/Zip {
         let zipFile = newZipFile(javaFile);
         Ok(Zip(zipFile))
     } catch {
-        case _: ##java.io.IOException => Err(IOError.IOException)
-        case _: ##java.util.zip.ZipException => Err(IOError.ZipException)
+        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
     }
 
     ///
@@ -57,14 +47,7 @@ namespace Core/Io/Zip {
         import java.util.Enumeration.nextElement();
         import java.util.zip.ZipFile.entries();
         import java.util.zip.ZipFile.getInputStream(##java.util.zip.ZipEntry);
-        import java.util.zip.ZipEntry.getComment();
-        import java.util.zip.ZipEntry.getCompressedSize();
-        import java.util.zip.ZipEntry.getCrc();
-        import java.util.zip.ZipEntry.getExtra();
-        import java.util.zip.ZipEntry.getMethod();
         import java.util.zip.ZipEntry.getName();
-        import java.util.zip.ZipEntry.getSize();
-        import java.util.zip.ZipEntry.getTime();
         import java.util.zip.ZipEntry.isDirectory();
 
         use Core/Io/InputStream.InputStream.InputStream;
@@ -77,14 +60,7 @@ namespace Core/Io/Zip {
                 let entry = e.nextElement() as ##java.util.zip.ZipEntry;
                 let entryStream = javaZip.getInputStream(entry);
                 let entryRec = {
-                    comment = entry.getComment(),
-                    compressedSize = entry.getCompressedSize(),
-                    crc = entry.getCrc(),
-                    extra = entry.getExtra(),
-                    method = entry.getMethod(),
                     name = entry.getName(),
-                    size = entry.getSize(),
-                    time = entry.getTime(),
                     isDirectory = entry.isDirectory(),
                     stream = InputStream(entryStream)
                 };
@@ -94,10 +70,10 @@ namespace Core/Io/Zip {
         };
         Ok(List.unfoldWithIter(step))
     } catch {
-        case _: ##java.lang.IllegalStateException => Err(IOError.IllegalStateException)
-        case _: ##java.util.zip.ZipException => Err(IOError.ZipException)
-        case _: ##java.io.IOException => Err(IOError.IOException)
-        case _: ##java.util.NoSuchElementException => Err(IOError.NoSuchElementException)
+        case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
+        case _: ##java.lang.IllegalStateException => Err(IOError.IllegalState)
+        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.util.NoSuchElementException => Err(IOError.ElementNotFound)
     }
 
     ///
@@ -108,6 +84,6 @@ namespace Core/Io/Zip {
         let Zip(javaZip) = z;
         Ok(javaZip.close())
     } catch {
-        case _: ##java.lang.IllegalStateException => Err(IOError.IllegalStateException)
+        case _: ##java.lang.IllegalStateException => Err(IOError.IllegalState)
     }
 }
