@@ -37,6 +37,20 @@ namespace TestRedBlackTree {
         !RedBlackTree.memberOf(99, RedBlackTree.delete(99, toTree(List.range(0, 100))))
 
     @test
+    def testEmptyAfterDelete01(): Bool =
+        RedBlackTree.empty() == RedBlackTree.delete(42, RedBlackTree.insert(42, (), RedBlackTree.empty()))
+
+    @test
+    def testEmptyAfterDelete02(): Bool =
+        RedBlackTree.empty() == RedBlackTree.delete(2, RedBlackTree.delete(1, RedBlackTree.delete(0, toTree(List.range(0, 3)))))
+
+    @test
+    def testEmptyAfterDelete03(): Bool =
+        let tree =
+        List.fold((acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
+        tree == RedBlackTree.empty()
+
+    @test
     def testBinarySearchTreeInvariant01(): Bool =
         checkBinarySearchTreeInvariant(toTree(List.range(0, 10)))
 
