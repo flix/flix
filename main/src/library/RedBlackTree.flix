@@ -340,6 +340,7 @@ namespace RedBlackTree {
     def redden(tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
         case Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d)) =>
             Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
+        case DoubleBlackLeaf => Leaf
         case _ => tree
     }
 
