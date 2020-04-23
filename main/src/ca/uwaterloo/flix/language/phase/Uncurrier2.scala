@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.ops.SimplifiedAstOps
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.unification.BoolUnification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -418,13 +419,7 @@ object Uncurrier2 extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Type.Apply(lhs0, Type.Apply(Type.Apply(Type.Arrow(2, eff1), b), c)) => //TODO: arity could be more than 2
       def visitLhs(lhs0: Type): Type = lhs0 match {
         case Type.Arrow(arity0, eff0) =>
-          val eff2 = eff1 match {
-            case Type.Impure => Type.Impure
-            case Type.Pure => eff0
-            case Type.Unit => Type.Unit //TODO: What does this mean?
-            case Type.Var(id, kind, rigidity) => Type.Var(id, kind, rigidity) //TODO: What does this mean?
-            case _ => throw InternalCompilerException(s"Unexpected effect: '${eff1.getClass}'.")
-          }
+          val eff2 = BoolUnification.mkAnd(eff1, eff0)
           Type.Arrow(arity0 + 1, eff2)
 
         case Type.Apply(lhs0, rhs0) =>
