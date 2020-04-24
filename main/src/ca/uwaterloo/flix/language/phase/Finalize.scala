@@ -555,8 +555,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case Type.Cst(TypeConstructor.Int64) => MonoType.Int64
       case Type.Cst(TypeConstructor.BigInt) => MonoType.BigInt
       case Type.Cst(TypeConstructor.Str) => MonoType.Str
-      case Type.Cst(TypeConstructor.Relation) => MonoType.Relation(args)
-      case Type.Cst(TypeConstructor.Lattice) => MonoType.Lattice(args)
+      case Type.Cst(TypeConstructor.Relation(sym)) => MonoType.Relation(args)
+      case Type.Cst(TypeConstructor.Lattice(sym)) => MonoType.Lattice(args)
+      case Type.Cst(TypeConstructor.RecordEmpty) => MonoType.RecordEmpty()
+      case Type.Cst(TypeConstructor.SchemaEmpty) => MonoType.SchemaEmpty()
 
       // Compound Types.
       case Type.Cst(TypeConstructor.Array) => MonoType.Array(args.head)
@@ -573,15 +575,11 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Cst(TypeConstructor.Tuple(l)) => MonoType.Tuple(args)
 
+      case Type.Cst(TypeConstructor.RecordExtend(label)) => MonoType.RecordExtend(label, args(0), args(1))
+
+      case Type.Cst(TypeConstructor.SchemaExtend(sym)) => MonoType.SchemaExtend(sym, args(0), args(1))
+
       case Type.Arrow(l, _) => MonoType.Arrow(args.init, args.last)
-
-      case Type.RecordEmpty => MonoType.RecordEmpty()
-
-      case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
-
-      case Type.SchemaEmpty => MonoType.SchemaEmpty()
-
-      case Type.SchemaExtend(sym, tpe, rest) => MonoType.SchemaExtend(sym, visitType(tpe), visitType(rest))
 
       case Type.Zero => MonoType.Unit
 

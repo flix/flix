@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.RedundancyError
+import ca.uwaterloo.flix.language.errors.{NameError, RedundancyError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
@@ -475,7 +475,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[NameError.UnusedTypeParam](result)
   }
 
   test("UnusedTypeParam.Def.02") {
@@ -485,7 +485,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[NameError.UnusedTypeParam](result)
   }
 
   test("UnusedTypeParam.Def.03") {
@@ -495,7 +495,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[NameError.UnusedTypeParam](result)
   }
 
   test("UnusedTypeParam.Def.04") {
@@ -505,7 +505,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[NameError.UnusedTypeParam](result)
   }
 
   test("UnusedTypeParam.Enum.01") {

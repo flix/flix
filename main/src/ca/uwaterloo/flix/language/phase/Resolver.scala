@@ -61,7 +61,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
-          val eff = Type.freshTypeVar()
+          val eff = Type.freshEffectVar()
           val loc = SourceLocation.Unknown
           val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, sc, eff, loc)
           sym -> defn
@@ -1028,9 +1028,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
           ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
       }
-
-    case NamedAst.Type.Enum(sym) =>
-      Type.Cst(TypeConstructor.Enum(sym, Kind.Star)).toSuccess
+    case NamedAst.Type.Enum(sym, arity) =>
+      Type.Cst(TypeConstructor.mkEnumCst(sym, arity)).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
@@ -1044,7 +1043,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-      } yield Type.RecordExtend(label.name, v, r)
+      } yield Type.mkRecordExtend(label.name, v, r)
 
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
@@ -1063,7 +1062,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             r <- lookupType(rest, ns0, root)
           } yield {
             val tpe = simplify(ts.foldLeft(t)(Type.Apply))
-            Type.SchemaExtend(qname.ident.name, tpe, r)
+            Type.mkSchemaExtend(qname.ident.name, tpe, r)
           }
       }
 
@@ -1263,10 +1262,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * Otherwise fails with a resolution error.
     */
-  def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
+  def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.Cst(TypeConstructor.Enum(enum.sym, Kind.Star))
+      case enum => Type.Cst(TypeConstructor.mkEnumCst(enum.sym, enum.tparams.size))
     }
+  }
 
   /**
     * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.
@@ -1311,20 +1311,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case Type.Cst(_) => t
 
       case Type.Arrow(l, eff) => Type.Arrow(l, eval(eff, subst))
-
-      case Type.RecordEmpty => t
-
-      case Type.RecordExtend(label, value, rest) =>
-        val t1 = eval(value, subst)
-        val t2 = eval(rest, subst)
-        Type.RecordExtend(label, t1, t2)
-
-      case Type.SchemaEmpty => t
-
-      case Type.SchemaExtend(sym, tpe, rest) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.SchemaExtend(sym, t1, t2)
 
       case Type.Zero => t
 
@@ -1457,6 +1443,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object").toSuccess
 
+    case Type.Cst(TypeConstructor.RecordExtend(_)) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.SchemaExtend(_)) => Class.forName("java.lang.Object").toSuccess
+
     case Type.Cst(TypeConstructor.Array) =>
       tpe.typeArguments match {
         case elmTyp :: Nil =>
@@ -1481,13 +1471,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
 
-    case Type.RecordEmpty => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.RecordEmpty) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
-
-    case Type.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
-
-    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.SchemaEmpty) => Class.forName("java.lang.Object").toSuccess
 
     case _ => ResolutionError.IllegalType(tpe, loc).toFailure
   }

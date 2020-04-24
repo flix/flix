@@ -41,10 +41,6 @@ sealed trait Type {
     case Type.Zero => SortedSet.empty
     case Type.Succ(n, t) => t.typeVars
     case Type.Arrow(_, eff) => eff.typeVars
-    case Type.RecordEmpty => SortedSet.empty
-    case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
-    case Type.SchemaEmpty => SortedSet.empty
-    case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
@@ -96,10 +92,6 @@ sealed trait Type {
     case Type.Var(_, _, _) => 1
     case Type.Cst(tc) => 1
     case Type.Arrow(_, eff) => eff.size + 1
-    case Type.RecordEmpty => 1
-    case Type.RecordExtend(_, value, rest) => value.size + rest.size
-    case Type.SchemaEmpty => 1
-    case Type.SchemaExtend(_, tpe, rest) => tpe.size + rest.size
     case Type.Zero => 1
     case Type.Succ(_, t) => t.size + 1
     case Type.Lambda(_, tpe) => tpe.size + 1
@@ -175,6 +167,15 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str)
 
   /**
+    * Represents the Empty Record type.
+    */
+  val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty)
+
+
+  // MATT docs
+  val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty)
+
+  /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
     */
   val Pure: Type = Type.Cst(TypeConstructor.Pure)
@@ -242,34 +243,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents the empty record type.
-    */
-  case object RecordEmpty extends Type {
-    def kind: Kind = Kind.Record
-  }
-
-  /**
-    * A type constructor that represents a record extension type.
-    */
-  case class RecordExtend(label: String, value: Type, rest: Type) extends Type {
-    def kind: Kind = Kind.Star -> Kind.Record
-  }
-
-  /**
-    * A type constructor that represents the empty schema type.
-    */
-  case object SchemaEmpty extends Type {
-    def kind: Kind = Kind.Schema
-  }
-
-  /**
-    * A type constructor that represents a schema extension type.
-    */
-  case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Type {
-    def kind: Kind = Kind.Star -> Kind.Schema
-  }
-
-  /**
     * A type constructor that represents zero.
     */
   case object Zero extends Type {
@@ -287,7 +260,7 @@ object Type {
     * A type expression that represents a type abstraction [x] => tpe.
     */
   case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -300,9 +273,15 @@ object Type {
       * The kind of a type application can unique be determined
       * from the kind of the first type argument `t1`.
       */
-    def kind: Kind = tpe1.kind match {
-      case Kind.Arrow(_, k) => k
-      case _ => throw InternalCompilerException("Illegal kind.")
+    def kind: Kind = {
+      tpe1.kind match {
+        case Kind.Arrow(kparams, k) => kparams match {
+          case _ :: Nil => k
+          case _ :: tail => Kind.Arrow(tail, k)
+          case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1''")
+        }
+        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1''")
+      }
     }
   }
 
@@ -310,7 +289,7 @@ object Type {
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * Returns a fresh type variable.
+    * Returns a fresh type variable of kind Star.
     */
   def freshTypeVar(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var =
     Type.Var(flix.genSym.freshId(), k, m)
@@ -319,6 +298,30 @@ object Type {
     * Returns a fresh type variable of effect kind.
     */
   def freshEffectVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Effect)
+
+  /**
+    * Constructs a RecordExtend type.
+    */
+  def mkRecordExtend(label: String, tpe: Type, rest: Type): Type = {
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(label)), List(tpe, rest))
+  }
+
+  // MATT docs
+  def mkSchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type): Type = {
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(sym)), List(tpe, rest))
+  }
+
+  // MATT docs
+  def mkRelation(sym: Symbol.RelSym, tuple: Type): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Relation(sym)), tuple)
+  }
+
+  // MATT docs
+  // MATT could merge with relations since sym knows if it is  rel or lat
+  def mkLattice(sym: Symbol.LatSym, tuple: Type): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Lattice(sym)), tuple)
+  }
+
 
   /**
     * Constructs an arrow with the given effect type A ->eff B.
@@ -368,10 +371,19 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
+    require(ts.lengthIs > 1) // MATT change to internalcompilerexcpetion
     val init = Type.Cst(TypeConstructor.Tuple(ts.length))
     ts.foldLeft(init: Type) {
       case (acc, x) => Apply(acc, x)
     }
+  }
+
+  // MATT rename or replace mkTuple or something
+  // MATT docs
+  def mkTupleSmart(ts: List[Type]): Type = ts match {
+    case Nil => Type.Unit
+    case List(elem) => elem
+    case _ => mkTuple(ts)
   }
 
   /**
@@ -409,6 +421,10 @@ object Type {
 
         case Type.Cst(TypeConstructor.Tuple(l)) =>
           "(" + args.map(visit(_, m)).mkString(", ") + ")"
+
+        case Type.Cst(TypeConstructor.RecordEmpty) => "{ }"
+
+        case Type.Cst(TypeConstructor.RecordExtend(label)) => "{" + label + " = " + visit(args(0), m) + " | " + visit(args(1), m) + "}"
 
         case Type.Cst(TypeConstructor.Pure) => "Pure"
 
@@ -470,14 +486,7 @@ object Type {
           // Put everything together.
           argPart + arrowPart + resultPart + effPart
 
-        case Type.RecordEmpty => "{ }"
-
-        case Type.RecordExtend(label, value, rest) => "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
-
-        case Type.SchemaEmpty => "#{ }"
-
-        case Type.SchemaExtend(sym, t, rest) => "#{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
-
+          // MATT schema stuff
         case Type.Lambda(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
 
         case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"

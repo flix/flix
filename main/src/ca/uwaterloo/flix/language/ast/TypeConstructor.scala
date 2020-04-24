@@ -93,7 +93,7 @@ object TypeConstructor {
     /**
       * The shape of an array is Array[t].
       */
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -103,7 +103,7 @@ object TypeConstructor {
     /**
       * The shape of a channel is Channel[t].
       */
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -125,7 +125,7 @@ object TypeConstructor {
     /**
       * The shape of a reference is Ref[t].
       */
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -135,7 +135,11 @@ object TypeConstructor {
     /**
       * The shape of a tuple is (t1, ..., tn).
       */
-    def kind: Kind = ??? // TODO
+    def kind: Kind =
+      if (l == 0)
+        Kind.Star
+      else
+        Kind.Arrow(List.fill(l)(Kind.Star), Kind.Star)
   }
 
   /**
@@ -145,21 +149,49 @@ object TypeConstructor {
     /**
       * The shape of a vector is Array[t;n].
       */
-    def kind: Kind = (Kind.Star -> Kind.Nat) -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Nat ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that represents the type of empty records.
+    */
+  case object RecordEmpty extends TypeConstructor {
+    def kind: Kind = Kind.Record
+  }
+
+  /**
+    * A type constructor that represents the type of extended records.
+    */
+  case class RecordExtend(label: String) extends TypeConstructor {
+    /**
+      * The shape of an extended record is Record[t;r]
+      */
+    def kind: Kind = Kind.Star ->: Kind.Record ->: Kind.Record
+  }
+
+  // MATT docs
+  case object SchemaEmpty extends TypeConstructor {
+    def kind: Kind = Kind.Schema
+  }
+
+  // MATT docs
+  case class SchemaExtend(sym: String) extends TypeConstructor {
+    // MATT docs
+    def kind: Kind = Kind.Star ->: Kind.Schema ->: Kind.Schema
   }
 
   /**
     * A type constructor for relations.
     */
-  case object Relation extends TypeConstructor {
-    def kind: Kind = Kind.Star -> Kind.Star
+  case class Relation(sym: String) extends TypeConstructor {
+    def kind: Kind = Kind.Star ->: Kind.Relation
   }
 
   /**
     * A type constructor for lattices.
     */
-  case object Lattice extends TypeConstructor {
-    def kind: Kind = Kind.Star -> Kind.Star
+  case class Lattice(sym: String) extends TypeConstructor {
+    def kind: Kind = Kind.Star ->: Kind.Lattice
   }
 
   /**
@@ -184,21 +216,28 @@ object TypeConstructor {
     * A type constructor that represents the negation of an effect.
     */
   case object Not extends TypeConstructor {
-    def kind: Kind = Kind.Effect -> Kind.Effect
+    def kind: Kind = Kind.Effect ->: Kind.Effect
   }
 
   /**
     * A type constructor that represents the conjunction of two effects.
     */
   case object And extends TypeConstructor {
-    def kind: Kind = Kind.Effect -> Kind.Effect -> Kind.Effect
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
   }
 
   /**
     * A type constructor that represents the disjunction of two effects.
     */
   case object Or extends TypeConstructor {
-    def kind: Kind = Kind.Effect -> Kind.Effect -> Kind.Effect
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
   }
 
+  /**
+    * Create an enum type constructor with the given arity.
+    */
+  def mkEnumCst(sym: Symbol.EnumSym, arity: Int): Enum = {
+    val kind = Seq.fill(arity + 1)(Kind.Star: Kind).reduceRight((k, acc) => k ->: acc)
+    Enum(sym, kind)
+  }
 }

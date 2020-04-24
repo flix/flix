@@ -87,10 +87,6 @@ object Scheme {
       }
       case Type.Cst(_) => tpe0
       case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
-      case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visitType(value), visitType(rest))
-      case Type.SchemaEmpty => Type.SchemaEmpty
-      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visitType(t), visitType(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visitType(tpe1), visitType(tpe2))

@@ -26,7 +26,7 @@ sealed trait Kind {
   /**
     * Constructs an arrow kind.
     */
-  def ->(that: Kind): Kind = Kind.Arrow(List(this), that)
+  def ->:(left: Kind): Kind = Kind.Arrow(List(left), this)
 
   /**
     * Returns a human readable representation of `this` kind.
@@ -51,6 +51,12 @@ object Kind {
     * The kind of schemas.
     */
   case object Schema extends Kind
+
+  // MATT docs
+  case object Relation extends Kind
+
+  // MATT docs
+  case object Lattice extends Kind
 
   /**
     * The kind of natural number expressions.
@@ -81,12 +87,13 @@ object Kind {
       case Kind.Star => "*"
       case Kind.Record => "Record"
       case Kind.Schema => "Schema"
+      case Kind.Relation => "Relation"
+      case Kind.Lattice => "Lattice"
       case Kind.Nat => "Nat"
       case Kind.Effect => "Effect"
-      case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
-      case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"
-      case Kind.Arrow(kparams, Kind.Star) => s"(${kparams.mkString(", ")}) -> *"
-      case Kind.Arrow(kparams, kr) => s"(${kparams.mkString(", ")}) -> ($kr)"
+      case Kind.Arrow(List(kparam@ Arrow(_, _)), kr) => s"($kparam) -> $kr"
+      case Kind.Arrow(List(kparam), kr) => s"$kparam -> $kr"
+      case Kind.Arrow(kparams, kr) => s"(${kparams.mkString(", ")}) -> $kr"
     }
   }
 

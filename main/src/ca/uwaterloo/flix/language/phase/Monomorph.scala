@@ -80,20 +80,30 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Var(_, _, _) => Type.Unit
         case Type.Cst(_) => t
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
-        case Type.RecordEmpty => Type.RecordEmpty
-        case Type.RecordExtend(label, value, rest) => rest match {
-          case Type.Var(_, _, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
-          case _ => Type.RecordExtend(label, visit(value), visit(rest))
-        }
-        case Type.SchemaEmpty => Type.SchemaEmpty
-        case Type.SchemaExtend(sym, tt, rest) => rest match {
-          case Type.Var(_, _, _) => Type.SchemaExtend(sym, visit(tt), Type.SchemaEmpty)
-          case _ => Type.SchemaExtend(sym, visit(tt), visit(rest))
-        }
+        case record @ Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_)), _), _) =>
+          visitRecord(record)
+        case schema @ Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(_)), _), _) =>
+          visitSchema(schema)
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
         case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$t'.")
+      }
+
+      def visitRecord(t: Type): Type = t match {
+        case Type.Cst(TypeConstructor.RecordEmpty) => Type.RecordEmpty
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
+          Type.mkRecordExtend(label, visit(tpe), visitRecord(rest))
+        case Type.Var(_, _, _) => Type.RecordEmpty
+        case _ => throw InternalCompilerException(s"Unexpected type: '$t'.")
+      }
+
+      def visitSchema(t: Type): Type = t match {
+        case Type.Cst(TypeConstructor.SchemaEmpty) => Type.SchemaEmpty
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) =>
+          Type.mkSchemaExtend(sym, visit(tpe), visitSchema(rest))
+        case Type.Var(_, _) => Type.SchemaEmpty
+        case _ => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 
       visit(s(tpe))
