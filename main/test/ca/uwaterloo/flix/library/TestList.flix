@@ -1141,6 +1141,30 @@ def filter07(): Bool = List.filter(i -> i > 3, 8 :: 9 :: Nil) `assertEq!` 8 :: 9
 def filter08(): Bool = List.filter(i -> i > 3, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) `assertEq!` 4 :: 11 :: 17 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// init                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def init01(): Bool = List.init(Nil) `assertEq!` None
+
+@test
+def init02(): Bool = List.init(0 :: Nil) `assertEq!` Some(Nil)
+
+@test
+def init03(): Bool = List.init(0 :: 1 :: Nil) `assertEq!` Some(0 :: Nil)
+
+@test
+def init04(): Bool = List.init(2 :: 1 :: 0 :: Nil) `assertEq!` Some(2 :: 1 :: Nil)
+
+@test
+def init05(): Bool = List.init('a' :: 'b' :: 'c' :: 'd' :: Nil) `assertEq!` Some('a' :: 'b' :: 'c' :: Nil)
+
+@test
+def init06(): Bool = List.init("test1" :: "test2" :: "test3" :: Nil) `assertEq!` Some("test1" :: "test2" :: Nil)
+
+@test
+def init07(): Bool = List.init(2 :: 1 :: 0 :: -1 :: Nil) `assertEq!` Some(2 :: 1 :: 0 :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
 // slice                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
