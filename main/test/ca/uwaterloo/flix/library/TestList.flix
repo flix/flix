@@ -2024,10 +2024,3 @@ def sequenceOption02(): Bool =
 def sequenceOption03(): Bool =
     let s = List.sequenceOption(Nil);
     s == Some(Nil)
-
-@test
-def rev(): Bool =
-    let i = 1 :: 2 :: 3 :: 4 :: Nil;
-    let il = List.foldLeft((acc, e) -> e :: acc, Nil, i) |> List.reverse;
-    let ir = List.foldRight((e, acc) -> e :: acc, Nil, i);
-    il == ir
