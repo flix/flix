@@ -53,6 +53,22 @@ namespace Core/Io/Zip {
         ZipOutput(zipOutput)
     }
 
+    pub def write(n: String, a: Array[Int8], z: ZipOutput): Result[Unit, IOError] & Impure = try {
+        import new java.util.zip.ZipEntry(String) as newEntry;
+        import java.util.zip.ZipOutputStream.putNextEntry(##java.util.zip.ZipEntry);
+        import java.util.zip.ZipOutputStream.closeEntry();
+        use Core/Io/OutputStream.writeBuffer;
+        let ZipOutput(javaOutput) = z;
+        let outputStream = OutputStream(javaOutput as ##java.io.OutputStream);
+        let entry = newEntry(n);
+        javaOutput.putNextEntry(entry);
+        let _ = writeBuffer(a, outputStream);
+        javaOutput.closeEntry();
+        Ok(())
+    } catch {
+        case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
+    }
+
     ///
     /// Reads all entries in `z` into `InputStream`s.
     ///
@@ -104,5 +120,14 @@ namespace Core/Io/Zip {
         Ok(javaZip.close())
     } catch {
         case _: ##java.lang.IllegalStateException => Err(IOError.IllegalState)
+    }
+
+    pub def closeOut(z: ZipOutput): Result[Unit, IOError] & Impure = try {
+        import java.util.zip.ZipOutputStream.close();
+        let ZipOutput(javaOutput) = z;
+        javaOutput.close();
+        Ok(())
+    } catch {
+        case _: ##java.io.IOException => Err(IOError.Generic("something"))
     }
 }
