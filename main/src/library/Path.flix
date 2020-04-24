@@ -213,7 +213,7 @@ namespace Path {
         let res = f();
         Ok(res)
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Path"))
     }
 }
 

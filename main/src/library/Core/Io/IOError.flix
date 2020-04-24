@@ -21,9 +21,10 @@ namespace Core/Io/IOError {
     pub enum IOError {
         case ElementNotFound(String)
         case FileNotFound(Path)
-        case Generic
+        case Generic(String)
         case IllegalState
         case IncorrectBufferSize
         case MalformedZip
+        case StreamClosed
     }
 }

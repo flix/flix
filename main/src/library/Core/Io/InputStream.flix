@@ -19,6 +19,15 @@ use Core/Io/IOError.IOError;
 namespace Core/Io/InputStream {
     pub opaque type InputStream = ##java.io.InputStream
 
+    pub def open(p: Path): Result[InputStream, IOError] & Impure = try {
+        import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
+        let Path(javaFile) = p;
+        let inputStream = newFileInputStream(javaFile);
+        Ok(InputStream(inputStream as ##java.io.InputStream))
+    } catch {
+        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(p))
+    }
+
     ///
     /// Creates an `InputStream` from `b`.
     ///
@@ -36,7 +45,7 @@ namespace Core/Io/InputStream {
         let InputStream(javaStream) = s;
         Ok(javaStream.available())
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Core/Io/InputStream.available"))
     }
 
     ///
@@ -47,7 +56,7 @@ namespace Core/Io/InputStream {
         let InputStream(javaStream) = s;
         Ok(javaStream.read())
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Core/Io/InputStream.readByte"))
     }
 
     ///
@@ -59,20 +68,20 @@ namespace Core/Io/InputStream {
         let readBytes = javaStream.read(b);
         Ok(readBytes)
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Core/Io/InputStream.readBuffer"))
     }
 
     ///
     /// Reads a number of bytes from `s` into `b`, starting at index `o`, reading at most `l` bytes.
     /// Returns the number of bytes read. -1 is returned if no bytes are available.
     ///
-    pub def readBufferWithLength(b: Array[Int8], o: Int32, l: Int32, s: InputStream): Result[Int32, IOError] & Impure = try {
+    pub def readBufferWithOffset(b: Array[Int8], o: Int32, l: Int32, s: InputStream): Result[Int32, IOError] & Impure = try {
         import java.io.InputStream.read(Array[Int8], Int32, Int32);
         let InputStream(javaStream) = s;
         let readBytes = javaStream.read(b, o, l);
         Ok(readBytes)
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Core/Io/InputStream.readBufferWithLength"))
         case _: ##java.lang.IndexOutOfBoundsException => Err(IOError.IncorrectBufferSize)
     }
 
@@ -82,7 +91,7 @@ namespace Core/Io/InputStream {
     pub def readFully(s: InputStream): Result[Array[Int8], IOError] & Impure = {
         let step = () -> {
             let arr = [0 as Int8; 1024];
-            Result.map(r -> if (r == -1) None else Some(arr[0..r]), readBuffer(arr, s))
+            Result.map(r -> if (r <= 0) None else Some(arr[0..r]), readBuffer(arr, s))
         };
         List.unfoldWithOkIter(step)
             |> List.sequenceResult
@@ -97,7 +106,7 @@ namespace Core/Io/InputStream {
         let InputStream(javaStream) = stream;
         Ok(javaStream.close())
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Core/Io/InputStream.close"))
     }
 }
 

@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+use Core/Io/OutputStream.OutputStream;
+use Core/Io/OutputStream.OutputStream.OutputStream;
 use Core/Io/InputStream.InputStream;
 use Core/Io/IOError.IOError;
 
 namespace Core/Io/Zip {
     pub opaque type Zip = ##java.util.zip.ZipFile
+
+    pub opaque type ZipOutput = ##java.util.zip.ZipOutputStream
 
     ///
     /// An entry in a ZipFile
@@ -38,16 +42,15 @@ namespace Core/Io/Zip {
         let zipFile = newZipFile(javaFile);
         Ok(Zip(zipFile))
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Core/Io/Zip.new"))
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
     }
 
-    pub def temp(z: Zip): Bool & Impure = {
-        import java.util.zip.ZipFile.entries();
-        import java.util.Enumeration.hasMoreElements();
-        let Zip(javaZip) = z;
-        let e = entries(javaZip);
-        e.hasMoreElements()
+    pub def newOutput(s: OutputStream): ZipOutput & Impure = {
+        import new java.util.zip.ZipOutputStream(##java.io.OutputStream) as newZipOutputStream;
+        let OutputStream(javaStream) = s;
+        let zipOutput = newZipOutputStream(javaStream);
+        ZipOutput(zipOutput)
     }
 
     ///
@@ -89,7 +92,7 @@ namespace Core/Io/Zip {
     } catch {
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
         case _: ##java.lang.IllegalStateException => Err(IOError.IllegalState)
-        case _: ##java.io.IOException => Err(IOError.Generic)
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Exception in Core/Io/Zip.entries"))
     }
 
     ///

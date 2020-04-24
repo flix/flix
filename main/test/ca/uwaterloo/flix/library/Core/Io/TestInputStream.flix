@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Core/Io/InputStream.{available, close, fromBuffer, InputStream, readBuffer, readBufferWithLength, readByte, readFully};
+use Core/Io/InputStream.{available, close, fromBuffer, InputStream, readBuffer, readBufferWithOffset, readByte, readFully};
 use Core/Io/InputStream.InputStream.InputStream;
 use Core/Io/IOError.IOError;
 
@@ -103,10 +103,10 @@ namespace Core/Io/TestInputStream {
     }
 
     @test
-    def readBufferWithLength01(): Bool & Impure = {
+    def readBufferWithOffset01(): Bool & Impure = {
         let b = testBuffer();
         let a = [-1 as Int8; 4];
-        let g = readBufferWithLength(a, 1, 3, b) |> resultEq(3);
+        let g = readBufferWithOffset(a, 1, 3, b) |> resultEq(3);
         let a0 = a[0] == -1 as Int8;
         let a1 = a[1] == 0 as Int8;
         let a2 = a[2] == 1 as Int8;
@@ -114,34 +114,29 @@ namespace Core/Io/TestInputStream {
         g && a0 && a1 && a2 && a3
     }
 
-    def resultSwap(r: Result[a, b]): Result[b, a] = match r {
-        case Ok(x) => Err(x)
-        case Err(x) => Ok(x)
-    }
-
     @test
-    def readBufferWithLength02(): Bool & Impure = {
+    def readBufferWithOffset02(): Bool & Impure = {
         let b = testBuffer();
         let a = [-1 as Int8; 4];
-        let r = readBufferWithLength(a, 1, -1, b);
+        let r = readBufferWithOffset(a, 1, -1, b);
         let s = resultSwap(r);
         let m = Result.map(e -> e == IOError.IncorrectBufferSize, s);
         Result.isErr(r) && Result.getWithDefault(m, false)
     }
 
     @test
-    def readBufferWithLength03(): Bool & Impure = {
+    def readBufferWithOffset03(): Bool & Impure = {
         let b = testBuffer();
         let a = [-1 as Int8; 1];
-        let g = readBufferWithLength(a, 0, 1, b) |> resultEq(1);
+        let g = readBufferWithOffset(a, 0, 1, b) |> resultEq(1);
         g && a[0] == 0 as Int8
     }
 
     @test
-    def readBufferWithLength04(): Bool & Impure = {
+    def readBufferWithOffset04(): Bool & Impure = {
         let b = testBuffer();
         let a = [-1 as Int8; 4];
-        let g = readBufferWithLength(a, 0, 4, b) |> resultEq(3);
+        let g = readBufferWithOffset(a, 0, 4, b) |> resultEq(3);
         g && a[0] == 0 as Int8 && a[1] == 1 as Int8 && a[2] == 2 as Int8 && a[3] == -1 as Int8
     }
 
@@ -159,14 +154,12 @@ namespace Core/Io/TestInputStream {
         Result.map(Array.length, r) |> resultEq(2049)
     }
 
-    @test
-    // TODO: `close` is `nop` on an `InputStream` backed by a byte array
-    def close(): Bool & Impure = {
-        let b = testBuffer();
-        b |> close |> Result.isOk
-    }
-
     def testBuffer(): InputStream & Impure = fromBuffer([0 as Int8, 1 as Int8, 2 as Int8])
 
     def resultEq(i: Int32, r: Result[Int32, err]): Bool = Result.getWithDefault(Result.map(v -> i == v, r), false)
+
+    def resultSwap(r: Result[a, b]): Result[b, a] = match r {
+        case Ok(x) => Err(x)
+        case Err(x) => Ok(x)
+    }
 }
