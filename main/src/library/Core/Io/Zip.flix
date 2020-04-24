@@ -58,25 +58,30 @@ namespace Core/Io/Zip {
         let e = entries(javaZip);
         let step = () -> {
             if (!e.hasMoreElements()) {
-                None
+                Ok(None)
             } else {
                 let entry = e.nextElement() as ##java.util.zip.ZipEntry;
-                let entryStream = javaZip.getInputStream(entry);
-                let entryRec = {
-                    name = entry.getName(),
-                    isDirectory = entry.isDirectory(),
-                    stream = InputStream(entryStream)
+                let entryStream = try {
+                    Ok(InputStream(javaZip.getInputStream(entry)))
+                } catch {
+                    case _: ##java.util.NoSuchElementException => Err(IOError.ElementNotFound("Couldn't find '" + entry.getName() + "' in zip file"))
                 };
-
-                Some(entryRec)
+                Result.map(es -> {
+                    let entryRec = {
+                        name = entry.getName(),
+                        isDirectory = entry.isDirectory(),
+                        stream = es
+                    };
+                    Some(entryRec)
+                }, entryStream)
             }
         };
-        Ok(List.unfoldWithIter(step))
+        List.unfoldWithOkIter(step)
+            |> List.sequenceResult
     } catch {
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
         case _: ##java.lang.IllegalStateException => Err(IOError.IllegalState)
         case _: ##java.io.IOException => Err(IOError.Generic)
-        case _: ##java.util.NoSuchElementException => Err(IOError.ElementNotFound)
     }
 
     ///

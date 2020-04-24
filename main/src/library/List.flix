@@ -987,6 +987,16 @@ namespace List {
         case Ok(Some(a)) => unfoldWithOkIterHelper(next, xs -> k(Ok(a) :: xs))
     }
 
+    pub def sequenceResult(xs: List[Result[a, e]]): Result[List[a], e] =
+        fold((accR, elemR) -> {
+            Result.flatMap(acc -> {
+                Result.flatMap(elem -> {
+                    Ok(elem :: acc)
+                }, elemR)
+            }, accR)
+        }, Ok(Nil), xs)
+            |> Result.map(reverse)
+
 
     ///
     /// Compares `xs` and `ys` lexicographically.
