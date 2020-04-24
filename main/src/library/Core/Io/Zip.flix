@@ -20,6 +20,9 @@ use Core/Io/IOError.IOError;
 namespace Core/Io/Zip {
     pub opaque type Zip = ##java.util.zip.ZipFile
 
+    ///
+    /// An entry in a ZipFile
+    ///
     pub type alias ZipEntry = {
         name: String,
         isDirectory: Bool,

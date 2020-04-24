@@ -968,6 +968,17 @@ namespace List {
         case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }
 
+
+    ///
+    /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Ok(Some(a)` to signal a new list element `Ok(a)`.
+    ///
+    /// `next` should return `Err(e)` to signal a new list element `Err(e)` and the end of building the list.
+    ///
+    /// `next` should return `Ok(None)` to signal the end of building the list
+    ///
     pub def unfoldWithOkIter(next: () ~> Result[Option[a], e]): List[Result[a, e]] & Impure = unfoldWithOkIterHelper(next, xs -> xs)
 
     def unfoldWithOkIterHelper(next: () ~> Result[Option[a], e], k: List[Result[a, e]] -> List[Result[a, e]]): List[Result[a, e]] & Impure = match next() {
