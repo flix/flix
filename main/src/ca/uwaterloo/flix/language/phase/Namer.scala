@@ -1192,7 +1192,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
   }
 
-  // MATT hack
+  // MATT rename
   private def hackFreeVarsWithKind(tpe0: WeededAst.Type, varKind: Kind = Kind.Star): List[(Name.Ident, Kind)] = tpe0 match {
     case WeededAst.Type.Var(ident, loc) => List(ident -> varKind)
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
@@ -1321,55 +1321,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     val implicits = getImplicitTypeParams(fparams0, tpe, loc)
     tparams0 match {
-      case WeededAst.TypeParams.Elided => implicits.toSuccess
-      case WeededAst.TypeParams.Explicit(tparams) => unifyTypeParams(tparams, implicits)
+      case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
+      case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0)
     }
   }
 
   /**
     * Returns the explicit type parameters from the given type parameters.
     */
-  @deprecated
   private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
     case p =>
       // Generate a fresh type variable for the type parameter.
-      val tvar = Type.freshTypeVar()
+      val tvar = Type.freshTypeVarWithKind(Kind.Unbound)
       // Remember the original textual name.
       tvar.setText(p.name)
       NamedAst.TypeParam(p, tvar, p.loc)
-  }
-
-  // make sure all implicit names are defined explicitly, then use their types
-  // MATT docs
-  private def unifyTypeParams(explicitIdents: List[Name.Ident], implicitTypes: List[NamedAst.TypeParam])(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
-    def checkDeclared(explicitIdents: Set[String], implicitType: NamedAst.TypeParam): Validation[NamedAst.TypeParam, NameError] = {
-      if (explicitIdents.contains(implicitType.name.name)) {
-        implicitType.toSuccess
-      } else {
-        NameError.UndefinedTypeVar(implicitType.name.name, implicitType.loc).toFailure
-      }
-    }
-
-    def checkUsed(explicitIdent: Name.Ident, implicitTypeNames: Set[String]): Validation[Unit, NameError] = {
-      if (flix.options.xallowredundancies) {
-        ().toSuccess // TODO hack
-      } else {
-        if (implicitTypeNames.contains(explicitIdent.name)) {
-          ().toSuccess
-        } else {
-          NameError.UnusedTypeParam(explicitIdent.name, explicitIdent.loc).toFailure
-        }
-      }
-    }
-
-    val explicitNames = explicitIdents.map(_.name).toSet
-    val implicitNames = implicitTypes.map(_.name.name).toSet
-    flatMapN(traverse(implicitTypes)(checkDeclared(explicitNames, _))) {
-      tpes =>
-        mapN(traverse(explicitIdents)(checkUsed(_, implicitNames))) {
-          _ => tpes
-        }
-    }
   }
 
   /**

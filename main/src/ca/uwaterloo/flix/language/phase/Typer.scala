@@ -1829,10 +1829,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   private def getSubstFromParams(params: List[ResolvedAst.FormalParam])(implicit flix: Flix): Substitution = {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
+    // old
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (ResolvedAst.FormalParam(sym, _, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar, declaredType)
+        // end old
+        // MATT VERY IMPORTANT PART
+        // new
+    val typeVars: List[Type] = params.map(_.sym.tvar)
+
+    val result = declaredTypes.zip(typeVars).map {
+      case (d, v) => unifyTypes(d, v)
+        // end new
     }
+    result.map {
+      case Ok(t) => t
+      case Err(e) => throw InternalCompilerException(s"MATT!! ${e}") // MATT fix
+    }.foldRight(Substitution.empty)(_ ++ _)
   }
 
   /**

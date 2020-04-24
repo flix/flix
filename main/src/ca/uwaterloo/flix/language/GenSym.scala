@@ -29,7 +29,10 @@ final class GenSym() {
     * Returns a freshly generated unique id.
     */
   def freshId(): Int = {
-    if (Set(0).contains(counter.get())) {
+    val breakIds = Set[Int](
+    )
+
+    if (breakIds.contains(counter.get())) {
       System.err.println("breaking")
     }
     counter.getAndIncrement()

@@ -37,6 +37,10 @@ sealed trait Kind {
 
 object Kind {
 
+  // MATT docs
+  // MATT find better name
+  case object Unbound extends Kind
+
   /**
     * The kind of all nullary type expressions.
     */
@@ -87,6 +91,7 @@ object Kind {
     */
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
+      case Kind.Unbound => "?"
       case Kind.Star => "*"
       case Kind.Record => "Record"
       case Kind.Schema => "Schema"
