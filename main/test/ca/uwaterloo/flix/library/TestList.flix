@@ -1982,3 +1982,24 @@ def unfoldWithOkIter03(): Bool & Impure =
             Err("err")
         };
     List.unfoldWithOkIter(step) == (Ok(1) :: Ok(2) :: Ok(3) :: Ok(4) :: Err("err") :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
+// sequenceResult                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def sequenceResult01(): Bool =
+    let i = Ok(1) :: Ok(2) :: Ok(3) :: Err("err") :: Ok(5) :: Nil;
+    let s = List.sequenceResult(i);
+    s == Err("err")
+
+@test
+def sequenceResult02(): Bool =
+    let i = Ok(1) :: Ok(2) :: Ok(3) :: Ok(4) :: Nil;
+    let s = List.sequenceResult(i);
+    s == Ok(1 :: 2 :: 3 :: 4 :: Nil)
+
+@test
+def sequenceResult03(): Bool =
+    let s = List.sequenceResult(Nil);
+    s == Ok(Nil)

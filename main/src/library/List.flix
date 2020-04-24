@@ -987,6 +987,9 @@ namespace List {
         case Ok(Some(a)) => unfoldWithOkIterHelper(next, xs -> k(Ok(a) :: xs))
     }
 
+    ///
+    /// Sequences the results in `xs` and collects them
+    ///
     pub def sequenceResult(xs: List[Result[a, e]]): Result[List[a], e] =
         fold((accR, elemR) -> {
             Result.flatMap(acc -> {

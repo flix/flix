@@ -84,13 +84,9 @@ namespace Core/Io/InputStream {
             let arr = [0 as Int8; 1024];
             Result.map(r -> if (r == -1) None else Some(arr[0..r]), readBuffer(arr, s))
         };
-        let nested = List.unfoldWithOkIter(step);
-        List.fold((accR, elemR) -> {
-            let flatMap = Result.flatMap;
-            let* acc = accR;
-            let* elem = elemR;
-            Ok(Array.append(acc, elem))
-        }, Ok([]), nested)
+        List.unfoldWithOkIter(step)
+            |> List.sequenceResult
+            |> Result.map(List.fold((acc, elem) -> Array.append(acc, elem), []))
     }
 
     ///
