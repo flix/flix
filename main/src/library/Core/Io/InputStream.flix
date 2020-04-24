@@ -77,6 +77,23 @@ namespace Core/Io/InputStream {
     }
 
     ///
+    /// Read the whole stream into a byte array
+    ///
+    pub def readFully(s: InputStream): Result[Array[Int8], IOError] & Impure = {
+        let step = () -> {
+            let arr = [0 as Int8; 1024];
+            Result.map(r -> if (r == -1) None else Some(arr[0..r]), readBuffer(arr, s))
+        };
+        let nested = List.unfoldWithOkIter(step);
+        List.fold((accR, elemR) -> {
+            let flatMap = Result.flatMap;
+            let* acc = accR;
+            let* elem = elemR;
+            Ok(Array.append(acc, elem))
+        }, Ok([]), nested)
+    }
+
+    ///
     /// Closes `s` and frees the resource.
     ///
     pub def close(stream: InputStream): Result[Unit, IOError] & Impure = try {

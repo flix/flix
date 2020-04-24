@@ -20,7 +20,7 @@ namespace Core/Io/IOError {
     ///
     pub enum IOError {
         case ElementNotFound
-        case FileNotFound
+        case FileNotFound(Path)
         case Generic
         case IllegalState
         case IncorrectBufferSize

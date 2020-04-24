@@ -15,6 +15,7 @@
  */
 
 use Core/Io/IOError.IOError;
+use Core/Io/InputStream.InputStream;
 
 namespace Path {
 
@@ -130,31 +131,16 @@ namespace Path {
     })
 
     ///
-    /// Read the specified path into an array of bytes.
+    /// Opens the specified `Path` into an `InputStream`
     ///
-    pub def readBuffer(p: Path): Result[Array[Int8], IOError] & Impure = try {
-        use Core/Io/InputStream.{available, readBuffer};
-        use Core/Io/InputStream.InputStream.InputStream;
+    pub def open(p: Path): Result[InputStream, IOError] & Impure = try {
         import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
         let Path(javaFile) = p;
         let javaInputStream = newFileInputStream(javaFile);
-        let inputStream = InputStream(javaInputStream as ##java.io.InputStream);
-        let step = () -> {
-            available(inputStream)
-                |> Result.map(a -> [0 as Int8; a])
-                |> Result.flatMap(arr -> {
-                    Result.map(r -> if (r == -1) None else Some(arr), readBuffer(arr, inputStream))
-                })
-        };
-        let nested = List.unfoldWithOkIter(step);
-        List.fold((accR, elemR) -> {
-            let flatMap = Result.flatMap;
-            let* acc = accR;
-            let* elem = elemR;
-            Ok(Array.append(acc, elem))
-        }, Ok([]), nested)
+        let inputStream = InputStream.InputStream(javaInputStream as ##java.io.InputStream);
+        Ok(inputStream)
     } catch {
-        case _: ##java.io.FileNotFoundException => Err(IOError.Generic)
+        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(p))
     }
 
     ///
@@ -217,7 +203,7 @@ namespace Path {
         outputStream.write(buffer);
         Ok(())
     } catch {
-        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound)
+        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(p))
     }
 
     ///
