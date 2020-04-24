@@ -45,5 +45,4 @@ class LibrarySuite extends Suites(
   new FlixTest("TestValidation", "main/test/ca/uwaterloo/flix/library/TestValidation.flix")(Options.TestWithLibrary),
 
   new FlixTest("Core/Io/TestInputStream", "main/test/ca/uwaterloo/flix/library/Core/Io/TestInputStream.flix")(Options.TestWithLibrary),
-  new FlixTest("Core/Io/TestZip", "main/test/ca/uwaterloo/flix/library/Core/Io/TestZip.flix")(Options.TestWithLibrary)
 )

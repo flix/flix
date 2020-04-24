@@ -1,3 +1,0 @@
-namespace Core/Io/TestZip {
-
-}

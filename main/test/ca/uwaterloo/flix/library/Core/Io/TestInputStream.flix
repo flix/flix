@@ -3,10 +3,6 @@ use Core/Io/InputStream.InputStream.InputStream;
 use Core/Io/IOError.IOError;
 
 namespace Core/Io/TestInputStream {
-    def testBuffer(): InputStream & Impure = fromBuffer([0 as Int8, 1 as Int8, 2 as Int8])
-
-    def resultEq(i: Int32, r: Result[Int32, err]): Bool = Result.getWithDefault(Result.map(v -> i == v, r), false)
-
     @test
     def fromBuffer(): InputStream & Impure = fromBuffer([0 as Int8, 1 as Int8, 2 as Int8])
 
@@ -138,7 +134,10 @@ namespace Core/Io/TestInputStream {
     // TODO: `close` is `nop` on an `InputStream` backed by a byte array
     def close(): Bool & Impure = {
         let b = testBuffer();
-        let o = b |> close |> Result.isOk;
-        o
+        b |> close |> Result.isOk
     }
+
+    def testBuffer(): InputStream & Impure = fromBuffer([0 as Int8, 1 as Int8, 2 as Int8])
+
+    def resultEq(i: Int32, r: Result[Int32, err]): Bool = Result.getWithDefault(Result.map(v -> i == v, r), false)
 }
