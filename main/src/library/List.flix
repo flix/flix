@@ -968,6 +968,15 @@ namespace List {
         case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }
 
+    pub def unfoldWithOkIter(next: () ~> Result[Option[a], e]): List[Result[a, e]] & Impure = unfoldWithOkIterHelper(next, xs -> xs)
+
+    def unfoldWithOkIterHelper(next: () ~> Result[Option[a], e], k: List[Result[a, e]] -> List[Result[a, e]]): List[Result[a, e]] & Impure = match next() {
+        case Ok(None) => k(Nil)
+        case Err(e) => k(Err(e) :: Nil)
+        case Ok(Some(a)) => unfoldWithOkIterHelper(next, xs -> k(Ok(a) :: xs))
+    }
+
+
     ///
     /// Compares `xs` and `ys` lexicographically.
     ///

@@ -1943,3 +1943,47 @@ def unfoldWithIter06(): Bool & Impure =
     List.unfoldWithIter(step) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
 
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// unfoldWithOkIter                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfoldWithOkIter01(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (true) {
+            Ok(None)
+        } else {
+            Ok(Some(deref x))
+        };
+    List.unfoldWithOkIter(step) == Nil
+
+@test
+def unfoldWithOkIter02(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (true) {
+            Err(deref x)
+        } else {
+            Ok(Some(deref x))
+        };
+    List.unfoldWithOkIter(step) == Err(0) :: Nil
+
+@test
+def unfoldWithOkIter03(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 2) {
+            Ok(None)
+        } else {
+            let c = deref x;
+            x := c + 1;
+            if (c % 2 == 0) {
+                Ok(Some(c))
+            } else {
+                Err(Char.fromInt32(c + 48))
+            }
+        };
+    List.unfoldWithOkIter(step) == Ok(0) :: Err('1') :: Nil
+

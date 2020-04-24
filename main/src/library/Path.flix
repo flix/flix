@@ -140,19 +140,19 @@ namespace Path {
         let javaInputStream = newFileInputStream(javaFile);
         let inputStream = InputStream(javaInputStream as ##java.io.InputStream);
         let step = () -> {
-            let res = available(inputStream)
+            available(inputStream)
                 |> Result.map(a -> [0 as Int8; a])
                 |> Result.flatMap(arr -> {
                     Result.map(r -> if (r == -1) None else Some(arr), readBuffer(arr, inputStream))
-                });
-            match res {
-                case Ok(Some(a)) => Some(a)
-                case _ => None
-            }
+                })
         };
-        let nested = List.unfoldWithIter(step);
-        let flattened = List.fold((acc, elem) -> Array.append(acc, elem), [], nested);
-        Ok(flattened)
+        let nested = List.unfoldWithOkIter(step);
+        List.fold((accR, elemR) -> {
+            let flatMap = Result.flatMap;
+            let* acc = accR;
+            let* elem = elemR;
+            Ok(Array.append(acc, elem))
+        }, Ok([]), nested)
     } catch {
         case _: ##java.io.FileNotFoundException => Err(IOError.Generic)
     }
