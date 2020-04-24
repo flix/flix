@@ -2004,6 +2004,16 @@ def sequenceResult03(): Bool =
     let s = List.sequenceResult(Nil);
     s == Ok(Nil)
 
+@test
+def sequenceResult04(): Bool =
+    let s = List.sequenceResult(Err("err") :: Nil);
+    s == Err("err")
+
+@test
+def sequenceResult05(): Bool =
+    let s = List.sequenceResult(Ok(1) :: Nil);
+    s == Ok(1 :: Nil)
+
 /////////////////////////////////////////////////////////////////////////////
 // sequenceOption                                                          //
 /////////////////////////////////////////////////////////////////////////////
@@ -2024,3 +2034,13 @@ def sequenceOption02(): Bool =
 def sequenceOption03(): Bool =
     let s = List.sequenceOption(Nil);
     s == Some(Nil)
+
+@test
+def sequenceOption04(): Bool =
+    let s = List.sequenceOption(None :: Nil);
+    s == None
+
+@test
+def sequenceOption05(): Bool =
+    let s = List.sequenceOption(Some(1) :: Nil);
+    s == Some(1 :: Nil)
