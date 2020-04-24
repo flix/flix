@@ -1972,18 +1972,13 @@ def unfoldWithOkIter02(): Bool & Impure =
 
 @test
 def unfoldWithOkIter03(): Bool & Impure =
-    let x = ref 0;
+    let x = ref 1;
     let step = () ->
-        if (deref x > 2) {
-            Ok(None)
-        } else {
+        if (deref x % 5 > 0) {
             let c = deref x;
-            x := c + 1;
-            if (c % 2 == 0) {
-                Ok(Some(c))
-            } else {
-                Err(Char.fromInt32(c + 48))
-            }
+            x := deref x + 1;
+            Ok(Some(c))
+        } else {
+            Err("err")
         };
-    List.unfoldWithOkIter(step) == Ok(0) :: Err('1') :: Nil
-
+    List.unfoldWithOkIter(step) == (Ok(1) :: Ok(2) :: Ok(3) :: Ok(4) :: Err("err") :: Nil)
