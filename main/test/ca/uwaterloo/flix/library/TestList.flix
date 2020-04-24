@@ -2003,3 +2003,31 @@ def sequenceResult02(): Bool =
 def sequenceResult03(): Bool =
     let s = List.sequenceResult(Nil);
     s == Ok(Nil)
+
+/////////////////////////////////////////////////////////////////////////////
+// sequenceOption                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def sequenceOption01(): Bool =
+    let i = Some(1) :: Some(2) :: Some(3) :: None :: Some(5) :: Nil;
+    let s = List.sequenceOption(i);
+    s == None
+
+@test
+def sequenceOption02(): Bool =
+    let i = Some(1) :: Some(2) :: Some(3) :: Some(4) :: Nil;
+    let s = List.sequenceOption(i);
+    s == Some(1 :: 2 :: 3 :: 4 :: Nil)
+
+@test
+def sequenceOption03(): Bool =
+    let s = List.sequenceOption(Nil);
+    s == Some(Nil)
+
+@test
+def rev(): Bool =
+    let i = 1 :: 2 :: 3 :: 4 :: Nil;
+    let il = List.foldLeft((acc, e) -> e :: acc, Nil, i) |> List.reverse;
+    let ir = List.foldRight((e, acc) -> e :: acc, Nil, i);
+    il == ir

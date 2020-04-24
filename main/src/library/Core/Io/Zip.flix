@@ -42,6 +42,14 @@ namespace Core/Io/Zip {
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
     }
 
+    pub def temp(z: Zip): Bool & Impure = {
+        import java.util.zip.ZipFile.entries();
+        import java.util.Enumeration.hasMoreElements();
+        let Zip(javaZip) = z;
+        let e = entries(javaZip);
+        e.hasMoreElements()
+    }
+
     ///
     /// Reads all entries in `z` into `InputStream`s.
     ///
@@ -62,7 +70,7 @@ namespace Core/Io/Zip {
             } else {
                 let entry = e.nextElement() as ##java.util.zip.ZipEntry;
                 let entryStream = try {
-                    Ok(InputStream(javaZip.getInputStream(entry)))
+                    Ok(javaZip.getInputStream(entry))
                 } catch {
                     case _: ##java.util.NoSuchElementException => Err(IOError.ElementNotFound("Couldn't find '" + entry.getName() + "' in zip file"))
                 };
@@ -70,7 +78,7 @@ namespace Core/Io/Zip {
                     let entryRec = {
                         name = entry.getName(),
                         isDirectory = entry.isDirectory(),
-                        stream = es
+                        stream = InputStream(es)
                     };
                     Some(entryRec)
                 }, entryStream)

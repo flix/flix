@@ -988,10 +988,10 @@ namespace List {
     }
 
     ///
-    /// Sequences the results in `xs` and collects them
+    /// Sequences the `Result`s in `xs` and collects them
     ///
     pub def sequenceResult(xs: List[Result[a, e]]): Result[List[a], e] =
-        fold((accR, elemR) -> {
+        foldLeft((accR, elemR) -> {
             Result.flatMap(acc -> {
                 Result.flatMap(elem -> {
                     Ok(elem :: acc)
@@ -1000,6 +1000,18 @@ namespace List {
         }, Ok(Nil), xs)
             |> Result.map(reverse)
 
+    ///
+    /// Sequences the `Option`s in `xs` and collects them
+    ///
+    pub def sequenceOption(xs: List[Option[a]]): Option[List[a]] =
+        foldLeft((accR, elemR) -> {
+            Option.flatMap(acc -> {
+                Option.flatMap(elem -> {
+                    Some(elem :: acc)
+                }, elemR)
+            }, accR)
+        }, Some(Nil), xs)
+            |> Option.map(reverse)
 
     ///
     /// Compares `xs` and `ys` lexicographically.
