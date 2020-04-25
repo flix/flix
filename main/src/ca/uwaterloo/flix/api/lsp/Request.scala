@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import java.nio.file.{Path, Paths}
+
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
@@ -35,12 +37,12 @@ object Request {
   /**
     * A request to get the type and effect of an expression.
     */
-  case class TypeAndEffectOf(uri: String, pos: Position) extends Request
+  case class TypeAndEffectOf(uri: Path, pos: Position) extends Request
 
   /**
     * A request to go to a definition or local variable.
     */
-  case class GotoDef(uri: String, pos: Position) extends Request
+  case class GotoDef(uri: Path, pos: Position) extends Request
 
   /**
     * A request to shutdown the language server.
@@ -72,7 +74,7 @@ object Request {
     for {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
-    } yield Request.TypeAndEffectOf(doc, pos)
+    } yield Request.TypeAndEffectOf(Paths.get(doc).normalize(), pos)
   }
 
   /**
@@ -86,7 +88,7 @@ object Request {
     for {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
-    } yield Request.GotoDef(doc, pos)
+    } yield Request.GotoDef(Paths.get(doc).normalize(), pos)
   }
 
 }

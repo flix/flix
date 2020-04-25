@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import java.net.InetSocketAddress
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -199,13 +200,17 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.TypeAndEffectOf(doc, pos) =>
       index.query(doc, pos) match {
-        case None => Reply.NotFound()
+        case None =>
+          log(s"No entry for: '$doc' at '$pos'.")
+          Reply.NotFound()
         case Some(exp) => Reply.EffAndTypeOf(exp)
       }
 
     case Request.GotoDef(doc, pos) =>
       index.query(doc, pos) match {
-        case None => Reply.NotFound()
+        case None =>
+          log(s"No entry for: '$doc' at '$pos'.")
+          Reply.NotFound()
         case Some(exp) => exp match {
           case Expression.Def(sym, _, originLoc) =>
             val originSelectionRange = Range.from(originLoc)
