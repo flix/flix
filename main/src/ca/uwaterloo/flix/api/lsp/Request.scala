@@ -32,7 +32,7 @@ object Request {
   /**
     * A request to validate the source files in `paths`.
     */
-  case class Validate(paths: List[String]) extends Request
+  case class Validate(paths: List[Path]) extends Request
 
   /**
     * A request to get the type and effect of an expression.
@@ -58,7 +58,7 @@ object Request {
         val xs = arr.collect {
           case JString(s) => s
         }
-        Ok(Request.Validate(xs))
+        Ok(Request.Validate(xs.map(x => Paths.get(x))))
       case _ => Err("Cannot find property 'paths'. Missing or incorrect type?")
     }
   }
