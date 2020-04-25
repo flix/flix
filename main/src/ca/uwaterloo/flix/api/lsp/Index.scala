@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import java.nio.file.Path
+
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 
@@ -33,13 +35,13 @@ object Index {
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-case class Index(m: Map[(String, Int), List[Expression]]) {
+case class Index(m: Map[(Path, Int), List[Expression]]) {
 
   /**
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
     */
   // TODO: Add support for multi-line expressions.
-  def query(uri: String, pos: Position): Option[Expression] = {
+  def query(uri: Path, pos: Position): Option[Expression] = {
     // A key consists of a uri and a line number.
     val key = (uri, pos.line)
     m.get(key).flatMap {
@@ -65,7 +67,7 @@ case class Index(m: Map[(String, Int), List[Expression]]) {
     */
   def +(exp0: Expression): Index = {
     // Compute the uri, line, and column of the expression.
-    val uri = exp0.loc.source.name
+    val uri = Path.of(exp0.loc.source.name)
     val beginLine = exp0.loc.beginLine
     val beginCol = exp0.loc.beginCol
 
