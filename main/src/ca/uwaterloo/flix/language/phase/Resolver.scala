@@ -1004,7 +1004,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, root, ns0.loc)
 
           // Case 3: TypeAlias.
           case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
@@ -1022,7 +1022,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       // Disambiguate type.
       (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
         case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
+        case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, root, loc)
         case (None, Some(typeAliasDecl)) => getTypeAliasIfAccessible(typeAliasDecl, ns0, root, loc)
         case (Some(enumDecl), Some(typeAliasDecl)) =>
           val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
@@ -1072,9 +1072,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         r <- lookupType(rest, ns0, root)
       } yield den match {
         case Ast.Denotation.Relational =>
-          Type.SchemaExtend(ident.name, mkRelationType(ts), r)
+          Type.mkSchemaExtend(ident.name, mkRelationType(ts), r)
         case Ast.Denotation.Latticenal =>
-          Type.SchemaExtend(ident.name, mkLatticeType(ts), r)
+          Type.mkSchemaExtend(ident.name, mkLatticeType(ts), r)
       }
 
     case NamedAst.Type.Relation(tpes, loc) =>

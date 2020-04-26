@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -462,7 +462,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.RecordEmpty(loc) =>
-      NamedAst.Expression.RecordEmpty(Type.freshTypeVarWithKind(Kind.Record), loc).toSuccess
+      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(Kind.Record), loc).toSuccess
 
     case WeededAst.Expression.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
@@ -717,7 +717,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, env0, uenv0, tenv0))) {
         case cs =>
-          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVarWithKind(Kind.Schema), loc)
+          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVar(Kind.Schema), loc)
       }
 
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
@@ -1201,7 +1201,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.RecordEmpty(loc) => Nil
     case WeededAst.Type.RecordExtend(l, t, r, loc) => hackFreeVarsWithKind(t) ::: hackFreeVarsWithKind(r, Kind.Record)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
-    case WeededAst.Type.Schema(ts, r, loc) => ts.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(r)
+    case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(r)
+    case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(r)
+    case WeededAst.Type.Relation(ts, loc) => ts.flatMap(hackFreeVarsWithKind(_))
+    case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(hackFreeVarsWithKind(_))
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(eff, Kind.Effect) ::: hackFreeVarsWithKind(tresult)
@@ -1394,7 +1397,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     typeVars.toList.sortBy(_._1).map {
       case (name, kind) =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        val tvar = Type.freshTypeVarWithKind(kind)
+        val tvar = Type.freshTypeVar(kind)
         tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, loc)
     }
@@ -1416,7 +1419,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     typeVars.toList.sortBy(_._1).map {
       case (name, kind) =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        val tvar = Type.freshTypeVarWithKind(kind)
+        val tvar = Type.freshTypeVar(kind)
         tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, loc)
     }

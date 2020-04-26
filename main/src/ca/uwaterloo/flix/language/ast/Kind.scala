@@ -52,11 +52,14 @@ object Kind {
     */
   case object Schema extends Kind
 
-  // MATT docs
-  case object Relation extends Kind
+//  // MATT docs
+//  case object Relation extends Kind
+//
+//  // MATT docs
+//  case object Lattice extends Kind
 
   // MATT docs
-  case object Lattice extends Kind
+  case object Predicate extends Kind
 
   /**
     * The kind of natural number expressions.
@@ -87,8 +90,9 @@ object Kind {
       case Kind.Star => "*"
       case Kind.Record => "Record"
       case Kind.Schema => "Schema"
-      case Kind.Relation => "Relation"
-      case Kind.Lattice => "Lattice"
+//      case Kind.Relation => "Relation"
+//      case Kind.Lattice => "Lattice"
+      case Kind.Predicate => "Predicate"
       case Kind.Nat => "Nat"
       case Kind.Effect => "Effect"
       case Kind.Arrow(List(kparam@ Arrow(_, _)), kr) => s"($kparam) -> $kr"

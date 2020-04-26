@@ -108,4 +108,15 @@ class TestStratifier extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
   }
+
+  test("HackTest.01") {
+    val input =
+      """
+        |    @test
+        |    def withAgeAndSex[r](age: Int, sex: Str, rec: r): { age: Int, sex: Str | r } =
+        |        { +age = age, +sex = sex | rec }
+        |""".stripMargin
+    val result = compile(input, DefaultOptions.copy(core = false))
+    result.get
+  }
 }

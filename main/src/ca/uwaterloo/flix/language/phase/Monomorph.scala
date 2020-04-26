@@ -102,7 +102,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Cst(TypeConstructor.SchemaEmpty) => Type.SchemaEmpty
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) =>
           Type.mkSchemaExtend(sym, visit(tpe), visitSchema(rest))
-        case Type.Var(_, _) => Type.SchemaEmpty
+        case Type.Var(_, _, _) => Type.SchemaEmpty
         case _ => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 

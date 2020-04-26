@@ -231,13 +231,12 @@ object NameError {
     * @param loc  the location of the method name.
     */
   case class UnusedTypeParam(name: String, loc: SourceLocation) extends NameError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unused type variable '" << Red(name) << "'." << NewLine
+      vt << ">> Unused type parameter'" << Red(name) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "unused type variable.") << NewLine
+      vt << Code(loc, "unused type parameter.") << NewLine
     }
   }
 }

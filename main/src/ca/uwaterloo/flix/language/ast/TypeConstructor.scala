@@ -177,21 +177,21 @@ object TypeConstructor {
   // MATT docs
   case class SchemaExtend(sym: String) extends TypeConstructor {
     // MATT docs
-    def kind: Kind = Kind.Star ->: Kind.Schema ->: Kind.Schema
+    def kind: Kind = Kind.Predicate ->: Kind.Schema ->: Kind.Schema
   }
 
   /**
     * A type constructor for relations.
     */
-  case class Relation(sym: String) extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Relation
+  case object Relation extends TypeConstructor {
+    def kind: Kind = Kind.Star ->: Kind.Predicate
   }
 
   /**
     * A type constructor for lattices.
     */
-  case class Lattice(sym: String) extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Lattice
+  case object Lattice extends TypeConstructor {
+    def kind: Kind = Kind.Star ->: Kind.Predicate
   }
 
   /**

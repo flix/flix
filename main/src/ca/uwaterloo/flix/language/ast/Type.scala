@@ -267,6 +267,13 @@ object Type {
     * A type expression that a represents a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type) extends Type {
+    (tpe1, tpe2) match {
+      case (Apply(Cst(TypeConstructor.Relation), _), _) => {
+        System.err.println("error!")
+        throw InternalCompilerException("asdf")
+      }
+      case _ => // nothing
+    }
     /**
       * Returns the kind of `this` type.
       *
@@ -307,19 +314,19 @@ object Type {
   }
 
   // MATT docs
-  def mkSchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type): Type = {
+  def mkSchemaExtend(sym: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(sym)), List(tpe, rest))
   }
 
   // MATT docs
-  def mkRelation(sym: Symbol.RelSym, tuple: Type): Type = {
-    Type.Apply(Type.Cst(TypeConstructor.Relation(sym)), tuple)
+  def mkRelation(tuple: Type): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Relation), tuple)
   }
 
   // MATT docs
   // MATT could merge with relations since sym knows if it is  rel or lat
-  def mkLattice(sym: Symbol.LatSym, tuple: Type): Type = {
-    Type.Apply(Type.Cst(TypeConstructor.Lattice(sym)), tuple)
+  def mkLattice(tuple: Type): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Lattice), tuple)
   }
 
 

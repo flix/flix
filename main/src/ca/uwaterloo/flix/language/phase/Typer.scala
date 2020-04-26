@@ -585,7 +585,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // -------------------------
         // r.label : tpe
         //
-        val freshRowVar = Type.freshTypeVarWithKind(Kind.Record)
+        val freshRowVar = Type.freshTypeVar(Kind.Record)
         val expectedType = Type.mkRecordExtend(label, tvar, freshRowVar)
         for {
           (tpe, eff) <- visitExp(exp)
@@ -612,7 +612,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // { -label | r } : { r }
         //
         val freshFieldType = Type.freshTypeVar()
-        val freshRowVar = Type.freshTypeVarWithKind(Kind.Record)
+        val freshRowVar = Type.freshTypeVar(Kind.Record)
         for {
           (tpe, eff) <- visitExp(exp)
           recordType <- unifyTypM(tpe, Type.mkRecordExtend(label, freshFieldType, freshRowVar), loc)
@@ -1120,14 +1120,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //  -------------------------------------------
         //  project P exp2 : #{ P : a | c }
         //
-        val freshTupleTypeVar = Type.freshTypeVar()
-        val freshRestSchemaTypeVar = Type.freshTypeVarWithKind(Kind.Schema)
-        val freshResultSchemaTypeVar = Type.freshTypeVarWithKind(Kind.Schema)
+        val freshPredicateType = Type.freshTypeVar(Kind.Predicate)
+        val freshRestSchemaTypeVar = Type.freshTypeVar(Kind.Schema)
+        val freshResultSchemaTypeVar = Type.freshTypeVar(Kind.Schema)
 
         for {
           (tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypM(tpe, Type.mkSchemaExtend(name, freshTupleTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.mkSchemaExtend(name, freshTupleTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypM(tpe, Type.mkSchemaExtend(name, freshPredicateType, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkSchemaExtend(name, freshPredicateType, freshResultSchemaTypeVar), loc)
           resultEff = eff
         } yield (resultTyp, resultEff)
 
@@ -1153,13 +1153,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // fold P exp1 exp2 exp3 : b
         //
         val tupleType = Type.freshTypeVar()
-        val freshRestTypeVar = Type.freshTypeVarWithKind(Kind.Schema)
+        val predicateType = Type.freshTypeVar(Kind.Predicate)
+
+        val freshRestTypeVar = Type.freshTypeVar(Kind.Schema)
         for {
           (initType, eff1) <- visitExp(exp1)
           (fType, eff2) <- visitExp(exp2)
           (constraintsType, eff3) <- visitExp(exp3)
           // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          _ <- unifyTypM(constraintsType, Type.mkSchemaExtend(name, tupleType, freshRestTypeVar), loc)
+          _ <- unifyTypM(Type.mkRelation(tupleType), predicateType, loc)
+          _ <- unifyTypM(constraintsType, Type.mkSchemaExtend(name, predicateType, freshRestTypeVar), loc)
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
           resultTyp <- unifyTypM(tvar, initType, loc) // the result of the fold is the same type as init
@@ -1849,7 +1852,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshTypeVarWithKind(Kind.Schema)
+  private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshTypeVar(Kind.Schema)
 
   /**
     * Returns the Flix Type of a Java Class
