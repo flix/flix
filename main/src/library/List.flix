@@ -550,6 +550,21 @@ namespace List {
     }
 
     ///
+    /// Returns the sublist of `xs` without the last element.
+    /// Returns `None` if the list `xs` is `Nil`.
+    ///
+    pub def init(xs: List[a]): Option[List[a]] = initHelper(xs, Nil)
+
+    ///
+    /// Helper function for `init`.
+    ///
+    def initHelper(xs: List[a], acc: List[a]): Option[List[a]] = match xs {
+        case Nil => None
+        case _ :: Nil => Some(reverse(acc))
+        case x :: rs => initHelper(rs, x :: acc)
+    }
+
+    ///
     /// Returns the sublist of `xs` from index `b` (inclusive) to index `e` (exclusive).
     ///
     /// That is, an element at index `i` in `xs` is part of the returned sublist if and only if `i >= b` and `i < e`.
