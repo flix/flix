@@ -1957,7 +1957,7 @@ def unfoldWithOkIter01(): Bool & Impure =
         } else {
             Ok(Some(deref x))
         };
-    List.unfoldWithOkIter(step) == Nil
+    List.unfoldWithOkIter(step) == Ok(Nil)
 
 @test
 def unfoldWithOkIter02(): Bool & Impure =
@@ -1968,7 +1968,7 @@ def unfoldWithOkIter02(): Bool & Impure =
         } else {
             Ok(Some(deref x))
         };
-    List.unfoldWithOkIter(step) == Err(0) :: Nil
+    List.unfoldWithOkIter(step) == Err(0)
 
 @test
 def unfoldWithOkIter03(): Bool & Impure =
@@ -1979,68 +1979,6 @@ def unfoldWithOkIter03(): Bool & Impure =
             x := deref x + 1;
             Ok(Some(c))
         } else {
-            Err("err")
+            Ok(None)
         };
-    List.unfoldWithOkIter(step) == (Ok(1) :: Ok(2) :: Ok(3) :: Ok(4) :: Err("err") :: Nil)
-
-/////////////////////////////////////////////////////////////////////////////
-// sequenceResult                                                          //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def sequenceResult01(): Bool =
-    let i = Ok(1) :: Ok(2) :: Ok(3) :: Err("err") :: Ok(5) :: Nil;
-    let s = List.sequenceResult(i);
-    s == Err("err")
-
-@test
-def sequenceResult02(): Bool =
-    let i = Ok(1) :: Ok(2) :: Ok(3) :: Ok(4) :: Nil;
-    let s = List.sequenceResult(i);
-    s == Ok(1 :: 2 :: 3 :: 4 :: Nil)
-
-@test
-def sequenceResult03(): Bool =
-    let s = List.sequenceResult(Nil);
-    s == Ok(Nil)
-
-@test
-def sequenceResult04(): Bool =
-    let s = List.sequenceResult(Err("err") :: Nil);
-    s == Err("err")
-
-@test
-def sequenceResult05(): Bool =
-    let s = List.sequenceResult(Ok(1) :: Nil);
-    s == Ok(1 :: Nil)
-
-/////////////////////////////////////////////////////////////////////////////
-// sequenceOption                                                          //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def sequenceOption01(): Bool =
-    let i = Some(1) :: Some(2) :: Some(3) :: None :: Some(5) :: Nil;
-    let s = List.sequenceOption(i);
-    s == None
-
-@test
-def sequenceOption02(): Bool =
-    let i = Some(1) :: Some(2) :: Some(3) :: Some(4) :: Nil;
-    let s = List.sequenceOption(i);
-    s == Some(1 :: 2 :: 3 :: 4 :: Nil)
-
-@test
-def sequenceOption03(): Bool =
-    let s = List.sequenceOption(Nil);
-    s == Some(Nil)
-
-@test
-def sequenceOption04(): Bool =
-    let s = List.sequenceOption(None :: Nil);
-    s == None
-
-@test
-def sequenceOption05(): Bool =
-    let s = List.sequenceOption(Some(1) :: Nil);
-    s == Some(1 :: Nil)
+    List.unfoldWithOkIter(step) == Ok(1 :: 2 :: 3 :: 4 :: Nil)

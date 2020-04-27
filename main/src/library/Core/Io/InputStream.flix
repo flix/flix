@@ -103,7 +103,7 @@ namespace Core/Io/InputStream {
             let* r = readBuffer(arr, s);
             Ok(if (r <= 0) None else Some(arr[0..r]))
         };
-        let* r = List.unfoldWithOkIter(step) |> List.sequenceResult;
+        let* r = List.unfoldWithOkIter(step);
         let f = List.fold((acc, elem) -> Array.append(acc, elem), [], r);
         Ok(f)
     }

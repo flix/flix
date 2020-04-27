@@ -90,7 +90,6 @@ namespace Core/Io/ZipInput {
             }
         };
         List.unfoldWithOkIter(step)
-            |> List.sequenceResult
     } catch {
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
         case _: ##java.lang.IllegalStateException => Err(IOError.IllegalState)
