@@ -16,12 +16,13 @@
 
 use Core/Io/InputStream.InputStream;
 use Core/Io/IOError.IOError;
+use Result.flatMap;
 
 namespace Core/Io/ZipInput {
     pub opaque type ZipInput = ##java.util.zip.ZipFile
 
     ///
-    /// An entry in a `ZipInput`
+    /// An entry in a `ZipInput`.
     ///
     pub type alias ZipEntry = {
         name: String,
@@ -32,9 +33,15 @@ namespace Core/Io/ZipInput {
     ///
     /// Constructs a `ZipInput` from a `Path`.
     ///
-    pub def new(path: Path): Result[ZipInput, IOError] & Impure = try {
+    pub def new(p: Path): Result[ZipInput, IOError] & Impure = try {
         import new java.util.zip.ZipFile(##java.io.File) as newZipFile;
-        let Path(javaFile) = path;
+        let* e = Path.exists(p);
+        let* javaFile = if (e) {
+            let Path(javaFile) = p;
+            Ok(javaFile)
+        } else {
+            Err(IOError.FileNotFound(p))
+        };
         let zipFile = newZipFile(javaFile);
         Ok(ZipInput(zipFile))
     } catch {
