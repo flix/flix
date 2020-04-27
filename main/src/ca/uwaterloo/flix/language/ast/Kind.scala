@@ -37,12 +37,13 @@ sealed trait Kind {
 
 object Kind {
 
-  // MATT docs
-  // MATT find better name
+  /**
+    * The kind of type variables whose kinds are not yet determined.
+    */
   case object Unbound extends Kind
 
   /**
-    * The kind of all nullary type expressions.
+    * The kind of proper types.
     */
   case object Star extends Kind
 
@@ -56,13 +57,9 @@ object Kind {
     */
   case object Schema extends Kind
 
-//  // MATT docs
-//  case object Relation extends Kind
-//
-//  // MATT docs
-//  case object Lattice extends Kind
-
-  // MATT docs
+  /**
+    * The kind of lattices and relations.
+    */
   case object Predicate extends Kind
 
   /**
@@ -95,8 +92,6 @@ object Kind {
       case Kind.Star => "*"
       case Kind.Record => "Record"
       case Kind.Schema => "Schema"
-//      case Kind.Relation => "Relation"
-//      case Kind.Lattice => "Lattice"
       case Kind.Predicate => "Predicate"
       case Kind.Nat => "Nat"
       case Kind.Effect => "Effect"

@@ -62,10 +62,11 @@ object Scheme {
     val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
-        val rigidity = mode match {
-          case InstantiateMode.Flexible => Rigidity.Flexible
-          case InstantiateMode.Rigid => Rigidity.Rigid
-          case InstantiateMode.Mixed => Rigidity.Flexible
+        val rigidity = (mode, tvar.kind) match {
+          case (InstantiateMode.Flexible, _) => Rigidity.Flexible
+          case (InstantiateMode.Rigid, Kind.Unbound) => Rigidity.Flexible
+          case (InstantiateMode.Rigid, _) => Rigidity.Rigid
+          case (InstantiateMode.Mixed, _) => Rigidity.Flexible
         }
         macc + (tvar.id -> Type.freshTypeVar(tvar.kind, rigidity))
     }
@@ -128,7 +129,11 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     Unification.unifyTypes(tpe1, tpe2) match {
       case Result.Ok(_) => true
-      case Result.Err(_) => false
+      case r @ Result.Err(_) => {
+        val q = r
+        System.err.println("adsf")
+        false
+      }
     }
   }
 

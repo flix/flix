@@ -171,8 +171,9 @@ object Type {
     */
   val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty)
 
-
-  // MATT docs
+  /**
+    * Represents the Empty Schema type.
+    */
   val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty)
 
   /**
@@ -267,13 +268,6 @@ object Type {
     * A type expression that a represents a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type) extends Type {
-    (tpe1, tpe2) match {
-      case (Apply(Cst(TypeConstructor.Relation), _), _) => {
-        System.err.println("error!")
-        throw InternalCompilerException("asdf")
-      }
-      case _ => // nothing
-    }
     /**
       * Returns the kind of `this` type.
       *
@@ -313,18 +307,23 @@ object Type {
     mkApply(Type.Cst(TypeConstructor.RecordExtend(label)), List(tpe, rest))
   }
 
-  // MATT docs
+  /**
+    * Constructs a SchemaExtend type.
+    */
   def mkSchemaExtend(sym: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(sym)), List(tpe, rest))
   }
 
-  // MATT docs
+  /**
+    * Constructs a Relation type.
+    */
   def mkRelation(tuple: Type): Type = {
     Type.Apply(Type.Cst(TypeConstructor.Relation), tuple)
   }
 
-  // MATT docs
-  // MATT could merge with relations since sym knows if it is  rel or lat
+  /**
+    * Constructs a Lattice type.
+    */
   def mkLattice(tuple: Type): Type = {
     Type.Apply(Type.Cst(TypeConstructor.Lattice), tuple)
   }
@@ -378,16 +377,19 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
-    require(ts.lengthIs > 1) // MATT change to internalcompilerexcpetion
+    if (ts.lengthIs <= 1) {
+      throw InternalCompilerException(s"Illegal tuple argument list length: $ts")
+    }
     val init = Type.Cst(TypeConstructor.Tuple(ts.length))
     ts.foldLeft(init: Type) {
       case (acc, x) => Apply(acc, x)
     }
   }
 
-  // MATT rename or replace mkTuple or something
-  // MATT docs
-  def mkTupleSmart(ts: List[Type]): Type = ts match {
+  /**
+    * Constructs a Unit, Singleton Type, or Tuple from the given types.
+    */
+  def mkUnitOrTuple(ts: List[Type]): Type = ts match {
     case Nil => Type.Unit
     case List(elem) => elem
     case _ => mkTuple(ts)
@@ -493,7 +495,6 @@ object Type {
           // Put everything together.
           argPart + arrowPart + resultPart + effPart
 
-          // MATT schema stuff
         case Type.Lambda(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
 
         case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"

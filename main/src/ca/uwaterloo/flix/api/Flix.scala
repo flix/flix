@@ -353,7 +353,6 @@ class Flix {
     val si1 = getStringInputs
     val si2 = getPathInputs
     val si3 = if (options.core) Nil else getStandardLibraryInputs
-//    val si3 = Nil // MATT
     si1 ::: si2 ::: si3
   }
 

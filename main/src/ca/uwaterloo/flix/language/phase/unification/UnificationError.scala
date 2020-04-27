@@ -96,4 +96,6 @@ object UnificationError {
     */
   case class NonSchemaType(nonSchemaType: Type) extends UnificationError
 
+  // MATT
+  case class MismatchedKinds(todo: String) extends UnificationError
 }

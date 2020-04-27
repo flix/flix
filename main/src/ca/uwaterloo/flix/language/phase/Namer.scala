@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -271,19 +271,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
 
-      flatMapN(getTypeParams(tparams0, fparams0, tpe, loc)) {
-        case tparams =>
+      val tparams = getTypeParams(tparams0, fparams0, tpe, loc)
 
-          val tenv = tenv0 ++ getTypeEnv(tparams)
-          flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
-            case fparams =>
-              val env0 = getVarEnv(fparams)
+      val tenv = tenv0 ++ getTypeEnv(tparams)
+      flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
+        case fparams =>
+          val env0 = getVarEnv(fparams)
 
-              mapN(visitExp(exp, env0, uenv0, tenv), getScheme(tparams, tpe, uenv0, tenv), visitType(eff0, uenv0, tenv)) {
-                case (e, sc, eff) =>
-                  val sym = Symbol.mkDefnSym(ns0, ident)
-                  NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
-              }
+          mapN(visitExp(exp, env0, uenv0, tenv), getScheme(tparams, tpe, uenv0, tenv), visitType(eff0, uenv0, tenv)) {
+            case (e, sc, eff) =>
+              val sym = Symbol.mkDefnSym(ns0, ident)
+              NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
           }
       }
   }
@@ -557,27 +555,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
-      flatMapN(getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)) {
-        case tparams =>
-          flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
-            case p =>
-              mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
-                // TODO: Preserve type parameters in NamedAst?
-                case e => NamedAst.Expression.Existential(p, e, loc)
-              }
+      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
+      flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
+        case p =>
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
+            // TODO: Preserve type parameters in NamedAst?
+            case e => NamedAst.Expression.Existential(p, e, loc)
           }
       }
 
     case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
       // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
-      flatMapN(getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)) {
-        case tparams =>
-          flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
-            case p =>
-              mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
-                // TODO: Preserve type parameters in NamedAst?
-                case e => NamedAst.Expression.Universal(p, e, loc)
-              }
+      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
+      flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
+        case p =>
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
+            // TODO: Preserve type parameters in NamedAst?
+            case e => NamedAst.Expression.Universal(p, e, loc)
           }
       }
 
@@ -1192,28 +1186,30 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
   }
 
-  // MATT rename
-  private def hackFreeVarsWithKind(tpe0: WeededAst.Type, varKind: Kind = Kind.Star): List[(Name.Ident, Kind)] = tpe0 match {
+  /**
+    * Returns the free vars and their inferred kinds in the given type `tpe0`, with `varKind` assigned if `tpe0` is a type var.
+    */
+  private def freeVarsWithKind(tpe0: WeededAst.Type, varKind: Kind = Kind.Star): List[(Name.Ident, Kind)] = tpe0 match {
     case WeededAst.Type.Var(ident, loc) => List(ident -> varKind)
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
-    case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(hackFreeVarsWithKind(_))
+    case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVarsWithKind(_))
     case WeededAst.Type.RecordEmpty(loc) => Nil
-    case WeededAst.Type.RecordExtend(l, t, r, loc) => hackFreeVarsWithKind(t) ::: hackFreeVarsWithKind(r, Kind.Record)
+    case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVarsWithKind(t) ::: freeVarsWithKind(r, Kind.Record)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
-    case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(r)
-    case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(r)
-    case WeededAst.Type.Relation(ts, loc) => ts.flatMap(hackFreeVarsWithKind(_))
-    case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(hackFreeVarsWithKind(_))
+    case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVarsWithKind(_)) ::: freeVarsWithKind(r)
+    case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVarsWithKind(_)) ::: freeVarsWithKind(r)
+    case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVarsWithKind(_))
+    case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVarsWithKind(_))
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(hackFreeVarsWithKind(_)) ::: hackFreeVarsWithKind(eff, Kind.Effect) ::: hackFreeVarsWithKind(tresult)
-    case WeededAst.Type.Apply(tpe1, tpe2, loc) => hackFreeVarsWithKind(tpe1) ++ hackFreeVarsWithKind(tpe2)
+    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVarsWithKind(_)) ::: freeVarsWithKind(eff, Kind.Effect) ::: freeVarsWithKind(tresult)
+    case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVarsWithKind(tpe1) ++ freeVarsWithKind(tpe2)
     case WeededAst.Type.Pure(loc) => Nil
     case WeededAst.Type.Impure(loc) => Nil
-    case WeededAst.Type.Not(tpe, loc) => hackFreeVarsWithKind(tpe, Kind.Effect)
-    case WeededAst.Type.And(tpe1, tpe2, loc) => hackFreeVarsWithKind(tpe1, Kind.Effect) ++ hackFreeVarsWithKind(tpe2, Kind.Effect)
-    case WeededAst.Type.Or(tpe1, tpe2, loc) => hackFreeVarsWithKind(tpe1, Kind.Effect) ++ hackFreeVarsWithKind(tpe2, Kind.Effect)
+    case WeededAst.Type.Not(tpe, loc) => freeVarsWithKind(tpe, Kind.Effect)
+    case WeededAst.Type.And(tpe1, tpe2, loc) => freeVarsWithKind(tpe1, Kind.Effect) ++ freeVarsWithKind(tpe2, Kind.Effect)
+    case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVarsWithKind(tpe1, Kind.Effect) ++ freeVarsWithKind(tpe2, Kind.Effect)
   }
 
   /**
@@ -1305,21 +1301,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     traverse(fparams0)(visitFormalParam(_, uenv0, tenv0))
   }
 
-  //  /**
-  //    * Performs naming on the given type parameters parameters `tparam0` under the given type environment `tenv0`.
-  //    */
-  //  private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
-  //    tparams0 match {
-  //      case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-  //      case WeededAst.TypeParams.Explicit(tparams0) => getImplicitTypeParams(fparams0, tpe, loc) // MATT ignoring explicit tparams for now; need to validate against implicits
-  //    }
-  //  }
-
   /**
     * Performs naming on the given type parameters parameters `tparam0` under the given type environment `tenv0`.
     */
-  private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
-    val implicits = getImplicitTypeParams(fparams0, tpe, loc)
+  private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
       case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0)
@@ -1332,7 +1317,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
     case p =>
       // Generate a fresh type variable for the type parameter.
-      val tvar = Type.freshTypeVarWithKind(Kind.Unbound)
+      val tvar = Type.freshTypeVar(Kind.Unbound)
       // Remember the original textual name.
       tvar.setText(p.name)
       NamedAst.TypeParam(p, tvar, p.loc)
@@ -1346,13 +1331,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val typeVarsArgs = fparams.foldLeft(Set.empty[(String, Kind)]) {
       case (acc, WeededAst.FormalParam(_, _, None, _)) => acc
       case (acc, WeededAst.FormalParam(_, _, Some(tpe), _)) =>
-        hackFreeVarsWithKind(tpe).foldLeft(acc) {
+        freeVarsWithKind(tpe).foldLeft(acc) {
           case (innerAcc, (ident, kind)) => innerAcc + (ident.name -> kind)
         }
     }
 
     // Compute the type variables that occur in the return type.
-    val typeVarsReturnType = hackFreeVarsWithKind(returnType).map {
+    val typeVarsReturnType = freeVarsWithKind(returnType).map {
       case (ident, kind) => (ident.name, kind)
     }
 
@@ -1376,7 +1361,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     // Compute the type variables that occur in the formal parameters.
     val typeVars = attrs.foldLeft(Set.empty[(String, Kind)]) {
       case (acc, WeededAst.Attribute(_, tpe, _)) =>
-        hackFreeVarsWithKind(tpe).foldLeft(acc) {
+        freeVarsWithKind(tpe).foldLeft(acc) {
           case (innerAcc, (ident, kind)) => innerAcc + (ident.name -> kind)
         }
     }

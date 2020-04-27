@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -32,6 +32,7 @@ object Substitution {
     */
   def singleton(x: Type.Var, tpe: Type): Substitution = {
     // Ensure that we do not add any x -> x mappings.
+    require(tpe.kind != Kind.Unbound)
     tpe match {
       case y: Type.Var if x.id == y.id => empty
       case _ => Substitution(Map(x -> tpe))

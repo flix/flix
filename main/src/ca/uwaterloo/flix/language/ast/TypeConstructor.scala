@@ -169,14 +169,20 @@ object TypeConstructor {
     def kind: Kind = Kind.Star ->: Kind.Record ->: Kind.Record
   }
 
-  // MATT docs
+  /**
+    * A type constructor that represents the type of empty schemas.
+    */
   case object SchemaEmpty extends TypeConstructor {
     def kind: Kind = Kind.Schema
   }
 
-  // MATT docs
+  /**
+    * A type constructor that represents the type of extended schemas.
+    */
   case class SchemaExtend(sym: String) extends TypeConstructor {
-    // MATT docs
+    /**
+      * The shape of an extended schema is Schema[t;r]
+      */
     def kind: Kind = Kind.Predicate ->: Kind.Schema ->: Kind.Schema
   }
 
@@ -184,6 +190,9 @@ object TypeConstructor {
     * A type constructor for relations.
     */
   case object Relation extends TypeConstructor {
+    /**
+      * The shape of a relation is Relation[t]
+      */
     def kind: Kind = Kind.Star ->: Kind.Predicate
   }
 
@@ -191,6 +200,9 @@ object TypeConstructor {
     * A type constructor for lattices.
     */
   case object Lattice extends TypeConstructor {
+    /**
+      * The shape of a lattice is Lattice[t]
+      */
     def kind: Kind = Kind.Star ->: Kind.Predicate
   }
 

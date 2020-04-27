@@ -43,9 +43,9 @@ object Unification {
 
     // Check if the kind of `x` matches the kind of `tpe`.
 
-    //if (x.kind != tpe.kind) {
-    //  return Result.Err(TypeError.KindError())
-    //}
+    if (!canSubstituteKind(x.kind, tpe.kind)) {
+      return Result.Err(UnificationError.MismatchedKinds("a kind error"))
+    }
 
     // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
     if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
@@ -55,6 +55,13 @@ object Unification {
     Result.Ok(Substitution.singleton(x, tpe))
   }
 
+  def canSubstituteKind(kind1: Kind, kind2: Kind): Boolean = (kind1, kind2) match {
+    case _ if (kind1 == kind2) => true
+    case (Kind.Unbound, _) => true
+    case (Kind.Star, Kind.Record) => true
+    case (Kind.Star, Kind.Schema) => true
+    case _ => false
+  }
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
@@ -65,10 +72,10 @@ object Unification {
       if (x.id == y.id && x.kind == y.kind)
         return Result.Ok(Substitution.empty)
       // Case 2: The left type variable is flexible.
-      if (x.rigidity == Rigidity.Flexible)
+      if (x.rigidity == Rigidity.Flexible && canSubstituteKind(x.kind, y.kind))
         return Result.Ok(Substitution.singleton(x, y))
       // Case 3: The right type variable is flexible.
-      if (y.rigidity == Rigidity.Flexible)
+      if (y.rigidity == Rigidity.Flexible && canSubstituteKind(y.kind, x.kind))
         return Result.Ok(Substitution.singleton(y, x))
       // Case 4: Both type variables are rigid.
       Result.Err(UnificationError.RigidVar(x, y))
@@ -257,6 +264,10 @@ object Unification {
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, loc))
+
+          // MATT gotta do this
+        case Result.Err(UnificationError.MismatchedKinds(string)) =>
+          Err(TypeError.MismatchedTypes(Type.Unit, Type.Unit, Type.Unit, Type.Unit, SourceLocation.Unknown))
       }
     }
     )

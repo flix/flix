@@ -108,20 +108,4 @@ class TestStratifier extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
   }
-
-  test("HackTest.01") { // MATT
-    import ca.uwaterloo.flix.util.Options
-    import ca.uwaterloo.flix.api.Flix
-    val input =
-      """
-        |@test
-        |def doThing[a, e](f: Unit -> a & e): a & e = {
-        |  f()
-        |}
-        |    """.stripMargin
-    val flix = new Flix()
-    flix.setOptions(Options.Default.copy(core = true))
-    val result = flix.addStr(input).compile()
-    result.get
-  }
 }

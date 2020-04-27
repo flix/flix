@@ -1718,13 +1718,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       //  P(t_1, ..., t_n): #{ P = P(tpe_1, ..., tpe_n) | fresh }
       //
 
+      val restType = Type.freshTypeVar(Kind.Schema)
       for {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip)
         pureTermEffects <- unifyEffM(Type.Pure, mkAnd(termEffects), loc)
-        predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(name, predicateType, Type.freshTypeVar(Kind.Schema))
+        predicateType <- unifyTypM(tvar, Type.mkSchemaExtend(name, mkRelationOrLatticeType(name, den, termTypes, root), restType), loc)
+      } yield predicateType
 
-    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) => // MATT to do?
+    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
       //  exp : typ
       //  ------------------------------------------------------------
@@ -1760,10 +1761,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
     case ResolvedAst.Predicate.Body.Atom(name, den, polarity, terms, tvar, loc) =>
+      val restType = Type.freshTypeVar(Kind.Schema)
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
-        predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(name, predicateType, Type.freshTypeVar(Kind.Schema))
+        predicateType <- unifyTypM(tvar, Type.mkSchemaExtend(name, mkRelationOrLatticeType(name, den, termTypes, root), restType), loc)
+      } yield predicateType
 
     //
     //  exp : Bool
@@ -1829,22 +1831,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   private def getSubstFromParams(params: List[ResolvedAst.FormalParam])(implicit flix: Flix): Substitution = {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
-    // old
-    (params zip declaredTypes).foldLeft(Substitution.empty) {
-      case (macc, (ResolvedAst.FormalParam(sym, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar, declaredType)
-        // end old
-        // MATT VERY IMPORTANT PART
-        // new
     val typeVars: List[Type] = params.map(_.sym.tvar)
 
     val result = declaredTypes.zip(typeVars).map {
       case (d, v) => unifyTypes(d, v)
-        // end new
     }
     result.map {
       case Ok(t) => t
-      case Err(e) => throw InternalCompilerException(s"MATT!! ${e}") // MATT fix
+      case Err(e) => throw InternalCompilerException(s"MATT!! ${e}")
     }.foldRight(Substitution.empty)(_ ++ _)
   }
 
