@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-use Core/Io/OutputStream.OutputStream;
-use Core/Io/OutputStream.OutputStream.OutputStream;
 use Core/Io/InputStream.InputStream;
 use Core/Io/IOError.IOError;
 
-namespace Core/Io/Zip {
-    pub opaque type Zip = ##java.util.zip.ZipFile
-
-    pub opaque type ZipOutput = ##java.util.zip.ZipOutputStream
+namespace Core/Io/ZipInput {
+    pub opaque type ZipInput = ##java.util.zip.ZipFile
 
     ///
-    /// An entry in a ZipFile
+    /// An entry in a `ZipInput`
     ///
     pub type alias ZipEntry = {
         name: String,
@@ -34,45 +30,22 @@ namespace Core/Io/Zip {
     }
 
     ///
-    /// Constructs a `Zip` from a `Path`.
+    /// Constructs a `ZipInput` from a `Path`.
     ///
-    pub def new(path: Path): Result[Zip, IOError] & Impure = try {
+    pub def new(path: Path): Result[ZipInput, IOError] & Impure = try {
         import new java.util.zip.ZipFile(##java.io.File) as newZipFile;
         let Path(javaFile) = path;
         let zipFile = newZipFile(javaFile);
-        Ok(Zip(zipFile))
+        Ok(ZipInput(zipFile))
     } catch {
         case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Core/Io/Zip.new"))
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
     }
 
-    pub def newOutput(s: OutputStream): ZipOutput & Impure = {
-        import new java.util.zip.ZipOutputStream(##java.io.OutputStream) as newZipOutputStream;
-        let OutputStream(javaStream) = s;
-        let zipOutput = newZipOutputStream(javaStream);
-        ZipOutput(zipOutput)
-    }
-
-    pub def write(n: String, a: Array[Int8], z: ZipOutput): Result[Unit, IOError] & Impure = try {
-        import new java.util.zip.ZipEntry(String) as newEntry;
-        import java.util.zip.ZipOutputStream.putNextEntry(##java.util.zip.ZipEntry);
-        import java.util.zip.ZipOutputStream.closeEntry();
-        use Core/Io/OutputStream.writeBuffer;
-        let ZipOutput(javaOutput) = z;
-        let outputStream = OutputStream(javaOutput as ##java.io.OutputStream);
-        let entry = newEntry(n);
-        javaOutput.putNextEntry(entry);
-        let _ = writeBuffer(a, outputStream);
-        javaOutput.closeEntry();
-        Ok(())
-    } catch {
-        case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
-    }
-
     ///
-    /// Reads all entries in `z` into `InputStream`s.
+    /// Reads all entries in `z` into a list of `ZipEntry`.
     ///
-    pub def entries(z: Zip): Result[List[ZipEntry], IOError] & Impure = try {
+    pub def entries(z: ZipInput): Result[List[ZipEntry], IOError] & Impure = try {
         import java.util.Enumeration.hasMoreElements();
         import java.util.Enumeration.nextElement();
         import java.util.zip.ZipFile.entries();
@@ -81,7 +54,7 @@ namespace Core/Io/Zip {
         import java.util.zip.ZipEntry.isDirectory();
 
         use Core/Io/InputStream.InputStream.InputStream;
-        let Zip(javaZip) = z;
+        let ZipInput(javaZip) = z;
         let e = entries(javaZip);
         let step = () -> {
             if (!e.hasMoreElements()) {
@@ -114,20 +87,11 @@ namespace Core/Io/Zip {
     ///
     /// Closes `z` and frees the resource.
     ///
-    pub def close(z: Zip): Result[Unit, IOError] & Impure = try {
+    pub def close(z: ZipInput): Result[Unit, IOError] & Impure = try {
         import java.util.zip.ZipFile.close();
-        let Zip(javaZip) = z;
+        let ZipInput(javaZip) = z;
         Ok(javaZip.close())
     } catch {
         case _: ##java.lang.IllegalStateException => Err(IOError.IllegalState)
-    }
-
-    pub def closeOut(z: ZipOutput): Result[Unit, IOError] & Impure = try {
-        import java.util.zip.ZipOutputStream.close();
-        let ZipOutput(javaOutput) = z;
-        javaOutput.close();
-        Ok(())
-    } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic("something"))
     }
 }

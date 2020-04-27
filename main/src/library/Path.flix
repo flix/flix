@@ -16,6 +16,7 @@
 
 use Core/Io/IOError.IOError;
 use Core/Io/InputStream.InputStream;
+use Core/Io/OutputStream.OutputStream;
 
 namespace Path {
 
@@ -133,7 +134,7 @@ namespace Path {
     ///
     /// Opens the specified `Path` into an `InputStream`
     ///
-    pub def open(p: Path): Result[InputStream, IOError] & Impure = try {
+    pub def inStream(p: Path): Result[InputStream, IOError] & Impure = try {
         import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
         let Path(javaFile) = p;
         let javaInputStream = newFileInputStream(javaFile);
@@ -191,17 +192,15 @@ namespace Path {
                 println(w, x);
                 writeAll(xs, w)
         }
-
     ///
-    /// Writes an array of bytes to the specified file.
+    /// Opens the specified `Path` into an `OutputStream`
     ///
-    pub def writeBuffer(buffer: Array[Int8], p: Path): Result[Unit, IOError] & Impure = try {
+    pub def outStream(p: Path): Result[OutputStream, IOError] & Impure = try {
         import new java.io.FileOutputStream(##java.io.File) as newFileOutputStream;
-        import java.io.FileOutputStream.write(Array[Int8]);
         let Path(javaFile) = p;
         let outputStream = newFileOutputStream(javaFile);
-        outputStream.write(buffer);
-        Ok(())
+        let stream = OutputStream.OutputStream(outputStream as ##java.io.OutputStream);
+        Ok(stream)
     } catch {
         case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(p))
     }

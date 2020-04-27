@@ -91,7 +91,8 @@ class Flix {
     "Core/Io/InputStream.flix" -> LocalResource.get("/library/Core/Io/InputStream.flix"),
     "Core/Io/OutputStream.flix" -> LocalResource.get("/library/Core/Io/OutputStream.flix"),
     "Core/Io/IOError.flix" -> LocalResource.get("/library/Core/Io/IOError.flix"),
-    "Core/Io/Zip.flix" -> LocalResource.get("/library/Core/Io/Zip.flix"),
+    "Core/Io/ZipInput.flix" -> LocalResource.get("/library/Core/Io/ZipInput.flix"),
+    "Core/Io/ZipOutput.flix" -> LocalResource.get("/library/Core/Io/ZipOutput.flix"),
 
     "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
     "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
