@@ -49,6 +49,13 @@ namespace Core/Io/ZipInput {
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
     }
 
+    def entriesTryCatchHelper(z: ##java.util.zip.ZipFile, entry: ##java.util.zip.ZipEntry): Result[##java.io.InputStream, IOError] & Impure= try {
+        import java.util.zip.ZipFile.getInputStream(##java.util.zip.ZipEntry);
+            Ok(z.getInputStream(entry) as ##java.io.InputStream)
+        } catch {
+            case _: ##java.util.NoSuchElementException => Err(IOError.ElementNotFound("Couldn't find entry"))
+        }
+
     ///
     /// Reads all entries in `z` into a list of `ZipEntry`.
     ///
@@ -56,7 +63,6 @@ namespace Core/Io/ZipInput {
         import java.util.Enumeration.hasMoreElements();
         import java.util.Enumeration.nextElement();
         import java.util.zip.ZipFile.entries();
-        import java.util.zip.ZipFile.getInputStream(##java.util.zip.ZipEntry);
         import java.util.zip.ZipEntry.getName();
         import java.util.zip.ZipEntry.isDirectory();
 
@@ -68,19 +74,13 @@ namespace Core/Io/ZipInput {
                 Ok(None)
             } else {
                 let entry = e.nextElement() as ##java.util.zip.ZipEntry;
-                let entryStream = try {
-                    Ok(javaZip.getInputStream(entry))
-                } catch {
-                    case _: ##java.util.NoSuchElementException => Err(IOError.ElementNotFound("Couldn't find entry '" + entry.getName() + "' in zip file"))
+                let* es = entriesTryCatchHelper(javaZip, entry);
+                let entryRec = {
+                    name = entry.getName(),
+                    isDirectory = entry.isDirectory(),
+                    stream = InputStream(es)
                 };
-                Result.map(es -> {
-                    let entryRec = {
-                        name = entry.getName(),
-                        isDirectory = entry.isDirectory(),
-                        stream = InputStream(es)
-                    };
-                    Some(entryRec)
-                }, entryStream)
+                Ok(Some(entryRec))
             }
         };
         List.unfoldWithOkIter(step)
