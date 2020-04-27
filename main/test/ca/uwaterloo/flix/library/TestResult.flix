@@ -110,6 +110,18 @@ def map02(): Bool = Result.map(i -> i == 2, Ok(1)) `assertEq!` Ok(false)
 def map03(): Bool = Result.map(i -> i == 2, Ok(2)) `assertEq!` Ok(true)
 
 /////////////////////////////////////////////////////////////////////////////
+// mapErr                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def mapErr01(): Bool = Result.mapErr(i -> i == 2, Ok(1)) `assertEq!` Ok(1)
+
+@test
+def mapErr02(): Bool = Result.mapErr(i -> i == 2, Err(1)) `assertEq!` Err(false)
+
+@test
+def mapErr03(): Bool = Result.mapErr(i -> i == 2, Err(2)) `assertEq!` Err(true)
+
+/////////////////////////////////////////////////////////////////////////////
 // flatMap                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test

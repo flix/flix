@@ -32,7 +32,6 @@ class LibrarySuite extends Suites(
   new FlixTest("TestFloat32", "main/test/ca/uwaterloo/flix/library/TestFloat32.flix")(Options.TestWithLibrary),
   new FlixTest("TestFloat64", "main/test/ca/uwaterloo/flix/library/TestFloat64.flix")(Options.TestWithLibrary),
   new FlixTest("TestOption", "main/test/ca/uwaterloo/flix/library/TestOption.flix")(Options.TestWithLibrary),
-  new FlixTest("TestPath", "main/test/ca/uwaterloo/flix/library/TestPath.flix")(Options.TestWithLibrary),
   new FlixTest("TestRandom", "main/test/ca/uwaterloo/flix/library/TestRandom.flix")(Options.TestWithLibrary),
   new FlixTest("TestResult", "main/test/ca/uwaterloo/flix/library/TestResult.flix")(Options.TestWithLibrary),
   new FlixTest("TestList", "main/test/ca/uwaterloo/flix/library/TestList.flix")(Options.TestWithLibrary),
@@ -42,5 +41,9 @@ class LibrarySuite extends Suites(
   new FlixTest("TestString", "main/test/ca/uwaterloo/flix/library/TestString.flix")(Options.TestWithLibrary),
   new FlixTest("TestStringBuilder", "main/test/ca/uwaterloo/flix/library/TestStringBuilder.flix")(Options.TestWithLibrary),
   new FlixTest("TestTimer", "main/test/ca/uwaterloo/flix/library/TestTimer.flix")(Options.TestWithLibrary),
-  new FlixTest("TestValidation", "main/test/ca/uwaterloo/flix/library/TestValidation.flix")(Options.TestWithLibrary)
+  new FlixTest("TestValidation", "main/test/ca/uwaterloo/flix/library/TestValidation.flix")(Options.TestWithLibrary),
+
+  new FlixTest("Core/Io/TestFile", "main/test/ca/uwaterloo/flix/library/Core/Io/TestFile.flix")(Options.TestWithLibrary),
+  new FlixTest("Core/Io/TestInputStream", "main/test/ca/uwaterloo/flix/library/Core/Io/TestInputStream.flix")(Options.TestWithLibrary),
+  new FlixTest("Core/Io/TestOutputStream", "main/test/ca/uwaterloo/flix/library/Core/Io/TestOutputStream.flix")(Options.TestWithLibrary),
 )
