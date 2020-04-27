@@ -975,12 +975,11 @@ namespace List {
     ///
     /// `next` should return `Ok(Some(a)` to signal a new list element `Ok(a)`.
     ///
-    /// `next` should return `Err(e)` to signal a new list element `Err(e)` and the end of building the list.
+    /// `next` should return `Ok(None)` to signal the end of building the list.
     ///
-    /// `next` should return `Ok(None)` to signal the end of building the list
+    /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
     pub def unfoldWithOkIter(next: Unit ~> Result[Option[a], e]): Result[List[a], e] & Impure = unfoldWithOkIterHelper(next, xs -> xs)
-
 
     ///
     /// Helper function for `unfoldWithOkIter`
