@@ -71,7 +71,7 @@ namespace Core/Io/ZipInput {
                 let entryStream = try {
                     Ok(javaZip.getInputStream(entry))
                 } catch {
-                    case _: ##java.util.NoSuchElementException => Err(IOError.ElementNotFound("Couldn't find '" + entry.getName() + "' in zip file"))
+                    case _: ##java.util.NoSuchElementException => Err(IOError.ElementNotFound("Couldn't find entry '" + entry.getName() + "' in zip file"))
                 };
                 Result.map(es -> {
                     let entryRec = {
