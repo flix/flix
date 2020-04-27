@@ -979,9 +979,13 @@ namespace List {
     ///
     /// `next` should return `Ok(None)` to signal the end of building the list
     ///
-    pub def unfoldWithOkIter(next: () ~> Result[Option[a], e]): List[Result[a, e]] & Impure = unfoldWithOkIterHelper(next, xs -> xs)
+    pub def unfoldWithOkIter(next: Unit ~> Result[Option[a], e]): List[Result[a, e]] & Impure = unfoldWithOkIterHelper(next, xs -> xs)
 
-    def unfoldWithOkIterHelper(next: () ~> Result[Option[a], e], k: List[Result[a, e]] -> List[Result[a, e]]): List[Result[a, e]] & Impure = match next() {
+
+    ///
+    /// Helper function for `unfoldWithOkIter`
+    ///
+    def unfoldWithOkIterHelper(next: Unit ~> Result[Option[a], e], k: List[Result[a, e]] -> List[Result[a, e]]): List[Result[a, e]] & Impure = match next() {
         case Ok(None) => k(Nil)
         case Err(e) => k(Err(e) :: Nil)
         case Ok(Some(a)) => unfoldWithOkIterHelper(next, xs -> k(Ok(a) :: xs))

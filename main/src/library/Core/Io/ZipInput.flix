@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+use Core/Io/File.File;
 use Core/Io/InputStream.InputStream;
 use Core/Io/IOError.IOError;
 use Result.flatMap;
@@ -33,14 +34,14 @@ namespace Core/Io/ZipInput {
     ///
     /// Constructs a `ZipInput` from a `Path`.
     ///
-    pub def new(p: Path): Result[ZipInput, IOError] & Impure = try {
+    pub def new(f: File): Result[ZipInput, IOError] & Impure = try {
         import new java.util.zip.ZipFile(##java.io.File) as newZipFile;
-        let* e = Path.exists(p);
+        let* e = Core/Io/File.exists(f);
         let* javaFile = if (e) {
-            let Path(javaFile) = p;
+            let File.File(javaFile) = f;
             Ok(javaFile)
         } else {
-            Err(IOError.FileNotFound(p))
+            Err(IOError.FileNotFound(f))
         };
         let zipFile = newZipFile(javaFile);
         Ok(ZipInput(zipFile))
@@ -49,6 +50,11 @@ namespace Core/Io/ZipInput {
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
     }
 
+    ///
+    /// Get the `##java.io.InputStream` for a given `##java.util.zip.ZipEntry` in a `##java.util.zip.ZipFile`.
+    ///
+    /// This is a workaround for try-catch blocks being buggy!
+    ///
     def entriesTryCatchHelper(z: ##java.util.zip.ZipFile, entry: ##java.util.zip.ZipEntry): Result[##java.io.InputStream, IOError] & Impure= try {
         import java.util.zip.ZipFile.getInputStream(##java.util.zip.ZipEntry);
             Ok(z.getInputStream(entry) as ##java.io.InputStream)

@@ -78,7 +78,6 @@ class Flix {
     "Map.flix" -> LocalResource.get("/library/Map.flix"),
     "Nel.flix" -> LocalResource.get("/library/Nel.flix"),
     "Option.flix" -> LocalResource.get("/library/Option.flix"),
-    "Path.flix" -> LocalResource.get("/library/Path.flix"),
     "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
     "Random.flix" -> LocalResource.get("/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
@@ -88,9 +87,10 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/library/MutMap.flix"),
 
+    "Core/Io/File.flix" -> LocalResource.get("/library/Core/Io/File.flix"),
     "Core/Io/InputStream.flix" -> LocalResource.get("/library/Core/Io/InputStream.flix"),
-    "Core/Io/OutputStream.flix" -> LocalResource.get("/library/Core/Io/OutputStream.flix"),
     "Core/Io/IOError.flix" -> LocalResource.get("/library/Core/Io/IOError.flix"),
+    "Core/Io/OutputStream.flix" -> LocalResource.get("/library/Core/Io/OutputStream.flix"),
     "Core/Io/ZipInput.flix" -> LocalResource.get("/library/Core/Io/ZipInput.flix"),
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/library/Core/Io/ZipOutput.flix"),
 
@@ -127,7 +127,7 @@ class Flix {
     //"flix/io/InputStream.flix" -> LocalResource.get("/library/flix/io/InputStream.flix"),
     //"flix/io/OpenOption.flix" -> LocalResource.get("/library/flix/io/OpenOption.flix"),
     //"flix/io/OutputStream.flix" -> LocalResource.get("/library/flix/io/OutputStream.flix"),
-    //"flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
+    //"flix/io/File.flix" -> LocalResource.get("/library/flix/io/File.flix"),
 
   )
 

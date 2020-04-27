@@ -15,21 +15,21 @@
  */
 
 use Core/Io/IOError.IOError;
+use Core/Io/File.File;
+use Result.flatMap;
 
 namespace Core/Io/InputStream {
     pub opaque type InputStream = ##java.io.InputStream
 
-    pub def open(p: Path): Result[InputStream, IOError] & Impure = try {
-        import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
-        let Path(javaFile) = p;
-        let inputStream = newFileInputStream(javaFile);
-        Ok(InputStream(inputStream as ##java.io.InputStream))
-    } catch {
-        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(p))
+    ///
+    /// Creates an `InputStream` reading from the file `f`.
+    ///
+    pub def open(f: File): Result[InputStream, IOError] & Impure = {
+        Core/Io/File.newInputStream(f)
     }
 
     ///
-    /// Creates an `InputStream` from `b`.
+    /// Creates an `InputStream` from the buffer `b`.
     ///
     pub def fromBuffer(b: Array[Int8]): InputStream & Impure = {
         import new java.io.ByteArrayInputStream(Array[Int8]) as newByteArrayInputStream;
@@ -49,7 +49,9 @@ namespace Core/Io/InputStream {
     }
 
     ///
-    /// Reads a single byte from `s`. If the end of the stream is reached `-1` is returned.
+    /// Reads a single byte from `s`.
+    ///
+    /// Returns `-1` if end of stream has been reached.
     ///
     pub def readByte(s: InputStream): Result[Int32, IOError] & Impure = try {
         import java.io.InputStream.read();
@@ -60,7 +62,11 @@ namespace Core/Io/InputStream {
     }
 
     ///
-    /// Reads a number of bytes from `s` into `b`. Returns the number of bytes read. -1 is returned if no bytes are available.
+    /// Reads a number of bytes from `s` into `b`.
+    ///
+    /// Returns the number of bytes read.
+    ///
+    /// Returns `-1` if end of stream has been reached.
     ///
     pub def readBuffer(b: Array[Int8], s: InputStream): Result[Int32, IOError] & Impure = try {
         import java.io.InputStream.read(Array[Int8]);
@@ -73,7 +79,10 @@ namespace Core/Io/InputStream {
 
     ///
     /// Reads a number of bytes from `s` into `b`, starting at index `o`, reading at most `l` bytes.
-    /// Returns the number of bytes read. -1 is returned if no bytes are available.
+    ///
+    /// Returns the number of bytes read.
+    ///
+    /// Returns `-1` if end of stream has been reached.
     ///
     pub def readBufferWithOffset(b: Array[Int8], o: Int32, l: Int32, s: InputStream): Result[Int32, IOError] & Impure = try {
         import java.io.InputStream.read(Array[Int8], Int32, Int32);
@@ -88,14 +97,15 @@ namespace Core/Io/InputStream {
     ///
     /// Read the whole stream into a byte array
     ///
-    pub def readFully(s: InputStream): Result[Array[Int8], IOError] & Impure = {
+    pub def readAll(s: InputStream): Result[Array[Int8], IOError] & Impure = {
         let step = () -> {
             let arr = [0 as Int8; 1024];
-            Result.map(r -> if (r <= 0) None else Some(arr[0..r]), readBuffer(arr, s))
+            let* r = readBuffer(arr, s);
+            Ok(if (r <= 0) None else Some(arr[0..r]))
         };
-        List.unfoldWithOkIter(step)
-            |> List.sequenceResult
-            |> Result.map(List.fold((acc, elem) -> Array.append(acc, elem), []))
+        let* r = List.unfoldWithOkIter(step) |> List.sequenceResult;
+        let f = List.fold((acc, elem) -> Array.append(acc, elem), [], r);
+        Ok(f)
     }
 
     ///

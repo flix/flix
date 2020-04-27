@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Core/Io/InputStream.{available, close, fromBuffer, InputStream, readBuffer, readBufferWithOffset, readByte, readFully};
+use Core/Io/InputStream.{available, close, fromBuffer, InputStream, readBuffer, readBufferWithOffset, readByte, readAll};
 use Core/Io/InputStream.InputStream.InputStream;
 use Core/Io/IOError.IOError;
 
@@ -141,16 +141,16 @@ namespace Core/Io/TestInputStream {
     }
 
     @test
-    def readFully01(): Bool & Impure = {
+    def readAll01(): Bool & Impure = {
         let b = testBuffer();
-        let r = readFully(b);
+        let r = readAll(b);
         Result.map(Array.length, r) |> resultEq(3)
     }
 
     @test
-    def readFully02(): Bool & Impure = {
+    def readAll02(): Bool & Impure = {
         let b = fromBuffer([1 as Int8; 2049]);
-        let r = readFully(b);
+        let r = readAll(b);
         Result.map(Array.length, r) |> resultEq(2049)
     }
 

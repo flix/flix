@@ -17,6 +17,7 @@
 use Core/Io/OutputStream.OutputStream;
 use Core/Io/OutputStream.OutputStream.OutputStream;
 use Core/Io/IOError.IOError;
+use Result.flatMap;
 
 namespace Core/Io/ZipOutput {
     pub opaque type ZipOutput = ##java.util.zip.ZipOutputStream
@@ -43,10 +44,12 @@ namespace Core/Io/ZipOutput {
         let outputStream = OutputStream(javaOutput as ##java.io.OutputStream);
         let entry = newEntry(n);
         javaOutput.putNextEntry(entry);
-        let _ = writeBuffer(a, outputStream);
+        let r = writeBuffer(a, outputStream);
         javaOutput.closeEntry();
+        let* _ = r;
         Ok(())
     } catch {
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O error occurred in Core/Io/ZipOutput.write"))
         case _: ##java.util.zip.ZipException => Err(IOError.MalformedZip)
     }
 
@@ -59,6 +62,6 @@ namespace Core/Io/ZipOutput {
         javaOutput.close();
         Ok(())
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic("something"))
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O error occurred in Core/Io/ZipOutput.close"))
     }
 }

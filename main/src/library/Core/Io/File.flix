@@ -18,30 +18,34 @@ use Core/Io/IOError.IOError;
 use Core/Io/InputStream.InputStream;
 use Core/Io/OutputStream.OutputStream;
 
-namespace Path {
+namespace Core/Io/File {
+    ///
+    /// Represents a path.
+    ///
+    pub opaque type File = ##java.io.File
 
     ///
     /// Returns a path from the given string `s`.
     ///
-    pub def new(s: String): Path & Impure =
+    pub def new(s: String): File & Impure =
         import new java.io.File(String) as newFile;
-        Path(newFile(s))
+        File(newFile(s))
 
     ///
     /// Returns `true` if the given path `p` exists.
     ///
-    pub def exists(p: Path): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
+    pub def exists(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.exists();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         javaFile.exists()
     })
 
     ///
     /// Returns the name of the directory or file denoted by the given path `p`.
     ///
-    pub def getName(p: Path): Result[String, IOError] & Impure = tryWithCatch(_ -> {
+    pub def getName(f: File): Result[String, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.getName();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         javaFile.getName()
      })
 
@@ -50,14 +54,14 @@ namespace Path {
     ///
     /// Returns `None` if `p` has no parent.
     ///
-    pub def getParent(p: Path): Result[Option[Path], IOError] & Impure = tryWithCatch(_ -> {
+    pub def getParent(f: File): Result[Option[File], IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.getParentFile();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         let parent = javaFile.getParentFile();
         if (isNull(parent))
             None
         else
-            Some(Path(parent))
+            Some(File(parent))
     })
 
     ///
@@ -65,59 +69,59 @@ namespace Path {
     ///
     /// Returns `None` if the path `p` does not denote a directory.
     ///
-    pub def getChildren(p: Path): Result[Option[List[Path]], IOError] & Impure = tryWithCatch(_ -> {
+    pub def getChildren(f: File): Result[Option[List[File]], IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.listFiles();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         let children = javaFile.listFiles();
         if (isNull(children))
             None
         else
-            Some(children |> Array.toList |> List.map(p -> Path(p)))
+            Some(children |> Array.toList |> List.map(File))
     })
 
     ///
     /// Returns `true` if the given path `p` is a directory.
     ///
-    pub def isDirectory(p: Path): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
+    pub def isDirectory(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.isDirectory();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         javaFile.isDirectory()
     })
 
     ///
     /// Returns `true` if the given path `p` is executable.
     ///
-    pub def isExecutable(p: Path): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
+    pub def isExecutable(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.canExecute();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         javaFile.canExecute()
     })
 
     ///
     /// Returns `true` if the given path `p` is readable.
     ///
-    pub def isReadable(p: Path): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
+    pub def isReadable(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.canRead();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         javaFile.canRead()
     })
 
     ///
     /// Returns `true` if the given path `p` is a file.
     ///
-    pub def isFile(p: Path): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
+    pub def isFile(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.isFile();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         javaFile.isFile()
     })
 
     ///
     /// Returns `true` if the given path `p` is a symbolic link.
     ///
-    pub def isSymbolicLink(p: Path): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
+    pub def isSymbolicLink(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.toPath();
         import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         let javaPath = javaFile.toPath();
         javaPath.isSymbolicLink()
     })
@@ -125,32 +129,32 @@ namespace Path {
     ///
     /// Returns `true` if the given path `p` is writable.
     ///
-    pub def isWritable(p: Path): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
+    pub def isWritable(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.canWrite();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         javaFile.canWrite()
     })
 
     ///
     /// Opens the specified `Path` into an `InputStream`
     ///
-    pub def inStream(p: Path): Result[InputStream, IOError] & Impure = try {
+    pub def newInputStream(f: File): Result[InputStream, IOError] & Impure = try {
         import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         let javaInputStream = newFileInputStream(javaFile);
         let inputStream = InputStream.InputStream(javaInputStream as ##java.io.InputStream);
         Ok(inputStream)
     } catch {
-        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(p))
+        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(f))
     }
 
     ///
     /// Returns a list of all the lines in the given path `p`.
     ///
-    pub def readLines(p: Path): Result[List[String], IOError] & Impure = tryWithCatch(_ -> {
+    pub def readLines(f: File): Result[List[String], IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.toPath();
         import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         let javaPath = javaFile.toPath();
         let reader = javaPath.newBufferedReader();
         readAll(reader)
@@ -170,10 +174,10 @@ namespace Path {
     ///
     /// Writes all lines in the list `l` to the path `p`.
     ///
-    pub def writeLines(p: Path, l: List[String]): Result[Unit, IOError] & Impure = tryWithCatch(_ -> {
+    pub def writeLines(f: File, l: List[String]): Result[Unit, IOError] & Impure = tryWithCatch(_ -> {
         import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
         import java.io.PrintWriter.close();
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         let w = newPrintWriter(javaFile);
         writeAll(l, w);
         w.close();
@@ -195,14 +199,14 @@ namespace Path {
     ///
     /// Opens the specified `Path` into an `OutputStream`
     ///
-    pub def outStream(p: Path): Result[OutputStream, IOError] & Impure = try {
+    pub def newOutputStream(f: File): Result[OutputStream, IOError] & Impure = try {
         import new java.io.FileOutputStream(##java.io.File) as newFileOutputStream;
-        let Path(javaFile) = p;
+        let File(javaFile) = f;
         let outputStream = newFileOutputStream(javaFile);
         let stream = OutputStream.OutputStream(outputStream as ##java.io.OutputStream);
         Ok(stream)
     } catch {
-        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(p))
+        case _: ##java.io.FileNotFoundException => Err(IOError.FileNotFound(f))
     }
 
     ///
@@ -215,8 +219,3 @@ namespace Path {
         case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Path"))
     }
 }
-
-///
-/// Represents a path.
-///
-opaque type Path = ##java.io.File

@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
+use Core/Io/File.File;
+
 namespace Core/Io/IOError {
     ///
     /// Represents an error when operating in an I/O context.
     ///
     pub enum IOError {
         case ElementNotFound(String)
-        case FileNotFound(Path)
+        case FileNotFound(File)
         case Generic(String)
         case IllegalState
         case IncorrectBufferSize
