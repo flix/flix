@@ -24,7 +24,7 @@ namespace Core/Io/InputStream {
     ///
     /// Creates an `InputStream` reading from the file `f`.
     ///
-    pub def open(f: File): Result[InputStream, IOError] & Impure = {
+    pub def new(f: File): Result[InputStream, IOError] & Impure = {
         Core/Io/File.newInputStream(f)
     }
 

@@ -20,19 +20,19 @@ use Core/Io/OutputStream.OutputStream;
 
 namespace Core/Io/File {
     ///
-    /// Represents a path.
+    /// Represents a File.
     ///
     pub opaque type File = ##java.io.File
 
     ///
-    /// Returns a path from the given string `s`.
+    /// Returns a file from the given string `s`.
     ///
     pub def new(s: String): File & Impure =
         import new java.io.File(String) as newFile;
         File(newFile(s))
 
     ///
-    /// Returns `true` if the given path `p` exists.
+    /// Returns `true` if the given file `f` exists.
     ///
     pub def exists(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.exists();
@@ -41,7 +41,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Returns the name of the directory or file denoted by the given path `p`.
+    /// Returns the name of the directory or file denoted by the given file `f`.
     ///
     pub def getName(f: File): Result[String, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.getName();
@@ -50,9 +50,9 @@ namespace Core/Io/File {
      })
 
     ///
-    /// Optionally returns the path to the parent of the given path `p`.
+    /// Optionally returns the file to the parent of the given file `f`.
     ///
-    /// Returns `None` if `p` has no parent.
+    /// Returns `None` if `f` has no parent.
     ///
     pub def getParent(f: File): Result[Option[File], IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.getParentFile();
@@ -65,9 +65,9 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Returns a list of children for the given path `p`.
+    /// Returns a list of children for the given file `f`.
     ///
-    /// Returns `None` if the path `p` does not denote a directory.
+    /// Returns `None` if the file `f` does not denote a directory.
     ///
     pub def getChildren(f: File): Result[Option[List[File]], IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.listFiles();
@@ -80,7 +80,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Returns `true` if the given path `p` is a directory.
+    /// Returns `true` if the given file `f` is a directory.
     ///
     pub def isDirectory(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.isDirectory();
@@ -89,7 +89,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Returns `true` if the given path `p` is executable.
+    /// Returns `true` if the given file `f` is executable.
     ///
     pub def isExecutable(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.canExecute();
@@ -98,7 +98,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Returns `true` if the given path `p` is readable.
+    /// Returns `true` if the given file `f` is readable.
     ///
     pub def isReadable(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.canRead();
@@ -107,7 +107,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Returns `true` if the given path `p` is a file.
+    /// Returns `true` if the given file `f` is a file.
     ///
     pub def isFile(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.isFile();
@@ -116,7 +116,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Returns `true` if the given path `p` is a symbolic link.
+    /// Returns `true` if the given file `f` is a symbolic link.
     ///
     pub def isSymbolicLink(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.toPath();
@@ -127,7 +127,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Returns `true` if the given path `p` is writable.
+    /// Returns `true` if the given file `f` is writable.
     ///
     pub def isWritable(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.canWrite();
@@ -136,7 +136,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Opens the specified `Path` into an `InputStream`
+    /// Opens the specified `File` into an `InputStream`
     ///
     pub def newInputStream(f: File): Result[InputStream, IOError] & Impure = try {
         import new java.io.FileInputStream(##java.io.File) as newFileInputStream;
@@ -149,7 +149,7 @@ namespace Core/Io/File {
     }
 
     ///
-    /// Returns a list of all the lines in the given path `p`.
+    /// Returns a list of all the lines in the given file `f`.
     ///
     pub def readLines(f: File): Result[List[String], IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.toPath();
@@ -172,7 +172,7 @@ namespace Core/Io/File {
             line :: readAll(r)
 
     ///
-    /// Writes all lines in the list `l` to the path `p`.
+    /// Writes all lines in the list `l` to the file `f`.
     ///
     pub def writeLines(f: File, l: List[String]): Result[Unit, IOError] & Impure = tryWithCatch(_ -> {
         import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
@@ -197,7 +197,7 @@ namespace Core/Io/File {
                 writeAll(xs, w)
         }
     ///
-    /// Opens the specified `Path` into an `OutputStream`
+    /// Opens the specified `File` into an `OutputStream`
     ///
     pub def newOutputStream(f: File): Result[OutputStream, IOError] & Impure = try {
         import new java.io.FileOutputStream(##java.io.File) as newFileOutputStream;
@@ -216,6 +216,6 @@ namespace Core/Io/File {
         let res = f();
         Ok(res)
     } catch {
-        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in Path"))
+        case _: ##java.io.IOException => Err(IOError.Generic("I/O Error in File"))
     }
 }

@@ -20,7 +20,10 @@ use Core/Io/IOError.IOError;
 namespace Core/Io/OutputStream {
     pub opaque type OutputStream = ##java.io.OutputStream
 
-    pub def open(f: File): Result[OutputStream, IOError] & Impure = {
+    ///
+    /// Opens the specified `File` into an `OutputStream`
+    ///
+    pub def new(f: File): Result[OutputStream, IOError] & Impure = {
         Core/Io/File.newOutputStream(f)
     }
 
