@@ -586,7 +586,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // r.label : tpe
         //
         val freshRowVar = Type.freshTypeVar()
-        val expectedType = Type.RecordExtend(label, tvar, freshRowVar)
+        val expectedType = Type.mkRecordExtend(label, tvar, freshRowVar)
         for {
           (tpe, eff) <- visitExp(exp)
           recordType <- unifyTypM(tpe, expectedType, loc)
@@ -602,7 +602,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
-          resultTyp <- unifyTypM(tvar, Type.RecordExtend(label, tpe1, tpe2), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkRecordExtend(label, tpe1, tpe2), loc)
           resultEff = mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
@@ -615,7 +615,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val freshRowVar = Type.freshTypeVar()
         for {
           (tpe, eff) <- visitExp(exp)
-          recordType <- unifyTypM(tpe, Type.RecordExtend(label, freshFieldType, freshRowVar), loc)
+          recordType <- unifyTypM(tpe, Type.mkRecordExtend(label, freshFieldType, freshRowVar), loc)
           resultTyp <- unifyTypM(tvar, freshRowVar, loc)
           resultEff = eff
         } yield (resultTyp, resultEff)
@@ -1126,8 +1126,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         for {
           (tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypM(tpe, Type.SchemaExtend(name, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(name, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypM(tpe, Type.mkSchemaExtend(name, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkSchemaExtend(name, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
           resultEff = eff
         } yield (resultTyp, resultEff)
 
@@ -1160,7 +1160,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (fType, eff2) <- visitExp(exp2)
           (constraintsType, eff3) <- visitExp(exp3)
           // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(name, Type.Apply(freshPredicateNameTypeVar, tupleType), freshRestTypeVar), loc)
+          constraintsType2 <- unifyTypM(constraintsType, Type.mkSchemaExtend(name, Type.Apply(freshPredicateNameTypeVar, tupleType), freshRestTypeVar), loc)
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
           resultTyp <- unifyTypM(tvar, initType, loc) // the result of the fold is the same type as init
@@ -1720,7 +1720,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip)
         pureTermEffects <- unifyEffM(Type.Pure, mkAnd(termEffects), loc)
         predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
-      } yield Type.SchemaExtend(name, predicateType, Type.freshTypeVar())
+      } yield Type.mkSchemaExtend(name, predicateType, Type.freshTypeVar())
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
@@ -1761,7 +1761,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
-      } yield Type.SchemaExtend(name, predicateType, Type.freshTypeVar())
+      } yield Type.mkSchemaExtend(name, predicateType, Type.freshTypeVar())
 
     //
     //  exp : Bool

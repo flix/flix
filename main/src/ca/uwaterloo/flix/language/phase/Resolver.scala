@@ -1044,7 +1044,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-      } yield Type.RecordExtend(label.name, v, r)
+      } yield Type.mkRecordExtend(label.name, v, r)
 
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
@@ -1063,7 +1063,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             r <- lookupType(rest, ns0, root)
           } yield {
             val tpe = simplify(ts.foldLeft(t)(Type.Apply))
-            Type.SchemaExtend(qname.ident.name, tpe, r)
+            Type.mkSchemaExtend(qname.ident.name, tpe, r)
           }
       }
 
@@ -1073,9 +1073,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         r <- lookupType(rest, ns0, root)
       } yield den match {
         case Ast.Denotation.Relational =>
-          Type.SchemaExtend(ident.name, mkRelationType(ts), r)
+          Type.mkSchemaExtend(ident.name, mkRelationType(ts), r)
         case Ast.Denotation.Latticenal =>
-          Type.SchemaExtend(ident.name, mkLatticeType(ts), r)
+          Type.mkSchemaExtend(ident.name, mkLatticeType(ts), r)
       }
 
     case NamedAst.Type.Relation(tpes, loc) =>
@@ -1312,19 +1312,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case Type.Arrow(l, eff) => Type.Arrow(l, eval(eff, subst))
 
-      case Type.RecordEmpty => t
-
-      case Type.RecordExtend(label, value, rest) =>
-        val t1 = eval(value, subst)
-        val t2 = eval(rest, subst)
-        Type.RecordExtend(label, t1, t2)
-
-      case Type.SchemaEmpty => t
-
-      case Type.SchemaExtend(sym, tpe, rest) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
-        Type.SchemaExtend(sym, t1, t2)
+        Type.mkRecordExtend(label, t1, t2)
+
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) =>
+        val t1 = eval(tpe, subst)
+        val t2 = eval(rest, subst)
+        Type.mkSchemaExtend(sym, t1, t2)
 
       case Type.Zero => t
 
@@ -1481,13 +1477,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
 
-    case Type.RecordEmpty => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.RecordEmpty) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.RecordExtend(_)) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.SchemaEmpty) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.SchemaExtend(_)) => Class.forName("java.lang.Object").toSuccess
 
     case _ => ResolutionError.IllegalType(tpe, loc).toFailure
   }

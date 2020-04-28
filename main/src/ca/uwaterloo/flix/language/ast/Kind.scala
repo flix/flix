@@ -26,7 +26,7 @@ sealed trait Kind {
   /**
     * Constructs an arrow kind.
     */
-  def ->(that: Kind): Kind = Kind.Arrow(List(this), that)
+  def ->:(left: Kind): Kind = Kind.Arrow(List(left), this)
 
   /**
     * Returns a human readable representation of `this` kind.

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -877,8 +877,8 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def predicateSymbolsOf(tpe: Type): Set[String] = tpe match {
     case Type.Var(_, _, _) => Set.empty
-    case Type.SchemaEmpty => Set.empty
-    case Type.SchemaExtend(sym, _, rest) => predicateSymbolsOf(rest) + sym
+    case Type.Cst(TypeConstructor.SchemaEmpty) => Set.empty
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) => predicateSymbolsOf(rest) + sym
     case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
   }
 
