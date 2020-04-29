@@ -25,6 +25,10 @@ sealed trait Kind {
 
   /**
     * Constructs an arrow kind.
+    *
+    * This is a right-associative operator, i.e., the following two kinds are equivalent:
+    *   - `Kind.Star ->: Kind.Star ->: Kind.Star`
+    *   - `Kind.Star ->: (Kind.Star ->: Kind.Star)`
     */
   def ->:(left: Kind): Kind = Kind.Arrow(List(left), this)
 

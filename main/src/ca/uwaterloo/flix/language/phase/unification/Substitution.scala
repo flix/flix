@@ -64,10 +64,6 @@ case class Substitution(m: Map[Type.Var, Type]) {
             case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
           }
         case Type.Cst(tc) => t
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
-          Type.mkRecordExtend(label, visit(tpe), visit(rest))
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) =>
-          Type.mkSchemaExtend(sym, visit(tpe), visit(rest))
         case Type.Apply(t1, t2) =>
           (visit(t1), visit(t2)) match {
             // Simplify boolean equations.

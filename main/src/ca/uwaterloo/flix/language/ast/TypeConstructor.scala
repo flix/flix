@@ -98,7 +98,7 @@ object TypeConstructor {
     */
   case class RecordExtend(label: String) extends TypeConstructor {
     /**
-      * The shape of an extended record is Record[t;r]
+      * The shape of an extended record is { label: type | rest }
       */
     def kind: Kind = Kind.Star ->: Kind.Record ->: Kind.Record
   }
@@ -113,9 +113,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of extended schemas.
     */
-  case class SchemaExtend(label: String) extends TypeConstructor {
+  case class SchemaExtend(name: String) extends TypeConstructor {
     /**
-      * The shape of an extended schema is Schema[t;r]
+      * The shape of an extended schema is { name: type | rest }
       */
     def kind: Kind = Kind.Star ->: Kind.Schema ->: Kind.Record
   }

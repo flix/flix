@@ -167,13 +167,12 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str)
 
   /**
-    * Represents the RecordEmpty type.
+    * Represents the type of an empty record.
     */
   val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty)
 
-
   /**
-    * Represents the SchemaEmpty type.
+    * Represents the type of an empty schema.
     */
   val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty)
 
@@ -365,8 +364,8 @@ object Type {
   /**
     * Constructs a SchemaExtend type.
     */
-  def mkSchemaExtend(sym: String, tpe: Type, rest: Type): Type = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(sym)), List(tpe, rest))
+  def mkSchemaExtend(name: String, tpe: Type, rest: Type): Type = {
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
   }
 
   /**
