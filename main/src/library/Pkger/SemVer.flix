@@ -13,24 +13,16 @@ namespace Pkger/SemVer {
     ///
     def __cmp(l: SemVer, r: SemVer): Int32 = match (l, r) {
         case (SemVer(lMajor, lMinor, lPatch), SemVer(rMajor, rMinor, rPatch)) => {
-            if (lMajor == rMajor) {
-                if (lMinor == rMinor) {
-                    if (lPatch == rPatch) {
-                        0
-                    } else if (lPatch > rPatch) {
-                        1
-                    } else {
-                        -1
-                    }
-                } else if (lMajor > rMajor) {
-                    1
+            let major = lMajor <=> rMajor;
+            if (major == 0) {
+                let minor = lMinor <=> rMinor;
+                if (minor == 0) {
+                    lPatch <=> rPatch
                 } else {
-                    -1
+                    minor
                 }
-            } else if (lMajor > rMajor) {
-                1
             } else {
-                -1
+                major
             }
         }
     }
