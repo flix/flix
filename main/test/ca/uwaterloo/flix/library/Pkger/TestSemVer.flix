@@ -1,5 +1,6 @@
-use Pkger/SemVer.isCompatible;
-use Pkger/SemVer.SemVer;
+use Pkger/SemVer.{isCompatible, SemVer};
+use Pkger/SemVer.SemVer.SemVer;
+use Pkger/SemVer/Parser.fromString;
 
 @test
 def testHigherPatchInSpecificWhenZeroMajor01(): Bool = isCompatible(SemVer.SemVer(0, 1, 2), SemVer.SemVer(0, 1, 0))
@@ -96,3 +97,21 @@ def testSmallerPatchWhenNonZeroMajor03(): Bool = isCompatible(SemVer.SemVer(1, 2
 
 @test
 def testSmallerPatchWhenNonZeroMajor04(): Bool = isCompatible(SemVer.SemVer(1, 2, 0), SemVer.SemVer(1, 2, 3))
+
+@test
+def parseSemVer01(): Bool = fromString("1.2.3") == Some(SemVer(1, 2, 3))
+
+@test
+def parseSemVer02(): Bool = fromString("0.1.2") == Some(SemVer(0, 1, 2))
+
+@test
+def parseSemVer03(): Bool = fromString("10.52.64") == Some(SemVer(10, 52, 64))
+
+@test
+def parseSemVer04(): Bool = fromString("0.4") == None
+
+@test
+def parseSemVer05(): Bool = fromString("4") == None
+
+@test
+def parseSemVer06(): Bool = fromString("10.4") == None

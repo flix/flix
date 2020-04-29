@@ -70,10 +70,7 @@ namespace Pkger/SemVer {
             return(n2)
         }
 
-        ///
-        /// A parser reading a string into the SemVer enum
-        ///
-        pub def parseSemVer(): Parser[Pkger/SemVer.SemVer] = {
+        def parseSemVer(): Parser[Pkger/SemVer.SemVer] = {
             use Pkger/SemVer.SemVer;
             let* n1 = parseNumber();
             let* _ = char('.');
@@ -81,6 +78,15 @@ namespace Pkger/SemVer {
             let* _ = char('.');
             let* n3 = parseNumber();
             return(SemVer.SemVer(n1, n2, n3))
+        }
+
+        ///
+        /// Read a `SemVer` from an `input` String
+        ///
+        pub def fromString(input: String): Option[Pkger/SemVer.SemVer] = {
+            use Option.flatMap;
+            let* (_, semver) = runParser(parseSemVer(), input);
+            Some(semver)
         }
     }
 }
