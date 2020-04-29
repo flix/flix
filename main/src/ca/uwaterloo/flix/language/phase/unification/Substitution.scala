@@ -73,10 +73,6 @@ case class Substitution(m: Map[Type.Var, Type]) {
             case (x, y) => Type.Apply(x, y)
           }
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
-        case Type.RecordEmpty => Type.RecordEmpty
-        case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, visit(field), visit(rest))
-        case Type.SchemaEmpty => Type.SchemaEmpty
-        case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
         case Type.Zero => Type.Zero
         case Type.Succ(n, t) => Type.Succ(n, visit(t))
         case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")

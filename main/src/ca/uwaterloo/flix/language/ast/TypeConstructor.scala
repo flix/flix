@@ -87,13 +87,47 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the type of empty records.
+    */
+  case object RecordEmpty extends TypeConstructor {
+    def kind: Kind = Kind.Record
+  }
+
+  /**
+    * A type constructor that represents the type of extended records.
+    */
+  case class RecordExtend(label: String) extends TypeConstructor {
+    /**
+      * The shape of an extended record is { label: type | rest }
+      */
+    def kind: Kind = Kind.Star ->: Kind.Record ->: Kind.Record
+  }
+
+  /**
+    * A type constructor that represents the type of empty schemas.
+    */
+  case object SchemaEmpty extends TypeConstructor {
+    def kind: Kind = Kind.Schema
+  }
+
+  /**
+    * A type constructor that represents the type of extended schemas.
+    */
+  case class SchemaExtend(name: String) extends TypeConstructor {
+    /**
+      * The shape of an extended schema is { name: type | rest }
+      */
+    def kind: Kind = Kind.Star ->: Kind.Schema ->: Kind.Record
+  }
+
+  /**
     * A type constructor that represent the type of arrays.
     */
   case object Array extends TypeConstructor {
     /**
       * The shape of an array is Array[t].
       */
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -103,7 +137,7 @@ object TypeConstructor {
     /**
       * The shape of a channel is Channel[t].
       */
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -125,7 +159,7 @@ object TypeConstructor {
     /**
       * The shape of a reference is Ref[t].
       */
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -145,21 +179,21 @@ object TypeConstructor {
     /**
       * The shape of a vector is Array[t;n].
       */
-    def kind: Kind = (Kind.Star -> Kind.Nat) -> Kind.Star
+    def kind: Kind = (Kind.Star ->: Kind.Nat) ->: Kind.Star
   }
 
   /**
     * A type constructor for relations.
     */
   case object Relation extends TypeConstructor {
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
     * A type constructor for lattices.
     */
   case object Lattice extends TypeConstructor {
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -184,21 +218,21 @@ object TypeConstructor {
     * A type constructor that represents the negation of an effect.
     */
   case object Not extends TypeConstructor {
-    def kind: Kind = Kind.Effect -> Kind.Effect
+    def kind: Kind = Kind.Effect ->: Kind.Effect
   }
 
   /**
     * A type constructor that represents the conjunction of two effects.
     */
   case object And extends TypeConstructor {
-    def kind: Kind = Kind.Effect -> Kind.Effect -> Kind.Effect
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
   }
 
   /**
     * A type constructor that represents the disjunction of two effects.
     */
   case object Or extends TypeConstructor {
-    def kind: Kind = Kind.Effect -> Kind.Effect -> Kind.Effect
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
   }
 
 }
