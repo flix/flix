@@ -3,28 +3,28 @@ use Pkger/SemVer.SemVer.SemVer;
 use Pkger/SemVer/Parser.fromString;
 
 @test
-def testHigherPatchInSpecificWhenZeroMajor01(): Bool = isCompatible(SemVer.SemVer(0, 1, 2), SemVer.SemVer(0, 1, 0))
+def testHigherPatchInSpecificWhenZeroMajor01(): Bool = !isCompatible(SemVer.SemVer(0, 1, 2), SemVer.SemVer(0, 1, 0))
 
 @test
-def testHigherPatchInSpecificWhenZeroMajor02(): Bool = isCompatible(SemVer.SemVer(0, 1, 10), SemVer.SemVer(0, 1, 0))
+def testHigherPatchInSpecificWhenZeroMajor02(): Bool = !isCompatible(SemVer.SemVer(0, 1, 10), SemVer.SemVer(0, 1, 0))
 
 @test
-def testHigherPatchInSpecificWhenZeroMajor03(): Bool = isCompatible(SemVer.SemVer(0, 1, 256), SemVer.SemVer(0, 1, 27))
+def testHigherPatchInSpecificWhenZeroMajor03(): Bool = !isCompatible(SemVer.SemVer(0, 1, 256), SemVer.SemVer(0, 1, 27))
 
 @test
-def testHigherPatchInSpecificWhenZeroMajor04(): Bool = isCompatible(SemVer.SemVer(0, 22, 13), SemVer.SemVer(0, 22, 12))
+def testHigherPatchInSpecificWhenZeroMajor04(): Bool = !isCompatible(SemVer.SemVer(0, 22, 13), SemVer.SemVer(0, 22, 12))
 
 @test
-def testHigherPatchInBoundWhenZeroMajor01(): Bool = isCompatible(SemVer.SemVer(0, 1, 5), SemVer.SemVer(0, 1, 10))
+def testHigherPatchInBoundWhenZeroMajor01(): Bool = !isCompatible(SemVer.SemVer(0, 1, 5), SemVer.SemVer(0, 1, 10))
 
 @test
-def testHigherPatchInBoundWhenZeroMajor02(): Bool = isCompatible(SemVer.SemVer(0, 1, 71), SemVer.SemVer(0, 1, 72))
+def testHigherPatchInBoundWhenZeroMajor02(): Bool = !isCompatible(SemVer.SemVer(0, 1, 71), SemVer.SemVer(0, 1, 72))
 
 @test
-def testHigherPatchInBoundWhenZeroMajor03(): Bool = isCompatible(SemVer.SemVer(0, 1, 333), SemVer.SemVer(0, 1, 666))
+def testHigherPatchInBoundWhenZeroMajor03(): Bool = !isCompatible(SemVer.SemVer(0, 1, 333), SemVer.SemVer(0, 1, 666))
 
 @test
-def testHigherPatchInBoundWhenZeroMajor04(): Bool = isCompatible(SemVer.SemVer(0, 1, 13), SemVer.SemVer(0, 1, 42))
+def testHigherPatchInBoundWhenZeroMajor04(): Bool = !isCompatible(SemVer.SemVer(0, 1, 13), SemVer.SemVer(0, 1, 42))
 
 @test
 def testSamePatchWhenZeroMajor01(): Bool = isCompatible(SemVer.SemVer(0, 1, 10), SemVer.SemVer(0, 1, 10))
