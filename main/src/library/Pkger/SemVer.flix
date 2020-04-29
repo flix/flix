@@ -48,21 +48,47 @@ namespace Pkger/SemVer {
     }
 
     namespace Parser {
+        type alias Parser[a] = String -> Option[(String, a)]
+
+        def runParser(v: Parser[a], s: String): Option[(String, a)] = v(s)
+
+        def flatMap(f: a -> Parser[b], v: Parser[a]): Parser[b] = input -> {
+            Option.flatMap(match (inputx, x) -> runParser(f(x), inputx), runParser(v, input))
+        }
+
+        def return(x: a): Parser[a] = input -> Some((input, x))
+
+        def empty(): Parser[a] = _ -> None
+
+        def char(x: Char): Parser[Char] = input -> match String.toList(input) {
+            case Cons(y, ys) => if (y == x) { Some((List.toString(ys), x)) } else { None }
+            case Nil => None
+        }
+
+        def span(p: Char -> Bool): Parser[String] = input -> {
+            let (l, r) = List.span(p, String.toList(input));
+            Some(List.toString(r), List.toString(l))
+        }
+
+        def parseNumber(): Parser[Int] = {
+            let* s1 = span(Char.isDigit);
+            let* s2 = if (String.isEmpty(s1)) empty() else return(s1);
+            let n1 = Int32.fromString(s2);
+            let n2 = Result.getWithDefault(n1, 0);
+            return(n2)
+        }
+
         ///
         /// A parser reading a string into the SemVer enum
         ///
-        pub def parseSemVer(input: String): Result[Pkger/SemVer.SemVer, String] = {
-
+        pub def parseSemVer(): Parser[Pkger/SemVer.SemVer] = {
+            use Pkger/SemVer.SemVer;
+            let* n1 = parseNumber();
+            let* _ = char('.');
+            let* n2 = parseNumber();
+            let* _ = char('.');
+            let* n3 = parseNumber();
+            return(SemVer.SemVer(n1, n2, n3))
         }
-         /*
-         Parser.bind(parseNumber(), major -> {
-            Parser.bind(Parser.char('.') *> parseNumber(), minor -> {
-                Parser.bind(Parser.char('.') *> parseNumber(), patch -> {
-                    use Pkger/SemVer.SemVer;
-                    Parser.return(SemVer.SemVer(major, minor, patch))
-                })
-            })
-        })
-        */
     }
 }
