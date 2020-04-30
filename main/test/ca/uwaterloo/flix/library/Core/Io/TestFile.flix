@@ -119,13 +119,13 @@ def isWritable03(): Bool & Impure = isWritable(new("./doc/foo")) |> Result.isOk
 def testReadLines01(): Bool & Impure = readLines(new("README.md")) |> Result.isOk
 
 @test
-def canonical01(): Bool & Impure = canonical(new("./doc/..")) == canonical(new("."))
+def testCanonical01(): Bool & Impure = canonical(new("./doc/..")) == canonical(new("."))
 
 @test
-def canonical02(): Bool & Impure = canonical(new("./doc/foo/..")) == canonical(new("./doc"))
+def testCanonical02(): Bool & Impure = canonical(new("./doc/foo/..")) == canonical(new("./doc"))
 
 @test
-def canonical03(): Bool & Impure = canonical(new("./doc/foo/bar/../bar")) == canonical(new("./doc/foo/bar"))
+def testCanonical03(): Bool & Impure = canonical(new("./doc/foo/bar/../bar")) == canonical(new("./doc/foo/bar"))
 
 @test
 def testCombine01(): Bool & Impure = combine(Nel(".", "doc" :: Nil)) == new("./doc/")

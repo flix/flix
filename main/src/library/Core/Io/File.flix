@@ -68,7 +68,7 @@ namespace Core/Io/File {
     })
 
     ///
-    /// Gets the canonical form the the `f` file
+    /// Gets the canonical form of the `f` file
     ///
     pub def canonical(f: File): Result[File, IOError] & Impure = tryWithCatch(_ -> {
         import java.io.File.getCanonicalFile();
