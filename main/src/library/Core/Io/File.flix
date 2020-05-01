@@ -34,16 +34,16 @@ namespace Core/Io/File {
     ///
     /// Combines every string in `n` into a single path
     ///
-    pub def combine(n: Nel[String]): File & Impure = {
+    pub def newFromFragments(n: Nel[String]): File & Impure = {
         match n {
-            case Nel(base, xs) => List.fold((p, s) -> p.add(s), new(base), xs)
+            case Nel(base, xs) => List.fold((p, s) -> p.resolve(s), new(base), xs)
         }
     }
 
     ///
     /// Appends the string `s` to the end of the path `p`
     ///
-    pub def add(f: File, s: String): File & Impure = {
+    pub def resolve(f: File, s: String): File & Impure = {
         import new java.io.File(##java.io.File, String) as newFile;
         let File(baseFile) = f;
         File(newFile(baseFile, s))

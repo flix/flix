@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Core/Io/File.{add, canonical, combine, exists, File, getChildren, getName, getParent, isDirectory, isExecutable, isFile, isReadable, isSymbolicLink, isWritable, new, readLines};
+use Core/Io/File.{canonical, exists, File, getChildren, getName, getParent, isDirectory, isExecutable, isFile, isReadable, isSymbolicLink, isWritable, new, newFromFragments, readLines, resolve};
 
 @test
 def new01(): File & Impure = new("hello.txt")
@@ -128,22 +128,19 @@ def testCanonical02(): Bool & Impure = canonical(new("./doc/foo/..")) == canonic
 def testCanonical03(): Bool & Impure = canonical(new("./doc/foo/bar/../bar")) == canonical(new("./doc/foo/bar"))
 
 @test
-def testCombine01(): Bool & Impure = combine(Nel(".", "doc" :: Nil)) == new("./doc/")
+def testNewFromFragments01(): Bool & Impure = newFromFragments(Nel(".", "doc" :: Nil)) == new("./doc/")
 
 @test
-def testCombine02(): Bool & Impure = combine(Nel(".",  "doc" :: ".." :: Nil)) == new("./doc/..")
+def testNewFromFragments02(): Bool & Impure = newFromFragments(Nel(".",  "doc" :: ".." :: Nil)) == new("./doc/..")
 
 @test
-def testCombine03(): Bool & Impure = combine(Nel(".", Nil)) == new(".")
+def testNewFromFragments03(): Bool & Impure = newFromFragments(Nel(".", Nil)) == new(".")
 
 @test
-def testAdd01(): Bool & Impure = add(new("./foo"), "bar") == new("./foo/bar")
+def testResolve01(): Bool & Impure = resolve(new("./foo"), "bar") == new("./foo/bar")
 
 @test
-def testAdd02(): Bool & Impure = add(new("./foo/.."), "foo") == new("./foo/../foo")
+def testResolve02(): Bool & Impure = resolve(new("./foo/.."), "foo") == new("./foo/../foo")
 
 @test
-def testAdd03(): Bool & Impure = add(new("."), "foo") == new("./foo")
-
-// def resEq(a: a, o: Result[a, e]): Bool = Result.getWithDefault(Result.map(b -> a == b, o), false)
-
+def testResolve03(): Bool & Impure = resolve(new("."), "foo") == new("./foo")
