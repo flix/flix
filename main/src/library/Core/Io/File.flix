@@ -32,7 +32,7 @@ namespace Core/Io/File {
         File(newFile(s))
 
     ///
-    /// Combines every string in `xs` into a single path
+    /// Combines every string in `n` into a single path
     ///
     pub def combine(n: Nel[String]): File & Impure = {
         match n {
