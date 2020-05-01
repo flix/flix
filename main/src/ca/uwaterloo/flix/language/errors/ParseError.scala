@@ -29,6 +29,9 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 case class ParseError(msg: String, loc: SourceLocation) extends CompilationError {
   val kind = "Parse Error"
+
+  override val shortMessage: String = s"Parse error: $msg"
+
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
