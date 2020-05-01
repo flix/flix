@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Core/Io/File.{exists, File, getChildren, getName, getParent, isDirectory, isExecutable, isFile, isReadable, isSymbolicLink, isWritable, new, readLines};
+use Core/Io/File.{canonical, exists, File, getChildren, getName, getParent, isDirectory, isExecutable, isFile, isReadable, isSymbolicLink, isWritable, new, newFromFragments, readLines, resolve};
 
 @test
 def new01(): File & Impure = new("hello.txt")
@@ -117,3 +117,30 @@ def isWritable03(): Bool & Impure = isWritable(new("./doc/foo")) |> Result.isOk
 
 @test
 def testReadLines01(): Bool & Impure = readLines(new("README.md")) |> Result.isOk
+
+@test
+def testCanonical01(): Bool & Impure = canonical(new("./doc/..")) == canonical(new("."))
+
+@test
+def testCanonical02(): Bool & Impure = canonical(new("./doc/foo/..")) == canonical(new("./doc"))
+
+@test
+def testCanonical03(): Bool & Impure = canonical(new("./doc/foo/bar/../bar")) == canonical(new("./doc/foo/bar"))
+
+@test
+def testNewFromFragments01(): Bool & Impure = newFromFragments(Nel(".", "doc" :: Nil)) == new("./doc/")
+
+@test
+def testNewFromFragments02(): Bool & Impure = newFromFragments(Nel(".",  "doc" :: ".." :: Nil)) == new("./doc/..")
+
+@test
+def testNewFromFragments03(): Bool & Impure = newFromFragments(Nel(".", Nil)) == new(".")
+
+@test
+def testResolve01(): Bool & Impure = resolve(new("./foo"), "bar") == new("./foo/bar")
+
+@test
+def testResolve02(): Bool & Impure = resolve(new("./foo/.."), "foo") == new("./foo/../foo")
+
+@test
+def testResolve03(): Bool & Impure = resolve(new("."), "foo") == new("./foo")
