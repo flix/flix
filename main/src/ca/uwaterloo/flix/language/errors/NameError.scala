@@ -39,6 +39,7 @@ object NameError {
     * @param loc2 the location of the use.
     */
   case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    override val summary: String = s"Ambiguous name '$name''. The name may refer to both a variable and a use."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
