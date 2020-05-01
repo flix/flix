@@ -50,15 +50,6 @@ namespace Core/Io/File {
     }
 
     ///
-    /// Gets the current working directory of the process
-    ///
-    pub def workingDirectory(): Result[File, IOError] & Impure = tryWithCatch(_ -> {
-        import java.io.File.getAbsoluteFile();
-        let File(javaFile) = new("");
-        File(javaFile.getAbsoluteFile())
-    })
-
-    ///
     /// Creates all directories in the path `f` if they don't already exist
     ///
     pub def mkdirs(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
