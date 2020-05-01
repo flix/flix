@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 
 /**
   * A common super-type for compilation errors.
@@ -33,12 +33,17 @@ trait CompilationError {
   /**
     * Returns the input source of the error message.
     */
-  final def source: Source =  loc.source
+  def source: Source = loc.source
 
   /**
     * Returns the primary source location of the error.
     */
   def loc: SourceLocation
+
+  /**
+    * Returns a short description of the error message.
+    */
+  def shortMessage: String = message.fmt(TerminalContext.NoTerminal)
 
   /**
     * Returns the formatted error message.
