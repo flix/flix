@@ -1,28 +1,41 @@
-use Core/Io/File.{add, File};
+use Core/Io/File.{canonical, File, getParent, mkdirs, new, resolve};
+use Core/Io/IOError.IOError;
 use Result.flatMap;
 
 namespace Pkger/Pkger {
     pub enum InitError {
         case PathAlreadyExists(File)
-        case GenericIoError
+        case InitIOError(IOError)
     }
 
-    // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
-    pub def initPackage(name: String): /* Package */ Result[File, InitError] & Impure = {
-        let getProjectDir = (base) -> base.add(name);
-        let getSourceDir = (base) -> getProjectDir(base).add("src");
-        let getMainSourceFile = (base) -> getSourceDir(base).add("Main.flix");
+    //def IOErrorToInit(err: IOError): InitError {}
+
+    def mapIOErrorInit(r: Result[a, IOError]): Result[a, InitError] = Result.mapErr(err -> InitIOError(err), r)
+
+    ///
+    /// Create a new directory with called `name` in the current working directory and initialize a project called `name` inside of it.
+    ///
+    @test
+    pub def initPackage(name: String): Result[Unit, InitError] & Impure = {
+        let getProjectDir = (base) -> base.resolve(name);
+        let getSourceDir = (base) -> getProjectDir(base).resolve("src");
+        let getMainSourceFile = (base) -> getSourceDir(base).resolve("Main.flix");
 
         let newFile = (content) -> (path) -> {
-            Core/Io/File.writeLines(path, Array.toList(content))
+            let* optParent = getParent(path) |> mapIOErrorInit;
+            let* _ = match optParent {
+                case Some(parent) => mkdirs(parent) |> mapIOErrorInit
+                case _ => Ok(true)
+            };
+            Core/Io/File.writeLines(path, Array.toList(content)) |> mapIOErrorInit
         };
 
-        let* workingDir = Core/Io/File.workingDirectory();
+        let workingDir = new(".");
 
         // Ensure that none of the paths the init process creates are currently present on the system
         let pathExists = [getProjectDir, getMainSourceFile, getSourceDir]
             |> Array.map(f -> {
-                    let* path = f(workingDir);
+                    let path = f(workingDir);
                     let* exists = Core/Io/File.exists(path);
                     Ok((path, exists))
                 })
@@ -31,52 +44,28 @@ namespace Pkger/Pkger {
 
         match pathExists {
             case None => {
-                // Create all directories required for the package
-                let dir = Result.map(getProjectDir, workingDir);
-                let* _ = Result.flatMap(Core/Io/File.mkdirs, dir)
-
-                let newHistoryFile = newFile(["### v0.1.0", "  Initial Release"]);
-                let* _ = Result.flatMap(newHistoryFile, Result.map(getHistoryFile, workingDir));
-
-                let newLicenseFile = newFile(["<<ENTER LICENSE INFORMATION>>"]);
-                Result.flatMap(newLicenseFile, Result.map(getLicenseFile, workingDir));
-
-                let newReadmeFile = newFile(["# " + name, "", "Enter some useful information", ""]);
-                Result.flatMap(newReadmeFile, Result.map(getReadmeFile, workingDir));
+                let quote = s -> Char.toString('"') + s + Char.toString('"');
 
                 let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote("Hello, World") + ")"]);
-                Result.flatMap(newMainSourceFile, Result.map(getMainSourceFile, workingDir));
+                let* _ = newMainSourceFile(getMainSourceFile(workingDir));
 
-                let newMainTestFile = newFile(["@test", "def testMain01(): Bool & Impure = main() == ()"]);
-                Result.flatMap(newMainTestFile, Result.map(getMainTestFile, workingDir));
-
-                Result.mapErr(_ -> GenericIoError, Result.map(getSourceDir, workingDir))
+                Ok(())
             }
-            case Some((d, _)) => Err(PathAlreadyExists(d))
+            case Some((d, _)) => {
+                let* c = canonical(d) |> mapIOErrorInit;
+                Err(PathAlreadyExists(c))
+            }
         }
     }
+    /*
 
     pub enum PackagingError {
-        case NoManifestInRoot(File)
         case RootNotDirectory(File)
         case NoChildren(File)
         case IOError(IOError)
     }
 
-    def mapIOError(r: Result[a, IOError]): Result[a, PackagingError] = Result.mapErr(err -> IOError(err), r)
-
-    def _mapBool(f: a -> Result[Bool, t] & e, a: a): Bool & e = Result.getWithDefault(f(a), false)
-
-    def _allChildren(root: File): Result[List[File], PackagingError] & Impure = {
-        use Core/Io/File.{add, exists, getChildren, isDirectory};
-        let* childrenRes = getChildren(root) |> mapIOError;
-        let* children = match childrenRes {
-            case Some()
-        }
-        // let neg = b -> !b;
-        // let files = List.filter(f -> mapBool(isDirectory >> neg, f) && mapBool(exists, f));
-        ???
-    }
+    def mapIOErrorPackaging(r: Result[a, IOError]): Result[a, PackagingError] = Result.mapErr(err -> IOError(err), r)
 
     pub def filesForPackaging(root: File): Result[List[File], PackagingError] & Impure = {
         use Core/Io/File.{add, exists, getChildren, isDirectory};
@@ -91,5 +80,8 @@ namespace Pkger/Pkger {
         let* _ = if (packageFileExists && !packageFileIsDir) Ok(()) else Err(NoManifestInRoot(root));
         Ok(children)
     }
+    */
 
 }
+
+pub def main(): Result[Unit, Pkger/Pkger.InitError] & Impure = Pkger/Pkger.initPackage("package_test")
