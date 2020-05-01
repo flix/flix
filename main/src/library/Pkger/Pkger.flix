@@ -1,4 +1,4 @@
-use Core/Io/File.{canonical, File, getParent, mkdirs, new, resolve};
+use Core/Io/File.{canonical, exists, File, getParent, isDirectory, mkdirs, new, resolve};
 use Core/Io/IOError.IOError;
 use Result.flatMap;
 
@@ -18,8 +18,7 @@ namespace Pkger/Pkger {
     @test
     pub def initPackage(name: String): Result[Unit, InitError] & Impure = {
         let getProjectDir = (base) -> base.resolve(name);
-        let getSourceDir = (base) -> getProjectDir(base).resolve("src");
-        let getMainSourceFile = (base) -> getSourceDir(base).resolve("Main.flix");
+        let getMainSourceFile = (base) -> getProjectDir(base).resolve("Main.flix");
 
         let newFile = (content) -> (path) -> {
             let* optParent = getParent(path) |> mapIOErrorInit;
@@ -33,11 +32,11 @@ namespace Pkger/Pkger {
         let workingDir = new(".");
 
         // Ensure that none of the paths the init process creates are currently present on the system
-        let pathExists = [getProjectDir, getMainSourceFile, getSourceDir]
+        let pathExists = [getProjectDir, getMainSourceFile]
             |> Array.map(f -> {
                     let path = f(workingDir);
-                    let* exists = Core/Io/File.exists(path);
-                    Ok((path, exists))
+                    let* e = exists(path);
+                    Ok((path, e))
                 })
             |> Array.filterMap(Result.toOption)
             |> Array.find(snd);
@@ -57,31 +56,37 @@ namespace Pkger/Pkger {
             }
         }
     }
-    /*
 
     pub enum PackagingError {
         case RootNotDirectory(File)
-        case NoChildren(File)
-        case IOError(IOError)
+        case NoSourceFile
+        case PackagingIOError(IOError)
     }
 
-    def mapIOErrorPackaging(r: Result[a, IOError]): Result[a, PackagingError] = Result.mapErr(err -> IOError(err), r)
+    def mapIOErrorPackaging(r: Result[a, IOError]): Result[a, PackagingError] = Result.mapErr(err -> PackagingIOError(err), r)
 
-    pub def filesForPackaging(root: File): Result[List[File], PackagingError] & Impure = {
-        use Core/Io/File.{add, exists, getChildren, isDirectory};
-        let* isDir = isDirectory(root) |> mapIOError;
-        let* _ = if (isDir) Ok(()) else Err(RootNotDirectory(root));
-        let* optionalChildren = getChildren(root) |> mapIOError;
-        // We know `root` is a directory
-        let children = Option.getWithDefault(optionalChildren, Nil);
-        let packageFile = add(root, "package.toml");
-        let* packageFileExists = exists(packageFile) |> mapIOError;
-        let* packageFileIsDir = isDirectory(packageFile) |> mapIOError;
-        let* _ = if (packageFileExists && !packageFileIsDir) Ok(()) else Err(NoManifestInRoot(root));
-        Ok(children)
+    @test
+    pub def buildFiles(rootString: String): Array[##java.io.File] & Impure = {
+        let res = {
+            let root = new(rootString);
+            let* isDir = isDirectory(root) |> mapIOErrorPackaging;
+            let* _ = if (isDir) Ok(()) else Err(RootNotDirectory(root));
+            // We know `root` is a directory
+            let sourceFile = resolve(root, "Main.flix");
+            let* sourceFileExists = exists(sourceFile) |> mapIOErrorPackaging;
+            let* children = if (sourceFileExists) Ok([sourceFile]) else Err(NoSourceFile);
+            Ok(children)
+        };
+        match res {
+            case Ok(arr) => Array.map(a -> { let File.File(javaFile) = a; javaFile }, arr),
+            case _ => {
+                Console.printLine("empty");
+                []
+            }
+        }
     }
-    */
-
 }
 
-pub def main(): Result[Unit, Pkger/Pkger.InitError] & Impure = Pkger/Pkger.initPackage("package_test")
+// Example usage
+// pub def main(): Result[Unit, Pkger/Pkger.InitError] & Impure = Pkger/Pkger.initPackage("package_test")
+// pub def main(): List[File] & Impure = Pkger/Pkger.buildFiles("package_test") |> Array.toList |> List.map(a -> { File.File(a) })
