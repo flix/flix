@@ -23,7 +23,6 @@ namespace Pkger/SemVer {
         case SemVer(Int, Int, Int)
     }
 
-
     ///
     /// Compare two SemVer instances according to the ordering rules in the specification
     ///
@@ -44,7 +43,7 @@ namespace Pkger/SemVer {
     }
 
     ///
-    /// Check whether the `specific` SemVer is compatible with the `bound` SemVer
+    /// Check whether the `specific` SemVer is compatible with the `bound` SemVer according to the SemVer specification
     ///
     pub def isCompatible(bound: SemVer, specific: SemVer): Bool = {
         match (bound, specific) {
@@ -69,8 +68,8 @@ namespace Pkger/SemVer {
         def empty(): Parser[a] = _ -> None
 
         def char(x: Char): Parser[Char] = input -> match String.toList(input) {
-            case Cons(y, ys) => if (y == x) { Some((List.toString(ys), x)) } else { None }
             case Nil => None
+            case Cons(y, ys) => if (y == x) { Some((List.toString(ys), x)) } else { None }
         }
 
         def span(p: Char -> Bool): Parser[String] = input -> {
