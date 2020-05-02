@@ -17,6 +17,7 @@ object SafetyError {
     */
   case class IllegalNonPositivelyBoundVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     val kind: String = "Safety Error"
+    val summary: String = s"Illegal non-positively bound variable '$sym'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine

@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 case class StratificationError(cycle: List[(String, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
   val kind: String = "Stratification Error"
+  val summary: String = "The expression is not stratified. A predicate depends negatively on itself."
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine

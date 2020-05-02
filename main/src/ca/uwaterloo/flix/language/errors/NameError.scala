@@ -39,7 +39,7 @@ object NameError {
     * @param loc2 the location of the use.
     */
   case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    override val summary: String = s"Ambiguous name '$name''. The name may refer to both a variable and a use."
+    val summary: String = s"Ambiguous name '$name'. The name may refer to both a variable and a use."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -63,7 +63,7 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Duplicate definition '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -75,6 +75,7 @@ object NameError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -85,7 +86,7 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Duplicate use of the def '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -95,6 +96,7 @@ object NameError {
       vt << NewLine
       vt << Code(loc2, "the second use was here.") << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -105,7 +107,7 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseTyp(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Duplicate use of the type '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -115,6 +117,7 @@ object NameError {
       vt << NewLine
       vt << Code(loc2, "the second use was here.") << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -125,7 +128,7 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Duplicate use of the tag '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -135,6 +138,7 @@ object NameError {
       vt << NewLine
       vt << Code(loc2, "the second use was here.") << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -145,7 +149,7 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateTypeAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Duplicate type alias '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -157,6 +161,7 @@ object NameError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -166,6 +171,7 @@ object NameError {
     * @param loc  the location of the suspicious type variable.
     */
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
+    val summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -184,6 +190,7 @@ object NameError {
     * @param loc  the location of the class name.
     */
   case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
+    val summary: String = s"Undefined class '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -200,6 +207,7 @@ object NameError {
     * @param loc  the location of the undefined variable.
     */
   case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
+    val summary: String = s"Undefined variable '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -216,6 +224,7 @@ object NameError {
     * @param loc  the location of the undefined type variable.
     */
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
+    val summary: String = s"Undefined type variable '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine

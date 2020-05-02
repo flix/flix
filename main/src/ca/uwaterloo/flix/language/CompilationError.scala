@@ -43,7 +43,7 @@ trait CompilationError {
   /**
     * Returns a short description of the error message.
     */
-  def summary: String = message.fmt(TerminalContext.NoTerminal)
+  def summary: String
 
   /**
     * Returns the formatted error message.

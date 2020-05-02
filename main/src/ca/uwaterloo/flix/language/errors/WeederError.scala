@@ -346,6 +346,7 @@ object WeederError {
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
+    val summary: String = s"Undefined annotation $name"
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -356,6 +357,7 @@ object WeederError {
   }
 
   case class IllegalVectorLength(loc: SourceLocation) extends WeederError {
+    val summary: String = "Illegal vector length"
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -366,6 +368,7 @@ object WeederError {
   }
 
   case class IllegalVectorIndex(loc: SourceLocation) extends WeederError {
+    val summary: String = "Illegal vector index"
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
