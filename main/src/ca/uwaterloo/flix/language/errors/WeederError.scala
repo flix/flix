@@ -38,7 +38,7 @@ object WeederError {
     * @param loc2 the location of the second annotation.
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Multiple occurrences of the annotation '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -50,6 +50,7 @@ object WeederError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove one of the two annotations." << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -60,7 +61,7 @@ object WeederError {
     * @param loc2 the location of the second parameter.
     */
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Multiple declarations of the formal parameter '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -72,6 +73,7 @@ object WeederError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the formal parameters to avoid the name clash." << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -82,7 +84,7 @@ object WeederError {
     * @param loc2 the location of the second modifier.
     */
   case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Duplicate modifier '$name'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -92,6 +94,7 @@ object WeederError {
       vt << NewLine
       vt << Code(loc2, "the second occurrence was here.") << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -103,7 +106,7 @@ object WeederError {
     * @param loc2     the location of the second tag.
     */
   case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Duplicate tag: '$tagName'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -115,6 +118,7 @@ object WeederError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the tags to avoid the name clash." << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
@@ -123,6 +127,7 @@ object WeederError {
     * @param loc the location where the illegal array length occurs.
     */
   case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
+    val summary: String = "Illegal array length"
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -139,6 +144,7 @@ object WeederError {
     * @param loc  the location of the formal parameter.
     */
   case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
+    val summary: String = "The formal parameter must have a declared type."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -151,26 +157,12 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an effect is unknown.
-    *
-    * @param loc the location where the illegal effect occurs.
-    */
-  case class IllegalEffect(loc: SourceLocation) extends WeederError {
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal effect." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal effect.") << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal existential quantification expression.
     *
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
+    val summary: String = "The existential quantifier does not declare any formal parameters."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -188,6 +180,7 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
+    val summary: String = "The universal quantifier does not declare any formal parameters."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
