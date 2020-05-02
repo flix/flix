@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * A common super-type for compilation errors.
