@@ -66,6 +66,7 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+    val summary: String = s"Unable to unify the types '$fullType1' and '$fullType2'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -86,6 +87,7 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedEffects(eff1: Type, eff2: Type, loc: SourceLocation) extends TypeError {
+    val summary: String = s"Unable to unify the effects '$eff1' and '$eff2'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -110,6 +112,7 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
+    val summary: String = s"Unable to unify the types '$tpe1' and '$tpe2'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -129,6 +132,7 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+    val summary: String = s"Unable to unify the typ variable '$baseVar' with type type '$baseType'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
