@@ -271,6 +271,7 @@ object WeederError {
     * @param loc the location where the illegal modifier occurs.
     */
   case class IllegalModifier(loc: SourceLocation) extends WeederError {
+    val summary: String = "Illegal modifier."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -286,6 +287,7 @@ object WeederError {
     * @param loc the location of the name.
     */
   case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
+    val summary: String = "Illegal jvm field or method name."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -301,6 +303,7 @@ object WeederError {
     * @param loc the location where the illegal wildcard occurs.
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
+    val summary: String = "Wildcard not allowed here."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -318,7 +321,7 @@ object WeederError {
     * @param loc2 the location of the second use of the variable.
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val loc: SourceLocation = loc1 min loc2
+    val summary: String = s"Multiple occurrences of '$name' in pattern."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -330,6 +333,7 @@ object WeederError {
       vt << NewLine
       vt << Underline("Tip:") << " A variable may only occur once in a pattern." << NewLine
     }
+    val loc: SourceLocation = loc1 min loc2
   }
 
   /**
