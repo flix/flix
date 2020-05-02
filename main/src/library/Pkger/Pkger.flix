@@ -16,43 +16,55 @@ namespace Pkger/Pkger {
     /// Create a new directory with called `name` in the current working directory and initialize a project called `name` inside of it.
     ///
     @test
-    pub def initPackage(name: String): Result[Unit, InitError] & Impure = {
-        let getProjectDir = (base) -> base.resolve(name);
-        let getMainSourceFile = (base) -> getProjectDir(base).resolve("Main.flix");
+    pub def initPackage(name: String): ##java.util.Optional & Impure = {
+        let r = {
+            let getProjectDir = (base) -> base.resolve(name);
+            let getMainSourceFile = (base) -> getProjectDir(base).resolve("Main.flix");
 
-        let newFile = (content) -> (path) -> {
-            let* optParent = getParent(path) |> mapIOErrorInit;
-            let* _ = match optParent {
-                case Some(parent) => mkdirs(parent) |> mapIOErrorInit
-                case _ => Ok(true)
+            let newFile = (content) -> (path) -> {
+                let* optParent = getParent(path) |> mapIOErrorInit;
+                let* _ = match optParent {
+                    case Some(parent) => mkdirs(parent) |> mapIOErrorInit
+                    case _ => Ok(true)
+                };
+                Core/Io/File.writeLines(path, Array.toList(content)) |> mapIOErrorInit
             };
-            Core/Io/File.writeLines(path, Array.toList(content)) |> mapIOErrorInit
-        };
 
-        let workingDir = new(".");
+            let workingDir = new(".");
 
-        // Ensure that none of the paths the init process creates are currently present on the system
-        let pathExists = [getProjectDir, getMainSourceFile]
-            |> Array.map(f -> {
-                    let path = f(workingDir);
-                    let* e = exists(path);
-                    Ok((path, e))
-                })
-            |> Array.filterMap(Result.toOption)
-            |> Array.find(snd);
+            // Ensure that none of the paths the init process creates are currently present on the system
+            let pathExists = [getProjectDir, getMainSourceFile]
+                |> Array.map(f -> {
+                        let path = f(workingDir);
+                        let* e = exists(path);
+                        Ok((path, e))
+                    })
+                |> Array.filterMap(Result.toOption)
+                |> Array.find(snd);
 
-        match pathExists {
-            case None => {
-                let quote = s -> Char.toString('"') + s + Char.toString('"');
+            match pathExists {
+                case None => {
+                    let quote = s -> Char.toString('"') + s + Char.toString('"');
 
-                let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote("Hello, World") + ")"]);
-                let* _ = newMainSourceFile(getMainSourceFile(workingDir));
+                    let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote("Hello, World") + ")"]);
+                    let* _ = newMainSourceFile(getMainSourceFile(workingDir));
 
-                Ok(())
+                    Ok(())
+                }
+                case Some((d, _)) => {
+                    let* c = canonical(d) |> mapIOErrorInit;
+                    Err(PathAlreadyExists(c))
+                }
             }
-            case Some((d, _)) => {
-                let* c = canonical(d) |> mapIOErrorInit;
-                Err(PathAlreadyExists(c))
+        };
+        match r {
+            case Ok(_) => {
+                import java.util.Optional:empty();
+                empty()
+            }
+            case Err(_) => {
+                import java.util.Optional:of(##java.lang.Object);
+                of("error" as ##java.lang.Object)
             }
         }
     }
@@ -88,5 +100,5 @@ namespace Pkger/Pkger {
 }
 
 // Example usage
-// pub def main(): Result[Unit, Pkger/Pkger.InitError] & Impure = Pkger/Pkger.initPackage("package_test")
+pub def main(): ##java.util.Optional & Impure = Pkger/Pkger.initPackage("package_test")
 // pub def main(): List[File] & Impure = Pkger/Pkger.buildFiles("package_test") |> Array.toList |> List.map(a -> { File.File(a) })
