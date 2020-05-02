@@ -198,6 +198,7 @@ object WeederError {
     * @param loc the location where the illegal float occurs.
     */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
+    val summary: String = "Illegal float."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -215,6 +216,7 @@ object WeederError {
     * @param loc the location where the illegal int occurs.
     */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
+    val summary: String = "Illegal int."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -232,6 +234,7 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalHole(loc: SourceLocation) extends WeederError {
+    val summary: String = "Hole expressions are not allowed in release mode."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -249,6 +252,7 @@ object WeederError {
     * @param loc the location where the illegal definition occurs.
     */
   case class IllegalLattice(loc: SourceLocation) extends WeederError {
+    val summary: String = "Illegal lattice."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
