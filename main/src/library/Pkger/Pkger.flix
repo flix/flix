@@ -1,5 +1,7 @@
-use Core/Io/File.{canonical, exists, File, getParent, isDirectory, mkdirs, new, resolve};
+use Core/Io/File.{asString, canonical, exists, File, getParent, isDirectory, mkdirs, new, newInputStream, newOutputStream, resolve};
+use Core/Io/InputStream.readAll;
 use Core/Io/IOError.IOError;
+use Core/Io/ZipOutput.{close, new => newZip, write};
 use Result.flatMap;
 
 namespace Pkger/Pkger {
@@ -64,7 +66,7 @@ namespace Pkger/Pkger {
             }
             case Err(_) => {
                 import java.util.Optional:of(##java.lang.Object);
-                of("error" as ##java.lang.Object)
+                of("init error" as ##java.lang.Object)
             }
         }
     }
@@ -92,13 +94,40 @@ namespace Pkger/Pkger {
         match res {
             case Ok(arr) => Array.map(a -> { let File.File(javaFile) = a; javaFile }, arr),
             case _ => {
-                Console.printLine("empty");
                 []
+            }
+        }
+    }
+
+    pub def packZip(rootString: String): ##java.util.Optional & Impure = {
+        let r = {
+            let files = buildFiles(rootString) |> Array.map(a -> File.File(a));
+            let root = new(rootString);
+            let zip = root.resolve("target.zip");
+            let* zipFileOut = newOutputStream(zip);
+            let zipOut = newZip(zipFileOut);
+            let _ = Array.map(f -> {
+                let s = asString(f);
+                let* if_ = newInputStream(f);
+                let* all = readAll(if_);
+                write(s, all, zipOut)
+            }, files);
+            close(zipOut)
+        };
+        match r {
+            case Ok(_) => {
+                import java.util.Optional:empty();
+                empty()
+            }
+            case Err(_) => {
+                import java.util.Optional:of(##java.lang.Object);
+                of("pack error" as ##java.lang.Object)
             }
         }
     }
 }
 
 // Example usage
-pub def main(): ##java.util.Optional & Impure = Pkger/Pkger.initPackage("package_test")
+// pub def main(): ##java.util.Optional & Impure = Pkger/Pkger.initPackage("package_test")
 // pub def main(): List[File] & Impure = Pkger/Pkger.buildFiles("package_test") |> Array.toList |> List.map(a -> { File.File(a) })
+pub def main(): ##java.util.Optional & Impure = Pkger/Pkger.packZip("package_test")

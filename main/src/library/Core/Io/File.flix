@@ -41,6 +41,15 @@ namespace Core/Io/File {
     }
 
     ///
+    /// Get the string representation of the abstract path `f`
+    ///
+    pub def asString(f: File): String & Impure = {
+        import java.io.File.getPath();
+        let File(javaFile) = f;
+        javaFile.getPath()
+    }
+
+    ///
     /// Appends the string `s` to the end of the path `p`
     ///
     pub def resolve(f: File, s: String): File & Impure = {
