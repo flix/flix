@@ -190,7 +190,7 @@ object NameError {
     * @param loc  the location of the class name.
     */
   case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
-    val summary: String = s"Undefined class '$name'."
+    val summary: String = s"Undefined class."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -207,7 +207,7 @@ object NameError {
     * @param loc  the location of the undefined variable.
     */
   case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
-    val summary: String = s"Undefined variable '$name'."
+    val summary: String = s"Undefined variable."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -224,7 +224,7 @@ object NameError {
     * @param loc  the location of the undefined type variable.
     */
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
-    val summary: String = s"Undefined type variable '$name'."
+    val summary: String = s"Undefined type variable."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
