@@ -40,7 +40,7 @@ object TypeError {
     * @param loc      the location where the error occurred.
     */
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
-    val summary: String = s" The type scheme '$inferred' cannot be generalized to '$declared'."
+    val summary: String = s"The type scheme '$inferred' cannot be generalized to '$declared'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -132,7 +132,7 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val summary: String = s"Unable to unify the typ variable '$baseVar' with type type '$baseType'."
+    val summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
