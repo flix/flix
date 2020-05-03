@@ -41,7 +41,7 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class AmbiguousName(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Ambiguous name '$qn'."
+    val summary: String = "Ambiguous name."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -66,7 +66,7 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class AmbiguousType(qn: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Ambiguous type '$qn'."
+    val summary: String = "Ambiguous type."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -91,7 +91,7 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Ambiguous tag '$tag'."
+    val summary: String = "Ambiguous tag."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -133,7 +133,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Inaccessible definition '$sym'."
+    val summary: String = "Inaccessible."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -153,7 +153,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Inaccessible enum '$sym'."
+    val summary: String = "Inaccessible."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -173,7 +173,7 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class RecursionLimit(ident: Symbol.TypeAliasSym, limit: Int, loc: SourceLocation) extends ResolutionError {
-    val summary: String = s" Recursion limit $limit reached while unfolding the ${ident.name} type alias."
+    val summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -193,7 +193,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedName(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Undefined name '$qn'."
+    val summary: String = "Undefined name."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -213,7 +213,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Undefined tag '$tag'."
+    val summary: String = "Undefined tag."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -233,7 +233,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Undefined type '$qn'"
+    val summary: String = "Undefined type"
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -252,7 +252,7 @@ object ResolutionError {
     * @param loc  the location of the class name.
     */
   case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Undefined class '$name'."
+    val summary: String = "Undefined class."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -271,7 +271,7 @@ object ResolutionError {
     * @param loc          the location of the constructor name.
     */
   case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Undefined constructor in class '$className' with the given signature."
+    val summary: String = "Undefined constructor."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -301,9 +301,9 @@ object ResolutionError {
   case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
     val summary: String = {
       if (!static) {
-        s"Undefined object method '$methodName' in class '$className'."
+        s"Undefined object method."
       } else {
-        s"Undefined static method '$methodName' in class '$className'."
+        s"Undefined static method."
       }
     }
 
@@ -339,9 +339,9 @@ object ResolutionError {
   case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError {
     val summary: String = {
       if (!static) {
-        s"Undefined object field '$fieldName' in class '$className'."
+        s"Undefined object field."
       } else {
-        s"Undefined static field '$fieldName' in class '$className'."
+        s"Undefined static field."
       }
     }
 
