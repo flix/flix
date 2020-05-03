@@ -161,8 +161,8 @@ object RedundancyError {
     * @param sym the unused variable symbol.
     */
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
-    val summary: String = "Unused formal parameter."
-    val message: VirtualTerminal = {
+    def summary: String = "Unused formal parameter."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unused formal parameter '" << Red(sym.text) << "'. The parameter is not used within its scope." << NewLine
@@ -177,7 +177,7 @@ object RedundancyError {
       vt << NewLine
       vt
     }
-    val loc: SourceLocation = sym.loc
+    def loc: SourceLocation = sym.loc
   }
 
   /**
