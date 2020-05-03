@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.vt._
   * A common super-type for type errors.
   */
 sealed trait TypeError extends CompilationError {
-  final val kind: String = "Type Error"
+  def kind: String = "Type Error"
 }
 
 object TypeError {
@@ -40,7 +40,8 @@ object TypeError {
     * @param loc      the location where the error occurred.
     */
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+    def summary: String = s"The type scheme '$inferred' cannot be generalized to '$declared'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> The type scheme: '" << Red(inferred.toString) << "' cannot be generalized to '" << Red(declared.toString) << "'." << NewLine
@@ -65,7 +66,8 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+    def summary: String = s"Unable to unify the types '$fullType1' and '$fullType2'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unable to unify the types: '" << Red(baseType1.show) << "' and '" << Red(baseType2.show) << "'." << NewLine
@@ -85,7 +87,8 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedEffects(eff1: Type, eff2: Type, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+    def summary: String = s"Unable to unify the effects '$eff1' and '$eff2'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unable to unify the effects: '" << Red(eff1.show) << "' and '" << Red(eff2.show) << "'." << NewLine
@@ -109,7 +112,8 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+    def summary: String = s"Unable to unify the types '$tpe1' and '$tpe2'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unable to unify the types: '" << Red(tpe1.show) << "' and '" << Red(tpe2.show) << "'." << NewLine
@@ -128,7 +132,8 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+    def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unable to unify the type variable '" << Red(baseVar.toString) << "' with the type '" << Red(baseType.show) << "'." << NewLine
@@ -150,7 +155,8 @@ object TypeError {
     * @param loc        the location where the error occurred.
     */
   case class UndefinedField(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+    def summary: String = s"Missing field '$fieldName' of type '$fieldType'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(fieldType.show) << "'." << NewLine
@@ -167,23 +173,24 @@ object TypeError {
   /**
     * Undefined predicate error.
     *
-    * @param name       the missing predicate.
+    * @param predName   the missing predicate.
     * @param predType   the type of the missing predicate.
     * @param schemaType the schema type where the predicate is missing.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedPredicate(name: String, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+  case class UndefinedPredicate(predName: String, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Missing predicate '$predName' of type '$predType'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing predicate '" << Red(name) << "' of type '" << Cyan(predType.show) << "'." << NewLine
+      vt << ">> Missing predicate '" << Red(predName) << "' of type '" << Cyan(predType.show) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing predicate.") << NewLine
       vt << "The schema type: " << Indent << NewLine
       vt << NewLine
       vt << schemaType.show << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the predicate '" << Red(name) << "' of type " << Cyan(predType.show) << "." << NewLine
+      vt << "does not contain the predicate '" << Red(predName) << "' of type " << Cyan(predType.show) << "." << NewLine
     }
   }
 
@@ -194,7 +201,8 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+    def summary: String = s"Unexpected non-record type '$tpe'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unexpected non-record type: '" << Red(tpe.show) << "'." << NewLine
@@ -210,7 +218,8 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class NonSchemaType(tpe: Type, loc: SourceLocation) extends TypeError {
-    val message: VirtualTerminal = {
+    def summary: String = s"Unexpected non-schema type '$tpe'."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unexpected non-schema type: '" << Red(tpe.show) << "'." << NewLine

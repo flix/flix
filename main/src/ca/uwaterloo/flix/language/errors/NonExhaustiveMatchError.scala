@@ -25,8 +25,9 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   * An error raised to indicate a non exhaustive pattern match expression.
   */
 case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationError {
-  val kind = "Non-Exhaustive Pattern Match"
-  val message: VirtualTerminal = {
+  def kind = "Pattern Match"
+  def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
+  def message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
     vt << ">> Non-Exhaustive Pattern. Missing case: " << Red(pat) << " in match expression." << NewLine

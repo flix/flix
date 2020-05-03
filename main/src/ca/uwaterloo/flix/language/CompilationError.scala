@@ -33,12 +33,17 @@ trait CompilationError {
   /**
     * Returns the input source of the error message.
     */
-  final def source: Source =  loc.source
+  def source: Source = loc.source
 
   /**
     * Returns the primary source location of the error.
     */
   def loc: SourceLocation
+
+  /**
+    * Returns a short description of the error message.
+    */
+  def summary: String
 
   /**
     * Returns the formatted error message.

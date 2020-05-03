@@ -189,7 +189,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
                 case compilationError =>
                   val range = Range.from(compilationError.loc)
                   val code = compilationError.kind
-                  val message = compilationError.message.fmt
+                  val message = compilationError.summary
                   Diagnostic(range, code, message)
               }
               PublishDiagnosticsParams(source.name, diagnostics) :: acc

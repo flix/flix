@@ -25,9 +25,9 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   * An error raised to indicate that a property is violated.
   */
 case class PropertyError(property: FinalAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
-  val kind: String = "Property Error"
-  val loc: SourceLocation = property.defn.loc
-  val message: VirtualTerminal = {
+  def kind: String = "Property Error"
+  def summary: String = s"Function does not satisfy the law '${property.law}'."
+  def message: VirtualTerminal = {
     val name = property.defn.toString
     val law = property.law.toString
 
@@ -37,13 +37,14 @@ case class PropertyError(property: FinalAst.Property, m: Map[Symbol.VarSym, Stri
     vt << NewLine
     vt << "Counter-example: " << m.map(p => p._1.text -> p._2).mkString(", ") << NewLine
     vt << NewLine
-    vt << Code(property.defn.loc, s"violates the law '$law'.") << NewLine // TODO: Cyan
+    vt << Code(property.defn.loc, s"violates the law '$law'.") << NewLine
     vt << NewLine
     vt << Underline("Details") << " The universal/existential quantifiers were instantiated as follows:" << NewLine
     vt << NewLine
     for ((sym, value) <- m) {
-      vt << Code(sym.loc, s"instantiated as '$value'.") << NewLine // TODO: Magenta
+      vt << Code(sym.loc, s"instantiated as '$value'.") << NewLine
     }
     vt << NewLine
   }
+  val loc: SourceLocation = property.defn.loc
 }

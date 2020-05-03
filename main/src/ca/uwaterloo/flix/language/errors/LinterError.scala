@@ -23,7 +23,8 @@ object LinterError {
     * @param loc the location of the expression.
     */
   case class Lint(sym: Symbol.DefnSym, replacement: Expression, loc: SourceLocation) extends LinterError {
-    val message: VirtualTerminal = {
+    def summary: String = s"The expression matches the '$sym' lint."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format)
       vt << s"   __" << NewLine
