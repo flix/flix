@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationError {
   val kind = "Pattern Match"
-  val summary: String = s" Non-Exhaustive Pattern. Missing case: '$pat' in match expression."
+  val summary: String = s"Non-exhaustive match. Missing case: '$pat'."
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
