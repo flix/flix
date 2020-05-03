@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   * A common super-type for resolution errors.
   */
 sealed trait ResolutionError extends CompilationError {
-  val kind = "Resolution Error"
+  def kind = "Resolution Error"
 }
 
 object ResolutionError {
@@ -41,8 +41,8 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class AmbiguousName(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Ambiguous name."
-    val message: VirtualTerminal = {
+    def summary: String = "Ambiguous name."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Ambiguous name '" << Red(qn.toString) << "' Name refers to multiple definitions." << NewLine
@@ -66,8 +66,8 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class AmbiguousType(qn: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Ambiguous type."
-    val message: VirtualTerminal = {
+    def summary: String = "Ambiguous type."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Ambiguous type '" << Red(qn) << "'. Name refers to multiple types." << NewLine
@@ -91,8 +91,8 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Ambiguous tag."
-    val message: VirtualTerminal = {
+    def summary: String = "Ambiguous tag."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Ambiguous tag '" << Red(tag) << "'." << NewLine
@@ -115,8 +115,8 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Illegal type."
-    val message: VirtualTerminal = {
+    def summary: String = "Illegal type."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Illegal type: '" << Red(tpe.toString) << "'." << NewLine
@@ -133,8 +133,8 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Inaccessible."
-    val message: VirtualTerminal = {
+    def summary: String = "Inaccessible."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Definition '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
@@ -153,8 +153,8 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Inaccessible."
-    val message: VirtualTerminal = {
+    def summary: String = "Inaccessible."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Enum '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
@@ -173,8 +173,8 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class RecursionLimit(ident: Symbol.TypeAliasSym, limit: Int, loc: SourceLocation) extends ResolutionError {
-    val summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
-    val message: VirtualTerminal = {
+    def summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Recursion limit (" << limit << ") reached while unfolding the '" << Red(ident.name) << "' type alias." << NewLine
@@ -193,8 +193,8 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedName(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Undefined name."
-    val message: VirtualTerminal = {
+    def summary: String = "Undefined name."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Undefined name '" << Red(qn.toString) << "'." << NewLine
@@ -213,8 +213,8 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Undefined tag."
-    val message: VirtualTerminal = {
+    def summary: String = "Undefined tag."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Undefined tag '" << Red(tag) << "'." << NewLine
@@ -233,8 +233,8 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Undefined type"
-    val message: VirtualTerminal = {
+    def summary: String = "Undefined type"
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Undefined type '" << Red(qn.toString) << "'." << NewLine
@@ -252,8 +252,8 @@ object ResolutionError {
     * @param loc  the location of the class name.
     */
   case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Undefined class."
-    val message: VirtualTerminal = {
+    def summary: String = "Undefined class."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Undefined class '" << Red(name) << "'." << NewLine
@@ -271,8 +271,8 @@ object ResolutionError {
     * @param loc          the location of the constructor name.
     */
   case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
-    val summary: String = "Undefined constructor."
-    val message: VirtualTerminal = {
+    def summary: String = "Undefined constructor."
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Undefined constructor in class '" << Cyan(className) << "' with the given signature." << NewLine
@@ -299,7 +299,7 @@ object ResolutionError {
     * @param loc        the location of the method name.
     */
   case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
-    val summary: String = {
+    def summary: String = {
       if (!static) {
         s"Undefined object method."
       } else {
@@ -307,7 +307,7 @@ object ResolutionError {
       }
     }
 
-    val message: VirtualTerminal = {
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       if (!static) {
@@ -337,7 +337,7 @@ object ResolutionError {
     * @param loc       the location of the method name.
     */
   case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError {
-    val summary: String = {
+    def summary: String = {
       if (!static) {
         s"Undefined object field."
       } else {
@@ -345,7 +345,7 @@ object ResolutionError {
       }
     }
 
-    val message: VirtualTerminal = {
+    def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       if (!static) {

@@ -25,9 +25,9 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   * An error raised to indicate that a property is violated.
   */
 case class PropertyError(property: FinalAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
-  val kind: String = "Property Error"
-  val summary: String = s"Function does not satisfy the law '${property.law}'."
-  val message: VirtualTerminal = {
+  def kind: String = "Property Error"
+  def summary: String = s"Function does not satisfy the law '${property.law}'."
+  def message: VirtualTerminal = {
     val name = property.defn.toString
     val law = property.law.toString
 
