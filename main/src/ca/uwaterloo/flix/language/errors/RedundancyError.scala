@@ -37,7 +37,7 @@ object RedundancyError {
     * @param loc the source location of the use.
     */
   case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
-    val summary: String = s"Hidden variable symbol '$sym'."
+    val summary: String = "Hidden variable symbol."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -61,7 +61,7 @@ object RedundancyError {
     * @param sym2 the shadowing variable.
     */
   case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
-    val summary: String = s"Shadowed variable '$sym1'."
+    val summary: String = "Shadowed variable."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -83,7 +83,7 @@ object RedundancyError {
     * @param sym the unused enum symbol.
     */
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
-    val summary: String = s"Unused definition '$sym'."
+    val summary: String = "Unused definition."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -109,7 +109,7 @@ object RedundancyError {
     * @param sym the unused enum symbol.
     */
   case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
-    val summary: String = s"Unused enum '$sym'."
+    val summary: String = "Unused enum."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -161,7 +161,7 @@ object RedundancyError {
     * @param sym the unused variable symbol.
     */
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
-    val summary: String = s"Unused formal parameter '$sym'."
+    val summary: String = "Unused formal parameter."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -186,7 +186,7 @@ object RedundancyError {
     * @param ident the unused type variable.
     */
   case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
-    val summary: String = s"Unused type parameter '${ident.name}'."
+    val summary: String = "Unused type parameter."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -211,7 +211,7 @@ object RedundancyError {
     * @param sym the unused variable symbol.
     */
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
-    val summary: String = s"Unused local variable '$sym'."
+    val summary: String = "Unused local variable."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -260,7 +260,7 @@ object RedundancyError {
     * @param sym the unconditionally recursive definition.
     */
   case class UnconditionalRecursion(sym: Symbol.DefnSym) extends RedundancyError {
-    val summary: String = s"Unconditionally recursive definition '$sym'."
+    val summary: String = "Unconditional recursion."
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
