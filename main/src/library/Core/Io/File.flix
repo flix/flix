@@ -32,6 +32,42 @@ namespace Core/Io/File {
         File(newFile(s))
 
     ///
+    /// Combines every string in `n` into a single path
+    ///
+    pub def newFromFragments(n: Nel[String]): File & Impure = {
+        match n {
+            case Nel(base, xs) => List.fold((p, s) -> p.resolve(s), new(base), xs)
+        }
+    }
+
+    ///
+    /// Appends the string `s` to the end of the path `p`
+    ///
+    pub def resolve(f: File, s: String): File & Impure = {
+        import new java.io.File(##java.io.File, String) as newFile;
+        let File(baseFile) = f;
+        File(newFile(baseFile, s))
+    }
+
+    ///
+    /// Creates all directories in the path `f` if they don't already exist
+    ///
+    pub def mkdirs(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
+        import java.io.File.mkdirs();
+        let File(javaFile) = f;
+        javaFile.mkdirs()
+    })
+
+    ///
+    /// Gets the canonical form of the `f` file
+    ///
+    pub def canonical(f: File): Result[File, IOError] & Impure = tryWithCatch(_ -> {
+        import java.io.File.getCanonicalFile();
+        let File(javaFile) = f;
+        File(javaFile.getCanonicalFile())
+    })
+
+    ///
     /// Returns `true` if the given file `f` exists.
     ///
     pub def exists(f: File): Result[Bool, IOError] & Impure = tryWithCatch(_ -> {
