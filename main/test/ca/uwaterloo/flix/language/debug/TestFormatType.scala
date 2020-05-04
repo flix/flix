@@ -139,7 +139,7 @@ class TestFormatType extends FunSuite with TestUtils {
         () => Type.Cst(randomTypeConstructor(complexity - 1)),
         () => Type.Arrow(Random.nextInt(), randomType(complexity - 1)),
         () => Type.Succ(Random.nextInt(), randomType(complexity - 1)),
-        () => Type.Lambda(randomTypeVar(complexity - 1), randomType(complexity - 1))
+//        () => Type.Lambda(randomTypeVar(complexity - 1), randomType(complexity - 1)).
       )
       randomChoice(generators).apply()
     }
@@ -148,9 +148,10 @@ class TestFormatType extends FunSuite with TestUtils {
 
   // MATT probably don't want to keep this, just for development/checking for holes
   test("FormatRandomType.01") {
-    for (_ <- 0 to 10) {
+    for (_ <- 0 to 1000) {
       val tpe = randomType(100)
-      System.err.println(FormatType2.format(tpe)(FormatType2.Audience.External))
+      FormatType2.format(tpe)(FormatType2.Audience.External)
+      FormatType2.format(tpe)(FormatType2.Audience.Internal)
     }
   }
 }

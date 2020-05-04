@@ -87,28 +87,32 @@ object FormatType2 { // MATT rename and replace FormatType
         case Type.Cst(TypeConstructor.Impure) => formatApply("Impure", args)
 
         case Type.Cst(TypeConstructor.Array) => formatApply("Array", args)
+        case Type.Cst(TypeConstructor.Vector) => formatApply("Vector", args)
         case Type.Cst(TypeConstructor.Channel) => formatApply("Channel", args)
         case Type.Cst(TypeConstructor.Enum(sym, _)) => formatApply(sym.toString, args)
+        case Type.Cst(TypeConstructor.Lattice) => formatApply("Lattice", args)
+        case Type.Cst(TypeConstructor.Relation) => formatApply("Relation", args)
+        case Type.Cst(TypeConstructor.Ref) => formatApply("Ref", args)
 
         case Type.Zero => formatApply("Zero", args)
-        case Type.Succ(n, tpe) => s"$n $tpe"
+        case Type.Succ(n, tpe) => formatApply(s"Succ($n ${visit(tpe)})", args)
 
 
         // MATT still to do: vector, relation, lattice
 
-        case Type.Cst(TypeConstructor.RecordExtend(_)) =>
-          if (args.lengthIs == 2) {
-            formatWellFormedRecord(tpe)
-          } else {
-            formatApply("Record", args)
-          }
+        case Type.Cst(TypeConstructor.RecordExtend(_)) => args.length match {
+          case 0 => "{ ??? }"
+          case 1 => s"{ ${visit(args.head)} | ??? }"
+          case 2 => formatWellFormedRecord(tpe)
+          case _ => formatApply ("Record", args)
+        }
 
-        case Type.Cst(TypeConstructor.SchemaExtend(_)) =>
-          if (args.lengthIs == 2) {
-            formatWellFormedSchema(tpe)
-          } else {
-            formatApply("Schema", args)
-          }
+        case Type.Cst(TypeConstructor.SchemaExtend(_)) => args.length match {
+          case 0 => "#{ ??? }"
+          case 1 => s"#{ ${visit(args.head)} | ??? }"
+          case 2 =>  formatWellFormedSchema(tpe)
+          case _ => formatApply("Schema", args)
+        }
 
         case Type.Cst(TypeConstructor.Tuple(_)) => args.map(visit).mkString("(", ", ", ")") // MATT different format if length != applies?
 
@@ -116,6 +120,7 @@ object FormatType2 { // MATT rename and replace FormatType
         case Type.Cst(TypeConstructor.Not) => args match {
           case (t1: Type.Var) :: Nil => s"¬${visit(t1)}"
           case t1 :: Nil => s"¬(${visit(t1)})"
+          case Nil => "¬???"
           case _ => formatApply("Not", args)
         }
 
@@ -124,6 +129,9 @@ object FormatType2 { // MATT rename and replace FormatType
           case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∧ (${visit(t2)})"
           case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∧ ${visit(t2)}"
           case t1 :: t2 :: Nil => s"(${visit(t1)}) ∧ (${visit(t2)})"
+          case (t1: Type.Var)  :: Nil => s"${visit(t1)} ∧ ???"
+          case t1 :: Nil => s"(${visit(t1)}) ∧ ???"
+          case Nil => s"??? ∧ ???"
           case _ => formatApply("And", args)
         }
 
@@ -132,6 +140,9 @@ object FormatType2 { // MATT rename and replace FormatType
           case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∨ (${visit(t2)})"
           case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∨ ${visit(t2)}"
           case t1 :: t2 :: Nil => s"(${visit(t1)}) ∨ (${visit(t2)})"
+          case (t1: Type.Var)  :: Nil => s"${visit(t1)} ∨ ???"
+          case t1 :: Nil => s"(${visit(t1)}) ∧ ???"
+          case Nil => s"??? ∧ ???"
           case _ => formatApply("Or", args)
         }
 
@@ -167,10 +178,10 @@ object FormatType2 { // MATT rename and replace FormatType
             argPart + arrowPart + resultPart + effPart
 
           }
-        case Type.Lambda(tvar, tpe) => audience match {
-          case Audience.Internal => s"${tvar.id} => ${visit(tpe)}"
-          case Audience.External => s"${renameMap.get(tvar.id)} => ${visit(tpe)}"
-        }
+        case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: Lambda")
+
+        case Type.Cst(TypeConstructor.Native(clazz)) => s"${clazz.getSimpleName}"
+
         case _ => throw InternalCompilerException(s"Unexpected type: '$tpe''") // MATT this will infinitely loop if toString calls us
       }
     }
