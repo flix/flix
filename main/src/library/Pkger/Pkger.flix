@@ -97,6 +97,7 @@ namespace Pkger/Pkger {
         }
     }
 
+    @test
     pub def packZip(rootString: String): ##java.util.Optional & Impure = {
         use String.{length, sliceRight};
         let r = {
@@ -131,4 +132,4 @@ namespace Pkger/Pkger {
 // Example usage
 // pub def main(): ##java.util.Optional & Impure = Pkger/Pkger.initPackage("package_test")
 // pub def main(): List[File] & Impure = Pkger/Pkger.buildFiles("package_test") |> Array.toList |> List.map(a -> { File.File(a) })
-pub def main(): ##java.util.Optional & Impure = Pkger/Pkger.packZip("package_test")
+// pub def main(): ##java.util.Optional & Impure = Pkger/Pkger.packZip("package_test")
