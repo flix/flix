@@ -10,8 +10,6 @@ namespace Pkger/Pkger {
         case InitIOError(IOError)
     }
 
-    //def IOErrorToInit(err: IOError): InitError {}
-
     def mapIOErrorInit(r: Result[a, IOError]): Result[a, InitError] = Result.mapErr(err -> InitIOError(err), r)
 
     ///
@@ -100,14 +98,17 @@ namespace Pkger/Pkger {
     }
 
     pub def packZip(rootString: String): ##java.util.Optional & Impure = {
+        use String.{length, sliceRight};
         let r = {
             let files = buildFiles(rootString) |> Array.map(a -> File.File(a));
             let root = new(rootString);
-            let zip = root.resolve("target.zip");
+            let zip = root.resolve(rootString + ".zip");
             let* zipFileOut = newOutputStream(zip);
             let zipOut = newZip(zipFileOut);
             let _ = Array.map(f -> {
-                let s = asString(f);
+                let fs = asString(f);
+                let s = sliceRight(fs, length(rootString) + 1);
+                Console.printLine(s);
                 let* if_ = newInputStream(f);
                 let* all = readAll(if_);
                 write(s, all, zipOut)
