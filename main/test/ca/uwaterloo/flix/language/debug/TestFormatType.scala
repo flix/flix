@@ -7,7 +7,7 @@ import org.scalatest.FunSuite
 import scala.util.Random
 
 class TestFormatType extends FunSuite with TestUtils {
-  test("FormatType.WellFormedType.External.01") {
+  test("FormatType.WellFormedType.Record.External.01") {
     val tpe = Type.mkRecordExtend("x", Type.Int32, Type.mkRecordExtend("y", Type.Str, Type.RecordEmpty))
 
     val expected = "{ x: Int32, y: Str }"
@@ -16,8 +16,8 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.External.02") {
-    val rest = Type.Var(0, Kind.Star, Rigidity.Rigid)
+  test("FormatWellFormedType.Record.External.02") {
+    val rest = Type.Var(0, Kind.Record, Rigidity.Rigid)
     rest.setText("theRest")
     val tpe = Type.mkRecordExtend("x", Type.Int32, rest)
 
@@ -27,7 +27,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.External.03") {
+  test("FormatWellFormedType.Arrow.External.01") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     paramType.setText("t1")
     val tpe = Type.mkArrow(paramType, Type.Pure, paramType)
@@ -38,120 +38,208 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.External.04") {
+  test("FormatWellFormedType.Arrow.External.02") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
     val effectType = Type.Var(2, Kind.Effect, Rigidity.Rigid)
     val tpe = Type.mkArrow(paramType, effectType, returnType)
 
-    val expected = "a -> b & (c)"
+    val expected = "a -> b & c"
     val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
 
     assert(actual == expected)
   }
 
-  private def randomType(complexity: Int): Type = {
+  test("FormatWellFormedType.Schema.External.01") {
+    val tupleType = Type.mkTuple(List(Type.Int32, Type.Str))
+    val tpe = Type.mkSchemaExtend("S", tupleType, Type.SchemaEmpty)
 
-    def randomChoice[T](list: List[T]): T = {
-      list(Random.nextInt(list.length))
-    }
+    val expected = "#{ S(Int32, Str) }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
 
-    def randomKind(complexity: Int): Kind = {
-      if (complexity <= 0) {
-        Kind.Star
-      } else {
-        val generators = List(
-          () => Kind.Star,
-          () => Kind.Record,
-          () => Kind.Schema,
-          () => Kind.Nat,
-          () => Kind.Effect,
-          () => Kind.Arrow(List(randomKind(complexity - 1)), randomKind(complexity - 1))
-        )
-        randomChoice(generators).apply()
-      }
-    }
-
-    def randomRigidity(): Rigidity = {
-      randomChoice(List(Rigidity.Rigid, Rigidity.Flexible))
-    }
-
-    def randomLower(): String = {
-      randomChoice("abcdefghijklmnopqrstuvwxyz".toList.map(_.toString))
-    }
-
-    def randomUpper(): String = {
-      randomChoice("ABCDEFGHIJKLMNOPQRSTUVWXYZ".toList.map(_.toString))
-    }
-
-    def randomEnumSym(): Symbol.EnumSym = {
-      new Symbol.EnumSym(List(), randomUpper(), SourceLocation.Unknown)
-    }
-
-    def randomTypeConstructor(complexity: Int): TypeConstructor = {
-      if (complexity <= 0) {
-        TypeConstructor.Unit
-      } else {
-        val generators = List(
-          () => TypeConstructor.Unit,
-          () => TypeConstructor.Bool,
-          () => TypeConstructor.Char,
-          () => TypeConstructor.Float32,
-          () => TypeConstructor.Float64,
-          () => TypeConstructor.Int8,
-          () => TypeConstructor.Int16,
-          () => TypeConstructor.Int32,
-          () => TypeConstructor.Int64,
-          () => TypeConstructor.BigInt,
-          () => TypeConstructor.Str,
-          () => TypeConstructor.RecordEmpty,
-          () => TypeConstructor.RecordExtend(randomLower()),
-          () => TypeConstructor.SchemaEmpty,
-          () => TypeConstructor.SchemaExtend(randomLower()),
-          () => TypeConstructor.Array,
-          () => TypeConstructor.Channel,
-          () => TypeConstructor.Enum(randomEnumSym(), randomKind(complexity - 1)),
-          () => TypeConstructor.Native(classOf[Object]),
-          () => TypeConstructor.Ref,
-          () => TypeConstructor.Tuple(Random.nextInt()),
-          () => TypeConstructor.Vector,
-          () => TypeConstructor.Relation,
-          () => TypeConstructor.Lattice,
-          () => TypeConstructor.Pure,
-          () => TypeConstructor.Impure,
-          () => TypeConstructor.Not,
-          () => TypeConstructor.And,
-          () => TypeConstructor.Or
-        )
-        randomChoice(generators).apply()
-      }
-    }
-
-    def randomTypeVar(complexity: Int): Type.Var = {
-      Type.Var(Random.nextInt(), randomKind(complexity - 1), randomRigidity())
-    }
-
-    if (complexity <= 0) {
-      Type.Var(Random.nextInt(), randomKind(0), randomRigidity())
-    } else {
-      val generators = List(
-        () => Type.Var(Random.nextInt(), randomKind(complexity - 1), randomRigidity()),
-        () => Type.Cst(randomTypeConstructor(complexity - 1)),
-        () => Type.Arrow(Random.nextInt(), randomType(complexity - 1)),
-        () => Type.Succ(Random.nextInt(), randomType(complexity - 1)),
-//        () => Type.Lambda(randomTypeVar(complexity - 1), randomType(complexity - 1)).
-      )
-      randomChoice(generators).apply()
-    }
-
+    assert(actual == expected)
   }
 
-  // MATT probably don't want to keep this, just for development/checking for holes
-  test("FormatRandomType.01") {
-    for (_ <- 0 to 1000) {
-      val tpe = randomType(100)
-      FormatType2.format(tpe)(FormatType2.Audience.External)
-      FormatType2.format(tpe)(FormatType2.Audience.Internal)
-    }
+  test("FormatWellFormedType.Schema.External.02") {
+    val tupleType1 = Type.Str
+    val tupleType2 = Type.mkTuple(List(Type.Int32, Type.Str))
+    val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
+    restType.setText("theRest")
+    val tpe = Type.mkSchemaExtend("A", tupleType1, Type.mkSchemaExtend("B", tupleType2, restType))
+
+    val expected = "#{ A(Str), B(Int32, Str) | theRest }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.Enum.External.07") {
+    val enumConstructor = TypeConstructor.Enum(Symbol.mkEnumSym("Triplet"), Kind.Star ->: Kind.Star ->: Kind.Star ->: Kind.Star)
+    val tvar1 = Type.Var(1, Kind.Star, Rigidity.Flexible)
+    val tvar2 = Type.Var(2, Kind.Star, Rigidity.Flexible)
+    val tvar3 = Type.Var(3, Kind.Star, Rigidity.Flexible)
+    tvar1.setText("a")
+    tvar2.setText("b")
+    tvar3.setText("c")
+    val tpe = Type.mkApply(Type.Cst(enumConstructor), List(tvar1, tvar2, tvar3))
+
+    val expected = "Triplet[a, b, c]"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.WellFormedType.Record.Internal.01") {
+    val tpe = Type.mkRecordExtend("x", Type.Int32, Type.mkRecordExtend("y", Type.Str, Type.RecordEmpty))
+
+    val expected = "{ x: Int32, y: Str }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.Internal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.Record.Internal.02") {
+    val rest = Type.Var(0, Kind.Record, Rigidity.Rigid)
+    rest.setText("theRest")
+    val tpe = Type.mkRecordExtend("x", Type.Int32, rest)
+
+    val expected = "{ x: Int32 | '0 }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.Internal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.Arrow.Internal.01") {
+    val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
+    paramType.setText("t1")
+    val tpe = Type.mkArrow(paramType, Type.Pure, paramType)
+
+    val expected = "'0 -> '0"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.Internal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.Arrow.Internal.02") {
+    val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
+    val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
+    val effectType = Type.Var(2, Kind.Effect, Rigidity.Rigid)
+    val tpe = Type.mkArrow(paramType, effectType, returnType)
+
+    val expected = "'0 -> '1 & ''2"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.Internal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.Schema.Internal.01") {
+    val tupleType = Type.mkTuple(List(Type.Int32, Type.Str))
+    val tpe = Type.mkSchemaExtend("S", tupleType, Type.SchemaEmpty)
+
+    val expected = "#{ S(Int32, Str) }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.Internal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.Schema.Internal.02") {
+    val tupleType1 = Type.Str
+    val tupleType2 = Type.mkTuple(List(Type.Int32, Type.Str))
+    val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
+    restType.setText("theRest")
+    val tpe = Type.mkSchemaExtend("A", tupleType1, Type.mkSchemaExtend("B", tupleType2, restType))
+
+    val expected = "#{ A(Str), B(Int32, Str) | '5 }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.Internal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.Enum.Internal.07") {
+    val enumConstructor = TypeConstructor.Enum(Symbol.mkEnumSym("Triplet"), Kind.Star ->: Kind.Star ->: Kind.Star ->: Kind.Star)
+    val tvar1 = Type.Var(1, Kind.Star, Rigidity.Flexible)
+    val tvar2 = Type.Var(2, Kind.Star, Rigidity.Flexible)
+    val tvar3 = Type.Var(3, Kind.Star, Rigidity.Flexible)
+    tvar1.setText("a")
+    tvar2.setText("b")
+    tvar3.setText("c")
+    val tpe = Type.mkApply(Type.Cst(enumConstructor), List(tvar1, tvar2, tvar3))
+
+    val expected = "Triplet['1, '2, '3]"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.Internal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatIllFormedType.Record.External.01") {
+    val tpe = Type.Cst(TypeConstructor.RecordExtend("x"))
+
+    val expected = "{ x: ??? }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatIllFormedType.Record.External.02") {
+    val tpe = Type.Apply(Type.Cst(TypeConstructor.RecordExtend("x")), Type.Int32)
+
+    val expected = "{ x: Int32 | ??? }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatIllFormedType.Record.External.03") {
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.RecordExtend("x")), List(Type.Int32, Type.Int32, Type.Str))
+
+    val expected = "RecordExtend(x)[Int32, Int32, Str]"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatIllFormedType.Schema.External.01") {
+    val tpe = Type.Cst(TypeConstructor.SchemaExtend("X"))
+
+    val expected = "#{ X(???) }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatIllFormedType.Schema.External.02") {
+    val tpe = Type.Apply(Type.Cst(TypeConstructor.SchemaExtend("X")), Type.Int32)
+
+    val expected = "#{ X(Int32) | ??? }"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatIllFormedType.Schema.External.03") {
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.SchemaExtend("X")), List(Type.Int32, Type.Int32, Type.Str))
+
+    val expected = "SchemaExtend(X)[Int32, Int32, Str]"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatIllFormedType.Tuple.External.01") {
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2)), List(Type.Str))
+
+    val expected = "(Str, ???)"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatIllFormedType.Tuple.External.02") {
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2)), List(Type.Str, Type.Int32, Type.Float32))
+
+    val expected = "(Str, Int32)[Float32]"
+    val actual = FormatType2.format(tpe)(FormatType2.Audience.External)
+
+    assert(actual == expected)
   }
 }

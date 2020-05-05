@@ -6,7 +6,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object FormatType2 { // MATT rename and replace FormatType
 
-  // MATT this may be a very silly idea
   sealed trait Audience
 
   object Audience {
@@ -65,7 +64,7 @@ object FormatType2 { // MATT rename and replace FormatType
         case tvar@Type.Var(id, kind, _) => audience match {
           case Audience.Internal => kind match {
             case Effect => s"''$id"
-            case _ => s"'$id" // MATT probably want the text here too
+            case _ => s"'$id"
           }
           case Audience.External => tvar.getText.getOrElse(renameMap(tvar.id))
         }
@@ -95,26 +94,27 @@ object FormatType2 { // MATT rename and replace FormatType
         case Type.Cst(TypeConstructor.Ref) => formatApply("Ref", args)
 
         case Type.Zero => formatApply("Zero", args)
-        case Type.Succ(n, tpe) => formatApply(s"Succ($n ${visit(tpe)})", args)
+        case Type.Succ(n, tpe) => formatApply(s"Succ($n,  ${visit(tpe)})", args)
 
-
-        // MATT still to do: vector, relation, lattice
-
-        case Type.Cst(TypeConstructor.RecordExtend(_)) => args.length match {
-          case 0 => "{ ??? }"
-          case 1 => s"{ ${visit(args.head)} | ??? }"
+        case Type.Cst(TypeConstructor.RecordExtend(label)) => args.length match {
+          case 0 => s"{ $label: ??? }"
+          case 1 => s"{ $label: ${visit(args.head)} | ??? }"
           case 2 => formatWellFormedRecord(tpe)
-          case _ => formatApply ("Record", args)
+          case _ => formatApply(s"RecordExtend($label)", args)
         }
 
-        case Type.Cst(TypeConstructor.SchemaExtend(_)) => args.length match {
-          case 0 => "#{ ??? }"
-          case 1 => s"#{ ${visit(args.head)} | ??? }"
-          case 2 =>  formatWellFormedSchema(tpe)
-          case _ => formatApply("Schema", args)
+        case Type.Cst(TypeConstructor.SchemaExtend(name)) => args.length match {
+          case 0 => s"#{ $name(???) }"
+          case 1 => s"#{ $name(${visit(args.head)}) | ??? }"
+          case 2 => formatWellFormedSchema(tpe)
+          case _ => formatApply(s"SchemaExtend($name)", args)
         }
 
-        case Type.Cst(TypeConstructor.Tuple(_)) => args.map(visit).mkString("(", ", ", ")") // MATT different format if length != applies?
+        case Type.Cst(TypeConstructor.Tuple(length)) =>
+          val elements = args.take(length).map(visit)
+          val applyParams = args.drop(length) // excess elements
+          val tuple = elements.padTo(length, "???").mkString("(", ", ", ")")
+          formatApply(tuple, applyParams)
 
 
         case Type.Cst(TypeConstructor.Not) => args match {
@@ -129,7 +129,7 @@ object FormatType2 { // MATT rename and replace FormatType
           case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∧ (${visit(t2)})"
           case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∧ ${visit(t2)}"
           case t1 :: t2 :: Nil => s"(${visit(t1)}) ∧ (${visit(t2)})"
-          case (t1: Type.Var)  :: Nil => s"${visit(t1)} ∧ ???"
+          case (t1: Type.Var) :: Nil => s"${visit(t1)} ∧ ???"
           case t1 :: Nil => s"(${visit(t1)}) ∧ ???"
           case Nil => s"??? ∧ ???"
           case _ => formatApply("And", args)
@@ -140,49 +140,52 @@ object FormatType2 { // MATT rename and replace FormatType
           case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∨ (${visit(t2)})"
           case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∨ ${visit(t2)}"
           case t1 :: t2 :: Nil => s"(${visit(t1)}) ∨ (${visit(t2)})"
-          case (t1: Type.Var)  :: Nil => s"${visit(t1)} ∨ ???"
+          case (t1: Type.Var) :: Nil => s"${visit(t1)} ∨ ???"
           case t1 :: Nil => s"(${visit(t1)}) ∧ ???"
           case Nil => s"??? ∧ ???"
           case _ => formatApply("Or", args)
         }
 
         case Type.Arrow(l, eff) =>
-          if (args.lengthIs < 2) {
-            formatApply("Arrow", args)
+
+          // Retrieve and result type.
+          val resultType = args.lastOption
+
+          // Format the arguments.
+          val argPart = if (args.lengthIs < 2) {
+            "???"
+          } else if (args.lengthIs == 2) {
+            visit(args.head)
           } else {
-            // Retrieve the arguments and result types.
-            val argumentTypes = args.init
-            val resultType = args.last
-
-            // Format the arguments.
-            val argPart = if (argumentTypes.length == 1) {
-              visit(argumentTypes.head)
-            } else {
-              argumentTypes.map(visit).mkString("(", ", ", ")")
-            }
-            // Format the arrow.
-            val arrowPart = eff match {
-              case Type.Cst(TypeConstructor.Impure) => " ~> "
-              case _ => " -> "
-            }
-            // Format the effect.
-            val effPart = eff match {
-              case Type.Cst(TypeConstructor.Pure) => ""
-              case Type.Cst(TypeConstructor.Impure) => ""
-              case _ => " & (" + visit(eff) + ")"
-            }
-            // Format the result type.
-            val resultPart = visit(resultType)
-
-            // Put everything together.
-            argPart + arrowPart + resultPart + effPart
-
+            args.init.map(visit).mkString("(", ", ", ")")
           }
-        case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: Lambda")
+          // Format the arrow.
+          val arrowPart = eff match {
+            case Type.Cst(TypeConstructor.Impure) => " ~> "
+            case _ => " -> "
+          }
+          // Format the effect.
+          val effPart = eff match {
+            case Type.Cst(TypeConstructor.Pure) => ""
+            case Type.Cst(TypeConstructor.Impure) => ""
+            case _: Type.Var => s" & ${visit(eff)}"
+            case _ => " & (" + visit(eff) + ")"
+          }
+          // Format the result type.
+          val resultPart = resultType.map(visit).getOrElse("???")
+
+          // Put everything together.
+          argPart + arrowPart + resultPart + effPart
+
+        case Type.Lambda(tvar, tpe) => audience match {
+          case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
+          case Audience.External => throw InternalCompilerException(s"Unexpected type: Lambda")
+        }
 
         case Type.Cst(TypeConstructor.Native(clazz)) => s"${clazz.getSimpleName}"
 
-        case _ => throw InternalCompilerException(s"Unexpected type: '$tpe''") // MATT this will infinitely loop if toString calls us
+        case Type.Apply(_, _) => throw InternalCompilerException("Unexpected type: Apply") // Should be impossible
+
       }
     }
 
