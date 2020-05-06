@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show
 
@@ -97,7 +98,7 @@ sealed trait Type {
   /**
     * Returns a human readable string representation of `this` type.
     */
-  override def toString: String = Type.fmtType(this, renameVars = false)
+  override def toString: String = FormatType.format(this)(Audience.Internal)
 
 }
 
@@ -373,124 +374,7 @@ object Type {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
   }
 
-  /**
-    * Returns a human readable representation of the given type `tpe0`.
-    *
-    * @param renameVars whether to use human readable variable names.
-    */
-  def fmtType(tpe0: Type, renameVars: Boolean): String = {
-    def visit(tpe: Type, m: Map[Int, String]): String = {
-      // Retrieve the type constructor and type arguments.
-      val base = tpe.typeConstructor
-      val args = tpe.typeArguments
-
-      base match {
-        case Type.Var(id, kind, _) =>
-          // Lookup the human-friendly name in `m`.
-          m.get(id) match {
-            case None =>
-              // No human-friendly name. Return the id. Use ' for types and '' for effects.
-              if (kind != Kind.Effect) "'" + id.toString else "''" + id.toString
-            case Some(s) => s
-          }
-
-        case Type.Cst(TypeConstructor.Array) =>
-          s"Array[${args.map(visit(_, m)).mkString(", ")}]"
-
-        case Type.Cst(TypeConstructor.Channel) =>
-          s"Channel[${args.map(visit(_, m)).mkString(", ")}]"
-
-        case Type.Cst(TypeConstructor.Enum(sym, _)) =>
-          if (args.isEmpty)
-            sym.toString
-          else
-            sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
-
-        case Type.Cst(TypeConstructor.Tuple(l)) =>
-          "(" + args.map(visit(_, m)).mkString(", ") + ")"
-
-        case Type.Cst(TypeConstructor.Pure) => "Pure"
-
-        case Type.Cst(TypeConstructor.Impure) => "Impure"
-
-        case Type.Cst(TypeConstructor.Not) => args match {
-          case (t1: Type.Var) :: Nil => s"¬${visit(t1, m)}"
-          case t1 :: Nil => s"¬(${visit(t1, m)})"
-          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-        }
-
-        case Type.Cst(TypeConstructor.And) => args match {
-          case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1, m)} ∧ ${visit(t2, m)}"
-          case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1, m)} ∧ (${visit(t2, m)})"
-          case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1, m)}) ∧ ${visit(t2, m)}"
-          case t1 :: t2 :: Nil => s"(${visit(t1, m)}) ∧ (${visit(t2, m)})"
-          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-        }
-
-        case Type.Cst(TypeConstructor.Or) => args match {
-          case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1, m)} ∨ ${visit(t2, m)}"
-          case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1, m)} ∨ (${visit(t2, m)})"
-          case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1, m)}) ∨ ${visit(t2, m)}"
-          case t1 :: t2 :: Nil => s"(${visit(t1, m)}) ∨ (${visit(t2, m)})"
-          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-        }
-
-        case Type.Cst(tc) => tc.toString + (if (args.isEmpty) "" else "[" + args.map(visit(_, m)).mkString(", ") + "]")
-
-        case Type.Arrow(l, eff) =>
-          // Retrieve the arguments and result types.
-          val argumentTypes = args.init
-          val resultType = args.last
-
-          // Format the arguments.
-          val argPart = if (argumentTypes.length == 1) {
-            visit(argumentTypes.head, m)
-          } else {
-            "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ")"
-          }
-          // Format the arrow.
-          val arrowPart = eff match {
-            case Type.Cst(TypeConstructor.Impure) => " ~> "
-            case _ => " -> "
-          }
-          // Format the effect.
-          val effPart = eff match {
-            case Type.Cst(TypeConstructor.Pure) => ""
-            case Type.Cst(TypeConstructor.Impure) => ""
-            case _ => " & (" + visit(eff, m) + ")"
-          }
-          // Format the result type.
-          val resultPart = visit(resultType, m)
-
-          // Put everything together.
-          argPart + arrowPart + resultPart + effPart
-
-        case Type.Lambda(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
-
-        case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"
-      }
-    }
-
-    /**
-      * Computes a mapping from type variables to human readable variable names.
-      *
-      * E.g. the type variable 8192 might be mapped to 'a'and the type variable 8193 might be mapped to 'b'.
-      */
-    def alphaRenameVars(tpe0: Type): Map[Int, String] = {
-      tpe0.typeVars.toList.sortBy(_.id).zipWithIndex.map {
-        case (tvar, index) => tvar.id -> (index + 'a').toChar.toString
-      }.toMap
-    }
-
-    // Determine whether to use human readable variables.
-    if (renameVars)
-      visit(tpe0, alphaRenameVars(tpe0))
-    else
-      visit(tpe0, Map.empty)
-  }
-
   implicit object ShowInstance extends Show[Type] {
-    def show(tpe: Type): String = fmtType(tpe, renameVars = true)
+    def show(tpe: Type): String = FormatType.format(tpe)(Audience.External)
   }
-
 }

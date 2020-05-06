@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
@@ -41,6 +42,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * The directory where to write the ouput.
     */
   val OutputDirectory: Path = Paths.get("./target/api")
+
+  private implicit val audience: Audience = Audience.External
 
   /**
     * Emits a JSON file with information about the definitions of the program.
@@ -97,7 +100,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val fparams = getFormalParams(defn0).collect {
       case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
         JField("name", JString(psym.text)),
-        JField("type", JString(format(tpe)))
+        JField("type", JString(FormatType.format(tpe)))
       )
     }
 
@@ -109,7 +112,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       JField("name", JString(defn0.sym.name)),
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
-      JField("result", JString(format(returnType))),
+      JField("result", JString(FormatType.format(returnType))),
       JField("comment", JString(defn0.doc.text.trim))
     ))
   }
@@ -136,86 +139,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def getReturnType(tpe0: Type): Type = tpe0 match {
     case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getReturnType(tpe)
     case _ => tpe0
-  }
-
-  /**
-    * Returns a string representation of the given type `tpe0`.
-    */
-  private def format(tpe0: Type): String = {
-    val base = tpe0.typeConstructor
-    val args = tpe0.typeArguments
-
-    base match {
-      case tvar: Type.Var => tvar.getText.getOrElse(tvar.id.toString)
-
-      case Type.Cst(tc) => tc match {
-        case TypeConstructor.Unit => "Unit"
-        case TypeConstructor.Bool => "Bool"
-        case TypeConstructor.Char => "Char"
-        case TypeConstructor.Float32 => "Float32"
-        case TypeConstructor.Float64 => "Float64"
-        case TypeConstructor.Int8 => "Int8"
-        case TypeConstructor.Int16 => "Int16"
-        case TypeConstructor.Int32 => "Int32"
-        case TypeConstructor.Int64 => "Int64"
-        case TypeConstructor.BigInt => "BigInt"
-        case TypeConstructor.Str => "Str"
-        case TypeConstructor.RecordEmpty => "{ }"
-        case TypeConstructor.SchemaEmpty => "Schema { }"
-
-        case TypeConstructor.Relation => "Relation"
-
-        case TypeConstructor.Lattice => "Lattice"
-
-        case TypeConstructor.Array => "Array" + "[" + args.map(format).mkString(", ") + "]"
-
-        case TypeConstructor.Channel => "Channel" + "[" + args.map(format).mkString(", ") + "]"
-
-        case TypeConstructor.Enum(sym, kind) =>
-          if (args.isEmpty)
-            sym.toString
-          else
-            sym.toString + "[" + args.map(format).mkString(", ") + "]"
-
-        case TypeConstructor.Tag(sym, tag) => sym.toString + "." + tag
-
-        case TypeConstructor.RecordExtend(label) =>
-          "{" + label + " = " + format(args(0)) + " | " + format(args(1)) + "}"
-
-        case TypeConstructor.SchemaExtend(sym) =>
-          "{" + sym + " = " + format(args(0)) + " | " + format(args(1)) + "}"
-
-        case TypeConstructor.Native(clazz) => clazz.getName + (if (args.isEmpty) "" else "[" + args.map(format).mkString(", ") + "]")
-
-        case TypeConstructor.Ref => "Ref" + "[" + args.map(format).mkString(", ") + "]"
-
-        case TypeConstructor.Tuple(l) => "(" + args.map(format).mkString(", ") + ")"
-
-        case TypeConstructor.Pure => "Pure"
-
-        case TypeConstructor.Impure => "Impure"
-
-        case TypeConstructor.Not => "Not"
-
-        case TypeConstructor.And => "And"
-
-        case TypeConstructor.Or => "Or"
-          
-      }
-
-      case Type.Arrow(l, _) =>
-        val argumentTypes = args.init
-        val resultType = args.last
-        if (argumentTypes.length == 1) {
-          format(argumentTypes.head) + " -> " + format(resultType)
-        } else {
-          "(" + argumentTypes.map(format).mkString(", ") + ") -> " + format(resultType)
-        }
-
-      case Type.Lambda(tvar, tpe) => tvar.toString + " => " + format(tpe)
-
-      case Type.Apply(tpe1, tpe2) => format(tpe1) + "[" + format(tpe2) + "]"
-    }
   }
 
   /**
