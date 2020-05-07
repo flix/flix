@@ -860,78 +860,81 @@ namespace List {
         }
 
     ///
-    /// Sort list `xs` with the comparing function `cmp`.
-    ///
-    /// The sort implementation is a mergesort.
-    /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
-    ///
-    pub def sortWith(cmp: (a,a) -> Int32, xs: List[a]): List[a] =
-        sortGenerateSequences(cmp, xs) |> sortMergeAll(cmp)
+        /// Sort list `xs` with the comparing function `cmp`.
+        ///
+        /// The sort implementation is a mergesort.
+        /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
+        ///
+        pub def sortWith(cmp: (a,a) -> Int32, xs: List[a]): List[a] =
+            sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
 
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortGenerateSequences(cmp: (a,a) -> Int32, xs: List[a]): List[List[a]] = match xs {
-        case a :: b :: rs =>
-            if (cmp(a, b) > 0)
-                sortDescendingStep(cmp, b, a :: Nil, rs)
-            else
-                sortAscendingStep(cmp, b, vs -> a :: vs, rs)
-        case rs => rs :: Nil
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortDescendingStep(cmp: (a,a) -> Int32, x: a, xs: List[a], ys: List[a]): List[List[a]] = match ys {
-        case r1 :: rs if (cmp(x, r1) > 0) =>
-            sortDescendingStep(cmp, r1, x :: xs, rs)
-        case rs =>
-            (x :: xs) :: sortGenerateSequences(cmp, rs)
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortAscendingStep(cmp: (a,a) -> Int32, x: a, xsf: List[a] -> List[a], ys: List[a]): List[List[a]] = match ys {
-        case r1 :: rs if (cmp(x, r1) <= 0)  =>
-            sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs)
-        case rs =>
-            let x1 = xsf( x :: Nil);
-            x1 :: sortGenerateSequences(cmp, rs)
+        ///
+        /// Helper function for `sortWith`.
+        ///
+        def sortGenerateSequences(cmp: (a,a) -> Int32, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
+            case a :: b :: rs =>
+                if (cmp(a, b) > 0)
+                    sortDescendingStep(cmp, b, a :: Nil, rs, k)
+                else
+                    sortAscendingStep(cmp, b, vs -> a :: vs, rs, k)
+            case rs => k(rs :: Nil)
         }
 
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMergeAll(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[a] = match xss {
-        case x :: Nil => x
-        case rs => sortMergeAll(cmp, sortMergePairs(cmp, rs))
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMergePairs(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[List[a]] = match xss {
-        case a :: b :: rs => {
-            let x = sortMerge(cmp, a, b);
-            x :: sortMergePairs(cmp, rs)
+        ///
+        /// Helper function for `sortWith`.
+        ///
+        def sortDescendingStep(cmp: (a,a) -> Int32, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
+            case r1 :: rs if (cmp(x, r1) > 0) =>
+                sortDescendingStep(cmp, r1, x :: xs, rs, k)
+            case rs =>
+                sortGenerateSequences(cmp, rs, zss -> k((x :: xs) :: zss))
         }
-        case rs => rs
-    }
 
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMerge(cmp: (a,a) -> Int32, xs: List[a], ys: List[a]) : List[a] = match (xs, ys) {
-        case (r :: rs, s :: ss) =>
-            if (cmp(r,s) > 0)
-                s :: sortMerge(cmp, xs, ss)
-            else
-                r :: sortMerge(cmp, rs, ys)
-        case (Nil, ss) => ss
-        case (rs, Nil) => rs
-    }
+        ///
+        /// Helper function for `sortWith`.
+        ///
+        def sortAscendingStep(cmp: (a,a) -> Int32, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
+            case r1 :: rs if (cmp(x, r1) <= 0)  =>
+                sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs, k)
+            case rs =>
+                let x1 = xsf(x :: Nil);
+                sortGenerateSequences(cmp, rs, zss -> k(x1 :: zss))
+            }
+
+        ///
+        /// Helper function for `sortWith`.
+        ///
+        def sortMergeAll(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[a] = match xss {
+            case x :: Nil => x
+            case rs => {
+                let xss = sortMergePairs(cmp, rs, zs -> zs);
+                sortMergeAll(cmp, xss)
+            }
+        }
+
+        ///
+        /// Helper function for `sortWith`.
+        ///
+        def sortMergePairs(cmp: (a,a) -> Int32, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
+            case a :: b :: rs => {
+                let x = sortMerge(cmp, a, b, zs -> zs);
+                sortMergePairs(cmp, rs, zss -> k(x :: zss))
+            }
+            case rs => k(rs)
+        }
+
+        ///
+        /// Helper function for `sortWith`.
+        ///
+        def sortMerge(cmp: (a,a) -> Int32, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
+            case (r :: rs, s :: ss) =>
+                if (cmp(r,s) > 0)
+                    sortMerge(cmp, xs, ss, zs -> k(s :: zs))
+                else
+                    sortMerge(cmp, rs, ys, zs -> k(r :: zs))
+            case (Nil, ss) => k(ss)
+            case (rs, Nil) => k(rs)
+        }
 
     ///
     /// Build a list by applying `f` to the seed value `st`.
