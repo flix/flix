@@ -16,6 +16,7 @@ class TestExamples extends Suites(
   new FlixTest("function-composition-pipelines-and-currying", "examples/function-composition-pipelines-and-currying.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("uniform-function-call-syntax", "examples/uniform-function-call-syntax.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("pure-and-impure-functions", "examples/pure-and-impure-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("effect-polymorphic-functions", "examples/effect-polymorphic-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("opaque-types", "examples/opaque-types.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("type-aliases", "examples/type-aliases.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("reading-and-writing-a-text-file", "examples/reading-and-writing-a-text-file.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
