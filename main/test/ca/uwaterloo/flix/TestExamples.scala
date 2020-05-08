@@ -15,6 +15,8 @@ class TestExamples extends Suites(
   new FlixTest("polymorphic-record-extension-and-restriction", "examples/polymorphic-record-extension-and-restriction.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("function-composition-pipelines-and-currying", "examples/function-composition-pipelines-and-currying.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("uniform-function-call-syntax", "examples/uniform-function-call-syntax.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("pure-and-impure-functions", "examples/pure-and-impure-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("effect-polymorphic-functions", "examples/effect-polymorphic-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("opaque-types", "examples/opaque-types.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("type-aliases", "examples/type-aliases.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("reading-and-writing-a-text-file", "examples/reading-and-writing-a-text-file.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
@@ -29,9 +31,9 @@ class TestExamples extends Suites(
   new FlixTest("first-class-constraints-and-fixpoints", "examples/first-class-constraints-and-fixpoints.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("polymorphic-first-class-constraints", "examples/polymorphic-first-class-constraints.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("pipelines-of-fixpoint-computations", "examples/pipelines-of-fixpoint-computations.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("compiler-puzzle", "examples/compiler-puzzle.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("compiler-puzzle", "examples/compiler-puzzle.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
