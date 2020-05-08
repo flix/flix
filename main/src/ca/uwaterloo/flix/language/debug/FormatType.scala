@@ -69,7 +69,7 @@ object FormatType { // MATT rename and replace FormatType
         case Type.Cst(TypeConstructor.Int32) => formatApply("Int32", args)
         case Type.Cst(TypeConstructor.Int64) => formatApply("Int64", args)
         case Type.Cst(TypeConstructor.BigInt) => formatApply("BigInt", args)
-        case Type.Cst(TypeConstructor.Str) => formatApply("Str", args)
+        case Type.Cst(TypeConstructor.Str) => formatApply("String", args)
         case Type.Cst(TypeConstructor.RecordEmpty) => formatApply("{ }", args)
         case Type.Cst(TypeConstructor.SchemaEmpty) => formatApply("#{ }", args)
         case Type.Cst(TypeConstructor.Pure) => formatApply("Pure", args)
