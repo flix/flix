@@ -3,8 +3,9 @@ package ca.uwaterloo.flix.language.debug
 import ca.uwaterloo.flix.language.ast.Kind.Effect
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
-object FormatType { // MATT rename and replace FormatType
+object FormatType {
 
   def format(tpe: Type)(implicit audience: Audience): String = {
 
@@ -185,35 +186,89 @@ object FormatType { // MATT rename and replace FormatType
 
   }
 
+  /**
+    * Returns a human readable representation of the given type difference.
+    */
+  def format(td: TypeDiff, color: String => VirtualString)(implicit audience: Audience): VirtualTerminal = {
+    val vt = new VirtualTerminal()
+
+    def visit(d: TypeDiff): Unit = {
+      val base = d.typeConstructor
+      val args = d.typeArguments
+
+      base match {
+        case TypeDiff.Star(constructor) => constructor match {
+          case TypeDiff.TyCon.Arrow =>
+            intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
+          case TypeDiff.TyCon.Enum(name) =>
+            vt << name
+            intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
+          case TypeDiff.TyCon.Tuple =>
+            intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
+          case TypeDiff.TyCon.Other =>
+            vt << "*"
+            intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
+        }
+        case TypeDiff.Mismatch(tpe1, _) => vt << color(format(tpe1))
+        case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
+      }
+    }
+
+    visit(td)
+
+    vt
+  }
+
+  /**
+    * Helper function to generate text before, in the middle of, and after a list of items.
+    */
+  private def intercalate[A](xs: List[A], f: A => Unit, vt: VirtualTerminal, before: String, separator: String, after: String): Unit = {
+    if (xs.isEmpty) return
+    vt << before
+    var first: Boolean = true
+    for (x <- xs) {
+      if (first) {
+        f(x)
+      } else {
+        vt << separator
+        f(x)
+      }
+      first = false
+    }
+    vt << after
+  }
+
+
+
   // MATT rename if we keep this
-  case class FlatThing(fields: List[(String, Type)], rest: Type) {
+  private case class FlatThing(fields: List[(String, Type)], rest: Type) {
     def ::(head: (String, Type)): FlatThing = {
       copy(fields = head :: fields)
     }
   }
 
-  def flattenRecord(record: Type): FlatThing = record match {
+  private def flattenRecord(record: Type): FlatThing = record match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
       (label, tpe) :: flattenRecord(rest)
     case _ => FlatThing(Nil, record)
   }
 
 
-  def flattenSchema(schema: Type): FlatThing = schema match {
+  private def flattenSchema(schema: Type): FlatThing = schema match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label)), tpe), rest) =>
       (label, tpe) :: flattenSchema(rest)
     case _ => FlatThing(Nil, schema)
   }
 
 
-  def getVarName(index: Int): String = {
+  private def getVarName(index: Int): String = {
     if (index / 26 <= 0)
       (index + 'a').toChar.toString
     else
       (index + 'a').toChar.toString + (index / 26).toString
   }
 
-  def alphaRenameVars(tpe0: Type): Map[Int, String] = {
+  private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
     tpe0.typeVars.toList.sortBy(_.id).zipWithIndex.map {
       case (tvar, index) => tvar.id -> getVarName(index)
     }.toMap
