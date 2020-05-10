@@ -198,7 +198,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Shows the hole context of the given `fqn`.
     */
-  private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal, s: Show[Type]): Unit = fqnOpt match {
+  private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal): Unit = fqnOpt match {
     case None =>
       // Case 1: Print all available holes.
       prettyPrintHoles()

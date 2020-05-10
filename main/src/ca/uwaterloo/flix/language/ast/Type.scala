@@ -373,8 +373,4 @@ object Type {
   def mkSchemaExtend(name: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
   }
-
-  implicit object ShowInstance extends Show[Type] {
-    def show(tpe: Type): String = FormatType.format(tpe)(Audience.External)
-  }
 }
