@@ -546,7 +546,7 @@ object PrettyPrinter {
     def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {
       fmtSym(p.sym, vt)
       vt.text(": ")
-      vt.text(FormatType.format(p.tpe))
+      vt.text(FormatType.formatType(p.tpe))
     }
 
     def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {

@@ -7,22 +7,22 @@ import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
 object FormatType {
 
-  def format(tpe: Type)(implicit audience: Audience): String = {
+  def formatType(tpe: Type)(implicit audience: Audience): String = {
 
     val renameMap = alphaRenameVars(tpe)
 
     def formatWellFormedRecord(record: Type): String = flattenRecord(record) match {
-      case FlatThing(fields, Type.Cst(TypeConstructor.RecordEmpty)) =>
+      case FlatNestable(fields, Type.Cst(TypeConstructor.RecordEmpty)) =>
         fields.map { case (label, tpe) => formatRecordField(label, tpe) }.mkString("{ ", ", ", " }")
-      case FlatThing(fields, rest) =>
+      case FlatNestable(fields, rest) =>
         val fieldString = fields.map { case (label, tpe) => formatRecordField(label, tpe) }.mkString(", ")
         s"{ $fieldString | ${visit(rest)} }"
     }
 
     def formatWellFormedSchema(schema: Type): String = flattenSchema(schema) match {
-      case FlatThing(fields, Type.Cst(TypeConstructor.SchemaEmpty)) =>
+      case FlatNestable(fields, Type.Cst(TypeConstructor.SchemaEmpty)) =>
         fields.map { case (label, tpe) => formatSchemaField(label, tpe) }.mkString("#{ ", ", ", " }")
-      case FlatThing(fields, rest) =>
+      case FlatNestable(fields, rest) =>
         val fieldString = fields.map { case (label, tpe) => formatSchemaField(label, tpe) }.mkString(", ")
         s"#{ $fieldString | ${visit(rest)} }"
     }
@@ -32,11 +32,28 @@ object FormatType {
     }
 
     def formatSchemaField(name: String, tpe: Type): String = {
-      tpe.typeConstructor match {
-        case Type.Cst(TypeConstructor.Unit) => s"$name()"
-        case Type.Cst(TypeConstructor.Tuple(_)) => s"$name${visit(tpe)}"
-        case _ => s"$name(${visit(tpe)})"
+      val typeConstructor = tpe.typeConstructor
+      val fullName = typeConstructor match {
+        case Type.Cst(TypeConstructor.Relation) => name
+        case Type.Cst(TypeConstructor.Lattice) => s"$name<>"
+        case _ => s"$name?"
       }
+      val arg = typeConstructor match {
+        case Type.Cst(TypeConstructor.Relation) | Type.Cst(TypeConstructor.Lattice) =>
+          tpe.typeArguments match {
+            case Nil => "(???)"
+            case arg :: tail => arg.typeConstructor match {
+              case Type.Cst(TypeConstructor.Unit) => formatApply("()", tail)
+              case Type.Cst(TypeConstructor.Tuple(_)) => formatApply(formatType(arg), tail)
+              case _ => formatApply(s"(${formatType(arg)})", tail)
+            }
+          }
+        case Type.Cst(TypeConstructor.Unit) => "()"
+        case Type.Cst(TypeConstructor.Tuple(_)) => formatType(tpe)
+        case _ => s"(${formatType(tpe)})"
+
+      }
+      s"$fullName$arg"
     }
 
     def formatApply(name: String, args: List[Type]): String = {
@@ -95,8 +112,8 @@ object FormatType {
         }
 
         case Type.Cst(TypeConstructor.SchemaExtend(name)) => args.length match {
-          case 0 => s"#{ $name(???) }"
-          case 1 => s"#{ $name(${visit(args.head)}) | ??? }"
+          case 0 => s"#{ $name?(???) }"
+          case 1 => s"#{ ${formatSchemaField(name, args.head)} | ??? }"
           case 2 => formatWellFormedSchema(tpe)
           case _ => formatApply(s"SchemaExtend($name)", args)
         }
@@ -137,37 +154,41 @@ object FormatType {
           case _ => formatApply("∨", args)
         }
 
-        case Type.Arrow(arity, eff) => // MATT need to handle arity < 2
-
-          // Retrieve and result type.
-          val types = args.take(arity).map(visit)
-          val applyParams = args.drop(arity)  // excess args
-          val typeStrings = types.padTo(arity, "???")
-
-
-          // Format the arguments.
-          val argPart = typeStrings.init.mkString(" -> ")
-          // Format the arrow.
-          val arrowPart = eff match {
-            case Type.Cst(TypeConstructor.Impure) => " ~> "
-            case _ => " -> "
-          }
-          // Format the effect.
-          val effPart = eff match {
-            case Type.Cst(TypeConstructor.Pure) => ""
-            case Type.Cst(TypeConstructor.Impure) => ""
-            case _: Type.Var => s" & ${visit(eff)}"
-            case _ => " & (" + visit(eff) + ")"
-          }
-          // Format the result type.
-          val resultPart = typeStrings.last
-
-          // Put everything together.
-          val mainString = argPart + arrowPart + resultPart + effPart // MATT find better var name
-          if (applyParams.isEmpty) {
-            mainString
+        case Type.Arrow(arity, eff) =>
+          if (arity < 2) {
+            formatApply(s"Arrow$arity", args)
           } else {
-            formatApply(s"($mainString)", applyParams)
+
+            // Retrieve and result type.
+            val types = args.take(arity).map(visit)
+            val applyParams = args.drop(arity) // excess args
+            val typeStrings = types.padTo(arity, "???")
+
+
+            // Format the arguments.
+            val argPart = typeStrings.init.mkString(" -> ")
+            // Format the arrow.
+            val arrowPart = eff match {
+              case Type.Cst(TypeConstructor.Impure) => " ~> "
+              case _ => " -> "
+            }
+            // Format the effect.
+            val effPart = eff match {
+              case Type.Cst(TypeConstructor.Pure) => ""
+              case Type.Cst(TypeConstructor.Impure) => ""
+              case _: Type.Var => s" & ${visit(eff)}"
+              case _ => " & (" + visit(eff) + ")"
+            }
+            // Format the result type.
+            val resultPart = typeStrings.last
+
+            // Put everything together.
+            val applyPart = argPart + arrowPart + resultPart + effPart
+            if (applyParams.isEmpty) {
+              applyPart
+            } else {
+              formatApply(s"($applyPart)", applyParams)
+            }
           }
 
         case Type.Lambda(tvar, tpe) => audience match {
@@ -189,7 +210,7 @@ object FormatType {
   /**
     * Returns a human readable representation of the given type difference.
     */
-  def format(td: TypeDiff, color: String => VirtualString)(implicit audience: Audience): VirtualTerminal = {
+  def formatTypeDiff(td: TypeDiff, color: String => VirtualString)(implicit audience: Audience): VirtualTerminal = {
     val vt = new VirtualTerminal()
 
     def visit(d: TypeDiff): Unit = {
@@ -209,7 +230,7 @@ object FormatType {
             vt << "*"
             intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         }
-        case TypeDiff.Mismatch(tpe1, _) => vt << color(format(tpe1))
+        case TypeDiff.Mismatch(tpe1, _) => vt << color(formatType(tpe1))
         case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
       }
     }
@@ -239,28 +260,41 @@ object FormatType {
   }
 
 
-
-  // MATT rename if we keep this
-  private case class FlatThing(fields: List[(String, Type)], rest: Type) {
-    def ::(head: (String, Type)): FlatThing = {
+  /**
+    * A flat representation of a schema or record.
+    */
+  private case class FlatNestable(fields: List[(String, Type)], rest: Type) {
+    def ::(head: (String, Type)): FlatNestable = {
       copy(fields = head :: fields)
     }
   }
 
-  private def flattenRecord(record: Type): FlatThing = record match {
+  /**
+    * Convert a record to a [[FlatNestable]].
+    */
+  private def flattenRecord(record: Type): FlatNestable = record match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
       (label, tpe) :: flattenRecord(rest)
-    case _ => FlatThing(Nil, record)
+    case _ => FlatNestable(Nil, record)
   }
 
-
-  private def flattenSchema(schema: Type): FlatThing = schema match {
+  /**
+    * Convert a schema to a [[FlatNestable]].
+    */
+  private def flattenSchema(schema: Type): FlatNestable = schema match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label)), tpe), rest) =>
       (label, tpe) :: flattenSchema(rest)
-    case _ => FlatThing(Nil, schema)
+    case _ => FlatNestable(Nil, schema)
   }
 
 
+  /**
+    * Get the var name for the given index.
+    * Maps `0-25` to `a-z`,
+    * then `26-51` to `a1-z1`,
+    * then `52-77` to `a2-z2`,
+    * etc.
+    */
   private def getVarName(index: Int): String = {
     if (index / 26 <= 0)
       (index + 'a').toChar.toString
@@ -268,6 +302,9 @@ object FormatType {
       (index + 'a').toChar.toString + (index / 26).toString
   }
 
+  /**
+    * Rename the variables in the given type.
+    */
   private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
     tpe0.typeVars.toList.sortBy(_.id).zipWithIndex.map {
       case (tvar, index) => tvar.id -> getVarName(index)

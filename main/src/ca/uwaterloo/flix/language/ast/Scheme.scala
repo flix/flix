@@ -144,9 +144,9 @@ case class Scheme(quantifiers: List[Type.Var], base: Type) {
     */
   override def toString: String = {
     if (quantifiers.isEmpty)
-      FormatType.format(base)
+      FormatType.formatType(base)
     else
-      s"∀(${quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${FormatType.format(base)}"
+      s"∀(${quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${FormatType.formatType(base)}"
   }
 
 }

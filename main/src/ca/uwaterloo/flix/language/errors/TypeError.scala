@@ -71,12 +71,12 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the types: '" << Red(FormatType.format(baseType1)) << "' and '" << Red(FormatType.format(baseType2)) << "'." << NewLine
+      vt << ">> Unable to unify the types: '" << Red(FormatType.formatType(baseType1)) << "' and '" << Red(FormatType.formatType(baseType2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched types.") << NewLine
       vt << NewLine
-      vt << "Type One: " << FormatType.format(TypeDiff.diff(fullType1, fullType2), Cyan) << NewLine
-      vt << "Type Two: " << FormatType.format(TypeDiff.diff(fullType2, fullType1), Magenta) << NewLine
+      vt << "Type One: " << FormatType.formatTypeDiff(TypeDiff.diff(fullType1, fullType2), Cyan) << NewLine
+      vt << "Type Two: " << FormatType.formatTypeDiff(TypeDiff.diff(fullType2, fullType1), Magenta) << NewLine
     }
   }
 
@@ -92,7 +92,7 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the effects: '" << Red(FormatType.format(eff1)) << "' and '" << Red(FormatType.format(eff2)) << "'." << NewLine
+      vt << ">> Unable to unify the effects: '" << Red(FormatType.formatType(eff1)) << "' and '" << Red(FormatType.formatType(eff2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched effects.") << NewLine
       vt << "Possible fixes:" << NewLine
@@ -117,7 +117,7 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the types: '" << Red(FormatType.format(tpe1)) << "' and '" << Red(FormatType.format(tpe2)) << "'." << NewLine
+      vt << ">> Unable to unify the types: '" << Red(FormatType.formatType(tpe1)) << "' and '" << Red(FormatType.formatType(tpe2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched arity of types.") << NewLine
     }
@@ -137,13 +137,13 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the type variable '" << Red(baseVar.toString) << "' with the type '" << Red(FormatType.format(baseType)) << "'." << NewLine
+      vt << ">> Unable to unify the type variable '" << Red(baseVar.toString) << "' with the type '" << Red(FormatType.formatType(baseType)) << "'." << NewLine
       vt << ">> The type variable occurs recursively within the type." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched types.") << NewLine
       vt << NewLine
-      vt << "Type One: " << FormatType.format(TypeDiff.diff(fullType1, fullType2), Cyan) << NewLine
-      vt << "Type Two: " << FormatType.format(TypeDiff.diff(fullType2, fullType1), Magenta) << NewLine
+      vt << "Type One: " << FormatType.formatTypeDiff(TypeDiff.diff(fullType1, fullType2), Cyan) << NewLine
+      vt << "Type Two: " << FormatType.formatTypeDiff(TypeDiff.diff(fullType2, fullType1), Magenta) << NewLine
     }
   }
 
@@ -160,14 +160,14 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(FormatType.format(fieldType)) << "'." << NewLine
+      vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(FormatType.formatType(fieldType)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing field.") << NewLine
       vt << "The record type: " << Indent << NewLine
       vt << NewLine
-      vt << FormatType.format(recordType) << NewLine
+      vt << FormatType.formatType(recordType) << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the field '" << Red(fieldName) << "' of type " << Cyan(FormatType.format(fieldType)) << "." << NewLine
+      vt << "does not contain the field '" << Red(fieldName) << "' of type " << Cyan(FormatType.formatType(fieldType)) << "." << NewLine
     }
   }
 
@@ -184,14 +184,14 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing predicate '" << Red(predName) << "' of type '" << Cyan(FormatType.format(predType)) << "'." << NewLine
+      vt << ">> Missing predicate '" << Red(predName) << "' of type '" << Cyan(FormatType.formatType(predType)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing predicate.") << NewLine
       vt << "The schema type: " << Indent << NewLine
       vt << NewLine
-      vt << FormatType.format(schemaType) << NewLine
+      vt << FormatType.formatType(schemaType) << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the predicate '" << Red(predName) << "' of type " << Cyan(FormatType.format(predType)) << "." << NewLine
+      vt << "does not contain the predicate '" << Red(predName) << "' of type " << Cyan(FormatType.formatType(predType)) << "." << NewLine
     }
   }
 
@@ -206,7 +206,7 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unexpected non-record type: '" << Red(FormatType.format(tpe)) << "'." << NewLine
+      vt << ">> Unexpected non-record type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unexpected non-record type.") << NewLine
     }
@@ -223,7 +223,7 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unexpected non-schema type: '" << Red(FormatType.format(tpe)) << "'." << NewLine
+      vt << ">> Unexpected non-schema type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unexpected non-schema type.") << NewLine
     }

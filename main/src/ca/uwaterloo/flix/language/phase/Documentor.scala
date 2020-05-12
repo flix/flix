@@ -100,7 +100,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val fparams = getFormalParams(defn0).collect {
       case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
         JField("name", JString(psym.text)),
-        JField("type", JString(FormatType.format(tpe)))
+        JField("type", JString(FormatType.formatType(tpe)))
       )
     }
 
@@ -112,7 +112,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       JField("name", JString(defn0.sym.name)),
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
-      JField("result", JString(FormatType.format(returnType))),
+      JField("result", JString(FormatType.formatType(returnType))),
       JField("comment", JString(defn0.doc.text.trim))
     ))
   }

@@ -225,14 +225,14 @@ class Shell(initialPaths: List[Path], options: Options) {
 
           // Iterate through the premises, i.e. the variable symbols in scope.
           for ((varSym, varType) <- env) {
-            vt << Blue(varSym.text) << ": " << Cyan(FormatType.format(varType)) << " " * 6
+            vt << Blue(varSym.text) << ": " << Cyan(FormatType.formatType(varType)) << " " * 6
           }
 
           // Print the divider.
           vt << NewLine << "-" * 80 << NewLine
 
           // Print the goal.
-          vt << Blue(sym.toString) << ": " << Cyan(FormatType.format(holeType)) << NewLine
+          vt << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(holeType)) << NewLine
 
           // Print the result to the terminal.
           terminal.writer().print(vt.fmt)
@@ -531,12 +531,12 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
     vt << Bold("def ") << Blue(defn.sym.name) << "("
     if (defn.fparams.nonEmpty) {
-      vt << defn.fparams.head.sym.text << ": " << Cyan(FormatType.format(defn.fparams.head.tpe))
+      vt << defn.fparams.head.sym.text << ": " << Cyan(FormatType.formatType(defn.fparams.head.tpe))
       for (fparam <- defn.fparams.tail) {
-        vt << ", " << fparam.sym.text << ": " << Cyan(FormatType.format(fparam.tpe))
+        vt << ", " << fparam.sym.text << ": " << Cyan(FormatType.formatType(fparam.tpe))
       }
     }
-    vt << "): " << Cyan(FormatType.format(defn.inferredScheme.base.typeArguments.last)) << NewLine
+    vt << "): " << Cyan(FormatType.formatType(defn.inferredScheme.base.typeArguments.last)) << NewLine
   }
 
   /**
@@ -552,7 +552,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       vt << Bold("Holes:") << Indent
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
-        vt << NewLine << Blue(sym.toString) << ": " << Cyan(FormatType.format(ctx.tpe))
+        vt << NewLine << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(ctx.tpe))
       }
       vt << Dedent << NewLine
     }

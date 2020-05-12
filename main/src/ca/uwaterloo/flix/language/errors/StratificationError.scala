@@ -38,7 +38,7 @@ case class StratificationError(cycle: List[(String, SourceLocation)], tpe: Type,
     vt << NewLine
     vt << "The type of the expression is:"
     vt << Indent << NewLine << NewLine
-    vt << Cyan(FormatType.format(tpe))
+    vt << Cyan(FormatType.formatType(tpe))
     vt << Dedent << NewLine << NewLine
     vt << "The following predicate symbols are on the negative cycle:" << NewLine
     vt << Indent << NewLine
