@@ -26,7 +26,7 @@ object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty, MultiMap.empty)
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given expression `exp0`.
@@ -34,16 +34,22 @@ object Index {
   def of(exp0: Expression): Index = empty + exp0
 
   /**
-    * Returns an index for a use of the given variable symbol `sym`.
+    * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index(Map.empty, MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index(Map.empty, MultiMap.singleton(sym, loc), MultiMap.empty)
+
+  /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index(Map.empty, MultiMap.empty, MultiMap.singleton(sym, loc))
 }
 
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
 case class Index(m: Map[(Path, Int), List[Expression]],
-                 varSymUses: MultiMap[Symbol.VarSym, SourceLocation]) {
+                 defUses: MultiMap[Symbol.DefnSym, SourceLocation],
+                 varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
   /**
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
@@ -71,9 +77,14 @@ case class Index(m: Map[(Path, Int), List[Expression]],
   }
 
   /**
-    * Returns all uses of the given variable symbol `sym`.
+    * Returns all uses of the given symbol `sym`.
     */
-  def getUses(sym: Symbol.VarSym): Set[SourceLocation] = varSymUses(sym)
+  def usesOf(sym: Symbol.DefnSym): Set[SourceLocation] = defUses(sym)
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
 
   /**
     * Adds the given expression `exp0` to `this` index.
@@ -104,7 +115,7 @@ case class Index(m: Map[(Path, Int), List[Expression]],
         val result = exps1 ::: exps2
         macc + (line -> result)
     }
-    Index(m3, this.varSymUses ++ that.varSymUses)
+    Index(m3, this.defUses ++ that.defUses, this.varUses ++ that.varUses)
   }
 
   /**

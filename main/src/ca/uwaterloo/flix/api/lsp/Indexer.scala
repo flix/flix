@@ -78,8 +78,8 @@ object Indexer {
     case Expression.Var(sym, _, loc) =>
       Index.of(exp0) ++ Index.useOf(sym, loc)
 
-    case Expression.Def(_, _, _) =>
-      Index.of(exp0)
+    case Expression.Def(sym, _, loc) =>
+      Index.of(exp0) ++ Index.useOf(sym, loc)
 
     case Expression.Hole(_, _, _, _) =>
       Index.of(exp0)
