@@ -237,7 +237,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           case Expression.Var(sym, _, _) =>
             val uses = index.getUses(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.VarUsages(locs)
+            Reply.VarUses(locs)
         }
       }
 

@@ -92,12 +92,25 @@ object Reply {
   }
 
   /**
-    * A reply that represents all usages of a variable.
+    * A reply that represents all usages of a definition.
     */
-  case class VarUsages(results: List[Location]) extends Reply {
+  case class DefUses(results: List[Location]) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("success")),
+        JField("entity", JString("def")),
+        JField("results", JArray(results.map(_.toJSON))),
+      )
+  }
+
+  /**
+    * A reply that represents all usages of a variable.
+    */
+  case class VarUses(results: List[Location]) extends Reply {
+    def toJSON: JObject =
+      JObject(
+        JField("status", JString("success")),
+        JField("entity", JString("var")),
         JField("results", JArray(results.map(_.toJSON))),
       )
   }
