@@ -100,9 +100,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Invoked when a client sends a message.
     */
   override def onMessage(ws: WebSocket, data: String): Unit = {
-    // Log the length and size of the received data.
-    log(s"Received ${data.length} characters of input (${data.getBytes.length} bytes).")(ws)
-
     // Parse and process request.
     parseRequest(data)(ws) match {
       case Ok(request) =>

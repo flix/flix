@@ -42,7 +42,8 @@ object Index {
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-case class Index(m: Map[(Path, Int), List[Expression]], varSymUses: MultiMap[Symbol.VarSym, SourceLocation]) {
+case class Index(m: Map[(Path, Int), List[Expression]],
+                 varSymUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
   /**
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
