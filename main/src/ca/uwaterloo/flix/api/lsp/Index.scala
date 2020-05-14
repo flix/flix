@@ -26,7 +26,7 @@ object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty)
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given expression `exp0`.
@@ -36,12 +36,17 @@ object Index {
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index(Map.empty, MultiMap.singleton(sym, loc), MultiMap.empty)
+  def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index(Map.empty, MultiMap.empty, MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
 }
 
 /**
@@ -49,6 +54,7 @@ object Index {
   */
 case class Index(m: Map[(Path, Int), List[Expression]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
+                 enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
   /**
@@ -115,7 +121,7 @@ case class Index(m: Map[(Path, Int), List[Expression]],
         val result = exps1 ::: exps2
         macc + (line -> result)
     }
-    Index(m3, this.defUses ++ that.defUses, this.varUses ++ that.varUses)
+    Index(m3, this.defUses ++ that.defUses, this.enumUses ++ that.enumUses, this.varUses ++ that.varUses)
   }
 
   /**

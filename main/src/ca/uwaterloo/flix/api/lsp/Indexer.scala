@@ -114,8 +114,8 @@ object Indexer {
         case (index, MatchRule(_, guard, exp)) => index ++ visitExp(guard) ++ visitExp(exp)
       }
 
-    case Expression.Tag(_, _, exp, _, _, _) =>
-      visitExp(exp) + exp0
+    case Expression.Tag(sym, tag, exp, _, _, loc) =>
+      visitExp(exp) + exp0 ++ Index.useOf(sym, tag, loc)
 
     case Expression.Tuple(exps, tpe, eff, loc) =>
       visitExps(exps) + exp0
