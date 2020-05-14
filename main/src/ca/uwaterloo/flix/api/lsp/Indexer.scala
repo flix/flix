@@ -75,8 +75,8 @@ object Indexer {
     case Expression.Wild(_, _) =>
       Index.of(exp0)
 
-    case Expression.Var(_, _, _) =>
-      Index.of(exp0)
+    case Expression.Var(sym, _, loc) =>
+      Index.of(exp0) ++ Index.useOf(sym, loc)
 
     case Expression.Def(_, _, _) =>
       Index.of(exp0)

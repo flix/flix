@@ -8,6 +8,11 @@ object MultiMap {
     * Returns the empty multi map.
     */
   def empty[K, V]: MultiMap[K, V] = MultiMap(Map.empty)
+
+  /**
+    * Returns a singleton multi map with a mapping from `k` to `v`.
+    */
+  def singleton[K, V](k: K, v: V): MultiMap[K, V] = empty + (k, v)
 }
 
 /**

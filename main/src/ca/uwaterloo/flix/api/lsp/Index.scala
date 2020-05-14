@@ -19,23 +19,30 @@ import java.nio.file.Path
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty)
+  val empty: Index = Index(Map.empty, MultiMap.empty)
 
   /**
-    * Returns the index of the given expression `exp0`.
+    * Returns an index for the given expression `exp0`.
     */
   def of(exp0: Expression): Index = empty + exp0
+
+  /**
+    * Returns an index for a use of the given variable symbol `sym`.
+    */
+  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index(Map.empty, MultiMap.singleton(sym, loc))
 }
 
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-case class Index(m: Map[(Path, Int), List[Expression]]) {
+case class Index(m: Map[(Path, Int), List[Expression]], varSymUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
   /**
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
@@ -78,7 +85,7 @@ case class Index(m: Map[(Path, Int), List[Expression]]) {
     val newExps = exp0 :: otherExps
 
     // Returns an updated map.
-    Index(m + ((uri, beginLine) -> newExps))
+    copy(m = m + ((uri, beginLine) -> newExps))
   }
 
   /**
@@ -91,7 +98,7 @@ case class Index(m: Map[(Path, Int), List[Expression]]) {
         val result = exps1 ::: exps2
         macc + (line -> result)
     }
-    Index(m3)
+    Index(m3, this.varSymUses ++ that.varSymUses)
   }
 
   /**
