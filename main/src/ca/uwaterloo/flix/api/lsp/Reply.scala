@@ -106,6 +106,18 @@ object Reply {
   /**
     * A reply that represents all usages of a variable.
     */
+  case class EnumUses(results: List[Location]) extends Reply {
+    def toJSON: JObject =
+      JObject(
+        JField("status", JString("success")),
+        JField("entity", JString("enum")),
+        JField("results", JArray(results.map(_.toJSON))),
+      )
+  }
+
+  /**
+    * A reply that represents all usages of a variable.
+    */
   case class VarUses(results: List[Location]) extends Reply {
     def toJSON: JObject =
       JObject(

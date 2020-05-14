@@ -90,6 +90,11 @@ case class Index(m: Map[(Path, Int), List[Expression]],
   /**
     * Returns all uses of the given symbol `sym`.
     */
+  def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
   def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
 
   /**
