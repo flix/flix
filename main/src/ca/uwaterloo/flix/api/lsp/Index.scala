@@ -71,6 +71,11 @@ case class Index(m: Map[(Path, Int), List[Expression]],
   }
 
   /**
+    * Returns all uses of the given variable symbol `sym`.
+    */
+  def getUses(sym: Symbol.VarSym): Set[SourceLocation] = varSymUses(sym)
+
+  /**
     * Adds the given expression `exp0` to `this` index.
     */
   def +(exp0: Expression): Index = {

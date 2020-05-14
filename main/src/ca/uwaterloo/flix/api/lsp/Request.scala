@@ -45,6 +45,11 @@ object Request {
   case class GotoDef(uri: Path, pos: Position) extends Request
 
   /**
+    * A request to find all references of an entity.
+    */
+  case class FindReferences(uri: Path, pos: Position) extends Request
+
+  /**
     * A request to shutdown the language server.
     */
   case object Shutdown extends Request

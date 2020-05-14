@@ -92,6 +92,17 @@ object Reply {
   }
 
   /**
+    * A reply that represents all usages of a variable.
+    */
+  case class VarUsages(results: List[Object]) extends Reply { // TODO
+    def toJSON: JObject =
+      JObject(
+        JField("status", JString("success")),
+        //JField("locationLink", locationLink.toJSON),
+      )
+  }
+
+  /**
     * A reply that represents that the specified entity was not found.
     */
   case class NotFound() extends Reply {

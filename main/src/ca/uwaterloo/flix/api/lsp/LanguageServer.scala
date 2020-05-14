@@ -201,10 +201,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case Some(exp) => Reply.EffAndTypeOf(exp)
       }
 
-    case Request.GotoDef(doc, pos) =>
-      index.query(doc, pos) match {
+    case Request.GotoDef(uri, pos) =>
+      index.query(uri, pos) match {
         case None =>
-          log(s"No entry for: '$doc' at '$pos'.")
+          log(s"No entry for: '$uri,' at '$pos'.")
           Reply.NotFound()
         case Some(exp) => exp match {
           case Expression.Def(sym, _, originLoc) =>
@@ -224,6 +224,20 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             Reply.GotoVar(locationLink)
 
           case _ => Reply.NotFound()
+        }
+      }
+
+    case Request.FindReferences(uri, pos) =>
+      index.query(uri, pos) match {
+        case None =>
+          log(s"No entry for: '$uri,' at '$pos'.")
+          Reply.NotFound()
+
+        case Some(exp) => exp match {
+          case Expression.Var(sym, _, _) =>
+            val uses = index.getUses(sym)
+            // TODO: Reply
+            ???
         }
       }
 
