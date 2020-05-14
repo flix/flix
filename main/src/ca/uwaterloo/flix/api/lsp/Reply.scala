@@ -94,11 +94,11 @@ object Reply {
   /**
     * A reply that represents all usages of a variable.
     */
-  case class VarUsages(results: List[Object]) extends Reply { // TODO
+  case class VarUsages(results: List[Location]) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("success")),
-        //JField("locationLink", locationLink.toJSON),
+        JField("results", JArray(results.map(_.toJSON))),
       )
   }
 
