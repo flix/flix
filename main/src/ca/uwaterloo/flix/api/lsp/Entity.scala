@@ -27,6 +27,11 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
+  case class Pat(e: TypedAst.Pattern) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
+  // TODO: NEEDED?
   case class Enum(e: TypedAst.Enum) extends Entity {
     def loc: SourceLocation = e.loc
   }

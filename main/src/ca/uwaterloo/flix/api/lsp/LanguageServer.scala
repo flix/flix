@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -244,6 +244,18 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val targetSelectionRange = Range.from(caseDecl.loc)
             val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
             Reply.GotoVar(locationLink) // TODO: use different reply?
+
+          case _ => Reply.NotFound()
+        }
+
+        case Some(Entity.Pat(pat)) => pat match { // TODO: add patterns.
+          case Pattern.Var(sym, _, originLoc) =>
+            val originSelectionRange = Range.from(originLoc)
+            val targetUri = sym.loc.source.name
+            val targetRange = Range.from(sym.loc)
+            val targetSelectionRange = Range.from(sym.loc)
+            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+            Reply.GotoVar(locationLink) // TODO: Type
 
           case _ => Reply.NotFound()
         }
