@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import org.json4s.JsonAST.{JField, JInt, JObject, JString}
 
 /**
-  * Represent a `Diagnostic` in LSP.
+  * Represents a `Diagnostic` in LSP.
   */
 case class Diagnostic(range: Range, code: String, message: String) {
   def toJSON: JObject =
