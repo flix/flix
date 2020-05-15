@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import java.nio.file.Path
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -32,6 +32,11 @@ object Index {
     * Returns an index for the given expression `exp0`.
     */
   def of(exp0: Expression): Index = empty + exp0
+
+  /**
+    * Returns an index for the given expression `exp0`.
+    */
+  def of(enum0: Enum): Index = empty + enum0
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -100,17 +105,27 @@ case class Index(m: Map[(Path, Int), List[Entity]],
   /**
     * Adds the given expression `exp0` to `this` index.
     */
-  def +(exp0: Expression): Index = {
+  def +(exp0: Expression): Index = this + Entity.Exp(exp0)
+
+  /**
+    * Adds the given enum `enum0` to `this` index.
+    */
+  def +(enum0: Enum): Index = this + Entity.Enum(enum0)
+
+  /**
+    * Adds the given entity `exp0` to `this` index.
+    */
+  private def +(entity: Entity): Index = {
     // Compute the uri, line, and column of the expression.
-    val uri = Path.of(exp0.loc.source.name)
-    val beginLine = exp0.loc.beginLine
-    val beginCol = exp0.loc.beginCol
+    val uri = Path.of(entity.loc.source.name)
+    val beginLine = entity.loc.beginLine
+    val beginCol = entity.loc.beginCol
 
     // Compute the other expressions already on that uri and line.
     val otherEntities = m.getOrElse((uri, beginLine), Nil)
 
     // Prepend the current expression to the other expressions on that uri and line.
-    val newEntities = Entity.Exp(exp0) :: otherEntities
+    val newEntities = entity :: otherEntities
 
     // Returns an updated map.
     copy(m = m + ((uri, beginLine) -> newEntities))

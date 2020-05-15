@@ -15,8 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
 trait Entity {
   def loc: SourceLocation
@@ -24,8 +23,12 @@ trait Entity {
 
 object Entity {
 
-  case class Exp(exp: Expression) extends Entity {
-    def loc: SourceLocation = exp.loc
+  case class Exp(e: TypedAst.Expression) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
+  case class Enum(e: TypedAst.Enum) extends Entity {
+    def loc: SourceLocation = e.loc
   }
 
 }

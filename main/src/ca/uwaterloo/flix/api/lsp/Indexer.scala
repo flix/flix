@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, MatchRule, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, MatchRule, Predicate, Root, SelectChannelRule}
 
 object Indexer {
 
@@ -31,6 +31,14 @@ object Indexer {
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = visitExp(def0.exp)
+
+
+  /**
+    * Returns a reverse index for the given enum `enum0`.
+    */
+  private def visitDef(enum0: Enum): Index =
+    Index.of(enum0)
+
 
   /**
     * Returns a reverse index for the given expression `exp0`.

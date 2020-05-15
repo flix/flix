@@ -86,6 +86,7 @@ object Reply {
   /**
     * A reply that represents a link to a definition.
     */
+  // TODO: Merge these?
   case class GotoDef(locationLink: LocationLink) extends Reply {
     def toJSON: JObject =
       JObject(
@@ -108,6 +109,7 @@ object Reply {
   /**
     * A reply that represents all usages of a definition.
     */
+  // TODO: Merge these?
   case class DefUses(results: List[Location]) extends Reply {
     def toJSON: JObject =
       JObject(
@@ -120,6 +122,7 @@ object Reply {
   /**
     * A reply that represents all usages of a variable.
     */
+  // TODO: Merge these?
   case class EnumUses(results: List[Location]) extends Reply {
     def toJSON: JObject =
       JObject(
@@ -132,6 +135,7 @@ object Reply {
   /**
     * A reply that represents all usages of a variable.
     */
+  // TODO: Merge these?
   case class VarUses(results: List[Location]) extends Reply {
     def toJSON: JObject =
       JObject(
