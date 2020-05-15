@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -69,6 +69,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * The custom date format to use for logging.
     */
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
+
+  /**
+    * The current AST root. The root is null until the source code is compiled.
+    */
+  var root: Root = _
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
@@ -172,7 +177,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse the reverse index.
-          index = Indexer.visitRoot(root)
+          this.root = root
+          this.index = Indexer.visitRoot(root)
 
           // Compute elapsed time.
           val e = System.nanoTime() - t
@@ -217,7 +223,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val originSelectionRange = Range.from(originLoc)
             val targetUri = sym.loc.source.name
             val targetRange = Range.from(sym.loc)
-            val targetSelectionRange = Range.from(sym.loc)
+            val targetSelectionRange = Range.from(sym.loc) // TODO: Here we should lookup the def...
             val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
             Reply.GotoDef(locationLink)
 
@@ -228,6 +234,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val targetSelectionRange = Range.from(sym.loc)
             val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
             Reply.GotoVar(locationLink)
+
+          case Expression.Tag(sym, tag, _, _, _, originLoc) =>
+            val enumDecl = root.enums(sym)
+            val caseDecl = enumDecl.cases(tag)
+            val originSelectionRange = Range.from(originLoc)
+            val targetUri = sym.loc.source.name
+            val targetRange = Range.from(caseDecl.loc)
+            val targetSelectionRange = Range.from(caseDecl.loc)
+            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+            Reply.GotoVar(locationLink) // TODO: use different reply?
 
           case _ => Reply.NotFound()
         }
