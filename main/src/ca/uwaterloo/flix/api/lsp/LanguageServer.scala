@@ -144,7 +144,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("validate") => Request.parseValidate(json)
       case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
       case JString("goto") => Request.parseGoto(json)
-      case JString("uses") => Request.parseFindUses(json)
+      case JString("uses") => Request.parseUses(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -235,7 +235,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           Reply.NotFound()
       }
 
-    case Request.FindUses(uri, pos) =>
+    case Request.Uses(uri, pos) =>
       index.query(uri, pos) match {
         case Some(Entity.Exp(exp)) => exp match {
           case Expression.Def(sym, _, _) =>

@@ -52,7 +52,7 @@ object Request {
   /**
     * A request to find all uses of an entity.
     */
-  case class FindUses(uri: Path, pos: Position) extends Request
+  case class Uses(uri: Path, pos: Position) extends Request
 
   /**
     * A request to shutdown the language server.
@@ -102,9 +102,9 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[FindUses]] request.
+    * Tries to parse the given `json` value as a [[Uses]] request.
     */
-  def parseFindUses(json: json4s.JValue): Result[Request, String] = {
+  def parseUses(json: json4s.JValue): Result[Request, String] = {
     val docRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
@@ -112,7 +112,7 @@ object Request {
     for {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
-    } yield Request.FindUses(Paths.get(doc).normalize(), pos)
+    } yield Request.Uses(Paths.get(doc).normalize(), pos)
   }
 
 }
