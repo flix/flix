@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import org.json4s.JsonAST.{JArray, JField, JObject, JString}
+import org.json4s.JsonAST.{JArray, JField, JInt, JObject, JString}
 
 /**
   * A common super-type for language server replies.
@@ -29,6 +29,20 @@ trait Reply {
 }
 
 object Reply {
+
+  /**
+    * A reply that represents that the current compiler version.
+    */
+  case class Version(major: Int, minor: Int, patch: Int) extends Reply {
+    def toJSON: JObject = {
+      JObject(
+        JField("status", JString("success")),
+        JField("major", JInt(major)),
+        JField("minor", JInt(minor)),
+        JField("patch", JInt(patch))
+      )
+    }
+  }
 
   /**
     * A reply that represents that compilation was successful.

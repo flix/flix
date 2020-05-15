@@ -30,6 +30,11 @@ sealed trait Request
 object Request {
 
   /**
+    * A request to return the compiler version.
+    */
+  case object Version extends Request
+
+  /**
     * A request to validate the source files in `paths`.
     */
   case class Validate(paths: List[Path]) extends Request
