@@ -45,6 +45,16 @@ object Request {
   case class TypeAndEffectOf(uri: Path, pos: Position) extends Request
 
   /**
+    * A request to get all defs.
+    */
+  case class GetDefs(uri: Path) extends Request
+
+  /**
+    * A request to get all enums.
+    */
+  case class GetEnums(uri: Path) extends Request
+
+  /**
     * A request to go to a declaration.
     */
   case class Goto(uri: Path, pos: Position) extends Request
