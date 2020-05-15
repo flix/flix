@@ -143,8 +143,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("version") => Ok(Request.Version)
       case JString("validate") => Request.parseValidate(json)
       case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
-      case JString("gotoDef") => Request.parseGotoDef(json)
-      case JString("findUses") => Request.parseFindUses(json)
+      case JString("goto") => Request.parseGoto(json)
+      case JString("uses") => Request.parseFindUses(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -217,22 +217,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           Reply.NotFound()
       }
 
-    case Request.GotoDef(uri, pos) =>
+    case Request.Goto(uri, pos) =>
       index.query(uri, pos) match {
         case Some(Entity.Exp(exp)) => exp match {
           case Expression.Def(sym, _, loc) => Reply.Goto(mkGotoDef(sym, loc))
           case Expression.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
-
-          case Expression.Tag(sym, tag, _, _, _, originLoc) =>
-            val enumDecl = root.enums(sym)
-            val caseDecl = enumDecl.cases(tag)
-            val originSelectionRange = Range.from(originLoc)
-            val targetUri = sym.loc.source.name
-            val targetRange = Range.from(caseDecl.loc)
-            val targetSelectionRange = Range.from(caseDecl.loc)
-            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.Goto(locationLink) // TODO: use different reply?
-
+          case Expression.Tag(sym, tag, _, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
           case _ => Reply.NotFound()
         }
 
@@ -289,6 +279,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(sym.loc)
     val targetSelectionRange = Range.from(defDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  private def mkGotoEnum(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): LocationLink = {
+    val enumDecl = root.enums(sym)
+    val caseDecl = enumDecl.cases(tag)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(caseDecl.loc)
+    val targetSelectionRange = Range.from(caseDecl.loc)
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 

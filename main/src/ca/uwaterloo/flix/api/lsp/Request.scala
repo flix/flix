@@ -45,9 +45,9 @@ object Request {
   case class TypeAndEffectOf(uri: Path, pos: Position) extends Request
 
   /**
-    * A request to go to a definition or local variable.
+    * A request to go to a declaration.
     */
-  case class GotoDef(uri: Path, pos: Position) extends Request
+  case class Goto(uri: Path, pos: Position) extends Request
 
   /**
     * A request to find all uses of an entity.
@@ -88,9 +88,9 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[GotoDef]] request.
+    * Tries to parse the given `json` value as a [[Goto]] request.
     */
-  def parseGotoDef(json: json4s.JValue): Result[Request, String] = {
+  def parseGoto(json: json4s.JValue): Result[Request, String] = {
     val docRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
@@ -98,7 +98,7 @@ object Request {
     for {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
-    } yield Request.GotoDef(Paths.get(doc).normalize(), pos)
+    } yield Request.Goto(Paths.get(doc).normalize(), pos)
   }
 
   /**
