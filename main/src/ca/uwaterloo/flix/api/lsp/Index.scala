@@ -36,7 +36,7 @@ object Index {
   /**
     * Returns an index for the given pattern `pat00`.
     */
-  def of(pat0: Pattern): Index = ??? // TODO
+  def of(pat0: Pattern): Index = empty + pat0
 
   /**
     * Returns an index for the given expression `exp0`.
@@ -111,6 +111,11 @@ case class Index(m: Map[(Path, Int), List[Entity]],
     * Adds the given expression `exp0` to `this` index.
     */
   def +(exp0: Expression): Index = this + Entity.Exp(exp0)
+
+  /**
+    * Adds the given pattern `pat0` to `this` index.
+    */
+  def +(pat0: Pattern): Index = this + Entity.Pat(pat0)
 
   /**
     * Adds the given enum `enum0` to `this` index.
