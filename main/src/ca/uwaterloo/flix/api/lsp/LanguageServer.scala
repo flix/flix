@@ -220,15 +220,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.GotoDef(uri, pos) =>
       index.query(uri, pos) match {
         case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Def(sym, _, originLoc) =>
-            val originSelectionRange = Range.from(originLoc)
-            val targetUri = sym.loc.source.name
-            val targetRange = Range.from(sym.loc)
-            val targetSelectionRange = Range.from(sym.loc) // TODO: Here we should lookup the def...
-            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.GotoDef(locationLink)
-
-          case Expression.Var(sym, _, loc) => mkGotoVar(sym, loc)
+          case Expression.Def(sym, _, loc) => Reply.Goto(mkGotoDef(sym, loc))
+          case Expression.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
 
           case Expression.Tag(sym, tag, _, _, _, originLoc) =>
             val enumDecl = root.enums(sym)
@@ -238,16 +231,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val targetRange = Range.from(caseDecl.loc)
             val targetSelectionRange = Range.from(caseDecl.loc)
             val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.GotoVar(locationLink) // TODO: use different reply?
+            Reply.Goto(locationLink) // TODO: use different reply?
 
           case _ => Reply.NotFound()
         }
 
         case Some(Entity.Pat(pat)) => pat match { // TODO: add patterns to indexer.
-          case Pattern.Var(sym, _, loc) => mkGotoVar(sym, loc)
-
-          case Pattern.Tag(sym, tag, pat, tpe, loc) => ??? // TODO
-
+          case Pattern.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
+          case Pattern.Tag(sym, tag, _, _, loc) => ??? // TODO
           case _ => Reply.NotFound()
         }
 
@@ -288,16 +279,28 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       null
   }
 
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  private def mkGotoDef(sym: Symbol.DefnSym, loc: SourceLocation): LocationLink = {
+    val defDecl = root.defs(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(defDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
   /**
     * Returns a reference to the variable symbol `sym`.
     */
-  private def mkGotoVar(sym: Symbol.VarSym, originLoc: SourceLocation): Reply = {
+  private def mkGotoVar(sym: Symbol.VarSym, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(sym.loc)
     val targetSelectionRange = Range.from(sym.loc)
-    val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-    Reply.GotoVar(locationLink) // TODO: Type
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
   /**

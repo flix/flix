@@ -84,21 +84,9 @@ object Reply {
   }
 
   /**
-    * A reply that represents a link to a definition.
+    * A reply that represents a location link.
     */
-  // TODO: Merge these?
-  case class GotoDef(locationLink: LocationLink) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("success")),
-        JField("locationLink", locationLink.toJSON),
-      )
-  }
-
-  /**
-    * A reply that represents a link to a variable.
-    */
-  case class GotoVar(locationLink: LocationLink) extends Reply {
+  case class Goto(locationLink: LocationLink) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("success")),
