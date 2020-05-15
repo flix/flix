@@ -137,6 +137,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("validate") => Request.parseValidate(json)
       case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
       case JString("gotoDef") => Request.parseGotoDef(json)
+      case JString("findUses") => Request.parseFindUses(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -227,7 +228,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         }
       }
 
-    case Request.FindReferences(uri, pos) =>
+    case Request.FindUses(uri, pos) =>
       index.query(uri, pos) match {
         case None =>
           log(s"No entry for: '$uri,' at '$pos'.")
