@@ -15,10 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.TypedAst.FormalParam
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
-
-import scala.annotation.tailrec
 
 object Indexer {
 
@@ -34,13 +34,11 @@ object Indexer {
     */
   private def visitDef(def0: Def): Index = visitExp(def0.exp)
 
-
   /**
     * Returns a reverse index for the given enum `enum0`.
     */
   private def visitDef(enum0: Enum): Index =
-    Index.of(enum0)
-
+    Index.of(enum0) // TODO: visit fparam
 
   /**
     * Returns a reverse index for the given expression `exp0`.
@@ -95,7 +93,7 @@ object Indexer {
       Index.of(exp0)
 
     case Expression.Lambda(_, exp, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) + exp0 // TODO: visit fparam
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -107,7 +105,7 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) + exp0 // TODO: visit tpe
 
     case Expression.LetRec(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -188,16 +186,16 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.Existential(_, exp, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) + exp0 // TODO: visit param
 
     case Expression.Universal(_, exp, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) + exp0 // TODO: visit param
 
     case Expression.Ascribe(exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) + exp0 // TODO: visit tpe
 
     case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) + exp0 // TODO: visit tpe
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) + exp0
@@ -309,6 +307,11 @@ object Indexer {
   }
 
   /**
+    * Returns a reverse index for the given type `tpe0`.
+    */
+  private def visitType(tpe0: Type): Index = ??? // TODO
+
+  /**
     * Returns a reverse index for the given constraint `c0`.
     */
   private def visitConstraint(c0: Constraint): Index = {
@@ -333,5 +336,10 @@ object Indexer {
     case Body.Atom(_, _, _, _, _, _) => Index.empty
     case Body.Guard(exp, _) => visitExp(exp)
   }
+
+  /**
+    * Returns a reverse index for the given formal parameter `fparam0`.
+    */
+  private def visitFormalParam(fparam0: FormalParam): Index = visitType(fparam0.tpe)
 
 }
