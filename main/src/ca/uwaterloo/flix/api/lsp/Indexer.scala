@@ -25,20 +25,31 @@ object Indexer {
   /**
     * Returns a reverse index for the given AST `root`.
     */
-  def visitRoot(root: Root): Index = root.defs.foldLeft(Index.empty) {
-    case (index, (_, def0)) => index ++ visitDef(def0)
+  def visitRoot(root: Root): Index = {
+    val idx1 = root.defs.foldLeft(Index.empty) {
+      case (acc, (_, def0)) => acc ++ visitDef(def0)
+    }
+    val idx2 = root.enums.foldLeft(Index.empty) {
+      case (acc, (_, enum0)) => acc ++ visitEnum(enum0)
+    }
+    idx1 ++ idx2
   }
 
   /**
     * Returns a reverse index for the given definition `def0`.
     */
-  private def visitDef(def0: Def): Index = visitExp(def0.exp)
+  private def visitDef(def0: Def): Index = {
+    val idx1 = visitExp(def0.exp)
+    val idx2 = def0.fparams.foldLeft(Index.empty) {
+      case (acc, fparam) => acc ++ visitFormalParam(fparam)
+    }
+    idx1 ++ idx2
+  }
 
   /**
     * Returns a reverse index for the given enum `enum0`.
     */
-  private def visitDef(enum0: Enum): Index =
-    Index.of(enum0) // TODO: visit fparam
+  private def visitEnum(enum0: Enum): Index = Index.of(enum0)
 
   /**
     * Returns a reverse index for the given expression `exp0`.
@@ -92,8 +103,8 @@ object Indexer {
     case Expression.Hole(_, _, _, _) =>
       Index.of(exp0)
 
-    case Expression.Lambda(_, exp, _, _) =>
-      visitExp(exp) + exp0 // TODO: visit fparam
+    case Expression.Lambda(fparam, exp, _, _) =>
+      visitFormalParam(fparam) ++ visitExp(exp) + exp0
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -105,7 +116,7 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0 // TODO: visit tpe
+      visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.LetRec(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -185,17 +196,17 @@ object Indexer {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
-    case Expression.Existential(_, exp, _) =>
-      visitExp(exp) + exp0 // TODO: visit param
+    case Expression.Existential(fparam, exp, _) =>
+      visitFormalParam(fparam) ++ visitExp(exp) + exp0
 
-    case Expression.Universal(_, exp, _) =>
-      visitExp(exp) + exp0 // TODO: visit param
+    case Expression.Universal(fparam, exp, _) =>
+      visitFormalParam(fparam) ++ visitExp(exp) + exp0
 
-    case Expression.Ascribe(exp, _, _, _) =>
-      visitExp(exp) + exp0 // TODO: visit tpe
+    case Expression.Ascribe(exp, tpe, eff, loc) =>
+      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) + exp0
 
-    case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp) + exp0 // TODO: visit tpe
+    case Expression.Cast(exp, tpe, eff, loc) =>
+      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) + exp0
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) + exp0
