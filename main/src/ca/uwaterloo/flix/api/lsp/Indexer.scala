@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, MatchRule, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+
+import scala.annotation.tailrec
 
 object Indexer {
 
@@ -119,7 +121,7 @@ object Indexer {
     case Expression.Match(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) + exp0
       rules.foldLeft(i0) {
-        case (index, MatchRule(_, guard, exp)) => index ++ visitExp(guard) ++ visitExp(exp)
+        case (index, MatchRule(pat, guard, exp)) => index ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
     case Expression.Tag(sym, tag, exp, _, _, loc) =>
@@ -273,6 +275,38 @@ object Indexer {
     exps0.foldLeft(Index.empty) {
       case (index, exp0) => index ++ visitExp(exp0)
     }
+
+  /**
+    * Returns a reverse index for the given pattern `pat0`.
+    */
+  private def visitPat(pat0: Pattern): Index = pat0 match {
+    case Pattern.Wild(_, _) => Index.of(pat0)
+    case Pattern.Var(sym, _, loc) => Index.of(pat0) ++ Index.useOf(sym, loc)
+    case Pattern.Unit(_) => Index.of(pat0)
+    case Pattern.True(_) => Index.of(pat0)
+    case Pattern.False(_) => Index.of(pat0)
+    case Pattern.Char(_, _) => Index.of(pat0)
+    case Pattern.Float32(_, _) => Index.of(pat0)
+    case Pattern.Float64(_, _) => Index.of(pat0)
+    case Pattern.Int8(_, _) => Index.of(pat0)
+    case Pattern.Int16(_, _) => Index.of(pat0)
+    case Pattern.Int32(_, _) => Index.of(pat0)
+    case Pattern.Int64(_, _) => Index.of(pat0)
+    case Pattern.BigInt(_, _) => Index.of(pat0)
+    case Pattern.Str(_, _) => Index.of(pat0)
+    case Pattern.Tag(sym, tag, pat, _, loc) => Index.useOf(sym, tag, loc) ++ visitPat(pat)
+    case Pattern.Tuple(elms, _, _) => visitPats(elms)
+    case Pattern.Array(elms, _, _) => visitPats(elms)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms)
+  }
+
+  /**
+    * Returns a reverse index for the given patterns `pats0`.
+    */
+  private def visitPats(pats0: List[Pattern]): Index = pats0.foldLeft(Index.empty) {
+    case (acc, pat0) => acc ++ visitPat(pat0)
+  }
 
   /**
     * Returns a reverse index for the given constraint `c0`.

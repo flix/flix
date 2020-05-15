@@ -34,6 +34,11 @@ object Index {
   def of(exp0: Expression): Index = empty + exp0
 
   /**
+    * Returns an index for the given pattern `pat00`.
+    */
+  def of(pat0: Pattern): Index = ??? // TODO
+
+  /**
     * Returns an index for the given expression `exp0`.
     */
   def of(enum0: Enum): Index = empty + enum0

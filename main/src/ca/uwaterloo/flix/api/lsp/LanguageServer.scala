@@ -225,13 +225,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           case Expression.Tag(sym, tag, _, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
           case _ => Reply.NotFound()
         }
-
-        case Some(Entity.Pat(pat)) => pat match { // TODO: add patterns to indexer.
+        case Some(Entity.Pat(pat)) => pat match {
           case Pattern.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
-          case Pattern.Tag(sym, tag, _, _, loc) => ??? // TODO
+          case Pattern.Tag(sym, tag, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
           case _ => Reply.NotFound()
         }
-
         case _ =>
           log(s"No entry for: '$uri,' at '$pos'.")
           Reply.NotFound()
