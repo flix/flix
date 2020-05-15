@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import org.json4s.JsonAST.{JField, JObject, JString}
 
 /**
-  * Represent a `LocationLink` in LSP.
+  * Represents a `LocationLink` in LSP.
   */
 case class LocationLink(originSelectionRange: Range, targetUri: String, targetRange: Range, targetSelectionRange: Range) {
   def toJSON: JObject = {

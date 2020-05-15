@@ -19,23 +19,43 @@ import java.nio.file.Path
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty)
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
-    * Returns the index of the given expression `exp0`.
+    * Returns an index for the given expression `exp0`.
     */
   def of(exp0: Expression): Index = empty + exp0
+
+  /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
 }
 
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-case class Index(m: Map[(Path, Int), List[Expression]]) {
+case class Index(m: Map[(Path, Int), List[Expression]],
+                 defUses: MultiMap[Symbol.DefnSym, SourceLocation],
+                 enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
+                 varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
   /**
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
@@ -63,6 +83,21 @@ case class Index(m: Map[(Path, Int), List[Expression]]) {
   }
 
   /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.DefnSym): Set[SourceLocation] = defUses(sym)
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
+
+  /**
     * Adds the given expression `exp0` to `this` index.
     */
   def +(exp0: Expression): Index = {
@@ -78,7 +113,7 @@ case class Index(m: Map[(Path, Int), List[Expression]]) {
     val newExps = exp0 :: otherExps
 
     // Returns an updated map.
-    Index(m + ((uri, beginLine) -> newExps))
+    copy(m = m + ((uri, beginLine) -> newExps))
   }
 
   /**
@@ -91,7 +126,7 @@ case class Index(m: Map[(Path, Int), List[Expression]]) {
         val result = exps1 ::: exps2
         macc + (line -> result)
     }
-    Index(m3)
+    Index(m3, this.defUses ++ that.defUses, this.enumUses ++ that.enumUses, this.varUses ++ that.varUses)
   }
 
   /**

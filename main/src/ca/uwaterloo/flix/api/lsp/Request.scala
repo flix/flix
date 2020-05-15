@@ -45,6 +45,11 @@ object Request {
   case class GotoDef(uri: Path, pos: Position) extends Request
 
   /**
+    * A request to find all uses of an entity.
+    */
+  case class FindUses(uri: Path, pos: Position) extends Request
+
+  /**
     * A request to shutdown the language server.
     */
   case object Shutdown extends Request
@@ -89,6 +94,20 @@ object Request {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
     } yield Request.GotoDef(Paths.get(doc).normalize(), pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[FindUses]] request.
+    */
+  def parseFindUses(json: json4s.JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      doc <- docRes
+      pos <- Position.parse(json \\ "position")
+    } yield Request.FindUses(Paths.get(doc).normalize(), pos)
   }
 
 }
