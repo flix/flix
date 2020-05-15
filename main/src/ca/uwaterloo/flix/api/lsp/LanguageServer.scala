@@ -204,18 +204,15 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.TypeAndEffectOf(doc, pos) =>
       index.query(doc, pos) match {
-        case None =>
+        case Some(Entity.Exp(exp)) => Reply.EffAndTypeOf(exp)
+        case _ =>
           log(s"No entry for: '$doc' at '$pos'.")
           Reply.NotFound()
-        case Some(exp) => Reply.EffAndTypeOf(exp)
       }
 
     case Request.GotoDef(uri, pos) =>
       index.query(uri, pos) match {
-        case None =>
-          log(s"No entry for: '$uri,' at '$pos'.")
-          Reply.NotFound()
-        case Some(exp) => exp match {
+        case Some(Entity.Exp(exp)) => exp match {
           case Expression.Def(sym, _, originLoc) =>
             val originSelectionRange = Range.from(originLoc)
             val targetUri = sym.loc.source.name
@@ -234,15 +231,15 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
           case _ => Reply.NotFound()
         }
+
+        case _ =>
+          log(s"No entry for: '$uri,' at '$pos'.")
+          Reply.NotFound()
       }
 
     case Request.FindUses(uri, pos) =>
       index.query(uri, pos) match {
-        case None =>
-          log(s"No entry for: '$uri,' at '$pos'.")
-          Reply.NotFound()
-
-        case Some(exp) => exp match {
+        case Some(Entity.Exp(exp)) => exp match {
           case Expression.Def(sym, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
@@ -260,6 +257,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
           case _ => Reply.NotFound()
         }
+
+        case _ =>
+          log(s"No entry for: '$uri,' at '$pos'.")
+          Reply.NotFound()
       }
 
     case Request.Shutdown =>

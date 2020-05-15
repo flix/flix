@@ -52,7 +52,7 @@ object Index {
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-case class Index(m: Map[(Path, Int), List[Expression]],
+case class Index(m: Map[(Path, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
@@ -61,7 +61,7 @@ case class Index(m: Map[(Path, Int), List[Expression]],
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
     */
   // TODO: Add support for multi-line expressions.
-  def query(uri: Path, pos: Position): Option[Expression] = {
+  def query(uri: Path, pos: Position): Option[Entity] = {
     // A key consists of a uri and a line number.
     val key = (uri, pos.line)
     m.get(key).flatMap {
@@ -107,13 +107,13 @@ case class Index(m: Map[(Path, Int), List[Expression]],
     val beginCol = exp0.loc.beginCol
 
     // Compute the other expressions already on that uri and line.
-    val otherExps = m.getOrElse((uri, beginLine), Nil)
+    val otherEntities = m.getOrElse((uri, beginLine), Nil)
 
     // Prepend the current expression to the other expressions on that uri and line.
-    val newExps = exp0 :: otherExps
+    val newEntities = Entity.Exp(exp0) :: otherEntities
 
     // Returns an updated map.
-    copy(m = m + ((uri, beginLine) -> newExps))
+    copy(m = m + ((uri, beginLine) -> newEntities))
   }
 
   /**
