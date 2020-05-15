@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
@@ -227,13 +228,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
             Reply.GotoDef(locationLink)
 
-          case Expression.Var(sym, _, originLoc) =>
-            val originSelectionRange = Range.from(originLoc)
-            val targetUri = sym.loc.source.name
-            val targetRange = Range.from(sym.loc)
-            val targetSelectionRange = Range.from(sym.loc)
-            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.GotoVar(locationLink)
+          case Expression.Var(sym, _, loc) => mkGotoVar(sym, loc)
 
           case Expression.Tag(sym, tag, _, _, _, originLoc) =>
             val enumDecl = root.enums(sym)
@@ -248,14 +243,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           case _ => Reply.NotFound()
         }
 
-        case Some(Entity.Pat(pat)) => pat match { // TODO: add patterns.
-          case Pattern.Var(sym, _, originLoc) =>
-            val originSelectionRange = Range.from(originLoc)
-            val targetUri = sym.loc.source.name
-            val targetRange = Range.from(sym.loc)
-            val targetSelectionRange = Range.from(sym.loc)
-            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.GotoVar(locationLink) // TODO: Type
+        case Some(Entity.Pat(pat)) => pat match { // TODO: add patterns to indexer.
+          case Pattern.Var(sym, _, loc) => mkGotoVar(sym, loc)
+
+          case Pattern.Tag(sym, tag, pat, tpe, loc) => ??? // TODO
 
           case _ => Reply.NotFound()
         }
@@ -295,6 +286,18 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       ws.close(1000, "Shutting down...")
       System.exit(0)
       null
+  }
+
+  /**
+    * Returns a reference to the variable symbol `sym`.
+    */
+  private def mkGotoVar(sym: Symbol.VarSym, originLoc: SourceLocation): Reply = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+    Reply.GotoVar(locationLink) // TODO: Type
   }
 
   /**
