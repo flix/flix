@@ -51,7 +51,7 @@ object Index {
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.EnumSym, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`

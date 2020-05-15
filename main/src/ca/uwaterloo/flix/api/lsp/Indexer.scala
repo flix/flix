@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.TypedAst.FormalParam
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
@@ -122,8 +122,8 @@ object Indexer {
         case (index, MatchRule(pat, guard, exp)) => index ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
-    case Expression.Tag(sym, tag, exp, _, _, loc) =>
-      visitExp(exp) + exp0 ++ Index.useOf(sym, tag, loc)
+    case Expression.Tag(sym, _, exp, _, _, loc) =>
+      visitExp(exp) + exp0 ++ Index.useOf(sym, loc)
 
     case Expression.Tuple(exps, tpe, eff, loc) =>
       visitExps(exps) + exp0
@@ -292,7 +292,7 @@ object Indexer {
     case Pattern.Int64(_, _) => Index.of(pat0)
     case Pattern.BigInt(_, _) => Index.of(pat0)
     case Pattern.Str(_, _) => Index.of(pat0)
-    case Pattern.Tag(sym, tag, pat, _, loc) => Index.useOf(sym, tag, loc) ++ visitPat(pat)
+    case Pattern.Tag(sym, tag, pat, _, loc) => Index.useOf(sym, loc) ++ visitPat(pat)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Array(elms, _, _) => visitPats(elms)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
@@ -307,9 +307,20 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given type `tpe0`.
+    * Returns a reverse index for the given type `tpe0` at the given source location `loc`.
     */
-  private def visitType(tpe0: Type): Index = ??? // TODO
+  private def visitType(tpe0: Type, loc: SourceLocation): Index = tpe0 match {
+    case Type.Var(_, _, _) => Index.empty
+    case Type.Cst(tc) => tc match {
+      case TypeConstructor.Enum(sym, _) => Index.useOf(sym, loc)
+      case _ => Index.empty
+    }
+    case Type.Arrow(_, eff) => visitType(eff, loc)
+    case Type.Zero => Index.empty
+    case Type.Succ(_, tpe) => visitType(tpe, loc)
+    case Type.Lambda(_, tpe) => visitType(tpe, loc)
+    case Type.Apply(tpe1, tpe2) => visitType(tpe1, loc) ++ visitType(tpe2, loc)
+  }
 
   /**
     * Returns a reverse index for the given constraint `c0`.
@@ -340,6 +351,6 @@ object Indexer {
   /**
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
-  private def visitFormalParam(fparam0: FormalParam): Index = visitType(fparam0.tpe)
+  private def visitFormalParam(fparam0: FormalParam): Index = visitType(fparam0.tpe, fparam0.loc)
 
 }
