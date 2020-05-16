@@ -217,6 +217,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           Reply.NotFound()
       }
 
+    case Request.GetDefs(uri) => ??? // TODO
+
+    case Request.GetEnums(uri) => ??? // TODO
+
     case Request.Goto(uri, pos) =>
       index.query(uri, pos) match {
         case Some(Entity.Exp(exp)) => exp match {
