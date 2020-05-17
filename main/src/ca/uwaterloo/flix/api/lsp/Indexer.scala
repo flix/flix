@@ -15,22 +15,41 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.FormalParam
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, MatchRule, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
 
 object Indexer {
 
   /**
     * Returns a reverse index for the given AST `root`.
     */
-  def visitRoot(root: Root): Index = root.defs.foldLeft(Index.empty) {
-    case (index, (_, def0)) => index ++ visitDef(def0)
+  def visitRoot(root: Root): Index = {
+    val idx1 = root.defs.foldLeft(Index.empty) {
+      case (acc, (_, def0)) => acc ++ visitDef(def0)
+    }
+    val idx2 = root.enums.foldLeft(Index.empty) {
+      case (acc, (_, enum0)) => acc ++ visitEnum(enum0)
+    }
+    idx1 ++ idx2
   }
 
   /**
     * Returns a reverse index for the given definition `def0`.
     */
-  private def visitDef(def0: Def): Index = visitExp(def0.exp)
+  private def visitDef(def0: Def): Index = {
+    val idx1 = visitExp(def0.exp)
+    val idx2 = def0.fparams.foldLeft(Index.empty) {
+      case (acc, fparam) => acc ++ visitFormalParam(fparam)
+    }
+    idx1 ++ idx2
+  }
+
+  /**
+    * Returns a reverse index for the given enum `enum0`.
+    */
+  private def visitEnum(enum0: Enum): Index = Index.of(enum0)
 
   /**
     * Returns a reverse index for the given expression `exp0`.
@@ -84,8 +103,8 @@ object Indexer {
     case Expression.Hole(_, _, _, _) =>
       Index.of(exp0)
 
-    case Expression.Lambda(_, exp, _, _) =>
-      visitExp(exp) + exp0
+    case Expression.Lambda(fparam, exp, _, _) =>
+      visitFormalParam(fparam) ++ visitExp(exp) + exp0
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -111,11 +130,11 @@ object Indexer {
     case Expression.Match(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) + exp0
       rules.foldLeft(i0) {
-        case (index, MatchRule(_, guard, exp)) => index ++ visitExp(guard) ++ visitExp(exp)
+        case (index, MatchRule(pat, guard, exp)) => index ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
-    case Expression.Tag(sym, tag, exp, _, _, loc) =>
-      visitExp(exp) + exp0 ++ Index.useOf(sym, tag, loc)
+    case Expression.Tag(sym, _, exp, _, _, loc) =>
+      visitExp(exp) + exp0 ++ Index.useOf(sym, loc)
 
     case Expression.Tuple(exps, tpe, eff, loc) =>
       visitExps(exps) + exp0
@@ -177,17 +196,17 @@ object Indexer {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
-    case Expression.Existential(_, exp, _) =>
-      visitExp(exp) + exp0
+    case Expression.Existential(fparam, exp, _) =>
+      visitFormalParam(fparam) ++ visitExp(exp) + exp0
 
-    case Expression.Universal(_, exp, _) =>
-      visitExp(exp) + exp0
+    case Expression.Universal(fparam, exp, _) =>
+      visitFormalParam(fparam) ++ visitExp(exp) + exp0
 
-    case Expression.Ascribe(exp, _, _, _) =>
-      visitExp(exp) + exp0
+    case Expression.Ascribe(exp, tpe, eff, loc) =>
+      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) + exp0
 
-    case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp) + exp0
+    case Expression.Cast(exp, tpe, eff, loc) =>
+      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) + exp0
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) + exp0
@@ -267,6 +286,54 @@ object Indexer {
     }
 
   /**
+    * Returns a reverse index for the given pattern `pat0`.
+    */
+  private def visitPat(pat0: Pattern): Index = pat0 match {
+    case Pattern.Wild(_, _) => Index.of(pat0)
+    case Pattern.Var(sym, _, loc) => Index.of(pat0) ++ Index.useOf(sym, loc)
+    case Pattern.Unit(_) => Index.of(pat0)
+    case Pattern.True(_) => Index.of(pat0)
+    case Pattern.False(_) => Index.of(pat0)
+    case Pattern.Char(_, _) => Index.of(pat0)
+    case Pattern.Float32(_, _) => Index.of(pat0)
+    case Pattern.Float64(_, _) => Index.of(pat0)
+    case Pattern.Int8(_, _) => Index.of(pat0)
+    case Pattern.Int16(_, _) => Index.of(pat0)
+    case Pattern.Int32(_, _) => Index.of(pat0)
+    case Pattern.Int64(_, _) => Index.of(pat0)
+    case Pattern.BigInt(_, _) => Index.of(pat0)
+    case Pattern.Str(_, _) => Index.of(pat0)
+    case Pattern.Tag(sym, tag, pat, _, loc) => Index.useOf(sym, loc) ++ visitPat(pat)
+    case Pattern.Tuple(elms, _, _) => visitPats(elms)
+    case Pattern.Array(elms, _, _) => visitPats(elms)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms)
+  }
+
+  /**
+    * Returns a reverse index for the given patterns `pats0`.
+    */
+  private def visitPats(pats0: List[Pattern]): Index = pats0.foldLeft(Index.empty) {
+    case (acc, pat0) => acc ++ visitPat(pat0)
+  }
+
+  /**
+    * Returns a reverse index for the given type `tpe0` at the given source location `loc`.
+    */
+  private def visitType(tpe0: Type, loc: SourceLocation): Index = tpe0 match {
+    case Type.Var(_, _, _) => Index.empty
+    case Type.Cst(tc) => tc match {
+      case TypeConstructor.Enum(sym, _) => Index.useOf(sym, loc)
+      case _ => Index.empty
+    }
+    case Type.Arrow(_, eff) => visitType(eff, loc)
+    case Type.Zero => Index.empty
+    case Type.Succ(_, tpe) => visitType(tpe, loc)
+    case Type.Lambda(_, tpe) => visitType(tpe, loc)
+    case Type.Apply(tpe1, tpe2) => visitType(tpe1, loc) ++ visitType(tpe2, loc)
+  }
+
+  /**
     * Returns a reverse index for the given constraint `c0`.
     */
   private def visitConstraint(c0: Constraint): Index = {
@@ -291,5 +358,10 @@ object Indexer {
     case Body.Atom(_, _, _, _, _, _) => Index.empty
     case Body.Guard(exp, _) => visitExp(exp)
   }
+
+  /**
+    * Returns a reverse index for the given formal parameter `fparam0`.
+    */
+  private def visitFormalParam(fparam0: FormalParam): Index = visitType(fparam0.tpe, fparam0.loc)
 
 }

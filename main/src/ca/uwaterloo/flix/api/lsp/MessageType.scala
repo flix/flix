@@ -15,17 +15,38 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
-
 /**
-  * Represents a `Diagnostic` in LSP.
+  * Represents a `MessageType` in LSP.
   */
-case class Diagnostic(range: Range, code: String, message: String) {
-  def toJSON: JObject =
-    JObject(
-      JField("range", range.toJSON),
-      JField("severity", JInt(1)),
-      JField("code", JString(code)),
-      JField("message", JString(message)),
-    )
+sealed trait MessageType {
+  def toInt: Int = this match {
+    case MessageType.Error => 1
+    case MessageType.Warning => 2
+    case MessageType.Info => 3
+    case MessageType.Log => 4
+  }
+}
+
+object MessageType {
+
+  /**
+    * An error message.
+    */
+  case object Error extends MessageType
+
+  /**
+    * A warning message.
+    */
+  case object Warning extends MessageType
+
+  /**
+    * An information message.
+    */
+  case object Info extends MessageType
+
+  /**
+    * A log message.
+    */
+  case object Log extends MessageType
+
 }

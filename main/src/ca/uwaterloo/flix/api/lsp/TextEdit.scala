@@ -15,17 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
+import org.json4s.JsonAST.{JField, JObject, JString}
 
 /**
-  * Represents a `Diagnostic` in LSP.
+  * Represents a `TextEdit` in LSP.
   */
-case class Diagnostic(range: Range, code: String, message: String) {
-  def toJSON: JObject =
+case class TextEdit(range: Range, newText: String) {
+  def toJSON: JObject = {
     JObject(
       JField("range", range.toJSON),
-      JField("severity", JInt(1)),
-      JField("code", JString(code)),
-      JField("message", JString(message)),
+      JField("newText", JString(newText)),
     )
+  }
 }

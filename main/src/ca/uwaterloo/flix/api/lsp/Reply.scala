@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import org.json4s.JsonAST.{JArray, JField, JObject, JString}
+import org.json4s.JsonAST.{JArray, JField, JInt, JObject, JString}
 
 /**
   * A common super-type for language server replies.
@@ -29,6 +29,20 @@ trait Reply {
 }
 
 object Reply {
+
+  /**
+    * A reply that represents that the current compiler version.
+    */
+  case class Version(major: Int, minor: Int, patch: Int) extends Reply {
+    def toJSON: JObject = {
+      JObject(
+        JField("status", JString("success")),
+        JField("major", JInt(major)),
+        JField("minor", JInt(minor)),
+        JField("patch", JInt(patch))
+      )
+    }
+  }
 
   /**
     * A reply that represents that compilation was successful.
@@ -70,20 +84,9 @@ object Reply {
   }
 
   /**
-    * A reply that represents a link to a definition.
+    * A reply that represents a location link.
     */
-  case class GotoDef(locationLink: LocationLink) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("success")),
-        JField("locationLink", locationLink.toJSON),
-      )
-  }
-
-  /**
-    * A reply that represents a link to a variable.
-    */
-  case class GotoVar(locationLink: LocationLink) extends Reply {
+  case class Goto(locationLink: LocationLink) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("success")),
@@ -94,35 +97,10 @@ object Reply {
   /**
     * A reply that represents all usages of a definition.
     */
-  case class DefUses(results: List[Location]) extends Reply {
+  case class Uses(results: List[Location]) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("success")),
-        JField("entity", JString("def")),
-        JField("results", JArray(results.map(_.toJSON))),
-      )
-  }
-
-  /**
-    * A reply that represents all usages of a variable.
-    */
-  case class EnumUses(results: List[Location]) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("success")),
-        JField("entity", JString("enum")),
-        JField("results", JArray(results.map(_.toJSON))),
-      )
-  }
-
-  /**
-    * A reply that represents all usages of a variable.
-    */
-  case class VarUses(results: List[Location]) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("success")),
-        JField("entity", JString("var")),
         JField("results", JArray(results.map(_.toJSON))),
       )
   }

@@ -15,17 +15,24 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
-/**
-  * Represents a `Diagnostic` in LSP.
-  */
-case class Diagnostic(range: Range, code: String, message: String) {
-  def toJSON: JObject =
-    JObject(
-      JField("range", range.toJSON),
-      JField("severity", JInt(1)),
-      JField("code", JString(code)),
-      JField("message", JString(message)),
-    )
+trait Entity {
+  def loc: SourceLocation
+}
+
+object Entity {
+
+  case class Exp(e: TypedAst.Expression) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
+  case class Pat(e: TypedAst.Pattern) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
+  case class Enum(e: TypedAst.Enum) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
 }

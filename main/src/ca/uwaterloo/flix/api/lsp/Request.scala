@@ -30,6 +30,11 @@ sealed trait Request
 object Request {
 
   /**
+    * A request to return the compiler version.
+    */
+  case object Version extends Request
+
+  /**
     * A request to validate the source files in `paths`.
     */
   case class Validate(paths: List[Path]) extends Request
@@ -40,14 +45,24 @@ object Request {
   case class TypeAndEffectOf(uri: Path, pos: Position) extends Request
 
   /**
-    * A request to go to a definition or local variable.
+    * A request to get all defs.
     */
-  case class GotoDef(uri: Path, pos: Position) extends Request
+  case class GetDefs(uri: Path) extends Request
+
+  /**
+    * A request to get all enums.
+    */
+  case class GetEnums(uri: Path) extends Request
+
+  /**
+    * A request to go to a declaration.
+    */
+  case class Goto(uri: Path, pos: Position) extends Request
 
   /**
     * A request to find all uses of an entity.
     */
-  case class FindUses(uri: Path, pos: Position) extends Request
+  case class Uses(uri: Path, pos: Position) extends Request
 
   /**
     * A request to shutdown the language server.
@@ -83,9 +98,9 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[GotoDef]] request.
+    * Tries to parse the given `json` value as a [[Goto]] request.
     */
-  def parseGotoDef(json: json4s.JValue): Result[Request, String] = {
+  def parseGoto(json: json4s.JValue): Result[Request, String] = {
     val docRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
@@ -93,13 +108,13 @@ object Request {
     for {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
-    } yield Request.GotoDef(Paths.get(doc).normalize(), pos)
+    } yield Request.Goto(Paths.get(doc).normalize(), pos)
   }
 
   /**
-    * Tries to parse the given `json` value as a [[FindUses]] request.
+    * Tries to parse the given `json` value as a [[Uses]] request.
     */
-  def parseFindUses(json: json4s.JValue): Result[Request, String] = {
+  def parseUses(json: json4s.JValue): Result[Request, String] = {
     val docRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
@@ -107,7 +122,7 @@ object Request {
     for {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
-    } yield Request.FindUses(Paths.get(doc).normalize(), pos)
+    } yield Request.Uses(Paths.get(doc).normalize(), pos)
   }
 
 }

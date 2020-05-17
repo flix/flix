@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import java.nio.file.Path
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -34,6 +34,16 @@ object Index {
   def of(exp0: Expression): Index = empty + exp0
 
   /**
+    * Returns an index for the given pattern `pat00`.
+    */
+  def of(pat0: Pattern): Index = empty + pat0
+
+  /**
+    * Returns an index for the given expression `exp0`.
+    */
+  def of(enum0: Enum): Index = empty + enum0
+
+  /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
   def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
@@ -41,7 +51,7 @@ object Index {
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.EnumSym, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -52,7 +62,7 @@ object Index {
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-case class Index(m: Map[(Path, Int), List[Expression]],
+case class Index(m: Map[(Path, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
@@ -61,7 +71,7 @@ case class Index(m: Map[(Path, Int), List[Expression]],
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
     */
   // TODO: Add support for multi-line expressions.
-  def query(uri: Path, pos: Position): Option[Expression] = {
+  def query(uri: Path, pos: Position): Option[Entity] = {
     // A key consists of a uri and a line number.
     val key = (uri, pos.line)
     m.get(key).flatMap {
@@ -100,20 +110,35 @@ case class Index(m: Map[(Path, Int), List[Expression]],
   /**
     * Adds the given expression `exp0` to `this` index.
     */
-  def +(exp0: Expression): Index = {
+  def +(exp0: Expression): Index = this + Entity.Exp(exp0)
+
+  /**
+    * Adds the given pattern `pat0` to `this` index.
+    */
+  def +(pat0: Pattern): Index = this + Entity.Pat(pat0)
+
+  /**
+    * Adds the given enum `enum0` to `this` index.
+    */
+  def +(enum0: Enum): Index = this + Entity.Enum(enum0)
+
+  /**
+    * Adds the given entity `exp0` to `this` index.
+    */
+  private def +(entity: Entity): Index = {
     // Compute the uri, line, and column of the expression.
-    val uri = Path.of(exp0.loc.source.name)
-    val beginLine = exp0.loc.beginLine
-    val beginCol = exp0.loc.beginCol
+    val uri = Path.of(entity.loc.source.name)
+    val beginLine = entity.loc.beginLine
+    val beginCol = entity.loc.beginCol
 
     // Compute the other expressions already on that uri and line.
-    val otherExps = m.getOrElse((uri, beginLine), Nil)
+    val otherEntities = m.getOrElse((uri, beginLine), Nil)
 
     // Prepend the current expression to the other expressions on that uri and line.
-    val newExps = exp0 :: otherExps
+    val newEntities = entity :: otherEntities
 
     // Returns an updated map.
-    copy(m = m + ((uri, beginLine) -> newExps))
+    copy(m = m + ((uri, beginLine) -> newEntities))
   }
 
   /**

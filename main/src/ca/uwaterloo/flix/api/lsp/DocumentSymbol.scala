@@ -15,17 +15,18 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
+import org.json4s.JsonAST.{JArray, JField, JObject, JString}
 
 /**
-  * Represents a `Diagnostic` in LSP.
+  * Represents a `DocumentSymbol` in LSP.
   */
-case class Diagnostic(range: Range, code: String, message: String) {
-  def toJSON: JObject =
+case class DocumentSymbol(name: String, kind: SymbolKind, range: Range, selectionRange: Range, children: List[DocumentSymbol]) {
+  def toJSON: JObject = {
     JObject(
+      JField("name", JString(name)),
       JField("range", range.toJSON),
-      JField("severity", JInt(1)),
-      JField("code", JString(code)),
-      JField("message", JString(message)),
+      JField("selectionRange", selectionRange.toJSON),
+      JField("children", JArray(children.map(_.toJSON)))
     )
+  }
 }

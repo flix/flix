@@ -20,7 +20,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -69,6 +70,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * The custom date format to use for logging.
     */
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
+
+  /**
+    * The current AST root. The root is null until the source code is compiled.
+    */
+  var root: Root = _
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
@@ -134,10 +140,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Determine the type of request.
     json \\ "request" match {
+      case JString("version") => Ok(Request.Version)
       case JString("validate") => Request.parseValidate(json)
       case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
-      case JString("gotoDef") => Request.parseGotoDef(json)
-      case JString("findUses") => Request.parseFindUses(json)
+      case JString("goto") => Request.parseGoto(json)
+      case JString("uses") => Request.parseUses(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -149,6 +156,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Process the request.
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): Reply = request match {
+
+    case Request.Version =>
+      val major = Version.CurrentVersion.major
+      val minor = Version.CurrentVersion.minor
+      val revision = Version.CurrentVersion.revision
+      Reply.Version(major, minor, revision)
+
     case Request.Validate(paths) =>
       // Configure the Flix compiler.
       val flix = new Flix()
@@ -164,7 +178,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse the reverse index.
-          index = Indexer.visitRoot(root)
+          this.root = root
+          this.index = Indexer.visitRoot(root)
 
           // Compute elapsed time.
           val e = System.nanoTime() - t
@@ -196,68 +211,101 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.TypeAndEffectOf(doc, pos) =>
       index.query(doc, pos) match {
-        case None =>
+        case Some(Entity.Exp(exp)) => Reply.EffAndTypeOf(exp)
+        case _ =>
           log(s"No entry for: '$doc' at '$pos'.")
           Reply.NotFound()
-        case Some(exp) => Reply.EffAndTypeOf(exp)
       }
 
-    case Request.GotoDef(uri, pos) =>
+    case Request.GetDefs(uri) => ??? // TODO
+
+    case Request.GetEnums(uri) => ??? // TODO
+
+    case Request.Goto(uri, pos) =>
       index.query(uri, pos) match {
-        case None =>
-          log(s"No entry for: '$uri,' at '$pos'.")
-          Reply.NotFound()
-        case Some(exp) => exp match {
-          case Expression.Def(sym, _, originLoc) =>
-            val originSelectionRange = Range.from(originLoc)
-            val targetUri = sym.loc.source.name
-            val targetRange = Range.from(sym.loc)
-            val targetSelectionRange = Range.from(sym.loc)
-            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.GotoDef(locationLink)
-
-          case Expression.Var(sym, _, originLoc) =>
-            val originSelectionRange = Range.from(originLoc)
-            val targetUri = sym.loc.source.name
-            val targetRange = Range.from(sym.loc)
-            val targetSelectionRange = Range.from(sym.loc)
-            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.GotoVar(locationLink)
-
+        case Some(Entity.Exp(exp)) => exp match {
+          case Expression.Def(sym, _, loc) => Reply.Goto(mkGotoDef(sym, loc))
+          case Expression.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
+          case Expression.Tag(sym, tag, _, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
           case _ => Reply.NotFound()
         }
-      }
-
-    case Request.FindUses(uri, pos) =>
-      index.query(uri, pos) match {
-        case None =>
+        case Some(Entity.Pat(pat)) => pat match {
+          case Pattern.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
+          case Pattern.Tag(sym, tag, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
+          case _ => Reply.NotFound()
+        }
+        case _ =>
           log(s"No entry for: '$uri,' at '$pos'.")
           Reply.NotFound()
+      }
 
-        case Some(exp) => exp match {
+    case Request.Uses(uri, pos) =>
+      index.query(uri, pos) match {
+        case Some(Entity.Exp(exp)) => exp match {
           case Expression.Def(sym, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.DefUses(locs)
+            Reply.Uses(locs)
 
           case Expression.Var(sym, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.VarUses(locs)
+            Reply.Uses(locs)
 
           case Expression.Tag(sym, _, _, _, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.EnumUses(locs)
+            Reply.Uses(locs)
 
           case _ => Reply.NotFound()
         }
+
+        case _ =>
+          log(s"No entry for: '$uri,' at '$pos'.")
+          Reply.NotFound()
       }
 
     case Request.Shutdown =>
       ws.close(1000, "Shutting down...")
       System.exit(0)
       null
+  }
+
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  private def mkGotoDef(sym: Symbol.DefnSym, loc: SourceLocation): LocationLink = {
+    val defDecl = root.defs(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(defDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  private def mkGotoEnum(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): LocationLink = {
+    val enumDecl = root.enums(sym)
+    val caseDecl = enumDecl.cases(tag)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(caseDecl.loc)
+    val targetSelectionRange = Range.from(caseDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a reference to the variable symbol `sym`.
+    */
+  private def mkGotoVar(sym: Symbol.VarSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
   /**

@@ -15,17 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
+import org.json4s.JsonAST.{JArray, JField, JInt, JObject, JString}
 
 /**
-  * Represents a `Diagnostic` in LSP.
+  * Represents a `ShowMessageRequestParams` in LSP.
   */
-case class Diagnostic(range: Range, code: String, message: String) {
-  def toJSON: JObject =
-    JObject(
-      JField("range", range.toJSON),
-      JField("severity", JInt(1)),
-      JField("code", JString(code)),
-      JField("message", JString(message)),
-    )
+case class ShowMessageRequestParams(typ: MessageType, message: String, actions: List[MessageActionItem]) {
+  def toJSON: JObject = JObject(
+    JField("type", JInt(typ.toInt)),
+    JField("message", JString(message)),
+    JField("actions", JArray(actions.map(_.toJSON)))
+  )
 }
