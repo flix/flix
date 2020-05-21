@@ -14,7 +14,9 @@ public class OrBoolExp implements BoolExp {
 
     @Override
     public void prettyPrint(PrintStream stream, int indentLevel) {
-
+        leftExp.prettyPrint(stream, indentLevel);
+        stream.print("||");
+        rightExp.prettyPrint(stream, indentLevel);
     }
 
     public BoolExp getLeftExp() {

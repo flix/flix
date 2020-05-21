@@ -7,7 +7,6 @@ import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.RowVariable;
 import flix.runtime.fixpoint.ram.exp.bool.*;
 import flix.runtime.fixpoint.ram.exp.relation.*;
-import flix.runtime.fixpoint.ram.interpreter.RamInterpreter;
 import flix.runtime.fixpoint.ram.stmt.*;
 import flix.runtime.fixpoint.ram.term.AttrTerm;
 import flix.runtime.fixpoint.ram.term.RamLitTerm;
@@ -28,6 +27,7 @@ public class MySolver {
     private static final Object[] nullArray = new Object[]{null};
     private static int variableCounter = 0;
     private static boolean addLabelStmts = true;
+    private static boolean printProgram = true;
 
     public static Stmt compileProgram(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
@@ -42,9 +42,11 @@ public class MySolver {
         resultStmts.addAll(compileStratums(derivedInStratum));
 
         SeqStmt seqStmt = new SeqStmt(resultStmts);
-        PrintStream stream = System.out;
-        seqStmt.prettyPrint(stream, 0);
-        stream.print('\n');
+        if (printProgram) {
+            PrintStream stream = System.out;
+            seqStmt.prettyPrint(stream, 0);
+            stream.print('\n');
+        }
         return seqStmt;
     }
 

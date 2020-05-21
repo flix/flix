@@ -12,8 +12,9 @@ public final class NotBoolExp implements BoolExp {
 
     @Override
     public void prettyPrint(PrintStream stream, int indentLevel) {
-        stream.print("Not ");
+        stream.print("Not (");
         exp.prettyPrint(stream, indentLevel);
+        stream.print(')');
     }
 
     public BoolExp getExp() {
