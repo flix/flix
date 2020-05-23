@@ -41,7 +41,7 @@ namespace BenchmarkConstraint {
         };
         let facts = List.range(1, 20) |> List.foldLeft(fold, #{});
         let rules = #{
-            DirectedPath(x, y) :- DirectedPath(x, y).
+            DirectedPath(x, y) :- DirectedEdge(x, y).
             DirectedPath(x, z) :- DirectedPath(x, y), DirectedEdge(y, z).
         };
         (solve facts <+> rules) |= DirectedPath(1, 20).

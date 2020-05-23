@@ -26,8 +26,8 @@ public class MySolver {
 
     private static final Object[] nullArray = new Object[]{null};
     private static int variableCounter = 0;
-    private static boolean addLabelStmts = true;
-    private static boolean printProgram = true;
+    private static boolean addLabelStmts = false;
+    private static boolean printProgram = false;
 
     public static Stmt compileProgram(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();

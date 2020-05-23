@@ -24,7 +24,7 @@ import java.util.*;
 
 public class RamInterpreter {
 
-    private static final boolean printNewFacts = true;
+    private static final boolean printNewFacts = false;
     private static final PrintStream printStream = System.out;
 
     public static ConstraintSystem run(Stmt toInterpret) {
