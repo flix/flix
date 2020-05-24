@@ -66,7 +66,7 @@ public final class Solver {
      */
     public static ConstraintSystem solve(ConstraintSystem cs, Stratification stf, Options o) {
         ca.uwaterloo.flix.runtime.solver.Solver solver = new ca.uwaterloo.flix.runtime.solver.Solver(cs, stf, o);
-        Stmt compiled = MySolver.compileProgram(cs, stf, o);
+        Stmt compiled = DatalogCompiler.compileProgram(cs, stf, o);
         return RamInterpreter.run(compiled);
     }
 

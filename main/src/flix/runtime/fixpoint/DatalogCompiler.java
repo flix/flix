@@ -22,12 +22,12 @@ import flix.runtime.fixpoint.term.VarTerm;
 import java.io.PrintStream;
 import java.util.*;
 
-public class MySolver {
+public class DatalogCompiler {
 
     private static final Object[] nullArray = new Object[]{null};
     private static int variableCounter = 0;
-    private static boolean addLabelStmts = false;
-    private static boolean printProgram = false;
+    private static final boolean addLabelStmts = false;
+    private static final boolean printProgram = false;
 
     public static Stmt compileProgram(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
