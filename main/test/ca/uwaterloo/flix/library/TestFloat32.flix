@@ -56,7 +56,7 @@ namespace TestFloat32 {
     // nan                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def nan01(): Bool = assert!(Float32.isNan(Float32.nan()))
+    def nan01(): Bool = Float32.isNan(Float32.nan()) == true
     
     /////////////////////////////////////////////////////////////////////////////
     // positiveInfinity                                                        //
@@ -74,76 +74,76 @@ namespace TestFloat32 {
     // isFinite                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def isFinite01(): Bool = assert!(Float32.isFinite(1.0f32))
+    def isFinite01(): Bool = Float32.isFinite(1.0f32) == true
     
     @test
-    def isFinite02(): Bool = assert!(Float32.isFinite(-1.0f32))
+    def isFinite02(): Bool = Float32.isFinite(-1.0f32) == true
     
     @test
-    def isFinite03(): Bool = assert!(Float32.isFinite(Float32.minValue()))
+    def isFinite03(): Bool = Float32.isFinite(Float32.minValue()) == true
     
     @test
-    def isFinite04(): Bool = assert!(Float32.isFinite(Float32.maxValue()))
+    def isFinite04(): Bool = Float32.isFinite(Float32.maxValue()) == true
     
     @test
-    def isFinite05(): Bool = assertNot!(Float32.isFinite(Float32.negativeInfinity()))
+    def isFinite05(): Bool = Float32.isFinite(Float32.negativeInfinity()) == false
     
     @test
-    def isFinite06(): Bool = assertNot!(Float32.isFinite(Float32.positiveInfinity()))
+    def isFinite06(): Bool = Float32.isFinite(Float32.positiveInfinity()) == false
     
     @test
-    def isFinite07(): Bool = assertNot!(Float32.isFinite(Float32.nan()))
+    def isFinite07(): Bool = Float32.isFinite(Float32.nan()) == false
     
     /////////////////////////////////////////////////////////////////////////////
     // isInfinite                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def isInfinite01(): Bool = assertNot!(Float32.isInfinite(1.0f32))
+    def isInfinite01(): Bool = Float32.isInfinite(1.0f32) == false
     
     @test
-    def isInfinite02(): Bool = assertNot!(Float32.isInfinite(-1.0f32))
+    def isInfinite02(): Bool = Float32.isInfinite(-1.0f32) == false
     
     @test
-    def isInfinite03(): Bool = assertNot!(Float32.isInfinite(Float32.minValue()))
+    def isInfinite03(): Bool = Float32.isInfinite(Float32.minValue()) == false
     
     @test
-    def isInfinite04(): Bool = assertNot!(Float32.isInfinite(Float32.maxValue()))
+    def isInfinite04(): Bool = Float32.isInfinite(Float32.maxValue()) == false
     
     @test
-    def isInfinite05(): Bool = assert!(Float32.isInfinite(Float32.negativeInfinity()))
+    def isInfinite05(): Bool = Float32.isInfinite(Float32.negativeInfinity()) == true
     
     @test
-    def isInfinite06(): Bool = assert!(Float32.isInfinite(Float32.positiveInfinity()))
+    def isInfinite06(): Bool = Float32.isInfinite(Float32.positiveInfinity()) == true
     
     @test
-    def isInfinite07(): Bool = assertNot!(Float32.isInfinite(Float32.nan()))
+    def isInfinite07(): Bool = Float32.isInfinite(Float32.nan()) == false
     
     /////////////////////////////////////////////////////////////////////////////
     // isNan                                                                   //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def isNan01(): Bool = assert!(Float32.isNan(Float32.nan()))
+    def isNan01(): Bool = Float32.isNan(Float32.nan()) == true
     
     @test
-    def isNan02(): Bool = assert!(Float32.isNan(0.0f32 / 0.0f32))
+    def isNan02(): Bool = Float32.isNan(0.0f32 / 0.0f32) == true
     
     @test
-    def isNan03(): Bool = assertNot!(Float32.isNan(Float32.positiveInfinity()))
+    def isNan03(): Bool = Float32.isNan(Float32.positiveInfinity()) == false
     
     @test
-    def isNan04(): Bool = assertNot!(Float32.isNan(Float32.negativeInfinity()))
+    def isNan04(): Bool = Float32.isNan(Float32.negativeInfinity()) == false
     
     @test
-    def isNan05(): Bool = assertNot!(Float32.isNan(1.0f32))
+    def isNan05(): Bool = Float32.isNan(1.0f32) == false
     
     @test
-    def isNan06(): Bool = assertNot!(Float32.isNan(-1.0f32))
+    def isNan06(): Bool = Float32.isNan(-1.0f32) == false
     
     @test
-    def isNan07(): Bool = assertNot!(Float32.isNan(Float32.minValue()))
+    def isNan07(): Bool = Float32.isNan(Float32.minValue()) == false
     
     @test
-    def isNan08(): Bool = assertNot!(Float32.isNan(Float32.maxValue()))
+    def isNan08(): Bool = Float32.isNan(Float32.maxValue()) == false
     
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //

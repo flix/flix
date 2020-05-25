@@ -20,151 +20,151 @@ namespace TestOption {
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isEmpty01(): Bool = assert!(Option.isEmpty(None))
+def isEmpty01(): Bool = Option.isEmpty(None) == true
 
 @test
-def isEmpty02(): Bool = assertNot!(Option.isEmpty(Some(0)))
+def isEmpty02(): Bool = Option.isEmpty(Some(0)) == false
 
 @test
-def isEmpty03(): Bool = assertNot!(Option.isEmpty(Some(22ii)))
+def isEmpty03(): Bool = Option.isEmpty(Some(22ii)) == false
 
 /////////////////////////////////////////////////////////////////////////////
 // getWithDefault                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def getWithDefault01(): Bool = Option.getWithDefault(None, 32) `assertEq!` 32
+def getWithDefault01(): Bool = Option.getWithDefault(None, 32) == 32
 
 @test
-def getWithDefault02(): Bool = Option.getWithDefault(Some(30), 32) `assertEq!` 30
+def getWithDefault02(): Bool = Option.getWithDefault(Some(30), 32) == 30
 
 @test
-def getWithDefault03(): Bool = Option.getWithDefault(None, 32ii) `assertEq!` 32ii
+def getWithDefault03(): Bool = Option.getWithDefault(None, 32ii) == 32ii
 
 @test
-def getWithDefault04(): Bool = Option.getWithDefault(Some(30ii), 32ii) `assertEq!` 30ii
+def getWithDefault04(): Bool = Option.getWithDefault(Some(30ii), 32ii) == 30ii
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def exists01(): Bool = assertNot!(Option.exists(i -> i == 2, None))
+def exists01(): Bool = Option.exists(i -> i == 2, None) == false
 
 @test
-def exists02(): Bool = assertNot!(Option.exists(i -> i == 2, Some(1)))
+def exists02(): Bool = Option.exists(i -> i == 2, Some(1)) == false
 
 @test
-def exists03(): Bool = assert!(Option.exists(i -> i == 2, Some(2)))
+def exists03(): Bool = Option.exists(i -> i == 2, Some(2)) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // forall                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def forall01(): Bool = assert!(Option.forall(i -> i == 2, None))
+def forall01(): Bool = Option.forall(i -> i == 2, None) == true
 
 @test
-def forall02(): Bool = assertNot!(Option.forall(i -> i == 2, Some(1)))
+def forall02(): Bool = Option.forall(i -> i == 2, Some(1)) == false
 
 @test
-def forall03(): Bool = assert!(Option.forall(i -> i == 2, Some(2)))
+def forall03(): Bool = Option.forall(i -> i == 2, Some(2)) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // filter                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def filter01(): Bool = Option.filter(i -> i == 2, None) `assertEq!` None
+def filter01(): Bool = Option.filter(i -> i == 2, None) == None
 
 @test
-def filter02(): Bool = Option.filter(i -> i == 2, Some(1)) `assertEq!` None
+def filter02(): Bool = Option.filter(i -> i == 2, Some(1)) == None
 
 @test
-def filter03(): Bool = Option.filter(i -> i == 2, Some(2)) `assertEq!` Some(2)
+def filter03(): Bool = Option.filter(i -> i == 2, Some(2)) == Some(2)
 
 /////////////////////////////////////////////////////////////////////////////
 // map                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def map01(): Bool = Option.map(i -> 2*i, None) `assertEq!` None
+def map01(): Bool = Option.map(i -> 2*i, None) == None
 
 @test
-def map02(): Bool = Option.map(i -> 2*i, Some(1)) `assertEq!` Some(2)
+def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 
 @test
-def map03(): Bool = Option.map(i -> 2*i, Some(2)) `assertEq!` Some(4)
+def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // map2                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def map201(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, None) `assertEq!` None
+def map201(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, None) == None
 
 @test
-def map202(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), None) `assertEq!` None
+def map202(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), None) == None
 
 @test
-def map203(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, Some(true)) `assertEq!` None
+def map203(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, Some(true)) == None
 
 @test
-def map204(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(true)) `assertEq!` Some(2)
+def map204(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(true)) == Some(2)
 
 @test
-def map205(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(false)) `assertEq!` Some(3)
+def map205(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(false)) == Some(3)
 
 /////////////////////////////////////////////////////////////////////////////
 // flatMap                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def flatMap01(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), None) `assertEq!` None
+def flatMap01(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), None) == None
 
 @test
-def flatMap02(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(1)) `assertEq!` None
+def flatMap02(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(1)) == None
 
 @test
-def flatMap03(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(2)) `assertEq!` Some(4)
+def flatMap03(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(2)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // flatMap2                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def flatMap201(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, None) `assertEq!` None
+def flatMap201(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, None) == None
 
 @test
-def flatMap202(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(5), None) `assertEq!` None
+def flatMap202(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(5), None) == None
 
 @test
-def flatMap203(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, Some(true)) `assertEq!` None
+def flatMap203(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, Some(true)) == None
 
 @test
-def flatMap204(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(false)) `assertEq!` None
+def flatMap204(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(false)) == None
 
 @test
-def flatMap205(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(true)) `assertEq!` Some(2)
+def flatMap205(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(true)) == Some(2)
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toList01(): Bool = Option.toList(None) `assertEq!` Nil
+def toList01(): Bool = Option.toList(None) == Nil
 
 @test
-def toList02(): Bool = Option.toList(Some(1)) `assertEq!` 1 :: Nil
+def toList02(): Bool = Option.toList(Some(1)) == 1 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = Option.toSet(None) `assertEq!` Set#{}
+def toSet01(): Bool = Option.toSet(None) == Set#{}
 
 @test
-def toSet02(): Bool = Option.toSet(Some(1)) `assertEq!` Set#{1}
+def toSet02(): Bool = Option.toSet(Some(1)) == Set#{1}
 
 /////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toMap01(): Bool = Option.toMap(None) `assertEq!` Map#{}
+def toMap01(): Bool = Option.toMap(None) == Map#{}
 
 @test
-def toMap02(): Bool = Option.toMap(Some((1, true))) `assertEq!` Map#{1 -> true}
+def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 -> true}
 
 /////////////////////////////////////////////////////////////////////////////
 // toOk                                                                   //
@@ -206,104 +206,104 @@ def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Ne
 // withDefault                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def withDefault01(): Bool = Option.withDefault(None, None) `assertEq!` None
+def withDefault01(): Bool = Option.withDefault(None, None) == None
 
 @test
-def withDefault02(): Bool = Option.withDefault(None, Some(1)) `assertEq!` Some(1)
+def withDefault02(): Bool = Option.withDefault(None, Some(1)) == Some(1)
 
 @test
-def withDefault03(): Bool = Option.withDefault(Some(1), None) `assertEq!` Some(1)
+def withDefault03(): Bool = Option.withDefault(Some(1), None) == Some(1)
 
 @test
-def withDefault04(): Bool = Option.withDefault(Some(1), Some(2)) `assertEq!` Some(1)
+def withDefault04(): Bool = Option.withDefault(Some(1), Some(2)) == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Option.replace(3, 4, None) `assertEq!` None
+def replace01(): Bool = Option.replace(3, 4, None) == None
 
 @test
-def replace02(): Bool = Option.replace(3, 4, Some(2)) `assertEq!` Some(2)
+def replace02(): Bool = Option.replace(3, 4, Some(2)) == Some(2)
 
 @test
-def replace03(): Bool = Option.replace(3, 4, Some(3)) `assertEq!` Some(4)
+def replace03(): Bool = Option.replace(3, 4, Some(3)) == Some(4)
 
 @test
-def replace04(): Bool = Option.replace(3, 4, Some(4)) `assertEq!` Some(4)
+def replace04(): Bool = Option.replace(3, 4, Some(4)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // count                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def count01(): Bool = Option.count(i -> i == 2, None) `assertEq!` 0
+def count01(): Bool = Option.count(i -> i == 2, None) == 0
 
 @test
-def count02(): Bool = Option.count(i -> i == 2, Some(1)) `assertEq!` 0
+def count02(): Bool = Option.count(i -> i == 2, Some(1)) == 0
 
 @test
-def count03(): Bool = Option.count(i -> i == 2, Some(2)) `assertEq!` 1
+def count03(): Bool = Option.count(i -> i == 2, Some(2)) == 1
 
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def find01(): Bool = Option.find(i -> i == 2, None) `assertEq!` None
+def find01(): Bool = Option.find(i -> i == 2, None) == None
 
 @test
-def find02(): Bool = Option.find(i -> i == 2, Some(1)) `assertEq!` None
+def find02(): Bool = Option.find(i -> i == 2, Some(1)) == None
 
 @test
-def find03(): Bool = Option.find(i -> i == 2, Some(2)) `assertEq!` Some(2)
+def find03(): Bool = Option.find(i -> i == 2, Some(2)) == Some(2)
 
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def flatten01(): Bool = Option.flatten(None) `assertEq!` None
+def flatten01(): Bool = Option.flatten(None) == None
 
 @test
-def flatten02(): Bool = Option.flatten(Some(None)) `assertEq!` None
+def flatten02(): Bool = Option.flatten(Some(None)) == None
 
 @test
-def flatten03(): Bool = Option.flatten(Some(Some(2))) `assertEq!` Some(2)
+def flatten03(): Bool = Option.flatten(Some(Some(2))) == Some(2)
 
 
 /////////////////////////////////////////////////////////////////////////////
 // foldLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldLeft01(): Bool = assertNot!(Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, None))
+def foldLeft01(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, None) == false
 
 @test
-def foldLeft02(): Bool = assertNot!(Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Some(1)))
+def foldLeft02(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Some(1)) == false
 
 @test
-def foldLeft03(): Bool = assertNot!(Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Some(2)))
+def foldLeft03(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Some(2)) == false
 
 @test
-def foldLeft04(): Bool = assertNot!(Option.foldLeft((b, i) -> if (i == 2 && b) true else false, true, Some(1)))
+def foldLeft04(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, true, Some(1)) == false
 
 @test
-def foldLeft05(): Bool = assert!(Option.foldLeft((b, i) -> if (i == 2 && b) true else false, true, Some(2)))
+def foldLeft05(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, true, Some(2)) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = assertNot!(Option.foldRight((i, b) -> if (i == 2 && b) true else false, None, false))
+def foldRight01(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, None, false) == false
 
 @test
-def foldRight02(): Bool = assertNot!(Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(1), false))
+def foldRight02(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(1), false) == false
 
 @test
-def foldRight03(): Bool = assertNot!(Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(2), false))
+def foldRight03(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(2), false) == false
 
 @test
-def foldRight04(): Bool = assertNot!(Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(1), true))
+def foldRight04(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(1), true) == false
 
 @test
-def foldRight05(): Bool = assert!(Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(2), true))
+def foldRight05(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //
@@ -360,25 +360,25 @@ def traverse08(): Bool = Option.traverse(_ -> Some(42), 1 :: 2 :: 3 :: Nil) == S
 // zip                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def zip01(): Bool = Option.zip(None, None) `assertEq!` None
+def zip01(): Bool = Option.zip(None, None) == None
 
 @test
-def zip02(): Bool = Option.zip(Some(1), None) `assertEq!` None
+def zip02(): Bool = Option.zip(Some(1), None) == None
 
 @test
-def zip03(): Bool = Option.zip(None, Some(true)) `assertEq!` None
+def zip03(): Bool = Option.zip(None, Some(true)) == None
 
 @test
-def zip04(): Bool = Option.zip(Some(1), Some(true)) `assertEq!` Some((1, true))
+def zip04(): Bool = Option.zip(Some(1), Some(true)) == Some((1, true))
 
 /////////////////////////////////////////////////////////////////////////////
 // unzip                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unzip01(): Bool = Option.unzip(None) `assertEq!` (None, None)
+def unzip01(): Bool = Option.unzip(None) == (None, None)
 
 @test
-def unzip02(): Bool = Option.unzip(Some((1, true))) `assertEq!` (Some(1), Some(true))
+def unzip02(): Bool = Option.unzip(Some((1, true))) == (Some(1), Some(true))
 
 /////////////////////////////////////////////////////////////////////////////
 // foreach                                                                 //
