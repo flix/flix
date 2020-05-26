@@ -115,15 +115,12 @@ namespace Test/Exp/ArrayLength {
     def testArrayLength38(): Int & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x.length
     
     @test
-    def testArrayLength39(): Int & Impure = let x = [[|1, 2|], [|3, 4|]]; x.length
+    def testArrayLength39(): Int & Impure = let x = [[None, Some(1), None], [Some(2), Some(45), Some(9), None]]; x.length
     
     @test
-    def testArrayLength40(): Int & Impure = let x = [[None, Some(1), None], [Some(2), Some(45), Some(9), None]]; x.length
+    def testArrayLength40(): Int & Impure = let x = [(1, 2), (3, 4)]; x.length
     
     @test
-    def testArrayLength41(): Int & Impure = let x = [(1, 2), (3, 4)]; x.length
-    
-    @test
-    def testArrayLength42(): Int & Impure = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; x.length
+    def testArrayLength41(): Int & Impure = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; x.length
 
 }

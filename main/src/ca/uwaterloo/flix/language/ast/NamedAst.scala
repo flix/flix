@@ -136,18 +136,6 @@ object NamedAst {
 
     case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class VectorLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class VectorNew(elm: NamedAst.Expression, len: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class VectorLoad(base: NamedAst.Expression, index: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class VectorStore(base: NamedAst.Expression, index: Int, elm: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class VectorLength(base: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class VectorSlice(base: NamedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class Ref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Deref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression

@@ -417,37 +417,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             i2 <- visit(endIndex, tenv0)
           } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, tvar, loc)
 
-        case NamedAst.Expression.VectorLit(elms, tvar, loc) =>
-          for {
-            es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.VectorLit(es, tvar, loc)
-
-        case NamedAst.Expression.VectorNew(elm, len, tvar, loc) =>
-          for {
-            e <- visit(elm, tenv0)
-          } yield ResolvedAst.Expression.VectorNew(e, len, tvar, loc)
-
-        case NamedAst.Expression.VectorLoad(base, index, tvar, loc) =>
-          for {
-            b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.VectorLoad(b, index, tvar, loc)
-
-        case NamedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
-          for {
-            b <- visit(base, tenv0)
-            e <- visit(elm, tenv0)
-          } yield ResolvedAst.Expression.VectorStore(b, index, e, tvar, loc)
-
-        case NamedAst.Expression.VectorLength(base, tvar, loc) =>
-          for {
-            b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.VectorLength(b, tvar, loc)
-
-        case NamedAst.Expression.VectorSlice(base, startIndex, optEndIndex, tvar, loc) =>
-          for {
-            b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.VectorSlice(b, startIndex, optEndIndex, tvar, loc)
-
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
@@ -995,7 +964,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Array" => Type.Cst(TypeConstructor.Array).toSuccess
       case "Channel" => Type.Cst(TypeConstructor.Channel).toSuccess
       case "Ref" => Type.Cst(TypeConstructor.Ref).toSuccess
-      case "Vector" => Type.Cst(TypeConstructor.Vector).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1087,8 +1055,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
       } yield mkLatticeType(ts)
-
-    case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
@@ -1322,10 +1288,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val t2 = eval(rest, subst)
         Type.mkSchemaExtend(sym, t1, t2)
 
-      case Type.Zero => t
-
-      case Type.Succ(len, t) => Type.Succ(len, eval(t, subst))
-
       case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
 
       // TODO: Does not take variable capture into account.
@@ -1454,17 +1416,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object").toSuccess
 
     case Type.Cst(TypeConstructor.Array) =>
-      tpe.typeArguments match {
-        case elmTyp :: Nil =>
-          mapN(getJVMType(elmTyp, loc)) {
-            case elmClass =>
-              // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
-              java.lang.reflect.Array.newInstance(elmClass, 0).getClass
-          }
-        case _ => ResolutionError.IllegalType(tpe, loc).toFailure
-      }
-
-    case Type.Cst(TypeConstructor.Vector) =>
       tpe.typeArguments match {
         case elmTyp :: Nil =>
           mapN(getJVMType(elmTyp, loc)) {

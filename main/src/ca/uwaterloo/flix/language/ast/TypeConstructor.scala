@@ -173,16 +173,6 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of vectors.
-    */
-  case object Vector extends TypeConstructor {
-    /**
-      * The shape of a vector is Array[t;n].
-      */
-    def kind: Kind = (Kind.Star ->: Kind.Nat) ->: Kind.Star
-  }
-
-  /**
     * A type constructor for relations.
     */
   case object Relation extends TypeConstructor {

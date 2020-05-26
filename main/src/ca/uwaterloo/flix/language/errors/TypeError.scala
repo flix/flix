@@ -235,8 +235,6 @@ object TypeError {
     case (Type.Var(_, _, _), _) => TypeDiff.Star(TyCon.Other)
     case (_, Type.Var(_, _, _)) => TypeDiff.Star(TyCon.Other)
     case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
-    case (Type.Zero, Type.Zero) => TypeDiff.Star(TyCon.Other)
-    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TyCon.Other)
     case (Type.Arrow(l1, _), Type.Arrow(l2, _)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
       (diff(t11, t21), diff(t12, t22)) match {

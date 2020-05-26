@@ -140,18 +140,6 @@ object WeededAst {
 
     case class ArraySlice(base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
-
-    case class VectorNew(elm: WeededAst.Expression, len: Int, loc: SourceLocation) extends WeededAst.Expression
-
-    case class VectorLoad(base: WeededAst.Expression, index: Int, loc: SourceLocation) extends WeededAst.Expression
-
-    case class VectorStore(base: WeededAst.Expression, index: Int, elm: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class VectorLength(base: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class VectorSlice(base: WeededAst.Expression, startIndex: Int, optEndIndex: Option[Int], loc: SourceLocation) extends WeededAst.Expression
-
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

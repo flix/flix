@@ -119,21 +119,6 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
 
-    case Expression.VectorLit(elms, tpe, eff, loc) =>
-      elms.foldLeft(Nil: List[CompilationError]) {
-        case (acc, e) => acc ::: visitExp(e)
-      }
-
-    case Expression.VectorNew(elm, len, tpe, eff, loc) => visitExp(elm)
-
-    case Expression.VectorLoad(base, index, tpe, eff, loc) => visitExp(base)
-
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => visitExp(base) ::: visitExp(elm)
-
-    case Expression.VectorLength(base, tpe, eff, loc) => visitExp(base)
-
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => visitExp(base)
-
     case Expression.Ref(exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)

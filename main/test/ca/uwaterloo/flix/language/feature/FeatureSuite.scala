@@ -68,16 +68,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Decl.Disallow", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Disallow.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Decl.Impl", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Impl.flix")(Options.TestWithLibrary),
 
-  new FlixTest("Test.Expression.VectorLit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLit.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.VectorNew", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorNew.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.VectorLoad", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLoad.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.VectorStore", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorStore.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.VectorLength", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLength.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.VectorSlice", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSlice.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.VectorSliceNoIndexes", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoIndexes.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.VectorSliceNoEnd", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoEnd.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.VectorSliceNoStart", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoStart.flix")(Options.TestWithLibrary),
-
   //
   // Declarations.
   //

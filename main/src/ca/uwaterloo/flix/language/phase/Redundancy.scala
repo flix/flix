@@ -385,26 +385,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us3 = visitExp(end, env0.resetApplies)
       us1 and us2 and us3
 
-    case Expression.VectorLit(elms, _, _, _) =>
-      visitExps(elms, env0.resetApplies)
-
-    case Expression.VectorNew(elm, _, _, _, _) =>
-      visitExp(elm, env0.resetApplies)
-
-    case Expression.VectorLoad(base, _, _, _, _) =>
-      visitExp(base, env0.resetApplies)
-
-    case Expression.VectorStore(base, _, elm, _, _, _) =>
-      val us1 = visitExp(base, env0.resetApplies)
-      val us2 = visitExp(elm, env0.resetApplies)
-      us1 and us2
-
-    case Expression.VectorLength(base, _, _, _) =>
-      visitExp(base, env0.resetApplies)
-
-    case Expression.VectorSlice(base, _, _, _, _, _) =>
-      visitExp(base, env0.resetApplies)
-
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp, env0.resetApplies)
 

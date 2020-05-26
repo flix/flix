@@ -853,64 +853,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
-    case ParsedAst.Expression.VectorLit(sp1, elms, sp2) =>
-      traverse(elms)(e => visitExp(e)) map {
-        case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.VectorNew(sp1, elm, len, sp2) =>
-      mapN(visitExp(elm), getVectorLength(len, sp1, sp2)) {
-        case (e, l) => WeededAst.Expression.VectorNew(e, l, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.VectorLoad(base, index, sp2) =>
-      val sp1 = leftMostSourcePosition(base)
-      val loc = mkSL(sp1, sp2)
-      mapN(visitExp(base), getVectorLength(index, sp1, sp2)) {
-        case (b, l) => WeededAst.Expression.VectorLoad(b, l, loc)
-      }
-
-    case ParsedAst.Expression.VectorStore(base, indexes, elm, sp2) =>
-      val sp1 = leftMostSourcePosition(base)
-      val loc = mkSL(sp1, sp2)
-      val indexesVal = checkIndexSequence(indexes, sp1, sp2)
-      mapN(visitExp(base), indexesVal, visitExp(elm)) {
-        case (b, is, e) =>
-          val inner = is.init.foldLeft(b) {
-            case (acc, e) => WeededAst.Expression.VectorLoad(acc, e, loc)
-          }
-          WeededAst.Expression.VectorStore(inner, is.last, e, loc)
-      }
-
-    case ParsedAst.Expression.VectorLength(sp1, base, sp2) =>
-      visitExp(base) map {
-        case b => WeededAst.Expression.VectorLength(b, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.VectorSlice(base, optStartIndex, optEndIndex, sp2) =>
-      val sp1 = leftMostSourcePosition(base)
-      val loc = mkSL(sp1, sp2)
-      (optStartIndex, optEndIndex) match {
-        case (None, None) =>
-          visitExp(base) flatMap {
-            case b => WeededAst.Expression.VectorSlice(b, 0, None, loc).toSuccess
-          }
-        case (None, Some(i)) =>
-          mapN(visitExp(base), getVectorLength(i, sp1, sp2)) {
-            case (b, l) => WeededAst.Expression.VectorSlice(b, 0, Some(l), loc)
-          }
-        case (Some(i), None) =>
-          mapN(visitExp(base), getVectorLength(i, sp1, sp2)) {
-            case (b, l) => WeededAst.Expression.VectorSlice(b, l, None, loc)
-          }
-        case (Some(i1), Some(i2)) =>
-          flatMapN(visitExp(base), getVectorLength(i1, sp1, sp2), getVectorLength(i2, sp1, sp2)) {
-            case (b, l1, l2) if l1 > l2 => WeederError.IllegalVectorIndex(loc).toFailure
-            case (b, l1, l2) => WeededAst.Expression.VectorSlice(b, l1, Some(l2), loc).toSuccess
-            case _ => WeederError.IllegalVectorLength(loc).toFailure
-          }
-      }
-
     case ParsedAst.Expression.FNil(sp1, sp2) =>
       /*
        * Rewrites a `FNil` expression into a tag expression.
@@ -1236,20 +1178,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Literal.Str(sp1, lit, sp2) =>
       WeededAst.Expression.Str(lit, mkSL(sp1, sp2)).toSuccess
-  }
-
-  // TODO: Comment
-  private def getVectorLength(elm: ParsedAst.Literal, sp1: SourcePosition, sp2: SourcePosition): Validation[Int, WeederError] = elm match {
-    case ParsedAst.Literal.Int32(_, sign, radix, digits, _) => toInt32(sign, radix, digits, mkSL(sp1, sp2)) flatMap {
-      case l if l >= 0 => l.toSuccess
-      case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
-    }
-    case _ => throw InternalCompilerException(s"Expected literal.int32. Actual: $elm.")
-  }
-
-  // TODO: Comment
-  private def checkIndexSequence(elms: Seq[ParsedAst.Literal], sp1: SourcePosition, sp2: SourcePosition): Validation[List[Int], WeederError] = {
-    traverse(elms)(e => getVectorLength(e, sp1, sp2))
   }
 
   /**
@@ -1967,12 +1895,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
-    case ParsedAst.Expression.VectorNew(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.VectorLoad(base, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.VectorStore(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.VectorLength(sp1, _, _) => sp1
-    case ParsedAst.Expression.VectorSlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)

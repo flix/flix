@@ -112,15 +112,12 @@ namespace Test/Exp/ArrayStore {
     def testArrayStore37(): Unit & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[2][2] = 42
 
     @test
-    def testArrayStore38(): Unit & Impure = let x = [[|7 ; 10|], [|7 ; 10|]]; x[1] = [|19 ; 10|]
+    def testArrayStore38(): Unit & Impure = let x = [[(7 , 10)], [(7 , 10)]]; x[1] = [(19 , 10)]
 
     @test
-    def testArrayStore39(): Unit & Impure = let x = [[(7 , 10)], [(7 , 10)]]; x[1] = [(19 , 10)]
+    def testArrayStore39(): Unit & Impure = let x = [[7 :: 10 :: Nil], [7 :: Nil]]; x[1] = [19 :: Nil]
 
     @test
-    def testArrayStore40(): Unit & Impure = let x = [[7 :: 10 :: Nil], [7 :: Nil]]; x[1] = [19 :: Nil]
-
-    @test
-    def testArrayStore41(): Unit & Impure = let x = [None, None, None, Some(4)]; x[1] = Some(6)
+    def testArrayStore40(): Unit & Impure = let x = [None, None, None, Some(4)]; x[1] = Some(6)
 
 }

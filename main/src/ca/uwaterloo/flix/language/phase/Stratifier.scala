@@ -229,36 +229,6 @@ object Stratifier extends Phase[Root, Root] {
         case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
       }
 
-    case Expression.VectorLit(elms, tpe, eff, loc) =>
-      mapN(traverse(elms)(visitExp)) {
-        case es => Expression.VectorLit(es, tpe, eff, loc)
-      }
-
-    case Expression.VectorNew(elm, len, tpe, eff, loc) =>
-      mapN(visitExp(elm)) {
-        case e => Expression.VectorNew(e, len, tpe, eff, loc)
-      }
-
-    case Expression.VectorLoad(base, index, tpe, eff, loc) =>
-      mapN(visitExp(base)) {
-        case e => Expression.VectorLoad(e, index, tpe, eff, loc)
-      }
-
-    case Expression.VectorLength(base, tpe, eff, loc) =>
-      mapN(visitExp(base)) {
-        case e => Expression.VectorLength(e, tpe, eff, loc)
-      }
-
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
-      mapN(visitExp(base), visitExp(elm)) {
-        case (b, e) => Expression.VectorStore(b, index, e, tpe, eff, loc)
-      }
-
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
-      mapN(visitExp(base)) {
-        case b => Expression.VectorSlice(b, startIndex, endIndex, tpe, eff, loc)
-      }
-
     case Expression.Ref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Ref(e, tpe, eff, loc)
@@ -527,26 +497,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
       dependencyGraphOfExp(base) + dependencyGraphOfExp(beginIndex) + dependencyGraphOfExp(endIndex)
-
-    case Expression.VectorLit(elms, _, _, _) =>
-      elms.foldLeft(DependencyGraph.empty) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.VectorNew(elm, _, _, _, _) =>
-      dependencyGraphOfExp(elm)
-
-    case Expression.VectorLoad(base, _, _, _, _) =>
-      dependencyGraphOfExp(base)
-
-    case Expression.VectorLength(base, _, _, _) =>
-      dependencyGraphOfExp(base)
-
-    case Expression.VectorStore(base, _, elm, _, _, _) =>
-      dependencyGraphOfExp(base) + dependencyGraphOfExp(elm)
-
-    case Expression.VectorSlice(base, _, _, _, _, _) =>
-      dependencyGraphOfExp(base)
 
     case Expression.Ref(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
