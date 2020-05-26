@@ -2,4 +2,4 @@
 def testBool01(): Bool = true
 
 @test
-def testBool02(): Bool = false `assertEq!` false
+def testBool02(): Bool = false == false

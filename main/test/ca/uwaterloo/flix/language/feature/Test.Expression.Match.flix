@@ -11,28 +11,28 @@ def f04(x: Int): Int = match x with {
 }
 
 @test
-def testMatchVar01(): Bool = assertEq!(f04(3), 1)
+def testMatchVar01(): Bool = f04(3) == 1
 
 def f05(x: Int): Int = match x with {
   case a => a
 }
 
 @test
-def testMatchVar02(): Bool = assertEq!(f05(3), 3)
+def testMatchVar02(): Bool = f05(3) == 3
 
 def f06(x: Int): Int = match x with {
   case a => a + 11
 }
 
 @test
-def testMatchVar03(): Bool = assertEq!(f06(3), 14)
+def testMatchVar03(): Bool = f06(3) == 14
 
 def f07(x: Unit): Bool = match x with {
   case () => true
 }
 
 @test
-def testMatchLiteral01(): Bool = assertEq!(f07(()), true)
+def testMatchLiteral01(): Bool = f07(()) == true
 
 def f08(x: Bool): Int = match x with {
   case true => 30
@@ -40,10 +40,10 @@ def f08(x: Bool): Int = match x with {
 }
 
 @test
-def testMatchLiteral02(): Bool = assertEq!(f08(true), 30)
+def testMatchLiteral02(): Bool = f08(true) == 30
 
 @test
-def testMatchLiteral03(): Bool = assertEq!(f08(false), 81)
+def testMatchLiteral03(): Bool = f08(false) == 81
 
 def f09(x: Bool): Int = match x with {
   case true => 30
@@ -51,10 +51,10 @@ def f09(x: Bool): Int = match x with {
 }
 
 @test
-def testMatchLiteral04(): Bool = assertEq!(f09(true), 30)
+def testMatchLiteral04(): Bool = f09(true) == 30
 
 @test
-def testMatchLiteral05(): Bool = assertEq!(f09(false), 81)
+def testMatchLiteral05(): Bool = f09(false) == 81
 
 def f10(x: Int): Str = match x with {
   case -1 => "minus one"
@@ -64,19 +64,19 @@ def f10(x: Int): Str = match x with {
 }
 
 @test
-def testMatchLiteral06(): Bool = assertEq!(f10(-1), "minus one")
+def testMatchLiteral06(): Bool = f10(-1) == "minus one"
 
 @test
-def testMatchLiteral07(): Bool = assertEq!(f10(0), "zero")
+def testMatchLiteral07(): Bool = f10(0) == "zero"
 
 @test
-def testMatchLiteral08(): Bool = assertEq!(f10(1), "one")
+def testMatchLiteral08(): Bool = f10(1) == "one"
 
 @test
-def testMatchLiteral09(): Bool = assertEq!(f10(2), "unknown")
+def testMatchLiteral09(): Bool = f10(2) == "unknown"
 
 @test
-def testMatchLiteral10(): Bool = assertEq!(f10(3), "unknown")
+def testMatchLiteral10(): Bool = f10(3) == "unknown"
 
 def f11(x: Int8): Str = match x with {
   case -128i8 => "min"
@@ -87,19 +87,19 @@ def f11(x: Int8): Str = match x with {
 }
 
 @test
-def testMatchLiteral11(): Bool = assertEq!(f11(-128i8), "min")
+def testMatchLiteral11(): Bool = f11(-128i8) == "min"
 
 @test
-def testMatchLiteral12(): Bool = assertEq!(f11(-2i8), "a")
+def testMatchLiteral12(): Bool = f11(-2i8) == "a"
 
 @test
-def testMatchLiteral13(): Bool = assertEq!(f11(6i8), "b")
+def testMatchLiteral13(): Bool = f11(6i8) == "b"
 
 @test
-def testMatchLiteral14(): Bool = assertEq!(f11(127i8), "max")
+def testMatchLiteral14(): Bool = f11(127i8) == "max"
 
 @test
-def testMatchLiteral15(): Bool = assertEq!(f11(0i8), "unknown")
+def testMatchLiteral15(): Bool = f11(0i8) == "unknown"
 
 def f12(x: Int16): Str = match x with {
   case -32768i16 => "min"
@@ -110,19 +110,19 @@ def f12(x: Int16): Str = match x with {
 }
 
 @test
-def testMatchLiteral16(): Bool = assertEq!(f12(-32768i16), "min")
+def testMatchLiteral16(): Bool = f12(-32768i16) == "min"
 
 @test
-def testMatchLiteral17(): Bool = assertEq!(f12(-211i16), "a")
+def testMatchLiteral17(): Bool = f12(-211i16) == "a"
 
 @test
-def testMatchLiteral18(): Bool = assertEq!(f12(623i16), "b")
+def testMatchLiteral18(): Bool = f12(623i16) == "b"
 
 @test
-def testMatchLiteral19(): Bool = assertEq!(f12(32767i16), "max")
+def testMatchLiteral19(): Bool = f12(32767i16) == "max"
 
 @test
-def testMatchLiteral20(): Bool = assertEq!(f12(0i16), "unknown")
+def testMatchLiteral20(): Bool = f12(0i16) == "unknown"
 
 def f13(x: Int32): Str = match x with {
   case -2147483648i32 => "min"
@@ -133,19 +133,19 @@ def f13(x: Int32): Str = match x with {
 }
 
 @test
-def testMatchLiteral21(): Bool = assertEq!(f13(-2147483648i32), "min")
+def testMatchLiteral21(): Bool = f13(-2147483648i32) == "min"
 
 @test
-def testMatchLiteral22(): Bool = assertEq!(f13(-2136541i32), "a")
+def testMatchLiteral22(): Bool = f13(-2136541i32) == "a"
 
 @test
-def testMatchLiteral23(): Bool = assertEq!(f13(6254523i32), "b")
+def testMatchLiteral23(): Bool = f13(6254523i32) == "b"
 
 @test
-def testMatchLiteral24(): Bool = assertEq!(f13(2147483647i32), "max")
+def testMatchLiteral24(): Bool = f13(2147483647i32) == "max"
 
 @test
-def testMatchLiteral25(): Bool = assertEq!(f13(0i32), "unknown")
+def testMatchLiteral25(): Bool = f13(0i32) == "unknown"
 
 def f14(x: Int64): Str = match x with {
   case -9223372036854775808i64 => "min"
@@ -156,19 +156,19 @@ def f14(x: Int64): Str = match x with {
 }
 
 @test
-def testMatchLiteral26(): Bool = assertEq!(f14(-9223372036854775808i64), "min")
+def testMatchLiteral26(): Bool = f14(-9223372036854775808i64) == "min"
 
 @test
-def testMatchLiteral27(): Bool = assertEq!(f14(-213645454545541i64), "a")
+def testMatchLiteral27(): Bool = f14(-213645454545541i64) == "a"
 
 @test
-def testMatchLiteral28(): Bool = assertEq!(f14(6287816254523i64), "b")
+def testMatchLiteral28(): Bool = f14(6287816254523i64) == "b"
 
 @test
-def testMatchLiteral29(): Bool = assertEq!(f14(9223372036854775807i64), "max")
+def testMatchLiteral29(): Bool = f14(9223372036854775807i64) == "max"
 
 @test
-def testMatchLiteral30(): Bool = assertEq!(f14(0i64), "unknown")
+def testMatchLiteral30(): Bool = f14(0i64) == "unknown"
 
 def f15(x: Str): Str = match x with {
   case "one" => "un"
@@ -178,16 +178,16 @@ def f15(x: Str): Str = match x with {
 }
 
 @test
-def testMatchLiteral31(): Bool = assertEq!(f15("one"), "un")
+def testMatchLiteral31(): Bool = f15("one") == "un"
 
 @test
-def testMatchLiteral32(): Bool = assertEq!(f15("two"), "deux")
+def testMatchLiteral32(): Bool = f15("two") == "deux"
 
 @test
-def testMatchLiteral33(): Bool = assertEq!(f15("three"), "trois")
+def testMatchLiteral33(): Bool = f15("three") == "trois"
 
 @test
-def testMatchLiteral34(): Bool = assertEq!(f15("four"), "???")
+def testMatchLiteral34(): Bool = f15("four") == "???"
 
 enum Foo16 { case Bar16, case Baz16, case Abc16(Int,Str), case Xyz16 }
 
@@ -199,25 +199,25 @@ def f16(x: Foo16): Int = match x with {
 }
 
 @test
-def testMatchLiteral35(): Bool = assertEq!(f16(Foo16.Bar16), 1)
+def testMatchLiteral35(): Bool = f16(Foo16.Bar16) == 1
 
 @test
-def testMatchLiteral36(): Bool = assertEq!(f16(Foo16.Baz16), 2)
+def testMatchLiteral36(): Bool = f16(Foo16.Baz16) == 2
 
 @test
-def testMatchLiteral37(): Bool = assertEq!(f16(Foo16.Abc16(42, "hi")), 3)
+def testMatchLiteral37(): Bool = f16(Foo16.Abc16(42, "hi")) == 3
 
 @test
-def testMatchLiteral38(): Bool = assertEq!(f16(Foo16.Abc16(42, "hi!")), 0)
+def testMatchLiteral38(): Bool = f16(Foo16.Abc16(42, "hi!")) == 0
 
 @test
-def testMatchLiteral39(): Bool = assertEq!(f16(Foo16.Abc16(41, "hi")), 0)
+def testMatchLiteral39(): Bool = f16(Foo16.Abc16(41, "hi")) == 0
 
 @test
-def testMatchLiteral40(): Bool = assertEq!(f16(Foo16.Abc16(40, "a")), 0)
+def testMatchLiteral40(): Bool = f16(Foo16.Abc16(40, "a")) == 0
 
 @test
-def testMatchLiteral41(): Bool = assertEq!(f16(Foo16.Xyz16), 0)
+def testMatchLiteral41(): Bool = f16(Foo16.Xyz16) == 0
 
 def f17(x: Str, y: Bool): Int = match (x, y) with {
   case ("hi", false) => 1
@@ -225,16 +225,16 @@ def f17(x: Str, y: Bool): Int = match (x, y) with {
 }
 
 @test
-def testMatchLiteral42(): Bool = assertEq!(f17("hi", true), 2)
+def testMatchLiteral42(): Bool = f17("hi", true) == 2
 
 @test
-def testMatchLiteral43(): Bool = assertEq!(f17("hi", false), 1)
+def testMatchLiteral43(): Bool = f17("hi", false) == 1
 
 @test
-def testMatchLiteral44(): Bool = assertEq!(f17("abc", true), 2)
+def testMatchLiteral44(): Bool = f17("abc", true) == 2
 
 @test
-def testMatchLiteral45(): Bool = assertEq!(f17("abc", false), 2)
+def testMatchLiteral45(): Bool = f17("abc", false) == 2
 
 def f18(x: (Int, (Int, Int))): Int = match x with {
   case (4, (12, 8)) => 1
@@ -244,16 +244,16 @@ def f18(x: (Int, (Int, Int))): Int = match x with {
 }
 
 @test
-def testMatchLiteral46(): Bool = assertEq!(f18((4, (12, 8))), 1)
+def testMatchLiteral46(): Bool = f18((4, (12, 8))) == 1
 
 @test
-def testMatchLiteral47(): Bool = assertEq!(f18((4, (12, 0))), 2)
+def testMatchLiteral47(): Bool = f18((4, (12, 0))) == 2
 
 @test
-def testMatchLiteral48(): Bool = assertEq!(f18((1, (12, 8))), 3)
+def testMatchLiteral48(): Bool = f18((1, (12, 8))) == 3
 
 @test
-def testMatchLiteral49(): Bool = assertEq!(f18((1, (12, 0))), 4)
+def testMatchLiteral49(): Bool = f18((1, (12, 0))) == 4
 
 def f19(x: Int, y: Int): Int = match x with {
   case 0 => y
@@ -264,16 +264,16 @@ def f19(x: Int, y: Int): Int = match x with {
 }
 
 @test
-def testMatchLiteral50(): Bool = assertEq!(f19(0, 0), 0)
+def testMatchLiteral50(): Bool = f19(0, 0) == 0
 
 @test
-def testMatchLiteral51(): Bool = assertEq!(f19(1, 0), 1)
+def testMatchLiteral51(): Bool = f19(1, 0) == 1
 
 @test
-def testMatchLiteral52(): Bool = assertEq!(f19(0, 2), 2)
+def testMatchLiteral52(): Bool = f19(0, 2) == 2
 
 @test
-def testMatchLiteral53(): Bool = assertEq!(f19(3, 4), 0)
+def testMatchLiteral53(): Bool = f19(3, 4) == 0
 
 def f20(x: BigInt): Str = match x with {
   case -9223372036854775809ii => "-"
@@ -282,13 +282,13 @@ def f20(x: BigInt): Str = match x with {
 }
 
 @test
-def testMatchLiteral54(): Bool = assertEq!(f20(-9223372036854775809ii), "-")
+def testMatchLiteral54(): Bool = f20(-9223372036854775809ii) == "-"
 
 @test
-def testMatchLiteral55(): Bool = assertEq!(f20(9223372036854775809ii), "+")
+def testMatchLiteral55(): Bool = f20(9223372036854775809ii) == "+"
 
 @test
-def testMatchLiteral56(): Bool = assertEq!(f20(6287816254523ii), "unknown")
+def testMatchLiteral56(): Bool = f20(6287816254523ii) == "unknown"
 
 enum NameAndAge21 { case T21(Str,Int) }
 
@@ -297,16 +297,16 @@ def f21(x: NameAndAge21): Int =
     age
 
 @test
-def testMatchTag01(): Bool = assertEq!(f21(NameAndAge21.T21("James", 42)), 42)
+def testMatchTag01(): Bool = f21(NameAndAge21.T21("James", 42)) == 42
 
 @test
-def testMatchTag02(): Bool = assertEq!(f21(NameAndAge21.T21("John", 21)), 21)
+def testMatchTag02(): Bool = f21(NameAndAge21.T21("John", 21)) == 21
 
 @test
-def testMatchTag03(): Bool = assertEq!(f21(NameAndAge21.T21("James", 5)), 5)
+def testMatchTag03(): Bool = f21(NameAndAge21.T21("James", 5)) == 5
 
 @test
-def testMatchTag04(): Bool = assertEq!(f21(NameAndAge21.T21("Mary", 33)), 33)
+def testMatchTag04(): Bool = f21(NameAndAge21.T21("Mary", 33)) == 33
 
 enum NameAndAge22 { case T22(Str,Int) }
 
@@ -316,16 +316,16 @@ def f22(x: NameAndAge22): Int = match x with {
 }
 
 @test
-def testMatchTag05(): Bool = assertEq!(f22(NameAndAge22.T22("James", 42)), 42)
+def testMatchTag05(): Bool = f22(NameAndAge22.T22("James", 42)) == 42
 
 @test
-def testMatchTag06(): Bool = assertEq!(f22(NameAndAge22.T22("John", 21)), -1)
+def testMatchTag06(): Bool = f22(NameAndAge22.T22("John", 21)) == -1
 
 @test
-def testMatchTag07(): Bool = assertEq!(f22(NameAndAge22.T22("James", 5)), 5)
+def testMatchTag07(): Bool = f22(NameAndAge22.T22("James", 5)) == 5
 
 @test
-def testMatchTag08(): Bool = assertEq!(f22(NameAndAge22.T22("Mary", 33)), -1)
+def testMatchTag08(): Bool = f22(NameAndAge22.T22("Mary", 33)) == -1
 
 enum ConstProp23 { case Top23, case Val23(Int), case Bot23 }
 
@@ -336,16 +336,16 @@ def f23(x: ConstProp23): Int = match x with {
 }
 
 @test
-def testMatchTag09(): Bool = assertEq!(f23(ConstProp23.Top23), -1)
+def testMatchTag09(): Bool = f23(ConstProp23.Top23) == -1
 
 @test
-def testMatchTag10(): Bool = assertEq!(f23(ConstProp23.Val23(42)), 42)
+def testMatchTag10(): Bool = f23(ConstProp23.Val23(42)) == 42
 
 @test
-def testMatchTag11(): Bool = assertEq!(f23(ConstProp23.Val23(-24)), -24)
+def testMatchTag11(): Bool = f23(ConstProp23.Val23(-24)) == -24
 
 @test
-def testMatchTag12(): Bool = assertEq!(f23(ConstProp23.Bot23), -2)
+def testMatchTag12(): Bool = f23(ConstProp23.Bot23) == -2
 
 enum BoolTag24 { case Top24, case B24(Bool), case Bot24 }
 
@@ -356,16 +356,16 @@ def f24(x: BoolTag24): Int = match x with {
 }
 
 @test
-def testMatchTag13(): Bool = assertEq!(f24(BoolTag24.Top24), 0)
+def testMatchTag13(): Bool = f24(BoolTag24.Top24) == 0
 
 @test
-def testMatchTag14(): Bool = assertEq!(f24(BoolTag24.B24(true)), 1)
+def testMatchTag14(): Bool = f24(BoolTag24.B24(true)) == 1
 
 @test
-def testMatchTag15(): Bool = assertEq!(f24(BoolTag24.B24(false)), -1)
+def testMatchTag15(): Bool = f24(BoolTag24.B24(false)) == -1
 
 @test
-def testMatchTag16(): Bool = assertEq!(f24(BoolTag24.Bot24), 0)
+def testMatchTag16(): Bool = f24(BoolTag24.Bot24) == 0
 
 enum Val25 { case Nip25, case Val25((Str, Int)) }
 
@@ -378,16 +378,16 @@ def f25(x: Val25): Int = match x with {
 }
 
 @test
-def testMatchTag17(): Bool = assertEq!(f25(Val25.Nip25), 0)
+def testMatchTag17(): Bool = f25(Val25.Nip25) == 0
 
 @test
-def testMatchTag18(): Bool = assertEq!(f25(Val25.Val25(("a", 1))), 1)
+def testMatchTag18(): Bool = f25(Val25.Val25(("a", 1))) == 1
 
 @test
-def testMatchTag19(): Bool = assertEq!(f25(Val25.Val25(("b", 2))), 2)
+def testMatchTag19(): Bool = f25(Val25.Val25(("b", 2))) == 2
 
 @test
-def testMatchTag20(): Bool = assertEq!(f25(Val25.Val25(("x", 3))), -1)
+def testMatchTag20(): Bool = f25(Val25.Val25(("x", 3))) == -1
 
 enum Val26 { case Nip26, case Val26((Str, Int)) }
 
@@ -404,16 +404,16 @@ def f26(x: Val26): Int = match x with {
 }
 
 @test
-def testMatchTag21(): Bool = assertEq!(f26(Val26.Nip26), 0)
+def testMatchTag21(): Bool = f26(Val26.Nip26) == 0
 
 @test
-def testMatchTag22(): Bool = assertEq!(f26(Val26.Val26(("a", 1))), 1)
+def testMatchTag22(): Bool = f26(Val26.Val26(("a", 1))) == 1
 
 @test
-def testMatchTag23(): Bool = assertEq!(f26(Val26.Val26(("b", 2))), 2)
+def testMatchTag23(): Bool = f26(Val26.Val26(("b", 2))) == 2
 
 @test
-def testMatchTag24(): Bool = assertEq!(f26(Val26.Val26(("x", 3))), -1)
+def testMatchTag24(): Bool = f26(Val26.Val26(("x", 3))) == -1
 
 enum A27 { case AA27(Int), case AB27(Int) }
 
@@ -435,22 +435,22 @@ def f27(x: B27): Str = match x with {
 }
 
 @test
-def testMatchTag25(): Bool = assertEq!(f27(B27.Top27), "top")
+def testMatchTag25(): Bool = f27(B27.Top27) == "top"
 
 @test
-def testMatchTag26(): Bool = assertEq!(f27(B27.Bot27), "bot")
+def testMatchTag26(): Bool = f27(B27.Bot27) == "bot"
 
 @test
-def testMatchTag27(): Bool = assertEq!(f27(B27.BB27(A27.AA27(0))), "a0")
+def testMatchTag27(): Bool = f27(B27.BB27(A27.AA27(0))) == "a0"
 
 @test
-def testMatchTag28(): Bool = assertEq!(f27(B27.BB27(A27.AA27(1))), "aaa")
+def testMatchTag28(): Bool = f27(B27.BB27(A27.AA27(1))) == "aaa"
 
 @test
-def testMatchTag29(): Bool = assertEq!(f27(B27.BB27(A27.AB27(0))), "b0")
+def testMatchTag29(): Bool = f27(B27.BB27(A27.AB27(0))) == "b0"
 
 @test
-def testMatchTag30(): Bool = assertEq!(f27(B27.BB27(A27.AB27(-1))), "bbb")
+def testMatchTag30(): Bool = f27(B27.BB27(A27.AB27(-1))) == "bbb"
 
 enum Val28 { case Nip28, case Val28(Set[Int]) }
 
@@ -460,10 +460,10 @@ def f28(x: Val28): Set[Int] = match x with {
 }
 
 @test
-def testMatchTag31(): Bool = assertEq!(f28(Val28.Nip28), Set#{0})
+def testMatchTag31(): Bool = f28(Val28.Nip28) == Set#{0}
 
 @test
-def testMatchTag32(): Bool = assertEq!(f28(Val28.Val28(Set#{1, 2, 3})), Set#{1, 2, 3})
+def testMatchTag32(): Bool = f28(Val28.Val28(Set#{1, 2, 3})) == Set#{1, 2, 3}
 
 enum Val29 { case Val29(Int8) }
 
@@ -472,7 +472,7 @@ def f29(): Int8 = match Val29.Val29(32i8) with {
 }
 
 @test
-def testMatchTag33(): Bool = assertEq!(f29(), 32i8)
+def testMatchTag33(): Bool = f29() == 32i8
 
 enum Val30 { case Val30(Int16) }
 
@@ -481,7 +481,7 @@ def f30(): Int16 = match Val30.Val30(3200i16) with {
 }
 
 @test
-def testMatchTag34(): Bool = assertEq!(f30(), 3200i16)
+def testMatchTag34(): Bool = f30() == 3200i16
 
 enum Val31 { case Val31(Int32) }
 
@@ -490,7 +490,7 @@ def f31(): Int32 = match Val31.Val31(32000000i32) with {
 }
 
 @test
-def testMatchTag35(): Bool = assertEq!(f31(), 32000000i32)
+def testMatchTag35(): Bool = f31() == 32000000i32
 
 enum Val32 { case Val32(Int64) }
 def f32(): Int64 = match Val32.Val32(320000000000i64) with {
@@ -498,7 +498,7 @@ def f32(): Int64 = match Val32.Val32(320000000000i64) with {
 }
 
 @test
-def testMatchTag36(): Bool = assertEq!(f32(), 320000000000i64)
+def testMatchTag36(): Bool = f32() == 320000000000i64
 
 enum Val33 { case Val33(Char) }
 
@@ -507,7 +507,7 @@ def f33(): Char = match Val33.Val33('a') with {
 }
 
 @test
-def testMatchTag37(): Bool = assertEq!(f33(), 'a')
+def testMatchTag37(): Bool = f33() == 'a'
 
 enum Val34 { case Val34(Float32) }
 
@@ -516,7 +516,7 @@ def f34(): Float32 = match Val34.Val34(4.2f32) with {
 }
 
 @test
-def testMatchTag38(): Bool = assertEq!(f34(), 4.2f32)
+def testMatchTag38(): Bool = f34() == 4.2f32
 
 enum Val35 { case Val35(Float64) }
 
@@ -525,7 +525,7 @@ def f35(): Float64 = match Val35.Val35(4.2f64) with {
 }
 
 @test
-def testMatchTag39(): Bool = assertEq!(f35(), 4.2f64)
+def testMatchTag39(): Bool = f35() == 4.2f64
 
 enum Val36 { case Val36(BigInt) }
 
@@ -534,20 +534,20 @@ def f36(): BigInt = match Val36.Val36(100000000000000000000ii) with {
 }
 
 @test
-def testMatchTag40(): Bool = assertEq!(f36(), 100000000000000000000ii)
+def testMatchTag40(): Bool = f36() == 100000000000000000000ii
 
 def f41(x: Int, y: Int): Int =
   let (a, b) = (x, y);
     a + b
 
 @test
-def testMatchTuple01(): Bool = assertEq!(f41(5, 6), 11)
+def testMatchTuple01(): Bool = f41(5, 6) == 11
 
 @test
-def testMatchTuple02(): Bool = assertEq!(f41(6, 5), 11)
+def testMatchTuple02(): Bool = f41(6, 5) == 11
 
 @test
-def testMatchTuple03(): Bool = assertEq!(f41(100, 23), 123)
+def testMatchTuple03(): Bool = f41(100, 23) == 123
 
 def f42(x: Int, y: Bool): Str = match (x, y) with {
   case (5, true) => "abc"
@@ -557,16 +557,16 @@ def f42(x: Int, y: Bool): Str = match (x, y) with {
 }
 
 @test
-def testMatchTuple04(): Bool = assertEq!(f42(5, true), "abc")
+def testMatchTuple04(): Bool = f42(5, true) == "abc"
 
 @test
-def testMatchTuple05(): Bool = assertEq!(f42(5, false), "def")
+def testMatchTuple05(): Bool = f42(5, false) == "def"
 
 @test
-def testMatchTuple06(): Bool = assertEq!(f42(6, true), "ghi")
+def testMatchTuple06(): Bool = f42(6, true) == "ghi"
 
 @test
-def testMatchTuple07(): Bool = assertEq!(f42(0, false), "jkl")
+def testMatchTuple07(): Bool = f42(0, false) == "jkl"
 
 def f43(x: BigInt, y: Int, z: Int): Int = match (x, (y, z)) with {
   case (1ii, (2, 3)) => -1
@@ -577,22 +577,22 @@ def f43(x: BigInt, y: Int, z: Int): Int = match (x, (y, z)) with {
 }
 
 @test
-def testMatchTuple08(): Bool = assertEq!(f43(1ii, 2, 3), -1)
+def testMatchTuple08(): Bool = f43(1ii, 2, 3) == -1
 
 @test
-def testMatchTuple09(): Bool = assertEq!(f43(1ii, 2, 4), -2)
+def testMatchTuple09(): Bool = f43(1ii, 2, 4) == -2
 
 @test
-def testMatchTuple10(): Bool = assertEq!(f43(1ii, 3, 3), -3)
+def testMatchTuple10(): Bool = f43(1ii, 3, 3) == -3
 
 @test
-def testMatchTuple11(): Bool = assertEq!(f43(1ii, 5, 5), -4)
+def testMatchTuple11(): Bool = f43(1ii, 5, 5) == -4
 
 @test
-def testMatchTuple12(): Bool = assertEq!(f43(2ii, 2, 3), 5)
+def testMatchTuple12(): Bool = f43(2ii, 2, 3) == 5
 
 @test
-def testMatchTuple13(): Bool = assertEq!(f43(2ii, 10, 20), 30)
+def testMatchTuple13(): Bool = f43(2ii, 10, 20) == 30
 
 enum ConstProp44 { case Top44, case Val44(Int), case Bot44 }
 
@@ -604,22 +604,22 @@ def f44(x: ConstProp44, y: ConstProp44): Int = match (x, y) with {
 }
 
 @test
-def testMatchTuple14(): Bool = assertEq!(f44(ConstProp44.Top44, ConstProp44.Top44), 1)
+def testMatchTuple14(): Bool = f44(ConstProp44.Top44, ConstProp44.Top44) == 1
 
 @test
-def testMatchTuple15(): Bool = assertEq!(f44(ConstProp44.Bot44, ConstProp44.Bot44), 2)
+def testMatchTuple15(): Bool = f44(ConstProp44.Bot44, ConstProp44.Bot44) == 2
 
 @test
-def testMatchTuple16(): Bool = assertEq!(f44(ConstProp44.Val44(42), ConstProp44.Val44(42)), 3)
+def testMatchTuple16(): Bool = f44(ConstProp44.Val44(42), ConstProp44.Val44(42)) == 3
 
 @test
-def testMatchTuple17(): Bool = assertEq!(f44(ConstProp44.Val44(42), ConstProp44.Val44(0)), 4)
+def testMatchTuple17(): Bool = f44(ConstProp44.Val44(42), ConstProp44.Val44(0)) == 4
 
 @test
-def testMatchTuple18(): Bool = assertEq!(f44(ConstProp44.Val44(0), ConstProp44.Val44(42)), 4)
+def testMatchTuple18(): Bool = f44(ConstProp44.Val44(0), ConstProp44.Val44(42)) == 4
 
 @test
-def testMatchTuple19(): Bool = assertEq!(f44(ConstProp44.Top44, ConstProp44.Bot44), 5)
+def testMatchTuple19(): Bool = f44(ConstProp44.Top44, ConstProp44.Bot44) == 5
 
 enum NameAndAge45 { case T45(Str,Int) }
 
@@ -631,25 +631,25 @@ def f45(x: Int, y: NameAndAge45): Int = match (x, y) with {
 }
 
 @test
-def testMatchTuple20(): Bool = assertEq!(f45(1, NameAndAge45.T45("James", 20)), 1)
+def testMatchTuple20(): Bool = f45(1, NameAndAge45.T45("James", 20)) == 1
 
 @test
-def testMatchTuple21(): Bool = assertEq!(f45(1, NameAndAge45.T45("John", 53)), -1)
+def testMatchTuple21(): Bool = f45(1, NameAndAge45.T45("John", 53)) == -1
 
 @test
-def testMatchTuple22(): Bool = assertEq!(f45(2, NameAndAge45.T45("James", 20)), 22)
+def testMatchTuple22(): Bool = f45(2, NameAndAge45.T45("James", 20)) == 22
 
 @test
-def testMatchTuple23(): Bool = assertEq!(f45(2, NameAndAge45.T45("John", 53)), -1)
+def testMatchTuple23(): Bool = f45(2, NameAndAge45.T45("John", 53)) == -1
 
 @test
-def testMatchTuple24(): Bool = assertEq!(f45(3, NameAndAge45.T45("Mary", 24)), 2)
+def testMatchTuple24(): Bool = f45(3, NameAndAge45.T45("Mary", 24)) == 2
 
 @test
-def testMatchTuple25(): Bool = assertEq!(f45(3, NameAndAge45.T45("Anne", 18)), -1)
+def testMatchTuple25(): Bool = f45(3, NameAndAge45.T45("Anne", 18)) == -1
 
 @test
-def testMatchTuple26(): Bool = assertEq!(f45(4, NameAndAge45.T45("Charles", 64)), -1)
+def testMatchTuple26(): Bool = f45(4, NameAndAge45.T45("Charles", 64)) == -1
 
 def f46(x: Int, y: Int): Int = match (x, y) with {
   case (u, v) => match u with {
@@ -662,16 +662,16 @@ def f46(x: Int, y: Int): Int = match (x, y) with {
 }
 
 @test
-def testMatchTuple27(): Bool = assertEq!(f46(0, 0), 0)
+def testMatchTuple27(): Bool = f46(0, 0) == 0
 
 @test
-def testMatchTuple28(): Bool = assertEq!(f46(1, 0), 1)
+def testMatchTuple28(): Bool = f46(1, 0) == 1
 
 @test
-def testMatchTuple29(): Bool = assertEq!(f46(0, 2), 2)
+def testMatchTuple29(): Bool = f46(0, 2) == 2
 
 @test
-def testMatchTuple30(): Bool = assertEq!(f46(3, 4), 0)
+def testMatchTuple30(): Bool = f46(3, 4) == 0
 
 @test
 def testMatchTupleWithSep01(): Bool = match 0 with {

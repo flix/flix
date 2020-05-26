@@ -4,31 +4,31 @@
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testBinaryLogicalAnd01(): Bool = assertEq!(true && true, true)
+def testBinaryLogicalAnd01(): Bool = (true && true) == true
 
 @test
-def testBinaryLogicalAnd02(): Bool = assertEq!(true && false, false)
+def testBinaryLogicalAnd02(): Bool = (true && false) == false
 
 @test
-def testBinaryLogicalAnd03(): Bool = assertEq!(false && true, false)
+def testBinaryLogicalAnd03(): Bool = (false && true) == false
 
 @test
-def testBinaryLogicalAnd04(): Bool = assertEq!(false && false, false)
+def testBinaryLogicalAnd04(): Bool = (false && false) == false
 
 @test
-def testBinaryLogicalAnd05(): Bool = assertEq!(false && ???, false)
+def testBinaryLogicalAnd05(): Bool = (false && ???) == false
 
 @test
-def binaryLogicalOrTest01(): Bool = assertEq!(true || true, true)
+def binaryLogicalOrTest01(): Bool = (true || true) == true
 
 @test
-def binaryLogicalOrTest02(): Bool = assertEq!(true || false, true)
+def binaryLogicalOrTest02(): Bool = (true || false) == true
 
 @test
-def binaryLogicalOrTest03(): Bool = assertEq!(false || true, true)
+def binaryLogicalOrTest03(): Bool = (false || true) == true
 
 @test
-def binaryLogicalOrTest04(): Bool = assertEq!(false || false, false)
+def binaryLogicalOrTest04(): Bool = (false || false) == false
 
 @test
-def binaryLogicalOrTest05(): Bool = assertEq!(true || ???, true)
+def binaryLogicalOrTest05(): Bool = (true || ???) == true

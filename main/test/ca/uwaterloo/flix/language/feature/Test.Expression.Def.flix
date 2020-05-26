@@ -20,7 +20,7 @@ namespace Foo01/Bar01 {
 }
 
 @test
-def testDef01(): Bool = assertEq!(Foo01/Bar01.f(), "foo")
+def testDef01(): Bool = Foo01/Bar01.f() == "foo"
 
 namespace Foo02 {
     pub def f(): Int = 5
@@ -28,7 +28,7 @@ namespace Foo02 {
 }
 
 @test
-def testDef02(): Bool = assertEq!(Foo02.g(), 5)
+def testDef02(): Bool = Foo02.g() == 5
 
 namespace Foo03 {
     pub def x(): Bool = true
@@ -37,7 +37,7 @@ namespace Foo03 {
 }
 
 @test
-def testDef03(): Bool = assertEq!(Foo03.f(), false)
+def testDef03(): Bool = Foo03.f() == false
 
 namespace Foo04 {
     pub def x(): Str = "hello"
@@ -47,12 +47,12 @@ namespace Bar04 {
 }
 
 @test
-def testDef04(): Bool = assertEq!(Bar04.x(), "hello")
+def testDef04(): Bool = Bar04.x() == "hello"
 
 def x05(): Int = 42
 
 @test
-def testDef05(): Bool = assertEq!(x05(), 42)
+def testDef05(): Bool = x05() == 42
 
 namespace A06/B06 {
     pub def a(): Bool = false
@@ -72,16 +72,16 @@ namespace A06 {
 def e06(): Int = -1
 
 @test
-def testDef06(): Bool = assertEq!(A06/B06.a(), false)
+def testDef06(): Bool = A06/B06.a() == false
 
 @test
 def testDef07(): Bool = A06.b()
 
 @test
-def testDef08(): Bool = assertEq!(A06/B06.c(), 0)
+def testDef08(): Bool = A06/B06.c() == 0
 
 @test
-def testDef09(): Bool = assertEq!(A06/B06/C06.d(), 42)
+def testDef09(): Bool = A06/B06/C06.d() == 42
 
 @test
-def testDef10(): Bool = assertEq!(e06(), -1)
+def testDef10(): Bool = e06() == -1

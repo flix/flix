@@ -8,7 +8,7 @@ namespace Test/Expression/Match/Guard {
             case Some(x) if x == 'c' => 3
             case _                   => 42
         };
-        r `assertEq!` 1
+        r == 1
 
     @test
     def guard02(): Bool =
@@ -18,7 +18,7 @@ namespace Test/Expression/Match/Guard {
             case Some(x) if x == 'c' => 3
             case _                   => 42
         };
-        r `assertEq!` 2
+        r == 2
 
     @test
     def guard03(): Bool =
@@ -28,7 +28,7 @@ namespace Test/Expression/Match/Guard {
             case Some(x) if x == 'c' => 3
             case _                   => 42
         };
-        r `assertEq!` 3
+        r == 3
 
     @test
     def guard04(): Bool =
@@ -38,7 +38,7 @@ namespace Test/Expression/Match/Guard {
             case Some(x) if x == 'c' => 3
             case _                   => 42
         };
-        r `assertEq!` 42
+        r == 42
 
     @test
     def guard05(): Bool =
@@ -48,6 +48,6 @@ namespace Test/Expression/Match/Guard {
             case Some(x) if x == 'c' => 3
             case _                   => 42
         };
-        r `assertEq!` 42
+        r == 42
 
 }

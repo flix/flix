@@ -1,68 +1,68 @@
 @test
-def curry01(): Bool = f(1, 2) `assertEq!` f(1)(2)
+def curry01(): Bool = f(1, 2) == f(1)(2)
 
 @test
-def curry02(): Bool = g(1, 2, 3) `assertEq!` g(1)(2)(3)
+def curry02(): Bool = g(1, 2, 3) == g(1)(2)(3)
 
 @test
-def curry03(): Bool = g(1, 2, 3) `assertEq!` g(1, 2)(3)
+def curry03(): Bool = g(1, 2, 3) == g(1, 2)(3)
 
 @test
-def curry04(): Bool = g(1, 2, 3) `assertEq!` g(1)(2, 3)
+def curry04(): Bool = g(1, 2, 3) == g(1)(2, 3)
 
 @test
-def curry05(): Bool = h(1, 2, 3, 4) `assertEq!` h(1)(2)(3)(4)
+def curry05(): Bool = h(1, 2, 3, 4) == h(1)(2)(3)(4)
 
 @test
-def curry06(): Bool = h(1, 2, 3, 4) `assertEq!` h(1, 2)(3)(4)
+def curry06(): Bool = h(1, 2, 3, 4) == h(1, 2)(3)(4)
 
 @test
-def curry07(): Bool = h(1, 2, 3, 4) `assertEq!` h(1)(2, 3)(4)
+def curry07(): Bool = h(1, 2, 3, 4) == h(1)(2, 3)(4)
 
 @test
-def curry08(): Bool = h(1, 2, 3, 4) `assertEq!` h(1)(2)(3, 4)
+def curry08(): Bool = h(1, 2, 3, 4) == h(1)(2)(3, 4)
 
 @test
-def curry09(): Bool = h(1, 2, 3, 4) `assertEq!` h(1, 2)(3, 4)
+def curry09(): Bool = h(1, 2, 3, 4) == h(1, 2)(3, 4)
 
 @test
-def curry10(): Bool = h(1, 2, 3, 4) `assertEq!` h(1, 2, 3)(4)
+def curry10(): Bool = h(1, 2, 3, 4) == h(1, 2, 3)(4)
 
 @test
-def curry11(): Bool = h(1, 2, 3, 4) `assertEq!` h(1)(2, 3, 4)
+def curry11(): Bool = h(1, 2, 3, 4) == h(1)(2, 3, 4)
 
 @test
-def curry12(): Bool = i(1, 2) `assertEq!` i(1)(2)
+def curry12(): Bool = i(1, 2) == i(1)(2)
 
 @test
-def curry13(): Bool = j(1, 2, 3) `assertEq!` j(1)(2)(3)
+def curry13(): Bool = j(1, 2, 3) == j(1)(2)(3)
 
 @test
-def curry14(): Bool = j(1, 2, 3) `assertEq!` j(1, 2)(3)
+def curry14(): Bool = j(1, 2, 3) == j(1, 2)(3)
 
 @test
-def curry15(): Bool = j(1, 2, 3) `assertEq!` j(1)(2, 3)
+def curry15(): Bool = j(1, 2, 3) == j(1)(2, 3)
 
 @test
-def curry16(): Bool = k(x -> x, 42) `assertEq!` k(x -> x)(42)
+def curry16(): Bool = k(x -> x, 42) == k(x -> x)(42)
 
 @test
-def curry17(): Bool = Option.map(x -> x + 1)(Some(42)) `assertEq!` Some(43)
+def curry17(): Bool = Option.map(x -> x + 1)(Some(42)) == Some(43)
 
 @test
-def curry18(): Bool = Result.map(x -> x + 1)(Ok(42)) `assertEq!` Ok(43)
+def curry18(): Bool = Result.map(x -> x + 1)(Ok(42)) == Ok(43)
 
 @test
-def curry19(): Bool = List.map(x -> x + 1)(1 :: 2 :: 3 :: Nil) `assertEq!` (2 :: 3 :: 4 :: Nil)
+def curry19(): Bool = List.map(x -> x + 1)(1 :: 2 :: 3 :: Nil) == (2 :: 3 :: 4 :: Nil)
 
 @test
-def curry20(): Bool = List.exists(x -> x == 1)(1 :: 2 :: 3 :: Nil) `assertEq!` true
+def curry20(): Bool = List.exists(x -> x == 1)(1 :: 2 :: 3 :: Nil) == true
 
 @test
-def curry21(): Bool = flip(Option.map)(Some(42), x -> x + 1) `assertEq!` Some(43)
+def curry21(): Bool = flip(Option.map)(Some(42), x -> x + 1) == Some(43)
 
 @test
-def curry22(): Bool = flip(Option.map)(Some(42))(x -> x + 1) `assertEq!` Some(43)
+def curry22(): Bool = flip(Option.map)(Some(42))(x -> x + 1) == Some(43)
 
 ///
 /// A function of arity 2.
