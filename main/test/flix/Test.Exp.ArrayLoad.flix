@@ -232,9 +232,6 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad78(): Option[Int] & Impure = let x = [[None, Some(4), Some(999)], [Some(9), Some(5), None, None]]; x[1][2]
 
     @test
-    def testArrayLoad79(): Int & Impure = let x = [[|1, 2|], [|3, 4|]]; x[0][|0|]
-
-    @test
-    def testArrayLoad80(): Array[List[Int]] & Impure = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
+    def testArrayLoad79(): Array[List[Int]] & Impure = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
 
 }

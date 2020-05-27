@@ -166,18 +166,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
-      case Expression.VectorLit(exps, _, _, _) => exps.flatMap(visitExp(_, lint0))
-
-      case Expression.VectorNew(exp, _, _, _, _) => visitExp(exp, lint0)
-
-      case Expression.VectorLoad(exp, _, _, _, _) => visitExp(exp, lint0)
-
-      case Expression.VectorStore(exp1, _, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
-
-      case Expression.VectorLength(exp, _, _, _) => visitExp(exp, lint0)
-
-      case Expression.VectorSlice(exp, _, _, _, _, _) => visitExp(exp, lint0)
-
       case Expression.Ref(exp, _, _, _) => visitExp(exp, lint0)
 
       case Expression.Deref(exp, _, _, _) => visitExp(exp, lint0)
@@ -439,24 +427,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.ArraySlice(exp11, exp12, exp13, _, _, _), Expression.ArraySlice(exp21, exp22, exp23, _, _, _)) =>
       unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
-
-    case (Expression.VectorLit(exps1, _, _, _), Expression.VectorLit(exps2, _, _, _)) =>
-      unifyExps(exps1, exps2, metaVars)
-
-    case (Expression.VectorNew(exp1, len1, _, _, _), Expression.VectorNew(exp2, len2, _, _, _)) if len1 == len2 =>
-      unifyExp(exp1, exp2, metaVars)
-
-    case (Expression.VectorLoad(exp1, index1, _, _, _), Expression.VectorLoad(exp2, index2, _, _, _)) if index1 == index2 =>
-      unifyExp(exp1, exp2, metaVars)
-
-    case (Expression.VectorStore(exp11, index1, exp12, _, _, _), Expression.VectorStore(exp21, index2, exp22, _, _, _)) if index1 == index2 =>
-      unifyExp(exp11, exp12, exp21, exp22, metaVars)
-
-    case (Expression.VectorLength(exp1, _, _, _), Expression.VectorLength(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2, metaVars)
-
-    case (Expression.VectorSlice(exp1, start1, end1, _, _, _), Expression.VectorSlice(exp2, start2, end2, _, _, _)) if start1 == start2 && end1 == end2 =>
-      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Ref(exp1, _, _, _), Expression.Ref(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
@@ -848,31 +818,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         val e3 = apply(exp3)
         Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
-
-      case Expression.VectorLit(elms, tpe, eff, loc) =>
-        val es = elms.map(apply)
-        Expression.VectorLit(es, tpe, eff, loc)
-
-      case Expression.VectorNew(exp, len, tpe, eff, loc) =>
-        val e = apply(exp)
-        Expression.VectorNew(e, len, tpe, eff, loc)
-
-      case Expression.VectorLoad(exp, index, tpe, eff, loc) =>
-        val e = apply(exp)
-        Expression.VectorLoad(e, index, tpe, eff, loc)
-
-      case Expression.VectorStore(exp1, index, exp2, tpe, eff, loc) =>
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        Expression.VectorStore(e1, index, e2, tpe, eff, loc)
-
-      case Expression.VectorLength(exp, tpe, eff, loc) =>
-        val e = apply(exp)
-        Expression.VectorLength(e, tpe, eff, loc)
-
-      case Expression.VectorSlice(exp, begin, end, tpe, eff, loc) =>
-        val e = apply(exp)
-        Expression.VectorSlice(e, begin, end, tpe, eff, loc)
 
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = apply(exp)

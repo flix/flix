@@ -79,15 +79,12 @@ namespace Test/Exp/ArraySlice {
     def testArraySlice26(): Array[Array[Int]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[0..3]
 
     @test
-    def testArraySlice27(): Array[Vector[Int, 3]] & Impure = let x = [[|1, 2, 3|], [|1, 2, 3|] ]; x[1..2]
+    def testArraySlice27(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[1..2]
 
     @test
-    def testArraySlice28(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[1..2]
+    def testArraySlice28(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[1..2]
 
     @test
-    def testArraySlice29(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[1..2]
-
-    @test
-    def testArraySlice30(): Array[Option[Int]] & Impure = let x = [Some(1), Some(2), Some(3), Some(4), None]; x[1..2]
+    def testArraySlice29(): Array[Option[Int]] & Impure = let x = [Some(1), Some(2), Some(3), Some(4), None]; x[1..2]
 
 }

@@ -82,15 +82,12 @@ namespace Test/Exp/ArraySliceNoEndIndex {
     def testArraySliceNoEndIndex27(): Array[Int] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex28(): Array[Vector[Int, 3]] & Impure = let x = [[|1, 2, 3|], [|1, 2, 3|] ]; x[0..]
+    def testArraySliceNoEndIndex28(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex29(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
+    def testArraySliceNoEndIndex29(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex30(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[0..]
-
-    @test
-    def testArraySliceNoEndIndex31(): Array[Option[Int]] & Impure = let x = [None, None, None, None, Some(1)]; x[0..]
+    def testArraySliceNoEndIndex30(): Array[Option[Int]] & Impure = let x = [None, None, None, None, Some(1)]; x[0..]
 
 }

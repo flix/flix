@@ -118,26 +118,6 @@ object TypedAstOps {
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
         visitExp(base, env0) ++ visitExp(beginIndex, env0) ++ visitExp(endIndex, env0)
 
-      case Expression.VectorLit(elms, tpe, eff, loc) =>
-        elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, elm) => macc ++ visitExp(elm, env0)
-        }
-
-      case Expression.VectorNew(elm, len, tpe, eff, loc) =>
-        visitExp(elm, env0)
-
-      case Expression.VectorLoad(base, index, tpe, eff, loc) =>
-        visitExp(base, env0)
-
-      case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
-        visitExp(base, env0)
-
-      case Expression.VectorLength(base, tpe, eff, loc) =>
-        visitExp(base, env0)
-
-      case Expression.VectorSlice(base, beginIndex, endIndex, tpe, eff, loc) =>
-        visitExp(base, env0) ++ visitExp(endIndex, env0)
-
       case Expression.Ref(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 

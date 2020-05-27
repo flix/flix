@@ -88,8 +88,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           case Type.Var(_, _, _) => Type.mkSchemaExtend(sym, visit(tpe), Type.SchemaEmpty)
           case _ => Type.mkSchemaExtend(sym, visit(tpe), visit(rest))
         }
-        case Type.Zero => Type.Zero
-        case Type.Succ(n, i) => Type.Succ(n, i)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
         case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
@@ -379,32 +377,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val i1 = visitExp(startIndex, env0)
           val i2 = visitExp(endIndex, env0)
           Expression.ArraySlice(b, i1, i2, subst0(tpe), eff, loc)
-
-        case Expression.VectorLit(elms, tpe, eff, loc) =>
-          val es = elms.map(e => visitExp(e, env0))
-          Expression.VectorLit(es, subst0(tpe), eff, loc)
-
-        case Expression.VectorNew(elm, len, tpe, eff, loc) =>
-          val e = visitExp(elm, env0)
-          Expression.VectorNew(e, len, subst0(tpe), eff, loc)
-
-        case Expression.VectorLoad(base, index, tpe, eff, loc) =>
-          val b = visitExp(base, env0)
-          Expression.VectorLoad(b, index, subst0(tpe), eff, loc)
-
-        case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
-          val b = visitExp(base, env0)
-          val e = visitExp(elm, env0)
-          Expression.VectorStore(b, index, e, subst0(tpe), eff, loc)
-
-        case Expression.VectorLength(base, tpe, eff, loc) =>
-          val b = visitExp(base, env0)
-          Expression.VectorLength(b, subst0(tpe), eff, loc)
-
-        case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
-          val b = visitExp(base, env0)
-          val i2 = visitExp(endIndex, env0)
-          Expression.VectorSlice(b, startIndex, i2, subst0(tpe), eff, loc)
 
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

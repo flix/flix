@@ -57,11 +57,6 @@ object Kind {
   case object Schema extends Kind
 
   /**
-    * The kind of natural number expressions.
-    */
-  case object Nat extends Kind
-
-  /**
     * The kind of effects.
     */
   case object Effect extends Kind
@@ -85,7 +80,6 @@ object Kind {
       case Kind.Star => "*"
       case Kind.Record => "Record"
       case Kind.Schema => "Schema"
-      case Kind.Nat => "Nat"
       case Kind.Effect => "Effect"
       case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
       case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"

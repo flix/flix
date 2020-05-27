@@ -79,15 +79,12 @@ namespace Test/Exp/ArraySliceNoStartIndex {
     def testArraySliceNoStartIndex26(): Array[Array[Int]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[..3]
 
     @test
-    def testArraySliceNoStartIndex27(): Array[Vector[Int, 3]] & Impure = let x = [[|1, 2, 3|], [|1, 2, 3|] ]; x[0..]
+    def testArraySliceNoStartIndex27(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
 
     @test
-    def testArraySliceNoStartIndex28(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
+    def testArraySliceNoStartIndex28(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[0..]
 
     @test
-    def testArraySliceNoStartIndex29(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[0..]
-
-    @test
-    def testArraySliceNoStartIndex30(): Array[Option[Int]] & Impure = let x = [None, None, Some(1)]; x[0..]
+    def testArraySliceNoStartIndex29(): Array[Option[Int]] & Impure = let x = [None, None, Some(1)]; x[0..]
 
 }

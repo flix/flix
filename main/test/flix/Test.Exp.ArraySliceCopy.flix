@@ -82,15 +82,12 @@ namespace Test/Exp/ArraySliceCopy {
     def testArraySliceCopy27(): Array[Int] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; x[..]
 
     @test
-    def testArraySliceCopy28(): Array[Vector[Int, 3]] & Impure = let x = [[|1, 2, 3|], [|1, 2, 3|] ]; x[..]
+    def testArraySliceCopy28(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[..]
 
     @test
-    def testArraySliceCopy29(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[..]
-
-    @test
-    def testArraySliceCopy30(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[..]
+    def testArraySliceCopy29(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[..]
     
     @test
-    def testArraySliceCopy31(): Array[Option[Int]] & Impure = let x = [None, None, Some(2), Some(2)]; x[..]
+    def testArraySliceCopy30(): Array[Option[Int]] & Impure = let x = [None, None, Some(2), Some(2)]; x[..]
 
 }
