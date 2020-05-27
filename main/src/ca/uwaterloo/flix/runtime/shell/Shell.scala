@@ -140,7 +140,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       """     __   _   _
         |    / _| | | (_)            Welcome to Flix __VERSION__
         |   | |_  | |  _  __  __
-        |   |  _| | | | | \ \/ /     Enter an expression or command, and hit return.
+        |   |  _| | | | | \ \/ /     Enter a command and hit return.
         |   | |   | | | |  >  <      Type ':help' for more information.
         |   |_|   |_| |_| /_/\_\     Type ':quit' or press 'ctrl + d' to exit.
       """.stripMargin
@@ -465,7 +465,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     w.println("  :browse       <ns>              Shows all entities in <ns>.")
     w.println("  :doc          <fqn>             Shows documentation for <fqn>.")
     w.println("  :search       <needle>          Shows all entities that match <needle>.")
-    w.println("  :load         <path>            Adds <path> as a source file.")
+    w.println("  :reload :r                      Recompiles every source file.")
     w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")
     w.println("  :warmup                         Warms up the compiler by running it multiple times.")
