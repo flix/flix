@@ -1,9 +1,4 @@
 ///
-/// The Void type.
-///
-pub enum Void { }
-
-///
 /// The identity function.
 ///
 pub def identity(x: a): a = x
@@ -55,13 +50,6 @@ pub def swap(p: (a, b)): (b, a) =
         (y, x)
 
 ///
-/// Backwards function composition. Applies the function on the right first.
-///
-/// Given the functions `f: b -> c` and `g: a -> b` returns a function `a -> c`
-///
-pub def <<(f: b -> c & e1, g: a -> b & e2): a -> c & {e1, e2} = x -> f(g(x))
-
-///
 /// Forwards function composition. Applies the function on the left first.
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
@@ -81,15 +69,6 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 /// Given a pair `x` and a function `f` returns `f(x)`.
 ///
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
-
-///
-/// Returns `true` if the given value `x` is `null`.
-///
-/// NB: For internal use only.
-///
-pub def isNull(x: a): Bool =
-    import java.util.Objects:isNull(##java.lang.Object);
-    isNull(x as ##java.lang.Object) as & Pure
 
 ///
 /// Asserts that the given boolean `b` is `true`.
