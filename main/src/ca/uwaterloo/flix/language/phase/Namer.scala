@@ -943,9 +943,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case ts => NamedAst.Type.Lattice(ts, loc)
       }
 
-    case WeededAst.Type.Nat(len, loc) =>
-      NamedAst.Type.Nat(len, loc).toSuccess
-
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
@@ -1138,7 +1135,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
-    case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)

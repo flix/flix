@@ -294,8 +294,6 @@ object WeededAst {
 
     case class Lattice(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
-    case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
-
     case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type
 
     case class Arrow(tparams: List[WeededAst.Type], eff: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type

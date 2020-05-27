@@ -288,8 +288,6 @@ object NamedAst {
 
     case class SchemaExtendWithTypes(ident: Name.Ident, den: Ast.Denotation, tpes: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
-
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
     case class Relation(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type

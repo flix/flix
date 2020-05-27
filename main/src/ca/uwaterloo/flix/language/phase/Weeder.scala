@@ -1584,8 +1584,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
       }
 
-    case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
-
     case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
@@ -1935,7 +1933,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
-    case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.UnaryImpureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
@@ -1947,20 +1944,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Not(eff) => leftMostSourcePosition(eff)
     case ParsedAst.Type.And(tpe1, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(eff1, _) => leftMostSourcePosition(eff1)
-  }
-
-  /**
-    * Helper method for Succ type.
-    * Checks to make sure Literal.Int32 is >= 0, and converts it to int.
-    * Throws InternalCompilerException if check fails.
-    * TODO make type handling for vertification.
-    */
-  private def checkNaturalNumber(elm: ParsedAst.Literal.Int32, sp1: SourcePosition, sp2: SourcePosition): Int = {
-    toInt32(elm.sign, elm.radix, elm.lit, mkSL(sp1, sp2)) match {
-      case Validation.Success(l) if l >= 0 => l
-      // TODO Make Types.weed handle validation.
-      case _ => throw InternalCompilerException("Vector length must be an integer of minimum 0.")
-    }
   }
 
   /**

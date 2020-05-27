@@ -1193,15 +1193,6 @@ object ParsedAst {
     case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Nat Type.
-      *
-      * @param sp1 the position of the first character in the type.
-      * @param len the type of the element.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class Nat(sp1: SourcePosition, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * Unary Impure Arrow Type.
       *
       * @param tpe1 the argument type.

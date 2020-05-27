@@ -1130,7 +1130,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Record | Schema | Native | Pure | Impure | Var | Ambiguous
+      Arrow | Tuple | Record | Schema | Native | Pure | Impure | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1144,10 +1144,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
             (atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.PolymorphicArrow)
           )
       }
-    }
-
-    def Nat: Rule1[ParsedAst.Type] = rule {
-      SP ~ Literals.IntDefault ~ SP ~> ParsedAst.Type.Nat
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
