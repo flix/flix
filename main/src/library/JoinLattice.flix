@@ -9,6 +9,7 @@ namespace JoinLattice {
     /// greater than or equal to each of its arguments.
     ///
     law upperBound[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
+        use Bool.∧;
         ∀(x: e, y: e). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
 
     ///
@@ -16,6 +17,7 @@ namespace JoinLattice {
     /// element that is larger than its two arguments.
     ///
     law leastUpperBound[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
+        use Bool.{∧, →};
         ∀(x: e, y: e, z: e). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
 
 }

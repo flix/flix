@@ -10,6 +10,7 @@ namespace PartialOrder {
     /// NB: This particular law is for unary functions.
     ///
     law monotone1[a, b](f: a -> b, dom: (a, a) -> Bool, codom: (b, b) -> Bool): Bool =
+        use Bool.→;
         ∀(x: a, y: a). (x `dom` y) → (f(x) `codom` f(y))
 
     ///
@@ -19,6 +20,7 @@ namespace PartialOrder {
     /// NB: This particular law is for binary functions.
     ///
     law monotone2[a, b, c](f: (a, b) -> c, dom1: (a, a) -> Bool, dom2: (b, b) -> Bool, codom: (c, c) -> Bool): Bool =
+        use Bool.{∧, →};
         ∀(x1: a, x2: a, y1: b, y2: b). ((x1 `dom1` y1) ∧ (x2 `dom2` y2)) → (f(x1, x2) `codom` f(y1, y2))
 
     ///

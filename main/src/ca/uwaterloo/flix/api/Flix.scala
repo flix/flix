@@ -65,6 +65,7 @@ class Flix {
     */
   private val library = List(
     "Array.flix" -> LocalResource.get("/library/Array.flix"),
+    "Bool.flix" -> LocalResource.get("/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/library/BigInt.flix"),
     "Char.flix" -> LocalResource.get("/library/Char.flix"),
     "Console.flix" -> LocalResource.get("/library/Console.flix"),

@@ -1,7 +1,8 @@
 /**
  * An implementation of the four-valued boolean lattice named for Nuel Belnap.
  */
-// TODO: Domain
+use Bool.{∧, ∨, →, ↔, ⊕};
+
 namespace Belnap {
 
     ///
@@ -155,21 +156,6 @@ namespace Belnap {
         case (True, True)   => True
         case (True, False)  => False
         case (False, True)  => False
-        case (False, False) => True
-        case _              => Top
-    }
-
-    ///
-    /// Over-approximates the logical `nand` operator.
-    ///
-    #safe2((x, y) -> x ↑ y)
-    #strict2 #monotone2 #commutative // NB: Commutative, but not associative!
-    pub def nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Bot, _)       => Bot
-        case (_, Bot)       => Bot
-        case (True, True)   => False
-        case (True, False)  => True
-        case (False, True)  => True
         case (False, False) => True
         case _              => Top
     }
