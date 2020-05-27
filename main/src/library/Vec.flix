@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// TODO: There is already a built-in type named "Vector". We should deal with this unfortunate name clash.
-
 ///
 /// Represents a mutable vector.
 ///

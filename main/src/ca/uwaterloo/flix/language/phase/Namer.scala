@@ -506,36 +506,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.VectorLit(elms, loc) =>
-      traverse(elms)(e => visitExp(e, env0, uenv0, tenv0)) map {
-        case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), loc)
-      }
-
-    case WeededAst.Expression.VectorNew(elm, len, loc) =>
-      visitExp(elm, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.VectorNew(e, len, Type.freshTypeVar(), loc)
-      }
-
-    case WeededAst.Expression.VectorLoad(base, index, loc) =>
-      visitExp(base, env0, uenv0, tenv0) map {
-        case b => NamedAst.Expression.VectorLoad(b, index, Type.freshTypeVar(), loc)
-      }
-
-    case WeededAst.Expression.VectorStore(base, index, elm, loc) =>
-      mapN(visitExp(base, env0, uenv0, tenv0), visitExp(elm, env0, uenv0, tenv0)) {
-        case (b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), loc)
-      }
-
-    case WeededAst.Expression.VectorLength(base, loc) =>
-      visitExp(base, env0, uenv0, tenv0) map {
-        case b => NamedAst.Expression.VectorLength(b, Type.freshTypeVar(), loc)
-      }
-
-    case WeededAst.Expression.VectorSlice(base, startIndex, optEndIndex, loc) =>
-      visitExp(base, env0, uenv0, tenv0) map {
-        case b => NamedAst.Expression.VectorSlice(b, startIndex, optEndIndex, Type.freshTypeVar(), loc)
-      }
-
     case WeededAst.Expression.Ref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
         case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), loc)
@@ -973,9 +943,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case ts => NamedAst.Type.Lattice(ts, loc)
       }
 
-    case WeededAst.Type.Nat(len, loc) =>
-      NamedAst.Type.Nat(len, loc).toSuccess
-
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
@@ -1080,12 +1047,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
     case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
-    case WeededAst.Expression.VectorLit(elms, loc) => elms.flatMap(freeVars)
-    case WeededAst.Expression.VectorNew(elm, len, loc) => freeVars(elm)
-    case WeededAst.Expression.VectorLoad(base, index, loc) => freeVars(base)
-    case WeededAst.Expression.VectorStore(base, index, elm, loc) => freeVars(base) ++ freeVars(elm)
-    case WeededAst.Expression.VectorLength(base, loc) => freeVars(base)
-    case WeededAst.Expression.VectorSlice(base, startIndex, endIndexOpt, loc) => freeVars(base)
     case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
@@ -1174,7 +1135,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
-    case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)

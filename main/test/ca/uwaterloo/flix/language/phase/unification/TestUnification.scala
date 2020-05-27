@@ -217,61 +217,6 @@ class TestUnification extends FunSuite {
     assert(isOk(result))
   }
 
-  test("Unify.Zero") {
-    val result = Unification.unifyTypes(Type.Zero, Type.Zero)
-    assert(isOk(result))
-  }
-
-  test("Unify.ZeroSucc.01") {
-    val result = Unification.unifyTypes(Type.Zero, Type.Succ(0, Type.Zero))
-    assert(isOk(result))
-  }
-
-  test("Unify.ZeroSucc.02") {
-    val result = Unification.unifyTypes(Type.Succ(0, Type.Zero), Type.Zero)
-    assert(isOk(result))
-  }
-
-  test("Unify.Succ.01") {
-    val freshVar = Type.Var(1, Kind.Star)
-    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(1, freshVar))
-    assert(isOk(result))
-  }
-
-  test("Unify.Succ.02") {
-    val freshVar = Type.Var(1, Kind.Star)
-    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(1, freshVar))
-    assert(isOk(result))
-  }
-
-  test("Unify.Succ.03") {
-    val freshVar = Type.Var(1, Kind.Star)
-    val freshVar2 = Type.Var(2, Kind.Star)
-    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(2, freshVar2))
-    assert(isOk(result))
-  }
-
-  test("Unify.Succ.04") {
-    val freshVar = Type.Var(1, Kind.Star)
-    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(2, Type.Zero))
-    assert(isOk(result))
-  }
-
-  test("Unify.Succ.05") {
-    val freshVar = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkApply(Type.Cst(TypeConstructor.Vector), Type.Bool :: Type.Succ(7, Type.Zero) :: Nil)
-    val tpe2 = Type.mkApply(Type.Cst(TypeConstructor.Vector), Type.Bool :: Type.Succ(5, freshVar) :: Nil)
-    val result = Unification.unifyTypes(tpe1, tpe2)
-    assert(isOk(result))
-  }
-
-  test("Unify.Succ.06") {
-    val freshVar = Type.Var(1, Kind.Star)
-    val freshVar2 = Type.Var(1, Kind.Star)
-    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(2, Type.Zero))
-    assert(isOk(result))
-  }
-
   test("Unify.Enum.01") {
     val sym = Symbol.mkEnumSym("Color")
     val result = Unification.unifyTypes(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), Type.Cst(TypeConstructor.Enum(sym, Kind.Star)))

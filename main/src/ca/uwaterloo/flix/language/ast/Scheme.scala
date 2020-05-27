@@ -87,8 +87,6 @@ object Scheme {
       }
       case Type.Cst(_) => tpe0
       case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
-      case Type.Zero => Type.Zero
-      case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visitType(tpe1), visitType(tpe2))
       case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }

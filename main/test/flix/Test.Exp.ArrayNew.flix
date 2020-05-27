@@ -63,7 +63,4 @@ namespace Test/Exp/ArrayNew {
     @test
     def testArrayNew21(): Array[Option[Int]] & Impure = [None; 1]
 
-    @test
-    def testArrayNew22(): Array[Vector[Int, 2]] & Impure = [[|3 ; 2|]]
-
 }

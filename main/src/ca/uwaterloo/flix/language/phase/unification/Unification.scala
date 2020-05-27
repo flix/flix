@@ -110,18 +110,6 @@ object Unification {
 
     case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => BoolUnification.unifyEffects(eff1, eff2)
 
-    case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
-
-    case (Type.Succ(0, Type.Zero), Type.Zero) => Result.Ok(Substitution.empty)
-
-    case (Type.Zero, Type.Succ(0, Type.Zero)) => Result.Ok(Substitution.empty)
-
-    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
-
-    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
-
-    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
-
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
 

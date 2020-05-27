@@ -38,8 +38,6 @@ sealed trait Type {
   def typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
     case Type.Cst(tc) => SortedSet.empty
-    case Type.Zero => SortedSet.empty
-    case Type.Succ(n, t) => t.typeVars
     case Type.Arrow(_, eff) => eff.typeVars
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -92,8 +90,6 @@ sealed trait Type {
     case Type.Var(_, _, _) => 1
     case Type.Cst(tc) => 1
     case Type.Arrow(_, eff) => eff.size + 1
-    case Type.Zero => 1
-    case Type.Succ(_, t) => t.size + 1
     case Type.Lambda(_, tpe) => tpe.size + 1
     case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
   }
@@ -241,20 +237,6 @@ object Type {
     */
   case class Arrow(arity: Int, eff: Type) extends Type {
     def kind: Kind = Kind.Arrow((0 until arity).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
-  /**
-    * A type constructor that represents zero.
-    */
-  case object Zero extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represents the successor of a type.
-    */
-  case class Succ(len: Int, t: Type) extends Type {
-    def kind: Kind = Kind.Star
   }
 
   /**
@@ -431,10 +413,6 @@ object Type {
         }
 
         case Type.Cst(tc) => tc.toString + (if (args.isEmpty) "" else "[" + args.map(visit(_, m)).mkString(", ") + "]")
-
-        case Type.Zero => "Zero"
-
-        case Type.Succ(n, t) => n.toString + " " + t.toString
 
         case Type.Arrow(l, eff) =>
           // Retrieve the arguments and result types.

@@ -715,122 +715,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
-        //
-        // elm1: t ...  elm_len: t  len: Succ(n, Zero)
-        // -------------------------------------------
-        // [|elm1,...,elm_len|] : Vector[t, len]
-        //
-        if (elms.isEmpty) {
-          for {
-            resultTyp <- unifyTypM(tvar, mkVector(Type.freshTypeVar(), Type.Succ(0, Type.Zero)), loc)
-            resultEff = Type.Impure
-          } yield (resultTyp, resultEff)
-        } else {
-          for {
-            (elementTypes, _) <- seqM(elms.map(visitExp)).map(_.unzip)
-            elementType <- unifyTypM(elementTypes, loc)
-            resultTyp <- unifyTypM(tvar, mkVector(elementType, Type.Succ(elms.length, Type.Zero)), loc)
-            resultEff = Type.Impure
-          } yield (resultTyp, resultEff)
-        }
-
-      case ResolvedAst.Expression.VectorNew(exp, len, tvar, loc) =>
-        //
-        // exp: t    len: Succ(n, Zero)
-        // --------------------------------
-        // [|exp1 ; len |] : Vector[t, len]
-        //
-        for {
-          (tpe, _) <- visitExp(exp)
-          resultTyp <- unifyTypM(tvar, mkVector(tpe, Type.Succ(len, Type.Zero)), loc)
-          resultEff = Type.Impure
-        } yield (resultTyp, resultEff)
-
-      case ResolvedAst.Expression.VectorLoad(exp, index, tvar, loc) =>
-        //
-        //  exp : Vector[t, len1]   index: len2   len1: Succ(n1, Zero) len2: Succ(n2, Var)
-        //  ------------------------------------------------------------------------------
-        //  exp[|index|] : t
-        //
-        val elementType = Type.freshTypeVar()
-        val indexOffsetType = Type.freshTypeVar()
-        for {
-          (tpe, _) <- visitExp(exp)
-          vectorType <- unifyTypM(tpe, mkVector(elementType, Type.Succ(index, indexOffsetType)), loc)
-          resultTyp <- unifyTypM(tvar, elementType, loc)
-          resultEff = Type.Impure
-        } yield (resultTyp, resultEff)
-
-      case ResolvedAst.Expression.VectorStore(exp1, index, exp2, tvar, loc) =>
-        //
-        //  exp1 : Vector[t, len1]   index: len2   exp2: t    len1: Succ(n1, Zero)  len2: Succ(n2, Var)
-        //  -------------------------------------------------------------------------------------------
-        //  exp1[|index|] = exp2 : Unit
-        //
-        val elementType = Type.freshTypeVar()
-        val indexOffsetType = Type.freshTypeVar()
-        for {
-          (tpe1, _) <- visitExp(exp1)
-          (tpe2, _) <- visitExp(exp2)
-          vectorType <- unifyTypM(tpe1, mkVector(elementType, Type.Succ(index, indexOffsetType)), loc)
-          elementType <- unifyTypM(tpe2, elementType, loc)
-          resultTyp <- unifyTypM(tvar, Type.Unit, loc)
-          resultEff = Type.Impure
-        } yield (resultTyp, resultEff)
-
-      case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
-        //
-        // exp: Vector[t, len1]   index: len2   len1: Succ(n1, Zero)  len2: Succ(n2, Var)
-        // ------------------------------------------------------------------------------
-        // exp[|index|] : Int
-        //
-        val elementType = Type.freshTypeVar()
-        val indexOffsetType = Type.freshTypeVar()
-        for {
-          (tpe, eff) <- visitExp(exp)
-          vectorType <- unifyTypM(tpe, mkVector(elementType, Type.Succ(0, indexOffsetType)), loc)
-          resultTyp <- unifyTypM(tvar, Type.Int32, loc)
-          resultEff = eff
-        } yield (resultTyp, resultEff)
-
-      case ResolvedAst.Expression.VectorSlice(exp, startIndex, optEndIndex, tvar, loc) =>
-        //
-        //  Case None =
-        //  exp : Vector[t, len2]   startIndex : len3
-        //  len1 : Succ(n1, Zero) len2 : Succ(n2, Zero) len3 : Succ(n3, Var)
-        //  --------------------------------------------------------------------------------------
-        //  exp[|startIndex.. |] : Vector[t, len1]
-        //
-        //
-        //  Case Some =
-        //  exp : Vector[t, len2]   startIndex : len3   endIndexOpt : len4
-        //  len1 : Succ(n1, Zero) len2 : Succ(n2, Zero) len3 : Succ(n3, Var) len 4 : Succ(n4, Var)
-        //  --------------------------------------------------------------------------------------
-        //  base[startIndex..endIndexOpt] : Vector[t, len1]
-        //
-        val freshBeginIndex = Type.freshTypeVar()
-        val freshEndIndex = Type.freshTypeVar()
-        val freshElmType = Type.freshTypeVar()
-        optEndIndex match {
-          case None =>
-            for {
-              (tpe, _) <- visitExp(exp)
-              fstIndex <- unifyTypM(tpe, mkVector(freshElmType, Type.Succ(startIndex, freshEndIndex)), loc)
-              resultTyp <- unifyTypM(tvar, mkVector(freshElmType, freshEndIndex), loc)
-              resultEff = Type.Impure
-            } yield (resultTyp, resultEff)
-
-          case Some(endIndex) =>
-            for {
-              (tpe, _) <- visitExp(exp)
-              fstIndex <- unifyTypM(tpe, mkVector(freshElmType, Type.Succ(startIndex, freshBeginIndex)), loc)
-              lstIndex <- unifyTypM(tpe, mkVector(freshElmType, Type.Succ(endIndex, freshEndIndex)), loc)
-              resultTyp <- unifyTypM(tvar, mkVector(freshElmType, Type.Succ(endIndex - startIndex, Type.Zero)), loc)
-              resultEff = Type.Impure
-            } yield (resultTyp, resultEff)
-        }
-
       case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
         //
         //  exp : t @ eff
@@ -1364,44 +1248,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.Impure
         TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
-        val es = elms.map(e => visitExp(e, subst0))
-        val eff = Type.Impure
-        TypedAst.Expression.VectorLit(es, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
-        val e = visitExp(elm, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.VectorNew(e, len, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.VectorLoad(base, index, tvar, loc) =>
-        val b = visitExp(base, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.VectorLoad(b, index, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
-        val b = visitExp(base, subst0)
-        val e = visitExp(elm, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.VectorStore(b, index, e, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.VectorLength(base, tvar, loc) =>
-        val b = visitExp(base, subst0)
-        val eff = b.eff
-        TypedAst.Expression.VectorLength(b, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.VectorSlice(base, startIndex, optEndIndex, tvar, loc) =>
-        val e = visitExp(base, subst0)
-        val eff = Type.Impure
-        optEndIndex match {
-          case None =>
-            val len = TypedAst.Expression.VectorLength(e, Type.Int32, eff, loc)
-            TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), eff, loc)
-          case Some(endIndex) =>
-            val len = TypedAst.Expression.Int32(endIndex, loc)
-            TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), eff, loc)
-        }
-
       case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = Type.Impure
@@ -1915,11 +1761,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns the type `Ref[tpe]`.
     */
   private def mkRefType(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Ref), tpe)
-
-  /**
-    * Returns the type `Vector[tpe, len]`.
-    */
-  private def mkVector(tpe: Type, len: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), tpe), len)
 
   /**
     * Returns the type `And(eff1, eff2)`.

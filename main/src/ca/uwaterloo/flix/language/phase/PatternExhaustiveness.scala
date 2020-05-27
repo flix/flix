@@ -246,31 +246,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(beginIndex, root)
           _ <- checkPats(endIndex, root)
         } yield tast
-        case Expression.VectorLit(elms, _, _, _) => sequence(elms map {
-          checkPats(_, root)
-        }).map(const(tast))
-        case Expression.VectorNew(elm, _, _, _, _) =>
-          for {
-            _ <- checkPats(elm, root)
-          } yield tast
-        case Expression.VectorLoad(base, _, _, _, _) =>
-          for {
-            _ <- checkPats(base, root)
-          } yield tast
-        case Expression.VectorStore(base, _, elm, _, _, _) =>
-          for {
-            _ <- checkPats(base, root)
-            _ <- checkPats(elm, root)
-          } yield tast
-        case Expression.VectorLength(base, _, _, _) =>
-          for {
-            _ <- checkPats(base, root)
-          } yield tast
-        case Expression.VectorSlice(base, _, endIndex, _, _, _) =>
-          for {
-            _ <- checkPats(base, root)
-            _ <- checkPats(endIndex, root)
-          } yield tast
         case Expression.Ref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
         case Expression.Deref(exp, _, _, _) =>
@@ -739,12 +714,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Channel) => 1
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
       case Type.Cst(TypeConstructor.Native(clazz)) => 0
-      case Type.Cst(TypeConstructor.Vector) => 2
       case Type.Cst(TypeConstructor.Tuple(l)) => l
       case Type.Cst(TypeConstructor.RecordExtend(_)) => 2
       case Type.Cst(TypeConstructor.SchemaExtend(_)) => 2
-      case Type.Zero => 0
-      case Type.Succ(n, t) => 2
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
       case Type.Cst(TypeConstructor.Pure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Type.Cst(TypeConstructor.Impure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")

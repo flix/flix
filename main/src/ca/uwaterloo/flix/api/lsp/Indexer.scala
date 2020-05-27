@@ -169,24 +169,6 @@ object Indexer {
     case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
 
-    case Expression.VectorLit(exps, _, _, _) =>
-      visitExps(exps) + exp0
-
-    case Expression.VectorNew(exp, _, _, _, _) =>
-      visitExp(exp) + exp0
-
-    case Expression.VectorLoad(exp, _, _, _, _) =>
-      visitExp(exp) + exp0
-
-    case Expression.VectorStore(exp1, _, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
-
-    case Expression.VectorLength(exp, _, _, _) =>
-      visitExp(exp) + exp0
-
-    case Expression.VectorSlice(exp, _, _, _, _, _) =>
-      visitExp(exp) + exp0
-
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp) + exp0
 
@@ -327,8 +309,6 @@ object Indexer {
       case _ => Index.empty
     }
     case Type.Arrow(_, eff) => visitType(eff, loc)
-    case Type.Zero => Index.empty
-    case Type.Succ(_, tpe) => visitType(tpe, loc)
     case Type.Lambda(_, tpe) => visitType(tpe, loc)
     case Type.Apply(tpe1, tpe2) => visitType(tpe1, loc) ++ visitType(tpe2, loc)
   }

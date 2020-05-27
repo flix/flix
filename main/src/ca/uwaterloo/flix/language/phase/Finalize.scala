@@ -571,8 +571,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Cst(TypeConstructor.Ref) => MonoType.Ref(args.head)
 
-      case Type.Cst(TypeConstructor.Vector) => MonoType.Array(args.head)
-
       case Type.Cst(TypeConstructor.Tuple(l)) => MonoType.Tuple(args)
 
       case Type.Arrow(l, _) => MonoType.Arrow(args.init, args.last)
@@ -580,10 +578,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case Type.Cst(TypeConstructor.RecordExtend(label)) => MonoType.RecordExtend(label, args(0), args(1))
 
       case Type.Cst(TypeConstructor.SchemaExtend(label)) => MonoType.SchemaExtend(label, args(0), args(1))
-
-      case Type.Zero => MonoType.Unit
-
-      case Type.Succ(l, t) => MonoType.Unit
 
       case Type.Var(id, _, _) => MonoType.Var(id) // TODO: Should never happen.
 

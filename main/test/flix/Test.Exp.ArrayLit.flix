@@ -261,7 +261,4 @@ namespace Test/Exp/ArrayLit {
     @test
     def testArrayLit89(): Array[Option[Int]] & Impure = [Some(1), Some(2), None]
 
-    @test
-    def testArrayLit90(): Array[Vector[Int, 4]] & Impure = [[|1, 2, 3, 4|]]
-
 }

@@ -356,27 +356,4 @@ object WeederError {
       vt << Code(loc, "undefined annotation.") << NewLine
     }
   }
-
-  case class IllegalVectorLength(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal vector length"
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal vector length. " << NewLine
-      vt << NewLine
-      vt << Code(loc, "Vector length must be an integer of minimum 0.") << NewLine
-    }
-  }
-
-  case class IllegalVectorIndex(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal vector index"
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal vector index. " << NewLine
-      vt << NewLine
-      vt << Code(loc, "Illegal vector index.") << NewLine
-    }
-  }
-
 }
