@@ -145,13 +145,6 @@ def forwardComposition01(): Bool =
         h(0) == 2 // (0 + 1) * 2
 
 @test
-def backwardComposition01(): Bool =
-    let f = x -> x + 1;
-    let g = x -> x * 2;
-    let h = f << g;
-        h(0) == 1 // (0 * 2) + 1
-
-@test
 def forwardPipe01(): Bool =
     let f = x -> x + 1;
     let g = x -> x * 2;

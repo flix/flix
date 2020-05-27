@@ -94,7 +94,7 @@ namespace Core/Io/File {
         import java.io.File.getParentFile();
         let File(javaFile) = f;
         let parent = javaFile.getParentFile();
-        if (isNull(parent))
+        if (Object.isNull(parent))
             None
         else
             Some(File(parent))
@@ -109,7 +109,7 @@ namespace Core/Io/File {
         import java.io.File.listFiles();
         let File(javaFile) = f;
         let children = javaFile.listFiles();
-        if (isNull(children))
+        if (Object.isNull(children))
             None
         else
             Some(children |> Array.toList |> List.map(File))
@@ -202,7 +202,7 @@ namespace Core/Io/File {
     def readAll(r: ##java.io.BufferedReader): List[String] & Impure =
         import java.io.BufferedReader.readLine();
         let line = r.readLine();
-        if (isNull(line))
+        if (Object.isNull(line))
             Nil
         else
             line :: readAll(r)
