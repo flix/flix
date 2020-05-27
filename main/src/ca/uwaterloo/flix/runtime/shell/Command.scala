@@ -31,24 +31,9 @@ object Command {
   case object Nop extends Command
 
   /**
-    * Evaluates the given expression `exp`.
+    * Executes the main function.
     */
-  case class Eval(exp: String) extends Command
-
-  /**
-    * Shows the type of the given expression `exp`.
-    */
-  case class TypeOf(exp: String) extends Command
-
-  /**
-    * Shows the kind of the given expression `exp`.
-    */
-  case class KindOf(exp: String) extends Command
-
-  /**
-    * Shows the effect of the given expression `exp`.
-    */
-  case class EffectOf(exp: String) extends Command
+  case object Run extends Command
 
   /**
     * Shows the context for the given hole `fqn`.
@@ -71,16 +56,6 @@ object Command {
   case class Search(needle: String) extends Command
 
   /**
-    * Adds the given `path` to the set of source paths.
-    */
-  case class Load(path: String) extends Command
-
-  /**
-    * Removes the given `path` from the set of source paths.
-    */
-  case class Unload(path: String) extends Command
-
-  /**
     * Reloads all source paths.
     */
   case object Reload extends Command
@@ -94,11 +69,6 @@ object Command {
     * Runs all unit tests in the program.
     */
   case object Test extends Command
-
-  /**
-    * Verifies all properties in the program.
-    */
-  case object Verify extends Command
 
   /**
     * Warms up the compiler.
@@ -152,40 +122,10 @@ object Command {
       return Command.Nop
 
     //
-    // Type
+    // Run
     //
-    if (input.startsWith(":type ")) {
-      val exp = input.substring(":type ".length).trim
-      return Command.TypeOf(exp)
-    }
-    if (input.startsWith(":t ")) {
-      val exp = input.substring(":t ".length).trim
-      return Command.TypeOf(exp)
-    }
-
-    //
-    // Kind
-    //
-    if (input.startsWith(":kind ")) {
-      val exp = input.substring(":kind ".length).trim
-      return Command.TypeOf(exp)
-    }
-    if (input.startsWith(":k ")) {
-      val exp = input.substring(":k ".length).trim
-      return Command.KindOf(exp)
-    }
-
-    //
-    // Effect
-    //
-    if (input.startsWith(":effect ")) {
-      val exp = input.substring(":effect ".length).trim
-      return Command.EffectOf(exp)
-    }
-    if (input.startsWith(":e ")) {
-      val exp = input.substring(":e ".length).trim
-      return Command.EffectOf(exp)
-    }
+    if (input.startsWith(":run"))
+      return Command.Run
 
     //
     // Hole
@@ -234,30 +174,6 @@ object Command {
     }
 
     //
-    // Load
-    //
-    if (input.startsWith(":load ")) {
-      val path = input.substring(":load ".length).trim
-      if (path.isEmpty) {
-        terminal.writer().println("Missing argument for command :load.")
-        return Command.Nop
-      }
-      return Command.Load(path)
-    }
-
-    //
-    // Unload
-    //
-    if (input.startsWith(":unload ")) {
-      val path = input.substring(":unload ".length).trim
-      if (path.isEmpty) {
-        terminal.writer().println("Missing argument for command :unload.")
-        return Command.Nop
-      }
-      return Command.Unload(path)
-    }
-
-    //
     // Reload
     //
     if (input == ":r" || input == ":reload")
@@ -268,12 +184,6 @@ object Command {
     //
     if (input == ":benchmark")
       return Command.Benchmark
-
-    //
-    // Verify
-    //
-    if (input == ":verify")
-      return Command.Verify
 
     //
     // Test
@@ -317,16 +227,7 @@ object Command {
     if (input == ":praise")
       return Command.Praise
 
-    //
-    // Unknown
-    //
-    if (input.startsWith(":"))
-      return Command.Unknown(input)
-
-    //
-    // Eval
-    //
-    Command.Eval(input)
+    Command.Unknown(input)
   }
 
 }

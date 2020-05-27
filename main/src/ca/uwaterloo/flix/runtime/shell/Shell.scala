@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
@@ -75,16 +74,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     * The current compilation result (initialized on startup).
     */
   private var compilationResult: CompilationResult = _
-
-  /**
-    * The definition symbol to use for the expression.
-    */
-  private val sym: Symbol.DefnSym = Symbol.mkDefnSym("$1")
-
-  /**
-    * The current expression (if any).
-    */
-  private var exp: String = _
 
   /**
     * The current watcher (if any).
@@ -151,7 +140,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       """     __   _   _
         |    / _| | | (_)            Welcome to Flix __VERSION__
         |   | |_  | |  _  __  __
-        |   |  _| | | | | \ \/ /     Enter an expression or command, and hit return.
+        |   |  _| | | | | \ \/ /     Enter a command and hit return.
         |   | |   | | | |  >  <      Type ':help' for more information.
         |   |_|   |_| |_| /_/\_\     Type ':quit' or press 'ctrl + d' to exit.
       """.stripMargin
@@ -170,20 +159,14 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
-    case Command.Eval(s) => execEval(s)
-    case Command.TypeOf(e) => execTypeOf(e)
-    case Command.KindOf(e) => execKindOf(e)
-    case Command.EffectOf(e) => execEffectOf(e)
+    case Command.Run => execRun()
     case Command.Hole(fqnOpt) => execHole(fqnOpt)
     case Command.Browse(ns) => execBrowse(ns)
     case Command.Doc(fqn) => execDoc(fqn)
     case Command.Search(s) => execSearch(s)
-    case Command.Load(s) => execLoad(s)
-    case Command.Unload(s) => execUnload(s)
     case Command.Reload => execReload()
     case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
-    case Command.Verify => execVerify()
     case Command.Warmup => execWarmup()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
@@ -196,84 +179,16 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Executes the eval command.
     */
-  private def execEval(s: String)(implicit terminal: Terminal): Unit = {
-    // Set the expression.
-    this.exp = s.trim
-
+  private def execRun()(implicit terminal: Terminal): Unit = {
     // Recompile the program.
     execReload()
 
-    // Evaluate the function and get the result.
-    val result = this.compilationResult.evalToString(this.sym.toString)
+    // Evaluate the main function and get the result.
+    val main = Symbol.mkDefnSym("main")
+    val result = this.compilationResult.evalToString(main.toString)
 
     // Write the result to the terminal.
     terminal.writer().println(result)
-  }
-
-  /**
-    * Shows the type of the given expression `exp`.
-    */
-  private def execTypeOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
-    // Set the expression.
-    this.exp = exp
-
-    // Recompile the program.
-    execReload()
-
-    // Retrieve the definition.
-    val defn = this.root.defs(this.sym)
-
-    // Compute the result type, i.e. the last type argument.
-    val tpe = defn.inferredScheme.base.typeArguments.last
-
-    // Print the type to the terminal.
-    val vt = new VirtualTerminal
-    vt << Cyan(tpe.show) << NewLine
-    terminal.writer().print(vt.fmt)
-  }
-
-  /**
-    * Shows the kind of the given expression `exp`.
-    */
-  private def execKindOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
-    // Set the expression.
-    this.exp = exp
-
-    // Recompile the program.
-    execReload()
-
-    // Retrieve the definition.
-    val defn = this.root.defs(this.sym)
-
-    // Retrieve the kind.
-    val kind = defn.inferredScheme.base.kind
-
-    // Print the kind to the terminal.
-    val vt = new VirtualTerminal
-    vt << Green(kind.show) << NewLine
-    terminal.writer().print(vt.fmt)
-  }
-
-  /**
-    * Shows the effect of the given expression `exp`.
-    */
-  private def execEffectOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
-    // Set the expression.
-    this.exp = exp
-
-    // Recompile the program.
-    execReload()
-
-    // Retrieve the definition.
-    val defn = this.root.defs(this.sym)
-
-    // Retrieve the effect.
-    val effect = defn.eff
-
-    // Print the effect to the terminal.
-    val vt = new VirtualTerminal
-    vt << Magenta(effect.toString) << NewLine
-    terminal.writer().print(vt.fmt)
   }
 
   /**
@@ -422,33 +337,6 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Executes the load command.
-    */
-  private def execLoad(s: String)(implicit terminal: Terminal): Unit = {
-    val path = Paths.get(s)
-    if (!Files.exists(path) || !Files.isRegularFile(path)) {
-      terminal.writer().println(s"Path '$path' does not exist or is not a regular file.")
-      return
-    }
-    this.sourcePaths += path
-    terminal.writer().println(s"Path '$path' was loaded. Run :reload.")
-  }
-
-  /**
-    * Executes the unload command.
-    */
-  private def execUnload(s: String)(implicit terminal: Terminal): Unit = {
-    this.exp = null
-    val path = Paths.get(s)
-    if (!(this.sourcePaths contains path)) {
-      terminal.writer().println(s"Path '$path' was not loaded.")
-      return
-    }
-    this.sourcePaths -= path
-    terminal.writer().println(s"Path '$path' was unloaded. Run :reload.")
-  }
-
-  /**
     * Reloads every source path.
     */
   private def execReload()(implicit terminal: Terminal): Unit = {
@@ -459,11 +347,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
       this.flix.addPath(path)
-    }
-
-    // Add the named expression (if any).
-    if (this.exp != null) {
-      this.flix.addNamedExp(this.sym, this.exp)
     }
 
     // Compute the TypedAst and store it.
@@ -511,14 +394,6 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Print the result to the terminal.
     terminal.writer().print(vt.output.fmt)
-  }
-
-  /**
-    * Verify all properties in the program.
-    */
-  private def execVerify()(implicit terminal: Terminal): Unit = {
-    // Verify all properties in the program.
-    Verifier.runAndPrint(this.compilationResult.getRoot, terminal.writer())(flix)
   }
 
   /**
@@ -585,20 +460,14 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     w.println("  Command       Arguments         Purpose")
     w.println()
-    w.println("  <expr>                          Evaluates the expression <expr>.")
-    w.println("  :type :t      <expr>            Shows the type of <expr>.")
-    w.println("  :kind :k      <expr>            Shows the kind of <expr>.")
-    w.println("  :effect :e    <expr>            Shows the effect of <expr>.")
+    w.println("  :run                            Runs the main function.")
     w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
     w.println("  :browse       <ns>              Shows all entities in <ns>.")
     w.println("  :doc          <fqn>             Shows documentation for <fqn>.")
     w.println("  :search       <needle>          Shows all entities that match <needle>.")
-    w.println("  :load         <path>            Adds <path> as a source file.")
-    w.println("  :unload       <path>            Removes <path> as a source file.")
     w.println("  :reload :r                      Recompiles every source file.")
     w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")
-    w.println("  :verify                         Verify all properties in the program and show the results.")
     w.println("  :warmup                         Warms up the compiler by running it multiple times.")
     w.println("  :watch :w                       Watches all source files for changes.")
     w.println("  :unwatch                        Unwatches all source files for changes.")
@@ -619,7 +488,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     * Reports unknown command.
     */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
-    terminal.writer().println(s"Unknown command '$s'. Try `:help'.")
+    terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
   }
 
   /**

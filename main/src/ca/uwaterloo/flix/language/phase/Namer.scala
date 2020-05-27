@@ -60,21 +60,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     })(_.flatten)
 
     // fold over the top-level declarations.
-    val result = flatMapN(declarations) {
+    flatMapN(declarations) {
       case decls => Validation.fold(decls, prog0) {
         case (pacc, (uenv0, decl)) => visitDecl(decl, Name.RootNS, uenv0, pacc)
       }
-    }
-
-    // fold over the named expressions.
-    val named = traverse(program.named) {
-      case (sym, exp) => visitExp(exp, Map.empty, UseEnv.empty, Map.empty).map(e => sym -> e)
-    }
-
-    mapN(result, named) {
-      // update elapsed time.
-      case (p, ne) =>
-        p.copy(named = ne.toMap)
     }
   }
 

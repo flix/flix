@@ -29,15 +29,12 @@ import ca.uwaterloo.flix.util.Validation
 /**
   * A phase to read inputs into memory.
   */
-object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, String]), (List[Source], Map[Symbol.DefnSym, String])] {
+object Reader extends Phase[List[Input], List[Source]] {
 
   /**
     * Reads the given source inputs into memory.
     */
-  def run(arg: (List[Input], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[(List[Source], Map[Symbol.DefnSym, String]), CompilationError] = flix.phase("Reader") {
-    // Pattern match the argument into the inputs and the named expressions.
-    val (input, named) = arg
-
+  def run(input: List[Input])(implicit flix: Flix): Validation[List[Source], CompilationError] = flix.phase("Reader") {
     // Compute the sources.
     val sources = input flatMap {
 
@@ -64,8 +61,7 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, String]), (List[So
       case Input.PkgFile(path) => Packager.unpack(path)
     }
 
-    // Return a triple of inputs, elapsed time, and named expressions.
-    (sources, named).toSuccess
+    sources.toSuccess
   }
 
 
