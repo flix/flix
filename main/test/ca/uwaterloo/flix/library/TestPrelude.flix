@@ -164,19 +164,6 @@ def forwardPipe02(): Bool =
     let r = (1, 2) |> f;
         r == 3
 
-@test
-def backwardPipe01(): Bool =
-    let f = x -> x + 1;
-    let g = x -> x * 2;
-    let r = f <| (g <| 0);
-        r == 1 // (0 * 2) + 1
-
-@test
-def backwardPipe02(): Bool =
-    let f = match (x, y) -> x + y;
-    let r = f <| (1, 2);
-        r == 3
-
 /////////////////////////////////////////////////////////////////////////////
 // Logical And                                                             //
 /////////////////////////////////////////////////////////////////////////////
