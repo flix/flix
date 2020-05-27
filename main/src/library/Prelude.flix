@@ -83,36 +83,6 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 
 ///
-/// Alias for logical conjunction.
-///
-pub def ∧(x: Bool, y: Bool): Bool = x && y
-
-///
-/// Alias for logical disjunction.
-///
-pub def ∨(x: Bool, y: Bool): Bool = x || y
-
-///
-/// Alias for logical implication.
-///
-pub def →(x: Bool, y: Bool): Bool = !x ∨ y
-
-///
-/// Alias for logical biconditional.
-///
-pub def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
-
-///
-/// Alias for exclusive disjunction.
-///
-pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ !(x ∧ y)
-
-///
-/// Alias for the Sheffer stroke.
-///
-pub def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
-
-///
 /// Returns `true` if the given value `x` is `null`.
 ///
 /// NB: For internal use only.
@@ -165,13 +135,17 @@ law reflexive(⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
 /// The anti-symmetry law asserts that if `x` is less than or equal to `y` and vice versa then the
 /// two elements must be equal.
 ///
-law antiSymmetric(⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y)
+law antiSymmetric(⊑: (e, e) -> Bool): Bool =
+    use Bool.{∧, →};
+    ∀(x: e, y: e). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y)
 
 ///
 /// The transitivity law asserts that if `x` less than or equal to `y` and `y` is less than or equal
 /// to `z` then `x` must be less than or equal to `z`.
 ///
-law transitive(⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e, z: e). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z)
+law transitive(⊑: (e, e) -> Bool): Bool =
+    use Bool.{∧, →};
+    ∀(x: e, y: e, z: e). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z)
 
 ///
 /// The non-negative law asserts that the co-domain of `h` is non-negative.
@@ -182,7 +156,9 @@ law nonNegative(h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
 /// The decreasing law asserts that if an element `x` is strictly less than an element `y` then
 /// the height assigned to `x` is stricty greater than the height assigned to `y`.
 ///
-law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). (x ⊑ y && !equ(x, y)) → (h(x) > h(y))
+law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool =
+    use Bool.{∧, →};
+    ∀(x: e, y: e). (x ⊑ y ∧ !equ(x, y)) → (h(x) > h(y))
 
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.

@@ -57,9 +57,9 @@ object Name {
     def isWild: Boolean = name.startsWith("_")
 
     /**
-      * Returns `true` if `this` identifier is lowercase.
+      * Returns `true` if `this` identifier is uppercase.
       */
-    def isLower: Boolean = name.charAt(0).isLower
+    def isUpper: Boolean = name.charAt(0).isUpper
 
     /**
       * The source location of the identifier.

@@ -9,6 +9,7 @@ namespace MeetLattice {
     /// is less than or equal to each of its arguments.
     ///
     law lowerBound[e](⊑: (e, e) -> Bool, ⊓: (e, e) -> e): Bool =
+        use Bool.∧;
         ∀(x: e, y: e). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
 
     ///
@@ -16,6 +17,7 @@ namespace MeetLattice {
     /// largest element that is smaller than its two arguments.
     ///
     law greatestLowerBound[e](⊑: (e, e) -> Bool, ⊓: (e, e) -> e): Bool =
+        use Bool.{∧, →};
         ∀(x: e, y: e, z: e). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
 
 }

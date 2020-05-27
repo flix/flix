@@ -326,12 +326,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Uses {
     def UseOne: Rule1[ParsedAst.Use.UseOne] = rule {
-      SP ~ Names.Namespace ~ "." ~ LowerOrUpperName ~ SP ~> ParsedAst.Use.UseOne
+      SP ~ Names.Namespace ~ "." ~ UseName ~ SP ~> ParsedAst.Use.UseOne
     }
 
     def UseMany: Rule1[ParsedAst.Use.UseMany] = {
       def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-        SP ~ LowerOrUpperName ~ optional(WS ~ atomic("=>") ~ WS ~ LowerOrUpperName) ~ SP ~> ParsedAst.Use.NameAndAlias
+        SP ~ UseName ~ optional(WS ~ atomic("=>") ~ WS ~ UseName) ~ SP ~> ParsedAst.Use.NameAndAlias
       }
 
       rule {
@@ -353,8 +353,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def LowerOrUpperName: Rule1[Name.Ident] = rule {
-      Names.LowerCaseName | Names.UpperCaseName
+    def UseName: Rule1[Name.Ident] = rule {
+      Names.LowerCaseName | Names.UpperCaseName | Names.GreekName | Names.MathName | Names.OperatorName
     }
   }
 
