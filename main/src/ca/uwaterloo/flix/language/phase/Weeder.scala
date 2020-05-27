@@ -41,18 +41,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
     val roots = parTraverse(program.roots)(visitRoot)
-    val named = traverse(program.named) {
-      case (sym, exp) => visitExp(exp).map(e => sym -> e)
-    }
     val constraints = visitAllConstraints(program.roots)
 
-    mapN(roots, named, constraints) {
-      case (rs, ne, cs) =>
+    mapN(roots, constraints) {
+      case (rs, cs) =>
         // Check if there are top-level constraints and we should introduce a main.
         if (cs.isEmpty)
-          WeededAst.Program(rs, ne.toMap, flix.getReachableRoots)
+          WeededAst.Program(rs, flix.getReachableRoots)
         else
-          WeededAst.Program(mkMain(cs) :: rs, ne.toMap, flix.getReachableRoots)
+          WeededAst.Program(mkMain(cs) :: rs, flix.getReachableRoots)
     }
   }
 

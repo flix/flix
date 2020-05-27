@@ -29,29 +29,21 @@ import scala.collection.immutable.Seq
 /**
   * A phase to transform source files into abstract syntax trees.
   */
-object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, String]), ParsedAst.Program] {
+object Parser extends Phase[List[Source], ParsedAst.Program] {
 
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(arg: (List[Source], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = flix.phase("Parser") {
-    // The argument consists of a list of sources and the time spent by the reader.
-    val (sources, namedExp) = arg
-
+  def run(sources: List[Source])(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = flix.phase("Parser") {
     // Retrieve the execution context.
     implicit val _ = flix.ec
 
     // Parse each source in parallel.
     val roots = sequence(ParOps.parMap(parseRoot, sources))
 
-    // Parse each named expression.
-    val named = traverse(namedExp) {
-      case (sym, s) => parseExp(Source("<unknown>", s.toCharArray)).map(exp => sym -> exp)
-    }
-
     // Sequence and combine the ASTs into one abstract syntax tree.
-    mapN(roots, named) {
-      case (as, ne) => ParsedAst.Program(as, ne.toMap)
+    mapN(roots) {
+      case as => ParsedAst.Program(as)
     }
 
   }
