@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.runtime.interpreter;
 
+// TODO: Move this to the Flix runtime.
+
 public class SelectChoice {
   public static SelectChoice DEFAULT_CHOICE = new SelectChoice(-1, null, true);
 

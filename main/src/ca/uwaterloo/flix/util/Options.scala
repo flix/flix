@@ -27,7 +27,6 @@ object Options {
     core = false,
     debug = false,
     documentor = false,
-    evaluation = Evaluation.Compiled,
     invariants = false,
     mode = CompilationMode.Development,
     optimizations = Optimization.All,
@@ -70,7 +69,6 @@ object Options {
   * @param core               disables loading of all non-essential namespaces.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
-  * @param evaluation         selects the evaluation strategy.
   * @param invariants         enables checking of compiler invariants.
   * @param mode               the compilation mode.
   * @param quickchecker       enables the quickchecker.
@@ -92,7 +90,6 @@ object Options {
 case class Options(core: Boolean,
                    debug: Boolean,
                    documentor: Boolean,
-                   evaluation: Evaluation,
                    invariants: Boolean,
                    optimizations: Set[Optimization],
                    mode: CompilationMode,
@@ -112,25 +109,6 @@ case class Options(core: Boolean,
                    xnostratifier: Boolean,
                    xstatistics: Boolean
                   )
-
-/**
-  * An option to control the evaluation strategy.
-  */
-sealed trait Evaluation
-
-object Evaluation {
-
-  /**
-    * Enables JVM code generation of Flix functions.
-    */
-  case object Compiled extends Evaluation
-
-  /**
-    * Disables JVM code generation of Flix functions.
-    */
-  case object Interpreted extends Evaluation
-
-}
 
 /**
   * A common super-type for optimizations.

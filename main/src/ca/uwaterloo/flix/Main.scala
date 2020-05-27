@@ -88,7 +88,6 @@ object Main {
       core = cmdOpts.xcore,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
-      evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
       optimizations = optimizations,
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       quickchecker = cmdOpts.quickchecker,
@@ -233,7 +232,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
-                     xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
                      xnoeffects: Boolean = false,
                      xlinter: Boolean = false,
@@ -370,10 +368,6 @@ object Main {
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables output of debugging information.")
-
-      // Xinterpreter.
-      opt[Unit]("Xinterpreter").action((_, c) => c.copy(xinterpreter = true)).
-        text("[experimental] enables interpreted evaluation.")
 
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).

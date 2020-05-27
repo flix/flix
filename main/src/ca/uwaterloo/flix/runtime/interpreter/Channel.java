@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.*;
 
+// TODO: Move this to the Flix runtime.
+
 /**
  * Precondition: Null is not a valid element to put in a channel.
  */
