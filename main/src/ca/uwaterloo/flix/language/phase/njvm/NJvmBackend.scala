@@ -22,12 +22,11 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.language.phase.jvm.{Bootstrap, GenClosureClasses, GenFunctionClasses, GenNamespaces, JvmName, JvmOps}
+import ca.uwaterloo.flix.language.phase.jvm.{Bootstrap, GenClosureClasses, GenFunctionClasses, JvmName, JvmOps}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
+import ca.uwaterloo.flix.util.{InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
 object NJvmBackend extends Phase[Root, CompilationResult] {
@@ -41,13 +40,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     * Emits JVM bytecode for the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("JvmBackend") {
-    //
-    // Immediately return if in interpreted mode.
-    //
-    if (flix.options.evaluation == Evaluation.Interpreted) {
-      return new CompilationResult(root, getInterpretedDefs(root)).toSuccess
-    }
-
     //
     // Immediately return if in verification mode.
     //
@@ -145,16 +137,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     new CompilationResult(root, getCompiledDefs(root)).toSuccess
   }
-
-  /**
-    * Returns a map from definition symbols to executable functions (backed by the interpreter).
-    */
-  private def getInterpretedDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] =
-    root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
-      case (macc, (sym, defn)) =>
-        val args: Array[AnyRef] = Array(null)
-        macc + (sym -> (() => Interpreter.link(sym, root).apply(args)))
-    }
 
   /**
     * Returns a map from definition symbols to executable functions (backed by JVM backend).

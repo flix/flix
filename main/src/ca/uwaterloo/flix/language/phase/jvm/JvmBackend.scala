@@ -24,10 +24,9 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
+import ca.uwaterloo.flix.util.{InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
 
@@ -50,13 +49,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
-      //
-      // Immediately return if in interpreted mode.
-      //
-      if (flix.options.evaluation == Evaluation.Interpreted) {
-        return new CompilationResult(root, getInterpretedDefs(root)).toSuccess
-      }
-
       //
       // Immediately return if in verification mode.
       //
@@ -213,16 +205,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       new CompilationResult(root, getCompiledDefs(root)).toSuccess
     }
   }
-
-  /**
-    * Returns a map from definition symbols to executable functions (backed by the interpreter).
-    */
-  private def getInterpretedDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] =
-    root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
-      case (macc, (sym, defn)) =>
-        val args: Array[AnyRef] = Array(null)
-        macc + (sym -> (() => Interpreter.link(sym, root).apply(args)))
-    }
 
   /**
     * Returns a map from definition symbols to executable functions (backed by JVM backend).
