@@ -71,30 +71,16 @@ pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & {e1, e2} = x -> g(f(x))
 ///
 /// Pipes the given value `x` into the function `f`.
 ///
-/// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
+/// Given a value `x` and a function `f` returns `f(x)`.
 ///
 pub def |>(x: a, f: a -> b & e): b & e = f(x)
 
 ///
-/// Pipes the given pair `p` into the function `f`.
+/// Pipes the given pair `x` into the function `f`.
 ///
-/// Given a pair `x: (a1, a1)` and a function `f: ((a1, a2)) -> b` returns `f(x)`.
+/// Given a pair `x` and a function `f` returns `f(x)`.
 ///
-pub def ||>(x: (a1, a2), f: ((a1, a2)) -> b & e): b & e = f(x)
-
-///
-/// Pipes the given value `x` into the function `f`.
-///
-/// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
-///
-pub def <|(f: a -> b & e, x: a): b & e = f(x)
-
-///
-/// Pipes the given pair `p` into the function `f`.
-///
-/// Given a pair `x: (a1, a1)` and a function `f: ((a1, a2)) -> b` returns `f(x)`.
-///
-pub def <||(f: ((a1, a2)) -> b & e, x: (a1, a2)): b & e = f(x)
+pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 
 ///
 /// Alias for logical conjunction.
