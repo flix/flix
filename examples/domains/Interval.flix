@@ -5,6 +5,8 @@
 ///
 /// See Cousot & Cousot '77 for details.
 ///
+use Bool.{∧, ∨, →, ↔, ⊕};
+
 namespace Domain/Interval {
 
     ///
