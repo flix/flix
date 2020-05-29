@@ -18,23 +18,41 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 
-import scala.concurrent.duration.{Duration => SDuration}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.collection.parallel._
 
 object ParOps {
 
   /**
+    * Control the degree of parallelism.
+    */
+  private val Threads: Int = scala.collection.parallel.availableProcessors
+
+  /**
+    * Global fork join pool (per JVM-instance).
+    */
+  private val forkJoinPool = new java.util.concurrent.ForkJoinPool(Threads)
+
+  /**
+    * Global fork join task support (per JVM-instance).
+    */
+  private val forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
+
+  /**
     * Apply the given function `f` to each element in the list `xs` in parallel.
     */
-  def parMap[A, B](f: A => B, xs: List[A])(implicit flix: Flix): List[B] = {
-    // Retrieve the execution context.
-    implicit val executionContext: ExecutionContext = flix.ec
+  @inline
+  def parMap[A, B](f: A => B, xs: Iterable[A])(implicit flix: Flix): Iterable[B] = {
+    // Build the parallel array.
+    val parArray = xs.toParArray
+
+    // Configure the task support.
+    parArray.tasksupport = forkJoinTaskSupport
 
     // Apply the function `f` in parallel.
-    val futures = xs.map(x => Future(f(x)))
+    val result = parArray.map(f)
 
-    // Wait for all the results.
-    Await.result(Future.sequence(futures), SDuration.Inf)
+    // Return the result as an iterable.
+    result.seq
   }
 
 }

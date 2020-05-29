@@ -59,7 +59,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Report linter errors (if any).
     results.flatten match {
-      case Nil => root.toSuccess
+      case xs if xs.isEmpty => root.toSuccess
       case xs => Failure(LazyList.from(xs))
     }
   }
