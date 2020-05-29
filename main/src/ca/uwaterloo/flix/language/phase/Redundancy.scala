@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -53,7 +53,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Computes all used symbols in all defs (in parallel).
-    val usedDefs = root.defs.par.aggregate(Used.empty)({
+    val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
       case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
     }, _ and _)
 

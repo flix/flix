@@ -55,7 +55,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     println(s"I found: ${lints.length} lints to match against ${targets.length} defs.") // TODO: Debug
 
     // Searches for applicable lints in the targets.
-    val results = ParOps.parMap(visitDef(_, lints), targets)
+    val results = ParOps.parMap(targets, visitDef(_, lints))
 
     // Report linter errors (if any).
     results.flatten match {

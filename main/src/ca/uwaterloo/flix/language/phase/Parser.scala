@@ -39,7 +39,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
     implicit val _ = flix.ec
 
     // Parse each source in parallel.
-    val roots = sequence(ParOps.parMap(parseRoot, sources))
+    val roots = sequence(ParOps.parMap(sources, parseRoot))
 
     // Sequence and combine the ASTs into one abstract syntax tree.
     mapN(roots) {

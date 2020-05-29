@@ -64,7 +64,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       }
 
     // Compute the results in parallel.
-    val results = ParOps.parMap(visitDefn, root.defs.values)
+    val results = ParOps.parMap(root.defs.values, visitDefn)
 
     // Sequence the results.
     Validation.sequence(results) map {

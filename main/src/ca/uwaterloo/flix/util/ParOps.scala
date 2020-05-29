@@ -41,7 +41,7 @@ object ParOps {
     * Apply the given function `f` to each element in the list `xs` in parallel.
     */
   @inline
-  def parMap[A, B](f: A => B, xs: Iterable[A])(implicit flix: Flix): Iterable[B] = {
+  def parMap[A, B](xs: Iterable[A], f: A => B)(implicit flix: Flix): Iterable[B] = {
     // Build the parallel array.
     val parArray = xs.toParArray
 
@@ -53,6 +53,18 @@ object ParOps {
 
     // Return the result as an iterable.
     result.seq
+  }
+
+  /**
+    * Aggregates the result of applying `seq` and `comb` to `xs`.
+    */
+  @inline
+  def parAgg[A, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
+    // Build the parallel array.
+    val parArray = xs.toParArray
+
+    // Aggregate the result in parallel.
+    parArray.aggregate(z)(seq, comb)
   }
 
 }
