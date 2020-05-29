@@ -63,9 +63,6 @@ object TypedAstOps {
       case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0 + (sym -> exp1.tpe))
 
-      case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
-        visitExp(exp1, env0 + (sym -> exp1.tpe)) ++ visitExp(exp2, env0 + (sym -> exp1.tpe))
-
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
 

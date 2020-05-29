@@ -118,9 +118,6 @@ object Indexer {
     case Expression.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
-    case Expression.LetRec(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
-
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
 
