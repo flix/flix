@@ -1456,11 +1456,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultType <- unifyTypM(tvar, freshEnumType, loc)
         ) yield resultType
 
-      case ResolvedAst.Pattern.Tuple(elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          resultType <- unifyTypM(tvar, Type.mkTuple(elementTypes), loc)
-        ) yield resultType
+      case ResolvedAst.Pattern.Tuple(elms, loc) =>
+        for {
+          elementTypes <- seqM(elms map visit)
+        } yield Type.mkTuple(elementTypes)
 
       case ResolvedAst.Pattern.Array(elms, tvar, loc) =>
         for (
@@ -1520,7 +1519,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.BigInt(lit, loc)
       case ResolvedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, tag, visit(pat), subst0(tvar), loc)
-      case ResolvedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visit, subst0(tvar), loc)
+
+      case ResolvedAst.Pattern.Tuple(elms, loc) =>
+        val es = elms.map(visit)
+        val tpe = Type.mkTuple(es.map(_.tpe))
+        TypedAst.Pattern.Tuple(es, tpe, loc)
+
       case ResolvedAst.Pattern.Array(elms, tvar, loc) => TypedAst.Pattern.Array(elms map visit, subst0(tvar), loc)
       case ResolvedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) => TypedAst.Pattern.ArrayTailSpread(elms map visit, sym, subst0(tvar), loc)
       case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) => TypedAst.Pattern.ArrayHeadSpread(sym, elms map visit, subst0(tvar), loc)

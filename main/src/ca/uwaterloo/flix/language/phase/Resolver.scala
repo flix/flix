@@ -668,7 +668,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for {
             es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.Tuple(es, tvar, loc)
+          } yield ResolvedAst.Pattern.Tuple(es, loc)
 
         case NamedAst.Pattern.Array(elms, tvar, loc) =>
           for {
