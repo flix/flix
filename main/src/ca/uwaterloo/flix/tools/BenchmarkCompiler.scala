@@ -17,7 +17,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val BenchmarkIterations = 25
+  val BenchmarkIterations = 10
 
   /**
     * Outputs statistics about time spent in each compiler phase.
