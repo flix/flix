@@ -3,8 +3,10 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.{Def, FormalParam, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
+
 import scala.collection.parallel.CollectionConverters._
 
 /**
@@ -19,7 +21,7 @@ object GenClosureClasses {
     //
     // Generate a closure class for each closure and collect the results in a map.
     //
-    closures.par.aggregate(Map.empty[JvmName, JvmClass])({
+    ParOps.parAgg(closures, Map.empty[JvmName, JvmClass])({
       case (macc, closure) =>
         val jvmType = JvmOps.getClosureClassType(closure)
         val jvmName = jvmType.name

@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -40,7 +40,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the whole program.
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
-    val roots = parTraverse(program.roots)(visitRoot)
+    val roots = Validation.sequence(ParOps.parMap(program.roots, visitRoot))
     val constraints = visitAllConstraints(program.roots)
 
     mapN(roots, constraints) {

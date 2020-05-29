@@ -18,23 +18,41 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 
-import scala.concurrent.duration.{Duration => SDuration}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.collection.parallel._
 
 object ParOps {
 
   /**
     * Apply the given function `f` to each element in the list `xs` in parallel.
     */
-  def parMap[A, B](f: A => B, xs: List[A])(implicit flix: Flix): List[B] = {
-    // Retrieve the execution context.
-    implicit val executionContext: ExecutionContext = flix.ec
+  @inline
+  def parMap[A, B](xs: Iterable[A], f: A => B)(implicit flix: Flix): Iterable[B] = {
+    // Build the parallel array.
+    val parArray = xs.toParArray
+
+    // Configure the task support.
+    parArray.tasksupport = flix.forkJoinTaskSupport
 
     // Apply the function `f` in parallel.
-    val futures = xs.map(x => Future(f(x)))
+    val result = parArray.map(f)
 
-    // Wait for all the results.
-    Await.result(Future.sequence(futures), SDuration.Inf)
+    // Return the result as an iterable.
+    result.seq
+  }
+
+  /**
+    * Aggregates the result of applying `seq` and `comb` to `xs`.
+    */
+  @inline
+  def parAgg[A, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
+    // Build the parallel array.
+    val parArray = xs.toParArray
+
+    // Configure the task support.
+    parArray.tasksupport = flix.forkJoinTaskSupport
+
+    // Aggregate the result in parallel.
+    parArray.aggregate(z)(seq, comb)
   }
 
 }

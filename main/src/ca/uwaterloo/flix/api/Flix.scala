@@ -157,9 +157,14 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-    * The execution context for `this` Flix instance.
+    * The fork join pool for `this` Flix instance.
     */
-  var ec: ExecutionContext = mkExecutionContext(threads = 1)
+  var forkJoinPool: java.util.concurrent.ForkJoinPool = _
+
+  /**
+    * The fork join task support for `this` Flix instance.
+    */
+  var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -221,7 +226,6 @@ class Flix {
   def setOptions(opts: Options): Flix = {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
-    ec = mkExecutionContext(threads = opts.threads)
     options = opts
     this
   }
@@ -230,6 +234,9 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationError] = {
+    // Initialize fork join pool.
+    initForkJoin()
+
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
@@ -248,13 +255,22 @@ class Flix {
         Safety
 
     // Apply the pipeline to the parsed AST.
-    pipeline.run(getInputs)(this)
+    val result = pipeline.run(getInputs)(this)
+
+    // Shutdown fork join pool.
+    shutdownForkJoin()
+
+    // Return the result.
+    result
   }
 
   /**
     * Compiles the given typed ast to an executable ast.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationError] = {
+    // Initialize fork join pool.
+    initForkJoin()
+
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
       Monomorph |>
@@ -275,7 +291,13 @@ class Flix {
       Finish
 
     // Apply the pipeline to the parsed AST.
-    pipeline.run(typedAst)(this)
+    val result = pipeline.run(typedAst)(this)
+
+    // Shutdown fork join pool.
+    shutdownForkJoin()
+
+    // Return the result.
+    result
   }
 
   /**
@@ -379,22 +401,19 @@ class Flix {
   }
 
   /**
-    * Returns an execution context fixed to the given number of `threads`.
+    * Initializes the fork join pools.
     */
-  private def mkExecutionContext(threads: Int): ExecutionContext = {
-    val service = mkExecutorService(threads)
-    ExecutionContext.fromExecutorService(service)
+  private def initForkJoin(): Unit = {
+    val threads = options.threads.getOrElse(Runtime.getRuntime.availableProcessors())
+    forkJoinPool = new java.util.concurrent.ForkJoinPool(threads)
+    forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
   }
 
   /**
-    * Returns an executor service fixed to the given number of `threads`.
+    * Shuts down the fork join pools.
     */
-  private def mkExecutorService(threads: Int): ExecutorService = {
-    Executors.newFixedThreadPool(threads, (r: Runnable) => {
-      val t = new Thread(r)
-      t.setDaemon(true)
-      t
-    })
+  private def shutdownForkJoin(): Unit = {
+    forkJoinPool.shutdown()
   }
 
 }
