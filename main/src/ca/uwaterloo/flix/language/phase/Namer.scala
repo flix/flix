@@ -436,7 +436,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Tuple(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, uenv0, tenv0)) map {
-        case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
+        case es => NamedAst.Expression.Tuple(es, loc)
       }
 
     case WeededAst.Expression.RecordEmpty(loc) =>
