@@ -131,23 +131,6 @@ object Validation {
   }
 
   /**
-    * Traverses `xs` in parallel applying the function `f` to each element.
-    */
-  def parTraverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = {
-    @inline
-    def seq(x: Vector[Validation[S, E]], y: T): Vector[Validation[S, E]] = x :+ f(y)
-
-    @inline
-    def com(x: Vector[Validation[S, E]], y: Vector[Validation[S, E]]): Vector[Validation[S, E]] = x ++ y
-
-    // The sequence of validations.
-    val validations = xs.par.aggregate(Vector.empty[Validation[S, E]])(seq, com)
-
-    // Merge them into one validation.
-    sequence(validations)
-  }
-
-  /**
     * Maps over t1.
     */
   def mapN[T1, U, E](t1: Validation[T1, E])
