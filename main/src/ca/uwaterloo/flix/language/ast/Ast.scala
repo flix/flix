@@ -84,6 +84,15 @@ object Ast {
     }
 
     /**
+      * An AST node that represents a `@deprecated` annotation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Deprecated(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@deprecated"
+    }
+
+    /**
       * An AST node that represents a `@law` annotation.
       *
       * A `law` function is a property (theorem) about the behaviour of one or more functions.
