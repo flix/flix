@@ -2384,7 +2384,7 @@ object GenExpression {
 
     // Threads
     mv.visitInsn(DUP)
-    mv.visitIntInsn(BIPUSH, flix.options.threads)
+    mv.visitIntInsn(BIPUSH, 1) // TODO: Remove this option.
     mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setThreads", "(I)V", false)
 
     // Verbosity

@@ -23,21 +23,6 @@ import scala.collection.parallel._
 object ParOps {
 
   /**
-    * Control the degree of parallelism.
-    */
-  private val Threads: Int = scala.collection.parallel.availableProcessors
-
-  /**
-    * Global fork join pool (per JVM-instance).
-    */
-  private val forkJoinPool = new java.util.concurrent.ForkJoinPool(Threads)
-
-  /**
-    * Global fork join task support (per JVM-instance).
-    */
-  private val forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
-
-  /**
     * Apply the given function `f` to each element in the list `xs` in parallel.
     */
   @inline
@@ -46,7 +31,7 @@ object ParOps {
     val parArray = xs.toParArray
 
     // Configure the task support.
-    parArray.tasksupport = forkJoinTaskSupport
+    parArray.tasksupport = flix.forkJoinTaskSupport
 
     // Apply the function `f` in parallel.
     val result = parArray.map(f)
@@ -62,6 +47,9 @@ object ParOps {
   def parAgg[A, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
     // Build the parallel array.
     val parArray = xs.toParArray
+
+    // Configure the task support.
+    parArray.tasksupport = flix.forkJoinTaskSupport
 
     // Aggregate the result in parallel.
     parArray.aggregate(z)(seq, comb)

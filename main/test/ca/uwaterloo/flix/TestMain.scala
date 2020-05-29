@@ -104,6 +104,12 @@ class TestMain extends FunSuite {
     assert(opts.test)
   }
 
+  test("--threads") {
+    val args = Array("--threads", "42", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.threads.contains("42"))
+  }
+
   test("--verbose") {
     val args = Array("--verbose", "p.flix")
     val opts = Main.parseCmdOpts(args).get

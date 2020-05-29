@@ -35,9 +35,6 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
     * Parses the given source inputs into an abstract syntax tree.
     */
   def run(sources: List[Source])(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = flix.phase("Parser") {
-    // Retrieve the execution context.
-    implicit val _ = flix.ec
-
     // Parse each source in parallel.
     val roots = sequence(ParOps.parMap(sources, parseRoot))
 
@@ -45,7 +42,6 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
     mapN(roots) {
       case as => ParsedAst.Program(as)
     }
-
   }
 
   /**
