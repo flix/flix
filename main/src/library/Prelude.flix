@@ -71,29 +71,6 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 
 ///
-/// Asserts that the given boolean `b` is `true`.
-///
-/// NB: For internal use only.
-///
-pub def assert!(b: Bool): Bool =
-    if (b) true else panic "assertion failed"
-
-///
-/// Asserts that the given boolean `b` is `false`.
-///
-/// NB: For internal use only.
-///
-pub def assertNot!(b: Bool): Bool =
-    if (!b) true else panic "assertion failed"
-
-///
-/// Asserts that the given values `x` and `y` are equal.
-///
-/// NB: For internal use only.
-///
-pub def assertEq!(x: a, y: a): Bool = if (x == y) true else panic "assertion failed"
-
-///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
 ///
 law commutative(f: (a, a) -> b): Bool =
