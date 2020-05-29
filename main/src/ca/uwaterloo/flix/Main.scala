@@ -150,13 +150,13 @@ object Main {
 
     // check if the -Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
-      BenchmarkCompiler.benchmarkPhases()
+      BenchmarkCompiler.benchmarkPhases(options)
       System.exit(0)
     }
 
     // check if the -Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput()
+      BenchmarkCompiler.benchmarkThroughput(options)
       System.exit(0)
     }
 

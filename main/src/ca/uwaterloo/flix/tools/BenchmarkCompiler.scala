@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.{StatUtils, Validation}
+import ca.uwaterloo.flix.util.{Options, StatUtils, Validation}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
 /**
@@ -22,8 +22,8 @@ object BenchmarkCompiler {
   /**
     * Outputs statistics about time spent in each compiler phase.
     */
-  def benchmarkPhases(): Unit = {
-    val flix = newFlix()
+  def benchmarkPhases(o: Options): Unit = {
+    val flix = newFlix(o)
 
     warmup(flix)
 
@@ -47,8 +47,8 @@ object BenchmarkCompiler {
   /**
     * Computes the throughput of the compiler.
     */
-  def benchmarkThroughput(): Unit = {
-    val flix = newFlix()
+  def benchmarkThroughput(o: Options): Unit = {
+    val flix = newFlix(o)
 
     // Warmup
     warmup(flix)
@@ -84,9 +84,9 @@ object BenchmarkCompiler {
   /**
     * Returns a Flix object configured with the benchmark program.
     */
-  private def newFlix(): Flix = {
+  private def newFlix(o: Options): Flix = {
     val flix = new Flix()
-    flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
+    flix.setOptions(opts = o.copy(loadClassFiles = false, writeClassFiles = false))
 
     addCompilerTests(flix)
     addLibraryTests(flix)
