@@ -112,7 +112,8 @@ class Flix {
     "RedBlackTree.flix" -> LocalResource.get("/library/RedBlackTree.flix"),
 
     //"CodePatterns.flix" -> LocalResource.get("/library/CodePatterns.flix"),
-    // "Vec.flix" -> LocalResource.get("/library/Vec.flix"),
+
+    //"MutList.flix" -> LocalResource.get("/library/MutList.flix"),
 
     //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
     //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
