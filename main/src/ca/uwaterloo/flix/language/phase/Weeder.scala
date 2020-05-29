@@ -1420,6 +1420,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val loc = mkSL(past.sp1, past.sp2)
     past.ident.name match {
       case "benchmark" => Ast.Annotation.Benchmark(loc).toSuccess
+      case "deprecated" => Ast.Annotation.Deprecated(loc).toSuccess
       case "law" => Ast.Annotation.Law(loc).toSuccess
       case "lint" => Ast.Annotation.Lint(loc).toSuccess
       case "test" => Ast.Annotation.Test(loc).toSuccess
