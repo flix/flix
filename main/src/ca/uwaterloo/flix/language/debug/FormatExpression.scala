@@ -32,7 +32,6 @@ object FormatExpression {
     case TypedAst.Expression.Unary(op, exp, tpe, eff, loc) => s"Unary($op, $exp)"
     case TypedAst.Expression.Binary(op, exp1, exp2, tpe, eff, loc) => s"Binary($op, $exp1, $exp2)"
     case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => s"Let($sym, $exp1, $exp2)"
-    case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => s"LetRec($sym, $exp1, $exp2)"
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"IfThenElse($exp1, $exp2, $exp3)"
     case TypedAst.Expression.Stm(exp1, exp2, _, _, _) => s"Stm($exp1, $exp2)"
     case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => s"Match($exp, ${rules.mkString(", ")})"

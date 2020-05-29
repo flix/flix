@@ -174,9 +174,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Let(sym, e1, e2, tpe, loc) =>
       Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
-    case Expression.LetRec(sym, e1, e2, tpe, loc) =>
-      Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
-
     case Expression.Is(sym, tag, e, loc) =>
       Expression.Is(sym, tag, visitExp(e), loc)
 
@@ -473,9 +470,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
       freeVars(exp1) ++ freeVars(exp2).filterNot { v => bound == v._1 }
-    case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-      val bound = sym
-      (freeVars(exp1) ++ freeVars(exp2)).filterNot { v => bound == v._1 }
     case Expression.Is(sym, tag, exp, loc) => freeVars(exp)
     case Expression.Untag(sym, tag, exp, tpe, loc) => freeVars(exp)
     case Expression.Tag(enum, tag, exp, tpe, loc) => freeVars(exp)
@@ -710,14 +704,6 @@ object ClosureConv extends Phase[Root, Root] {
         subst.get(sym) match {
           case None => Expression.Let(sym, e1, e2, tpe, loc)
           case Some(newSym) => Expression.Let(newSym, e1, e2, tpe, loc)
-        }
-
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        subst.get(sym) match {
-          case None => Expression.LetRec(sym, e1, e2, tpe, loc)
-          case Some(newSym) => Expression.LetRec(newSym, e1, e2, tpe, loc)
         }
 
       case Expression.Is(sym, tag, exp, loc) =>

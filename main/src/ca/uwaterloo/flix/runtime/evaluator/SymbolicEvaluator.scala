@@ -674,30 +674,6 @@ object SymbolicEvaluator {
         }
 
       /**
-        * LetRec-binding.
-        */
-      case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-        case Expression.Closure(ref, freeVars, _, _, _) =>
-          // Save the values of the free variables in a list.
-          // When the closure is called, these values will be provided at the beginning of the argument list.
-          val bindings = Array.ofDim[SymVal](freeVars.length)
-          for (freeVar <- freeVars) {
-            // A value might be absent from the the environment if it is recursively bound.
-            env0.get(freeVar.sym) match {
-              case None => // Ok, value probably recursive.
-              case Some(v) => bindings(sym.getStackOffset) = v
-            }
-          }
-          // Construct circular closure.
-          val clo = SymVal.Closure(ref, bindings)
-          bindings(sym.getStackOffset) = clo
-
-          // Return the closure.
-          lift(pc0, qua0, clo)
-        case _ => throw InternalRuntimeException(s"Expected MkClosureRef expression: '$exp1'")
-      }
-
-      /**
         * Is Tag.
         */
       case Expression.Is(sym, tag, exp, _) =>

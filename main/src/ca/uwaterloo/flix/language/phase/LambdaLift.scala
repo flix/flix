@@ -177,11 +177,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.Let(sym, e1, e2, tpe, loc)
 
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.LetRec(sym, e1, e2, tpe, loc)
-
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp)
         Expression.Is(sym, tag, e, loc)
