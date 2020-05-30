@@ -62,11 +62,7 @@ jar {
         configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     
-    from('main/src') {
-        include '**/*.flix'
-    }
-
-    from('main/test') {
+    from('main') {
         include '**/*.flix'
     }
 }
