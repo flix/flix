@@ -548,12 +548,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
+      case ResolvedAst.Expression.Tuple(elms, loc) =>
         for {
           (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
-          resultTyp <- unifyTypM(tvar, Type.mkTuple(elementTypes), loc)
           resultEff = mkAnd(elementEffects)
-        } yield (resultTyp, resultEff)
+        } yield (Type.mkTuple(elementTypes), resultEff)
 
       case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
         //
@@ -653,7 +652,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (tvar, resultEff)
 
-      case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ArrayLength(exp, loc) =>
         //
         //  exp : Array[t] @ e
         //  --------------------
@@ -663,11 +662,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe, eff) <- visitExp(exp)
           arrayType <- unifyTypM(tpe, mkArray(elementType), loc)
-          resultTyp <- unifyTypM(tvar, Type.Int32, loc)
           resultEff = eff
-        } yield (resultTyp, resultEff)
+        } yield (Type.Int32, resultEff)
 
-      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
         //
         //  exp1 : Array[t] @ _   exp2 : Int @ _   exp3 : t @ _
         //  ---------------------------------------------------
@@ -679,11 +677,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe3, _) <- visitExp(exp3)
           arrayType <- unifyTypM(tpe1, mkArray(tpe3), loc)
           indexType <- unifyTypM(tpe2, Type.Int32, loc)
-          resultTyp <- unifyTypM(tvar, Type.Unit, loc)
           resultEff = Type.Impure
-        } yield (resultTyp, resultEff)
+        } yield (Type.Unit, resultEff)
 
-      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
         //
         //  exp1 : Array[t] @ _   exp2 : Int @ _   exp3 : Int @ _
         //  -----------------------------------------------------
@@ -696,7 +693,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe3, _) <- visitExp(exp3)
           fstIndexType <- unifyTypM(tpe2, Type.Int32, loc)
           lstIndexType <- unifyTypM(tpe3, Type.Int32, loc)
-          resultTyp <- unifyTypM(tvar, tpe1, mkArray(elementType), loc)
+          resultTyp <- unifyTypM(tpe1, mkArray(elementType), loc)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -1166,10 +1163,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.Tag(sym, tag, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
-        val es = elms.map(e => visitExp(e, subst0))
+      case ResolvedAst.Expression.Tuple(elms, loc) =>
+        val es = elms.map(visitExp(_, subst0))
+        val tpe = Type.mkTuple(es.map(_.tpe))
         val eff = mkAnd(es.map(_.eff))
-        TypedAst.Expression.Tuple(es, subst0(tvar), eff, loc)
+        TypedAst.Expression.Tuple(es, tpe, eff, loc)
 
       case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
         TypedAst.Expression.RecordEmpty(subst0(tvar), loc)
@@ -1207,24 +1205,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.Impure
         TypedAst.Expression.ArrayLoad(e1, e2, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.ArrayStore(e1, e2, e3, subst0(tvar), eff, loc)
+        TypedAst.Expression.ArrayStore(e1, e2, e3, loc)
 
-      case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ArrayLength(exp, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.ArrayLength(e, subst0(tvar), eff, loc)
+        TypedAst.Expression.ArrayLength(e, eff, loc)
 
-      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), eff, loc)
+        val tpe = e1.tpe
+        TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
       case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1456,11 +1453,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultType <- unifyTypM(tvar, freshEnumType, loc)
         ) yield resultType
 
-      case ResolvedAst.Pattern.Tuple(elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          resultType <- unifyTypM(tvar, Type.mkTuple(elementTypes), loc)
-        ) yield resultType
+      case ResolvedAst.Pattern.Tuple(elms, loc) =>
+        for {
+          elementTypes <- seqM(elms map visit)
+        } yield Type.mkTuple(elementTypes)
 
       case ResolvedAst.Pattern.Array(elms, tvar, loc) =>
         for (
@@ -1520,7 +1516,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.BigInt(lit, loc)
       case ResolvedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, tag, visit(pat), subst0(tvar), loc)
-      case ResolvedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visit, subst0(tvar), loc)
+
+      case ResolvedAst.Pattern.Tuple(elms, loc) =>
+        val es = elms.map(visit)
+        val tpe = Type.mkTuple(es.map(_.tpe))
+        TypedAst.Pattern.Tuple(es, tpe, loc)
+
       case ResolvedAst.Pattern.Array(elms, tvar, loc) => TypedAst.Pattern.Array(elms map visit, subst0(tvar), loc)
       case ResolvedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) => TypedAst.Pattern.ArrayTailSpread(elms map visit, sym, subst0(tvar), loc)
       case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) => TypedAst.Pattern.ArrayHeadSpread(sym, elms map visit, subst0(tvar), loc)

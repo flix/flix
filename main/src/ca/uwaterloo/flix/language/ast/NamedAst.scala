@@ -112,7 +112,7 @@ object NamedAst {
 
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Tuple(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Tuple(elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class RecordEmpty(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -128,11 +128,11 @@ object NamedAst {
 
     case class ArrayLoad(base: NamedAst.Expression, index: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayStore(base: NamedAst.Expression, index: NamedAst.Expression, elm: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class ArrayStore(base: NamedAst.Expression, index: NamedAst.Expression, elm: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayLength(base: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class ArrayLength(base: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

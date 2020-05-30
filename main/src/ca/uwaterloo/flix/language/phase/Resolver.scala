@@ -351,10 +351,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, loc)
         }
 
-        case NamedAst.Expression.Tuple(elms, tvar, loc) =>
+        case NamedAst.Expression.Tuple(elms, loc) =>
           for {
             es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
+          } yield ResolvedAst.Expression.Tuple(es, loc)
 
         case NamedAst.Expression.RecordEmpty(tvar, loc) =>
           ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
@@ -392,24 +392,24 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             i <- visit(index, tenv0)
           } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, loc)
 
-        case NamedAst.Expression.ArrayStore(base, index, elm, tvar, loc) =>
+        case NamedAst.Expression.ArrayStore(base, index, elm, loc) =>
           for {
             b <- visit(base, tenv0)
             i <- visit(index, tenv0)
             e <- visit(elm, tenv0)
-          } yield ResolvedAst.Expression.ArrayStore(b, i, e, tvar, loc)
+          } yield ResolvedAst.Expression.ArrayStore(b, i, e, loc)
 
-        case NamedAst.Expression.ArrayLength(base, tvar, loc) =>
+        case NamedAst.Expression.ArrayLength(base, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.ArrayLength(b, tvar, loc)
+          } yield ResolvedAst.Expression.ArrayLength(b, loc)
 
-        case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, tvar, loc) =>
+        case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
           for {
             b <- visit(base, tenv0)
             i1 <- visit(startIndex, tenv0)
             i2 <- visit(endIndex, tenv0)
-          } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, tvar, loc)
+          } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
 
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
@@ -668,7 +668,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for {
             es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.Tuple(es, tvar, loc)
+          } yield ResolvedAst.Pattern.Tuple(es, loc)
 
         case NamedAst.Pattern.Array(elms, tvar, loc) =>
           for {

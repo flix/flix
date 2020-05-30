@@ -106,13 +106,13 @@ object TypedAstOps {
       case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         visitExp(base, env0) ++ visitExp(index, env0)
 
-      case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+      case Expression.ArrayStore(base, index, elm, loc) =>
         visitExp(base, env0) ++ visitExp(index, env0) ++ visitExp(elm, env0)
 
-      case Expression.ArrayLength(base, tpe, eff, loc) =>
+      case Expression.ArrayLength(base, eff, loc) =>
         visitExp(base, env0)
 
-      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
         visitExp(base, env0) ++ visitExp(beginIndex, env0) ++ visitExp(endIndex, env0)
 
       case Expression.Ref(exp, tpe, eff, loc) =>
