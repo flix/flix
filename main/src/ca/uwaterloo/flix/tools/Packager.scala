@@ -327,7 +327,7 @@ object Packager {
     */
   private def copyRuntimeClassFiles(p: Path): Unit = {
     // Retrieve the Flix runtime JAR file.
-    val is = LocalResource.getInputStream("/resources/runtime/flix-runtime.jar")
+    val is = LocalResource.getInputStream("/src/resources/runtime/flix-runtime.jar")
     val zip = new ZipInputStream(is)
 
     // Iterate through its directories and classes.
