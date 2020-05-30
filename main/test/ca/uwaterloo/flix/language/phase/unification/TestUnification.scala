@@ -318,6 +318,51 @@ class TestUnification extends FunSuite {
     assertResult(C)(result(A))
   }
 
+  test("Unify.12") {
+    val rest = Type.Var(1, Kind.Record)
+    val field1 = Type.Bool
+    val field2 = Type.Int32
+    val label = "x"
+    val tpe1 = Type.mkRecordExtend(label, field1, rest)
+    val tpe2 = Type.mkRecordExtend(label, field2, rest)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
+  }
+
+  test("Unify.13") {
+    val rest = Type.Var(1, Kind.Record)
+    val field = Type.Bool
+    val label1 = "x"
+    val label2 = "y"
+    val tpe1 = Type.mkRecordExtend(label1, field, rest)
+    val tpe2 = Type.mkRecordExtend(label2, field, rest)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
+  }
+
+  test("Unify.14") {
+    val rest = Type.Var(1, Kind.Schema)
+    val field1 = Type.Apply(Type.Cst(TypeConstructor.Relation), Type.Bool)
+    val field2 = Type.Apply(Type.Cst(TypeConstructor.Relation), Type.Int32)
+    val label = "x"
+    val tpe1 = Type.mkSchemaExtend(label, field1, rest)
+    val tpe2 = Type.mkSchemaExtend(label, field2, rest)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
+  }
+
+
+  test("Unify.15") {
+    val rest = Type.Var(1, Kind.Schema)
+    val field = Type.Apply(Type.Cst(TypeConstructor.Relation), Type.Bool)
+    val label1 = "x"
+    val label2 = "y"
+    val tpe1 = Type.mkSchemaExtend(label1, field, rest)
+    val tpe2 = Type.mkSchemaExtend(label2, field, rest)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
+  }
+
   test("unifyM.01") {
     val subst0 = Substitution.empty
     val result = Unification.unifyTypM(Type.Bool, Type.Bool, loc).run(subst0)
