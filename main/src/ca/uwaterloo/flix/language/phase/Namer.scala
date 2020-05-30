@@ -474,17 +474,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) =>
       mapN(visitExp(base, env0, uenv0, tenv0), visitExp(index, env0, uenv0, tenv0), visitExp(elm, env0, uenv0, tenv0)) {
-        case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), loc)
+        case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, loc)
       }
 
     case WeededAst.Expression.ArrayLength(base, loc) =>
       visitExp(base, env0, uenv0, tenv0) map {
-        case b => NamedAst.Expression.ArrayLength(b, Type.freshTypeVar(), loc)
+        case b => NamedAst.Expression.ArrayLength(b, loc)
       }
 
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
       mapN(visitExp(base, env0, uenv0, tenv0), visitExp(startIndex, env0, uenv0, tenv0), visitExp(endIndex, env0, uenv0, tenv0)) {
-        case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), loc)
+        case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, loc)
       }
 
     case WeededAst.Expression.Ref(exp, loc) =>

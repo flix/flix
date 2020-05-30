@@ -20,13 +20,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.mutable
-import scala.collection.parallel.CollectionConverters._
 
 /**
   * The stratification phase breaks constraints into strata.
@@ -209,19 +208,19 @@ object Stratifier extends Phase[Root, Root] {
         case (b, i) => Expression.ArrayLoad(b, i, tpe, eff, loc)
       }
 
-    case Expression.ArrayLength(base, tpe, eff, loc) =>
+    case Expression.ArrayLength(base, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expression.ArrayLength(b, tpe, eff, loc)
+        case b => Expression.ArrayLength(b, eff, loc)
       }
 
-    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
       mapN(visitExp(base), visitExp(index), visitExp(elm)) {
-        case (b, i, e) => Expression.ArrayStore(b, i, e, tpe, eff, loc)
+        case (b, i, e) => Expression.ArrayStore(b, i, e, tpe, loc)
       }
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       mapN(visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
-        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
+        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, loc)
       }
 
     case Expression.Ref(exp, tpe, eff, loc) =>
@@ -481,13 +480,13 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ArrayLoad(base, index, _, _, _) =>
       dependencyGraphOfExp(base) + dependencyGraphOfExp(index)
 
-    case Expression.ArrayLength(base, _, _, _) =>
+    case Expression.ArrayLength(base, _, _) =>
       dependencyGraphOfExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _) =>
       dependencyGraphOfExp(base) + dependencyGraphOfExp(index) + dependencyGraphOfExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
       dependencyGraphOfExp(base) + dependencyGraphOfExp(beginIndex) + dependencyGraphOfExp(endIndex)
 
     case Expression.Ref(exp, _, _, _) =>

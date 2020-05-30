@@ -652,7 +652,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (tvar, resultEff)
 
-      case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ArrayLength(exp, loc) =>
         //
         //  exp : Array[t] @ e
         //  --------------------
@@ -662,11 +662,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe, eff) <- visitExp(exp)
           arrayType <- unifyTypM(tpe, mkArray(elementType), loc)
-          resultTyp <- unifyTypM(tvar, Type.Int32, loc)
           resultEff = eff
-        } yield (resultTyp, resultEff)
+        } yield (Type.Int32, resultEff)
 
-      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
         //
         //  exp1 : Array[t] @ _   exp2 : Int @ _   exp3 : t @ _
         //  ---------------------------------------------------
@@ -678,11 +677,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe3, _) <- visitExp(exp3)
           arrayType <- unifyTypM(tpe1, mkArray(tpe3), loc)
           indexType <- unifyTypM(tpe2, Type.Int32, loc)
-          resultTyp <- unifyTypM(tvar, Type.Unit, loc)
           resultEff = Type.Impure
-        } yield (resultTyp, resultEff)
+        } yield (Type.Unit, resultEff)
 
-      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
         //
         //  exp1 : Array[t] @ _   exp2 : Int @ _   exp3 : Int @ _
         //  -----------------------------------------------------
@@ -695,7 +693,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe3, _) <- visitExp(exp3)
           fstIndexType <- unifyTypM(tpe2, Type.Int32, loc)
           lstIndexType <- unifyTypM(tpe3, Type.Int32, loc)
-          resultTyp <- unifyTypM(tvar, tpe1, mkArray(elementType), loc)
+          resultTyp <- unifyTypM(tpe1, mkArray(elementType), loc)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -1207,24 +1205,24 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.Impure
         TypedAst.Expression.ArrayLoad(e1, e2, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.ArrayStore(e1, e2, e3, subst0(tvar), eff, loc)
+        val tpe = e1.tpe
+        TypedAst.Expression.ArrayStore(e1, e2, e3, tpe, loc)
 
-      case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ArrayLength(exp, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.ArrayLength(e, subst0(tvar), eff, loc)
+        TypedAst.Expression.ArrayLength(e, eff, loc)
 
-      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), eff, loc)
+        val tpe = e1.tpe
+        TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
       case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
