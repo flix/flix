@@ -160,7 +160,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ArrayLength(exp, _, _) => visitExp(exp, lint0)
 
-      case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
+      case Expression.ArrayStore(exp1, exp2, exp3, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
@@ -414,7 +414,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.ArrayLength(exp1, _, _), Expression.ArrayLength(exp2, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
-    case (Expression.ArrayStore(exp11, exp12, exp13, _, _), Expression.ArrayStore(exp21, exp22, exp23, _, _)) =>
+    case (Expression.ArrayStore(exp11, exp12, exp13, _), Expression.ArrayStore(exp21, exp22, exp23, _)) =>
       unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case (Expression.ArraySlice(exp11, exp12, exp13, _, _), Expression.ArraySlice(exp21, exp22, exp23, _, _)) =>
@@ -793,11 +793,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.ArrayLength(e, eff, loc)
 
-      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      case Expression.ArrayStore(exp1, exp2, exp3, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         val e3 = apply(exp3)
-        Expression.ArrayStore(e1, e2, e3, tpe, loc)
+        Expression.ArrayStore(e1, e2, e3, loc)
 
       case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
         val e1 = apply(exp1)

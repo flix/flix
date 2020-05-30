@@ -160,7 +160,7 @@ object Indexer {
     case Expression.ArrayLength(exp, _, _) =>
       visitExp(exp) + exp0
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
 
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>

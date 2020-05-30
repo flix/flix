@@ -113,7 +113,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ArrayLength(base, eff, loc) => visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, tpe, loc) => visitExp(base) ::: visitExp(index) ::: visitExp(elm)
+    case Expression.ArrayStore(base, index, elm, loc) => visitExp(base) ::: visitExp(index) ::: visitExp(elm)
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
 

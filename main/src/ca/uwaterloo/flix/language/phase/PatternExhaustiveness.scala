@@ -229,7 +229,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(base, root)
           _ <- checkPats(index, root)
         } yield tast
-        case Expression.ArrayStore(base, index, elm, _, _) => for {
+        case Expression.ArrayStore(base, index, elm, _) => for {
           _ <- checkPats(base, root)
           _ <- checkPats(index, root)
           _ <- checkPats(elm, root)

@@ -172,11 +172,11 @@ object Synthesize extends Phase[Root, Root] {
         val i = visitExp(index)
         Expression.ArrayLoad(b, i, tpe, eff, loc)
 
-      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+      case Expression.ArrayStore(base, index, elm, loc) =>
         val b = visitExp(base)
         val i = visitExp(index)
         val e = visitExp(elm)
-        Expression.ArrayStore(b, i, e, tpe, loc)
+        Expression.ArrayStore(b, i, e, loc)
 
       case Expression.ArrayLength(base, eff, loc) =>
         val b = visitExp(base)

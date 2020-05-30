@@ -356,7 +356,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.ArrayLength(base, _, _) =>
       visitExp(base, env0.resetApplies)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _) =>
       val us1 = visitExp(base, env0.resetApplies)
       val us2 = visitExp(index, env0.resetApplies)
       val us3 = visitExp(elm, env0.resetApplies)

@@ -1209,8 +1209,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
-        val tpe = e1.tpe
-        TypedAst.Expression.ArrayStore(e1, e2, e3, tpe, loc)
+        TypedAst.Expression.ArrayStore(e1, e2, e3, loc)
 
       case ResolvedAst.Expression.ArrayLength(exp, loc) =>
         val e = visitExp(exp, subst0)

@@ -356,11 +356,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val i = visitExp(index, env0)
           Expression.ArrayLoad(b, i, subst0(tpe), eff, loc)
 
-        case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        case Expression.ArrayStore(base, index, elm, loc) =>
           val b = visitExp(base, env0)
           val i = visitExp(index, env0)
           val e = visitExp(elm, env0)
-          Expression.ArrayStore(b, i, e, subst0(tpe), loc)
+          Expression.ArrayStore(b, i, e, loc)
 
         case Expression.ArrayLength(base, eff, loc) =>
           val b = visitExp(base, env0)

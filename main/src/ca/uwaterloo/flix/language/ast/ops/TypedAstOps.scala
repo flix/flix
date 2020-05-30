@@ -106,7 +106,7 @@ object TypedAstOps {
       case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         visitExp(base, env0) ++ visitExp(index, env0)
 
-      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+      case Expression.ArrayStore(base, index, elm, loc) =>
         visitExp(base, env0) ++ visitExp(index, env0) ++ visitExp(elm, env0)
 
       case Expression.ArrayLength(base, eff, loc) =>
