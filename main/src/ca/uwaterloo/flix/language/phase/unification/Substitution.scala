@@ -25,7 +25,7 @@ object Substitution {
   /**
     * Returns the empty substitution.
     */
-  val empty: Substitution = Substitution(Map.empty)
+  val empty: Substitution = Substitution(Map.empty, Set.empty, Set.empty)
 
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
@@ -34,21 +34,22 @@ object Substitution {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
       case y: Type.Var if x.id == y.id => empty
-      case _ => Substitution(Map(x -> tpe))
+      case Type.Cst(Type.Pure) => Substitution(Map.empty, Set(x), Set.empty)
+      case Type.Cst(Type.Impure) => Substitution(Map.empty, Set.empty, Set(x))
+      case _ => Substitution(Map(x -> tpe), Set.empty, Set.empty)
     }
   }
-
 }
 
 /**
   * A substitution is a map from type variables to types.
   */
-case class Substitution(m: Map[Type.Var, Type]) {
+case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVars: Set[Type.Var]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
     */
-  val isEmpty: Boolean = m.isEmpty
+  val isEmpty: Boolean = m.isEmpty && trueVars.isEmpty && falseVars.isEmpty
 
   /**
     * Applies `this` substitution to the given type `tpe0`.
@@ -59,6 +60,8 @@ case class Substitution(m: Map[Type.Var, Type]) {
       t match {
         case x: Type.Var =>
           m.get(x) match {
+            case None if trueVars.contains(x) => Type.Pure
+            case None if falseVars.contains(x) => Type.Impure
             case None => x
             case Some(y) if x.kind == t.kind => y
             case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
@@ -95,7 +98,9 @@ case class Substitution(m: Map[Type.Var, Type]) {
       this
     } else {
       Substitution(
-        this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
+        this.m ++ that.m.filter(kv => !this.m.contains(kv._1)),
+        this.trueVars ++ that.trueVars,
+        this.falseVars ++ that.falseVars
       )
     }
   }
@@ -109,11 +114,25 @@ case class Substitution(m: Map[Type.Var, Type]) {
     } else if (that.isEmpty) {
       this
     } else {
-      val newTypeMap = that.m.foldLeft(Map.empty[Type.Var, Type]) {
-        case (macc, (x, t)) => macc.updated(x, this.apply(t))
+      var newTypeMap = Map.empty[Type.Var, Type]
+      var newTrueVars = this.trueVars ++ that.trueVars
+      var newFalseVars = this.falseVars ++ that.falseVars
+
+      for ((tvar, tpe) <- that.m) {
+        val t = this.apply(tpe)
+        t match {
+          case Type.Cst(TypeConstructor.Pure) =>
+            newTrueVars = newTrueVars + tvar
+          case Type.Cst(TypeConstructor.Impure) =>
+            newFalseVars = newFalseVars + tvar
+          case _ =>
+            newTypeMap = newTypeMap.updated(tvar, t)
+        }
       }
-      Substitution(newTypeMap) ++ this
+      Substitution(newTypeMap, newTrueVars, newFalseVars) ++ this
     }
   }
+
+  override def toString: String = s"t = ${trueVars.size}, f = ${falseVars.size}, m = $m"
 
 }

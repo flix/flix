@@ -528,7 +528,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
           case param => param.tpe -> Type.freshTypeVar()
-        }.toMap)
+        }.toMap, Set.empty, Set.empty)
 
         // Retrieve the enum type.
         val enumType = decl.tpe
@@ -1426,7 +1426,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
           case param => param.tpe -> Type.freshTypeVar()
-        }.toMap)
+        }.toMap, Set.empty, Set.empty)
 
         // Retrieve the enum type.
         val enumType = decl.tpe
