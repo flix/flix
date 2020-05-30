@@ -63,7 +63,11 @@ jar {
     }
     
     from('main/src') {
-        include 'library/**/*.flix'
+        include '**/*.flix'
+    }
+
+    from('main/test') {
+        include '**/*.flix'
     }
 }
 

@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.{Options, StatUtils, Validation}
+import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils, Validation}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
 /**
@@ -90,7 +90,6 @@ object BenchmarkCompiler {
 
     addCompilerTests(flix)
     addLibraryTests(flix)
-    //addAbstractDomains(flix)
 
     flix
   }
@@ -99,92 +98,76 @@ object BenchmarkCompiler {
     * Adds the compiler test cases.
     */
   private def addCompilerTests(flix: Flix): Unit = {
-    flix.addPath("main/test/flix/Test.Eff.Polymorphism.flix")
+    flix.addStr(LocalResource.get("/test/flix/Test.Eff.Polymorphism.flix"))
 
-    flix.addPath("main/test/flix/Test.Exp.ArrayLength.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArrayNew.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArraySlice.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArraySliceCopy.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArrayStore.flix")
-    flix.addPath("main/test/flix/Test.Exp.Ascribe.flix")
-    flix.addPath("main/test/flix/Test.Exp.Binary.Spaceship.flix")
-    flix.addPath("main/test/flix/Test.Exp.Cast.flix")
-    flix.addPath("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
-    flix.addPath("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
-    flix.addPath("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
-    flix.addPath("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.GetField.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.GetStaticField.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeConstructor.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeMethod.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.PutField.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
-    flix.addPath("main/test/flix/Test.Exp.Let.MatchStar.flix")
-    flix.addPath("main/test/flix/Test.Exp.Reference.Assign.flix")
-    flix.addPath("main/test/flix/Test.Exp.Reference.Deref.flix")
-    flix.addPath("main/test/flix/Test.Exp.Reference.Precedence.flix")
-    flix.addPath("main/test/flix/Test.Exp.Reference.Ref.flix")
-    flix.addPath("main/test/flix/Test.Exp.Record.Polymorphism.flix")
-    flix.addPath("main/test/flix/Test.Exp.Stm.flix")
-    flix.addPath("main/test/flix/Test.Exp.Tag.flix")
-    flix.addPath("main/test/flix/Test.Exp.Tag.Lambda.flix")
-    flix.addPath("main/test/flix/Test.Use.Tag.flix")
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArrayLength.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArrayLit.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArrayLoad.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArrayNew.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArraySlice.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArraySliceCopy.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArraySliceNoEndIndex.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArraySliceNoStartIndex.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.ArrayStore.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Binary.Spaceship.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Cast.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Concurrency.Buffered.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Concurrency.NewChannel.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Concurrency.Unbuffered.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Concurrency.Spawn.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticField.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeMethod.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Let.MatchStar.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Reference.Assign.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Reference.Deref.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Reference.Precedence.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Reference.Ref.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Record.Polymorphism.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Stm.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Tag.flix"))
+    flix.addStr(LocalResource.get("/test/flix/Test.Exp.Tag.Lambda.flix"))
+
+    flix.addStr(LocalResource.get("/test/flix/Test.Use.Tag.flix"))
 
 
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Bitwise.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Logic.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Block.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix")
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Bitwise.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Logic.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Block.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix"))
   }
 
   /**
     * Adds the test cases for the standard library.
     */
   private def addLibraryTests(flix: Flix): Unit = {
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestBigInt.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestFloat32.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestFloat64.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt8.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt16.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt32.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt64.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestList.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestMap.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestOption.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestPrelude.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestResult.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestSet.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestString.flix")
-  }
-
-  /**
-    * Adds the abstract domains.
-    */
-  private def addAbstractDomains(flix: Flix): Unit = {
-    flix.addPath("examples/domains/Belnap.flix")
-    flix.addPath("examples/domains/Constant.flix")
-    flix.addPath("examples/domains/ConstantParity.flix")
-    flix.addPath("examples/domains/Interval.flix")
-    flix.addPath("examples/domains/IntervalAlt.flix")
-    flix.addPath("examples/domains/Mod3.flix")
-    flix.addPath("examples/domains/Parity.flix")
-    flix.addPath("examples/domains/ParitySign.flix")
-    flix.addPath("examples/domains/PrefixSuffix.flix")
-    flix.addPath("examples/domains/Sign.flix")
-    flix.addPath("examples/domains/StrictSign.flix")
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestBigInt.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestFloat32.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestFloat64.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt8.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt16.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt32.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt64.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
+    flix.addStr(LocalResource.get("/test/ca/uwaterloo/flix/library/TestString.flix"))
   }
 
 }
