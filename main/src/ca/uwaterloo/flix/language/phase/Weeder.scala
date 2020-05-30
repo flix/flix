@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -40,7 +40,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the whole program.
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
-    val roots = parTraverse(program.roots)(visitRoot)
+    val roots = Validation.sequence(ParOps.parMap(program.roots, visitRoot))
     val constraints = visitAllConstraints(program.roots)
 
     mapN(roots, constraints) {
@@ -501,11 +501,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
           val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
           WeededAst.Expression.Apply(inner, value, loc)
-      }
-
-    case ParsedAst.Expression.LetRec(sp1, ident, exp1, exp2, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (value, body) => WeededAst.Expression.LetRec(ident, value, body, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
@@ -1425,6 +1420,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val loc = mkSL(past.sp1, past.sp2)
     past.ident.name match {
       case "benchmark" => Ast.Annotation.Benchmark(loc).toSuccess
+      case "deprecated" => Ast.Annotation.Deprecated(loc).toSuccess
       case "law" => Ast.Annotation.Law(loc).toSuccess
       case "lint" => Ast.Annotation.Lint(loc).toSuccess
       case "test" => Ast.Annotation.Test(loc).toSuccess
@@ -1876,7 +1872,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Statement(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1

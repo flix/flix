@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -53,7 +53,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Computes all used symbols in all defs (in parallel).
-    val usedDefs = root.defs.par.aggregate(Used.empty)({
+    val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
       case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
     }, _ and _)
 
@@ -269,23 +269,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Check if the let-bound variable symbol is dead in exp2.
       if (deadVarSym(sym, innerUsed2))
-        (innerUsed1 and innerUsed2 and shadowedVar) - sym + UnusedVarSym(sym)
-      else
-        (innerUsed1 and innerUsed2 and shadowedVar) - sym
-
-    case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
-      // Extend the environment with the variable symbol.
-      val env1 = env0 + sym
-
-      // Visit the two expressions under the extended environment.
-      val innerUsed1 = visitExp(exp1, env1.resetApplies)
-      val innerUsed2 = visitExp(exp2, env1.resetApplies)
-
-      // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
-
-      // Check if the let-bound variable symbol is dead in exp1 and exp2.
-      if (deadVarSym(sym, innerUsed1 and innerUsed2))
         (innerUsed1 and innerUsed2 and shadowedVar) - sym + UnusedVarSym(sym)
       else
         (innerUsed1 and innerUsed2 and shadowedVar) - sym

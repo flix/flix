@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
+
 import scala.collection.parallel.CollectionConverters._
 
 /**
@@ -35,7 +37,7 @@ object GenFunctionClasses {
     //
     // Generate a function class for each def and collect the results in a map.
     //
-    defs.par.aggregate(Map.empty[JvmName, JvmClass])( {
+    ParOps.parAgg(defs, Map.empty[JvmName, JvmClass])({
       case (macc, (sym, defn)) if JvmOps.nonLaw(defn) =>
         // `JvmType` of the interface for `def.tpe`
         val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)

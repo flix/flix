@@ -55,11 +55,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     println(s"I found: ${lints.length} lints to match against ${targets.length} defs.") // TODO: Debug
 
     // Searches for applicable lints in the targets.
-    val results = ParOps.parMap(visitDef(_, lints), targets)
+    val results = ParOps.parMap(targets, visitDef(_, lints))
 
     // Report linter errors (if any).
     results.flatten match {
-      case Nil => root.toSuccess
+      case xs if xs.isEmpty => root.toSuccess
       case xs => Failure(LazyList.from(xs))
     }
   }
@@ -130,8 +130,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.Binary(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.Let(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
-
-      case Expression.LetRec(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
@@ -368,12 +366,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.Let(sym1, exp11, exp12, _, _, _), Expression.Let(sym2, exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyVar(sym1, exp11.tpe, sym2, exp21.tpe)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
-
-    case (Expression.LetRec(sym1, exp11, exp12, _, _, _), Expression.LetRec(sym2, exp21, exp22, _, _, _)) =>
       for {
         s1 <- unifyVar(sym1, exp11.tpe, sym2, exp21.tpe)
         s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
@@ -741,12 +733,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         Expression.Let(newSym, e1, e2, tpe, eff, loc)
-
-      case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
-        val newSym = apply(sym)
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        Expression.LetRec(newSym, e1, e2, tpe, eff, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = apply(exp1)

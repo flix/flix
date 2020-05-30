@@ -340,9 +340,6 @@ object GenExpression {
       visitor.visitVarInsn(iStore, sym.getStackOffset + 3)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
-    case Expression.LetRec(sym, exp1, exp2, _, _) =>
-      ??? // TODO: Ramin: Implement let rec. (The signature of let rec might need to change.)
-
     case Expression.Is(enum, tag, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -2387,7 +2384,7 @@ object GenExpression {
 
     // Threads
     mv.visitInsn(DUP)
-    mv.visitIntInsn(BIPUSH, flix.options.threads)
+    mv.visitIntInsn(BIPUSH, 1) // TODO: Remove this option.
     mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setThreads", "(I)V", false)
 
     // Verbosity

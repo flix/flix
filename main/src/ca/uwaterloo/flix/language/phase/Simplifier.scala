@@ -358,9 +358,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
-      case TypedAst.Expression.LetRec(sym, e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
-
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
@@ -1191,9 +1188,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
-
-      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        SimplifiedAst.Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
 
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         SimplifiedAst.Expression.Is(sym, tag, visitExp(exp), loc)

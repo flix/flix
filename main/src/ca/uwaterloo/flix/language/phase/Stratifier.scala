@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.mutable
 import scala.collection.parallel.CollectionConverters._
@@ -57,7 +57,7 @@ object Stratifier extends Phase[Root, Root] {
 
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val dg = flix.subphase("Compute Dependency Graph") {
-      root.defs.par.aggregate(DependencyGraph.empty)({
+      ParOps.parAgg(root.defs, DependencyGraph.empty)({
         case (acc, (sym, decl)) => acc + dependencyGraphOfDef(decl)
       }, _ + _)
     }
@@ -143,11 +143,6 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.Let(sym, e1, e2, tpe, eff, loc)
-      }
-
-    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.LetRec(sym, e1, e2, tpe, eff, loc)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -441,9 +436,6 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
     case Expression.Let(_, exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.LetRec(_, exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>

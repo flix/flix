@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.language.phase.unification.{InferMonad, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
 
+
 object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
   /**
@@ -57,26 +58,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     /**
       * Performs type inference and reassembly on the given definition `defn`.
       */
-    def visitDefn(defn: ResolvedAst.Def): Validation[((Symbol.DefnSym, TypedAst.Def), (Symbol.DefnSym, Substitution)), TypeError] = defn match {
-      case ResolvedAst.Def(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) =>
-        typeCheckDef(defn, root) map {
-          case (defn, subst) => ((sym, defn), (sym, subst))
-        }
-    }
+    def visitDefn(defn: ResolvedAst.Def): Validation[TypedAst.Def, TypeError] =
+      typeCheckDef(defn, root) map {
+        case (defn, subst) => defn
+      }
 
-    // Every definition in the ast.
-    val defs = root.defs.values.toList
+    // Compute the results in parallel.
+    val results = ParOps.parMap(root.defs.values, visitDefn)
 
-    // Visit every definition in parallel.
-    val results = ParOps.parMap(visitDefn, defs)
-
-    // Sequence the results
-    Validation.sequence(results).map(_.unzip).map {
-      case (m, m2) =>
-        if (flix.options.xstatistics) {
-          printStatistics(m2.toMap)
-        }
-        m.toMap
+    // Sequence the results.
+    Validation.sequence(results) map {
+      case xs => xs.foldLeft(Map.empty[Symbol.DefnSym, TypedAst.Def]) {
+        case (acc, defn) => acc + (defn.sym -> defn)
+      }
     }
   }
 
@@ -501,15 +495,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
-        for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
-          boundVar <- unifyTypM(sym.tvar, tpe1, loc)
-          resultTyp = tpe2
-          resultEff = mkAnd(eff1, eff2)
-        } yield (resultTyp, resultEff)
-
-      case ResolvedAst.Expression.LetRec(sym, exp1, exp2, loc) =>
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
@@ -1161,13 +1146,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = e2.tpe
         val eff = mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
-
-      case ResolvedAst.Expression.LetRec(sym, exp1, exp2, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val tpe = e2.tpe
-        val eff = mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.LetRec(sym, e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.Match(matchExp, rules, tvar, loc) =>
         val e1 = visitExp(matchExp, subst0)

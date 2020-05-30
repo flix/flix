@@ -116,11 +116,6 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.Let(sym, e1, e2, tpe, eff, loc)
 
-      case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.LetRec(sym, e1, e2, tpe, eff, loc)
-
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)

@@ -594,8 +594,6 @@ object JvmOps {
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-
       case Expression.Is(sym, tag, exp, loc) => visitExp(exp)
 
       case Expression.Tag(sym, tag, exp, tpe, loc) => visitExp(exp)
@@ -959,8 +957,6 @@ object JvmOps {
       case Expression.JumpTo(sym, tpe, loc) => Set(tpe)
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
-
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.Is(sym, tag, exp, loc) => visitExp(exp)
 

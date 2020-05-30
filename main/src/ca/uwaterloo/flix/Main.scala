@@ -91,6 +91,7 @@ object Main {
       optimizations = optimizations,
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       quickchecker = cmdOpts.quickchecker,
+      threads = cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
@@ -149,13 +150,13 @@ object Main {
 
     // check if the -Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
-      BenchmarkCompiler.benchmarkPhases()
+      BenchmarkCompiler.benchmarkPhases(options)
       System.exit(0)
     }
 
     // check if the -Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput()
+      BenchmarkCompiler.benchmarkThroughput(options)
       System.exit(0)
     }
 
@@ -225,6 +226,7 @@ object Main {
                      quickchecker: Boolean = false,
                      release: Boolean = false,
                      test: Boolean = false,
+                     threads: Option[Int] = None,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
                      xallowredundancies: Boolean = false,
@@ -333,6 +335,10 @@ object Main {
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
+
+      // Threads.
+      opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
+        text("number of threads for compilation.")
 
       // Verbose.
       opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
