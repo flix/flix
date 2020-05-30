@@ -51,6 +51,11 @@ class Flix {
   private val paths = ListBuffer.empty[Path]
 
   /**
+    * A sequence of inputs to be parsed into Flix ASTs.
+    */
+  private val inputs = ListBuffer.empty[Input]
+
+  /**
     * A set of reachable root definitions.
     */
   private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
@@ -168,6 +173,18 @@ class Flix {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
     paths += Paths.get(p)
+    this
+  }
+
+  /**
+    * Adds the given string `text` with the given `name`.
+    */
+  def addInput(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    inputs += Input.Internal(name, text)
     this
   }
 
@@ -353,8 +370,9 @@ class Flix {
   private def getInputs: List[Input] = {
     val si1 = getStringInputs
     val si2 = getPathInputs
-    val si3 = if (options.core) Nil else getStandardLibraryInputs
-    si1 ::: si2 ::: si3
+    val si3 = inputs.toList
+    val si4 = if (options.core) Nil else getStandardLibraryInputs
+    si1 ::: si2 ::: si3 ::: si4
   }
 
   /**
