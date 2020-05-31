@@ -1,6 +1,34 @@
 namespace Test/Exp/Binary/Logic {
 
     //
+    // Precedence.
+    //
+
+    @test
+    def binaryLogical01a(): Bool = (!false && true) == true
+
+    @test
+    def binaryLogical01b(): Bool = (not false and true) == true
+
+    @test
+    def binaryLogical02a(): Bool = (true && !false) == true
+
+    @test
+    def binaryLogical02b(): Bool = (true and not false) == true
+
+    @test
+    def binaryLogical03a(): Bool = (!true || true) == true
+
+    @test
+    def binaryLogical03b(): Bool = (not true or true) == true
+
+    @test
+    def binaryLogical04a(): Bool = (true || !true) == true
+
+    @test
+    def binaryLogical04b(): Bool = (true or not true) == true
+
+    //
     // Logical Not.
     //
 
