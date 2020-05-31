@@ -38,6 +38,12 @@ namespace Test/Exp/Binary/Logic {
     @test
     def testBinaryLogicalAnd05b(): Bool = (false and ???) == false
 
+    @test
+    def testBinaryLogicalAnd06a(): Bool = (true && true && true) == true
+
+    @test
+    def testBinaryLogicalAnd06b(): Bool = (true and true and true) == true
+
     //
     // Logical Or.
     //
