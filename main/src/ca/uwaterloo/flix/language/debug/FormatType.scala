@@ -94,15 +94,11 @@ object FormatType {
         case Type.Cst(TypeConstructor.Impure) => formatApply("Impure", args)
 
         case Type.Cst(TypeConstructor.Array) => formatApply("Array", args)
-        case Type.Cst(TypeConstructor.Vector) => formatApply("Vector", args)
         case Type.Cst(TypeConstructor.Channel) => formatApply("Channel", args)
         case Type.Cst(TypeConstructor.Enum(sym, _)) => formatApply(sym.toString, args)
         case Type.Cst(TypeConstructor.Lattice) => formatApply("Lattice", args)
         case Type.Cst(TypeConstructor.Relation) => formatApply("Relation", args)
         case Type.Cst(TypeConstructor.Ref) => formatApply("Ref", args)
-
-        case Type.Zero => formatApply("Zero", args)
-        case Type.Succ(n, tpe) => formatApply(s"Succ($n,  ${visit(tpe)})", args)
 
         case Type.Cst(TypeConstructor.RecordExtend(label)) => args.length match {
           case 0 => s"{ $label: ??? }"

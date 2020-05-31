@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 
 sealed trait TypeDiff {
 
@@ -41,22 +41,25 @@ object TypeDiff {
     */
   case class Mismatch(tpe1: Type, tpe2: Type) extends TypeDiff
 
-  /**
-    * Returns a string that represents the type difference between the two given types.
-    */
-  def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {
-    case (Type.Var(_, _, _), _) => TypeDiff.Star(TyCon.Other)
-    case (_, Type.Var(_, _, _)) => TypeDiff.Star(TyCon.Other)
-    case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
-    case (Type.Zero, Type.Zero) => TypeDiff.Star(TyCon.Other)
-    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TyCon.Other)
-    case (Type.Arrow(l1, _), Type.Arrow(l2, _)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
-    case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-      (diff(t11, t21), diff(t12, t22)) match {
-        case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TyCon.Other)
-        case (diff1, diff2) => TypeDiff.Apply(diff1, diff2)
-      }
-    case _ => TypeDiff.Mismatch(tpe1, tpe2)
+  def diff(tpe1: Type, tpe2: Type): TypeDiff = {
+    val tyCon1 = tpe1.typeConstructor
+    val tyCon2 = tpe1.typeConstructor
+
+    (tyCon1, tyCon2) match {
+      case (Type.Var(_, _, _), _) => TypeDiff.Star(TyCon.Other)
+      case (_, Type.Var(_, _, _)) => TypeDiff.Star(TyCon.Other)
+      case (Type.Cst(TypeConstructor.Tuple(len1)), Type.Cst(TypeConstructor.Tuple(len2)))  if (len1 == len2) =>
+          val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
+          diffs.foldLeft(TypeDiff.Star(TyCon.Tuple): TypeDiff)((base, param) => TypeDiff.Apply(base, param))
+      case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
+      case (Type.Arrow(l1, _), Type.Arrow(l2, _)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
+      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
+        (diff(t11, t21), diff(t12, t22)) match {
+          case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TyCon.Other)
+          case (diff1, diff2) => TypeDiff.Apply(diff1, diff2)
+        }
+      case _ => TypeDiff.Mismatch(tpe1, tpe2)
+    }
   }
 
   /**
