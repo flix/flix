@@ -49,19 +49,40 @@ namespace Test/Exp/Binary/Logic {
     //
 
     @test
-    def binaryLogicalOrTest01(): Bool = (true || true) == true
+    def binaryLogicalOrTest01a(): Bool = (true || true) == true
 
     @test
-    def binaryLogicalOrTest02(): Bool = (true || false) == true
+    def binaryLogicalOrTest01b(): Bool = (true or true) == true
 
     @test
-    def binaryLogicalOrTest03(): Bool = (false || true) == true
+    def binaryLogicalOrTest02a(): Bool = (true || false) == true
 
     @test
-    def binaryLogicalOrTest04(): Bool = (false || false) == false
+    def binaryLogicalOrTest02b(): Bool = (true or false) == true
 
     @test
-    def binaryLogicalOrTest05(): Bool = (true || ???) == true
+    def binaryLogicalOrTest03a(): Bool = (false || true) == true
+
+    @test
+    def binaryLogicalOrTest03b(): Bool = (false or true) == true
+
+    @test
+    def binaryLogicalOrTest04a(): Bool = (false || false) == false
+
+    @test
+    def binaryLogicalOrTest04b(): Bool = (false or false) == false
+
+    @test
+    def binaryLogicalOrTest05a(): Bool = (true || ???) == true
+
+    @test
+    def binaryLogicalOrTest05b(): Bool = (true or ???) == true
+
+    @test
+    def binaryLogicalOrTest06a(): Bool = (true || true || true) == true
+
+    @test
+    def binaryLogicalOrTest06b(): Bool = (true or true or true) == true
 
 }
 
