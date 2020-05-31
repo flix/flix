@@ -4,6 +4,30 @@ namespace Test/Exp/Binary/Logic {
     // Logical Not.
     //
 
+    @test
+    def binaryLogicalNotTest01a(): Bool = (!true) == false
+
+    @test
+    def binaryLogicalNotTest01b(): Bool = (not true) == false
+
+    @test
+    def binaryLogicalNotTest02a(): Bool = (!false) == true
+
+    @test
+    def binaryLogicalNotTest02b(): Bool = (not false) == true
+
+    @test
+    def binaryLogicalNotTest03a(): Bool = (!!true) == true
+
+    @test
+    def binaryLogicalNotTest03b(): Bool = (not not true) == true
+
+    @test
+    def binaryLogicalNotTest04a(): Bool = (!!false) == false
+
+    @test
+    def binaryLogicalNotTest04b(): Bool = (not not false) == false
+
     //
     // Logical And.
     //
