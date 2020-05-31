@@ -410,6 +410,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       visitExp(exp) map {
         case e => op match {
           case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
+          case "not" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
           case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
           case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
           case "~~~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
@@ -436,7 +437,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
           case "<=>" => WeededAst.Expression.Binary(BinaryOperator.Spaceship, e1, e2, loc)
           case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
+          case "and" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
           case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
+          case "or" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
           case "&&&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
           case "|||" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
           case "^^^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
