@@ -42,6 +42,7 @@ class LangSuite extends Suites(
   //
   // Binary.Spaceship.
   //
+  new FlixTest("Test.Exp.Binary.Logic", "main/test/flix/Test.Exp.Binary.Logic.flix")(Options.TestWithoutLibrary),
   new FlixTest("Test.Exp.Binary.Spaceship", "main/test/flix/Test.Exp.Binary.Spaceship.flix")(Options.TestWithLibrary),
 
   //
