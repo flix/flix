@@ -410,6 +410,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       visitExp(exp) map {
         case e => op match {
           case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
+          case "not" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
           case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
           case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
           case "~~~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)

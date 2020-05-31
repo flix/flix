@@ -578,12 +578,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "<-" | "|=")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "<-" | "|=" | "or")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture("<<<" | ">>>" | "<+>")
+        capture("<<<" | ">>>" | "<+>" | "not" | "and")
       }
 
       // Match any two character operator which is not reserved.
@@ -612,8 +612,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
+    def Unary: Rule1[ParsedAst.Expression] = {
+      def UnaryOp1: Rule1[String] = rule {
+        capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~"))
+      }
+      def UnaryOp2: Rule1[String] = rule {
+        capture(atomic("not")) ~ WS
+      }
+      rule {
+        !Literal ~ (SP ~ (UnaryOp1 | UnaryOp2) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
+      }
     }
 
     def Ref: Rule1[ParsedAst.Expression] = rule {
