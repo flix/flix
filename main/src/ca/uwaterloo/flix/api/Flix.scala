@@ -51,6 +51,11 @@ class Flix {
   private val paths = ListBuffer.empty[Path]
 
   /**
+    * A sequence of inputs to be parsed into Flix ASTs.
+    */
+  private val inputs = ListBuffer.empty[Input]
+
+  /**
     * A set of reachable root definitions.
     */
   private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
@@ -59,75 +64,55 @@ class Flix {
     * A sequence of internal inputs to be parsed into Flix ASTs.
     */
   private val library = List(
-    "Array.flix" -> LocalResource.get("/library/Array.flix"),
-    "Bool.flix" -> LocalResource.get("/library/Bool.flix"),
-    "BigInt.flix" -> LocalResource.get("/library/BigInt.flix"),
-    "Char.flix" -> LocalResource.get("/library/Char.flix"),
-    "Console.flix" -> LocalResource.get("/library/Console.flix"),
-    "Float32.flix" -> LocalResource.get("/library/Float32.flix"),
-    "Float64.flix" -> LocalResource.get("/library/Float64.flix"),
-    "Int8.flix" -> LocalResource.get("/library/Int8.flix"),
-    "Int16.flix" -> LocalResource.get("/library/Int16.flix"),
-    "Int32.flix" -> LocalResource.get("/library/Int32.flix"),
-    "Int64.flix" -> LocalResource.get("/library/Int64.flix"),
-    "List.flix" -> LocalResource.get("/library/List.flix"),
-    "Map.flix" -> LocalResource.get("/library/Map.flix"),
-    "Nel.flix" -> LocalResource.get("/library/Nel.flix"),
-    "Object.flix" -> LocalResource.get("/library/Object.flix"),
-    "Option.flix" -> LocalResource.get("/library/Option.flix"),
-    "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
-    "Random.flix" -> LocalResource.get("/library/Random.flix"),
-    "Result.flix" -> LocalResource.get("/library/Result.flix"),
-    "Set.flix" -> LocalResource.get("/library/Set.flix"),
-    "String.flix" -> LocalResource.get("/library/String.flix"),
+    "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
+    "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
+    "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
+    "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
+    "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
+    "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
+    "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
+    "Int8.flix" -> LocalResource.get("/src/library/Int8.flix"),
+    "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
+    "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
+    "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
+    "List.flix" -> LocalResource.get("/src/library/List.flix"),
+    "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
+    "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
+    "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
+    "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
+    "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
+    "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
+    "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
+    "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
+    "String.flix" -> LocalResource.get("/src/library/String.flix"),
 
-    "MutSet.flix" -> LocalResource.get("/library/MutSet.flix"),
-    "MutMap.flix" -> LocalResource.get("/library/MutMap.flix"),
+    "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
+    "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
-    "Core/Io/File.flix" -> LocalResource.get("/library/Core/Io/File.flix"),
-    "Core/Io/InputStream.flix" -> LocalResource.get("/library/Core/Io/InputStream.flix"),
-    "Core/Io/IOError.flix" -> LocalResource.get("/library/Core/Io/IOError.flix"),
-    "Core/Io/OutputStream.flix" -> LocalResource.get("/library/Core/Io/OutputStream.flix"),
-    "Core/Io/ZipInput.flix" -> LocalResource.get("/library/Core/Io/ZipInput.flix"),
-    "Core/Io/ZipOutput.flix" -> LocalResource.get("/library/Core/Io/ZipOutput.flix"),
+    "Core/Io/File.flix" -> LocalResource.get("/src/library/Core/Io/File.flix"),
+    "Core/Io/InputStream.flix" -> LocalResource.get("/src/library/Core/Io/InputStream.flix"),
+    "Core/Io/IOError.flix" -> LocalResource.get("/src/library/Core/Io/IOError.flix"),
+    "Core/Io/OutputStream.flix" -> LocalResource.get("/src/library/Core/Io/OutputStream.flix"),
+    "Core/Io/ZipInput.flix" -> LocalResource.get("/src/library/Core/Io/ZipInput.flix"),
+    "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
 
-    "Pkger/SemVer.flix" -> LocalResource.get("/library/Pkger/SemVer.flix"),
+    "Pkger/SemVer.flix" -> LocalResource.get("/src/library/Pkger/SemVer.flix"),
 
-    "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
-    "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
-    "MeetLattice.flix" -> LocalResource.get("/library/MeetLattice.flix"),
-    "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
-    "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
-    "Validation.flix" -> LocalResource.get("/library/Validation.flix"),
+    "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
+    "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),
+    "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
+    "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
+    "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
+    "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
-    "flix/channel/Channel.flix" -> LocalResource.get("/library/flix/channel/Channel.flix"),
-    "flix/channel/Ticker.flix" -> LocalResource.get("/library/flix/channel/Ticker.flix"),
-    "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
-    "flix/time/Duration.flix" -> LocalResource.get("/library/flix/time/Duration.flix"),
-    "flix/time/Instant.flix" -> LocalResource.get("/library/flix/time/Instant.flix"),
+    "flix/channel/Channel.flix" -> LocalResource.get("/src/library/flix/channel/Channel.flix"),
+    "flix/channel/Ticker.flix" -> LocalResource.get("/src/library/flix/channel/Ticker.flix"),
+    "flix/channel/Timer.flix" -> LocalResource.get("/src/library/flix/channel/Timer.flix"),
+    "flix/time/Duration.flix" -> LocalResource.get("/src/library/flix/time/Duration.flix"),
+    "flix/time/Instant.flix" -> LocalResource.get("/src/library/flix/time/Instant.flix"),
 
-
-    "StringBuilder.flix" -> LocalResource.get("/library/StringBuilder.flix"),
-
-    "RedBlackTree.flix" -> LocalResource.get("/library/RedBlackTree.flix"),
-
-    //"CodePatterns.flix" -> LocalResource.get("/library/CodePatterns.flix"),
-
-    //"MutList.flix" -> LocalResource.get("/library/MutList.flix"),
-
-    //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
-    //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
-    //"flix/core/cmp/Eq.flix" -> LocalResource.get("/library/flix/core/cmp/Eq.flix"),
-    //"flix/core/cmp/Ord.flix" -> LocalResource.get("/library/flix/core/cmp/Ord.flix"),
-    //"flix/core/cmp/PartialEq.flix" -> LocalResource.get("/library/flix/core/cmp/PartialEq.flix"),
-    //"flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/PartialOrd.flix"),
-    //"flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
-    //"flix/io/BufferedReader.flix" -> LocalResource.get("/library/flix/io/BufferedReader.flix"),
-    //"flix/io/BufferedWriter.flix" -> LocalResource.get("/library/flix/io/BufferedWriter.flix"),
-    //"flix/io/InputStream.flix" -> LocalResource.get("/library/flix/io/InputStream.flix"),
-    //"flix/io/OpenOption.flix" -> LocalResource.get("/library/flix/io/OpenOption.flix"),
-    //"flix/io/OutputStream.flix" -> LocalResource.get("/library/flix/io/OutputStream.flix"),
-    //"flix/io/File.flix" -> LocalResource.get("/library/flix/io/File.flix"),
+    "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
+    "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
 
   )
 
@@ -188,6 +173,18 @@ class Flix {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
     paths += Paths.get(p)
+    this
+  }
+
+  /**
+    * Adds the given string `text` with the given `name`.
+    */
+  def addInput(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    inputs += Input.Internal(name, text)
     this
   }
 
@@ -373,8 +370,9 @@ class Flix {
   private def getInputs: List[Input] = {
     val si1 = getStringInputs
     val si2 = getPathInputs
-    val si3 = if (options.core) Nil else getStandardLibraryInputs
-    si1 ::: si2 ::: si3
+    val si3 = inputs.toList
+    val si4 = if (options.core) Nil else getStandardLibraryInputs
+    si1 ::: si2 ::: si3 ::: si4
   }
 
   /**

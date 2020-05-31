@@ -23,17 +23,9 @@ import scala.collection.mutable
 
 object LocalResource {
 
-  val RootPath = "main/src"
+  val RootPath = "main"
 
   private val cache = mutable.Map.empty[String, String]
-
-  object Documentation {
-
-    def JavaScript: InputStream = getInputStream("/resources/documentation/app.js")
-
-    def StyleSheet: InputStream = getInputStream("/resources/documentation/app.css")
-
-  }
 
   /**
     * Returns the given relative path as a string.
