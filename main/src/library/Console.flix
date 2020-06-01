@@ -203,6 +203,10 @@ namespace Console {
         let blu = Int32.toString(b);
         esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
 
+    // TODO: background color.
+
+    // TODO: HEX and RGB helper functions.
+
     ///
     /// TODO: DOC
     ///
