@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -98,6 +97,30 @@ class TestWeeder extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.DuplicateTag](result)
+  }
+
+  test("IllegalFieldName.01") {
+    val input = "def f(): { length: Int } = { length = 123 }"
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalFieldName](result)
+  }
+
+  test("IllegalFieldName.02") {
+    val input = "def f(): { length: Int } = { +length = 123 | {} }"
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalFieldName](result)
+  }
+
+  test("IllegalFieldName.03") {
+    val input = "def f(): { length: Int } = { -length | {} }"
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalFieldName](result)
+  }
+
+  test("IllegalFieldName.04") {
+    val input = "def f(): { length: Int } = { length = 123 | {} }"
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalFieldName](result)
   }
 
   test("IllegalExistential.01") {

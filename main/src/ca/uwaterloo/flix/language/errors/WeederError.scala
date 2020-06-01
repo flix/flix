@@ -122,7 +122,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal array length,
+    * An error raised to indicate an illegal array length.
     *
     * @param loc the location where the illegal array length occurs.
     */
@@ -134,6 +134,22 @@ object WeederError {
       vt << ">> Illegal array length." << NewLine
       vt << NewLine
       vt << Code(loc, "illegal array length.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal field name.
+    *
+    * @param loc the location where the illegal field name occurs.
+    */
+  case class IllegalFieldName(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal field name"
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal field name." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal field name.") << NewLine
     }
   }
 
