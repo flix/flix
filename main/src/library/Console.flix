@@ -129,4 +129,38 @@ namespace Console {
 
     }
 
+    ///
+    /// TODO: DOC
+    ///
+    pub enum ColorSupport {
+        case NoColor,
+        case BasicColor,
+        case Extended,
+        case TrueColor
+    }
+
+    ///
+    /// TODO: DOC
+    /// TODO: Split into several boolean functions.
+    ///
+    pub def colorSupport(): ColorSupport & Impure =
+        import java.lang.System:getenv(String);
+        if (not Object.isNull(getenv("COLORTERM")) and getenv("COLORTERM") == "truecolor")
+            TrueColor
+        else {
+            let term = getenv("TERM");
+            if (Object.isNull(term))
+                NoColor
+            else if (String.indexOf("256", term) != None)
+                Extended
+            else {
+                let basic = "screen" :: "xterm" :: "ansi" :: Nil;
+                if (List.exists(s -> String.indexOf(s, term) != None, basic))
+                    BasicColor
+                else
+                    NoColor
+            }
+        }
+
+
 }
