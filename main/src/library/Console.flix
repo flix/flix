@@ -162,5 +162,19 @@ namespace Console {
             }
         }
 
+    ///
+    /// TODO: DOC
+    ///
+    pub def format(s: String, r: Int32, g: Int32, b: Int32): String =
+        let esc = Console.escape();
+        let red = Int32.toString(r);
+        let gre = Int32.toString(g);
+        let blu = Int32.toString(b);
+        esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
+
+    ///
+    /// TODO: DOC
+    ///
+    pub def escape(): String = Char.toString('\u001b')
 
 }
