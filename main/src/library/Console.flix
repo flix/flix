@@ -145,7 +145,7 @@ namespace Console {
     ///
     pub def colorSupport(): ColorSupport & Impure =
         import java.lang.System:getenv(String);
-        if (not Object.isNull(getenv("COLORTERM")) and getenv("COLORTERM") == "truecolor")
+        if (not Object.isNull(getenv("COLORTERM")) and getenv("COLORTERM") == "truecolor") // TODO "24bit" (case sensitive)
             TrueColor
         else {
             let term = getenv("TERM");
