@@ -129,6 +129,37 @@ namespace Console {
 
     }
 
+
+    ///
+    /// TODO: DOC
+    ///
+    pub enum Color {
+        case Blue,
+        case Red,
+        case Green,
+        case Coral,
+        case DarkOrchid
+    }
+
+    ///
+    /// TODO: DOC
+    ///
+    pub def toRgb(c: Color): (Int32, Int32, Int32) = match c {
+        case Blue   => (0, 0, 255)
+        case Red    => (255, 0, 0)
+        case Green  => (000, 255, 000)
+        case Coral  => (255, 127, 080)
+        case DarkOrchid => (153, 50, 204)
+    }
+
+
+    ///
+    /// TODO: DOC
+    ///
+    pub def formatWithColor(s: String, c: Color): String =
+        let (r, g, b) = toRgb(c);
+        Console.format(s, r, g, b)
+
     ///
     /// TODO: DOC
     ///
