@@ -173,8 +173,13 @@ namespace Console {
             /// Returns the RGB-triplet for the given color `c`.
             ///
             pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
-                case Red   => (232, 131, 136)
-                case _ => (0,0,0) // TODO
+                case Blue       =>      (113, 190, 242)
+                case Cyan       =>      (102, 194, 205)
+                case Green      =>      (168, 204, 140)
+                case Magenta    =>      (210, 144, 228)
+                case Red        =>      (232, 131, 136)
+                case Yellow     =>      (219, 171, 121)
+                case White      =>      (185, 191, 202)
             }
 
         }
