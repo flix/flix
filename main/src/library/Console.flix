@@ -171,6 +171,24 @@ namespace Console {
         case DarkSeaGreen
         case DarkSlateBlue
         case DarkSlateGray
+        case DarkSlateGrey
+        case DarkTurquoise
+        case DarkViolet
+        case DeepPink
+        case DeepSkyBlue
+        case DimGray
+        case DimGrey
+        case DodgerBlue
+        case FireBrick
+        case FloralWhite
+        case ForestGreen
+        case Fuchsia
+        case Gainsboro
+        case GhostWhite
+        case Gold
+        case GoldenRod
+        case Gray
+        case Grey
     }
 
     ///
@@ -214,6 +232,24 @@ namespace Console {
         case DarkSeaGreen => (	143,188,143)
         case DarkSlateBlue => (	72,61,139 )
         case DarkSlateGray => (	47,79,79 )
+        case DarkSlateGrey => (	47,79,79 )
+        case DarkTurquoise => (	0,206,209 )
+        case DarkViolet => (	148,0,211 )
+        case DeepPink => (	255,20,147 )
+        case DeepSkyBlue => (	0,191,255 )
+        case DimGray => (	105,105,105)
+        case DimGrey => (	105,105,105)
+        case DodgerBlue => (	30,144,255 )
+        case FireBrick => (	178,34,34 )
+        case FloralWhite => (	255,250,240)
+        case ForestGreen => (	34,139,34 )
+        case Fuchsia => (	255,0,255 )
+        case Gainsboro => (	220,220,220)
+        case GhostWhite => (	248,248,255)
+        case Gold => (	255,215,0 )
+        case GoldenRod => (218,165,32 )
+        case Gray => (128,128,128)
+        case Grey => 	(128,128,128)
     }
 
 
