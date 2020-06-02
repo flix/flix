@@ -527,7 +527,14 @@ namespace Console {
     /// TODO: DOC
     ///
     // TODO: This is for truecolor. Need one for non-true color.
-    pub def format(s: String, rgb: (Int32, Int32 , Int32)): String =
+    pub def format(s: String, rgb: (Int32, Int32 , Int32)): String = match TerminalColor.TrueColor {
+        case _ => formatTrueColor(s, rgb)
+    }
+
+    ///
+    /// TODO: DOC
+    ///
+    def formatTrueColor(s: String, rgb: (Int32, Int32 , Int32)): String =
         let (r, g, b) = rgb;
         let esc = Console.escape();
         let red = Int32.toString(r);
