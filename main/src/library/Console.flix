@@ -161,6 +161,7 @@ namespace Console {
             ///
             pub enum Color {
                 case Black
+                // TODO: Rest
             }
 
             ///
@@ -545,7 +546,7 @@ namespace Console {
     /// TODO: DOC
     ///
     // TODO: This is for truecolor. Need one for non-true color.
-    pub def format(s: String, rgb: (Int32, Int32 , Int32)): String = match TerminalColor.TrueColor {
+    pub def formatter(rgb: (Int32, Int32 , Int32), s: String): String = match TerminalColor.TrueColor {
         case _ => formatTrueColor(s, rgb)
     }
 
