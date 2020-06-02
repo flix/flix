@@ -152,6 +152,29 @@ namespace Console {
     namespace Color {
 
         ///
+        /// Namespace for Default Colors.
+        ///
+        namespace Default {
+
+            ///
+            /// Default Colors.
+            ///
+            pub enum Color {
+                case Normal
+                case Info
+                case Warning
+            }
+
+            ///
+            /// Returns the RGB-triplet for the given color `c`.
+            ///
+            pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
+                case _ => (0,0,0) // TODO
+            }
+
+        }
+
+        ///
         /// Namespace for Ansi Colors.
         ///
         namespace Ansi {
@@ -168,7 +191,7 @@ namespace Console {
             /// Returns the RGB-triplet for the given color `c`.
             ///
             pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
-                case Black => (0,0,0)
+                case Black => (0,0,0) // TODO
             }
 
         }
