@@ -134,22 +134,86 @@ namespace Console {
     /// TODO: DOC
     ///
     pub enum Color {
-        case Blue,
-        case Red,
-        case Green,
-        case Coral,
+        case AliceBlue
+        case AntiqueWhite
+        case Aqua
+        case Aquamarine
+        case Azure
+        case Beige
+        case Bisque
+        case Black
+        case BlanchedAlmond
+        case Blue
+        case BlueViolet
+        case Brown
+        case BurlyWood
+        case CadetBlue
+        case Chartreuse
+        case Chocolate
+        case Coral
+        case CornflowerBlue
+        case Cornsilk
+        case Crimson
+        case Cyan
+        case DarkBlue
+        case DarkCyan
+        case DarkGoldenRod
+        case DarkGray
+        case DarkGrey
+        case DarkGreen
+        case DarkKhaki
+        case DarkMagenta
+        case DarkOliveGreen
+        case DarkOrange
         case DarkOrchid
+        case DarkRed
+        case DarkSalmon
+        case DarkSeaGreen
+        case DarkSlateBlue
+        case DarkSlateGray
     }
 
     ///
     /// TODO: DOC
     ///
     pub def toRgb(c: Color): (Int32, Int32, Int32) = match c {
-        case Blue   => (0, 0, 255)
-        case Red    => (255, 0, 0)
-        case Green  => (000, 255, 000)
-        case Coral  => (255, 127, 080)
-        case DarkOrchid => (153, 50, 204)
+        case AliceBlue => (240, 248, 255)
+        case AntiqueWhite => (	250,235,215)
+        case Aqua => (0,255,255)
+        case Aquamarine => (	127,255,212)
+        case Azure => (240,255,255)
+        case Beige => (	245,245,220)
+        case Bisque => (	255,228,196)
+        case Black => (	0,0,0 )
+        case BlanchedAlmond => (	255,235,205)
+        case Blue => (	0,0,255 )
+        case BlueViolet => (	138,43,226 )
+        case Brown => (165,42,42 )
+        case BurlyWood => (	222,184,135)
+        case CadetBlue => (	95,158,160 )
+        case Chartreuse => (	127,255,0 )
+        case Chocolate => (	210,105,30)
+        case Coral => (	255,127,80 )
+        case CornflowerBlue => (100,149,237)
+        case Cornsilk => (	255,248,220)
+        case Crimson => (	220,20,60 )
+        case Cyan => (	0,255,255 )
+        case DarkBlue => (	0,0,139 )
+        case DarkCyan => (	0,139,139 )
+        case DarkGoldenRod => (	184,134,11 )
+        case DarkGray => (	169,169,169)
+        case DarkGrey => (	169,169,169)
+        case DarkGreen => (	0,100,0 )
+        case DarkKhaki => (189,183,107)
+        case DarkMagenta => (	139,0,139 )
+        case DarkOliveGreen => (85,107,47 )
+        case DarkOrange => (	255,140,0 )
+        case DarkOrchid => (	153,50,204 )
+        case DarkRed => (	139,0,0 )
+        case DarkSalmon => (	233,150,122)
+        case DarkSeaGreen => (	143,188,143)
+        case DarkSlateBlue => (	72,61,139 )
+        case DarkSlateGray => (	47,79,79 )
     }
 
 
