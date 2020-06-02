@@ -16,13 +16,19 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.errors.TypeError.OccursCheckError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
+import ca.uwaterloo.flix.language.phase.unification.UnificationError.OccursCheck
 import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.Err
 import org.scalatest.FunSuite
 
-class TestUnification extends FunSuite {
+import scala.reflect.ClassTag
+
+class TestUnification extends FunSuite with TestUtils {
 
   implicit val flix: Flix = new Flix()
 
@@ -319,46 +325,19 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.12") {
-    val rest = Type.Var(1, Kind.Record)
-    val field1 = Type.Bool
-    val field2 = Type.Int32
+    val tpe1 = Type.Var(1, Kind.Record)
+    val field = Type.Bool
     val label = "x"
-    val tpe1 = Type.mkRecordExtend(label, field1, rest)
-    val tpe2 = Type.mkRecordExtend(label, field2, rest)
+    val tpe2 = Type.mkRecordExtend(label, field, tpe1)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
   }
 
   test("Unify.13") {
-    val rest = Type.Var(1, Kind.Record)
-    val field = Type.Bool
-    val label1 = "x"
-    val label2 = "y"
-    val tpe1 = Type.mkRecordExtend(label1, field, rest)
-    val tpe2 = Type.mkRecordExtend(label2, field, rest)
-    val result = Unification.unifyTypes(tpe1, tpe2)
-    assert(!isOk(result))
-  }
-
-  test("Unify.14") {
-    val rest = Type.Var(1, Kind.Schema)
-    val field1 = Type.Apply(Type.Cst(TypeConstructor.Relation), Type.Bool)
-    val field2 = Type.Apply(Type.Cst(TypeConstructor.Relation), Type.Int32)
-    val label = "x"
-    val tpe1 = Type.mkSchemaExtend(label, field1, rest)
-    val tpe2 = Type.mkSchemaExtend(label, field2, rest)
-    val result = Unification.unifyTypes(tpe1, tpe2)
-    assert(!isOk(result))
-  }
-
-
-  test("Unify.15") {
-    val rest = Type.Var(1, Kind.Schema)
+    val tpe1 = Type.Var(1, Kind.Schema)
     val field = Type.Apply(Type.Cst(TypeConstructor.Relation), Type.Bool)
-    val label1 = "x"
-    val label2 = "y"
-    val tpe1 = Type.mkSchemaExtend(label1, field, rest)
-    val tpe2 = Type.mkSchemaExtend(label2, field, rest)
+    val label = "x"
+    val tpe2 = Type.mkSchemaExtend(label, field, tpe1)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
   }
