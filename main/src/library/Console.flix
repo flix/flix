@@ -255,6 +255,33 @@ namespace Console {
         case Purple
         case RebeccaPurple
         case Red
+        case RosyBrown
+        case RoyalBlue
+        case SaddleBrown
+        case Salmon
+        case SandyBrown
+        case SeaGreen
+        case SeaShell
+        case Sienna
+        case Silver
+        case SkyBlue
+        case SlateBlue
+        case SlateGray
+        case SlateGrey
+        case Snow
+        case SpringGreen
+        case SteelBlue
+        case Tan
+        case Teal
+        case Thistle
+        case Tomato
+        case Turquoise
+        case Violet
+        case Wheat
+        case White
+        case WhiteSmoke
+        case Yellow
+        case YellowGreen
     }
 
     ///
@@ -382,6 +409,33 @@ namespace Console {
         case Purple => (	128,0,128 )
         case RebeccaPurple => (	102,51,153 )
         case Red => (	255,0,0 )
+        case RosyBrown => (	188,143,143)
+        case RoyalBlue => (	65,105,225 )
+        case SaddleBrown => (	139,69,19)
+        case Salmon => (	250,128,114)
+        case SandyBrown => (	244,164,96 )
+        case SeaGreen => (	46,139,87 )
+        case SeaShell => (	255,245,238)
+        case Sienna => (	160,82,45)
+        case Silver => (	192,192,192)
+        case SkyBlue => (	135,206,235)
+        case SlateBlue => (	106,90,205 )
+        case SlateGray => (	112,128,144)
+        case SlateGrey => (	112,128,144)
+        case Snow => (255,250,250)
+        case SpringGreen => (	0,255,127 )
+        case SteelBlue => (	70,130,180 )
+        case Tan => (	210,180,140)
+        case Teal => (0,128,128 )
+        case Thistle => (	216,191,216)
+        case Tomato => (	255,99,71 )
+        case Turquoise => (	64,224,208 )
+        case Violet => (	238,130,238)
+        case Wheat => (	245,222,179)
+        case White => (	255,255,255)
+        case WhiteSmoke => (	245,245,245)
+        case Yellow => (	255,255,0 )
+        case YellowGreen => (154,205,50 )
     }
 
     // TODO: AnsiColor
