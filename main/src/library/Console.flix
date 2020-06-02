@@ -152,12 +152,35 @@ namespace Console {
     namespace Color {
 
         ///
+        /// Namespace for Ansi Colors.
+        ///
+        namespace Ansi {
+
+            ///
+            /// Ansi Colors.
+            ///
+            pub enum Color {
+                case Black
+            }
+
+            ///
+            /// Returns the RGB-triplet for the given color `c`.
+            ///
+            pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
+                case Black => (0,0,0)
+            }
+
+        }
+
+        // TODO: RecommendColors
+
+        ///
         /// Namespace for Web Colors.
         ///
         namespace Web {
 
             ///
-            /// Web Color Names.
+            /// Web Colors.
             ///
             pub enum Color {
                 case AliceBlue
@@ -466,12 +489,7 @@ namespace Console {
         }
     }
 
-
-    // TODO: AnsiColor
-    // TODO: RecommendColors
-
     // TODO: Need color distance function.
-
 
     ///
     /// TODO: DOC
