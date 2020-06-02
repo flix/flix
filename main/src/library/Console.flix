@@ -470,6 +470,9 @@ namespace Console {
     // TODO: AnsiColor
     // TODO: RecommendColors
 
+    // TODO: Need color distance function.
+
+
     ///
     /// TODO: DOC
     ///
@@ -494,6 +497,8 @@ namespace Console {
             List.exists(s -> String.isInfixOf(s, p), keywords)
         }
 
+    // TODO: WIndows support. Need to check build.
+
     ///
     /// Returns `true` if the terminal supports 24-bit true color.
     ///
@@ -505,10 +510,23 @@ namespace Console {
         else
             p == "truecolor"
 
+// TODO:
+            // https://github.com/chalk/supports-color/blob/master/index.js
+//	if (process.platform === 'win32') {
+//		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
+//		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
+//		const osRelease = os.release().split('.');
+//		if (
+//			Number(osRelease[0]) >= 10 &&
+//			Number(osRelease[2]) >= 10586
+//		) {
+//			return Number(osRelease[2]) >= 14931 ? 3 : 2;
+//		}
 
     ///
     /// TODO: DOC
     ///
+    // TODO: This is for truecolor. Need one for non-true color.
     pub def format(s: String, rgb: (Int32, Int32 , Int32)): String =
         let (r, g, b) = rgb;
         let esc = Console.escape();
