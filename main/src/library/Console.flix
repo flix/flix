@@ -160,22 +160,22 @@ namespace Console {
             /// Default Colors.
             ///
             pub enum Color {
-                case Normal
-                case Info
-                case Warning
+                case Blue
+                case Cyan
+                case Green
+                case Magenta
+                case Red
+                case Yellow
+                case White
             }
 
             ///
             /// Returns the RGB-triplet for the given color `c`.
             ///
             pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
+                case Red   => (232, 131, 136)
                 case _ => (0,0,0) // TODO
             }
-
-            ///
-            /// Returns the closet foreground color for the given RGB color `rgb`.
-            ///
-            // TODO
 
         }
 
