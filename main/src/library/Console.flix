@@ -130,17 +130,18 @@ namespace Console {
     }
 
     ///
-    /// An enum that represents the color support of a terminal emulator.
+    /// An enum that represents the colors supported by a terminal emulator.
     ///
-    pub enum ColorSupport {
+    pub enum TerminalColor {
         ///
         /// No color support.
         ///
         case None,
 
-
-        case BasicColor,
-        case Extended,
+        ///
+        /// Ansi color support.
+        ///
+        case Ansi,
 
         ///
         /// True 24-bit color support.
@@ -472,22 +473,22 @@ namespace Console {
     /// TODO: DOC
     /// TODO: Split into several boolean functions.
     ///
-    pub def colorSupport(): ColorSupport & Impure =
+    pub def colorSupport(): TerminalColor & Impure =
         import java.lang.System:getenv(String);
         if (not Object.isNull(getenv("COLORTERM")) and getenv("COLORTERM") == "truecolor") // TODO "24bit" (case sensitive)
             TrueColor
         else {
             let term = getenv("TERM");
             if (Object.isNull(term))
-                ColorSupport.None
+                TerminalColor.None
             else if (String.isInfixOf("256", term))
-                Extended
+                TerminalColor.Ansi
             else {
                 let basic = "screen" :: "xterm" :: "ansi" :: Nil;
                 if (List.exists(s -> String.isInfixOf(s, term), basic))
-                    BasicColor
+                    TerminalColor.Ansi
                 else
-                ColorSupport.None
+                TerminalColor.None
             }
         }
 
