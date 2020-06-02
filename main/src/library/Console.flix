@@ -189,6 +189,33 @@ namespace Console {
         case GoldenRod
         case Gray
         case Grey
+        case Green
+        case GreenYellow
+        case HoneyDew
+        case HotPink
+        case IndianRed
+        case Indigo
+        case Ivory
+        case Khaki
+        case Lavender
+        case LavenderBlush
+        case LawnGreen
+        case LemonChiffon
+        case LightBlue
+        case LightCoral
+        case LightCyan
+        case LightGoldenRodYellow
+        case LightGray
+        case LightGrey
+        case LightGreen
+        case LightPink
+        case LightSalmon
+        case LightSeaGreen
+        case LightSkyBlue
+        case LightSlateGray
+        case LightSlateGrey
+        case LightSteelBlue
+        case LightYellow
     }
 
     ///
@@ -250,7 +277,37 @@ namespace Console {
         case GoldenRod => (218,165,32 )
         case Gray => (128,128,128)
         case Grey => 	(128,128,128)
+        case Green => (	0,128,0 )
+        case GreenYellow => (173,255,47 )
+        case HoneyDew => (240,255,240)
+        case HotPink => (	255,105,180)
+        case IndianRed  => (	205,92,92 )
+        case Indigo => (75,0,130)
+        case Ivory => (	255,255,240)
+        case Khaki => (	240,230,140)
+        case Lavender => (	230,230,250)
+        case LavenderBlush => (	255,240,245)
+        case LawnGreen => (	124,252,0 )
+        case LemonChiffon => (	255,250,205)
+        case LightBlue => (	173,216,230)
+        case LightCoral => (	240,128,128)
+        case LightCyan => (	224,255,255)
+        case LightGoldenRodYellow => (	250,250,210)
+        case LightGray => (	211,211,211)
+        case LightGrey => (	211,211,211)
+        case LightGreen => (	144,238,144)
+        case LightPink => (	255,182,193)
+        case LightSalmon => (255,160,122)
+        case LightSeaGreen => (	32,178,170 )
+        case LightSkyBlue => (	135,206,250)
+        case LightSlateGray => (	119,136,153)
+        case LightSlateGrey => (	119,136,153)
+        case LightSteelBlue => (	176,196,222)
+        case LightYellow => (	255,255,224)
     }
+
+    // TODO: AnsiColor
+    // TODO: RecommendColors
 
 
     ///
