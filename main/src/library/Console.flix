@@ -129,6 +129,24 @@ namespace Console {
 
     }
 
+    ///
+    /// An enum that represents the color support of a terminal emulator.
+    ///
+    pub enum ColorSupport {
+        ///
+        /// No color support.
+        ///
+        case None,
+
+
+        case BasicColor,
+        case Extended,
+
+        ///
+        /// True 24-bit color support.
+        ///
+        case TrueColor
+    }
 
     ///
     /// TODO: DOC
@@ -449,15 +467,6 @@ namespace Console {
         let (r, g, b) = toRgb(c);
         Console.format(s, r, g, b)
 
-    ///
-    /// TODO: DOC
-    ///
-    pub enum ColorSupport {
-        case NoColor,
-        case BasicColor,
-        case Extended,
-        case TrueColor
-    }
 
     ///
     /// TODO: DOC
@@ -470,15 +479,15 @@ namespace Console {
         else {
             let term = getenv("TERM");
             if (Object.isNull(term))
-                NoColor
-            else if (String.indexOf("256", term) != None)
+                ColorSupport.None
+            else if (String.isInfixOf("256", term))
                 Extended
             else {
                 let basic = "screen" :: "xterm" :: "ansi" :: Nil;
-                if (List.exists(s -> String.indexOf(s, term) != None, basic))
+                if (List.exists(s -> String.isInfixOf(s, term), basic))
                     BasicColor
                 else
-                    NoColor
+                ColorSupport.None
             }
         }
 
@@ -492,13 +501,9 @@ namespace Console {
         let blu = Int32.toString(b);
         esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
 
-    // TODO: background color.
-
-    // TODO: HEX and RGB helper functions.
-
     ///
-    /// TODO: DOC
+    /// Returns the escape character as a string.
     ///
-    pub def escape(): String = Char.toString('\u001b')
+    def escape(): String = Char.toString('\u001b')
 
 }
