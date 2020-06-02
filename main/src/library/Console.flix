@@ -475,7 +475,7 @@ namespace Console {
     ///
     pub def colorSupport(): TerminalColor & Impure =
         import java.lang.System:getenv(String);
-        if (not Object.isNull(getenv("COLORTERM")) and getenv("COLORTERM") == "truecolor") // TODO "24bit" (case sensitive)
+        if (supportsTrueColor())
             TrueColor
         else {
             let term = getenv("TERM");
@@ -491,6 +491,18 @@ namespace Console {
                 TerminalColor.None
             }
         }
+
+    ///
+    /// Returns `true` if the terminal emulator supports 24-bit true color.
+    ///
+    pub def supportsTrueColor(): Bool =
+        import java.lang.System:getenv(String);
+        let p = getenv("COLORTERM") as & Pure;
+        if (Object.isNull(p))
+            false
+        else
+            p == "truecolor"
+
 
     ///
     /// TODO: DOC
