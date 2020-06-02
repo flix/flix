@@ -130,7 +130,7 @@ namespace Console {
     }
 
     ///
-    /// An enum that represents the colors supported by a terminal emulator.
+    /// An enum that represents the colors supported by the terminal.
     ///
     pub enum TerminalColor {
         ///
@@ -470,35 +470,34 @@ namespace Console {
     // TODO: AnsiColor
     // TODO: RecommendColors
 
-
-
     ///
     /// TODO: DOC
-    /// TODO: Split into several boolean functions.
     ///
-    pub def colorSupport(): TerminalColor & Impure =
-        import java.lang.System:getenv(String);
+    pub def colorSupport(): TerminalColor =
         if (supportsTrueColor())
-            TrueColor
+            TerminalColor.TrueColor
+        else if (supportsAnsiColor())
+            TerminalColor.Ansi
+        else
+            TerminalColor.None
+
+    ///
+    /// Returns `true` if the terminal supports ANSI colors.
+    ///
+    def supportsAnsiColor(): Bool =
+        import java.lang.System:getenv(String);
+        let p = getenv("TERM") as & Pure;
+        if (Object.isNull(p))
+            false
         else {
-            let term = getenv("TERM");
-            if (Object.isNull(term))
-                TerminalColor.None
-            else if (String.isInfixOf("256", term))
-                TerminalColor.Ansi
-            else {
-                let basic = "screen" :: "xterm" :: "ansi" :: Nil;
-                if (List.exists(s -> String.isInfixOf(s, term), basic))
-                    TerminalColor.Ansi
-                else
-                TerminalColor.None
-            }
+            let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
+            List.exists(s -> String.isInfixOf(s, p), keywords)
         }
 
     ///
-    /// Returns `true` if the terminal emulator supports 24-bit true color.
+    /// Returns `true` if the terminal supports 24-bit true color.
     ///
-    pub def supportsTrueColor(): Bool =
+    def supportsTrueColor(): Bool =
         import java.lang.System:getenv(String);
         let p = getenv("COLORTERM") as & Pure;
         if (Object.isNull(p))
