@@ -172,6 +172,11 @@ namespace Console {
                 case _ => (0,0,0) // TODO
             }
 
+            ///
+            /// Returns the closet foreground color for the given RGB color `rgb`.
+            ///
+            // TODO
+
         }
 
         ///
