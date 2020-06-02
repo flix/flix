@@ -194,7 +194,43 @@ namespace Console {
             ///
             pub enum Color {
                 case Black
-                // TODO: Rest
+                case Red
+                case Green
+                case Yellow
+                case Blue
+                case Magenta
+                case Cyan
+                case White
+                case BrightBlack
+                case BrightRed
+                case BrightGreen
+                case BrightYellow
+                case BrightBlue
+                case BrightMagenta
+                case BrightCyan
+                case BrightWhite
+            }
+
+            ///
+            /// Returns the foreground color of the given color `c`.
+            ///
+            pub def toFG(c: Color): Int32 = match c {
+                case Black          => 30
+                case Red            => 31
+                case Green          => 32
+                case Yellow         => 33
+                case Blue           => 34
+                case Magenta        => 35
+                case Cyan           => 36
+                case White          => 37
+                case BrightBlack    => 90
+                case BrightRed      => 91
+                case BrightGreen    => 92
+                case BrightYellow   => 93
+                case BrightBlue     => 94
+                case BrightMagenta  => 95
+                case BrightCyan     => 96
+                case BrightWhite    => 97
             }
 
             ///
@@ -202,6 +238,7 @@ namespace Console {
             ///
             pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
                 case Black => (0,0,0) // TODO
+                case _ => ??? // TODO
             }
 
         }
@@ -561,24 +598,6 @@ namespace Console {
             false
         else
             p == "truecolor"
-
-    pub def windowsBuild(): String =
-        import java.lang.System:getenv(String);
-        let p = getenv("PATH") as & Pure;
-        p
-
-// TODO:
-            // https://github.com/chalk/supports-color/blob/master/index.js
-//	if (process.platform === 'win32') {
-//		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
-//		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
-//		const osRelease = os.release().split('.');
-//		if (
-//			Number(osRelease[0]) >= 10 &&
-//			Number(osRelease[2]) >= 10586
-//		) {
-//			return Number(osRelease[2]) >= 14931 ? 3 : 2;
-//		}
 
     ///
     /// TODO: DOC
