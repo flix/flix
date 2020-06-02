@@ -557,6 +557,11 @@ namespace Console {
         else
             p == "truecolor"
 
+    pub def windowsBuild(): String =
+        import java.lang.System:getenv(String);
+        let p = getenv("PATH") as & Pure;
+        p
+
 // TODO:
             // https://github.com/chalk/supports-color/blob/master/index.js
 //	if (process.platform === 'win32') {
