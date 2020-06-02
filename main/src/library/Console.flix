@@ -216,6 +216,45 @@ namespace Console {
         case LightSlateGrey
         case LightSteelBlue
         case LightYellow
+        case Lime
+        case LimeGreen
+        case Linen
+        case Magenta
+        case Maroon
+        case MediumAquaMarine
+        case MediumBlue
+        case MediumOrchid
+        case MediumPurple
+        case MediumSeaGreen
+        case MediumSlateBlue
+        case MediumSpringGreen
+        case MediumTurquoise
+        case MediumVioletRed
+        case MidnightBlue
+        case MintCream
+        case MistyRose
+        case Moccasin
+        case NavajoWhite
+        case Navy
+        case OldLace
+        case Olive
+        case OliveDrab
+        case Orange
+        case OrangeRed
+        case Orchid
+        case PaleGoldenRod
+        case PaleGreen
+        case PaleTurquoise
+        case PaleVioletRed
+        case PapayaWhip
+        case PeachPuff
+        case Peru
+        case Pink
+        case Plum
+        case PowderBlue
+        case Purple
+        case RebeccaPurple
+        case Red
     }
 
     ///
@@ -304,6 +343,45 @@ namespace Console {
         case LightSlateGrey => (	119,136,153)
         case LightSteelBlue => (	176,196,222)
         case LightYellow => (	255,255,224)
+        case Lime => (	0,255,0 )
+        case LimeGreen => (	50,205,50 )
+        case Linen => (	250,240,230)
+        case Magenta => (	255,0,255 )
+        case Maroon => (	128,0,0 )
+        case MediumAquaMarine => (	102,205,170)
+        case MediumBlue => (	0,0,205 )
+        case MediumOrchid => (	186,85,211 )
+        case MediumPurple => (	147,112,219)
+        case MediumSeaGreen => (	60,179,113 )
+        case MediumSlateBlue => (	123,104,238)
+        case MediumSpringGreen => (	0,250,154 )
+        case MediumTurquoise => (	72,209,204 )
+        case MediumVioletRed => (	199,21,133 )
+        case MidnightBlue => (	25,25,112 )
+        case MintCream => (	245,255,250)
+        case MistyRose => (	255,228,225)
+        case Moccasin => (	255,228,181)
+        case NavajoWhite => (	255,222,173)
+        case Navy => (	0,0,128 )
+        case OldLace => (	253,245,230)
+        case Olive => (	128,128,0 )
+        case OliveDrab => (	107,142,35 )
+        case Orange => (255,165,0 )
+        case OrangeRed => (	255,69,0 )
+        case Orchid => (	218,112,214)
+        case PaleGoldenRod => (238,232,170)
+        case PaleGreen => (	152,251,152)
+        case PaleTurquoise => (	175,238,238)
+        case PaleVioletRed => (	219,112,147)
+        case PapayaWhip => (	255,239,213)
+        case PeachPuff => (	255,218,185)
+        case Peru => (	205,133,63 )
+        case Pink => (	255,192,203)
+        case Plum => (	221,160,221)
+        case PowderBlue => (	176,224,230)
+        case Purple => (	128,0,128 )
+        case RebeccaPurple => (	102,51,153 )
+        case Red => (	255,0,0 )
     }
 
     // TODO: AnsiColor
