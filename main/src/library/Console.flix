@@ -236,9 +236,27 @@ namespace Console {
             ///
             /// Returns the RGB-triplet for the given color `c`.
             ///
+            /// Based on the Ubuntu settings.
+            ///
+            /// See https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+            ///
             pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
-                case Black => (0,0,0) // TODO
-                case _ => ??? // TODO
+                case Black          => (  1,   1,   1)
+                case Red            => (222,  56,  43)
+                case Green          => ( 57, 181,  74)
+                case Yellow         => (255, 199,   6)
+                case Blue           => (  0, 111, 184)
+                case Magenta        => (118,  38, 113)
+                case Cyan           => ( 44, 181, 233)
+                case White          => (204, 204, 204)
+                case BrightBlack    => (128, 128, 128)
+                case BrightRed      => (255,   0,   0)
+                case BrightGreen    => (  0, 255,   0)
+                case BrightYellow   => (255, 255,   0)
+                case BrightBlue     => (  0,   0, 255)
+                case BrightMagenta  => (255,   0, 255)
+                case BrightCyan     => (  0, 255, 255)
+                case BrightWhite    => (255, 255, 255)
             }
 
         }
