@@ -657,7 +657,7 @@ namespace Console {
     ///
     /// Returns the color support of the current terminal.
     ///
-    pub def colorSupport(): ColorSupport =
+    def colorSupport(): ColorSupport =
         if (isTrueColorTerminal() or isWindowsTerminal())
             ColorSupport.TrueColor
         else if (isAnsiTerminal())
