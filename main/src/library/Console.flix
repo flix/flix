@@ -187,46 +187,47 @@ namespace Console {
         }
 
         ///
+        /// Ansi Colors.
+        ///
+        pub enum Ansi {
+            case Black
+            case Red
+            case Green
+            case Yellow
+            case Blue
+            case Magenta
+            case Cyan
+            case White
+            case BrightBlack
+            case BrightRed
+            case BrightGreen
+            case BrightYellow
+            case BrightBlue
+            case BrightMagenta
+            case BrightCyan
+            case BrightWhite
+        }
+
+        ///
         /// Namespace for Ansi Colors.
         ///
         namespace Ansi {
 
             ///
-            /// Ansi Colors.
-            ///
-            pub enum Color {
-                case Black
-                case Red
-                case Green
-                case Yellow
-                case Blue
-                case Magenta
-                case Cyan
-                case White
-                case BrightBlack
-                case BrightRed
-                case BrightGreen
-                case BrightYellow
-                case BrightBlue
-                case BrightMagenta
-                case BrightCyan
-                case BrightWhite
-            }
-
-            ///
             /// Down sample the given color `c` to an ANSI color code.
             ///
             pub def downsample(c: (Int32, Int32, Int32)): Int32 =
-                let ansi = Color.Black :: Color.Red :: Color.Green :: Color.Yellow :: Color.Blue :: Color.Magenta ::
-                           Color.Cyan :: Color.White :: Color.BrightBlack :: Color.BrightRed :: Color.BrightGreen ::
-                           Color.BrightYellow :: Color.BrightBlue :: Color.BrightMagenta :: Color.BrightCyan ::
-                           Color.BrightWhite :: Nil;
-                nearest(c, Color.Black, Int32.maxValue(), ansi) |> toFG
+                use Console/Color.Ansi;
+                let candidates = Ansi.Black :: Ansi.Red :: Ansi.Green :: Ansi.Yellow :: Ansi.Blue :: Ansi.Magenta ::
+                                 Ansi.Cyan :: Ansi.White :: Ansi.BrightBlack :: Ansi.BrightRed :: Ansi.BrightGreen ::
+                                 Ansi.BrightYellow :: Ansi.BrightBlue :: Ansi.BrightMagenta :: Ansi.BrightCyan ::
+                                 Ansi.BrightWhite :: Nil;
+                nearest(c, Ansi.Black, Int32.maxValue(), candidates) |> toFG
 
             ///
             /// Returns the ANSI color nearest to the given `target` color from the given list of `candidates`.
             ///
-            def nearest(target: (Int32, Int32, Int32), bestCandidate: Color, bestDistance: Int32, candidates: List[Color]): Color =
+            def nearest(target: (Int32, Int32, Int32), bestCandidate: Console/Color.Ansi, bestDistance: Int32, candidates: List[Console/Color.Ansi]): Console/Color.Ansi =
                 match candidates {
                     case Nil     => bestCandidate
                     case currentCandidate :: remainingCandidates =>
@@ -248,24 +249,26 @@ namespace Console {
             ///
             /// Returns the foreground color of the given color `c`.
             ///
-            pub def toFG(c: Color): Int32 = match c {
-                case Black          => 30
-                case Red            => 31
-                case Green          => 32
-                case Yellow         => 33
-                case Blue           => 34
-                case Magenta        => 35
-                case Cyan           => 36
-                case White          => 37
-                case BrightBlack    => 90
-                case BrightRed      => 91
-                case BrightGreen    => 92
-                case BrightYellow   => 93
-                case BrightBlue     => 94
-                case BrightMagenta  => 95
-                case BrightCyan     => 96
-                case BrightWhite    => 97
-            }
+            pub def toFG(c: Console/Color.Ansi): Int32 =
+                use Console/Color.Ansi;
+                match c {
+                    case Ansi.Black          => 30
+                    case Ansi.Red            => 31
+                    case Ansi.Green          => 32
+                    case Ansi.Yellow         => 33
+                    case Ansi.Blue           => 34
+                    case Ansi.Magenta        => 35
+                    case Ansi.Cyan           => 36
+                    case Ansi.White          => 37
+                    case Ansi.BrightBlack    => 90
+                    case Ansi.BrightRed      => 91
+                    case Ansi.BrightGreen    => 92
+                    case Ansi.BrightYellow   => 93
+                    case Ansi.BrightBlue     => 94
+                    case Ansi.BrightMagenta  => 95
+                    case Ansi.BrightCyan     => 96
+                    case Ansi.BrightWhite    => 97
+                }
 
             ///
             /// Returns the RGB-triplet for the given color `c`.
@@ -274,24 +277,26 @@ namespace Console {
             ///
             /// See https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
             ///
-            pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
-                case Black          => (  1,   1,   1)
-                case Red            => (222,  56,  43)
-                case Green          => ( 57, 181,  74)
-                case Yellow         => (255, 199,   6)
-                case Blue           => (  0, 111, 184)
-                case Magenta        => (118,  38, 113)
-                case Cyan           => ( 44, 181, 233)
-                case White          => (204, 204, 204)
-                case BrightBlack    => (128, 128, 128)
-                case BrightRed      => (255,   0,   0)
-                case BrightGreen    => (  0, 255,   0)
-                case BrightYellow   => (255, 255,   0)
-                case BrightBlue     => (  0,   0, 255)
-                case BrightMagenta  => (255,   0, 255)
-                case BrightCyan     => (  0, 255, 255)
-                case BrightWhite    => (255, 255, 255)
-            }
+            pub def toRGB(c: Console/Color.Ansi): (Int32, Int32, Int32) =
+                use Console/Color.Ansi;
+                match c {
+                    case Ansi.Black          => (  1,   1,   1)
+                    case Ansi.Red            => (222,  56,  43)
+                    case Ansi.Green          => ( 57, 181,  74)
+                    case Ansi.Yellow         => (255, 199,   6)
+                    case Ansi.Blue           => (  0, 111, 184)
+                    case Ansi.Magenta        => (118,  38, 113)
+                    case Ansi.Cyan           => ( 44, 181, 233)
+                    case Ansi.White          => (204, 204, 204)
+                    case Ansi.BrightBlack    => (128, 128, 128)
+                    case Ansi.BrightRed      => (255,   0,   0)
+                    case Ansi.BrightGreen    => (  0, 255,   0)
+                    case Ansi.BrightYellow   => (255, 255,   0)
+                    case Ansi.BrightBlue     => (  0,   0, 255)
+                    case Ansi.BrightMagenta  => (255,   0, 255)
+                    case Ansi.BrightCyan     => (  0, 255, 255)
+                    case Ansi.BrightWhite    => (255, 255, 255)
+                }
 
         }
 

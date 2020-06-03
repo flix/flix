@@ -233,7 +233,7 @@ object JvmOps {
     val args = tag.tparams.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form Tag$Arg0$Arg1$Arg2
-    val name = if (args.isEmpty) tagName else tagName + "$" + args.mkString("$")
+    val name = tag.sym.name + "$" + (if (args.isEmpty) tagName else tagName + "$" + args.mkString("$"))
 
     // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(tag.sym.namespace, name))
