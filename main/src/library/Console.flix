@@ -130,21 +130,21 @@ namespace Console {
     }
 
     ///
-    /// An enum that represents the colors supported by the terminal.
+    /// An enum that represents the colors supported by a terminal.
     ///
-    pub enum TerminalColor {
+    pub enum ColorSupport {
         ///
-        /// No color support.
+        /// The terminal does not support any colors.
         ///
         case None,
 
         ///
-        /// Ansi color support.
+        /// The terminal supports ANSI colors.
         ///
         case Ansi,
 
         ///
-        /// True 24-bit color support.
+        /// The terminal supports 24-bit colors.
         ///
         case TrueColor
     }
@@ -611,19 +611,18 @@ namespace Console {
     // TODO: Argument order.
     // TODO: Namespaces.
     // TODO: Files
-    // TODO: Rename TerminalColor.
 
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
     ///
     pub def formatter(c: (Int32, Int32 , Int32), s: String): String =
         match colorSupport() {
-            case TerminalColor.None      => s
-            case TerminalColor.Ansi      =>
+            case ColorSupport.None      => s
+            case ColorSupport.Ansi      =>
                 use Console/Color/Ansi.downsample;
                 let fg = downsample(c);
                 formatAnsi(s, fg)
-            case TerminalColor.TrueColor => formatTrueColor(s, c)
+            case ColorSupport.TrueColor => formatTrueColor(s, c)
         }
 
     ///
@@ -650,22 +649,20 @@ namespace Console {
     def escape(): String = Char.toString('\u001b')
 
     ///
-    /// Returns the color support of the currently attached terminal.
+    /// Returns the color support of the current terminal.
     ///
-    /// Returns `TerminalColor.None` if the terminal does not appear to support colors.
-    ///
-    pub def colorSupport(): TerminalColor =
-        if (supportsTrueColor())
-            TerminalColor.TrueColor
-        else if (supportsAnsiColor())
-            TerminalColor.Ansi
+    pub def colorSupport(): ColorSupport =
+        if (isTrueColorTerminal())
+            ColorSupport.TrueColor
+        else if (isAnsiTerminal())
+            ColorSupport.Ansi
         else
-            TerminalColor.None
+            ColorSupport.None
 
     ///
     /// Returns `true` if the terminal supports ANSI colors.
     ///
-    def supportsAnsiColor(): Bool =
+    def isAnsiTerminal(): Bool =
         import java.lang.System:getenv(String);
         let p = getenv("TERM") as & Pure;
         if (Object.isNull(p))
@@ -676,9 +673,9 @@ namespace Console {
         }
 
     ///
-    /// Returns `true` if the terminal supports 24-bit true color.
+    /// Returns `true` if the terminal supports 24-bit colors.
     ///
-    def supportsTrueColor(): Bool =
+    def isTrueColorTerminal(): Bool =
         import java.lang.System:getenv(String);
         let p = getenv("COLORTERM") as & Pure;
         if (Object.isNull(p))
