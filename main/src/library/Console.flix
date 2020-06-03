@@ -152,6 +152,17 @@ namespace Console {
     namespace Color {
 
         ///
+        /// Returns the string `s` formatted with the default blue color.
+        ///
+        pub def blue(s: String): String =
+            use Console/Color.Default.Blue;
+            use Console/Color/Default.toRGB;
+            use Console.formatter;
+            formatter(Blue |> toRGB, s)
+
+        // TODO: Add the rest of the colors.
+
+        ///
         /// Default Colors.
         ///
         pub enum Default {
