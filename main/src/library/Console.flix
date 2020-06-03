@@ -652,7 +652,7 @@ namespace Console {
     /// Returns the color support of the current terminal.
     ///
     pub def colorSupport(): ColorSupport =
-        if (isTrueColorTerminal())
+        if (isTrueColorTerminal() or isWindowsTerminal())
             ColorSupport.TrueColor
         else if (isAnsiTerminal())
             ColorSupport.Ansi
@@ -683,5 +683,12 @@ namespace Console {
         else
             p == "truecolor"
 
+    ///
+    /// Returns `true` if the terminal is the Windows Terminal.
+    ///
+    def isWindowsTerminal(): Bool =
+        import java.lang.System:getenv(String);
+        let p = getenv("WT_SESSION") as & Pure;
+        not Object.isNull(p)
 
 }
