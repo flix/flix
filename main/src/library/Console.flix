@@ -212,6 +212,38 @@ namespace Console {
             }
 
             ///
+            /// Down sample the given color `c` to an ansi color code.
+            ///
+            pub def downsample(c: (Int32, Int32, Int32)): Int32 =
+                let ansi = Color.Black :: Color.Red :: Color.Green :: Color.Yellow :: Color.Blue :: Color.Magenta ::
+                           Color.Cyan :: Color.White :: Color.BrightBlack :: Color.BrightRed :: Color.BrightGreen ::
+                           Color.BrightYellow :: Color.BrightBlue :: Color.BrightMagenta :: Color.BrightCyan ::
+                           Color.BrightWhite :: Nil;
+                nearest(c, Color.Black, Int32.maxValue(), ansi) |> toFG
+
+            ///
+            /// Returns the ansi color nearest to the given `target` color from the given list of `candidates`.
+            ///
+            def nearest(target: (Int32, Int32, Int32), bestCandidate: Color, bestDistance: Int32, candidates: List[Color]): Color =
+                match candidates {
+                    case Nil     => bestCandidate
+                    case currentCandidate :: remainingCandidates =>
+                        let currentDistance = distanceSquared(target, toRGB(currentCandidate));
+                        if (currentDistance < bestDistance)
+                            nearest(target, currentCandidate, currentDistance, remainingCandidates)
+                        else
+                            nearest(target, bestCandidate, bestDistance, remainingCandidates)
+                }
+
+            ///
+            /// Returns the square of the distance between the two colors `c1` and `c2`.
+            ///
+            def distanceSquared(c1: (Int32, Int32, Int32), c2: (Int32, Int32, Int32)): Int32 =
+                let (r1, g1, b1) = c1;
+                let (r2, g2, b2) = c2;
+                (r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2)
+
+            ///
             /// Returns the foreground color of the given color `c`.
             ///
             pub def toFG(c: Color): Int32 = match c {
@@ -260,8 +292,6 @@ namespace Console {
             }
 
         }
-
-        // TODO: RecommendColors
 
         ///
         /// Namespace for Web Colors.
@@ -628,13 +658,15 @@ namespace Console {
     ///
     /// TODO: DOC
     ///
-    def formatTrueColor(s: String, rgb: (Int32, Int32 , Int32)): String =
+    def formatTrueColor(s: String, rgb: (Int32, Int32, Int32)): String =
         let (r, g, b) = rgb;
         let esc = Console.escape();
         let red = Int32.toString(r);
         let gre = Int32.toString(g);
         let blu = Int32.toString(b);
         esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
+
+
 
     ///
     /// Returns the escape character as a string.
