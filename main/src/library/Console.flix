@@ -608,17 +608,22 @@ namespace Console {
         }
     }
 
+    // TODO: Argument order.
+    // TODO: Namespaces.
+    // TODO: Files
+    // TODO: Rename TerminalColor.
+
     ///
-    /// TODO: DOC
+    /// Returns the string `s` formatted with the given RGB color `c`.
     ///
-    pub def formatter(rgb: (Int32, Int32 , Int32), s: String): String =
+    pub def formatter(c: (Int32, Int32 , Int32), s: String): String =
         match colorSupport() {
             case TerminalColor.None      => s
             case TerminalColor.Ansi      =>
                 use Console/Color/Ansi.downsample;
-                let fg = downsample(rgb);
+                let fg = downsample(c);
                 formatAnsi(s, fg)
-            case TerminalColor.TrueColor => formatTrueColor(s, rgb)
+            case TerminalColor.TrueColor => formatTrueColor(s, c)
         }
 
     ///
@@ -629,7 +634,7 @@ namespace Console {
         esc + "[" + Int32.toString(fg) + "m" + s + esc + "[0m"
 
     ///
-    /// Returns the string `s` formatted with the given rgb color `c`.
+    /// Returns the string `s` formatted with the given RGB color `c`.
     ///
     def formatTrueColor(s: String, rgb: (Int32, Int32, Int32)): String =
         let (r, g, b) = rgb;
