@@ -625,7 +625,7 @@ namespace Console {
     /// TODO: DOC
     ///
     // TODO: Remove pub
-    pub def formatAnsi(s: String, fg: Int32): String =
+    def formatAnsi(s: String, fg: Int32): String =
         let esc = Console.escape();
         esc + "[" + Int32.toString(fg) + "m" + s + esc + "[0m"
 
@@ -639,7 +639,6 @@ namespace Console {
         let gre = Int32.toString(g);
         let blu = Int32.toString(b);
         esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
-
 
     ///
     /// TODO: DOC
@@ -664,8 +663,6 @@ namespace Console {
             let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
             List.exists(s -> String.isInfixOf(s, p), keywords)
         }
-
-    // TODO: WIndows support. Need to check build.
 
     ///
     /// Returns `true` if the terminal supports 24-bit true color.
