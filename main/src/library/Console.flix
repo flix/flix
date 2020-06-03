@@ -608,7 +608,34 @@ namespace Console {
         }
     }
 
-    // TODO: Need color distance function.
+
+    ///
+    /// TODO: DOC
+    ///
+    // TODO: This is for truecolor. Need one for non-true color.
+    pub def formatter(rgb: (Int32, Int32 , Int32), s: String): String = match TerminalColor.TrueColor {
+        case _ => formatTrueColor(s, rgb)
+    }
+
+    ///
+    /// TODO: DOC
+    ///
+    // TODO: Remove pub
+    pub def formatAnsi(s: String, fg: Int32): String =
+        let esc = Console.escape();
+        esc + "[" + Int32.toString(fg) + "m" + s + esc + "[0m"
+
+    ///
+    /// TODO: DOC
+    ///
+    def formatTrueColor(s: String, rgb: (Int32, Int32, Int32)): String =
+        let (r, g, b) = rgb;
+        let esc = Console.escape();
+        let red = Int32.toString(r);
+        let gre = Int32.toString(g);
+        let blu = Int32.toString(b);
+        esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
+
 
     ///
     /// TODO: DOC
@@ -646,33 +673,6 @@ namespace Console {
             false
         else
             p == "truecolor"
-
-    ///
-    /// TODO: DOC
-    ///
-    // TODO: This is for truecolor. Need one for non-true color.
-    pub def formatter(rgb: (Int32, Int32 , Int32), s: String): String = match TerminalColor.TrueColor {
-        case _ => formatTrueColor(s, rgb)
-    }
-
-    ///
-    /// TODO: DOC
-    ///
-    // TODO: Remove pub
-    pub def formatAnsi(s: String, fg: Int32): String =
-        let esc = Console.escape();
-        esc + "[" + Int32.toString(fg) + "m" + s + esc + "[0m"
-
-    ///
-    /// TODO: DOC
-    ///
-    def formatTrueColor(s: String, rgb: (Int32, Int32, Int32)): String =
-        let (r, g, b) = rgb;
-        let esc = Console.escape();
-        let red = Int32.toString(r);
-        let gre = Int32.toString(g);
-        let blu = Int32.toString(b);
-        esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
 
     ///
     /// Returns the escape character as a string.
