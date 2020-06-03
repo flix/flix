@@ -152,35 +152,37 @@ namespace Console {
     namespace Color {
 
         ///
+        /// Default Colors.
+        ///
+        pub enum Default {
+            case Blue
+            case Cyan
+            case Green
+            case Magenta
+            case Red
+            case Yellow
+            case White
+        }
+
+        ///
         /// Namespace for Default Colors.
         ///
         namespace Default {
 
             ///
-            /// Default Colors.
-            ///
-            pub enum Color {
-                case Blue
-                case Cyan
-                case Green
-                case Magenta
-                case Red
-                case Yellow
-                case White
-            }
-
-            ///
             /// Returns the RGB-triplet for the given color `c`.
             ///
-            pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
-                case Blue       => (113, 190, 242)
-                case Cyan       => (102, 194, 205)
-                case Green      => (168, 204, 140)
-                case Magenta    => (210, 144, 228)
-                case Red        => (232, 131, 136)
-                case Yellow     => (219, 171, 121)
-                case White      => (185, 191, 202)
-            }
+            pub def toRGB(c: Console/Color.Default): (Int32, Int32, Int32) =
+                use Console/Color.Default;
+                match c {
+                    case Default.Blue       => (113, 190, 242)
+                    case Default.Cyan       => (102, 194, 205)
+                    case Default.Green      => (168, 204, 140)
+                    case Default.Magenta    => (210, 144, 228)
+                    case Default.Red        => (232, 131, 136)
+                    case Default.Yellow     => (219, 171, 121)
+                    case Default.White      => (185, 191, 202)
+                }
 
         }
 
@@ -609,7 +611,6 @@ namespace Console {
     }
 
     // TODO: Namespaces.
-    // TODO: Files
 
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
