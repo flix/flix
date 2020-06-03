@@ -608,7 +608,6 @@ namespace Console {
         }
     }
 
-    // TODO: Argument order.
     // TODO: Namespaces.
     // TODO: Files
 
@@ -621,22 +620,22 @@ namespace Console {
             case ColorSupport.Ansi      =>
                 use Console/Color/Ansi.downsample;
                 let fg = downsample(c);
-                formatAnsi(s, fg)
-            case ColorSupport.TrueColor => formatTrueColor(s, c)
+                formatAnsi(fg, s)
+            case ColorSupport.TrueColor => formatTrueColor(c, s)
         }
 
     ///
     /// Returns the string `s` formatted with the given ANSI color `fg`.
     ///
-    def formatAnsi(s: String, fg: Int32): String =
+    def formatAnsi(fg: Int32, s: String): String =
         let esc = Console.escape();
         esc + "[" + Int32.toString(fg) + "m" + s + esc + "[0m"
 
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
     ///
-    def formatTrueColor(s: String, rgb: (Int32, Int32, Int32)): String =
-        let (r, g, b) = rgb;
+    def formatTrueColor(c: (Int32, Int32, Int32), s: String): String =
+        let (r, g, b) = c;
         let esc = Console.escape();
         let red = Int32.toString(r);
         let gre = Int32.toString(g);
