@@ -212,7 +212,7 @@ namespace Console {
             }
 
             ///
-            /// Down sample the given color `c` to an ansi color code.
+            /// Down sample the given color `c` to an ANSI color code.
             ///
             pub def downsample(c: (Int32, Int32, Int32)): Int32 =
                 let ansi = Color.Black :: Color.Red :: Color.Green :: Color.Yellow :: Color.Blue :: Color.Magenta ::
@@ -222,7 +222,7 @@ namespace Console {
                 nearest(c, Color.Black, Int32.maxValue(), ansi) |> toFG
 
             ///
-            /// Returns the ansi color nearest to the given `target` color from the given list of `candidates`.
+            /// Returns the ANSI color nearest to the given `target` color from the given list of `candidates`.
             ///
             def nearest(target: (Int32, Int32, Int32), bestCandidate: Color, bestDistance: Int32, candidates: List[Color]): Color =
                 match candidates {
@@ -622,15 +622,14 @@ namespace Console {
         }
 
     ///
-    /// TODO: DOC
+    /// Returns the string `s` formatted with the given ANSI color `fg`.
     ///
-    // TODO: Remove pub
     def formatAnsi(s: String, fg: Int32): String =
         let esc = Console.escape();
         esc + "[" + Int32.toString(fg) + "m" + s + esc + "[0m"
 
     ///
-    /// TODO: DOC
+    /// Returns the string `s` formatted with the given rgb color `c`.
     ///
     def formatTrueColor(s: String, rgb: (Int32, Int32, Int32)): String =
         let (r, g, b) = rgb;
@@ -639,6 +638,11 @@ namespace Console {
         let gre = Int32.toString(g);
         let blu = Int32.toString(b);
         esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
+
+    ///
+    /// Returns the escape character as a string.
+    ///
+    def escape(): String = Char.toString('\u001b')
 
     ///
     /// TODO: DOC
@@ -675,9 +679,5 @@ namespace Console {
         else
             p == "truecolor"
 
-    ///
-    /// Returns the escape character as a string.
-    ///
-    def escape(): String = Char.toString('\u001b')
 
 }
