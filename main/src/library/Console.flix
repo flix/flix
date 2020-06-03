@@ -658,6 +658,14 @@ namespace Console {
     ///
     /// TODO: DOC
     ///
+    // TODO: Remove pub
+    pub def formatAnsi(s: String, fg: Int32): String =
+        let esc = Console.escape();
+        esc + "[" + Int32.toString(fg) + "m" + s + esc + "[0m"
+
+    ///
+    /// TODO: DOC
+    ///
     def formatTrueColor(s: String, rgb: (Int32, Int32, Int32)): String =
         let (r, g, b) = rgb;
         let esc = Console.escape();
@@ -665,8 +673,6 @@ namespace Console {
         let gre = Int32.toString(g);
         let blu = Int32.toString(b);
         esc + "[38;2;" + red + ";" + gre + ";" + blu + "m" + s + esc + "[0m"
-
-
 
     ///
     /// Returns the escape character as a string.
