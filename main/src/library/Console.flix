@@ -650,7 +650,9 @@ namespace Console {
     def escape(): String = Char.toString('\u001b')
 
     ///
-    /// TODO: DOC
+    /// Returns the color support of the currently attached terminal.
+    ///
+    /// Returns `TerminalColor.None` if the terminal does not appear to support colors.
     ///
     pub def colorSupport(): TerminalColor =
         if (supportsTrueColor())
