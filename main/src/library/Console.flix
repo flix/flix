@@ -608,14 +608,18 @@ namespace Console {
         }
     }
 
-
     ///
     /// TODO: DOC
     ///
-    // TODO: This is for truecolor. Need one for non-true color.
-    pub def formatter(rgb: (Int32, Int32 , Int32), s: String): String = match TerminalColor.TrueColor {
-        case _ => formatTrueColor(s, rgb)
-    }
+    pub def formatter(rgb: (Int32, Int32 , Int32), s: String): String =
+        match colorSupport() {
+            case TerminalColor.None      => s
+            case TerminalColor.Ansi      =>
+                use Console/Color/Ansi.downsample;
+                let fg = downsample(rgb);
+                formatAnsi(s, fg)
+            case TerminalColor.TrueColor => formatTrueColor(s, rgb)
+        }
 
     ///
     /// TODO: DOC
