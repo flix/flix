@@ -151,6 +151,8 @@ namespace Console {
 
     namespace Color {
 
+        // TODO: Move these one namespace out?
+
         ///
         /// Returns the string `s` formatted with the default blue color.
         ///
@@ -160,7 +162,59 @@ namespace Console {
             use Console.formatter;
             formatter(Blue |> toRGB, s)
 
-        // TODO: Add the rest of the colors.
+        ///
+        /// Returns the string `s` formatted with the default cyan color.
+        ///
+        pub def cyan(s: String): String =
+            use Console/Color.Default.Cyan;
+            use Console/Color/Default.toRGB;
+            use Console.formatter;
+            formatter(Cyan |> toRGB, s)
+
+        ///
+        /// Returns the string `s` formatted with the default green color.
+        ///
+        pub def green(s: String): String =
+            use Console/Color.Default.Green;
+            use Console/Color/Default.toRGB;
+            use Console.formatter;
+            formatter(Green |> toRGB, s)
+
+        ///
+        /// Returns the string `s` formatted with the default magenta color.
+        ///
+        pub def magenta(s: String): String =
+            use Console/Color.Default.Magenta;
+            use Console/Color/Default.toRGB;
+            use Console.formatter;
+            formatter(Magenta |> toRGB, s)
+
+        ///
+        /// Returns the string `s` formatted with the default red color.
+        ///
+        pub def red(s: String): String =
+            use Console/Color.Default.Red;
+            use Console/Color/Default.toRGB;
+            use Console.formatter;
+            formatter(Red |> toRGB, s)
+
+        ///
+        /// Returns the string `s` formatted with the default yellow color.
+        ///
+        pub def yellow(s: String): String =
+            use Console/Color.Default.Yellow;
+            use Console/Color/Default.toRGB;
+            use Console.formatter;
+            formatter(Yellow |> toRGB, s)
+
+        ///
+        /// Returns the string `s` formatted with the default white color.
+        ///
+        pub def white(s: String): String =
+            use Console/Color.Default.White;
+            use Console/Color/Default.toRGB;
+            use Console.formatter;
+            formatter(White |> toRGB, s)
 
         ///
         /// Default Colors.
