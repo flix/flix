@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.math.BigInteger
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
+import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
@@ -410,6 +410,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       visitExp(exp) map {
         case e => op match {
           case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
+          case "not" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
           case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
           case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
           case "~~~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
@@ -436,7 +437,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
           case "<=>" => WeededAst.Expression.Binary(BinaryOperator.Spaceship, e1, e2, loc)
           case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
+          case "and" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
           case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
+          case "or" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
           case "&&&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
           case "|||" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
           case "^^^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
@@ -738,8 +741,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
       val fieldsVal = traverse(fields) {
         case ParsedAst.RecordField(fsp1, label, exp, fsp2) =>
-          mapN(visitExp(exp)) {
-            case e => label -> e
+          flatMapN(visitExp(exp)) {
+            case e =>
+              if (label.name == "length")
+                WeederError.IllegalFieldName(label.loc).toFailure
+              else
+                (label -> e).toSuccess
           }
       }
 
@@ -776,19 +783,30 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       // We translate the sequence of record operations into a nested tree using a fold right.
       foldRight(ops)(visitExp(rest)) {
         case (ParsedAst.RecordOp.Extend(sp1, label, exp, sp2), acc) =>
-          mapN(visitExp(exp)) {
-            case e => WeededAst.Expression.RecordExtend(label, e, acc, mkSL(sp1, sp2))
+          flatMapN(visitExp(exp)) {
+            case e =>
+              if (label.name == "length")
+                WeederError.IllegalFieldName(label.loc).toFailure
+              else
+                WeededAst.Expression.RecordExtend(label, e, acc, mkSL(sp1, sp2)).toSuccess
           }
 
         case (ParsedAst.RecordOp.Restrict(sp1, label, sp2), acc) =>
-          WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2)).toSuccess
+          if (label.name == "length")
+            WeederError.IllegalFieldName(label.loc).toFailure
+          else
+            WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2)).toSuccess
 
         case (ParsedAst.RecordOp.Update(sp1, label, exp, sp2), acc) =>
-          mapN(visitExp(exp)) {
+          flatMapN(visitExp(exp)) {
             case e =>
-              // An update is a restrict followed by an extension.
-              val inner = WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2))
-              WeededAst.Expression.RecordExtend(label, e, inner, mkSL(sp1, sp2))
+              if (label.name == "length")
+                WeederError.IllegalFieldName(label.loc).toFailure
+              else {
+                // An update is a restrict followed by an extension.
+                val inner = WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2))
+                WeededAst.Expression.RecordExtend(label, e, inner, mkSL(sp1, sp2)).toSuccess
+              }
           }
       }
 
