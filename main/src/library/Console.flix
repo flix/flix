@@ -301,321 +301,322 @@ namespace Console {
         }
 
         ///
+        /// Web Colors.
+        ///
+        pub enum Web {
+            case AliceBlue
+            case AntiqueWhite
+            case Aqua
+            case Aquamarine
+            case Azure
+            case Beige
+            case Bisque
+            case Black
+            case BlanchedAlmond
+            case Blue
+            case BlueViolet
+            case Brown
+            case BurlyWood
+            case CadetBlue
+            case Chartreuse
+            case Chocolate
+            case Coral
+            case CornflowerBlue
+            case Cornsilk
+            case Crimson
+            case Cyan
+            case DarkBlue
+            case DarkCyan
+            case DarkGoldenRod
+            case DarkGray
+            case DarkGrey
+            case DarkGreen
+            case DarkKhaki
+            case DarkMagenta
+            case DarkOliveGreen
+            case DarkOrange
+            case DarkOrchid
+            case DarkRed
+            case DarkSalmon
+            case DarkSeaGreen
+            case DarkSlateBlue
+            case DarkSlateGray
+            case DarkSlateGrey
+            case DarkTurquoise
+            case DarkViolet
+            case DeepPink
+            case DeepSkyBlue
+            case DimGray
+            case DimGrey
+            case DodgerBlue
+            case FireBrick
+            case FloralWhite
+            case ForestGreen
+            case Fuchsia
+            case Gainsboro
+            case GhostWhite
+            case Gold
+            case GoldenRod
+            case Gray
+            case Grey
+            case Green
+            case GreenYellow
+            case HoneyDew
+            case HotPink
+            case IndianRed
+            case Indigo
+            case Ivory
+            case Khaki
+            case Lavender
+            case LavenderBlush
+            case LawnGreen
+            case LemonChiffon
+            case LightBlue
+            case LightCoral
+            case LightCyan
+            case LightGoldenRodYellow
+            case LightGray
+            case LightGrey
+            case LightGreen
+            case LightPink
+            case LightSalmon
+            case LightSeaGreen
+            case LightSkyBlue
+            case LightSlateGray
+            case LightSlateGrey
+            case LightSteelBlue
+            case LightYellow
+            case Lime
+            case LimeGreen
+            case Linen
+            case Magenta
+            case Maroon
+            case MediumAquaMarine
+            case MediumBlue
+            case MediumOrchid
+            case MediumPurple
+            case MediumSeaGreen
+            case MediumSlateBlue
+            case MediumSpringGreen
+            case MediumTurquoise
+            case MediumVioletRed
+            case MidnightBlue
+            case MintCream
+            case MistyRose
+            case Moccasin
+            case NavajoWhite
+            case Navy
+            case OldLace
+            case Olive
+            case OliveDrab
+            case Orange
+            case OrangeRed
+            case Orchid
+            case PaleGoldenRod
+            case PaleGreen
+            case PaleTurquoise
+            case PaleVioletRed
+            case PapayaWhip
+            case PeachPuff
+            case Peru
+            case Pink
+            case Plum
+            case PowderBlue
+            case Purple
+            case RebeccaPurple
+            case Red
+            case RosyBrown
+            case RoyalBlue
+            case SaddleBrown
+            case Salmon
+            case SandyBrown
+            case SeaGreen
+            case SeaShell
+            case Sienna
+            case Silver
+            case SkyBlue
+            case SlateBlue
+            case SlateGray
+            case SlateGrey
+            case Snow
+            case SpringGreen
+            case SteelBlue
+            case Tan
+            case Teal
+            case Thistle
+            case Tomato
+            case Turquoise
+            case Violet
+            case Wheat
+            case White
+            case WhiteSmoke
+            case Yellow
+            case YellowGreen
+        }
+
+        ///
         /// Namespace for Web Colors.
         ///
         namespace Web {
 
             ///
-            /// Web Colors.
-            ///
-            pub enum Color {
-                case AliceBlue
-                case AntiqueWhite
-                case Aqua
-                case Aquamarine
-                case Azure
-                case Beige
-                case Bisque
-                case Black
-                case BlanchedAlmond
-                case Blue
-                case BlueViolet
-                case Brown
-                case BurlyWood
-                case CadetBlue
-                case Chartreuse
-                case Chocolate
-                case Coral
-                case CornflowerBlue
-                case Cornsilk
-                case Crimson
-                case Cyan
-                case DarkBlue
-                case DarkCyan
-                case DarkGoldenRod
-                case DarkGray
-                case DarkGrey
-                case DarkGreen
-                case DarkKhaki
-                case DarkMagenta
-                case DarkOliveGreen
-                case DarkOrange
-                case DarkOrchid
-                case DarkRed
-                case DarkSalmon
-                case DarkSeaGreen
-                case DarkSlateBlue
-                case DarkSlateGray
-                case DarkSlateGrey
-                case DarkTurquoise
-                case DarkViolet
-                case DeepPink
-                case DeepSkyBlue
-                case DimGray
-                case DimGrey
-                case DodgerBlue
-                case FireBrick
-                case FloralWhite
-                case ForestGreen
-                case Fuchsia
-                case Gainsboro
-                case GhostWhite
-                case Gold
-                case GoldenRod
-                case Gray
-                case Grey
-                case Green
-                case GreenYellow
-                case HoneyDew
-                case HotPink
-                case IndianRed
-                case Indigo
-                case Ivory
-                case Khaki
-                case Lavender
-                case LavenderBlush
-                case LawnGreen
-                case LemonChiffon
-                case LightBlue
-                case LightCoral
-                case LightCyan
-                case LightGoldenRodYellow
-                case LightGray
-                case LightGrey
-                case LightGreen
-                case LightPink
-                case LightSalmon
-                case LightSeaGreen
-                case LightSkyBlue
-                case LightSlateGray
-                case LightSlateGrey
-                case LightSteelBlue
-                case LightYellow
-                case Lime
-                case LimeGreen
-                case Linen
-                case Magenta
-                case Maroon
-                case MediumAquaMarine
-                case MediumBlue
-                case MediumOrchid
-                case MediumPurple
-                case MediumSeaGreen
-                case MediumSlateBlue
-                case MediumSpringGreen
-                case MediumTurquoise
-                case MediumVioletRed
-                case MidnightBlue
-                case MintCream
-                case MistyRose
-                case Moccasin
-                case NavajoWhite
-                case Navy
-                case OldLace
-                case Olive
-                case OliveDrab
-                case Orange
-                case OrangeRed
-                case Orchid
-                case PaleGoldenRod
-                case PaleGreen
-                case PaleTurquoise
-                case PaleVioletRed
-                case PapayaWhip
-                case PeachPuff
-                case Peru
-                case Pink
-                case Plum
-                case PowderBlue
-                case Purple
-                case RebeccaPurple
-                case Red
-                case RosyBrown
-                case RoyalBlue
-                case SaddleBrown
-                case Salmon
-                case SandyBrown
-                case SeaGreen
-                case SeaShell
-                case Sienna
-                case Silver
-                case SkyBlue
-                case SlateBlue
-                case SlateGray
-                case SlateGrey
-                case Snow
-                case SpringGreen
-                case SteelBlue
-                case Tan
-                case Teal
-                case Thistle
-                case Tomato
-                case Turquoise
-                case Violet
-                case Wheat
-                case White
-                case WhiteSmoke
-                case Yellow
-                case YellowGreen
-            }
-
-            ///
             /// Returns the RGB-triplet for the given color `c`.
             ///
-            pub def toRGB(c: Color): (Int32, Int32, Int32) = match c {
-                case AliceBlue              => (240, 248, 255)
-                case AntiqueWhite           => (250, 235, 215)
-                case Aqua                   => (  0, 255, 255)
-                case Aquamarine             => (127, 255, 212)
-                case Azure                  => (240, 255, 255)
-                case Beige                  => (245, 245, 220)
-                case Bisque                 => (255, 228, 196)
-                case Black                  => (  0,   0,   0)
-                case BlanchedAlmond         => (255, 235, 205)
-                case Blue                   => (  0,  0,  255)
-                case BlueViolet             => (138,  43, 226)
-                case Brown                  => (165,  42,  42)
-                case BurlyWood              => (222, 184, 135)
-                case CadetBlue              => ( 95, 158, 160)
-                case Chartreuse             => (127, 255,   0)
-                case Chocolate              => (210, 105,  30)
-                case Coral                  => (255, 127,  80)
-                case CornflowerBlue         => (100, 149, 237)
-                case Cornsilk               => (255, 248, 220)
-                case Crimson                => (220,  20,  60)
-                case Cyan                   => (  0, 255, 255)
-                case DarkBlue               => (  0,   0, 139)
-                case DarkCyan               => (  0, 139, 139)
-                case DarkGoldenRod          => (184, 134,  11)
-                case DarkGray               => (169, 169, 169)
-                case DarkGrey               => (169, 169, 169)
-                case DarkGreen              => (  0, 100,   0)
-                case DarkKhaki              => (189, 183, 107)
-                case DarkMagenta            => (139,   0, 139)
-                case DarkOliveGreen         => ( 85, 107,  47)
-                case DarkOrange             => (255, 140,   0)
-                case DarkOrchid             => (153,  50, 204)
-                case DarkRed                => (139,   0,   0)
-                case DarkSalmon             => (233, 150, 122)
-                case DarkSeaGreen           => (143, 188, 143)
-                case DarkSlateBlue          => ( 72,  61, 139)
-                case DarkSlateGray          => ( 47,  79,  79)
-                case DarkSlateGrey          => ( 47,  79,  79)
-                case DarkTurquoise          => (  0, 206, 209)
-                case DarkViolet             => (148,   0, 211)
-                case DeepPink               => (255,  20, 147)
-                case DeepSkyBlue            => (  0, 191, 255)
-                case DimGray                => (105, 105, 105)
-                case DimGrey                => (105, 105, 105)
-                case DodgerBlue             => ( 30, 144, 255)
-                case FireBrick              => (178,  34,  34)
-                case FloralWhite            => (255, 250, 240)
-                case ForestGreen            => ( 34, 139, 34)
-                case Fuchsia                => (255,   0, 255)
-                case Gainsboro              => (220, 220, 220)
-                case GhostWhite             => (248, 248, 255)
-                case Gold                   => (255, 215,   0)
-                case GoldenRod              => (218, 165,  32)
-                case Gray                   => (128, 128, 128)
-                case Grey                   => (128, 128, 128)
-                case Green                  => (  0, 128,   0)
-                case GreenYellow            => (173, 255,  47)
-                case HoneyDew               => (240, 255, 240)
-                case HotPink                => (255, 105, 180)
-                case IndianRed              => (205,  92,  92)
-                case Indigo                 => ( 75,   0, 130)
-                case Ivory                  => (255, 255, 240)
-                case Khaki                  => (240, 230, 140)
-                case Lavender               => (230, 230, 250)
-                case LavenderBlush          => (255, 240, 245)
-                case LawnGreen              => (124, 252,   0)
-                case LemonChiffon           => (255, 250, 205)
-                case LightBlue              => (173, 216, 230)
-                case LightCoral             => (240, 128, 128)
-                case LightCyan              => (224, 255, 255)
-                case LightGoldenRodYellow   => (250, 250, 210)
-                case LightGray              => (211, 211, 211)
-                case LightGrey              => (211, 211, 211)
-                case LightGreen             => (144, 238, 144)
-                case LightPink              => (255, 182, 193)
-                case LightSalmon            => (255, 160, 122)
-                case LightSeaGreen          => ( 32, 178, 170)
-                case LightSkyBlue           => (135, 206, 250)
-                case LightSlateGray         => (119, 136, 153)
-                case LightSlateGrey         => (119, 136, 153)
-                case LightSteelBlue         => (176, 196, 222)
-                case LightYellow            => (255, 255, 224)
-                case Lime                   => (  0, 255,   0)
-                case LimeGreen              => ( 50, 205,  50)
-                case Linen                  => (250, 240, 230)
-                case Magenta                => (255,   0, 255)
-                case Maroon                 => (128,   0,   0)
-                case MediumAquaMarine       => (102, 205, 170)
-                case MediumBlue             => (  0,   0, 205)
-                case MediumOrchid           => (186,  85, 211)
-                case MediumPurple           => (147, 112, 219)
-                case MediumSeaGreen         => ( 60, 179, 113)
-                case MediumSlateBlue        => (123, 104, 238)
-                case MediumSpringGreen      => (  0, 250, 154)
-                case MediumTurquoise        => ( 72, 209, 204)
-                case MediumVioletRed        => (199,  21, 133)
-                case MidnightBlue           => ( 25,  25, 112)
-                case MintCream              => (245, 255, 250)
-                case MistyRose              => (255, 228, 225)
-                case Moccasin               => (255, 228, 181)
-                case NavajoWhite            => (255, 222, 173)
-                case Navy                   => (  0,   0, 128)
-                case OldLace                => (253, 245, 230)
-                case Olive                  => (128, 128,   0)
-                case OliveDrab              => (107, 142,  35)
-                case Orange                 => (255, 165,   0)
-                case OrangeRed              => (255,  69,   0)
-                case Orchid                 => (218, 112, 214)
-                case PaleGoldenRod          => (238, 232, 170)
-                case PaleGreen              => (152, 251, 152)
-                case PaleTurquoise          => (175, 238, 238)
-                case PaleVioletRed          => (219, 112, 147)
-                case PapayaWhip             => (255, 239, 213)
-                case PeachPuff              => (255, 218, 185)
-                case Peru                   => (205, 133,  63)
-                case Pink                   => (255, 192, 203)
-                case Plum                   => (221, 160, 221)
-                case PowderBlue             => (176, 224, 230)
-                case Purple                 => (128,   0, 128)
-                case RebeccaPurple          => (102,  51, 153)
-                case Red                    => (255,   0,   0)
-                case RosyBrown              => (188, 143, 143)
-                case RoyalBlue              => ( 65, 105, 225)
-                case SaddleBrown            => (139,  69,  19)
-                case Salmon                 => (250, 128, 114)
-                case SandyBrown             => (244, 164,  96)
-                case SeaGreen               => ( 46, 139,  87)
-                case SeaShell               => (255, 245, 238)
-                case Sienna                 => (160,  82,  45)
-                case Silver                 => (192, 192, 192)
-                case SkyBlue                => (135, 206, 235)
-                case SlateBlue              => (106,  90, 205)
-                case SlateGray              => (112, 128, 144)
-                case SlateGrey              => (112, 128, 144)
-                case Snow                   => (255, 250, 250)
-                case SpringGreen            => (  0, 255, 127)
-                case SteelBlue              => ( 70, 130, 180)
-                case Tan                    => (210, 180, 140)
-                case Teal                   => (  0, 128, 128)
-                case Thistle                => (216, 191, 216)
-                case Tomato                 => (255,  99,  71)
-                case Turquoise              => ( 64, 224, 208)
-                case Violet                 => (238, 130, 238)
-                case Wheat                  => (245, 222, 179)
-                case White                  => (255, 255, 255)
-                case WhiteSmoke             => (245, 245, 245)
-                case Yellow                 => (255, 255,   0)
-                case YellowGreen            => (154, 205,  50)
-            }
+            pub def toRGB(c: Console/Color.Web): (Int32, Int32, Int32) =
+                use Console/Color.Web;
+                match c {
+                    case Web.AliceBlue              => (240, 248, 255)
+                    case Web.AntiqueWhite           => (250, 235, 215)
+                    case Web.Aqua                   => (  0, 255, 255)
+                    case Web.Aquamarine             => (127, 255, 212)
+                    case Web.Azure                  => (240, 255, 255)
+                    case Web.Beige                  => (245, 245, 220)
+                    case Web.Bisque                 => (255, 228, 196)
+                    case Web.Black                  => (  0,   0,   0)
+                    case Web.BlanchedAlmond         => (255, 235, 205)
+                    case Web.Blue                   => (  0,  0,  255)
+                    case Web.BlueViolet             => (138,  43, 226)
+                    case Web.Brown                  => (165,  42,  42)
+                    case Web.BurlyWood              => (222, 184, 135)
+                    case Web.CadetBlue              => ( 95, 158, 160)
+                    case Web.Chartreuse             => (127, 255,   0)
+                    case Web.Chocolate              => (210, 105,  30)
+                    case Web.Coral                  => (255, 127,  80)
+                    case Web.CornflowerBlue         => (100, 149, 237)
+                    case Web.Cornsilk               => (255, 248, 220)
+                    case Web.Crimson                => (220,  20,  60)
+                    case Web.Cyan                   => (  0, 255, 255)
+                    case Web.DarkBlue               => (  0,   0, 139)
+                    case Web.DarkCyan               => (  0, 139, 139)
+                    case Web.DarkGoldenRod          => (184, 134,  11)
+                    case Web.DarkGray               => (169, 169, 169)
+                    case Web.DarkGrey               => (169, 169, 169)
+                    case Web.DarkGreen              => (  0, 100,   0)
+                    case Web.DarkKhaki              => (189, 183, 107)
+                    case Web.DarkMagenta            => (139,   0, 139)
+                    case Web.DarkOliveGreen         => ( 85, 107,  47)
+                    case Web.DarkOrange             => (255, 140,   0)
+                    case Web.DarkOrchid             => (153,  50, 204)
+                    case Web.DarkRed                => (139,   0,   0)
+                    case Web.DarkSalmon             => (233, 150, 122)
+                    case Web.DarkSeaGreen           => (143, 188, 143)
+                    case Web.DarkSlateBlue          => ( 72,  61, 139)
+                    case Web.DarkSlateGray          => ( 47,  79,  79)
+                    case Web.DarkSlateGrey          => ( 47,  79,  79)
+                    case Web.DarkTurquoise          => (  0, 206, 209)
+                    case Web.DarkViolet             => (148,   0, 211)
+                    case Web.DeepPink               => (255,  20, 147)
+                    case Web.DeepSkyBlue            => (  0, 191, 255)
+                    case Web.DimGray                => (105, 105, 105)
+                    case Web.DimGrey                => (105, 105, 105)
+                    case Web.DodgerBlue             => ( 30, 144, 255)
+                    case Web.FireBrick              => (178,  34,  34)
+                    case Web.FloralWhite            => (255, 250, 240)
+                    case Web.ForestGreen            => ( 34, 139, 34)
+                    case Web.Fuchsia                => (255,   0, 255)
+                    case Web.Gainsboro              => (220, 220, 220)
+                    case Web.GhostWhite             => (248, 248, 255)
+                    case Web.Gold                   => (255, 215,   0)
+                    case Web.GoldenRod              => (218, 165,  32)
+                    case Web.Gray                   => (128, 128, 128)
+                    case Web.Grey                   => (128, 128, 128)
+                    case Web.Green                  => (  0, 128,   0)
+                    case Web.GreenYellow            => (173, 255,  47)
+                    case Web.HoneyDew               => (240, 255, 240)
+                    case Web.HotPink                => (255, 105, 180)
+                    case Web.IndianRed              => (205,  92,  92)
+                    case Web.Indigo                 => ( 75,   0, 130)
+                    case Web.Ivory                  => (255, 255, 240)
+                    case Web.Khaki                  => (240, 230, 140)
+                    case Web.Lavender               => (230, 230, 250)
+                    case Web.LavenderBlush          => (255, 240, 245)
+                    case Web.LawnGreen              => (124, 252,   0)
+                    case Web.LemonChiffon           => (255, 250, 205)
+                    case Web.LightBlue              => (173, 216, 230)
+                    case Web.LightCoral             => (240, 128, 128)
+                    case Web.LightCyan              => (224, 255, 255)
+                    case Web.LightGoldenRodYellow   => (250, 250, 210)
+                    case Web.LightGray              => (211, 211, 211)
+                    case Web.LightGrey              => (211, 211, 211)
+                    case Web.LightGreen             => (144, 238, 144)
+                    case Web.LightPink              => (255, 182, 193)
+                    case Web.LightSalmon            => (255, 160, 122)
+                    case Web.LightSeaGreen          => ( 32, 178, 170)
+                    case Web.LightSkyBlue           => (135, 206, 250)
+                    case Web.LightSlateGray         => (119, 136, 153)
+                    case Web.LightSlateGrey         => (119, 136, 153)
+                    case Web.LightSteelBlue         => (176, 196, 222)
+                    case Web.LightYellow            => (255, 255, 224)
+                    case Web.Lime                   => (  0, 255,   0)
+                    case Web.LimeGreen              => ( 50, 205,  50)
+                    case Web.Linen                  => (250, 240, 230)
+                    case Web.Magenta                => (255,   0, 255)
+                    case Web.Maroon                 => (128,   0,   0)
+                    case Web.MediumAquaMarine       => (102, 205, 170)
+                    case Web.MediumBlue             => (  0,   0, 205)
+                    case Web.MediumOrchid           => (186,  85, 211)
+                    case Web.MediumPurple           => (147, 112, 219)
+                    case Web.MediumSeaGreen         => ( 60, 179, 113)
+                    case Web.MediumSlateBlue        => (123, 104, 238)
+                    case Web.MediumSpringGreen      => (  0, 250, 154)
+                    case Web.MediumTurquoise        => ( 72, 209, 204)
+                    case Web.MediumVioletRed        => (199,  21, 133)
+                    case Web.MidnightBlue           => ( 25,  25, 112)
+                    case Web.MintCream              => (245, 255, 250)
+                    case Web.MistyRose              => (255, 228, 225)
+                    case Web.Moccasin               => (255, 228, 181)
+                    case Web.NavajoWhite            => (255, 222, 173)
+                    case Web.Navy                   => (  0,   0, 128)
+                    case Web.OldLace                => (253, 245, 230)
+                    case Web.Olive                  => (128, 128,   0)
+                    case Web.OliveDrab              => (107, 142,  35)
+                    case Web.Orange                 => (255, 165,   0)
+                    case Web.OrangeRed              => (255,  69,   0)
+                    case Web.Orchid                 => (218, 112, 214)
+                    case Web.PaleGoldenRod          => (238, 232, 170)
+                    case Web.PaleGreen              => (152, 251, 152)
+                    case Web.PaleTurquoise          => (175, 238, 238)
+                    case Web.PaleVioletRed          => (219, 112, 147)
+                    case Web.PapayaWhip             => (255, 239, 213)
+                    case Web.PeachPuff              => (255, 218, 185)
+                    case Web.Peru                   => (205, 133,  63)
+                    case Web.Pink                   => (255, 192, 203)
+                    case Web.Plum                   => (221, 160, 221)
+                    case Web.PowderBlue             => (176, 224, 230)
+                    case Web.Purple                 => (128,   0, 128)
+                    case Web.RebeccaPurple          => (102,  51, 153)
+                    case Web.Red                    => (255,   0,   0)
+                    case Web.RosyBrown              => (188, 143, 143)
+                    case Web.RoyalBlue              => ( 65, 105, 225)
+                    case Web.SaddleBrown            => (139,  69,  19)
+                    case Web.Salmon                 => (250, 128, 114)
+                    case Web.SandyBrown             => (244, 164,  96)
+                    case Web.SeaGreen               => ( 46, 139,  87)
+                    case Web.SeaShell               => (255, 245, 238)
+                    case Web.Sienna                 => (160,  82,  45)
+                    case Web.Silver                 => (192, 192, 192)
+                    case Web.SkyBlue                => (135, 206, 235)
+                    case Web.SlateBlue              => (106,  90, 205)
+                    case Web.SlateGray              => (112, 128, 144)
+                    case Web.SlateGrey              => (112, 128, 144)
+                    case Web.Snow                   => (255, 250, 250)
+                    case Web.SpringGreen            => (  0, 255, 127)
+                    case Web.SteelBlue              => ( 70, 130, 180)
+                    case Web.Tan                    => (210, 180, 140)
+                    case Web.Teal                   => (  0, 128, 128)
+                    case Web.Thistle                => (216, 191, 216)
+                    case Web.Tomato                 => (255,  99,  71)
+                    case Web.Turquoise              => ( 64, 224, 208)
+                    case Web.Violet                 => (238, 130, 238)
+                    case Web.Wheat                  => (245, 222, 179)
+                    case Web.White                  => (255, 255, 255)
+                    case Web.WhiteSmoke             => (245, 245, 245)
+                    case Web.Yellow                 => (255, 255,   0)
+                    case Web.YellowGreen            => (154, 205,  50)
+                }
+
         }
     }
-
-    // TODO: Namespaces.
 
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
