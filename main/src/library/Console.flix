@@ -151,8 +151,6 @@ namespace Console {
 
     namespace Color {
 
-        // TODO: Move these one namespace out?
-
         ///
         /// Returns the string `s` formatted with the default blue color.
         ///
