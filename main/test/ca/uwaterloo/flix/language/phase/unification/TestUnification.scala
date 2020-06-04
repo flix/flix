@@ -16,13 +16,19 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.errors.TypeError.OccursCheckError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
+import ca.uwaterloo.flix.language.phase.unification.UnificationError.OccursCheck
 import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.Err
 import org.scalatest.FunSuite
 
-class TestUnification extends FunSuite {
+import scala.reflect.ClassTag
+
+class TestUnification extends FunSuite with TestUtils {
 
   implicit val flix: Flix = new Flix()
 
@@ -316,6 +322,24 @@ class TestUnification extends FunSuite {
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Bool)(result(B))
     assertResult(C)(result(A))
+  }
+
+  test("Unify.12") {
+    val tpe1 = Type.Var(1, Kind.Record)
+    val field = Type.Bool
+    val label = "x"
+    val tpe2 = Type.mkRecordExtend(label, field, tpe1)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
+  }
+
+  test("Unify.13") {
+    val tpe1 = Type.Var(1, Kind.Schema)
+    val field = Type.Apply(Type.Cst(TypeConstructor.Relation), Type.Bool)
+    val label = "x"
+    val tpe2 = Type.mkSchemaExtend(label, field, tpe1)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
   }
 
   test("unifyM.01") {

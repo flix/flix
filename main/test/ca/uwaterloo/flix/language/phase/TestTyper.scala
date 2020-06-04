@@ -113,4 +113,15 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
+  test("TestOccurs01") {
+    val input =
+      """
+        |rel A(v: Int)
+        |rel B(v: Int)
+        |
+        |def f(a: #{A | r}, b: #{B | r}): #{A, B} = solve (a <+> b)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OccursCheckError](result)
+  }
 }
