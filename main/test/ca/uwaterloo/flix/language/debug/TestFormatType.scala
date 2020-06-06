@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualString}
 import org.scalatest.FunSuite
 
 class TestFormatType extends FunSuite with TestUtils {
@@ -375,6 +376,28 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val expected = "(String -> Float32 & e)[Int8]"
     val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatTypeDiff.Tuple.01") {
+    val tpe1 = Type.mkTuple(List(Type.Int32, Type.Int32, Type.Int32))
+    val tpe2 = Type.mkTuple(List(Type.Int32, Type.Bool, Type.Int32))
+
+    val diff = TypeDiff.diff(tpe1, tpe2)
+    val expected = "(*, Int32, *)"
+    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatTypeDiff.Arrow.01") {
+    val tpe1 = Type.mkArrow(Type.Int32, Type.Pure, Type.Int32)
+    val tpe2 = Type.mkArrow(Type.Int32, Type.Pure, Type.Bool)
+
+    val diff = TypeDiff.diff(tpe1, tpe2)
+    val expected = "* -> Int32"
+    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
 
     assert(actual == expected)
   }
