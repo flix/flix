@@ -48,18 +48,22 @@ object TypeDiff {
     (tyCon1, tyCon2) match {
       case (Type.Var(_, _, _), _) => TypeDiff.Star(TyCon.Other)
       case (_, Type.Var(_, _, _)) => TypeDiff.Star(TyCon.Other)
-      case (Type.Cst(TypeConstructor.Tuple(len1)), Type.Cst(TypeConstructor.Tuple(len2)))  if (len1 == len2) =>
-          val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
-          diffs.foldLeft(TypeDiff.Star(TyCon.Tuple): TypeDiff)((base, param) => TypeDiff.Apply(base, param))
+      case (Type.Cst(TypeConstructor.Tuple(len1)), Type.Cst(TypeConstructor.Tuple(len2))) if (len1 == len2) =>
+        val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
+        mkApply(TypeDiff.Star(TyCon.Tuple), diffs)
+      case (Type.Cst(TypeConstructor.Enum(sym1, kind1)), Type.Cst(TypeConstructor.Enum(sym2, kind2))) if ((sym1 == sym2) && (kind1 == kind2)) =>
+        val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
+        mkApply(TypeDiff.Star(TyCon.Enum(sym1.name)), diffs)
       case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
-      case (Type.Arrow(l1, _), Type.Arrow(l2, _)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
-      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-        (diff(t11, t21), diff(t12, t22)) match {
-          case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TyCon.Other)
-          case (diff1, diff2) => TypeDiff.Apply(diff1, diff2)
-        }
+      case (Type.Arrow(len1, _), Type.Arrow(len2, _)) if (len1 == len2) =>
+        val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
+        mkApply(TypeDiff.Star(TyCon.Arrow), diffs)
       case _ => TypeDiff.Mismatch(tpe1, tpe2)
     }
+  }
+
+  private def mkApply(base: TypeDiff, params: List[TypeDiff]): TypeDiff = {
+    params.foldLeft(base)((base0, param) => TypeDiff.Apply(base0, param))
   }
 
   /**
@@ -90,5 +94,6 @@ object TypeDiff {
     case object Other extends TyCon
 
   }
+
 }
 

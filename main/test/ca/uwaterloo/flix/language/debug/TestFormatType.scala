@@ -401,4 +401,16 @@ class TestFormatType extends FunSuite with TestUtils {
 
     assert(actual == expected)
   }
+
+  test("FormatTypeDiff.Enum.01") {
+    val map = Type.Cst(TypeConstructor.Enum(Symbol.mkEnumSym("Map"), Kind.Star ->: Kind.Star ->: Kind.Star))
+    val tpe1 = Type.mkApply(map, List(Type.Int32, Type.Bool))
+    val tpe2 = Type.mkApply(map, List(Type.Int32, Type.Str))
+
+    val diff = TypeDiff.diff(tpe1, tpe2)
+    val expected = "*[*, Bool]"
+    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
+
+    assert(actual == expected)
+  }
 }

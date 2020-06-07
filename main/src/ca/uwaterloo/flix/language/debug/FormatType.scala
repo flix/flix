@@ -189,7 +189,7 @@ object FormatType {
 
         case Type.Lambda(tvar, tpe) => audience match {
           case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-          case Audience.External => throw InternalCompilerException(s"Unexpected type: Lambda") // Lambda should not be show externally
+          case Audience.External => throw InternalCompilerException(s"Unexpected type: Lambda") // Lambda should not be shown externally
         }
 
         case Type.Cst(TypeConstructor.Native(clazz)) => s"${clazz.getSimpleName}"
@@ -218,7 +218,7 @@ object FormatType {
           case TypeDiff.TyCon.Arrow =>
             intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
           case TypeDiff.TyCon.Enum(name) =>
-            vt << name
+            vt << "*"
             intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
           case TypeDiff.TyCon.Tuple =>
             intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
