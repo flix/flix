@@ -185,7 +185,7 @@ namespace RedBlackTree {
     /// Returns `None` if `tree` is the empty tree.
     ///
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] & e =
-        foldLeft((x: Option[(k, v)], k1: k, v1: v) -> match x {
+        foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
             case None => Some(k1, v1)
         }, None, tree)
@@ -198,7 +198,7 @@ namespace RedBlackTree {
     /// Returns `None` if `tree` is the empty tree.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] & e =
-        foldRight((k1: k, v1: v, x: Option[(k, v)]) -> match x {
+        foldRight((k1, v1, x) -> match x {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
             case None => Some(k1, v1)
         }, None, tree)
