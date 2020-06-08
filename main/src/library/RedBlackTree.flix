@@ -178,7 +178,6 @@ namespace RedBlackTree {
         case _ => s
     }
 
-    ///
     /// Applies `f` to all key-value pairs in `tree` going from left to right until a single pair `(k, v)` is obtained.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
@@ -186,9 +185,9 @@ namespace RedBlackTree {
     /// Returns `None` if `tree` is the empty tree.
     ///
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] & e =
-        reduceLeftHelper((x: Option[(k, v)], y: (k, v)) -> match x {
-            case Some((k, v)) => Some(f(k, v, fst(y), snd(y)))
-            case None => Some(y)
+        foldLeft((x, k1, v1) -> match x {
+            case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
+            case None => Some(k1, v1)
         }, None, tree)
 
     ///
@@ -199,9 +198,9 @@ namespace RedBlackTree {
     /// Returns `None` if `tree` is the empty tree.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] & e =
-        reduceRightHelper((x: Option[(k, v)], y: (k, v)) -> match x {
-            case Some((k, v)) => Some(f(fst(y), snd(y), k, v))
-            case None => Some(y)
+        foldRight((k1, v1, x) -> match x {
+            case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
+            case None => Some(k1, v1)
         }, None, tree)
 
     ///
@@ -383,23 +382,5 @@ namespace RedBlackTree {
                 rotate(Node(c, a, k1, v1, deleteHelper(k, b)))
         case _ => tree
     }
-
-    ///
-    /// Helper function for `reduceLeft`.
-    ///
-    def reduceLeftHelper(f: (Option[(k, v)], (k, v)) -> Option[(k, v)] & e, s: Option[(k, v)], tree: RedBlackTree[k, v]): Option[(k, v)] & e =
-        match tree {
-            case Node(_, a, k, v, b) => reduceLeftHelper(f, f(reduceLeftHelper(f, s, a), (k, v)), b)
-            case _ => s
-        }
-
-    ///
-    /// Helper function for `reduceRight`.
-    ///
-    def reduceRightHelper(f: (Option[(k, v)], (k, v)) -> Option[(k, v)] & e, s: Option[(k, v)], tree: RedBlackTree[k, v]): Option[(k, v)] & e =
-        match tree {
-            case Node(_, a, k, v, b) => reduceRightHelper(f, f(reduceRightHelper(f, s, b), (k, v)), a)
-            case _ => s
-        }
 
 }
