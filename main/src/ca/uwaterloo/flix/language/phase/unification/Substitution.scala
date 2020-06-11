@@ -100,16 +100,35 @@ case class Substitution(m: Map[Type.Var, Type]) {
     * Returns the composition of `this` substitution with `that` substitution.
     */
   def @@(that: Substitution): Substitution = {
+    // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
-      that
-    } else if (that.isEmpty) {
-      this
-    } else {
-      val newTypeMap = that.m.foldLeft(Map.empty[Type.Var, Type]) {
-        case (macc, (x, t)) => macc.updated(x, this.apply(t))
-      }
-      Substitution(newTypeMap) ++ this
+      return that
     }
+
+    // Case 2: Return `this` if `that` is empty.
+    if (that.isEmpty) {
+      return this
+    }
+
+    // Case 3: Merge the two substitutions.
+
+    // NB: Use of mutability improve performance.
+    import scala.collection.mutable
+    val newTypeMap = mutable.Map.empty[Type.Var, Type]
+
+    // Add all bindings in `that`. (Applying the current substitution).
+    for ((x, t) <- that.m) {
+      newTypeMap.update(x, this.apply(t))
+    }
+
+    // Add all bindings in `this` that are not in `that`.
+    for ((x, t) <- this.m) {
+      if (!that.m.contains(x)) {
+        newTypeMap.update(x, t)
+      }
+    }
+
+    Substitution(newTypeMap.toMap) ++ this
   }
 
 }
