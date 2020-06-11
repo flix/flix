@@ -131,25 +131,22 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
 
     // Case 3: Merge the two substitutions.
 
-    // NB: Use of mutability improve performance.
-    import scala.collection.mutable
-
     // We start with all bindings in `this`.
     var newTypeMap = this.m
 
     // Compute all newly true variables.
-    val newTrueVars = mutable.Set.empty[Type.Var]
+    var newTrueVars: List[Type.Var] = Nil
 
     // Compute all newly false variables.
-    val newFalseVars = mutable.Set.empty[Type.Var]
+    var newFalseVars: List[Type.Var] = Nil
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
       this.apply(t) match {
         case Type.Cst(TypeConstructor.Pure) =>
-          newTrueVars.add(x)
+          newTrueVars = x :: newTrueVars
         case Type.Cst(TypeConstructor.Impure) =>
-          newFalseVars.add(x)
+          newFalseVars = x :: newFalseVars
         case tpe =>
           newTypeMap = newTypeMap.updated(x, tpe)
       }
