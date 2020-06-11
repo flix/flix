@@ -232,9 +232,6 @@ object Indexer {
     case Expression.ProcessSpawn(exp, _, _, _) =>
       visitExp(exp) + exp0
 
-    case Expression.ProcessPanic(_, _, _, _) =>
-      Index.empty
-
     case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Index.empty) {
         case (index, c) => index ++ visitConstraint(c)

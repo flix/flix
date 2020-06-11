@@ -337,9 +337,6 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.ProcessSpawn(e, tpe, eff, loc)
       }
 
-    case Expression.ProcessPanic(msg, tpe, eff, loc) =>
-      Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
-
     case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
@@ -563,9 +560,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.ProcessSpawn(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
-
-    case Expression.ProcessPanic(_, _, _, _) =>
-      DependencyGraph.empty
 
     case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(DependencyGraph.empty) {

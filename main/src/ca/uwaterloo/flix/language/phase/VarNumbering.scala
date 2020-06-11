@@ -252,9 +252,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ProcessSpawn(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.ProcessPanic(msg, tpe, loc) =>
-        i0
-
       case Expression.FixpointConstraintSet(cs, tpe, loc) =>
         for (c <- cs) {
           visitConstraint(c)

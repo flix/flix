@@ -580,9 +580,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, loc)
 
-        case NamedAst.Expression.ProcessPanic(msg, tvar, loc) =>
-          ResolvedAst.Expression.ProcessPanic(msg, tvar, loc).toSuccess
-
         case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
           for {
             cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, prog0))

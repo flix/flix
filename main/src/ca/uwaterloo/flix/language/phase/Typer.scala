@@ -945,10 +945,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
-        // A panic is, by nature, not type safe.
-        liftM(tvar, Type.Pure)
-
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
           constraintTypes <- seqM(cs.map(visitConstraint))
@@ -1334,10 +1330,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         val eff = e.eff
         TypedAst.Expression.ProcessSpawn(e, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
-        val eff = Type.Pure
-        TypedAst.Expression.ProcessPanic(msg, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)

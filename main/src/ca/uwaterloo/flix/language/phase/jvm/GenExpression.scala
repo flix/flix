@@ -1059,11 +1059,6 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
-    case Expression.ProcessPanic(msg, tpe, loc) =>
-      // TODO: Throw a more specific exception?
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
-
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)

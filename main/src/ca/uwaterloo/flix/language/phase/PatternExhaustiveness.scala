@@ -321,9 +321,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp, root)
         } yield tast
 
-        case Expression.ProcessPanic(_, _, _, _) =>
-          tast.toSuccess
-
         case Expression.FixpointConstraintSet(cs, tpe, loc) =>
           for {
             _ <- traverse(cs)(visitConstraint(_, root))

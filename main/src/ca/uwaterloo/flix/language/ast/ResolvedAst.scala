@@ -158,8 +158,6 @@ object ResolvedAst {
 
     case class ProcessSpawn(exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ProcessPanic(msg: String, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class FixpointConstraintSet(cs: List[ResolvedAst.Constraint], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointCompose(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

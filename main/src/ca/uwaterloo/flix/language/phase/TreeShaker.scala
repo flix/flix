@@ -248,9 +248,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ProcessSpawn(exp, _, _) =>
         visitExp(exp)
 
-      case Expression.ProcessPanic(_, _, _) =>
-        Set.empty
-
       case Expression.FixpointConstraintSet(cs0, _, _) =>
         cs0.foldLeft(Set.empty[Symbol.DefnSym]) {
           case (fvs, c) => fvs ++ visitConstraint(c)

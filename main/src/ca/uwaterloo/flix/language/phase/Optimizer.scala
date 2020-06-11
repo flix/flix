@@ -308,9 +308,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp, env0)
         Expression.ProcessSpawn(e, tpe, loc)
 
-      case Expression.ProcessPanic(msg, tpe, loc) =>
-        Expression.ProcessPanic(msg, tpe, loc)
-
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, env0))
         Expression.FixpointConstraintSet(cs, tpe, loc)

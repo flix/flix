@@ -327,9 +327,6 @@ object SimplifiedAstOps {
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      case Expression.ProcessPanic(msg, tpe, loc) =>
-        checkType(tpe)
-
       case Expression.FixpointConstraintSet(_, tpe, _) =>
         checkType(tpe)
 

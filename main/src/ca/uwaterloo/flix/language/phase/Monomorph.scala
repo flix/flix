@@ -473,9 +473,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.ProcessSpawn(e, subst0(tpe), eff, loc)
 
-        case Expression.ProcessPanic(msg, tpe, eff, loc) =>
-          Expression.ProcessPanic(msg, subst0(tpe), eff, loc)
-
         case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
           val cs = cs0.map(visitConstraint(_, env0))
           Expression.FixpointConstraintSet(cs, subst0(tpe), loc)

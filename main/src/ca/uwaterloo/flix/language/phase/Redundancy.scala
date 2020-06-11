@@ -486,8 +486,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, env0.resetApplies)
 
-    case Expression.ProcessPanic(msg, _, _, _) => Used.empty
-
     case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {
         case (used, con) => used and visitConstraint(con, env0.resetApplies)

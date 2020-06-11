@@ -210,8 +210,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.ProcessPanic(_, _, _, _) => Nil
-
       case Expression.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint(_, lint0))
 
       case Expression.FixpointCompose(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
@@ -501,8 +499,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.ProcessSpawn(exp1, _, _, _), Expression.ProcessSpawn(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
-
-    case (Expression.ProcessPanic(msg1, _, _, _), Expression.ProcessPanic(msg2, _, _, _)) if msg1 == msg2 => Some(Substitution.empty)
 
     case (Expression.FixpointConstraintSet(_, _, _), Expression.FixpointConstraintSet(_, _, _)) =>
       // NB: We currently do not perform unification inside constraint sets.
@@ -884,8 +880,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.ProcessSpawn(e, tpe, eff, loc)
-
-      case Expression.ProcessPanic(msg, tpe, eff, loc) => exp0
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) =>
         Expression.FixpointConstraintSet(cs.map(apply), tpe, loc)

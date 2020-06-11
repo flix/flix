@@ -445,9 +445,6 @@ object PrettyPrinter {
           vt.text("spawn ")
           visitExp(exp)
 
-        case Expression.ProcessPanic(msg, tpe, loc) =>
-          vt.text("!!! " + msg)
-
         case Expression.FixpointConstraintSet(cs, tpe, loc) =>
           vt.text("#{")
           for (c <- cs) {
