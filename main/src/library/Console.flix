@@ -157,8 +157,8 @@ namespace Console {
         pub def blue(s: String): String =
             use Console/Color.Default.Blue;
             use Console/Color/Default.toRGB;
-            use Console.formatter;
-            formatter(Blue |> toRGB, s)
+            use Console.rgb;
+            rgb(Blue |> toRGB, s)
 
         ///
         /// Returns the string `s` formatted with the default cyan color.
@@ -166,8 +166,8 @@ namespace Console {
         pub def cyan(s: String): String =
             use Console/Color.Default.Cyan;
             use Console/Color/Default.toRGB;
-            use Console.formatter;
-            formatter(Cyan |> toRGB, s)
+            use Console.rgb;
+            rgb(Cyan |> toRGB, s)
 
         ///
         /// Returns the string `s` formatted with the default green color.
@@ -175,8 +175,8 @@ namespace Console {
         pub def green(s: String): String =
             use Console/Color.Default.Green;
             use Console/Color/Default.toRGB;
-            use Console.formatter;
-            formatter(Green |> toRGB, s)
+            use Console.rgb;
+            rgb(Green |> toRGB, s)
 
         ///
         /// Returns the string `s` formatted with the default magenta color.
@@ -184,8 +184,8 @@ namespace Console {
         pub def magenta(s: String): String =
             use Console/Color.Default.Magenta;
             use Console/Color/Default.toRGB;
-            use Console.formatter;
-            formatter(Magenta |> toRGB, s)
+            use Console.rgb;
+            rgb(Magenta |> toRGB, s)
 
         ///
         /// Returns the string `s` formatted with the default red color.
@@ -193,8 +193,8 @@ namespace Console {
         pub def red(s: String): String =
             use Console/Color.Default.Red;
             use Console/Color/Default.toRGB;
-            use Console.formatter;
-            formatter(Red |> toRGB, s)
+            use Console.rgb;
+            rgb(Red |> toRGB, s)
 
         ///
         /// Returns the string `s` formatted with the default yellow color.
@@ -202,8 +202,8 @@ namespace Console {
         pub def yellow(s: String): String =
             use Console/Color.Default.Yellow;
             use Console/Color/Default.toRGB;
-            use Console.formatter;
-            formatter(Yellow |> toRGB, s)
+            use Console.rgb;
+            rgb(Yellow |> toRGB, s)
 
         ///
         /// Returns the string `s` formatted with the default white color.
@@ -211,8 +211,8 @@ namespace Console {
         pub def white(s: String): String =
             use Console/Color.Default.White;
             use Console/Color/Default.toRGB;
-            use Console.formatter;
-            formatter(White |> toRGB, s)
+            use Console.rgb;
+            rgb(White |> toRGB, s)
 
         ///
         /// Default Colors.
@@ -684,7 +684,7 @@ namespace Console {
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
     ///
-    pub def formatter(c: (Int32, Int32 , Int32), s: String): String =
+    pub def rgb(c: (Int32, Int32 , Int32), s: String): String =
         match colorSupport() {
             case ColorSupport.None      => s
             case ColorSupport.Ansi      =>
