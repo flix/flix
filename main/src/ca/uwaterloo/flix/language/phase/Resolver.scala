@@ -662,7 +662,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             p <- visit(pat)
           } yield ResolvedAst.Pattern.Tag(d.sym, tag.name, p, tvar, loc)
 
-        case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
+        case NamedAst.Pattern.Tuple(elms, loc) =>
           for {
             es <- traverse(elms)(visit)
           } yield ResolvedAst.Pattern.Tuple(es, loc)
