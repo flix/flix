@@ -57,20 +57,16 @@ case class Substitution(m: Map[Type.Var, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.Var =>
-          m.get(x) match {
-            case None => x
-            case Some(y) if x.kind == t.kind => y
-            case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
-          }
+        case x: Type.Var => m.getOrElse(x, x)
         case Type.Cst(tc) => t
         case Type.Apply(t1, t2) =>
-          (visit(t1), visit(t2)) match {
+          val y = visit(t2)
+          visit(t1) match {
             // Simplify boolean equations.
-            case (Type.Cst(TypeConstructor.Not), x) => BoolUnification.mkNot(x)
-            case (Type.Apply(Type.Cst(TypeConstructor.And), x), y) => BoolUnification.mkAnd(x, y)
-            case (Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => BoolUnification.mkOr(x, y)
-            case (x, y) => Type.Apply(x, y)
+            case Type.Cst(TypeConstructor.Not) => BoolUnification.mkNot(y)
+            case Type.Apply(Type.Cst(TypeConstructor.And), x) => BoolUnification.mkAnd(x, y)
+            case Type.Apply(Type.Cst(TypeConstructor.Or), x) => BoolUnification.mkOr(x, y)
+            case x => Type.Apply(x, y)
           }
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
