@@ -503,7 +503,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Match(exp, rules, tvar, loc) =>
+      case ResolvedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.map(_.guard)
         val bodies = rules.map(_.exp)
@@ -515,7 +515,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (guardTypes, guardEffects) <- seqM(guards map visitExp).map(_.unzip)
           guardType <- unifyTypM(Type.Bool :: guardTypes, loc)
           (bodyTypes, bodyEffects) <- seqM(bodies map visitExp).map(_.unzip)
-          resultTyp <- unifyTypM(tvar :: bodyTypes, loc)
+          resultTyp <- unifyTypM(bodyTypes, loc)
           resultEff = mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (resultTyp, resultEff)
 
@@ -1140,7 +1140,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Match(matchExp, rules, tvar, loc) =>
+      case ResolvedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
           case ResolvedAst.MatchRule(pat, guard, exp) =>
@@ -1149,10 +1149,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val b = visitExp(exp, subst0)
             TypedAst.MatchRule(p, g, b)
         }
+        val tpe = rs.head.exp.tpe
         val eff = rs.foldLeft(e1.eff) {
           case (acc, TypedAst.MatchRule(_, g, b)) => mkAnd(g.eff, b.eff, acc)
         }
-        TypedAst.Expression.Match(e1, rs, subst0(tvar), eff, loc)
+        TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

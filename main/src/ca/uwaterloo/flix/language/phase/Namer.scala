@@ -417,7 +417,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
       mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), loc)
+        case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
       }
 
     case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>
