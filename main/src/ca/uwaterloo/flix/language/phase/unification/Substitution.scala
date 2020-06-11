@@ -145,8 +145,10 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
       this.apply(t) match {
         case Type.Cst(TypeConstructor.Pure) =>
           newTrueVars = x :: newTrueVars
+          newTypeMap = newTypeMap - x
         case Type.Cst(TypeConstructor.Impure) =>
           newFalseVars = x :: newFalseVars
+          newTypeMap = newTypeMap - x
         case tpe =>
           newTypeMap = newTypeMap.updated(x, tpe)
       }
