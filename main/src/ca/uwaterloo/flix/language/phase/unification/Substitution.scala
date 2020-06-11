@@ -59,13 +59,12 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
     def visit(t: Type): Type =
       t match {
         case x: Type.Var =>
-          m.get(x) match {
-            case None if trueVars.contains(x) => Type.Pure
-            case None if falseVars.contains(x) => Type.Impure
-            case None => x
-            case Some(y) if x.kind == t.kind => y
-            case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
-          }
+          if (trueVars.contains(x))
+            Type.Pure
+          else if (falseVars.contains(x))
+            Type.Impure
+          else
+            m.getOrElse(x, x)
         case Type.Cst(tc) => t
         case Type.Apply(t1, t2) =>
           (visit(t1), visit(t2)) match {
