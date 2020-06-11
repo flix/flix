@@ -516,24 +516,24 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               }
           }
 
-        case NamedAst.Expression.GetField(className, fieldName, exp, tvar, loc) =>
+        case NamedAst.Expression.GetField(className, fieldName, exp, loc) =>
           mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp, tenv0)) {
-            case (field, e) => ResolvedAst.Expression.GetField(field, e, tvar, loc)
+            case (field, e) => ResolvedAst.Expression.GetField(field, e, loc)
           }
 
-        case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
           mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp1, tenv0), visit(exp2, tenv0)) {
-            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, tvar, loc)
+            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, loc)
           }
 
-        case NamedAst.Expression.GetStaticField(className, fieldName, tvar, loc) =>
+        case NamedAst.Expression.GetStaticField(className, fieldName, loc) =>
           mapN(lookupJvmField(className, fieldName, static = true, loc)) {
-            case field => ResolvedAst.Expression.GetStaticField(field, tvar, loc)
+            case field => ResolvedAst.Expression.GetStaticField(field, loc)
           }
 
-        case NamedAst.Expression.PutStaticField(className, fieldName, exp, tvar, loc) =>
+        case NamedAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
           mapN(lookupJvmField(className, fieldName, static = true, loc), visit(exp, tenv0)) {
-            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, tvar, loc)
+            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -575,10 +575,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             d <- defaultVal
           } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
 
-        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+        case NamedAst.Expression.Spawn(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+          } yield ResolvedAst.Expression.Spawn(e, loc)
 
         case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
           for {

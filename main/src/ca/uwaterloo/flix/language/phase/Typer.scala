@@ -808,17 +808,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.GetField(field, exp, tvar, loc) =>
+      case ResolvedAst.Expression.GetField(field, exp, loc) =>
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(field.getDeclaringClass)
         for {
           (baseTyp, _) <- visitExp(exp)
           objectTyp <- unifyTypM(baseTyp, classType, loc)
-          resultTyp <- unifyTypM(tvar, fieldType, loc)
+          resultTyp = fieldType
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, loc) =>
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(field.getDeclaringClass)
         for {
@@ -826,22 +826,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (valueType, _) <- visitExp(exp2)
           objectTyp <- unifyTypM(baseTyp, classType, loc)
           valueTyp <- unifyTypM(valueType, fieldType, loc)
-          resultTyp <- unifyTypM(tvar, Type.Unit, loc)
+          resultTyp = Type.Unit
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.GetStaticField(field, tvar, loc) =>
+      case ResolvedAst.Expression.GetStaticField(field, loc) =>
         val fieldType = getFlixType(field.getType)
-        for {
-          resultTyp <- unifyTypM(tvar, fieldType, loc)
-          resultEff = Type.Impure
-        } yield (resultTyp, resultEff)
+        val resultTyp = fieldType
+        val resultEff = Type.Impure
+        liftM(resultTyp, resultEff)
 
-      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, loc) =>
+      case ResolvedAst.Expression.PutStaticField(field, exp, loc) =>
         for {
           (valueTyp, _) <- visitExp(exp)
           fieldTyp <- unifyTypM(getFlixType(field.getType), valueTyp, loc)
-          resultTyp <- unifyTypM(tvar, Type.Unit, loc)
+          resultTyp = Type.Unit
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -933,7 +932,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+      case ResolvedAst.Expression.Spawn(exp, loc) =>
         //
         //  exp: t @ _
         //  -------------------------
@@ -941,7 +940,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         for {
           (tpe, _) <- visitExp(exp)
-          resultTyp <- unifyTypM(tvar, Type.Unit, loc)
+          resultTyp = Type.Unit
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -1283,25 +1282,29 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.Impure
         TypedAst.Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
 
-      case ResolvedAst.Expression.GetField(field, exp, tvar, loc) =>
+      case ResolvedAst.Expression.GetField(field, exp, loc) =>
         val e = visitExp(exp, subst0)
+        val tpe = getFlixType(field.getType)
         val eff = Type.Impure
-        TypedAst.Expression.GetField(field, e, subst0(tvar), eff, loc)
+        TypedAst.Expression.GetField(field, e, tpe, eff, loc)
 
-      case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
+        val tpe = Type.Unit
         val eff = Type.Impure
-        TypedAst.Expression.PutField(field, e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expression.PutField(field, e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.GetStaticField(field, tvar, loc) =>
+      case ResolvedAst.Expression.GetStaticField(field, loc) =>
+        val tpe = getFlixType(field.getType)
         val eff = Type.Impure
-        TypedAst.Expression.GetStaticField(field, subst0(tvar), eff, loc)
+        TypedAst.Expression.GetStaticField(field, tpe, eff, loc)
 
-      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, loc) =>
+      case ResolvedAst.Expression.PutStaticField(field, exp, loc) =>
         val e = visitExp(exp, subst0)
+        val tpe = Type.Unit
         val eff = Type.Impure
-        TypedAst.Expression.PutStaticField(field, e, subst0(tvar), eff, loc)
+        TypedAst.Expression.PutStaticField(field, e, tpe, eff, loc)
 
       case ResolvedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)
@@ -1330,10 +1333,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.Impure
         TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+      case ResolvedAst.Expression.Spawn(exp, loc) =>
         val e = visitExp(exp, subst0)
+        val tpe = Type.Unit
         val eff = e.eff
-        TypedAst.Expression.Spawn(e, subst0(tvar), eff, loc)
+        TypedAst.Expression.Spawn(e, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)
