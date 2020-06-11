@@ -882,15 +882,6 @@ object ParsedAst {
     case class ProcessSpawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Process Panic Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param msg the panic error message.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ProcessPanic(sp1: SourcePosition, msg: ParsedAst.Literal.Str, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Fixpoint Constraint expression.
       *
       * @param sp1 the position of the first character in the expression.

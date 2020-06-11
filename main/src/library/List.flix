@@ -172,7 +172,7 @@ namespace List {
         case Nil => s :: Nil
         case x :: rs => match scanRight(f, s, rs) {
             case y :: ys => f(x, y) :: y :: ys
-            case _ => panic "unreachable"
+            case _ => panic("unreachable")
         }
     }
 
@@ -305,7 +305,7 @@ namespace List {
     def at(i: Int32, xs: List[a]): a = match (i, xs) {
         case (0, x :: _) => x
         case (p, _ :: rs) => at(p - 1, rs)
-        case _ => panic "unreachable"
+        case _ => panic("unreachable")
     }
 
     ///
@@ -391,7 +391,7 @@ namespace List {
     def applyListHelper(xs: List[a], ys: List[List[a]]): List[List[a]] = match (xs, ys) {
         case (Nil, Nil) => Nil
         case (x :: rs, y :: qs) => (x :: y) :: applyListHelper(rs, qs)
-        case _ => panic "unreachable"
+        case _ => panic("unreachable")
     }
 
 

@@ -71,6 +71,11 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 
 ///
+/// Panics (crashes) the current process with the given message `m`.
+///
+pub def panic(m: String): a = ?panic
+
+///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
 ///
 law commutative(f: (a, a) -> b): Bool =
@@ -119,7 +124,7 @@ law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool =
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.
 ///
-def ===(_x: a, _y: a): Bool = panic "meta-programming construct"
+def ===(_x: a, _y: a): Bool = panic("meta-programming construct")
 
 namespace Tuple2 {
 
