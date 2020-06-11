@@ -489,7 +489,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Ref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.Ref(e, loc)
       }
 
     case WeededAst.Expression.Deref(exp, loc) =>
@@ -499,7 +499,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Assign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, loc)
       }
 
 
