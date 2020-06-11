@@ -135,10 +135,10 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
     import scala.collection.mutable
     val newTypeMap = mutable.Map.empty[Type.Var, Type]
 
-    // Compute all true variables.
+    // Compute all newly true variables.
     val newTrueVars = mutable.Set.empty[Type.Var]
 
-    // Compute all false variables.
+    // Compute all newly false variables.
     val newFalseVars = mutable.Set.empty[Type.Var]
 
     // Add all bindings in `that`. (Applying the current substitution).
