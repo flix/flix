@@ -133,7 +133,9 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
 
     // NB: Use of mutability improve performance.
     import scala.collection.mutable
-    val newTypeMap = mutable.Map.empty[Type.Var, Type]
+
+    // We start with all bindings in `this`.
+    var newTypeMap = this.m
 
     // Compute all newly true variables.
     val newTrueVars = mutable.Set.empty[Type.Var]
@@ -149,19 +151,12 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
         case Type.Cst(TypeConstructor.Impure) =>
           newFalseVars.add(x)
         case tpe =>
-          newTypeMap.update(x, tpe)
-      }
-    }
-
-    // Add all bindings in `this` that are not in `that`.
-    for ((x, t) <- this.m) {
-      if (!that.contains(x)) {
-        newTypeMap.update(x, t)
+          newTypeMap = newTypeMap.updated(x, tpe)
       }
     }
 
     // Reassemble the substitution.
-    Substitution(newTypeMap.toMap, this.trueVars ++ that.trueVars ++ newTrueVars, this.falseVars ++ that.falseVars ++ newFalseVars)
+    Substitution(newTypeMap, this.trueVars ++ that.trueVars ++ newTrueVars, this.falseVars ++ that.falseVars ++ newFalseVars)
   }
 
   /**
