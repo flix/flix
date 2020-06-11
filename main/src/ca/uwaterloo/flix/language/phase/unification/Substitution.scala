@@ -156,7 +156,8 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
     }
 
     // Reassemble the substitution.
-    Substitution(newTypeMap, this.trueVars ++ that.trueVars ++ newTrueVars, this.falseVars ++ that.falseVars ++ newFalseVars)
+    // Note: Order of ++ determined by profiling.
+    Substitution(newTypeMap, that.trueVars ++ this.trueVars ++ newTrueVars, that.falseVars ++ this.falseVars ++ newFalseVars)
   }
 
   /**
