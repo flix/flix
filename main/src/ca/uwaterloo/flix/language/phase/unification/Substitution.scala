@@ -136,10 +136,10 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
     val newTypeMap = mutable.Map.empty[Type.Var, Type]
 
     // Compute all true variables.
-    val newTrueVars = mutable.Set.empty ++ this.trueVars ++ that.trueVars
+    val newTrueVars = mutable.Set.empty[Type.Var]
 
     // Compute all false variables.
-    val newFalseVars = mutable.Set.empty ++ this.falseVars ++ that.falseVars
+    val newFalseVars = mutable.Set.empty[Type.Var]
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
@@ -161,7 +161,7 @@ case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVa
     }
 
     // Reassemble the substitution.
-    Substitution(newTypeMap.toMap, newTrueVars.toSet, newFalseVars.toSet)
+    Substitution(newTypeMap.toMap, this.trueVars ++ that.trueVars ++ newTrueVars, this.falseVars ++ that.falseVars ++ newFalseVars)
   }
 
   /**
