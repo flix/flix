@@ -484,7 +484,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (acc, used) => acc or used
       }
 
-    case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, env0.resetApplies)
+    case Expression.Spawn(exp, _, _, _) => visitExp(exp, env0.resetApplies)
 
     case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {

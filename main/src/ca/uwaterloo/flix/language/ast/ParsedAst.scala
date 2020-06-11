@@ -873,13 +873,13 @@ object ParsedAst {
     case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], default: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Process Spawn Expression.
+      * Spawn Expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ProcessSpawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Constraint expression.

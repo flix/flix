@@ -317,7 +317,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           }
         } yield tast
 
-        case Expression.ProcessSpawn(exp, _, _, _) => for {
+        case Expression.Spawn(exp, _, _, _) => for {
           _ <- checkPats(exp, root)
         } yield tast
 

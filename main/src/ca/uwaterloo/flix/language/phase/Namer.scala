@@ -650,9 +650,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.ProcessSpawn(exp, loc) =>
+    case WeededAst.Expression.Spawn(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.ProcessSpawn(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
@@ -1052,7 +1052,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
-    case WeededAst.Expression.ProcessSpawn(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)

@@ -323,7 +323,7 @@ object SimplifiedAstOps {
         default.foreach(exp => checkExp(exp, env0, ienv0))
         checkType(tpe)
 
-      case Expression.ProcessSpawn(exp, tpe, loc) =>
+      case Expression.Spawn(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 

@@ -245,7 +245,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
-      case Expression.ProcessSpawn(exp, _, _) =>
+      case Expression.Spawn(exp, _, _) =>
         visitExp(exp)
 
       case Expression.FixpointConstraintSet(cs0, _, _) =>

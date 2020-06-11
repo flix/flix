@@ -208,7 +208,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
           case (acc, SelectChannelRule(_, chan, body)) => visitExp(chan, lint0) ::: visitExp(body, lint0) ::: acc
         }
 
-      case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, lint0)
+      case Expression.Spawn(exp, _, _, _) => visitExp(exp, lint0)
 
       case Expression.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint(_, lint0))
 
@@ -497,7 +497,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       // NB: We currently do not perform unification of complex binding constructs.
       None
 
-    case (Expression.ProcessSpawn(exp1, _, _, _), Expression.ProcessSpawn(exp2, _, _, _)) =>
+    case (Expression.Spawn(exp1, _, _, _), Expression.Spawn(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.FixpointConstraintSet(_, _, _), Expression.FixpointConstraintSet(_, _, _)) =>
@@ -877,9 +877,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         }
         Expression.SelectChannel(rs, d, tpe, eff, loc)
 
-      case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
+      case Expression.Spawn(exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.ProcessSpawn(e, tpe, eff, loc)
+        Expression.Spawn(e, tpe, eff, loc)
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) =>
         Expression.FixpointConstraintSet(cs.map(apply), tpe, loc)

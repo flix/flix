@@ -683,7 +683,7 @@ object JvmOps {
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
-      case Expression.ProcessSpawn(exp, tpe, loc) => visitExp(exp)
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, constraint) => sacc ++ visitConstraint(constraint)
@@ -1044,7 +1044,7 @@ object JvmOps {
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
-      case Expression.ProcessSpawn(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set(tpe))((ts, c) => ts ++ visitConstraint(c))
 

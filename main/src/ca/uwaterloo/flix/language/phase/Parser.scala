@@ -669,7 +669,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | ProcessSpawn | ArrayLit | ArrayNew |
+        GetChannel | SelectChannel | Spawn | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
         FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
@@ -825,8 +825,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def ProcessSpawn: Rule1[ParsedAst.Expression.ProcessSpawn] = rule {
-      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ProcessSpawn
+    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
+      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {

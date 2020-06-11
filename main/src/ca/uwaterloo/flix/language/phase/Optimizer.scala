@@ -304,9 +304,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
-      case Expression.ProcessSpawn(exp, tpe, loc) =>
+      case Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.ProcessSpawn(e, tpe, loc)
+        Expression.Spawn(e, tpe, loc)
 
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, env0))

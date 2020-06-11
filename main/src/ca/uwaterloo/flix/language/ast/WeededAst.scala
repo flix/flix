@@ -176,7 +176,7 @@ object WeededAst {
 
     case class SelectChannel(rules: List[WeededAst.SelectChannelRule], default: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class ProcessSpawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointConstraintSet(cs: List[WeededAst.Constraint], loc: SourceLocation) extends WeededAst.Expression
 

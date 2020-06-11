@@ -229,7 +229,7 @@ object Indexer {
         case (index, SelectChannelRule(_, _, exp)) => index ++ visitExp(exp)
       }
 
-    case Expression.ProcessSpawn(exp, _, _, _) =>
+    case Expression.Spawn(exp, _, _, _) =>
       visitExp(exp) + exp0
 
     case Expression.FixpointConstraintSet(cs, _, _) =>

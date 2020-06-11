@@ -332,9 +332,9 @@ object Stratifier extends Phase[Root, Root] {
         case (rs, d) => Expression.SelectChannel(rs, d, tpe, eff, loc)
       }
 
-    case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
+    case Expression.Spawn(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.ProcessSpawn(e, tpe, eff, loc)
+        case e => Expression.Spawn(e, tpe, eff, loc)
       }
 
     case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
@@ -558,7 +558,7 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, SelectChannelRule(_, exp1, exp2)) => acc + dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
       }
 
-    case Expression.ProcessSpawn(exp, _, _, _) =>
+    case Expression.Spawn(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.FixpointConstraintSet(cs, _, _) =>
