@@ -25,7 +25,7 @@ object Substitution {
   /**
     * Returns the empty substitution.
     */
-  val empty: Substitution = Substitution(Map.empty)
+  val empty: Substitution = Substitution(Map.empty, Set.empty, Set.empty)
 
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
@@ -34,21 +34,27 @@ object Substitution {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
       case y: Type.Var if x.id == y.id => empty
-      case _ => Substitution(Map(x -> tpe))
+      case Type.Cst(TypeConstructor.Pure) => Substitution(Map.empty, Set(x), Set.empty)
+      case Type.Cst(TypeConstructor.Impure) => Substitution(Map.empty, Set.empty, Set(x))
+      case _ => Substitution(Map(x -> tpe), Set.empty, Set.empty)
     }
   }
-
 }
 
 /**
   * A substitution is a map from type variables to types.
   */
-case class Substitution(m: Map[Type.Var, Type]) {
+case class Substitution(m: Map[Type.Var, Type], trueVars: Set[Type.Var], falseVars: Set[Type.Var]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
     */
-  val isEmpty: Boolean = m.isEmpty
+  val isEmpty: Boolean = m.isEmpty && trueVars.isEmpty && falseVars.isEmpty
+
+  /**
+    * Returns `true` if the domain of `this` substitution contains a mapping for `x`.
+    */
+  def contains(x: Type.Var): Boolean = this.trueVars.contains(x) || this.falseVars.contains(x) || this.m.contains(x)
 
   /**
     * Applies `this` substitution to the given type `tpe0`.
@@ -57,8 +63,19 @@ case class Substitution(m: Map[Type.Var, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.Var => m.getOrElse(x, x)
+        case x: Type.Var =>
+          // Determine if the type variable is `True`.
+          if (trueVars.contains(x))
+            Type.Pure
+          // Determine if the type variable is `False`.
+          else if (falseVars.contains(x))
+            Type.Impure
+          else
+          // Lookup the type variable in the map.
+            m.getOrElse(x, x)
+
         case Type.Cst(tc) => t
+
         case Type.Apply(t1, t2) =>
           val y = visit(t2)
           visit(t1) match {
@@ -91,7 +108,9 @@ case class Substitution(m: Map[Type.Var, Type]) {
       this
     } else {
       Substitution(
-        this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
+        this.m ++ that.m.filter(kv => !this.contains(kv._1)),
+        this.trueVars ++ that.trueVars,
+        this.falseVars ++ that.falseVars
       )
     }
   }
@@ -116,19 +135,38 @@ case class Substitution(m: Map[Type.Var, Type]) {
     import scala.collection.mutable
     val newTypeMap = mutable.Map.empty[Type.Var, Type]
 
+    // Compute all true variables.
+    val newTrueVars = mutable.Set.empty ++ this.trueVars ++ that.trueVars
+
+    // Compute all false variables.
+    val newFalseVars = mutable.Set.empty ++ this.falseVars ++ that.falseVars
+
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
-      newTypeMap.update(x, this.apply(t))
+      this.apply(t) match {
+        case Type.Cst(TypeConstructor.Pure) =>
+          newTrueVars.add(x)
+        case Type.Cst(TypeConstructor.Impure) =>
+          newFalseVars.add(x)
+        case tpe =>
+          newTypeMap.update(x, tpe)
+      }
     }
 
     // Add all bindings in `this` that are not in `that`.
     for ((x, t) <- this.m) {
-      if (!that.m.contains(x)) {
+      if (!that.contains(x)) {
         newTypeMap.update(x, t)
       }
     }
 
-    Substitution(newTypeMap.toMap) ++ this
+    // Reassemble the substitution.
+    Substitution(newTypeMap.toMap, newTrueVars.toSet, newFalseVars.toSet)
   }
+
+  /**
+    * Returns a human-readable representation of the substitution.
+    */
+  override def toString: String = f"t = ${trueVars.size}%3d, f = ${falseVars.size}%3d, m = ${m.size}%3d, subst = $m"
 
 }

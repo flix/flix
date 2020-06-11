@@ -60,7 +60,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       */
     def visitDefn(defn: ResolvedAst.Def): Validation[TypedAst.Def, TypeError] =
       typeCheckDef(defn, root) map {
-        case (defn, subst) => defn
+        case (defn, subst) =>
+          println(subst)
+          defn
       }
 
     // Compute the results in parallel.
@@ -528,7 +530,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
           case param => param.tpe -> Type.freshTypeVar()
-        }.toMap)
+        }.toMap, Set.empty, Set.empty)
 
         // Retrieve the enum type.
         val enumType = decl.tpe
@@ -1440,7 +1442,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
           case param => param.tpe -> Type.freshTypeVar()
-        }.toMap)
+        }.toMap, Set.empty, Set.empty)
 
         // Retrieve the enum type.
         val enumType = decl.tpe
