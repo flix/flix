@@ -332,13 +332,10 @@ object Stratifier extends Phase[Root, Root] {
         case (rs, d) => Expression.SelectChannel(rs, d, tpe, eff, loc)
       }
 
-    case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
+    case Expression.Spawn(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.ProcessSpawn(e, tpe, eff, loc)
+        case e => Expression.Spawn(e, tpe, eff, loc)
       }
-
-    case Expression.ProcessPanic(msg, tpe, eff, loc) =>
-      Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
     case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
@@ -561,11 +558,8 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, SelectChannelRule(_, exp1, exp2)) => acc + dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
       }
 
-    case Expression.ProcessSpawn(exp, _, _, _) =>
+    case Expression.Spawn(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
-
-    case Expression.ProcessPanic(_, _, _, _) =>
-      DependencyGraph.empty
 
     case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(DependencyGraph.empty) {

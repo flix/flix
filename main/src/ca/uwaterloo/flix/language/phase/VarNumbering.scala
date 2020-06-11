@@ -249,11 +249,8 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         default.map(visitExp(_, currentOffset)).getOrElse(currentOffset)
 
-      case Expression.ProcessSpawn(exp, tpe, loc) =>
+      case Expression.Spawn(exp, tpe, loc) =>
         visitExp(exp, i0)
-
-      case Expression.ProcessPanic(msg, tpe, loc) =>
-        i0
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) =>
         for (c <- cs) {

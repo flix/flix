@@ -391,14 +391,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.SelectChannel(rs, d, t, loc)
 
-      case SimplifiedAst.Expression.ProcessSpawn(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.ProcessSpawn(e, t, loc)
-
-      case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expression.ProcessPanic(msg, t, loc)
+        FinalAst.Expression.Spawn(e, t, loc)
 
       case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, m))

@@ -280,12 +280,9 @@ object Synthesize extends Phase[Root, Root] {
 
         Expression.SelectChannel(rs, d, tpe, eff, loc)
 
-      case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
+      case Expression.Spawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.ProcessSpawn(e, tpe, eff, loc)
-
-      case Expression.ProcessPanic(msg, tpe, eff, loc) =>
-        Expression.ProcessPanic(msg, tpe, eff, loc)
+        Expression.Spawn(e, tpe, eff, loc)
 
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)

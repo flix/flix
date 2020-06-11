@@ -575,13 +575,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             d <- defaultVal
           } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
 
-        case NamedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
+        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, loc)
-
-        case NamedAst.Expression.ProcessPanic(msg, tvar, loc) =>
-          ResolvedAst.Expression.ProcessPanic(msg, tvar, loc).toSuccess
+          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
 
         case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
           for {

@@ -140,7 +140,7 @@ namespace Nel {
     pub def reverse(xs: Nel[a]): Nel[a] = match xs {
         case Nel(h, l) => match List.reverse(h :: l) {
             case y :: ys => Nel(y, ys)
-            case _       => panic "unreachable"
+            case _       => panic("unreachable")
         }
     }
 
@@ -157,7 +157,7 @@ namespace Nel {
     pub def permutations(xs: Nel[a]): Nel[List[a]] = match xs {
         case Nel(h, l) => match List.permutations(h :: l) {
             case y :: ys => Nel(y, ys)
-            case Nil => panic "unreachable"
+            case Nil => panic("unreachable")
         }
     }
 
@@ -169,7 +169,7 @@ namespace Nel {
     pub def subsequences(xs: Nel[a]): Nel[List[a]] = match xs {
         case Nel(h, l) => match List.subsequences(h :: l) {
             case y :: ys => Nel(y, ys)
-            case Nil => panic "unreachable"
+            case Nil => panic("unreachable")
         }
     }
 
@@ -225,7 +225,7 @@ namespace Nel {
     ///
     pub def reduceRight(f: (a, a) -> a, xs: Nel[a]): a = match xs {
         case Nel(h, l) => match List.reduceRight(f, h :: l) {
-            case None    => panic "unreachable"
+            case None    => panic("unreachable")
             case Some(v) => v
         }
     }

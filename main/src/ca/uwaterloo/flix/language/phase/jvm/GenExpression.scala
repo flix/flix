@@ -1048,7 +1048,7 @@ object GenExpression {
       // Jump here if the correct rule has been evaluated
       visitor.visitLabel(completedLabel)
 
-    case Expression.ProcessSpawn(exp, tpe, loc) =>
+    case Expression.Spawn(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       // Compile the expression, putting a function implementing the Spawnable interface on the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1058,11 +1058,6 @@ object GenExpression {
       // Put a Unit value on the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
-
-    case Expression.ProcessPanic(msg, tpe, loc) =>
-      // TODO: Throw a more specific exception?
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       // Add source line numbers for debugging.

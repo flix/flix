@@ -320,12 +320,9 @@ object ClosureConv extends Phase[Root, Root] {
 
       Expression.SelectChannel(rs, d, tpe, loc)
 
-    case Expression.ProcessSpawn(exp, tpe, loc) =>
+    case Expression.Spawn(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.ProcessSpawn(e, tpe, loc)
-
-    case Expression.ProcessPanic(msg, tpe, loc) =>
-      Expression.ProcessPanic(msg, tpe, loc)
+      Expression.Spawn(e, tpe, loc)
 
     case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       val cs = cs0.map(visitConstraint)
@@ -526,9 +523,7 @@ object ClosureConv extends Phase[Root, Root] {
 
       rs ++ d
 
-    case Expression.ProcessSpawn(exp, tpe, loc) => freeVars(exp)
-
-    case Expression.ProcessPanic(msg, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       cs.foldLeft(mutable.LinkedHashSet.empty[(Symbol.VarSym, Type)]) {
@@ -862,12 +857,9 @@ object ClosureConv extends Phase[Root, Root] {
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
-      case Expression.ProcessSpawn(exp, tpe, loc) =>
+      case Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.ProcessSpawn(e, tpe, loc)
-
-      case Expression.ProcessPanic(msg, tpe, loc) =>
-        Expression.ProcessPanic(msg, tpe, loc)
+        Expression.Spawn(e, tpe, loc)
 
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
