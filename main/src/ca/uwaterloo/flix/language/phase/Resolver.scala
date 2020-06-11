@@ -485,34 +485,34 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, loc)
 
-        case NamedAst.Expression.InvokeConstructor(className, args, sig, tvar, loc) =>
+        case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
               mapN(lookupJvmConstructor(className, ts, loc)) {
-                case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, tvar, loc)
+                case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, loc)
               }
           }
 
-        case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, tvar, loc) =>
+        case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
           val expVal = visit(exp, tenv0)
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, expVal, argsVal) {
             case (ts, e, as) =>
               mapN(lookupJvmMethod(className, methodName, ts, static = false, loc)) {
-                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, tvar, loc)
+                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, loc)
               }
           }
 
-        case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, tvar, loc) =>
+        case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
               mapN(lookupJvmMethod(className, methodName, ts, static = true, loc)) {
-                case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, tvar, loc)
+                case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, loc)
               }
           }
 

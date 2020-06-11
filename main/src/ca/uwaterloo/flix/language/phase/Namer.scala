@@ -577,7 +577,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
       val sigVal = traverse(sig)(visitType(_, uenv0, tenv0))
       mapN(argsVal, sigVal) {
-        case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, Type.freshTypeVar(), loc)
+        case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, loc)
       }
 
     case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
@@ -585,14 +585,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
       val sigVal = traverse(sig)(visitType(_, uenv0, tenv0))
       mapN(expVal, argsVal, sigVal) {
-        case (e, as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, Type.freshTypeVar(), loc)
+        case (e, as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, loc)
       }
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
       val sigVal = traverse(sig)(visitType(_, uenv0, tenv0))
       mapN(argsVal, sigVal) {
-        case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, Type.freshTypeVar(), loc)
+        case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, loc)
       }
 
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>

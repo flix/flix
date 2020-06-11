@@ -781,30 +781,30 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = mkAnd(eff :: ruleEffects)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.InvokeConstructor(constructor, args, tvar, loc) =>
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
         for {
           argTypesAndEffects <- seqM(args.map(visitExp))
-          resultTyp <- unifyTypM(tvar, classType, loc)
+          resultTyp = classType
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.InvokeMethod(method, exp, args, tvar, loc) =>
+      case ResolvedAst.Expression.InvokeMethod(method, exp, args, loc) =>
         val classType = getFlixType(method.getDeclaringClass)
         val returnType = getFlixType(method.getReturnType)
         for {
           (baseTyp, _) <- visitExp(exp)
           objectTyp <- unifyTypM(baseTyp, classType, loc)
           argTypesAndEffects <- seqM(args.map(visitExp))
-          resultTyp <- unifyTypM(tvar, returnType, loc)
+          resultTyp = getFlixType(method.getReturnType)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tvar, loc) =>
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, loc) =>
         val returnType = getFlixType(method.getReturnType)
         for {
           argTypesAndEffects <- seqM(args.map(visitExp))
-          resultTyp <- unifyTypM(tvar, returnType, loc)
+          resultTyp = returnType
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -1263,21 +1263,24 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = mkAnd(rs.map(_.exp.eff))
         TypedAst.Expression.TryCatch(e, rs, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val as = args.map(visitExp(_, subst0))
+        val tpe = getFlixType(constructor.getDeclaringClass)
         val eff = Type.Impure
-        TypedAst.Expression.InvokeConstructor(constructor, as, subst0(tpe), eff, loc)
+        TypedAst.Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
 
-      case ResolvedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+      case ResolvedAst.Expression.InvokeMethod(method, exp, args, loc) =>
         val e = visitExp(exp, subst0)
         val as = args.map(visitExp(_, subst0))
+        val tpe = getFlixType(method.getReturnType)
         val eff = Type.Impure
-        TypedAst.Expression.InvokeMethod(method, e, as, subst0(tpe), eff, loc)
+        TypedAst.Expression.InvokeMethod(method, e, as, tpe, eff, loc)
 
-      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, loc) =>
         val as = args.map(visitExp(_, subst0))
+        val tpe = getFlixType(method.getReturnType)
         val eff = Type.Impure
-        TypedAst.Expression.InvokeStaticMethod(method, as, subst0(tpe), eff, loc)
+        TypedAst.Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

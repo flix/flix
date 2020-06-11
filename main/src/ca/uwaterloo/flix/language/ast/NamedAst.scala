@@ -150,11 +150,11 @@ object NamedAst {
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class InvokeConstructor(className: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class InvokeConstructor(className: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
-    case class InvokeMethod(className: String, methodName: String, exp: NamedAst.Expression, args: List[NamedAst.Expression], sig: List[NamedAst.Type], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class InvokeMethod(className: String, methodName: String, exp: NamedAst.Expression, args: List[NamedAst.Expression], sig: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
-    case class InvokeStaticMethod(className: String, methodName: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class InvokeStaticMethod(className: String, methodName: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
     case class GetField(className: String, fieldName: String, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
