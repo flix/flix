@@ -61,7 +61,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     def visitDefn(defn: ResolvedAst.Def): Validation[TypedAst.Def, TypeError] =
       typeCheckDef(defn, root) map {
         case (defn, subst) =>
-          println(subst)
           defn
       }
 
