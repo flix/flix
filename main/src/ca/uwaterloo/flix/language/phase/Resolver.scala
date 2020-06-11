@@ -292,7 +292,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Let(sym, e1, e2, loc)
 
-        case NamedAst.Expression.Match(exp, rules, tvar, loc) =>
+        case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
               for {
@@ -305,7 +305,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             e <- visit(exp, tenv0)
             rs <- rulesVal
-          } yield ResolvedAst.Expression.Match(e, rs, tvar, loc)
+          } yield ResolvedAst.Expression.Match(e, rs, loc)
 
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
           case None =>
@@ -411,21 +411,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             i2 <- visit(endIndex, tenv0)
           } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
 
-        case NamedAst.Expression.Ref(exp, tvar, loc) =>
+        case NamedAst.Expression.Ref(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Ref(e, tvar, loc)
+          } yield ResolvedAst.Expression.Ref(e, loc)
 
         case NamedAst.Expression.Deref(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Deref(e, tvar, loc)
 
-        case NamedAst.Expression.Assign(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.Assign(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Assign(e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.Assign(e1, e2, loc)
 
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
@@ -471,7 +471,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             f <- declaredEffVal
           } yield ResolvedAst.Expression.Cast(e, t, f, tvar, loc)
 
-        case NamedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
+        case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, clazz, body) =>
               val exceptionType = Type.Cst(TypeConstructor.Native(clazz))
@@ -483,57 +483,57 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             e <- visit(exp, tenv0)
             rs <- rulesVal
-          } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, loc)
+          } yield ResolvedAst.Expression.TryCatch(e, rs, loc)
 
-        case NamedAst.Expression.InvokeConstructor(className, args, sig, tvar, loc) =>
+        case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
               mapN(lookupJvmConstructor(className, ts, loc)) {
-                case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, tvar, loc)
+                case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, loc)
               }
           }
 
-        case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, tvar, loc) =>
+        case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
           val expVal = visit(exp, tenv0)
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, expVal, argsVal) {
             case (ts, e, as) =>
               mapN(lookupJvmMethod(className, methodName, ts, static = false, loc)) {
-                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, tvar, loc)
+                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, loc)
               }
           }
 
-        case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, tvar, loc) =>
+        case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
               mapN(lookupJvmMethod(className, methodName, ts, static = true, loc)) {
-                case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, tvar, loc)
+                case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, loc)
               }
           }
 
-        case NamedAst.Expression.GetField(className, fieldName, exp, tvar, loc) =>
+        case NamedAst.Expression.GetField(className, fieldName, exp, loc) =>
           mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp, tenv0)) {
-            case (field, e) => ResolvedAst.Expression.GetField(field, e, tvar, loc)
+            case (field, e) => ResolvedAst.Expression.GetField(field, e, loc)
           }
 
-        case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
           mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp1, tenv0), visit(exp2, tenv0)) {
-            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, tvar, loc)
+            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, loc)
           }
 
-        case NamedAst.Expression.GetStaticField(className, fieldName, tvar, loc) =>
+        case NamedAst.Expression.GetStaticField(className, fieldName, loc) =>
           mapN(lookupJvmField(className, fieldName, static = true, loc)) {
-            case field => ResolvedAst.Expression.GetStaticField(field, tvar, loc)
+            case field => ResolvedAst.Expression.GetStaticField(field, loc)
           }
 
-        case NamedAst.Expression.PutStaticField(className, fieldName, exp, tvar, loc) =>
+        case NamedAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
           mapN(lookupJvmField(className, fieldName, static = true, loc), visit(exp, tenv0)) {
-            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, tvar, loc)
+            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -575,37 +575,37 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             d <- defaultVal
           } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
 
-        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+        case NamedAst.Expression.Spawn(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+          } yield ResolvedAst.Expression.Spawn(e, loc)
 
         case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
           for {
             cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, prog0))
           } yield ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc)
 
-        case NamedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointCompose(e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointCompose(e1, e2, loc)
 
-        case NamedAst.Expression.FixpointSolve(exp, tvar, loc) =>
+        case NamedAst.Expression.FixpointSolve(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointSolve(e, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointSolve(e, loc)
 
         case NamedAst.Expression.FixpointProject(ident, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointProject(ident.name, e, tvar, loc)
 
-        case NamedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointEntails(e1, e2, loc)
 
         case NamedAst.Expression.FixpointFold(ident, exp1, exp2, exp3, tvar, loc) =>
           for {
@@ -662,7 +662,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             p <- visit(pat)
           } yield ResolvedAst.Pattern.Tag(d.sym, tag.name, p, tvar, loc)
 
-        case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
+        case NamedAst.Pattern.Tuple(elms, loc) =>
           for {
             es <- traverse(elms)(visit)
           } yield ResolvedAst.Pattern.Tuple(es, loc)

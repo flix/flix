@@ -57,20 +57,16 @@ case class Substitution(m: Map[Type.Var, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.Var =>
-          m.get(x) match {
-            case None => x
-            case Some(y) if x.kind == t.kind => y
-            case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
-          }
+        case x: Type.Var => m.getOrElse(x, x)
         case Type.Cst(tc) => t
         case Type.Apply(t1, t2) =>
-          (visit(t1), visit(t2)) match {
+          val y = visit(t2)
+          visit(t1) match {
             // Simplify boolean equations.
-            case (Type.Cst(TypeConstructor.Not), x) => BoolUnification.mkNot(x)
-            case (Type.Apply(Type.Cst(TypeConstructor.And), x), y) => BoolUnification.mkAnd(x, y)
-            case (Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => BoolUnification.mkOr(x, y)
-            case (x, y) => Type.Apply(x, y)
+            case Type.Cst(TypeConstructor.Not) => BoolUnification.mkNot(y)
+            case Type.Apply(Type.Cst(TypeConstructor.And), x) => BoolUnification.mkAnd(x, y)
+            case Type.Apply(Type.Cst(TypeConstructor.Or), x) => BoolUnification.mkOr(x, y)
+            case x => Type.Apply(x, y)
           }
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
@@ -104,16 +100,35 @@ case class Substitution(m: Map[Type.Var, Type]) {
     * Returns the composition of `this` substitution with `that` substitution.
     */
   def @@(that: Substitution): Substitution = {
+    // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
-      that
-    } else if (that.isEmpty) {
-      this
-    } else {
-      val newTypeMap = that.m.foldLeft(Map.empty[Type.Var, Type]) {
-        case (macc, (x, t)) => macc.updated(x, this.apply(t))
-      }
-      Substitution(newTypeMap) ++ this
+      return that
     }
+
+    // Case 2: Return `this` if `that` is empty.
+    if (that.isEmpty) {
+      return this
+    }
+
+    // Case 3: Merge the two substitutions.
+
+    // NB: Use of mutability improve performance.
+    import scala.collection.mutable
+    val newTypeMap = mutable.Map.empty[Type.Var, Type]
+
+    // Add all bindings in `that`. (Applying the current substitution).
+    for ((x, t) <- that.m) {
+      newTypeMap.update(x, this.apply(t))
+    }
+
+    // Add all bindings in `this` that are not in `that`.
+    for ((x, t) <- this.m) {
+      if (!that.m.contains(x)) {
+        newTypeMap.update(x, t)
+      }
+    }
+
+    Substitution(newTypeMap.toMap) ++ this
   }
 
 }
