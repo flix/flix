@@ -570,7 +570,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), loc)
+        case (e, rs) => NamedAst.Expression.TryCatch(e, rs, loc)
       }
 
     case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
@@ -663,12 +663,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, loc)
       }
 
     case WeededAst.Expression.FixpointSolve(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.FixpointSolve(e, loc)
       }
 
     case WeededAst.Expression.FixpointProject(ident, exp, loc) =>
@@ -678,7 +678,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, loc)
       }
 
     case WeededAst.Expression.FixpointFold(ident, init, f, constraints, loc) =>

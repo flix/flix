@@ -767,7 +767,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.TryCatch(exp, rules, tvar, loc) =>
+      case ResolvedAst.Expression.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
           case ResolvedAst.CatchRule(sym, clazz, body) =>
             visitExp(body)
@@ -777,7 +777,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe, eff) <- visitExp(exp)
           (ruleTypes, ruleEffects) <- seqM(rulesType).map(_.unzip)
           ruleType <- unifyTypM(ruleTypes, loc)
-          resultTyp <- unifyTypM(tvar, tpe, ruleType, loc)
+          resultTyp <- unifyTypM(tpe, ruleType, loc)
           resultEff = mkAnd(eff :: ruleEffects)
         } yield (resultTyp, resultEff)
 
@@ -950,7 +950,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypAllowEmptyM(tvar :: constraintTypes, loc)
         } yield (resultTyp, Type.Pure)
 
-      case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
         //
         //  exp1 : #{...}    exp2 : #{...}
         //  ------------------------------
@@ -959,11 +959,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
-          resultTyp <- unifyTypM(tvar, tpe1, tpe2, mkAnySchemaType(), loc)
+          resultTyp <- unifyTypM(tpe1, tpe2, mkAnySchemaType(), loc)
           resultEff = mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointSolve(exp, loc) =>
         //
         //  exp : #{...}
         //  ---------------
@@ -971,7 +971,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         for {
           (tpe, eff) <- visitExp(exp)
-          resultTyp <- unifyTypM(tvar, tpe, mkAnySchemaType(), loc)
+          resultTyp <- unifyTypM(tpe, mkAnySchemaType(), loc)
           resultEff = eff
         } yield (resultTyp, resultEff)
 
@@ -992,7 +992,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
         //
         //  exp1 : #{...}    exp2 : #{...}
         //  ------------------------------
@@ -1002,7 +1002,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           schemaType <- unifyTypM(tpe1, tpe2, mkAnySchemaType(), loc)
-          resultTyp <- unifyTypM(tvar, Type.Bool, loc)
+          resultTyp = Type.Bool
           resultEff = mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
@@ -1255,15 +1255,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.TryCatch(exp, rules, tvar, loc) =>
+      case ResolvedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules map {
           case ResolvedAst.CatchRule(sym, clazz, body) =>
             val b = visitExp(body, subst0)
             TypedAst.CatchRule(sym, clazz, b)
         }
+        val tpe = rs.head.exp.tpe
         val eff = mkAnd(rs.map(_.exp.eff))
-        TypedAst.Expression.TryCatch(e, rs, subst0(tvar), eff, loc)
+        TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val as = args.map(visitExp(_, subst0))
@@ -1345,27 +1346,30 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val cs = cs0.map(visitConstraint)
         TypedAst.Expression.FixpointConstraintSet(cs, subst0(tvar), loc)
 
-      case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
+        val tpe = e1.tpe
         val eff = mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.FixpointCompose(e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointSolve(exp, loc) =>
         val e = visitExp(exp, subst0)
+        val tpe = e.tpe
         val eff = e.eff
-        TypedAst.Expression.FixpointSolve(e, Stratification.Empty, subst0(tvar), eff, loc)
+        TypedAst.Expression.FixpointSolve(e, Stratification.Empty, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointProject(name, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
         TypedAst.Expression.FixpointProject(name, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
+        val tpe = Type.Bool
         val eff = mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointFold(name, init, f, constraints, tvar, loc) =>
         val e1 = visitExp(init, subst0)
