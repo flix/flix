@@ -550,7 +550,7 @@ object ParsedAst {
       * @param exp2 the second expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Statement(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Stm(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * LetMatch Expression (let-binding with pattern match).
