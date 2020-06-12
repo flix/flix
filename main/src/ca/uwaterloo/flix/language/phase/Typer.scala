@@ -1445,27 +1445,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Lookup the enum declaration.
         val decl = root.enums(sym)
 
-        // Generate a fresh type variable for each type parameters.
-        val subst = Substitution(decl.tparams.map {
-          case param => param.tpe -> Type.freshTypeVar()
-        }.toMap)
+        // Lookup the case declaration.
+        val caze = decl.cases(tag)
 
-        // Retrieve the enum type.
-        val enumType = decl.tpe
+        // Instantiate the type scheme of the case.
+        val tagType = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
 
-        // Substitute the fresh type variables into the enum type.
-        val freshEnumType = subst(enumType)
-
-        // Retrieve the case type.
-        val caseType = decl.cases(tag).tpe
-
-        // Substitute the fresh type variables into the case type.
-        val freshCaseType = subst(caseType)
-        for (
-          innerType <- visit(pat);
-          _________ <- unifyTypM(innerType, freshCaseType, loc);
-          resultType <- unifyTypM(tvar, freshEnumType, loc)
-        ) yield resultType
+        //
+        // The tag type can be thought of as a function from the type of variant to the type of the enum.
+        // See Type.mkTag for details.
+        //
+        for {
+          tpe <- visit(pat)
+          _ <- unifyTypM(tagType, Type.mkTag(sym, tag, tpe, tvar), loc)
+          resultTyp = tvar
+        } yield resultTyp
 
       case ResolvedAst.Pattern.Tuple(elms, loc) =>
         for {
