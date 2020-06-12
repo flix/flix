@@ -282,6 +282,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
+        // TODO: Document Exp.Def better
+
         val defn = root.defs(sym)
         for {
           resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc, InstantiateMode.Flexible), loc)
@@ -520,39 +522,22 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
-        // TODO: Use a type scheme?
-
         // Lookup the enum declaration.
         val decl = root.enums(sym)
 
         // Lookup the case declaration.
         val caze = decl.cases(tag)
 
-        // Retrieve the scheme of the case.
+        // Retrieve the type scheme of the case.
         val sc = caze.sc
 
-        println(s"$sym.$tag: $sc")
+        // Instantiate the type scheme.
+        val instantiatedScheme = Scheme.instantiate(sc, InstantiateMode.Flexible)
 
-        // Generate a fresh type variable for each type parameters.
-        val subst = Substitution(decl.tparams.map {
-          case param => param.tpe -> Type.freshTypeVar()
-        }.toMap)
-
-        // Retrieve the enum type.
-        val enumType = decl.tpe
-
-        // Substitute the fresh type variables into the enum type.
-        val freshEnumType = subst(enumType)
-
-        // Retrieve the case type.
-        val caseType = decl.cases(tag).tpe
-
-        // Substitute the fresh type variables into the case type.
-        val freshCaseType = subst(caseType)
         for {
           (tpe, eff) <- visitExp(exp)
-          _________ <- unifyTypM(tpe, freshCaseType, loc)
-          resultTyp <- unifyTypM(tvar, freshEnumType, loc)
+          _ <- unifyTypM(instantiatedScheme, Type.mkTag(sym, tag, tpe, tvar), loc)
+          resultTyp = tvar
           resultEff = eff
         } yield (resultTyp, resultEff)
 
