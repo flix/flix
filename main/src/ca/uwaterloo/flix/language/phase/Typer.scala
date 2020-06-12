@@ -60,8 +60,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       */
     def visitDefn(defn: ResolvedAst.Def): Validation[TypedAst.Def, TypeError] =
       typeCheckDef(defn, root) map {
-        case (defn, subst) =>
-          defn
+        case (defn, subst) => defn
       }
 
     // Compute the results in parallel.
