@@ -161,7 +161,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       tparams <- tparamsVal
       cases <- casesVal
       tpe <- lookupType(e0.tpe, ns0, prog0)
-    } yield ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, e0.loc)
+    } yield {
+      val sc = Scheme(tparams.map(_.tpe), tpe)
+      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
+    }
   }
 
   /**

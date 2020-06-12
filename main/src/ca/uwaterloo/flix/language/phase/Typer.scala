@@ -152,14 +152,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       * Performs type resolution on the given enum and its cases.
       */
     def visitEnum(enum: ResolvedAst.Enum): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
-      case ResolvedAst.Enum(doc, mod, enumSym, tparams, cases0, tpe, loc) =>
+      case ResolvedAst.Enum(doc, mod, enumSym, tparams, cases0, tpe, sc, loc) =>
         val tparams = getTypeParams(enum.tparams)
         val cases = cases0 map {
-          case (name, ResolvedAst.Case(_, tagName, tagType, _)) =>
-            name -> TypedAst.Case(enumSym, tagName, tagType, tagName.loc)
+          case (name, ResolvedAst.Case(_, tagName, tagType, tagScheme)) =>
+            name -> TypedAst.Case(enumSym, tagName, tagType, tagScheme, tagName.loc)
         }
 
-        Validation.Success(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, cases, enum.tpe, loc))
+        Validation.Success(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, cases, enum.tpeDeprecated, enum.sc, loc))
     }
 
     // Visit every enum in the ast.
