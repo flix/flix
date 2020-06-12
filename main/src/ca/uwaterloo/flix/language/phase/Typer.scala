@@ -155,7 +155,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Enum(doc, mod, enumSym, tparams, cases0, tpe, loc) =>
         val tparams = getTypeParams(enum.tparams)
         val cases = cases0 map {
-          case (name, ResolvedAst.Case(_, tagName, tagType)) =>
+          case (name, ResolvedAst.Case(_, tagName, tagType, _)) =>
             name -> TypedAst.Case(enumSym, tagName, tagType, tagName.loc)
         }
 
@@ -524,6 +524,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         // Lookup the enum declaration.
         val decl = root.enums(sym)
+
+        // Lookup the case declaration.
+        val caze = decl.cases(tag)
+
+        // Retrieve the scheme of the case.
+        val sc = caze.sc
+
+        println(s"$sym.$tag: $sc")
 
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {

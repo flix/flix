@@ -146,8 +146,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
+          tparams <- tparamsVal
           t <- lookupType(tpe, ns0, prog0)
-        } yield name -> ResolvedAst.Case(enum, tag, t)
+        } yield {
+          val freeVars = e0.tparams.map(_.tpe)
+          val caseType = t
+          val enumType = Type.mkApply(Type.Cst(TypeConstructor.Enum(e0.sym, Kind.Star)), freeVars)
+          val base = Type.mkApply(Type.Cst(TypeConstructor.Tag(e0.sym, tag.name)), List(caseType, enumType))
+          val sc = Scheme(freeVars, base)
+          name -> ResolvedAst.Case(enum, tag, t, sc)
+        }
     }
     for {
       tparams <- tparamsVal
