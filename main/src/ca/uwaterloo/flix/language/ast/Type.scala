@@ -327,6 +327,29 @@ object Type {
   }
 
   /**
+    * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
+    *
+    * A tag type can be understood as a "function type" from the `caseType` to the `resultType`.
+    *
+    * For example, for:
+    *
+    * {{{
+    * enum List[a] {
+    *   case Nil,
+    *   case Cons(a, List[a])
+    * }
+    *
+    * We have:
+    *
+    *   Nil:  Unit -> List[a]           (caseType = Unit, resultType = List[a])
+    *   Cons: (a, List[a]) -> List[a]   (caseType = (a, List[a]), resultType = List[a])
+    * }}}
+    */
+  def mkTag(sym: Symbol.EnumSym, tag: String, caseType: Type, resultType: Type): Type = {
+    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Tag(sym, tag)), caseType), resultType)
+  }
+
+  /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {

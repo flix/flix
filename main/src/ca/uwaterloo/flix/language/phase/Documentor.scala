@@ -177,6 +177,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
           else
             sym.toString + "[" + args.map(format).mkString(", ") + "]"
 
+        case TypeConstructor.Tag(sym, tag) => sym.toString + "." + tag
+
         case TypeConstructor.RecordExtend(label) =>
           "{" + label + " = " + format(args(0)) + " | " + format(args(1)) + "}"
 

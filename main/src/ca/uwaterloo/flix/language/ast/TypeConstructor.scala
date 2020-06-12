@@ -141,6 +141,16 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of tags.
+    */
+  case class Tag(sym: Symbol.EnumSym, tag: String) extends TypeConstructor {
+    /**
+      * The shape of a tag is "like" a function `caseType` -> `resultType`.
+      */
+    def kind: Kind = Kind.Star ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of enums.
     */
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor

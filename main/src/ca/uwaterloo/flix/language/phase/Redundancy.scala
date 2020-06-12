@@ -173,7 +173,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
         val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.Var]) {
-          case (sacc, (_, Case(_, _, tpe, _))) => sacc ++ tpe.typeVars
+          case (sacc, (_, Case(_, _, tpe, _, _))) => sacc ++ tpe.typeVars
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
