@@ -557,6 +557,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Cst(TypeConstructor.Enum(sym, _)) => MonoType.Enum(sym, args)
 
+      case Type.Cst(TypeConstructor.Tag(sym, _)) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
       case Type.Cst(TypeConstructor.Native(clazz)) => MonoType.Native(clazz)
 
       case Type.Cst(TypeConstructor.Ref) => MonoType.Ref(args.head)

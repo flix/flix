@@ -706,6 +706,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
+      case Type.Cst(TypeConstructor.Tag(sym, tag)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Type.Cst(TypeConstructor.Native(clazz)) => 0
       case Type.Cst(TypeConstructor.Tuple(l)) => l
       case Type.Cst(TypeConstructor.RecordExtend(_)) => 2
