@@ -456,10 +456,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       optional(capture("-")) ~> ((s: Option[String]) => s.nonEmpty)
     }
 
-    def SeparableBinDigits: Rule1[String] = rule {
-      capture(("0" | "1") ~ zeroOrMore(zeroOrMore("_") ~ ("0" | "1")))
-    }
-
     def SeparableDecDigits: Rule1[String] = rule {
       capture(CharPredicate.Digit ~ zeroOrMore(zeroOrMore("_") ~ CharPredicate.Digit))
     }
@@ -469,11 +465,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def RadixedInt: Rule2[Int, String] = rule {
-      BinInt | HexInt | DecInt
-    }
-
-    def BinInt: Rule2[Int, String] = rule {
-      atomic("0b") ~ push(2) ~ SeparableBinDigits
+      HexInt | DecInt
     }
 
     def HexInt: Rule2[Int, String] = rule {

@@ -28,31 +28,19 @@ def testInt8_07(): Int8 = 1_0i8
 def testInt8_08(): Int8 = 1_00i8
 
 @test
-def testInt8_09(): Int8 = 0b01010101i8
+def testInt8_09(): Int8 = 0x1Ai8
 
 @test
-def testInt8_10(): Int8 = 0b0101_0101i8
+def testInt8_10(): Int8 = 0x1_Ai8
 
 @test
-def testInt8_11(): Int8 = 0b0i8
+def testInt8_11(): Int8 = 0x0i8
 
 @test
-def testInt8_12(): Int8 = 0b1i8
+def testInt8_12(): Int8 = 0x1i8
 
 @test
-def testInt8_13(): Int8 = 0x1Ai8
+def testInt8_13(): Int8 = 0x1ai8
 
 @test
-def testInt8_14(): Int8 = 0x1_Ai8
-
-@test
-def testInt8_15(): Int8 = 0x0i8
-
-@test
-def testInt8_16(): Int8 = 0x1i8
-
-@test
-def testInt8_17(): Int8 = 0x1ai8
-
-@test
-def testInt8_18(): Int8 = 0x1_ai8
+def testInt8_14(): Int8 = 0x1_ai8

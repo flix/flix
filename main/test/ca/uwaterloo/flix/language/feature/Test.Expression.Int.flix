@@ -45,31 +45,19 @@ def testInt13(): Int = 42_000_000
 def testInt14(): Int = 1_000_000_000
 
 @test
-def testInt15(): Int = 0b01010101010101010101010101010101
+def testInt15(): Int = 0x1ABCDEF9
 
 @test
-def testInt16(): Int = 0b01010101_01010101_01010101_01010101
+def testInt16(): Int = 0x1A_BC_DE_F9
 
 @test
-def testInt17(): Int = 0b0
+def testInt17(): Int = 0x0
 
 @test
-def testInt18(): Int = 0b1
+def testInt18(): Int = 0x1
 
 @test
-def testInt19(): Int = 0x1ABCDEF9
+def testInt19(): Int = 0x1abcdef9
 
 @test
-def testInt20(): Int = 0x1A_BC_DE_F9
-
-@test
-def testInt21(): Int = 0x0
-
-@test
-def testInt22(): Int = 0x1
-
-@test
-def testInt23(): Int = 0x1abcdef9
-
-@test
-def testInt24(): Int = 0x1a_bc_de_f9
+def testInt20(): Int = 0x1a_bc_de_f9

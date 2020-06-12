@@ -57,31 +57,19 @@ def testInt64_17(): Int64 = 42_000_000_000_000_000i64
 def testInt64_18(): Int64 = 1_000_000_000_000_000_000i64
 
 @test
-def testInt64_19(): Int64 = 0b0101010101010101010101010101010101010101010101010101010101010101i64
+def testInt64_19(): Int64 = 0x1ABCDEF987654320i64
 
 @test
-def testInt64_20(): Int64 = 0b01010101_01010101_01010101_01010101_01010101_01010101_01010101_01010101i64
+def testInt64_20(): Int64 = 0x1A_BC_DE_F9_87_65_43_20i64
 
 @test
-def testInt64_21(): Int64 = 0b0i64
+def testInt64_21(): Int64 = 0x0i64
 
 @test
-def testInt64_22(): Int64 = 0b1i64
+def testInt64_22(): Int64 = 0x1i64
 
 @test
-def testInt64_23(): Int64 = 0x1ABCDEF987654320i64
+def testInt64_23(): Int64 = 0x1abcdef987654320i64
 
 @test
-def testInt64_24(): Int64 = 0x1A_BC_DE_F9_87_65_43_20i64
-
-@test
-def testInt64_25(): Int64 = 0x0i64
-
-@test
-def testInt64_26(): Int64 = 0x1i64
-
-@test
-def testInt64_27(): Int64 = 0x1abcdef987654320i64
-
-@test
-def testInt64_28(): Int64 = 0x1a_bc_de_f9_87_65_43_20i64
+def testInt64_24(): Int64 = 0x1a_bc_de_f9_87_65_43_20i64
