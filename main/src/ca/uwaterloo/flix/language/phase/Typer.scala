@@ -282,11 +282,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
-        // TODO: Document Exp.Def better
-
         val defn = root.defs(sym)
+        val defType = Scheme.instantiate(defn.sc, InstantiateMode.Flexible)
         for {
-          resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc, InstantiateMode.Flexible), loc)
+          resultTyp <- unifyTypM(tvar, defType, loc)
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
