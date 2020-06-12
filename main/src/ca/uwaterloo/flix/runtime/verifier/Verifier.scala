@@ -529,7 +529,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
           val decl = root.enums(enumSym)
           decl.cases.flatMap {
             // TODO: Assumes non-polymorphic type.
-            case (tag, caze) => visit(caze.tpe) map {
+            case (tag, caze) => visit(caze.tpeDeprecated) map {
               case e => SymVal.Tag(tag, e)
             }
           }.toList

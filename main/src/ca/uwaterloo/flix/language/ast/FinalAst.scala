@@ -34,7 +34,7 @@ object FinalAst {
     var method: Method = _
   }
 
-  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, FinalAst.Case], tpe: MonoType, loc: SourceLocation)
+  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, FinalAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: FinalAst.Expression) {
     def loc: SourceLocation = defn.loc
@@ -297,7 +297,7 @@ object FinalAst {
 
   case class Attribute(name: String, tpe: MonoType)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: MonoType, loc: SourceLocation)
+  case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 
