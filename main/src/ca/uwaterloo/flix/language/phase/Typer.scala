@@ -528,15 +528,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Lookup the case declaration.
         val caze = decl.cases(tag)
 
-        // Retrieve the type scheme of the case.
-        val sc = caze.sc
+        // Instantiate the type scheme of the case.
+        val tagType = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
 
-        // Instantiate the type scheme.
-        val instantiatedScheme = Scheme.instantiate(sc, InstantiateMode.Flexible)
-
+        //
+        // The tag type can be thought of as a function from the type of variant to the type of the enum.
+        // See Type.mkTag for details.
+        //
         for {
           (tpe, eff) <- visitExp(exp)
-          _ <- unifyTypM(instantiatedScheme, Type.mkTag(sym, tag, tpe, tvar), loc)
+          _ <- unifyTypM(tagType, Type.mkTag(sym, tag, tpe, tvar), loc)
           resultTyp = tvar
           resultEff = eff
         } yield (resultTyp, resultEff)
@@ -1413,19 +1414,33 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       */
     def visit(p: ResolvedAst.Pattern): InferMonad[Type] = p match {
       case ResolvedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
+
       case ResolvedAst.Pattern.Var(sym, tvar, loc) => unifyTypM(sym.tvar, tvar, loc)
+
       case ResolvedAst.Pattern.Unit(loc) => liftM(Type.Unit)
+
       case ResolvedAst.Pattern.True(loc) => liftM(Type.Bool)
+
       case ResolvedAst.Pattern.False(loc) => liftM(Type.Bool)
+
       case ResolvedAst.Pattern.Char(c, loc) => liftM(Type.Char)
+
       case ResolvedAst.Pattern.Float32(i, loc) => liftM(Type.Float32)
+
       case ResolvedAst.Pattern.Float64(i, loc) => liftM(Type.Float64)
+
       case ResolvedAst.Pattern.Int8(i, loc) => liftM(Type.Int8)
+
       case ResolvedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
+
       case ResolvedAst.Pattern.Int32(i, loc) => liftM(Type.Int32)
+
       case ResolvedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
+
       case ResolvedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
+
       case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Str)
+
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) =>
         // Lookup the enum declaration.
         val decl = root.enums(sym)
@@ -1514,6 +1529,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Int64(lit, loc)
       case ResolvedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.BigInt(lit, loc)
       case ResolvedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
+
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, tag, visit(pat), subst0(tvar), loc)
 
       case ResolvedAst.Pattern.Tuple(elms, loc) =>
