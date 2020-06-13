@@ -1277,6 +1277,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
+  def OptArgumentList: Rule1[Option[Seq[ParsedAst.Expression]]] = rule {
+    optional(ArgumentList)
+  }
+
   def AttributeList: Rule1[Seq[ParsedAst.Attribute]] = rule {
     "(" ~ optWS ~ zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
@@ -1304,17 +1308,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def Annotation: Rule1[ParsedAst.AnnotationOrProperty] = rule {
-    SP ~ atomic("@") ~ Names.Annotation ~ SP ~> ParsedAst.Annotation
+    SP ~ atomic("@") ~ Names.Annotation ~ OptArgumentList ~ SP ~> ParsedAst.Annotation
   }
 
-  def Property: Rule1[ParsedAst.AnnotationOrProperty] = {
-    def ArgumentList: Rule1[Option[Seq[ParsedAst.Expression]]] = rule {
-      optional("(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")")
-    }
-
-    rule {
-      SP ~ atomic("#") ~ Names.QualifiedDefinition ~ ArgumentList ~ SP ~> ParsedAst.Property
-    }
+  def Property: Rule1[ParsedAst.AnnotationOrProperty] = rule {
+    SP ~ atomic("#") ~ Names.QualifiedDefinition ~ OptArgumentList ~ SP ~> ParsedAst.Property
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1411,7 +1409,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
-    def Annotation: Rule1[Name.Ident] = LowerCaseName
+    def Annotation: Rule1[Name.Ident] = rule {
+      LowerCaseName | UpperCaseName
+    }
 
     def Attribute: Rule1[Name.Ident] = LowerCaseName
 

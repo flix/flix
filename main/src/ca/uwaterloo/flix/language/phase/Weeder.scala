@@ -1440,6 +1440,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case "lint" => Ast.Annotation.Lint(loc).toSuccess
       case "test" => Ast.Annotation.Test(loc).toSuccess
       case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
+      case "Time" => Ast.Annotation.Time(loc).toSuccess
+      case "Space" => Ast.Annotation.Space(loc).toSuccess
       case name => WeederError.UndefinedAnnotation(name, loc).toFailure
     }
   }

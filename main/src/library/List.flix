@@ -30,6 +30,7 @@ namespace List {
     ///
     /// Returns true if and only if `xs` is the empty list, i.e. `Nil`.
     ///
+    @Time(1) @Space(1)
     pub def isEmpty(xs: List[a]): Bool = match xs {
         case Nil => true
         case _ => false
