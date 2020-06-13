@@ -31,31 +31,13 @@ class TestParser extends FunSuite with TestUtils {
   test("ParseError.Int.03") {
     val input =
       s"""
-         |def f(): Int = 0b_1
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int.04") {
-    val input =
-      s"""
-         |def f(): Int = 0b1_
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int.05") {
-    val input =
-      s"""
          |def f(): Int = 0x_1
          """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
-  test("ParseError.Int.06") {
+  test("ParseError.Int.04") {
     val input =
       s"""
          |def f(): Int = 0x1_
@@ -85,31 +67,13 @@ class TestParser extends FunSuite with TestUtils {
   test("ParseError.Int8.03") {
     val input =
       s"""
-         |def f(): Int8 = 0b_1i8
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int8.04") {
-    val input =
-      s"""
-         |def f(): Int8 = 0b1_i8
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int8.05") {
-    val input =
-      s"""
          |def f(): Int8 = 0x_1i8
          """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
-  test("ParseError.Int8.06") {
+  test("ParseError.Int8.04") {
     val input =
       s"""
          |def f(): Int8 = 0x1_i8
@@ -139,31 +103,13 @@ class TestParser extends FunSuite with TestUtils {
   test("ParseError.Int16.03") {
     val input =
       s"""
-         |def f(): Int16 = 0b_1i16
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int16.04") {
-    val input =
-      s"""
-         |def f(): Int16 = 0b1_i16
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int16.05") {
-    val input =
-      s"""
          |def f(): Int16 = 0x_1i16
          """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
-  test("ParseError.Int16.06") {
+  test("ParseError.Int16.04") {
     val input =
       s"""
          |def f(): Int16 = 0x1_i16
@@ -193,31 +139,13 @@ class TestParser extends FunSuite with TestUtils {
   test("ParseError.Int32.03") {
     val input =
       s"""
-         |def f(): Int32 = 0b_1i32
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int32.04") {
-    val input =
-      s"""
-         |def f(): Int32 = 0b1_i32
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int32.05") {
-    val input =
-      s"""
          |def f(): Int32 = 0x_1i32
          """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
-  test("ParseError.Int32.06") {
+  test("ParseError.Int32.04") {
     val input =
       s"""
          |def f(): Int32 = 0x1_i32
@@ -247,31 +175,13 @@ class TestParser extends FunSuite with TestUtils {
   test("ParseError.Int64.03") {
     val input =
       s"""
-         |def f(): Int64 = 0b_1i64
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int64.04") {
-    val input =
-      s"""
-         |def f(): Int64 = 0b1_i64
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int64.05") {
-    val input =
-      s"""
          |def f(): Int64 = 0x_1i64
          """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
-  test("ParseError.Int64.06") {
+  test("ParseError.Int64.04") {
     val input =
       s"""
          |def f(): Int64 = 0x1_i64
@@ -301,31 +211,13 @@ class TestParser extends FunSuite with TestUtils {
   test("ParseError.BigInt.03") {
     val input =
       s"""
-         |def f(): BigInt = 0b_1ii
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigInt.04") {
-    val input =
-      s"""
-         |def f(): BigInt = 0b1_ii
-         """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigInt.05") {
-    val input =
-      s"""
          |def f(): BigInt = 0x_1ii
          """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
-  test("ParseError.BigInt.06") {
+  test("ParseError.BigInt.04") {
     val input =
       s"""
          |def f(): BigInt = 0x1_ii
