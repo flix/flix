@@ -1443,9 +1443,10 @@ object ParsedAst {
     *
     * @param sp1   the position of the first character in the annotation.
     * @param ident the name of the annotation.
+    * @param args  the arguments passed to the annotation.
     * @param sp2   the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends AnnotationOrProperty
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition) extends AnnotationOrProperty
 
   /**
     * String Interpolation Part.

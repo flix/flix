@@ -30,6 +30,7 @@ namespace List {
     ///
     /// Returns true if and only if `xs` is the empty list, i.e. `Nil`.
     ///
+    @Time(1) @Space(1)
     pub def isEmpty(xs: List[a]): Bool = match xs {
         case Nil => true
         case _ => false
@@ -40,6 +41,7 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
+    @Time(1) @Space(1)
     pub def head(xs: List[a]): Option[a] = match xs {
         case Nil => None
         case x :: _ => Some(x)
@@ -50,6 +52,7 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
+    @Time(length(xs)) @Space(1)
     pub def last(xs: List[a]): Option[a] = match xs {
         case Nil => None
         case x :: Nil => Some(x)
@@ -186,6 +189,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
     pub def map(f: a -> b & e, xs: List[a]): List[b] & e = match xs {
         case Nil => Nil
         case x :: rs => f(x) :: map(f, rs)
@@ -706,6 +710,7 @@ namespace List {
     ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
+    @Time(Int32.min(length(xs), length(ys))) @Space(Int32.min(length(xs), length(ys)))
     pub def zip(xs: List[a], ys: List[b]): List[(a,b)] = match (xs, ys) {
         case (x :: rs, y :: qs) => (x, y) :: zip(rs, qs)
         case _ => Nil

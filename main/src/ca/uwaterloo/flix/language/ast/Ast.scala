@@ -139,6 +139,24 @@ object Ast {
       override def toString: String = "@unchecked"
     }
 
+    /**
+      * An AST node that represents a `@Time` annotation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Time(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Time"
+    }
+
+    /**
+      * An AST node that represents a `@Space` annotation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Space(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Space"
+    }
+
   }
 
   /**
