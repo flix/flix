@@ -39,6 +39,7 @@ object WeederError {
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -50,6 +51,7 @@ object WeederError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove one of the two annotations." << NewLine
     }
+
     def loc: SourceLocation = loc1 min loc2
   }
 
@@ -62,6 +64,7 @@ object WeederError {
     */
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -73,6 +76,7 @@ object WeederError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the formal parameters to avoid the name clash." << NewLine
     }
+
     def loc: SourceLocation = loc1 min loc2
   }
 
@@ -85,6 +89,7 @@ object WeederError {
     */
   case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate modifier '$name'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -94,6 +99,7 @@ object WeederError {
       vt << NewLine
       vt << Code(loc2, "the second occurrence was here.") << NewLine
     }
+
     def loc: SourceLocation = loc1 min loc2
   }
 
@@ -107,6 +113,7 @@ object WeederError {
     */
   case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate tag: '$tagName'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -118,6 +125,7 @@ object WeederError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the tags to avoid the name clash." << NewLine
     }
+
     def loc: SourceLocation = loc1 min loc2
   }
 
@@ -128,6 +136,7 @@ object WeederError {
     */
   case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal array length"
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -144,6 +153,7 @@ object WeederError {
     */
   case class IllegalFieldName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal field name"
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -161,6 +171,7 @@ object WeederError {
     */
   case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = "The formal parameter must have a declared type."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -179,6 +190,7 @@ object WeederError {
     */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
     def summary: String = "The existential quantifier does not declare any formal parameters."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -197,6 +209,7 @@ object WeederError {
     */
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
     def summary: String = "The universal quantifier does not declare any formal parameters."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -215,6 +228,7 @@ object WeederError {
     */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal float."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -233,6 +247,7 @@ object WeederError {
     */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal int."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -251,6 +266,7 @@ object WeederError {
     */
   case class IllegalHole(loc: SourceLocation) extends WeederError {
     def summary: String = "Hole expressions are not allowed in release mode."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -269,6 +285,7 @@ object WeederError {
     */
   case class IllegalLattice(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal lattice."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -292,6 +309,7 @@ object WeederError {
     */
   case class IllegalModifier(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal modifier."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -302,12 +320,30 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal null pattern.
+    *
+    * @param loc the location where the illegal pattern occurs.
+    */
+  case class IllegalNullPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal null pattern"
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal null pattern." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal null pattern.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal jvm field or method name.
     *
     * @param loc the location of the name.
     */
   case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal jvm field or method name."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -324,6 +360,7 @@ object WeederError {
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
     def summary: String = "Wildcard not allowed here."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -342,6 +379,7 @@ object WeederError {
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -353,6 +391,7 @@ object WeederError {
       vt << NewLine
       vt << Underline("Tip:") << " A variable may only occur once in a pattern." << NewLine
     }
+
     def loc: SourceLocation = loc1 min loc2
   }
 
@@ -364,6 +403,7 @@ object WeederError {
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Undefined annotation $name"
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -372,4 +412,5 @@ object WeederError {
       vt << Code(loc, "undefined annotation.") << NewLine
     }
   }
+
 }

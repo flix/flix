@@ -195,6 +195,18 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalUniversal](result)
   }
 
+  test("IllegalNullPattern.01") {
+    val input =
+      s"""
+         |def f(): Int = match null {
+         |    case null => 123
+         |    case _    => 456
+         |}
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalNullPattern](result)
+  }
+
   test("IllegalJvmFieldOrMethodName.01") {
     val input =
       s"""

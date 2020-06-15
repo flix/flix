@@ -12,6 +12,7 @@ object FormatExpression {
     */
   def format(e0: TypedAst.Expression): String = e0 match {
     case TypedAst.Expression.Unit(_) => "()"
+    case TypedAst.Expression.Null(_, _) => "null"
     case TypedAst.Expression.True(_) => "true"
     case TypedAst.Expression.False(_) => "false"
     case TypedAst.Expression.Char(lit, _) => "'" + lit + "'"

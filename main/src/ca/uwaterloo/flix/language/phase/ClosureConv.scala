@@ -70,6 +70,8 @@ object ClosureConv extends Phase[Root, Root] {
   private def visitExp(exp0: Expression)(implicit flix: Flix): Expression = exp0 match {
     case Expression.Unit => exp0
 
+    case Expression.Null(tpe) => exp0
+
     case Expression.True => exp0
 
     case Expression.False => exp0
@@ -436,6 +438,7 @@ object ClosureConv extends Phase[Root, Root] {
   // TODO: Use immutable, but sorted data structure?
   private def freeVars(exp0: Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
     case Expression.Unit => mutable.LinkedHashSet.empty
+    case Expression.Null(tpe) => mutable.LinkedHashSet.empty
     case Expression.True => mutable.LinkedHashSet.empty
     case Expression.False => mutable.LinkedHashSet.empty
     case Expression.Char(lit) => mutable.LinkedHashSet.empty
@@ -613,6 +616,8 @@ object ClosureConv extends Phase[Root, Root] {
 
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
+
+      case Expression.Null(tpe) => e
 
       case Expression.True => e
 

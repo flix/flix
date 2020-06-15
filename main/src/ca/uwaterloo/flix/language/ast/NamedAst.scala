@@ -72,6 +72,8 @@ object NamedAst {
 
     case class Unit(loc: SourceLocation) extends NamedAst.Expression
 
+    case class Null(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class True(loc: SourceLocation) extends NamedAst.Expression
 
     case class False(loc: SourceLocation) extends NamedAst.Expression

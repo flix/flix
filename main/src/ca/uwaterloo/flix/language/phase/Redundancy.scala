@@ -186,6 +186,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitExp(e0: Expression, env0: Env): Used = e0 match {
     case Expression.Unit(_) => Used.empty
 
+    case Expression.Null(_, _) => Used.empty
+
     case Expression.True(_) => Used.empty
 
     case Expression.False(_) => Used.empty

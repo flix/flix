@@ -57,7 +57,6 @@ object Synthesize extends Phase[Root, Root] {
       defn.copy(exp = visitExp(defn.exp))
     }
 
-
     /**
       * Performs synthesis on the given expression `exp0`.
       *
@@ -65,20 +64,37 @@ object Synthesize extends Phase[Root, Root] {
       */
     def visitExp(exp0: Expression): Expression = exp0 match {
       case Expression.Wild(tpe, loc) => exp0
+
       case Expression.Var(sym, tpe, loc) => exp0
+
       case Expression.Def(sym, tpe, loc) => exp0
+
       case Expression.Hole(sym, tpe, eff, loc) => exp0
+
       case Expression.Unit(loc) => exp0
+
+      case Expression.Null(tpe, loc) => exp0
+
       case Expression.True(loc) => exp0
+
       case Expression.False(loc) => exp0
+
       case Expression.Char(lit, loc) => exp0
+
       case Expression.Float32(lit, loc) => exp0
+
       case Expression.Float64(lit, loc) => exp0
+
       case Expression.Int8(lit, loc) => exp0
+
       case Expression.Int16(lit, loc) => exp0
+
       case Expression.Int32(lit, loc) => exp0
+
       case Expression.Int64(lit, loc) => exp0
+
       case Expression.BigInt(lit, loc) => exp0
+
       case Expression.Str(lit, loc) => exp0
 
       case Expression.Lambda(fparams, exp, tpe, loc) =>

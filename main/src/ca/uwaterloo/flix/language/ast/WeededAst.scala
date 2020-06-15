@@ -76,6 +76,8 @@ object WeededAst {
 
     case class Unit(loc: SourceLocation) extends WeededAst.Expression
 
+    case class Null(loc: SourceLocation) extends WeededAst.Expression
+
     case class True(loc: SourceLocation) extends WeededAst.Expression
 
     case class False(loc: SourceLocation) extends WeededAst.Expression

@@ -174,6 +174,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.Unit(loc) => Expression.Unit(loc)
 
+        case Expression.Null(tpe, loc) => Expression.Null(subst0(tpe), loc)
+
         case Expression.True(loc) => Expression.True(loc)
 
         case Expression.False(loc) => Expression.False(loc)

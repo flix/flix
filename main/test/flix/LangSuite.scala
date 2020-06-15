@@ -86,6 +86,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Let.MatchStar", "main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibrary),
 
   //
+  // Null.
+  //
+  new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
+
+  //
   // Record.
   //
   new FlixTest("Test.Exp.Record.Polymorphism", "main/test/flix/Test.Exp.Record.Polymorphism.flix"),

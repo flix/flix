@@ -337,6 +337,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
 
+    case WeededAst.Expression.Null(loc) => NamedAst.Expression.Null(Type.freshTypeVar(), loc).toSuccess
+
     case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
 
     case WeededAst.Expression.False(loc) => NamedAst.Expression.False(loc).toSuccess
@@ -994,6 +996,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Hole(name, loc) => Nil
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Unit(loc) => Nil
+    case WeededAst.Expression.Null(loc) => Nil
     case WeededAst.Expression.True(loc) => Nil
     case WeededAst.Expression.False(loc) => Nil
     case WeededAst.Expression.Char(lit, loc) => Nil

@@ -102,6 +102,9 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case SimplifiedAst.Expression.Unit =>
         FinalAst.Expression.Unit
 
+      case SimplifiedAst.Expression.Null(tpe) =>
+        FinalAst.Expression.Null(visitType(tpe))
+
       case SimplifiedAst.Expression.True =>
         FinalAst.Expression.True
 

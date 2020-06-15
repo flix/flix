@@ -91,6 +91,11 @@ object SymbolicEvaluator {
       case Expression.Unit => lift(pc0, qua0, SymVal.Unit)
 
       /**
+        * Null.
+        */
+      case Expression.Null(tpe) => throw InternalCompilerException(s"Unsupported expression '$exp0'.'")
+
+      /**
         * True.
         */
       case Expression.True => lift(pc0, qua0, SymVal.True)

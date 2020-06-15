@@ -25,6 +25,8 @@ object TypedAstOps {
 
       case Expression.Unit(loc) => Map.empty
 
+      case Expression.Null(tpe, loc) => Map.empty
+
       case Expression.True(loc) => Map.empty
 
       case Expression.False(loc) => Map.empty

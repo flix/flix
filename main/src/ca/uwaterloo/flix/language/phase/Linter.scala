@@ -672,6 +672,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     def apply(exp0: Expression): Expression = exp0 match {
       case Expression.Unit(_) => exp0
 
+      case Expression.Null(_, _) => exp0
+
       case Expression.True(_) => exp0
 
       case Expression.False(_) => exp0

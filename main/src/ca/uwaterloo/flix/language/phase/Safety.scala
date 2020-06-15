@@ -45,16 +45,29 @@ object Safety extends Phase[Root, Root] {
     */
   private def visitExp(exp0: Expression): List[CompilationError] = exp0 match {
     case Expression.Unit(loc) => Nil
+
+    case Expression.Null(tpe, loc) => Nil
+
     case Expression.True(loc) => Nil
+
     case Expression.False(loc) => Nil
+
     case Expression.Char(lit, loc) => Nil
+
     case Expression.Float32(lit, loc) => Nil
+
     case Expression.Float64(lit, loc) => Nil
+
     case Expression.Int8(lit, loc) => Nil
+
     case Expression.Int16(lit, loc) => Nil
+
     case Expression.Int32(lit, loc) => Nil
+
     case Expression.Int64(lit, loc) => Nil
+
     case Expression.BigInt(lit, loc) => Nil
+
     case Expression.Str(lit, loc) => Nil
 
     case Expression.Wild(tpe, loc) => Nil

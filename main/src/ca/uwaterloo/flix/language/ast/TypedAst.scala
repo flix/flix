@@ -57,6 +57,10 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
+    case class Null(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def eff: Type = Type.Pure
+    }
+
     case class True(loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
 
