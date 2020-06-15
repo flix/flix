@@ -140,6 +140,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
           case (acc, MatchRule(_, guard, body)) => visitExp(guard, lint0) ::: visitExp(body, lint0) ::: acc
         }
 
+      case Expression.MatchNull(_, exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
+
       case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, lint0)
 
       case Expression.Tuple(exps, _, _, _) => exps.flatMap(visitExp(_, lint0))
