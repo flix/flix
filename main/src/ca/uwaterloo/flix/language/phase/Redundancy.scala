@@ -26,7 +26,6 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.annotation.tailrec
-import scala.collection.parallel.CollectionConverters._
 
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
@@ -320,6 +319,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       usedMatch and usedRules.reduceLeft(_ or _)
+
+    case Expression.MatchNull(sym, exp1, exp2, exp3, _, _, _) =>
+      val usedMatch = visitExp(exp1, env0.resetApplies)
+      val usedThen = visitExp(exp2, env0.resetApplies)
+      val usedElse = visitExp(exp3, env0.resetApplies)
+      // TODO: Check unused and shadowed variables.
+      usedMatch and usedThen and (usedElse - sym)
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
       val us = visitExp(exp, env0.resetApplies)
