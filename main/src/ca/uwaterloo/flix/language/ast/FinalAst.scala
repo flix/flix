@@ -55,6 +55,10 @@ object FinalAst {
       final val loc = SourceLocation.Unknown
     }
 
+    case class Null(tpe: MonoType) extends FinalAst.Expression {
+      final val loc = SourceLocation.Unknown
+    }
+
     case object True extends FinalAst.Expression {
       final val tpe = MonoType.Bool
       final val loc = SourceLocation.Unknown

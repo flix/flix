@@ -62,6 +62,8 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitExp(e0: Expression, i0: Int): Int = e0 match {
       case Expression.Unit => i0
 
+      case Expression.Null(_) => i0
+
       case Expression.True => i0
 
       case Expression.False => i0

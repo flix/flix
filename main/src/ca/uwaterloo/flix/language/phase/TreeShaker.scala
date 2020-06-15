@@ -66,6 +66,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Unit =>
         Set.empty
 
+      case Expression.Null(_) =>
+        Set.empty
+
       case Expression.True =>
         Set.empty
 
