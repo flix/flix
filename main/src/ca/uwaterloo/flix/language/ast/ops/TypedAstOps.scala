@@ -79,7 +79,7 @@ object TypedAstOps {
         }
 
       case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0 + (sym -> exp1))
+        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0 + (sym -> exp1.tpe))
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
