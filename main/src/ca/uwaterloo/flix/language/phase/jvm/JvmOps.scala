@@ -530,6 +530,8 @@ object JvmOps {
     def visitExp(exp0: Expression): Set[ClosureInfo] = exp0 match {
       case Expression.Unit => Set.empty
 
+      case Expression.Null(tpe) => Set.empty
+
       case Expression.True => Set.empty
 
       case Expression.False => Set.empty
@@ -892,6 +894,8 @@ object JvmOps {
       */
     def visitExp(exp0: Expression): Set[MonoType] = exp0 match {
       case Expression.Unit => Set(MonoType.Unit)
+
+      case Expression.Null(tpe) => Set(tpe)
 
       case Expression.True => Set(MonoType.Bool)
 

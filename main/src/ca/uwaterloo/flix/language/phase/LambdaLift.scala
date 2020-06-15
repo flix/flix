@@ -85,6 +85,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
 
+      case Expression.Null(tpe) => e
+
       case Expression.True => e
 
       case Expression.False => e

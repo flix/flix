@@ -46,6 +46,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
       case Expression.Unit => exp0
 
+      case Expression.Null(tpe) => exp0
+
       case Expression.True => exp0
 
       case Expression.False => exp0

@@ -73,6 +73,8 @@ object Synthesize extends Phase[Root, Root] {
 
       case Expression.Unit(loc) => exp0
 
+      case Expression.Null(tpe, loc) => exp0
+
       case Expression.True(loc) => exp0
 
       case Expression.False(loc) => exp0

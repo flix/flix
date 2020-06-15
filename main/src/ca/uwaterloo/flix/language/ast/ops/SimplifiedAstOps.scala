@@ -47,6 +47,8 @@ object SimplifiedAstOps {
     def checkExp(exp0: Expression, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = exp0 match {
       case Expression.Unit => // nop
 
+      case Expression.Null(tpe) => checkType(tpe)
+
       case Expression.True => // nop
 
       case Expression.False => // nop

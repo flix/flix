@@ -38,6 +38,10 @@ object GenExpression {
     case Expression.Unit =>
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+    case Expression.Null(tpe) =>
+      visitor.visitInsn((ACONST_NULL))
+      visitor.visitTypeInsn(CHECKCAST, JvmOps.getJvmType(tpe).toDescriptor)
+
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
     case Expression.Char(c) => compileInt(visitor, c)

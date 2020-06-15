@@ -1131,6 +1131,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     def visitExp(e: SimplifiedAst.Expression): SimplifiedAst.Expression = e match {
       case SimplifiedAst.Expression.Unit => e
 
+      case SimplifiedAst.Expression.Null(tpe) => e
+
       case SimplifiedAst.Expression.True => e
 
       case SimplifiedAst.Expression.False => e

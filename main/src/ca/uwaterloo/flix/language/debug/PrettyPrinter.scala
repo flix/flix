@@ -50,6 +50,8 @@ object PrettyPrinter {
       def visitExp(e0: Expression): Unit = e0 match {
         case Expression.Unit => vt.text("Unit")
 
+        case Expression.Null(tpe) => vt.text("null")
+
         case Expression.True => vt.text("true")
 
         case Expression.False => vt.text("false")
