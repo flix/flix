@@ -78,6 +78,9 @@ object TypedAstOps {
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
+      case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0 + (sym -> exp1))
+
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
