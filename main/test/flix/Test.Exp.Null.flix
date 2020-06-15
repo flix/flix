@@ -36,4 +36,14 @@ namespace Test/Exp/Null {
     @test
     def testNull12(): ##java.lang.Object = null
 
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
+
 }
