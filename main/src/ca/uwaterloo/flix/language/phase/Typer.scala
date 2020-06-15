@@ -1165,8 +1165,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp1, subst0)
-        val e3 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val e3 = visitExp(exp3, subst0)
         val tpe = e2.tpe // TODO
         val eff = mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
