@@ -524,8 +524,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
-
-        ??? // TODO
+        // TODO: Typing of null.
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          (tpe3, eff3) <- visitExp(exp3)
+          boundVar <- unifyTypM(sym.tvar, tpe1, loc)
+          resultTyp <- unifyTypM(tpe2, tpe3, loc)
+          resultEff = mkAnd(eff1, eff2, eff3)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         // Lookup the enum declaration.

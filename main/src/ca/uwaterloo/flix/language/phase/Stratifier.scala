@@ -167,6 +167,11 @@ object Stratifier extends Phase[Root, Root] {
         case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
       }
 
+    case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
+      }
+
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
@@ -449,6 +454,9 @@ object Stratifier extends Phase[Root, Root] {
       rules.foldLeft(dg) {
         case (acc, MatchRule(_, g, b)) => acc + dependencyGraphOfExp(g) + dependencyGraphOfExp(b)
       }
+
+    case Expression.MatchNull(_, exp1, exp2, exp3, _, _, _) =>
+      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
 
     case Expression.Tag(_, _, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
