@@ -294,6 +294,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Unit(loc) =>
         liftM(Type.Unit, Type.Pure)
 
+      case ResolvedAst.Expression.Null(tpe, loc) =>
+        liftM(tpe, Type.Pure)
+
       case ResolvedAst.Expression.True(loc) =>
         liftM(Type.Bool, Type.Pure)
 
@@ -1065,6 +1068,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         TypedAst.Expression.Hole(sym, subst0(tpe), subst0(evar), loc)
 
       case ResolvedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
+
+      case ResolvedAst.Expression.Null(tpe, loc) => TypedAst.Expression.Null(subst0(tpe), loc)
 
       case ResolvedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
 

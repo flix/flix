@@ -350,10 +350,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
+    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
   }
 
   object Literals {
+
+    def Null: Rule1[ParsedAst.Literal] = rule {
+      SP ~ atomic("null") ~ SP ~> ParsedAst.Literal.Null
+    }
 
     def Bool: Rule1[ParsedAst.Literal] = {
 
