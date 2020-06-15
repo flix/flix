@@ -62,6 +62,7 @@ namespace List {
     ///
     /// Returns the length of `xs`.
     ///
+    @Time(length(xs)) @Space(1)
     pub def length(xs: List[a]): Int32 = match xs {
         case Nil => 0
         case _ :: rs => 1 + length(rs)
