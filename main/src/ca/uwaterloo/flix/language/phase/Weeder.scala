@@ -1139,6 +1139,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Literal.Unit(sp1, sp2) =>
       WeededAst.Expression.Unit(mkSL(sp1, sp2)).toSuccess
 
+    case ParsedAst.Literal.Null(sp1, sp2) =>
+      WeededAst.Expression.Null(mkSL(sp1, sp2)).toSuccess
+
     case ParsedAst.Literal.True(sp1, sp2) =>
       WeededAst.Expression.True(mkSL(sp1, sp2)).toSuccess
 
@@ -1192,6 +1195,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitLitPat(pat0: ParsedAst.Literal): Validation[WeededAst.Pattern, WeederError] = pat0 match {
     case ParsedAst.Literal.Unit(sp1, sp2) => WeededAst.Pattern.Unit(mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.Null(sp1, sp2) => WeederError.IllegalNullPattern(mkSL(sp1, sp2)).toFailure
     case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.True(mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.False(mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.Char(sp1, lit, sp2) => WeededAst.Pattern.Char(lit(0), mkSL(sp1, sp2)).toSuccess
