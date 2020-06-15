@@ -97,6 +97,9 @@ object Safety extends Phase[Root, Root] {
         case (acc, MatchRule(p, g, e)) => acc ::: visitExp(g) ::: visitExp(e)
       }
 
+    case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
+
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
