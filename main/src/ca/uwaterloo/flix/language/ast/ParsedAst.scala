@@ -605,6 +605,17 @@ object ParsedAst {
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Match Null Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the match expression.
+      * @param exp2 the null case expression.
+      * @param exp3 the non-null case expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class MatchNull(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, name: Name.Ident, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Tag Expression.
       *
       * @param sp1  the position of the first character in the expression.
