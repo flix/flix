@@ -62,6 +62,7 @@ namespace List {
     ///
     /// Returns the length of `xs`.
     ///
+    @Time(length(xs)) @Space(1)
     pub def length(xs: List[a]): Int32 = match xs {
         case Nil => 0
         case _ :: rs => 1 + length(rs)
@@ -72,6 +73,7 @@ namespace List {
     ///
     /// The infix operator `:::` is an alias for `append` (`xs ::: ys = append(xs, ys)`).
     ///
+    @Time(length(xs)) @Space(length(xs))
     pub def append(xs: List[a], ys: List[a]): List[a] = match xs {
         case Nil => ys
         case x :: rs => x :: append(rs, ys)
@@ -80,6 +82,7 @@ namespace List {
     ///
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
+    @Time(length(xs)) @Space(1)
     pub def memberOf(a: a, xs: List[a]): Bool = match xs {
         case Nil => false
         case x :: rs => if (x == a) true else memberOf(a, rs)
@@ -90,6 +93,7 @@ namespace List {
     ///
     /// Returns `-1` if `a` does not exist in `xs`.
     ///
+    @Time(length(xs)) @Space(1)
     pub def indexOf(a: a, xs: List[a]): Int32 = indexOfHelper(a, xs, 0)
 
     ///
@@ -105,6 +109,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f))
     pub def find(f: a -> Bool, xs: List[a]): Option[a] = findLeft(f, xs)
 
     ///
@@ -112,6 +117,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f))
     pub def findLeft(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
         case x :: rs => if (f(x)) Some(x) else findLeft(f, rs)
@@ -122,6 +128,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f))
     pub def findRight(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
         case x :: rs => Option.withDefault(findRight(f, rs), if (f(x)) Some(x) else None)
@@ -137,6 +144,7 @@ namespace List {
     ///
     /// Returns `Nil` if `b >= e`.
     ///
+    @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): List[Int32] = if (b >= e) Nil else b :: range(b + 1, e)
 
     ///
@@ -144,11 +152,13 @@ namespace List {
     ///
     /// Returns `Nil` if `n < 0`.
     ///
+    @Time(n) @Space(n)
     pub def repeat(a: a, n: Int32): List[a] = if (n <= 0) Nil else a :: repeat(a, n - 1)
 
     ///
     /// Alias for `scanLeft`.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
     pub def scan(f: (b, a) -> b & e, s: b, xs: List[a]): List[b] & e = scanLeft(f, s, xs)
 
     ///
@@ -156,6 +166,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
     pub def scanLeft(f: (b, a) -> b & e, s: b, xs: List[a]): List[b] & e = s :: scanLeftHelper(f, s, xs)
 
     ///
@@ -171,6 +182,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
     pub def scanRight(f: (a, b) -> b & e, s: b, xs: List[a]): List[b] & e = match xs {
         case Nil => s :: Nil
         case x :: rs => match scanRight(f, s, rs) {
@@ -200,6 +212,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
     pub def mapWithIndex(f: (a, Int32) -> b & e, xs: List[a]): List[b] & e = mapWithIndexHelper(f, xs, 0)
 
     ///
@@ -213,6 +226,7 @@ namespace List {
     ///
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
     ///
+    @Time(time(f) * length(xs)) @Space(time(f) * length(xs))
     pub def flatMap(f: a -> List[b] & e, xs: List[a]): List[b] & e = match xs {
         case Nil => Nil
         case x :: rs => f(x) ::: flatMap(f, rs)
@@ -221,6 +235,7 @@ namespace List {
     ///
     /// Returns the reverse of `xs`.
     ///
+    @Time(length(xs)) @Space(length(xs))
     pub def reverse(xs: List[a]): List[a] = reverseHelper(xs, Nil)
 
     ///
@@ -237,6 +252,7 @@ namespace List {
     /// That is, returns a new list where the first `n mod length(xs)` elements in `xs`
     /// are the last `n mod length(xs)` elements of the new list.
     ///
+    @Time(length(xs)) @Space(length(xs))
     pub def rotateLeft(n: Int32, xs: List[a]): List[a] =
         let len = length(xs);
             if (len == 0) xs else
@@ -250,6 +266,7 @@ namespace List {
     /// That is, returns a new list where the last `n mod length(xs)` elements in `xs`
     /// are the first `n mod length(xs)` elements of the new list.
     ///
+    @Time(length(xs)) @Space(length(xs))
     pub def rotateRight(n: Int32, xs: List[a]): List[a] = rotateLeft(-n, xs)
 
     ///
@@ -257,6 +274,7 @@ namespace List {
     ///
     /// Returns `xs` if `i < 0` or `i > length(xs)-1`.
     ///
+    @Time(i) @Space(i)
     pub def update(i: Int32, a: a, xs: List[a]): List[a] = match (i, xs) {
         case (_, Nil) => xs
         case (0, _ :: rs) => a :: rs
@@ -266,6 +284,7 @@ namespace List {
     ///
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
+    @Time(length(xs)) @Space(length(xs))
     pub def replace(x: a, y: a, xs: List[a]): List[a] = map(e -> if (e == x) y else e, xs)
 
     ///
@@ -865,81 +884,81 @@ namespace List {
         }
 
     ///
-        /// Sort list `xs` with the comparing function `cmp`.
-        ///
-        /// The sort implementation is a mergesort.
-        /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
-        ///
-        pub def sortWith(cmp: (a,a) -> Int32, xs: List[a]): List[a] =
-            sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
+    /// Sort list `xs` with the comparing function `cmp`.
+    ///
+    /// The sort implementation is a mergesort.
+    /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
+    ///
+    pub def sortWith(cmp: (a,a) -> Int32, xs: List[a]): List[a] =
+        sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
 
-        ///
-        /// Helper function for `sortWith`.
-        ///
-        def sortGenerateSequences(cmp: (a,a) -> Int32, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
-            case a :: b :: rs =>
-                if (cmp(a, b) > 0)
-                    sortDescendingStep(cmp, b, a :: Nil, rs, k)
-                else
-                    sortAscendingStep(cmp, b, vs -> a :: vs, rs, k)
-            case rs => k(rs :: Nil)
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortGenerateSequences(cmp: (a,a) -> Int32, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
+        case a :: b :: rs =>
+            if (cmp(a, b) > 0)
+                sortDescendingStep(cmp, b, a :: Nil, rs, k)
+            else
+                sortAscendingStep(cmp, b, vs -> a :: vs, rs, k)
+        case rs => k(rs :: Nil)
+    }
+
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortDescendingStep(cmp: (a,a) -> Int32, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
+        case r1 :: rs if (cmp(x, r1) > 0) =>
+            sortDescendingStep(cmp, r1, x :: xs, rs, k)
+        case rs =>
+            sortGenerateSequences(cmp, rs, zss -> k((x :: xs) :: zss))
+    }
+
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortAscendingStep(cmp: (a,a) -> Int32, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
+        case r1 :: rs if (cmp(x, r1) <= 0)  =>
+            sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs, k)
+        case rs =>
+            let x1 = xsf(x :: Nil);
+            sortGenerateSequences(cmp, rs, zss -> k(x1 :: zss))
         }
 
-        ///
-        /// Helper function for `sortWith`.
-        ///
-        def sortDescendingStep(cmp: (a,a) -> Int32, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
-            case r1 :: rs if (cmp(x, r1) > 0) =>
-                sortDescendingStep(cmp, r1, x :: xs, rs, k)
-            case rs =>
-                sortGenerateSequences(cmp, rs, zss -> k((x :: xs) :: zss))
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortMergeAll(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[a] = match xss {
+        case x :: Nil => x
+        case rs => {
+            let xss = sortMergePairs(cmp, rs, zs -> zs);
+            sortMergeAll(cmp, xss)
         }
+    }
 
-        ///
-        /// Helper function for `sortWith`.
-        ///
-        def sortAscendingStep(cmp: (a,a) -> Int32, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
-            case r1 :: rs if (cmp(x, r1) <= 0)  =>
-                sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs, k)
-            case rs =>
-                let x1 = xsf(x :: Nil);
-                sortGenerateSequences(cmp, rs, zss -> k(x1 :: zss))
-            }
-
-        ///
-        /// Helper function for `sortWith`.
-        ///
-        def sortMergeAll(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[a] = match xss {
-            case x :: Nil => x
-            case rs => {
-                let xss = sortMergePairs(cmp, rs, zs -> zs);
-                sortMergeAll(cmp, xss)
-            }
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortMergePairs(cmp: (a,a) -> Int32, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
+        case a :: b :: rs => {
+            let x = sortMerge(cmp, a, b, zs -> zs);
+            sortMergePairs(cmp, rs, zss -> k(x :: zss))
         }
+        case rs => k(rs)
+    }
 
-        ///
-        /// Helper function for `sortWith`.
-        ///
-        def sortMergePairs(cmp: (a,a) -> Int32, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
-            case a :: b :: rs => {
-                let x = sortMerge(cmp, a, b, zs -> zs);
-                sortMergePairs(cmp, rs, zss -> k(x :: zss))
-            }
-            case rs => k(rs)
-        }
-
-        ///
-        /// Helper function for `sortWith`.
-        ///
-        def sortMerge(cmp: (a,a) -> Int32, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
-            case (r :: rs, s :: ss) =>
-                if (cmp(r,s) > 0)
-                    sortMerge(cmp, xs, ss, zs -> k(s :: zs))
-                else
-                    sortMerge(cmp, rs, ys, zs -> k(r :: zs))
-            case (Nil, ss) => k(ss)
-            case (rs, Nil) => k(rs)
-        }
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortMerge(cmp: (a,a) -> Int32, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
+        case (r :: rs, s :: ss) =>
+            if (cmp(r,s) > 0)
+                sortMerge(cmp, xs, ss, zs -> k(s :: zs))
+            else
+                sortMerge(cmp, rs, ys, zs -> k(r :: zs))
+        case (Nil, ss) => k(ss)
+        case (rs, Nil) => k(rs)
+    }
 
     ///
     /// Build a list by applying `f` to the seed value `st`.
