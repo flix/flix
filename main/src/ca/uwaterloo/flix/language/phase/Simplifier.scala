@@ -61,9 +61,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Translates the given expression `exp` to the SimplifiedAst.
+      * Translates the given expression `exp0` to the SimplifiedAst.
       */
-    def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
+    def visitExp(exp0: TypedAst.Expression): SimplifiedAst.Expression = exp0 match {
       case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
 
       case TypedAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
@@ -71,6 +71,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
+
+      case TypedAst.Expression.Null(tpe, loc) => SimplifiedAst.Expression.Null(tpe)
 
       case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
 
@@ -554,7 +556,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                 SimplifiedAst.Expression.Var(var2, e2.tpe, loc),
                 SimplifiedAst.Expression.Var(var3, e3.tpe, loc), tpe, loc), tpe, loc), tpe, loc), tpe, loc)
 
-      case TypedAst.Expression.Wild(tpe, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
+      case TypedAst.Expression.Wild(tpe, loc) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
     }
 

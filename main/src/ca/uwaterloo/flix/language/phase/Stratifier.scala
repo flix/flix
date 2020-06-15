@@ -89,6 +89,8 @@ object Stratifier extends Phase[Root, Root] {
   private def visitExp(exp0: Expression)(implicit dg: DependencyGraph, cache: Cache): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit(_) => exp0.toSuccess
 
+    case Expression.Null(_, _) => exp0.toSuccess
+
     case Expression.True(_) => exp0.toSuccess
 
     case Expression.False(_) => exp0.toSuccess
@@ -388,6 +390,8 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def dependencyGraphOfExp(exp0: Expression): DependencyGraph = exp0 match {
     case Expression.Unit(_) => DependencyGraph.empty
+
+    case Expression.Null(_, _) => DependencyGraph.empty
 
     case Expression.True(_) => DependencyGraph.empty
 

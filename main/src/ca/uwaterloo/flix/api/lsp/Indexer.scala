@@ -58,6 +58,9 @@ object Indexer {
     case Expression.Unit(_) =>
       Index.of(exp0)
 
+    case Expression.Null(_, _) =>
+      Index.of(exp0)
+
     case Expression.True(_) =>
       Index.of(exp0)
 

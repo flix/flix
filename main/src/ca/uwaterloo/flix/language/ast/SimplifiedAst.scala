@@ -53,6 +53,10 @@ object SimplifiedAst {
       def loc: SourceLocation = SourceLocation.Unknown
     }
 
+    case class Null(tpe: Type) extends SimplifiedAst.Expression {
+      def loc: SourceLocation = SourceLocation.Unknown
+    }
+
     case object True extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
 
