@@ -753,6 +753,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
+      case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        val e3 = apply(exp3)
+        Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
+
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.Tag(sym, tag, e, tpe, eff, loc)
