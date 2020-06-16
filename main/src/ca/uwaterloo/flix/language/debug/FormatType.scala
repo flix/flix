@@ -137,6 +137,11 @@ object FormatType {
           val tuple = elements.padTo(length, "???").mkString("(", ", ", ")")
           formatApply(tuple, applyParams)
 
+        case Type.Cst(TypeConstructor.Tag(sym, tag)) => // TODO better unhappy case handling
+          if (args.lengthIs == 2)
+            s"$tag${args.head}"
+          else
+            formatApply(tag, args)
 
         case Type.Cst(TypeConstructor.Not) => args match {
           case (t1: Type.Var) :: Nil => s"¬${visit(t1)}"
