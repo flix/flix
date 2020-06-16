@@ -1,6 +1,39 @@
 namespace Test/Exp/Null {
 
     @test
+    def testUseCase01(): Bool =
+        let f = (x, y) -> {
+            let s = match? x {
+                case null => y
+                case w => w
+            };
+            toUpperCase(s)
+        };
+        f("hello", "world") == "HELLO"
+
+    @test
+    def testUseCase02(): Bool =
+        let f = (x, y) -> {
+            let s = match? x {
+                case null => y
+                case w => w
+            };
+            toUpperCase(s)
+        };
+        f("hello", null) == "HELLO"
+
+    @test
+    def testUseCase03(): Bool =
+        let f = (x, y) -> {
+            let s = match? x {
+                case null => y
+                case w => w
+            };
+            toUpperCase(s)
+        };
+        f(null, "world") == "WORLD"
+
+    @test
     def testUnitNull01(): Unit = null
 
     @test
@@ -71,6 +104,10 @@ namespace Test/Exp/Null {
 
     @test
     def testTupleNull03(): (String, String) = (null, "world")
+
+    def toUpperCase(s: String): String =
+        import java.lang.String.toUpperCase();
+        s.toUpperCase() as & Pure
 
     pub enum Option[t] {
         case None,
