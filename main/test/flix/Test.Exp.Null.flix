@@ -67,8 +67,39 @@ namespace Test/Exp/Null {
         };
         f({ssn = "123", name = null})
 
+    @test
+    def testUseCase07(): Bool =
+        let f = p -> {
+            match? p.ssn {
+                case null => isMaleFullName(p.fstName, p.lstName)
+                case ssn  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = "123", fstName = "Lucky", lstName = "Luke"})
+
+    @test
+    def testUseCase08(): Bool =
+        let f = p -> {
+            match? p.ssn {
+                case null => isMaleFullName(p.fstName, p.lstName)
+                case ssn  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = null, fstName = "Lucky", lstName = "Luke"})
+
+    @test
+    def testUseCase09(): Bool =
+        let f = p -> {
+            match? p.ssn {
+                case null => isMaleFullName(p.fstName, p.lstName)
+                case ssn  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = "123", fstName = null, lstName = null})
+
     def isMaleSSN(_: String): Bool = true
     def isMaleName(_: String): Bool = true
+    def isMaleFullName(_: String, _: String): Bool = true
 
     @test
     def testUnitNull01(): Unit = null
