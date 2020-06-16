@@ -28,7 +28,7 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
-  def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Return immediately if effects are disabled.
     ///
@@ -78,7 +78,6 @@ object BoolUnification {
     try {
       val subst = successiveVariableElimination(query, freeVars)
 
-      // TODO: Debugging
       //    if (!subst.isEmpty) {
       //      val s = subst.toString
       //      val len = s.length
