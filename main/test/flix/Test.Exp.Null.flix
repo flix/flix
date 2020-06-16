@@ -33,6 +33,43 @@ namespace Test/Exp/Null {
         };
         f(null, "world") == "WORLD"
 
+    def toUpperCase(s: String): String =
+        import java.lang.String.toUpperCase();
+        s.toUpperCase() as & Pure
+
+    @test
+    def testUseCase04(): Bool =
+        let f = p -> {
+            match? p.ssn {
+                case null => isMaleName(p.name)
+                case ssn  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = "123", name = "Lucky Luke"})
+
+    @test
+    def testUseCase05(): Bool =
+        let f = p -> {
+            match? p.ssn {
+                case null => isMaleName(p.name)
+                case ssn  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = null, name = "Lucky Luke"})
+
+    @test
+    def testUseCase06(): Bool =
+        let f = p -> {
+            match? p.ssn {
+                case null => isMaleName(p.name)
+                case ssn  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = "123", name = null})
+
+    def isMaleSSN(_: String): Bool = true
+    def isMaleName(_: String): Bool = true
+
     @test
     def testUnitNull01(): Unit = null
 
@@ -104,10 +141,6 @@ namespace Test/Exp/Null {
 
     @test
     def testTupleNull03(): (String, String) = (null, "world")
-
-    def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase();
-        s.toUpperCase() as & Pure
 
     pub enum Option[t] {
         case None,
