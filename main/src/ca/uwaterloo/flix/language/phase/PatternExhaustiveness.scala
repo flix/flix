@@ -719,8 +719,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.RecordExtend(_)) => 2
       case Type.Cst(TypeConstructor.SchemaExtend(_)) => 2
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
-      case Type.Cst(TypeConstructor.Pure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-      case Type.Cst(TypeConstructor.Impure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.True) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.False) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Type.Cst(TypeConstructor.Not) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Type.Cst(TypeConstructor.And) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Type.Cst(TypeConstructor.Or) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")

@@ -107,8 +107,8 @@ object FormatType {
         case Type.Cst(TypeConstructor.Str) => formatApply("String", args)
         case Type.Cst(TypeConstructor.RecordEmpty) => formatApply("{ }", args)
         case Type.Cst(TypeConstructor.SchemaEmpty) => formatApply("#{ }", args)
-        case Type.Cst(TypeConstructor.Pure) => formatApply("Pure", args)
-        case Type.Cst(TypeConstructor.Impure) => formatApply("Impure", args)
+        case Type.Cst(TypeConstructor.True) => formatApply("Pure", args)
+        case Type.Cst(TypeConstructor.False) => formatApply("Impure", args)
 
         case Type.Cst(TypeConstructor.Array) => formatApply("Array", args)
         case Type.Cst(TypeConstructor.Channel) => formatApply("Channel", args)
@@ -187,13 +187,13 @@ object FormatType {
             val argPart = typeStrings.init.mkString(" -> ")
             // Format the arrow.
             val arrowPart = eff match {
-              case Type.Cst(TypeConstructor.Impure) => " ~> "
+              case Type.Cst(TypeConstructor.False) => " ~> "
               case _ => " -> "
             }
             // Format the effect.
             val effPart = eff match {
-              case Type.Cst(TypeConstructor.Pure) => ""
-              case Type.Cst(TypeConstructor.Impure) => ""
+              case Type.Cst(TypeConstructor.True) => ""
+              case Type.Cst(TypeConstructor.False) => ""
               case _: Type.Var => s" & ${visit(eff)}"
               case _ => " & (" + visit(eff) + ")"
             }

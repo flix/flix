@@ -1776,10 +1776,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns the type `And(eff1, eff2)`.
     */
   private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
-    case (Type.Cst(TypeConstructor.Pure), _) => eff2
-    case (_, Type.Cst(TypeConstructor.Pure)) => eff1
-    case (Type.Cst(TypeConstructor.Impure), _) => Type.Impure
-    case (_, Type.Cst(TypeConstructor.Impure)) => Type.Impure
+    case (Type.Cst(TypeConstructor.True), _) => eff2
+    case (_, Type.Cst(TypeConstructor.True)) => eff1
+    case (Type.Cst(TypeConstructor.False), _) => Type.Impure
+    case (_, Type.Cst(TypeConstructor.False)) => Type.Impure
     case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
   }
 

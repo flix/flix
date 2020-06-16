@@ -576,9 +576,9 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Var(id, _, _) => MonoType.Var(id) // TODO: Should never happen.
 
-      case Type.Cst(TypeConstructor.Pure) => MonoType.Unit
+      case Type.Cst(TypeConstructor.True) => MonoType.Unit
 
-      case Type.Cst(TypeConstructor.Impure) => MonoType.Unit
+      case Type.Cst(TypeConstructor.False) => MonoType.Unit
 
       case Type.Cst(TypeConstructor.Not) => MonoType.Unit
 
