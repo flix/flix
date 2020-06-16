@@ -48,21 +48,29 @@ namespace Test/Exp/Null {
     @test
     def testResultNull01(): Result[String, String] = null
 
-
-
+    @test
+    def testResultNull02(): Result[String, String] = Ok(null)
 
     @test
-    def testListNull09(): List[String] = null
+    def testResultNull03(): Result[String, String] = Err(null)
 
     @test
-    def testNull09(): (Int, Int) = null
+    def testListNull01(): List[String] = null
 
     @test
-    def testNull10(): Channel[Int] = null
+    def testListNull02(): List[String] = null :: Nil
 
     @test
-    def testNull11(): Ref[Int] = null
+    def testListNull03(): List[String] = null :: null :: Nil
 
+    @test
+    def testTupleNull01(): (String, String) = null
+
+    @test
+    def testTupleNull02(): (String, String) = ("hello", null)
+
+    @test
+    def testTupleNull03(): (String, String) = (null, "world")
 
     pub enum Option[t] {
         case None,
