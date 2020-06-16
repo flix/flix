@@ -324,7 +324,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val usedMatch = visitExp(exp1, env0.resetApplies)
       val usedThen = visitExp(exp2, env0.resetApplies)
       val usedElse = visitExp(exp3, env0.resetApplies)
-      // TODO: Check unused and shadowed variables.
+      // TODO: Null: Check unused and shadowed variables.
       usedMatch and usedThen and (usedElse - sym)
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
