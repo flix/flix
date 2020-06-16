@@ -320,6 +320,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
 
+        case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+          // Generate a fresh symbol for the bound variable.
+          val freshSym = Symbol.freshVarSym(sym)
+          val env1 = env0 + (sym -> freshSym)
+
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          val e3 = visitExp(exp3, env1)
+          Expression.MatchNull(freshSym, e1, e2, e3, tpe, eff, loc)
+
         case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           Expression.Tag(sym, tag, e, subst0(tpe), eff, loc)

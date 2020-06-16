@@ -422,6 +422,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
       }
 
+    case WeededAst.Expression.MatchNull(ident, exp1, exp2, exp3, loc) =>
+      val sym = Symbol.freshVarSym(ident)
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), visitExp(exp3, env0 + (ident.name -> sym), uenv0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.MatchNull(sym, e1, e2, e3, loc)
+      }
+
     case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>
       val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
 
@@ -1018,6 +1024,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
+    case WeededAst.Expression.MatchNull(name, exp1, exp2, exp3, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(name)) ++ freeVars(exp3)
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.RecordEmpty(loc) => Nil

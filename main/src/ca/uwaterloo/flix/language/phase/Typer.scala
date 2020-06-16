@@ -523,6 +523,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (resultTyp, resultEff)
 
+      case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          (tpe3, eff3) <- visitExp(exp3)
+          boundVar <- unifyTypM(sym.tvar, tpe1, loc)
+          resultTyp <- unifyTypM(tpe2, tpe3, loc)
+          resultEff = mkAnd(eff1, eff2, eff3)
+        } yield (resultTyp, resultEff)
+
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         // Lookup the enum declaration.
         val decl = root.enums(sym)
@@ -1151,6 +1161,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           case (acc, TypedAst.MatchRule(_, g, b)) => mkAnd(g.eff, b.eff, acc)
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
+
+      case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val e3 = visitExp(exp3, subst0)
+        val tpe = e2.tpe // TODO
+        val eff = mkAnd(e1.eff, e2.eff, e3.eff)
+        TypedAst.Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

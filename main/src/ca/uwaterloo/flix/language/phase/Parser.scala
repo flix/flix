@@ -663,7 +663,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | MatchNull | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -777,6 +777,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ atomic("match") ~ WS ~ Expression ~ optional(WS ~ atomic("with") ~ WS) ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+      }
+    }
+
+    def MatchNull: Rule1[ParsedAst.Expression.MatchNull] = {
+      def nullCase: Rule1[ParsedAst.Expression] = rule {
+        atomic("case") ~ WS ~ atomic("null") ~ WS ~ atomic("=>") ~ WS ~ Expression
+      }
+
+      def nonNullCase: Rule2[Name.Ident, ParsedAst.Expression] = rule {
+        atomic("case") ~ WS ~ Names.Variable ~ WS ~ atomic("=>") ~ WS ~ Expression
+      }
+
+      rule {
+        SP ~ atomic("match?") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ nullCase ~ WS ~ nonNullCase ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
       }
     }
 

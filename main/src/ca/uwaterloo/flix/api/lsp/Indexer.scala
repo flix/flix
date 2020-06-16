@@ -133,6 +133,9 @@ object Indexer {
         case (index, MatchRule(pat, guard, exp)) => index ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
+    case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
     case Expression.Tag(sym, _, exp, _, _, loc) =>
       visitExp(exp) + exp0 ++ Index.useOf(sym, loc)
 
