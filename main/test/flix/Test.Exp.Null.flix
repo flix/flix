@@ -1,28 +1,58 @@
 namespace Test/Exp/Null {
 
     @test
-    def testNull01(): Unit = null
+    def testUnitNull01(): Unit = null
 
     @test
-    def testNull02(): String = null
+    def testStringNull01(): String = null
 
     @test
-    def testNull03(): {} = null
+    def testRecordNull01(): {} = null
 
     @test
-    def testNull04(): {x: Int, y: Int} = null
+    def testObjectNull01(): ##java.lang.Object = null
 
     @test
-    def testNull05(): #{} = null
+    def testRecordNull02(): {x: Int} = null
 
     @test
-    def testNull06(): #{A(Int)} = null
+    def testRecordNull03(): {x: Int, y: Int} = null
 
     @test
-    def testNull07(): Option[Int] = null
+    def testRecordNull04(): {x: String, y: String} = { x = "hello", y = null}
 
     @test
-    def testNull08(): Result[Int, Int] = null
+    def testRecordNull05(): {x: String, y: String} = { x = null, y = "world"}
+
+    @test
+    def testSchemaNull01(): #{} = null
+
+    @test
+    def testSchemaNull02(): #{A(Int)} = null
+
+    @test
+    def testSchemaNull03(): #{A(Int), B(Int)} = null
+
+    @test
+    def testSchemaNull04(): #{A(String), B(String)} = #{A(null).}
+
+    @test
+    def testSchemaNull05(): #{A(String), B(String)} = #{B(null).}
+
+    @test
+    def testOptionNull01(): Option[String] = null
+
+    @test
+    def testOptionNull02(): Option[String] = Some(null)
+
+    @test
+    def testResultNull01(): Result[String, String] = null
+
+
+
+
+    @test
+    def testListNull09(): List[String] = null
 
     @test
     def testNull09(): (Int, Int) = null
@@ -33,8 +63,6 @@ namespace Test/Exp/Null {
     @test
     def testNull11(): Ref[Int] = null
 
-    @test
-    def testNull12(): ##java.lang.Object = null
 
     pub enum Option[t] {
         case None,
@@ -44,6 +72,11 @@ namespace Test/Exp/Null {
     pub enum Result[t, e] {
         case Ok(t),
         case Err(e)
+    }
+
+    pub enum List[t] {
+        case Nil,
+        case Cons(t, List[t])
     }
 
 }
