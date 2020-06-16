@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
@@ -39,6 +41,8 @@ import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 
 class Shell(initialPaths: List[Path], options: Options) {
+
+  private implicit val audience: Audience = Audience.External
 
   /**
     * The number of warmup iterations.
@@ -194,7 +198,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Shows the hole context of the given `fqn`.
     */
-  private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal, s: Show[Type]): Unit = fqnOpt match {
+  private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal): Unit = fqnOpt match {
     case None =>
       // Case 1: Print all available holes.
       prettyPrintHoles()
@@ -221,14 +225,14 @@ class Shell(initialPaths: List[Path], options: Options) {
 
           // Iterate through the premises, i.e. the variable symbols in scope.
           for ((varSym, varType) <- env) {
-            vt << Blue(varSym.text) << ": " << Cyan(varType.show) << " " * 6
+            vt << Blue(varSym.text) << ": " << Cyan(FormatType.formatType(varType)) << " " * 6
           }
 
           // Print the divider.
           vt << NewLine << "-" * 80 << NewLine
 
           // Print the goal.
-          vt << Blue(sym.toString) << ": " << Cyan(holeType.show) << NewLine
+          vt << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(holeType)) << NewLine
 
           // Print the result to the terminal.
           terminal.writer().print(vt.fmt)
@@ -527,12 +531,12 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
     vt << Bold("def ") << Blue(defn.sym.name) << "("
     if (defn.fparams.nonEmpty) {
-      vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.show)
+      vt << defn.fparams.head.sym.text << ": " << Cyan(FormatType.formatType(defn.fparams.head.tpe))
       for (fparam <- defn.fparams.tail) {
-        vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.show)
+        vt << ", " << fparam.sym.text << ": " << Cyan(FormatType.formatType(fparam.tpe))
       }
     }
-    vt << "): " << Cyan(defn.inferredScheme.base.typeArguments.last.show) << NewLine
+    vt << "): " << Cyan(FormatType.formatType(defn.inferredScheme.base.typeArguments.last)) << NewLine
   }
 
   /**
@@ -548,7 +552,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       vt << Bold("Holes:") << Indent
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
-        vt << NewLine << Blue(sym.toString) << ": " << Cyan(ctx.tpe.show)
+        vt << NewLine << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(ctx.tpe))
       }
       vt << Dedent << NewLine
     }

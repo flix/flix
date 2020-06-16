@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
-import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
 
@@ -141,10 +141,7 @@ case class Scheme(quantifiers: List[Type.Var], base: Type) {
     * Returns a human readable representation of the polytype.
     */
   override def toString: String = {
-    if (quantifiers.isEmpty)
-      base.show
-    else
-      s"∀(${quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${base.show}"
+    FormatScheme.formatScheme(this)(Audience.Internal)
   }
 
 }

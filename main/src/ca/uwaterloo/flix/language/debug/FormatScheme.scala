@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2020 Matthew Lutze, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language
+package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.debug.TestFormatType
-import ca.uwaterloo.flix.language.feature.FeatureSuite
-import ca.uwaterloo.flix.language.phase.PhaseSuite
-import org.scalatest.Suites
+import ca.uwaterloo.flix.language.ast.Scheme
 
-class LanguageSuite extends Suites(
-  new FeatureSuite,
-  new PhaseSuite,
-  new TestFormatType
-)
+object FormatScheme {
+
+  /**
+    * Construct a string representation of the type scheme.
+    */
+  def formatScheme(sc: Scheme)(implicit audience: Audience): String = {
+    if (sc.quantifiers.isEmpty)
+      FormatType.formatType(sc.base)
+    else
+      s"∀(${sc.quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${FormatType.formatType(sc.base)}"
+  }
+}

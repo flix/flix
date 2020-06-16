@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Type}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt._
 
@@ -31,6 +30,7 @@ sealed trait TypeError extends CompilationError {
 }
 
 object TypeError {
+  implicit val audience: Audience = Audience.External
 
   /**
     * Generalization Error.
@@ -40,11 +40,11 @@ object TypeError {
     * @param loc      the location where the error occurred.
     */
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
-    def summary: String = s"The type scheme '$inferred' cannot be generalized to '$declared'."
+    def summary: String = s"The type scheme '${FormatScheme.formatScheme(inferred)}' cannot be generalized to '${FormatScheme.formatScheme(declared)}'."
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> The type scheme: '" << Red(inferred.toString) << "' cannot be generalized to '" << Red(declared.toString) << "'." << NewLine
+      vt << ">> The type scheme: '" << Red(FormatScheme.formatScheme(inferred)) << "' cannot be generalized to '" << Red(FormatScheme.formatScheme(declared)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unable to generalize the type scheme.") << NewLine
       vt << "Possible fixes:" << NewLine
@@ -70,12 +70,12 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the types: '" << Red(baseType1.show) << "' and '" << Red(baseType2.show) << "'." << NewLine
+      vt << ">> Unable to unify the types: '" << Red(FormatType.formatType(baseType1)) << "' and '" << Red(FormatType.formatType(baseType2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched types.") << NewLine
       vt << NewLine
-      vt << "Type One: " << pretty(diff(fullType1, fullType2), Cyan) << NewLine
-      vt << "Type Two: " << pretty(diff(fullType2, fullType1), Magenta) << NewLine
+      vt << "Type One: " << FormatType.formatTypeDiff(TypeDiff.diff(fullType1, fullType2), Cyan) << NewLine
+      vt << "Type Two: " << FormatType.formatTypeDiff(TypeDiff.diff(fullType2, fullType1), Magenta) << NewLine
     }
   }
 
@@ -91,7 +91,7 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the effects: '" << Red(eff1.show) << "' and '" << Red(eff2.show) << "'." << NewLine
+      vt << ">> Unable to unify the effects: '" << Red(FormatType.formatType(eff1)) << "' and '" << Red(FormatType.formatType(eff2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched effects.") << NewLine
       vt << "Possible fixes:" << NewLine
@@ -113,10 +113,11 @@ object TypeError {
     */
   case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the types '$tpe1' and '$tpe2'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the types: '" << Red(tpe1.show) << "' and '" << Red(tpe2.show) << "'." << NewLine
+      vt << ">> Unable to unify the types: '" << Red(FormatType.formatType(tpe1)) << "' and '" << Red(FormatType.formatType(tpe2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched arity of types.") << NewLine
     }
@@ -133,16 +134,17 @@ object TypeError {
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the type variable '" << Red(baseVar.toString) << "' with the type '" << Red(baseType.show) << "'." << NewLine
+      vt << ">> Unable to unify the type variable '" << Red(baseVar.toString) << "' with the type '" << Red(FormatType.formatType(baseType)) << "'." << NewLine
       vt << ">> The type variable occurs recursively within the type." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched types.") << NewLine
       vt << NewLine
-      vt << "Type One: " << pretty(diff(fullType1, fullType2), Cyan) << NewLine
-      vt << "Type Two: " << pretty(diff(fullType2, fullType1), Magenta) << NewLine
+      vt << "Type One: " << FormatType.formatTypeDiff(TypeDiff.diff(fullType1, fullType2), Cyan) << NewLine
+      vt << "Type Two: " << FormatType.formatTypeDiff(TypeDiff.diff(fullType2, fullType1), Magenta) << NewLine
     }
   }
 
@@ -159,14 +161,14 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(fieldType.show) << "'." << NewLine
+      vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(FormatType.formatType(fieldType)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing field.") << NewLine
       vt << "The record type: " << Indent << NewLine
       vt << NewLine
-      vt << recordType.show << NewLine
+      vt << FormatType.formatType(recordType) << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the field '" << Red(fieldName) << "' of type " << Cyan(fieldType.show) << "." << NewLine
+      vt << "does not contain the field '" << Red(fieldName) << "' of type " << Cyan(FormatType.formatType(fieldType)) << "." << NewLine
     }
   }
 
@@ -183,14 +185,14 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing predicate '" << Red(predName) << "' of type '" << Cyan(predType.show) << "'." << NewLine
+      vt << ">> Missing predicate '" << Red(predName) << "' of type '" << Cyan(FormatType.formatType(predType)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing predicate.") << NewLine
       vt << "The schema type: " << Indent << NewLine
       vt << NewLine
-      vt << schemaType.show << NewLine
+      vt << FormatType.formatType(schemaType) << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the predicate '" << Red(predName) << "' of type " << Cyan(predType.show) << "." << NewLine
+      vt << "does not contain the predicate '" << Red(predName) << "' of type " << Cyan(FormatType.formatType(predType)) << "." << NewLine
     }
   }
 
@@ -205,7 +207,7 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unexpected non-record type: '" << Red(tpe.show) << "'." << NewLine
+      vt << ">> Unexpected non-record type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unexpected non-record type.") << NewLine
     }
@@ -222,151 +224,9 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unexpected non-schema type: '" << Red(tpe.show) << "'." << NewLine
+      vt << ">> Unexpected non-schema type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unexpected non-schema type.") << NewLine
     }
   }
-
-  /**
-    * Returns a string that represents the type difference between the two given types.
-    */
-  private def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {
-    case (Type.Var(_, _, _), _) => TypeDiff.Star(TyCon.Other)
-    case (_, Type.Var(_, _, _)) => TypeDiff.Star(TyCon.Other)
-    case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
-    case (Type.Arrow(l1, _), Type.Arrow(l2, _)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
-    case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-      (diff(t11, t21), diff(t12, t22)) match {
-        case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TyCon.Other)
-        case (diff1, diff2) => TypeDiff.Apply(diff1, diff2)
-      }
-    case _ => TypeDiff.Mismatch(tpe1, tpe2)
-  }
-
-  /**
-    * A common super-type for type differences.
-    */
-  sealed trait TypeDiff {
-
-    /**
-      * Returns the type constructor of `this` type.
-      */
-    def typeConstructor: TypeDiff = this match {
-      case TypeDiff.Star(_) => this
-      case TypeDiff.Mismatch(t1, t2) => this
-      case TypeDiff.Apply(t1, _) => t1.typeConstructor
-    }
-
-    /**
-      * Returns the type parameters of `this` type.
-      */
-    def typeArguments: List[TypeDiff] = this match {
-      case TypeDiff.Star(_) => Nil
-      case TypeDiff.Mismatch(t1, t2) => Nil
-      case TypeDiff.Apply(t1, t2) => t1.typeArguments ::: t2 :: Nil
-    }
-
-  }
-
-  object TypeDiff {
-
-    /**
-      * Represents a matched type.
-      */
-    case class Star(constructor: TyCon) extends TypeDiff
-
-    /**
-      * Represents a type application.
-      */
-    case class Apply(tpe1: TypeDiff, tpe2: TypeDiff) extends TypeDiff
-
-    /**
-      * Represents two mismatched types.
-      */
-    case class Mismatch(tpe1: Type, tpe2: Type) extends TypeDiff
-
-  }
-
-  /**
-    * Represents a type constructor.
-    */
-  sealed trait TyCon
-
-  object TyCon {
-
-    /**
-      * Arrow constructor.
-      */
-    case object Arrow extends TyCon
-
-    /**
-      * Enum constructor.
-      */
-    case class Enum(name: String) extends TyCon
-
-    /**
-      * Tuple constructor.
-      */
-    case object Tuple extends TyCon
-
-    /**
-      * Other constructor.
-      */
-    case object Other extends TyCon
-
-  }
-
-  /**
-    * Returns a human readable representation of the given type difference.
-    */
-  private def pretty(td: TypeDiff, color: String => VirtualString): VirtualTerminal = {
-    val vt = new VirtualTerminal()
-
-    def visit(d: TypeDiff): Unit = {
-      val base = d.typeConstructor
-      val args = d.typeArguments
-
-      base match {
-        case TypeDiff.Star(constructor) => constructor match {
-          case TyCon.Arrow =>
-            intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
-          case TyCon.Enum(name) =>
-            vt << name
-            intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-          case TyCon.Tuple =>
-            intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
-          case TyCon.Other =>
-            vt << "*"
-            intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-        }
-        case TypeDiff.Mismatch(tpe1, tpe2) => vt << color(tpe1.show)
-        case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
-      }
-    }
-
-    visit(td)
-
-    vt
-  }
-
-  /**
-    * Helper function to generate text before, in the middle of, and after a list of items.
-    */
-  private def intercalate[A](xs: List[A], f: A => Unit, vt: VirtualTerminal, before: String, separator: String, after: String): Unit = {
-    if (xs.isEmpty) return
-    vt << before
-    var first: Boolean = true
-    for (x <- xs) {
-      if (first) {
-        f(x)
-      } else {
-        vt << separator
-        f(x)
-      }
-      first = false
-    }
-    vt << after
-  }
-
 }

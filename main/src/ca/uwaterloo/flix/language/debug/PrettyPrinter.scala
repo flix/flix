@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object PrettyPrinter {
 
+  private implicit val audience: Audience = Audience.External
+
   object Simplified {
 
     def fmtRoot(root: Root): VirtualTerminal = {
@@ -544,7 +546,7 @@ object PrettyPrinter {
     def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {
       fmtSym(p.sym, vt)
       vt.text(": ")
-      vt.text(p.tpe.show)
+      vt.text(FormatType.formatType(p.tpe))
     }
 
     def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
