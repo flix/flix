@@ -524,7 +524,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
-        // TODO: Typing of null.
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
