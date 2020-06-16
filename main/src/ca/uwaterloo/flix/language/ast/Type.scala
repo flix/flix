@@ -181,7 +181,7 @@ object Type {
   /**
     * Represents the Boolean False.
     */
-  val False: Type = Type.Cst(TypeConstructor.True)
+  val False: Type = Type.Cst(TypeConstructor.False)
 
   /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
