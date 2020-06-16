@@ -1,3 +1,20 @@
+/*
+ * Copyright 2020 Matthew Lutze
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Effect
@@ -189,7 +206,7 @@ object FormatType {
 
         case Type.Lambda(tvar, tpe) => audience match {
           case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-          case Audience.External => throw InternalCompilerException(s"Unexpected type: Lambda") // Lambda should not be shown externally
+          case Audience.External => s"${tvar.getText.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
         }
 
         case Type.Cst(TypeConstructor.Native(clazz)) => s"${clazz.getSimpleName}"
@@ -214,18 +231,16 @@ object FormatType {
       val args = d.typeArguments
 
       base match {
-        case TypeDiff.Star(constructor) => constructor match {
-          case TypeDiff.TyCon.Arrow =>
+          case TypeDiff.Arrow =>
             intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
-          case TypeDiff.TyCon.Enum(name) =>
+          case TypeDiff.Enum =>
             vt << "*"
             intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-          case TypeDiff.TyCon.Tuple =>
+          case TypeDiff.Tuple =>
             intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
-          case TypeDiff.TyCon.Other =>
+          case TypeDiff.Other =>
             vt << "*"
             intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-        }
         case TypeDiff.Mismatch(tpe1, _) => vt << color(formatType(tpe1))
         case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
       }
@@ -258,6 +273,10 @@ object FormatType {
 
   /**
     * A flat representation of a schema or record.
+    *
+    * Contains the fields and their types as a list at the top level.
+    * This better mirrors the structure of records and schemas as they are displayed (e.g. `{ x: Int8, y: Bool | r }`)
+    * rather than their true underlying shape (e.g. `{ x: Int8 | { y: Bool | r } }`).
     */
   private case class FlatNestable(fields: List[(String, Type)], rest: Type) {
     def ::(head: (String, Type)): FlatNestable = {
