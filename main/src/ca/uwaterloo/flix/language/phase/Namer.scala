@@ -363,7 +363,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Apply(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Apply(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Apply(e1, List(e2), Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>

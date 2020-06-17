@@ -262,11 +262,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
+        case NamedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
           for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Apply(e1, List(e2), tvar, evar, loc)
+            e <- visit(exp, tenv0)
+            es <- traverse(exps)(visit(_, tenv0))
+          } yield ResolvedAst.Expression.Apply(e, es, tvar, evar, loc)
 
         case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {
