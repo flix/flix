@@ -225,7 +225,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
 
               // Introduce a formal parameter for each variable symbol.
-              val fparams = varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, Type.freshTypeVar(), loc))
+              val fparams = varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
 
               // The definition expression.
               val defExp = ResolvedAst.Expression.Def(defn.sym, tvar, loc)
