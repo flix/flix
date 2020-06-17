@@ -48,8 +48,8 @@ object PrettyExpression {
     case Expression.Lambda(fparam, exp, _, _) =>
       s"${fparam.sym.text} -> ${pretty(exp)}"
 
-    case Expression.Apply(exp1, exp2, _, _, _) =>
-      s"${pretty(exp1)}(${pretty(exp2)})"
+    case Expression.Apply(exp, exps, _, _, _) =>
+      s"${pretty(exp)}(${exps.map(pretty).mkString(", ")})"
 
     case Expression.Unary(op, exp, _, _, _) => op match {
       case UnaryOperator.LogicalNot => s"!${pretty(exp)}"

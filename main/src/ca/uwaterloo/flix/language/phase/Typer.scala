@@ -1106,7 +1106,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.Apply(e1, e2, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.Apply(e1, List(e2), subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val p = visitParam(fparam)

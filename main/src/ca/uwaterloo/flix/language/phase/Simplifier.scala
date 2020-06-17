@@ -101,10 +101,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Lambda(List(p), e, tpe, loc)
 
-      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.Apply(e1, List(e2), tpe, loc)
+      case TypedAst.Expression.Apply(exp, exps, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.Apply(e, es, tpe, loc)
 
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
         /*

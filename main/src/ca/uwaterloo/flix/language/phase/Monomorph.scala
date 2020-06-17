@@ -203,10 +203,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0 ++ env1)
           Expression.Lambda(p, e, subst0(tpe), loc)
 
-        case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          Expression.Apply(e1, e2, subst0(tpe), eff, loc)
+        case Expression.Apply(exp, exps, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          val es = exps.map(visitExp(_, env0))
+          Expression.Apply(e, es, subst0(tpe), eff, loc)
 
         case Expression.Unary(op, exp, tpe, eff, loc) =>
           val e1 = visitExp(exp, env0)
@@ -242,8 +242,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, eqType, loc)
 
               // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Bool), eff, loc)
-              val outer = Expression.Apply(inner, e2, Type.Bool, eff, loc)
+              // TODO: Reduce currying?
+              val inner = Expression.Apply(base, List(e1), Type.mkPureArrow(valueType, Type.Bool), eff, loc)
+              val outer = Expression.Apply(inner, List(e2), Type.Bool, eff, loc)
 
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
@@ -280,8 +281,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, cmpType, loc)
 
               // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Int32), eff, loc)
-              Expression.Apply(inner, e2, Type.Int32, eff, loc)
+              // TODO: Reduce currying?
+              val inner = Expression.Apply(base, List(e1), Type.mkPureArrow(valueType, Type.Int32), eff, loc)
+              Expression.Apply(inner, List(e2), Type.Int32, eff, loc)
           }
 
         /*

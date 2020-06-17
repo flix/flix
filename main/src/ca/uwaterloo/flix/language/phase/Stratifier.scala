@@ -126,9 +126,9 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Lambda(fparam, e, tpe, loc)
       }
 
-    case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Apply(e1, e2, tpe, eff, loc)
+    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+      mapN(visitExp(exp), traverse(exps)(visitExp)) {
+        case (e, es) => Expression.Apply(e, es, tpe, eff, loc)
       }
 
     case Expression.Unary(op, exp, tpe, eff, loc) =>
@@ -431,8 +431,11 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Lambda(_, exp, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.Apply(exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+    case Expression.Apply(exp, exps, _, _, _) =>
+      val init = dependencyGraphOfExp(exp)
+      exps.foldLeft(init) {
+        case (acc, exp) => acc + dependencyGraphOfExp(exp)
+      }
 
     case Expression.Unary(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)

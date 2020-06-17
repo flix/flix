@@ -123,7 +123,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Lambda(_, exp, _, _) => visitExp(exp, lint0)
 
-      case Expression.Apply(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
+      case Expression.Apply(exp, exps, _, _, _) => visitExp(exp, lint0) ::: exps.flatMap(visitExp(_, lint0))
 
       case Expression.Unary(_, exp, _, _, _) => visitExp(exp, lint0)
 
@@ -357,8 +357,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         s2 <- unifyExp(s1(exp1), s1(exp2), metaVars)
       } yield s2 @@ s1
 
-    case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
-      unifyExp(exp11, exp12, exp21, exp22, metaVars)
+    case (Expression.Apply(exp1, exps1, _, _, _), Expression.Apply(exp2, exps2, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp1, exp2, metaVars)
+        s2 <- unifyExps(exps1, exps2, metaVars)
+      } yield s2 @@ s1
 
     case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
       unifyExp(exp1, exp2, metaVars)
@@ -609,7 +612,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     base match {
       case Expression.Apply(Expression.Apply(Expression.Def(lintSym, _, _), left, _, _, _), right, _, _, _) =>
         if (lintSym == contextEqSym) {
-          Some(Lint(sym, quantifiers, left, right))
+          Some(Lint(sym, quantifiers, left.head, right.head))
         } else if (lintSym == implies) {
           // TODO: Add support for additional lints.
           println(s"Unsupported lint: $sym ")
@@ -715,10 +718,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.Lambda(f, e, tpe, loc)
 
-      case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        Expression.Apply(e1, e2, tpe, eff, loc)
+      case Expression.Apply(exp, exps, tpe, eff, loc) =>
+        val e = apply(exp)
+        val es = exps.map(apply)
+        Expression.Apply(e, es, tpe, eff, loc)
 
       case Expression.Unary(op, exp, tpe, eff, loc) =>
         val e = apply(exp)

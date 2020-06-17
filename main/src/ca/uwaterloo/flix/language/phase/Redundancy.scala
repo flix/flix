@@ -242,11 +242,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         innerUsed and shadowedVar - fparam.sym
 
-    case Expression.Apply(exp1, exp2, _, _, _) =>
-      val env1 = env0.incApply
+    case Expression.Apply(exp, exps, _, _, _) =>
+      val env1 = env0.incApply // TODO: Need to send the number of arguments?
       val env2 = env0.resetApplies
-      val us1 = visitExp(exp1, env1)
-      val us2 = visitExp(exp2, env2)
+      val us1 = visitExp(exp, env1)
+      val us2 = visitExps(exps, env2)
       us1 and us2
 
     case Expression.Unary(_, exp, _, _, _) =>

@@ -80,7 +80,11 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
 
-    case Expression.Apply(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+      val init = visitExp(exp)
+      exps.foldLeft(init) {
+        case (acc, exp) => acc ::: visitExp(exp)
+      }
 
     case Expression.Unary(op, exp, tpe, eff, loc) => visitExp(exp)
 
