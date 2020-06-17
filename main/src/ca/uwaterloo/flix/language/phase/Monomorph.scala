@@ -224,7 +224,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of an equality function: a -> a -> bool.
-          val eqType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Bool)
+          val eqType = Type.mkUncurriedArrow(List(valueType, valueType), Type.Pure, Type.Bool)
 
           // Look for an equality function with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
@@ -242,15 +242,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, eqType, loc)
 
               // Call the equality function.
-              // TODO: Reduce currying?
-              val inner = Expression.Apply(base, List(e1), Type.mkPureArrow(valueType, Type.Bool), eff, loc)
-              val outer = Expression.Apply(inner, List(e2), Type.Bool, eff, loc)
+              val eqExp = Expression.Apply(base, List(e1, e2), Type.Bool, eff, loc)
 
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
-                outer
+                eqExp
               } else {
-                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
+                Expression.Unary(UnaryOperator.LogicalNot, eqExp, Type.Bool, eff, loc)
               }
           }
 
@@ -266,7 +264,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of a comparator function: a -> a -> int.
-          val cmpType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Int32)
+          val cmpType = Type.mkUncurriedArrow(List(valueType, valueType), Type.Pure, Type.Int32)
 
           // Look for a comparator function with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
@@ -281,9 +279,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, cmpType, loc)
 
               // Call the equality function.
-              // TODO: Reduce currying?
-              val inner = Expression.Apply(base, List(e1), Type.mkPureArrow(valueType, Type.Int32), eff, loc)
-              Expression.Apply(inner, List(e2), Type.Int32, eff, loc)
+              Expression.Apply(base, List(e1, e2), Type.Int32, eff, loc)
           }
 
         /*
