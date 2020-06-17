@@ -217,8 +217,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshTypeVar(), Type.freshEffectVar(), loc)
 
               // The curried lambda expressions.
-              fparams.foldLeft(applyExp: ResolvedAst.Expression) {
-                case (acc, fparam) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshTypeVar(), loc)
+              fparams.foldRight(applyExp: ResolvedAst.Expression) {
+                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshTypeVar(), loc)
               }
           }
 
