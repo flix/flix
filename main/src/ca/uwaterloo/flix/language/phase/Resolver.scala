@@ -268,11 +268,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
+        case NamedAst.Expression.Apply(exp, exps, tvar, evar, loc) => // TODO: Remove unused type and evar.
           for {
             e <- visit(exp, tenv0)
             es <- traverse(exps)(visit(_, tenv0))
-          } yield ResolvedAst.Expression.Apply(e, es, tvar, evar, loc)
+          } yield {
+            es.foldLeft(e) {
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+            }
+          }
 
         case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {

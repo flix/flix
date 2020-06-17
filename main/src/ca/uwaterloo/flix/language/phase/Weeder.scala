@@ -1754,9 +1754,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns a curried apply expression for the given `base` and `args` argument expressions.
     */
   private def mkApplyCurried(base: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
-    args.foldLeft(base) {
-      case (eacc, arg) => WeededAst.Expression.Apply(eacc, List(arg), loc)
-    }
+    WeededAst.Expression.Apply(base, args, loc) // TODO: Remove this and friends...
   }
 
   /**
