@@ -219,7 +219,7 @@ class TestUnification extends FunSuite with TestUtils {
   }
 
   test("Unify.Arrow") {
-    val result = Unification.unifyTypes(Type.Arrow(3, Type.Cst(TypeConstructor.Pure)), Type.Arrow(3, Type.Cst(TypeConstructor.Pure)))
+    val result = Unification.unifyTypes(Type.Arrow(3, Type.Cst(TypeConstructor.True)), Type.Arrow(3, Type.Cst(TypeConstructor.True)))
     assert(isOk(result))
   }
 

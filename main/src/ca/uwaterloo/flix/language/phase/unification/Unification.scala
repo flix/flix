@@ -106,7 +106,7 @@ object Unification {
         case Result.Err(e) => Result.Err(e)
       }
 
-    case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => BoolUnification.unifyEffects(eff1, eff2)
+    case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => BoolUnification.unify(eff1, eff2)
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
@@ -308,7 +308,7 @@ object Unification {
     InferMonad((s: Substitution) => {
       val effect1 = s(eff1)
       val effect2 = s(eff2)
-      BoolUnification.unifyEffects(effect1, effect2) match {
+      BoolUnification.unify(effect1, effect2) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(eff1))

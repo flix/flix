@@ -174,14 +174,24 @@ object Type {
   val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty)
 
   /**
+    * Represents the Boolean True.
+    */
+  val True: Type = Type.Cst(TypeConstructor.True)
+
+  /**
+    * Represents the Boolean False.
+    */
+  val False: Type = Type.Cst(TypeConstructor.False)
+
+  /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
     */
-  val Pure: Type = Type.Cst(TypeConstructor.Pure)
+  val Pure: Type = True
 
   /**
     * Represents the Impure effect. (FALSE in the Boolean algebra.)
     */
-  val Impure: Type = Type.Cst(TypeConstructor.Impure)
+  val Impure: Type = False
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //

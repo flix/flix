@@ -197,20 +197,16 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents a pure effect.
-    *
-    * Pure represents TRUE in the Boolean algebra.
+    * A type constructor that represent the Boolean True.
     */
-  case object Pure extends TypeConstructor {
+  case object True extends TypeConstructor {
     def kind: Kind = Kind.Effect
   }
 
   /**
-    * A type constructor that represents an impure effect.
-    *
-    * Impure represents FALSE in the Boolean algebra.
+    * A type constructor that represents the Boolean False.
     */
-  case object Impure extends TypeConstructor {
+  case object False extends TypeConstructor {
     def kind: Kind = Kind.Effect
   }
 

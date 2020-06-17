@@ -28,7 +28,7 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
-  def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Return immediately if effects are disabled.
     ///
@@ -43,18 +43,18 @@ object BoolUnification {
     }
 
     eff1 match {
-      case x: Type.Var if eff2 eq Type.Pure =>
-        return Ok(Substitution.singleton(x, Type.Pure))
-      case x: Type.Var if eff2 eq Type.Impure =>
-        return Ok(Substitution.singleton(x, Type.Impure))
+      case x: Type.Var if eff2 eq Type.True =>
+        return Ok(Substitution.singleton(x, Type.True))
+      case x: Type.Var if eff2 eq Type.False =>
+        return Ok(Substitution.singleton(x, Type.False))
       case _ => // nop
     }
 
     eff2 match {
-      case y: Type.Var if eff1 eq Type.Pure =>
-        return Ok(Substitution.singleton(y, Type.Pure))
-      case y: Type.Var if eff1 eq Type.Impure =>
-        return Ok(Substitution.singleton(y, Type.Impure))
+      case y: Type.Var if eff1 eq Type.True =>
+        return Ok(Substitution.singleton(y, Type.True))
+      case y: Type.Var if eff1 eq Type.False =>
+        return Ok(Substitution.singleton(y, Type.False))
       case _ => // nop
     }
 
@@ -78,7 +78,6 @@ object BoolUnification {
     try {
       val subst = successiveVariableElimination(query, freeVars)
 
-      // TODO: Debugging
       //    if (!subst.isEmpty) {
       //      val s = subst.toString
       //      val len = s.length
@@ -107,8 +106,8 @@ object BoolUnification {
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x, Type.Impure)(f) // impure == false
-      val t1 = Substitution.singleton(x, Type.Pure)(f) // pure   == true
+      val t0 = Substitution.singleton(x, Type.False)(f)
+      val t1 = Substitution.singleton(x, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
       val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
       st ++ se
@@ -123,10 +122,10 @@ object BoolUnification {
     * Returns `true` if the given boolean formula `f` is satisfiable.
     */
   private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
-    case Type.Pure => true
-    case Type.Impure => false
+    case Type.True => true
+    case Type.False => false
     case _ =>
-      val q = mkEq(f, Type.Pure)
+      val q = mkEq(f, Type.True)
       try {
         successiveVariableElimination(q, q.typeVars.toList)
         true
@@ -146,11 +145,11 @@ object BoolUnification {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   def mkNot(eff0: Type): Type = eff0 match {
-    case Type.Pure =>
-      Type.Impure
+    case Type.True =>
+      Type.False
 
-    case Type.Impure =>
-      Type.Pure
+    case Type.False =>
+      Type.True
 
     case NOT(x) =>
       x
@@ -173,20 +172,20 @@ object BoolUnification {
   @tailrec
   def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∧ x => x
-    case (Type.Pure, _) =>
+    case (Type.True, _) =>
       eff2
 
     // x ∧ T => x
-    case (_, Type.Pure) =>
+    case (_, Type.True) =>
       eff1
 
     // F ∧ x => F
-    case (Type.Impure, _) =>
-      Type.Impure
+    case (Type.False, _) =>
+      Type.False
 
     // x ∧ F => F
-    case (_, Type.Impure) =>
-      Type.Impure
+    case (_, Type.False) =>
+      Type.False
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (NOT(x1), OR(x2, y)) if x1 == x2 =>
@@ -194,11 +193,11 @@ object BoolUnification {
 
     // x ∧ ¬x => F
     case (x1, NOT(x2)) if x1 == x2 =>
-      Type.Impure
+      Type.False
 
     // ¬x ∧ x => F
     case (NOT(x1), x2) if x1 == x2 =>
-      Type.Impure
+      Type.False
 
     // x ∧ (x ∧ y) => (x ∧ y)
     case (x1, AND(x2, y)) if x1 == x2 =>
@@ -226,27 +225,27 @@ object BoolUnification {
 
     // x ∧ (y ∧ ¬x) => F
     case (x1, AND(_, NOT(x2))) if x1 == x2 =>
-      Type.Impure
+      Type.False
 
     // (¬x ∧ y) ∧ x => F
     case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.Impure
+      Type.False
 
     // x ∧ ¬(x ∨ y) => F
     case (x1, NOT(OR(x2, _))) if x1 == x2 =>
-      Type.Impure
+      Type.False
 
     // ¬(x ∨ y) ∧ x => F
     case (NOT(OR(x1, _)), x2) if x1 == x2 =>
-      Type.Impure
+      Type.False
 
     // x ∧ (¬x ∧ y) => F
     case (x1, AND(NOT(x2), _)) if x1 == x2 =>
-      Type.Impure
+      Type.False
 
     // (¬x ∧ y) ∧ x => F
     case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.Impure
+      Type.False
 
     // x ∧ x => x
     case _ if eff1 == eff2 => eff1
@@ -268,19 +267,19 @@ object BoolUnification {
   @tailrec
   def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∨ x => T
-    case (Type.Pure, _) =>
-      Type.Pure
+    case (Type.True, _) =>
+      Type.True
 
     // F ∨ y => y
-    case (Type.Impure, _) =>
+    case (Type.False, _) =>
       eff2
 
     // x ∨ T => T
-    case (_, Type.Pure) =>
-      Type.Pure
+    case (_, Type.True) =>
+      Type.True
 
     // x ∨ F => x
-    case (_, Type.Impure) =>
+    case (_, Type.False) =>
       eff1
 
     // x ∨ (y ∨ x) => x ∨ y
@@ -293,19 +292,19 @@ object BoolUnification {
 
     // ¬x ∨ x => T
     case (NOT(x), y) if x == y =>
-      Type.Pure
+      Type.True
 
     // x ∨ ¬x => T
     case (x, NOT(y)) if x == y =>
-      Type.Pure
+      Type.True
 
     // (¬x ∨ y) ∨ x) => T
     case (OR(NOT(x), _), y) if x == y =>
-      Type.Pure
+      Type.True
 
     // x ∨ (¬x ∨ y) => T
     case (x, OR(NOT(y), _)) if x == y =>
-      Type.Pure
+      Type.True
 
     // x ∨ (y ∧ x) => x
     case (x1, AND(_, x2)) if x1 == x2 => x1
