@@ -213,7 +213,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Def(qname, tvar, loc) =>
           lookupDef(qname, ns0, prog0) map {
-            case sym => ResolvedAst.Expression.Def(sym, tvar, loc)
+            case defn => ResolvedAst.Expression.Def(defn.sym, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -819,7 +819,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[Symbol.DefnSym, ResolutionError] = {
+  def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Def, ResolutionError] = {
     val defOpt = tryLookupDef(qname, ns0, prog0)
 
     defOpt match {
@@ -1182,12 +1182,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[Symbol.DefnSym, ResolutionError] = {
+  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Def, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
     if (defn0.mod.isPublic)
-      return defn0.sym.toSuccess
+      return defn0.toSuccess
 
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
@@ -1195,7 +1195,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val prefixNs = defn0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
-      return defn0.sym.toSuccess
+      return defn0.toSuccess
 
     //
     // The definition is not accessible.
