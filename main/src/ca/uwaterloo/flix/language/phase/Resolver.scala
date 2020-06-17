@@ -213,7 +213,33 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Def(qname, tvar, loc) =>
           lookupDef(qname, ns0, prog0) map {
-            case defn => ResolvedAst.Expression.Def(defn.sym, tvar, loc)
+            case defn =>
+              //
+              // We introduce /n/ lambda expressions around the definition expression.
+              //
+
+              // Find the arity of the function definition.
+              val arity = defn.fparams.length
+
+              // Introduce a fresh variable symbol for each argument of the function definition.
+              val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
+
+              // Introduce a formal parameter for each variable symbol.
+              val fparams = varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, Type.freshTypeVar(), loc))
+
+              // The definition expression.
+              val defExp = ResolvedAst.Expression.Def(defn.sym, tvar, loc)
+
+              // The arguments passed to the definition (i.e. the fresh variable symbols).
+              val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
+
+              // The apply expression inside the lambda.
+              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+
+              // The curried lambda expressions.
+              fparams.foldLeft(applyExp: ResolvedAst.Expression) {
+                case (acc, fparam) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshTypeVar(), loc)
+              }
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
