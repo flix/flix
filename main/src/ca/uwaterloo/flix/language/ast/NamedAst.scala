@@ -27,7 +27,6 @@ object NamedAst {
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   latticesOps: Map[NamedAst.Type, NamedAst.LatticeOps],
-                  named: Map[Symbol.DefnSym, NamedAst.Expression],
                   properties: Map[Name.NName, List[NamedAst.Property]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])

@@ -126,7 +126,7 @@ object ClosureConv extends Phase[Root, Root] {
 
       // Update the lambda type.
       val argTpes = fvs.map(_._2) ++ targs
-      val newTpe = Type.mkUncurriedArrow(argTpes, tresult)
+      val newTpe = Type.mkUncurriedPureArrow(argTpes, tresult)
 
       val newBody = visitExp(replace(body, subst.toMap))
       // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.

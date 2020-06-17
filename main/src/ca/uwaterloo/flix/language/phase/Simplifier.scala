@@ -620,7 +620,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       val lambdaBody = substitute(visitExp(exp), freshSubst.toMap)
 
       // Construct the function type.
-      val lambdaType = Type.mkUncurriedArrow(fparams.map(_.tpe), exp.tpe)
+      val lambdaType = Type.mkUncurriedPureArrow(fparams.map(_.tpe), exp.tpe)
 
       // Assemble the lambda.
       SimplifiedAst.Expression.Lambda(fparams, lambdaBody, lambdaType, loc)

@@ -109,7 +109,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given def declaration `d0`.
     */
   private def visitDef(d0: ParsedAst.Declaration.Def)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
-    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp0, sp2) =>
+    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
@@ -120,11 +120,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val effVal = visitEff(effOpt)
 
       mapN(annVal, modVal, formalsVal, expVal, effVal) {
-        case (as, mod, fs, exp, eff) =>
-          val ts = fs.map(_.tpe.get)
-          val e = mkCurried(fs.tail, exp, loc)
-          val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
+        case (as, mod, fparams, exp, eff) =>
+          val ts = fparams.map(_.tpe.get)
+          val tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, loc))
       }
   }
 

@@ -46,7 +46,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       enums = Map.empty,
       typealiases = Map.empty,
       latticesOps = Map.empty,
-      named = Map.empty,
       properties = Map.empty,
       reachable = program.reachable,
       sources = locations

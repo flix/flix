@@ -78,14 +78,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
-    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparam0, exp0, declaredScheme, declaredEff, loc) =>
+    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, declaredScheme, declaredEff, loc) =>
 
       ///
       /// Infer the type of the expression `exp0`.
       ///
       val result = for {
         (inferredTyp, inferredEff) <- inferExp(exp0, root)
-      } yield Type.mkArrow(fparam0.tpe, inferredEff, inferredTyp)
+      } yield Type.mkArrow(fparams0.map(_.tpe), inferredEff, inferredTyp)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -99,7 +99,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           /// This is required because we have expressions such as `x + y` where we must know the type of `x`
           /// (or y) to determine the type of floating-point or integer operations.
           ///
-          val initialSubst = getSubstFromParams(fparam0 :: Nil)
+          val initialSubst = getSubstFromParams(fparams0)
 
           run(initialSubst) match {
             case Ok((subst, partialType)) =>
@@ -123,7 +123,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               ///
               val exp = reassembleExp(exp0, root, subst)
               val tparams = getTypeParams(tparams0)
-              val fparams = getFormalParams(fparam0 :: Nil, subst)
+              val fparams = getFormalParams(fparams0, subst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.

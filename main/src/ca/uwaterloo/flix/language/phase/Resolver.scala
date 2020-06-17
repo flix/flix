@@ -49,25 +49,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-
-    val namedVal = prog0.named.map {
-      case (sym, exp0) => Expressions.resolve(exp0, Map.empty, Name.RootNS, prog0).map {
-        case exp =>
-          // Introduce a synthetic definition for the expression.
-          val doc = Ast.Doc(Nil, SourceLocation.Unknown)
-          val ann = Ast.Annotations.Empty
-          val mod = Ast.Modifiers(Ast.Modifier.Public :: Ast.Modifier.EntryPoint :: Nil)
-          val tparams = Nil
-          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
-          val fparams = List(fparam)
-          val sc = Scheme(Nil, Type.freshTypeVar())
-          val eff = Type.freshTypeVar()
-          val loc = SourceLocation.Unknown
-          val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, sc, eff, loc)
-          sym -> defn
-      }
-    }
-
     val enumsVal = prog0.enums.flatMap {
       case (ns0, enums) => enums.map {
         case (_, enum) => resolve(enum, ns0, prog0) map {
@@ -90,12 +71,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     for {
       definitions <- sequence(definitionsVal)
-      named <- sequence(namedVal)
       enums <- sequence(enumsVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      definitions.toMap ++ named.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
+      definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
 
@@ -135,7 +115,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
         eff <- lookupType(eff0, ns0, prog0)
-      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, scheme, eff, loc)
+      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
   }
 
   /**

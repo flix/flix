@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.tc.Show
 
 import scala.collection.immutable.SortedSet
 
@@ -318,10 +317,22 @@ object Type {
   }
 
   /**
+    * Constructs the arrow type [A] -> B & e.
+    */
+  def mkUncurriedArrow(as: List[Type], e: Type, b: Type): Type = {
+    val arrow = Arrow(as.length + 1, e)
+    val inner = as.foldLeft(arrow: Type) {
+      case (acc, x) => Apply(acc, x)
+    }
+    Apply(inner, b)
+  }
+
+  /**
     * Constructs the pure arrow type [A] -> B.
     */
+  // TODO: Remove or refactor?
   // TODO: Split into two: one for pure and one for impure.
-  def mkUncurriedArrow(as: List[Type], b: Type): Type = {
+  def mkUncurriedPureArrow(as: List[Type], b: Type): Type = {
     // TODO: Folding in wrong order?
     val arrow = Arrow(as.length + 1, Pure)
     val inner = as.foldLeft(arrow: Type) {
@@ -329,7 +340,6 @@ object Type {
     }
     Apply(inner, b)
   }
-
 
   /**
     * Constructs the apply type base[t_1, ,..., t_n].
