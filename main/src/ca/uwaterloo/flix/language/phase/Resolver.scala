@@ -266,7 +266,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Apply(e1, e2, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Apply(e1, List(e2), tvar, evar, loc)
 
         case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {

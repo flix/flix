@@ -299,17 +299,17 @@ object Type {
   def mkArrow(a: Type, f: Type, b: Type): Type = Apply(Apply(Arrow(2, f), a), b)
 
   /**
-    * Constructs the arrow type A ->> B.
+    * Constructs the pure arrow type A -> B.
     */
   def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Pure), a), b)
 
   /**
-    * Constructs the arrow type A ~>> B.
+    * Constructs the impure arrow type A ~> B.
     */
   def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Impure), a), b)
 
   /**
-    * Constructs the arrow type A_1 ->> ... ->> A_n ->{eff} B.
+    * Constructs the arrow type A_1 -> ... -> A_n ->{eff} B.
     */
   def mkArrow(as: List[Type], eff: Type, b: Type): Type = {
     val a = as.last
@@ -318,7 +318,7 @@ object Type {
   }
 
   /**
-    * Constructs the arrow type [A] -> B.
+    * Constructs the pure arrow type [A] -> B.
     */
   // TODO: Split into two: one for pure and one for impure.
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
@@ -329,6 +329,7 @@ object Type {
     }
     Apply(inner, b)
   }
+
 
   /**
     * Constructs the apply type base[t_1, ,..., t_n].

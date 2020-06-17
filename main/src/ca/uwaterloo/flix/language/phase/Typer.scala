@@ -337,15 +337,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, Type.mkArrow(argType, bodyEff, bodyType), loc)
         } yield (resultTyp, Type.Pure)
 
-      case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshTypeVar()
         val lambdaBodyEff = Type.freshTypeVar()
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
-          lambdaType <- unifyTypM(tpe1, Type.mkArrow(tpe2, lambdaBodyEff, lambdaBodyType), loc)
+          (tpe, eff) <- visitExp(exp)
+          (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
+          lambdaType <- unifyTypM(tpe, Type.mkArrow(tpes, lambdaBodyEff, lambdaBodyType), loc) // TODO: Need to construct a different arity arrow type.
           resultTyp <- unifyTypM(tvar, lambdaBodyType, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2, lambdaBodyEff), loc)
+          resultEff <- unifyEffM(evar, mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) => op match {
@@ -1103,10 +1103,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
 
-      case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.Apply(e1, List(e2), subst0(tvar), subst0(evar), loc)
+      case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val es = exps.map(visitExp(_, subst0))
+        TypedAst.Expression.Apply(e, es, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val p = visitParam(fparam)
