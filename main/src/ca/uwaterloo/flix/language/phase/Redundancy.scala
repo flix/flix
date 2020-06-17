@@ -243,7 +243,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         innerUsed and shadowedVar - fparam.sym
 
     case Expression.Apply(exp, exps, _, _, _) =>
-      val env1 = env0.incApply // TODO: Need to send the number of arguments?
+      val env1 = env0.incApply(exps.length)
       val env2 = env0.resetApplies
       val us1 = visitExp(exp, env1)
       val us2 = visitExps(exps, env2)
@@ -673,9 +673,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Updates `this` environment, marking that an application has been made.
+      * Updates `this` environment, marking that an application with `count` argument has been made.
       */
-    def incApply: Env = copy(recursionContext = recursionContext.incApply)
+    def incApply(count: Int): Env = copy(recursionContext = recursionContext.incApply(count))
 
     /**
       * Resets the consecutive application count of `this` environment.
@@ -812,9 +812,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def resetApplies: RecursionContext
 
     /**
-      * Add 1 to the apply count.
+      * Add count to the apply count.
       */
-    def incApply: RecursionContext
+    def incApply(count: Int): RecursionContext
 
     /**
       * True iff the call is recursive in this context.
@@ -830,7 +830,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case object NoContext extends RecursionContext {
       override def resetApplies: RecursionContext = this
 
-      override def incApply: RecursionContext = this
+      override def incApply(count: Int): RecursionContext = this
 
       override def isRecursiveCall(call: Symbol.DefnSym): Boolean = false
     }
@@ -844,7 +844,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case class Apply0(defn: Symbol.DefnSym, arity: Int) extends RecursionContext {
       override def resetApplies: RecursionContext = this
 
-      override def incApply: RecursionContext = ApplyN(defn, arity, 1)
+      override def incApply(count: Int): RecursionContext = ApplyN(defn, arity, count)
 
       override def isRecursiveCall(call: Symbol.DefnSym): Boolean = {
         defn == call && arity == 0
@@ -861,7 +861,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case class ApplyN(defn: Symbol.DefnSym, arity: Int, applies: Int) extends RecursionContext {
       override def resetApplies: RecursionContext = Apply0(defn, arity)
 
-      override def incApply: RecursionContext = copy(applies = applies + 1)
+      override def incApply(count: Int): RecursionContext = copy(applies = applies + count)
 
       override def isRecursiveCall(call: Symbol.DefnSym): Boolean = {
         defn == call && applies == arity
