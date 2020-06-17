@@ -85,7 +85,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       ///
       val result = for {
         (inferredTyp, inferredEff) <- inferExp(exp0, root)
-      } yield Type.mkArrow(fparams0.map(_.tpe), inferredEff, inferredTyp)
+      } yield Type.mkUncurriedArrow(fparams0.map(_.tpe), inferredEff, inferredTyp)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -343,7 +343,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe, eff) <- visitExp(exp)
           (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
-          lambdaType <- unifyTypM(tpe, Type.mkArrow(tpes, lambdaBodyEff, lambdaBodyType), loc) // TODO: Need to construct a different arity arrow type.
+          lambdaType <- unifyTypM(tpe, Type.mkUncurriedArrow(tpes, lambdaBodyEff, lambdaBodyType), loc)
           resultTyp <- unifyTypM(tvar, lambdaBodyType, loc)
           resultEff <- unifyEffM(evar, mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (resultTyp, resultEff)
