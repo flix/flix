@@ -490,8 +490,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // No pattern match.
           val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
-          val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
-          WeededAst.Expression.Apply(inner, value, loc)
+          val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
+          WeededAst.Expression.Apply(inner, List(value), loc)
         case (pat, value, body) =>
           // Full-blown pattern match.
           val lambdaIdent = Name.Ident(SourcePosition.Unknown, "pat$0", SourcePosition.Unknown)
@@ -502,8 +502,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
-          val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
-          WeededAst.Expression.Apply(inner, value, loc)
+          val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
+          WeededAst.Expression.Apply(inner, List(value), loc)
       }
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
@@ -1756,7 +1756,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def mkApplyCurried(base: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
     args.foldLeft(base) {
-      case (eacc, arg) => WeededAst.Expression.Apply(eacc, arg, loc)
+      case (eacc, arg) => WeededAst.Expression.Apply(eacc, List(arg), loc)
     }
   }
 
