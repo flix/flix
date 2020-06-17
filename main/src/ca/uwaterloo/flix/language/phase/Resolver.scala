@@ -195,6 +195,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           lookupDef(qname, ns0, prog0) map {
             case defn =>
               //
+              // We must curry the definition. Otherwise we would not be here.
+              //
               // We introduce /n/ lambda expressions around the definition expression.
               //
 
@@ -268,7 +270,34 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Apply(exp, exps, tvar, evar, loc) => // TODO: Remove unused type and evar.
+        case NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(qname, _, _), exps, _, _, loc) => // TODO: Remove unused type and evar.
+          //
+          // Special Case: We are applying a known function. Check if we have the right number of arguments.
+          //
+          flatMapN(lookupDef(qname, ns0, prog0)) {
+            case defn =>
+              if (defn.fparams.length == exps.length) {
+                // Case 1: Hooray! We can call the function directly.
+                for {
+                  es <- traverse(exps)(visit(_, tenv0))
+                } yield {
+                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshTypeVar(), loc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+                }
+              } else {
+                // Case 2: We have to curry. (See below).
+                for {
+                  e <- visit(exp, tenv0)
+                  es <- traverse(exps)(visit(_, tenv0))
+                } yield {
+                  es.foldLeft(e) {
+                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+                  }
+                }
+              }
+          }
+
+        case NamedAst.Expression.Apply(exp, exps, _, _, loc) => // TODO: Remove unused type and evar.
           for {
             e <- visit(exp, tenv0)
             es <- traverse(exps)(visit(_, tenv0))
