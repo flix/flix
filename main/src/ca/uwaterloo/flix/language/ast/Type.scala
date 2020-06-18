@@ -308,33 +308,30 @@ object Type {
   def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Impure), a), b)
 
   /**
-    * Constructs the arrow type A_1 -> ... -> A_n ->{eff} B.
+    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
     */
-  def mkArrow(as: List[Type], eff: Type, b: Type): Type = {
+  // TODO: Remove
+  def mkArrow(as: List[Type], e: Type, b: Type): Type = {
     val a = as.last
-    val base = mkArrow(a, eff, b)
+    val base = mkArrow(a, e, b)
     as.init.foldRight(base)(mkPureArrow)
   }
 
   /**
-    * Constructs the arrow type [A] -> B & e.
+    * Constructs the uncurried pure arrow type (A_1, ..., A_n) -> B.
+    */
+  def mkUncurriedPureArrow(as: List[Type], b: Type): Type = mkUncurriedArrow(as, Pure, b)
+
+  /**
+    * Constructs the uncurried impure arrow type (A_1, ..., A_n) ~> B.
+    */
+  def mkUncurriedImpureArrow(as: List[Type], b: Type): Type = mkUncurriedArrow(as, Impure, b)
+
+  /**
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrow(as: List[Type], e: Type, b: Type): Type = {
     val arrow = Arrow(as.length + 1, e)
-    val inner = as.foldLeft(arrow: Type) {
-      case (acc, x) => Apply(acc, x)
-    }
-    Apply(inner, b)
-  }
-
-  /**
-    * Constructs the pure arrow type [A] -> B.
-    */
-  // TODO: Remove or refactor?
-  // TODO: Split into two: one for pure and one for impure.
-  def mkUncurriedPureArrow(as: List[Type], b: Type): Type = {
-    // TODO: Folding in wrong order?
-    val arrow = Arrow(as.length + 1, Pure)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
