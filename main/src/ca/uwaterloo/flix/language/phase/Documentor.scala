@@ -29,8 +29,6 @@ import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
-import scala.annotation.tailrec
-
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
@@ -105,15 +103,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type and effect.
-    val returnType = getReturnType(defn0.declaredScheme.base)
-    val effect = getEffect(defn0.declaredScheme.base)
+    val result = getResultType(defn0.declaredScheme.base)
+    val effect = getEffectType(defn0.declaredScheme.base)
 
     // Construct the JSON object.
     JObject(List(
       JField("name", JString(defn0.sym.name)),
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
-      JField("result", JString(FormatType.formatType(returnType))),
+      JField("result", JString(FormatType.formatType(result))),
+      JField("effect", JString(FormatType.formatType(effect))),
       JField("comment", JString(defn0.doc.text.trim))
     ))
   }
@@ -121,16 +120,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the return type of the given function type `tpe0`.
     */
-  private def getReturnType(tpe0: Type): Type = tpe0 match {
-    case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getReturnType(tpe)
-    case _ => tpe0
-  }
+  private def getResultType(tpe0: Type): Type = tpe0.typeArguments.last
 
   /**
     * Returns the effect of the given function type `tpe0`.
     */
-  private def getEffect(tpe0: Type): Type = tpe0 match {
-    case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getEffect(tpe)
+  private def getEffectType(tpe0: Type): Type = tpe0 match {
+    case Type.Arrow(_, eff) => eff
     case _ => tpe0
   }
 
