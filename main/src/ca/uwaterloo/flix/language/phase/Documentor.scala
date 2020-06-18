@@ -97,7 +97,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute the formal parameters.
-    val fparams = getFormalParams(defn0).collect {
+    val fparams = defn0.fparams.collect {
       case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
         JField("name", JString(psym.text)),
         JField("type", JString(FormatType.formatType(tpe)))
@@ -115,21 +115,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       JField("result", JString(FormatType.formatType(returnType))),
       JField("comment", JString(defn0.doc.text.trim))
     ))
-  }
-
-  /**
-    * Returns the (uncurried) formal parameters of the given definition `defn0`.
-    */
-  private def getFormalParams(defn0: Def): List[FormalParam] = {
-    /**
-      * Returns the formal parameters of the lambda expressions in the given expression `exp0`.
-      */
-    def uncurry(exp0: Expression): List[FormalParam] = exp0 match {
-      case Expression.Lambda(fparam, exp, _, _) => fparam :: uncurry(exp)
-      case _ => Nil
-    }
-
-    defn0.fparams ::: uncurry(defn0.exp)
   }
 
   /**
