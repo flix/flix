@@ -45,7 +45,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Arrow.External.01") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     paramType.setText("t1")
-    val tpe = Type.mkPureArrow(paramType, paramType)
+    val tpe = Type.mkArrow(paramType, Type.Pure, paramType)
 
     val expected = "t1 -> t1"
     val actual = FormatType.formatType(tpe)(Audience.External)
