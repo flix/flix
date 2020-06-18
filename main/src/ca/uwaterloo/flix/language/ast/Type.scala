@@ -300,12 +300,12 @@ object Type {
   /**
     * Constructs the pure arrow type A -> B.
     */
-  def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Pure), a), b)
+  def mkPureArrow(a: Type, b: Type): Type = mkArrow(a, Pure, b)
 
   /**
     * Constructs the impure arrow type A ~> B.
     */
-  def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Impure), a), b)
+  def mkImpureArrow(a: Type, b: Type): Type = mkArrow(a, Impure, b)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
