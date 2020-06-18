@@ -395,11 +395,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      // TODO: Reduce currying
       val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool), sl)
-      val inner = Expression.Apply(base, List(exp1), Type.mkArrow(List(tpe), Type.Pure, Type.Bool), Type.Pure, sl)
-      val outer = Expression.Apply(inner, List(exp2), Type.Bool, Type.Pure, sl)
-      outer
+      Expression.Apply(base, List(exp1, exp2), Type.Bool, Type.Pure, sl)
     }
 
     /**
@@ -496,20 +493,17 @@ object Synthesize extends Phase[Root, Root] {
 
       // Type and formal parameters.
       val tparams = Nil
-      val fparams = paramX :: Nil
+      val fparams = paramX :: paramY :: Nil
 
       // The body expression.
       val exp = mkEqExp(tpe, freshX, freshY)
 
-      // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), sl)
-
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool)
+      val defType = Type.mkUncurriedPureArrow(List(tpe, tpe), Type.Bool)
 
       // Assemble the definition.
-      val sc = Scheme(Nil, lambdaType)
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, sc, sc, Type.Pure, sl)
+      val sc = Scheme(Nil, defType)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, sc, sc, Type.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)

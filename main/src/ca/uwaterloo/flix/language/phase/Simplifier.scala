@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -653,34 +654,45 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Translates the given `lattice0` to the SimplifiedAst.
       */
-    def visitLatticeOps(lattice0: TypedAst.LatticeOps): SimplifiedAst.LatticeOps = lattice0 match {
-      case TypedAst.LatticeOps(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+    def visitLatticeOps(lattice0: TypedAst.LatticeOps): SimplifiedAst.LatticeOps = {
+      // A hack to extract a definition symbol from a curried expression.
+      @tailrec
+      def getSymbolHack(exp0: SimplifiedAst.Expression): Symbol.DefnSym = exp0 match {
+        case SimplifiedAst.Expression.Def(sym, _, _) => sym
+        case SimplifiedAst.Expression.Apply(exp, _, _, _) => getSymbolHack(exp)
+        case SimplifiedAst.Expression.Lambda(_, exp, _, _) => getSymbolHack(exp)
+        case _ => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+      }
 
-        /**
-          * Introduces a unit function for the given expression `exp0`.
-          */
-        def mkUnitDef(name: String, exp0: TypedAst.Expression): Symbol.DefnSym = {
-          val freshSym = Symbol.freshDefnSym(name)
-          val ann = Ast.Annotations.Empty
-          val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-          val varX = Symbol.freshVarSym()
-          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
-          val exp = visitExp(exp0)
-          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkPureArrow(Type.Unit, exp.tpe), loc)
+      lattice0 match {
+        case TypedAst.LatticeOps(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
 
-          toplevel += (freshSym -> freshDef)
-          freshSym
-        }
+          /**
+            * Introduces a unit function for the given expression `exp0`.
+            */
+          def mkUnitDef(name: String, exp0: TypedAst.Expression): Symbol.DefnSym = {
+            val freshSym = Symbol.freshDefnSym(name)
+            val ann = Ast.Annotations.Empty
+            val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+            val varX = Symbol.freshVarSym()
+            val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
+            val exp = visitExp(exp0)
+            val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkPureArrow(Type.Unit, exp.tpe), loc)
 
-        val bot = mkUnitDef("bot", bot0)
-        val top = mkUnitDef("top", top0)
+            toplevel += (freshSym -> freshDef)
+            freshSym
+          }
 
-        // TODO: Unsafe assumption that these are symbols.
-        val equ = visitExp(equ0).asInstanceOf[SimplifiedAst.Expression.Def].sym
-        val leq = visitExp(leq0).asInstanceOf[SimplifiedAst.Expression.Def].sym
-        val lub = visitExp(lub0).asInstanceOf[SimplifiedAst.Expression.Def].sym
-        val glb = visitExp(glb0).asInstanceOf[SimplifiedAst.Expression.Def].sym
-        SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
+          val bot = mkUnitDef("bot", bot0)
+          val top = mkUnitDef("top", top0)
+
+          // TODO: Use of unsafe hack.
+          val equ = getSymbolHack(visitExp(equ0))
+          val leq = getSymbolHack(visitExp(leq0))
+          val lub = getSymbolHack(visitExp(lub0))
+          val glb = getSymbolHack(visitExp(glb0))
+          SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
+      }
     }
 
     /**
