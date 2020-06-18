@@ -304,7 +304,7 @@ object Type {
   def mkImpureArrow(a: Type, b: Type): Type = mkArrowWithEffect(a, Impure, b)
 
   /**
-    * Constructs an arrow with the given effect type A -> B & e.
+    * Constructs the arrow type A -> B & e.
     */
   def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = Apply(Apply(Arrow(2, e), a), b)
 
