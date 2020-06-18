@@ -104,8 +104,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       )
     }
 
-    // Compute return type.
-    val returnType = getReturnType(defn0.inferredScheme.base)
+    // Compute return type and effect.
+    val returnType = getReturnType(defn0.declaredScheme.base)
+    val effect = getEffect(defn0.declaredScheme.base)
 
     // Construct the JSON object.
     JObject(List(
@@ -120,9 +121,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the return type of the given function type `tpe0`.
     */
-  @tailrec
   private def getReturnType(tpe0: Type): Type = tpe0 match {
     case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getReturnType(tpe)
+    case _ => tpe0
+  }
+
+  /**
+    * Returns the effect of the given function type `tpe0`.
+    */
+  private def getEffect(tpe0: Type): Type = tpe0 match {
+    case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getEffect(tpe)
     case _ => tpe0
   }
 
