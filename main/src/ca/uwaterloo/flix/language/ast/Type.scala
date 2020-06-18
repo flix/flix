@@ -309,6 +309,16 @@ object Type {
   def mkImpureArrow(a: Type, b: Type): Type = mkArrow(a, Impure, b)
 
   /**
+    * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
+    */
+  def mkPureCurriedArrow(as: List[Type], b: Type): Type = mkCurriedArrowWithEffect(as, Pure, b)
+
+  /**
+    * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
+    */
+  def mkImpureCurriedArrow(as: List[Type], b: Type): Type = mkCurriedArrowWithEffect(as, Impure, b)
+
+  /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
     */
   def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {

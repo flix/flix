@@ -395,7 +395,7 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val base = Expression.Def(sym, Type.mkCurriedArrowWithEffect(List(tpe, tpe), Type.Pure, Type.Bool), sl)
+      val base = Expression.Def(sym, Type.mkPureCurriedArrow(List(tpe, tpe), Type.Bool), sl)
       Expression.Apply(base, List(exp1, exp2), Type.Bool, Type.Pure, sl)
     }
 
