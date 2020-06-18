@@ -270,7 +270,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(qname, _, _), exps, _, _, loc) => // TODO: Remove unused type and evar.
+        case NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(qname, _, _), exps, loc) =>
           //
           // Special Case: We are applying a known function. Check if we have the right number of arguments.
           //
@@ -297,7 +297,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               }
           }
 
-        case NamedAst.Expression.Apply(exp, exps, _, _, loc) => // TODO: Remove unused type and evar.
+        case NamedAst.Expression.Apply(exp, exps, loc) =>
           for {
             e <- visit(exp, tenv0)
             es <- traverse(exps)(visit(_, tenv0))
