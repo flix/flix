@@ -205,10 +205,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           // Check the type of each component:
           _______ <- unifyTypM(botType, declaredType, loc)
           _______ <- unifyTypM(topType, declaredType, loc)
-          _______ <- unifyTypM(equType, Type.mkCurriedArrowWithEffect(List(declaredType, declaredType), Type.Pure, Type.Bool), loc)
-          _______ <- unifyTypM(leqType, Type.mkCurriedArrowWithEffect(List(declaredType, declaredType), Type.Pure, Type.Bool), loc)
-          _______ <- unifyTypM(lubType, Type.mkCurriedArrowWithEffect(List(declaredType, declaredType), Type.Pure, declaredType), loc)
-          _______ <- unifyTypM(glbType, Type.mkCurriedArrowWithEffect(List(declaredType, declaredType), Type.Pure, declaredType), loc)
+          _______ <- unifyTypM(equType, Type.mkPureCurriedArrow(List(declaredType, declaredType), Type.Bool), loc)
+          _______ <- unifyTypM(leqType, Type.mkPureCurriedArrow(List(declaredType, declaredType), Type.Bool), loc)
+          _______ <- unifyTypM(lubType, Type.mkPureCurriedArrow(List(declaredType, declaredType), declaredType), loc)
+          _______ <- unifyTypM(glbType, Type.mkPureCurriedArrow(List(declaredType, declaredType), declaredType), loc)
         } yield declaredType
 
         // Evaluate the type inference monad with the empty substitution
