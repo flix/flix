@@ -224,7 +224,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of an equality function: a -> a -> bool.
-          val eqType = Type.mkUncurriedPureArrow(List(valueType, valueType), Type.Bool)
+          val eqType = Type.mkPureUncurriedArrow(List(valueType, valueType), Type.Bool)
 
           // Look for an equality function with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
@@ -264,7 +264,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of a comparator function: a -> a -> int.
-          val cmpType = Type.mkUncurriedPureArrow(List(valueType, valueType), Type.Int32)
+          val cmpType = Type.mkPureUncurriedArrow(List(valueType, valueType), Type.Int32)
 
           // Look for a comparator function with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.

@@ -290,7 +290,8 @@ object Type {
   /**
     * Returns a fresh type variable of effect kind.
     */
-  def freshEffectVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Effect)
+  def freshEffectVar()(implicit flix: Flix): Type.Var =
+    Type.Var(flix.genSym.freshId(), Kind.Effect)
 
   /**
     * Constructs an arrow with the given effect type A ->eff B.
@@ -310,27 +311,26 @@ object Type {
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
     */
-  // TODO: Remove
-  def mkArrow(as: List[Type], e: Type, b: Type): Type = {
+  def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
     val a = as.last
     val base = mkArrow(a, e, b)
     as.init.foldRight(base)(mkPureArrow)
   }
 
   /**
-    * Constructs the uncurried pure arrow type (A_1, ..., A_n) -> B.
+    * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
     */
-  def mkUncurriedPureArrow(as: List[Type], b: Type): Type = mkUncurriedArrow(as, Pure, b)
+  def mkPureUncurriedArrow(as: List[Type], b: Type): Type = mkUncurriedArrowWithEffect(as, Pure, b)
 
   /**
-    * Constructs the uncurried impure arrow type (A_1, ..., A_n) ~> B.
+    * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
     */
-  def mkUncurriedImpureArrow(as: List[Type], b: Type): Type = mkUncurriedArrow(as, Impure, b)
+  def mkImpureUncurriedArrow(as: List[Type], b: Type): Type = mkUncurriedArrowWithEffect(as, Impure, b)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
-  def mkUncurriedArrow(as: List[Type], e: Type, b: Type): Type = {
+  def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
     val arrow = Arrow(as.length + 1, e)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)

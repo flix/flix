@@ -85,7 +85,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       ///
       val result = for {
         (inferredTyp, inferredEff) <- inferExp(exp0, root)
-      } yield Type.mkUncurriedArrow(fparams0.map(_.tpe), inferredEff, inferredTyp)
+      } yield Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -205,10 +205,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           // Check the type of each component:
           _______ <- unifyTypM(botType, declaredType, loc)
           _______ <- unifyTypM(topType, declaredType, loc)
-          _______ <- unifyTypM(equType, Type.mkArrow(List(declaredType, declaredType), Type.Pure, Type.Bool), loc)
-          _______ <- unifyTypM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Pure, Type.Bool), loc)
-          _______ <- unifyTypM(lubType, Type.mkArrow(List(declaredType, declaredType), Type.Pure, declaredType), loc)
-          _______ <- unifyTypM(glbType, Type.mkArrow(List(declaredType, declaredType), Type.Pure, declaredType), loc)
+          _______ <- unifyTypM(equType, Type.mkCurriedArrowWithEffect(List(declaredType, declaredType), Type.Pure, Type.Bool), loc)
+          _______ <- unifyTypM(leqType, Type.mkCurriedArrowWithEffect(List(declaredType, declaredType), Type.Pure, Type.Bool), loc)
+          _______ <- unifyTypM(lubType, Type.mkCurriedArrowWithEffect(List(declaredType, declaredType), Type.Pure, declaredType), loc)
+          _______ <- unifyTypM(glbType, Type.mkCurriedArrowWithEffect(List(declaredType, declaredType), Type.Pure, declaredType), loc)
         } yield declaredType
 
         // Evaluate the type inference monad with the empty substitution
@@ -343,7 +343,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe, eff) <- visitExp(exp)
           (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
-          lambdaType <- unifyTypM(tpe, Type.mkUncurriedArrow(tpes, lambdaBodyEff, lambdaBodyType), loc)
+          lambdaType <- unifyTypM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType), loc)
           resultTyp <- unifyTypM(tvar, lambdaBodyType, loc)
           resultEff <- unifyEffM(evar, mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (resultTyp, resultEff)
