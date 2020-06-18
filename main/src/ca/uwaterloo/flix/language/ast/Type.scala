@@ -294,19 +294,19 @@ object Type {
     Type.Var(flix.genSym.freshId(), Kind.Effect)
 
   /**
-    * Constructs an arrow with the given effect type A ->eff B.
-    */
-  def mkArrow(a: Type, f: Type, b: Type): Type = Apply(Apply(Arrow(2, f), a), b)
-
-  /**
     * Constructs the pure arrow type A -> B.
     */
-  def mkPureArrow(a: Type, b: Type): Type = mkArrow(a, Pure, b)
+  def mkPureArrow(a: Type, b: Type): Type = mkArrowWithEffect(a, Pure, b)
 
   /**
     * Constructs the impure arrow type A ~> B.
     */
-  def mkImpureArrow(a: Type, b: Type): Type = mkArrow(a, Impure, b)
+  def mkImpureArrow(a: Type, b: Type): Type = mkArrowWithEffect(a, Impure, b)
+
+  /**
+    * Constructs an arrow with the given effect type A -> B & e.
+    */
+  def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = Apply(Apply(Arrow(2, e), a), b)
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
@@ -323,7 +323,7 @@ object Type {
     */
   def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
     val a = as.last
-    val base = mkArrow(a, e, b)
+    val base = mkArrowWithEffect(a, e, b)
     as.init.foldRight(base)(mkPureArrow)
   }
 

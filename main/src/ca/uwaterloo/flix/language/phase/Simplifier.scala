@@ -523,7 +523,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         // Make a function type, () -> e.tpe
-        val newTpe = Type.mkArrow(Type.Unit, eff, e.tpe)
+        val newTpe = Type.mkArrowWithEffect(Type.Unit, eff, e.tpe)
         // Rewrite our Spawn expression to a Lambda
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)

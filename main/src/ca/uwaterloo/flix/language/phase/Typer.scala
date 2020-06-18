@@ -334,7 +334,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val argType = fparam.tpe
         for {
           (bodyType, bodyEff) <- visitExp(exp)
-          resultTyp <- unifyTypM(tvar, Type.mkArrow(argType, bodyEff, bodyType), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkArrowWithEffect(argType, bodyEff, bodyType), loc)
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
