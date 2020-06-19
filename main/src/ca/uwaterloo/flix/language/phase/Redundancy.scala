@@ -118,16 +118,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Finds the arity of the Def.
     */
-  private def arity(defn: Def): Int = arity(defn.inferredScheme.base)
-
-  /**
-    * Finds the arity of the Type
-    */
-  @tailrec
-  private def arity(tpe: Type, acc: Int = 0): Int = tpe match {
-    case Type.Apply(_, tpe2) => arity(tpe2, acc + 1)
-    case _ => acc
-  }
+  private def arity(defn: Def): Int = defn.fparams.size
 
   /**
     * Checks for unused definition symbols.
@@ -228,7 +219,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
-      val env1 = env0 + fparam.sym
+      // Subtract one from Apply count for abstraction
+      val env1 = env0.incApply(-1) + fparam.sym
 
       // Visit the expression with the extended environment.
       val innerUsed = visitExp(exp, env1)
