@@ -85,23 +85,24 @@ object TypeDiff {
     *   * `diff(Option[Int32], Option[Bool]) => Enum[Mismatch(Int32, Bool)]`
     */
   def diff(tpe1: Type, tpe2: Type): TypeDiff = {
-    val tyCon1 = tpe1.typeConstructorDeprecatedWillBeRemoved
-    val tyCon2 = tpe2.typeConstructorDeprecatedWillBeRemoved
+    val tyCon1 = tpe1.typeConstructor
+    val tyCon2 = tpe2.typeConstructor
 
     (tyCon1, tyCon2) match {
-      case (Type.Var(_, _, _), _) => TypeDiff.Other
-      case (_, Type.Var(_, _, _)) => TypeDiff.Other
-      case (Type.Cst(TypeConstructor.Tuple(len1)), Type.Cst(TypeConstructor.Tuple(len2))) if (len1 == len2) =>
-        val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
-        mkApply(TypeDiff.Tuple, diffs)
-      case (Type.Cst(TypeConstructor.Enum(sym1, kind1)), Type.Cst(TypeConstructor.Enum(sym2, kind2))) if ((sym1 == sym2) && (kind1 == kind2)) =>
-        val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
-        mkApply(TypeDiff.Enum, diffs)
-      case (Type.Cst(TypeConstructor.Arrow(len1, _)), Type.Cst(TypeConstructor.Arrow(len2, _))) if (len1 == len2) =>
-        val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
-        mkApply(TypeDiff.Arrow, diffs)
-      case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Other
-      case _ => TypeDiff.Mismatch(tpe1, tpe2)
+      case (None, _) => TypeDiff.Other
+      case (_, None) => TypeDiff.Other
+      case (Some(tc1), Some(tc2)) => (tc1, tc2) match {
+        case (TypeConstructor.Tuple(len1), TypeConstructor.Tuple(len2)) if (len1 == len2) =>
+          val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
+          mkApply(TypeDiff.Tuple, diffs)
+        case (TypeConstructor.Enum(sym1, kind1), TypeConstructor.Enum(sym2, kind2)) if ((sym1 == sym2) && (kind1 == kind2)) =>
+          val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
+          mkApply(TypeDiff.Enum, diffs)
+        case (TypeConstructor.Arrow(len1, _), TypeConstructor.Arrow(len2, _)) if (len1 == len2) =>
+          val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
+          mkApply(TypeDiff.Arrow, diffs)
+        case _ => if (tc1 == tc2) TypeDiff.Other else TypeDiff.Mismatch(tpe1, tpe2)
+      }
     }
   }
 
