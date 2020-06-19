@@ -87,6 +87,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the type of functions.
+    */
+  case class Arrow(arity: Int, eff: Type) extends TypeConstructor { // TODO: Move effect.
+    def kind: Kind = Kind.Arrow((0 until arity).map(_ => Kind.Star).toList, Kind.Star)
+  }
+
+  /**
     * A type constructor that represents the type of empty records.
     */
   case object RecordEmpty extends TypeConstructor {

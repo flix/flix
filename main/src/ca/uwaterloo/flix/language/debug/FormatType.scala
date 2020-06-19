@@ -172,7 +172,7 @@ object FormatType {
           case _ => formatApply("∨", args)
         }
 
-        case Type.Arrow(arity, eff) =>
+        case Type.Cst(TypeConstructor.Arrow(arity, eff)) =>
           if (arity < 2) {
             formatApply(s"Arrow$arity", args)
           } else {

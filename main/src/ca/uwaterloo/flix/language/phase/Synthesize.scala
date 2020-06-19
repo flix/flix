@@ -797,7 +797,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Arrow(l, _), _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Arrow(l, _)), _) => Expression.Int32(123, sl)
 
         case _ =>
 
@@ -1069,7 +1069,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Cst(TypeConstructor.Channel), _) => Expression.Str("<<channel>>", sl)
 
-        case Type.Apply(Type.Arrow(l, _), _) => Expression.Str("<<clo>>", sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Arrow(l, _)), _) => Expression.Str("<<clo>>", sl)
 
         case _ =>
           //
@@ -1267,7 +1267,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is an arrow type.
       */
     def isArrow(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Arrow(_, _) => true
+      case Type.Cst(TypeConstructor.Arrow(_, _)) => true
       case _ => false
     }
 

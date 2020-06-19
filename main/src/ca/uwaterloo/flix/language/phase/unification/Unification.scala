@@ -77,6 +77,8 @@ object Unification {
 
     case (_, x: Type.Var) => unifyVar(x, tpe1)
 
+    case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 => BoolUnification.unify(eff1, eff2)
+
     case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
 
     case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_)), _), restRow1), row2) =>
@@ -105,8 +107,6 @@ object Unification {
         }
         case Result.Err(e) => Result.Err(e)
       }
-
-    case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => BoolUnification.unify(eff1, eff2)
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }

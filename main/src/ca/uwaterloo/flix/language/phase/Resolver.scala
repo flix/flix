@@ -1326,9 +1326,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   private def simplify(tpe0: Type): Type = {
     def eval(t: Type, subst: Map[Type.Var, Type]): Type = t match {
       case tvar: Type.Var => subst.getOrElse(tvar, tvar)
-      case Type.Cst(_) => t
 
-      case Type.Arrow(l, eff) => Type.Arrow(l, eval(eff, subst))
+      case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eval(eff, subst)))
+
+      case Type.Cst(_) => t
 
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
         val t1 = eval(tpe, subst)

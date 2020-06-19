@@ -97,10 +97,10 @@ object TypeDiff {
       case (Type.Cst(TypeConstructor.Enum(sym1, kind1)), Type.Cst(TypeConstructor.Enum(sym2, kind2))) if ((sym1 == sym2) && (kind1 == kind2)) =>
         val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
         mkApply(TypeDiff.Enum, diffs)
-      case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Other
-      case (Type.Arrow(len1, _), Type.Arrow(len2, _)) if (len1 == len2) =>
+      case (Type.Cst(TypeConstructor.Arrow(len1, _)), Type.Cst(TypeConstructor.Arrow(len2, _))) if (len1 == len2) =>
         val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
         mkApply(TypeDiff.Arrow, diffs)
+      case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Other
       case _ => TypeDiff.Mismatch(tpe1, tpe2)
     }
   }
