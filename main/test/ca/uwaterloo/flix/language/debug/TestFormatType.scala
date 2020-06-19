@@ -45,7 +45,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Arrow.External.01") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     paramType.setText("t1")
-    val tpe = Type.mkArrow(paramType, Type.Pure, paramType)
+    val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType)
 
     val expected = "t1 -> t1"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -57,7 +57,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
     val effectType = Type.Var(2, Kind.Effect, Rigidity.Rigid)
-    val tpe = Type.mkArrow(paramType, effectType, returnType)
+    val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType)
 
     val expected = "a -> b & c"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -68,7 +68,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Arrow.External.03") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
-    val tpe = Type.mkArrow(paramType, Type.Impure, returnType)
+    val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType)
 
     val expected = "a ~> b"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -87,7 +87,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
   test("FormatWellFormedType.Arrow.External.05") {
     val effType = Type.mkApply(Type.Cst(TypeConstructor.And), List(Type.Pure, Type.Impure))
-    val tpe = Type.mkArrow(Type.BigInt, effType, Type.Bool)
+    val tpe = Type.mkArrowWithEffect(Type.BigInt, effType, Type.Bool)
 
     val expected = "BigInt -> Bool & ((Pure) ∧ (Impure))"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -160,7 +160,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Arrow.Internal.01") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     paramType.setText("t1")
-    val tpe = Type.mkArrow(paramType, Type.Pure, paramType)
+    val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType)
 
     val expected = "'0 -> '0"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -172,7 +172,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
     val effectType = Type.Var(2, Kind.Effect, Rigidity.Rigid)
-    val tpe = Type.mkArrow(paramType, effectType, returnType)
+    val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType)
 
     val expected = "'0 -> '1 & ''2"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -408,8 +408,8 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatTypeDiff.Arrow.01") {
-    val tpe1 = Type.mkArrow(Type.Int32, Type.Pure, Type.Int32)
-    val tpe2 = Type.mkArrow(Type.Int32, Type.Pure, Type.Bool)
+    val tpe1 = Type.mkArrowWithEffect(Type.Int32, Type.Pure, Type.Int32)
+    val tpe2 = Type.mkArrowWithEffect(Type.Int32, Type.Pure, Type.Bool)
 
     val diff = TypeDiff.diff(tpe1, tpe2)
     val expected = "* -> Int32"

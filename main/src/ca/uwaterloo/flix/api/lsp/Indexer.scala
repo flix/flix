@@ -109,8 +109,8 @@ object Indexer {
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) + exp0
 
-    case Expression.Apply(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+    case Expression.Apply(exp, exps, _, _, _) =>
+      visitExp(exp) ++ visitExps(exps) + exp0
 
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp) + exp0

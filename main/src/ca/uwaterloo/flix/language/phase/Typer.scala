@@ -78,14 +78,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
-    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparam0, exp0, declaredScheme, declaredEff, loc) =>
+    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, declaredScheme, declaredEff, loc) =>
 
       ///
       /// Infer the type of the expression `exp0`.
       ///
       val result = for {
         (inferredTyp, inferredEff) <- inferExp(exp0, root)
-      } yield Type.mkArrow(fparam0.tpe, inferredEff, inferredTyp)
+      } yield Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -99,7 +99,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           /// This is required because we have expressions such as `x + y` where we must know the type of `x`
           /// (or y) to determine the type of floating-point or integer operations.
           ///
-          val initialSubst = getSubstFromParams(fparam0 :: Nil)
+          val initialSubst = getSubstFromParams(fparams0)
 
           run(initialSubst) match {
             case Ok((subst, partialType)) =>
@@ -123,7 +123,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               ///
               val exp = reassembleExp(exp0, root, subst)
               val tparams = getTypeParams(tparams0)
-              val fparams = getFormalParams(fparam0 :: Nil, subst)
+              val fparams = getFormalParams(fparams0, subst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.
@@ -205,10 +205,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           // Check the type of each component:
           _______ <- unifyTypM(botType, declaredType, loc)
           _______ <- unifyTypM(topType, declaredType, loc)
-          _______ <- unifyTypM(equType, Type.mkArrow(List(declaredType, declaredType), Type.Pure, Type.Bool), loc)
-          _______ <- unifyTypM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Pure, Type.Bool), loc)
-          _______ <- unifyTypM(lubType, Type.mkArrow(List(declaredType, declaredType), Type.Pure, declaredType), loc)
-          _______ <- unifyTypM(glbType, Type.mkArrow(List(declaredType, declaredType), Type.Pure, declaredType), loc)
+          _______ <- unifyTypM(equType, Type.mkPureCurriedArrow(List(declaredType, declaredType), Type.Bool), loc)
+          _______ <- unifyTypM(leqType, Type.mkPureCurriedArrow(List(declaredType, declaredType), Type.Bool), loc)
+          _______ <- unifyTypM(lubType, Type.mkPureCurriedArrow(List(declaredType, declaredType), declaredType), loc)
+          _______ <- unifyTypM(glbType, Type.mkPureCurriedArrow(List(declaredType, declaredType), declaredType), loc)
         } yield declaredType
 
         // Evaluate the type inference monad with the empty substitution
@@ -334,18 +334,18 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val argType = fparam.tpe
         for {
           (bodyType, bodyEff) <- visitExp(exp)
-          resultTyp <- unifyTypM(tvar, Type.mkArrow(argType, bodyEff, bodyType), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkArrowWithEffect(argType, bodyEff, bodyType), loc)
         } yield (resultTyp, Type.Pure)
 
-      case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshTypeVar()
         val lambdaBodyEff = Type.freshTypeVar()
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
-          lambdaType <- unifyTypM(tpe1, Type.mkArrow(tpe2, lambdaBodyEff, lambdaBodyType), loc)
+          (tpe, eff) <- visitExp(exp)
+          (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
+          lambdaType <- unifyTypM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType), loc)
           resultTyp <- unifyTypM(tvar, lambdaBodyType, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2, lambdaBodyEff), loc)
+          resultEff <- unifyEffM(evar, mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) => op match {
@@ -1103,10 +1103,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
 
-      case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.Apply(e1, e2, subst0(tvar), subst0(evar), loc)
+      case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val es = exps.map(visitExp(_, subst0))
+        TypedAst.Expression.Apply(e, es, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val p = visitParam(fparam)

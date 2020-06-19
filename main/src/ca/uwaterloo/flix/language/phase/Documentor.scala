@@ -29,8 +29,6 @@ import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
-import scala.annotation.tailrec
-
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
@@ -97,47 +95,38 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute the formal parameters.
-    val fparams = getFormalParams(defn0).collect {
+    val fparams = defn0.fparams.collect {
       case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
         JField("name", JString(psym.text)),
         JField("type", JString(FormatType.formatType(tpe)))
       )
     }
 
-    // Compute return type.
-    val returnType = getReturnType(defn0.inferredScheme.base)
+    // Compute return type and effect.
+    val result = getResultType(defn0.declaredScheme.base)
+    val effect = getEffectType(defn0.declaredScheme.base)
 
     // Construct the JSON object.
     JObject(List(
       JField("name", JString(defn0.sym.name)),
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
-      JField("result", JString(FormatType.formatType(returnType))),
+      JField("result", JString(FormatType.formatType(result))),
+      JField("effect", JString(FormatType.formatType(effect))),
       JField("comment", JString(defn0.doc.text.trim))
     ))
   }
 
   /**
-    * Returns the (uncurried) formal parameters of the given definition `defn0`.
-    */
-  private def getFormalParams(defn0: Def): List[FormalParam] = {
-    /**
-      * Returns the formal parameters of the lambda expressions in the given expression `exp0`.
-      */
-    def uncurry(exp0: Expression): List[FormalParam] = exp0 match {
-      case Expression.Lambda(fparam, exp, _, _) => fparam :: uncurry(exp)
-      case _ => Nil
-    }
-
-    defn0.fparams ::: uncurry(defn0.exp)
-  }
-
-  /**
     * Returns the return type of the given function type `tpe0`.
     */
-  @tailrec
-  private def getReturnType(tpe0: Type): Type = tpe0 match {
-    case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getReturnType(tpe)
+  private def getResultType(tpe0: Type): Type = tpe0.typeArguments.last
+
+  /**
+    * Returns the effect of the given function type `tpe0`.
+    */
+  private def getEffectType(tpe0: Type): Type = tpe0.typeConstructor match {
+    case Type.Arrow(_, eff) => eff
     case _ => tpe0
   }
 

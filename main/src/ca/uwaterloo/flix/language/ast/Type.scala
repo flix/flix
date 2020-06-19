@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.tc.Show
 
 import scala.collection.immutable.SortedSet
 
@@ -291,39 +290,58 @@ object Type {
   /**
     * Returns a fresh type variable of effect kind.
     */
-  def freshEffectVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Effect)
+  def freshEffectVar()(implicit flix: Flix): Type.Var =
+    Type.Var(flix.genSym.freshId(), Kind.Effect)
 
   /**
-    * Constructs an arrow with the given effect type A ->eff B.
+    * Constructs the pure arrow type A -> B.
     */
-  def mkArrow(a: Type, f: Type, b: Type): Type = Apply(Apply(Arrow(2, f), a), b)
+  def mkPureArrow(a: Type, b: Type): Type = mkArrowWithEffect(a, Pure, b)
 
   /**
-    * Constructs the arrow type A ->> B.
+    * Constructs the impure arrow type A ~> B.
     */
-  def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Pure), a), b)
+  def mkImpureArrow(a: Type, b: Type): Type = mkArrowWithEffect(a, Impure, b)
 
   /**
-    * Constructs the arrow type A ~>> B.
+    * Constructs the arrow type A -> B & e.
     */
-  def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Impure), a), b)
+  def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = Apply(Apply(Arrow(2, e), a), b)
 
   /**
-    * Constructs the arrow type A_1 ->> ... ->> A_n ->{eff} B.
+    * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
     */
-  def mkArrow(as: List[Type], eff: Type, b: Type): Type = {
+  def mkPureCurriedArrow(as: List[Type], b: Type): Type = mkCurriedArrowWithEffect(as, Pure, b)
+
+  /**
+    * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
+    */
+  def mkImpureCurriedArrow(as: List[Type], b: Type): Type = mkCurriedArrowWithEffect(as, Impure, b)
+
+  /**
+    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
+    */
+  def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
     val a = as.last
-    val base = mkArrow(a, eff, b)
+    val base = mkArrowWithEffect(a, e, b)
     as.init.foldRight(base)(mkPureArrow)
   }
 
   /**
-    * Constructs the arrow type [A] -> B.
+    * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
     */
-  // TODO: Split into two: one for pure and one for impure.
-  def mkUncurriedArrow(as: List[Type], b: Type): Type = {
-    // TODO: Folding in wrong order?
-    val arrow = Arrow(as.length + 1, Pure)
+  def mkPureUncurriedArrow(as: List[Type], b: Type): Type = mkUncurriedArrowWithEffect(as, Pure, b)
+
+  /**
+    * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
+    */
+  def mkImpureUncurriedArrow(as: List[Type], b: Type): Type = mkUncurriedArrowWithEffect(as, Impure, b)
+
+  /**
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    */
+  def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
+    val arrow = Arrow(as.length + 1, e)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }

@@ -169,9 +169,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.BigInt(_, _) => tast.toSuccess
         case Expression.Str(_, _) => tast.toSuccess
         case Expression.Lambda(_, body, _, _) => checkPats(body, root).map(const(tast))
-        case Expression.Apply(exp1, exp2, tpe, _, loc) => for {
-          _ <- checkPats(exp1, root)
-          _ <- checkPats(exp2, root)
+        case Expression.Apply(exp, exps, tpe, _, loc) => for {
+          _ <- checkPats(exp, root)
+          _ <- sequence(exps.map(checkPats(_, root)))
         } yield tast
         case Expression.Unary(_, exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Binary(_, exp1, exp2, _, _, _) => for {

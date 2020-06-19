@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -101,10 +101,10 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Lambda(fparams, e, tpe, loc)
 
-      case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.Apply(e1, e2, tpe, eff, loc)
+      case Expression.Apply(exp, exps, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val es = exps.map(visitExp)
+        Expression.Apply(e, es, tpe, eff, loc)
 
       case Expression.Unary(op, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -395,10 +395,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool), sl)
-      val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Pure, Type.Bool), Type.Pure, sl)
-      val outer = Expression.Apply(inner, exp2, Type.Bool, Type.Pure, sl)
-      outer
+      val base = Expression.Def(sym, Type.mkPureCurriedArrow(List(tpe, tpe), Type.Bool), sl)
+      Expression.Apply(base, List(exp1, exp2), Type.Bool, Type.Pure, sl)
     }
 
     /**
@@ -495,20 +493,17 @@ object Synthesize extends Phase[Root, Root] {
 
       // Type and formal parameters.
       val tparams = Nil
-      val fparams = paramX :: Nil
+      val fparams = paramX :: paramY :: Nil
 
       // The body expression.
       val exp = mkEqExp(tpe, freshX, freshY)
 
-      // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), sl)
-
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool)
+      val defType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
 
       // Assemble the definition.
-      val sc = Scheme(Nil, lambdaType)
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, sc, sc, Type.Pure, sl)
+      val sc = Scheme(Nil, defType)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, sc, sc, Type.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -715,8 +710,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkHash(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Pure, Type.Int32), sl)
-      Expression.Apply(exp1, exp2, Type.Int32, Type.Pure, sl)
+      val exp1 = Expression.Def(sym, Type.mkPureArrow(tpe, Type.Int32), sl)
+      Expression.Apply(exp1, List(exp2), Type.Int32, Type.Pure, sl)
     }
 
     /**
@@ -750,7 +745,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkHashExp(tpe, freshX)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe), Type.Pure, Type.Int32)
+      val lambdaType = Type.mkPureArrow(tpe, Type.Int32)
 
       // Assemble the definition.
       val sc = Scheme(Nil, lambdaType)
@@ -958,8 +953,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkToString(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Pure, Type.Str), sl)
-      Expression.Apply(exp1, exp2, Type.Str, Type.Pure, sl)
+      val exp1 = Expression.Def(sym, Type.mkPureArrow(tpe, Type.Str), sl)
+      Expression.Apply(exp1, List(exp2), Type.Str, Type.Pure, sl)
     }
 
     /**
@@ -993,7 +988,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkToStringExp(tpe, freshX)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe), Type.Pure, Type.Str)
+      val lambdaType = Type.mkPureArrow(tpe, Type.Str)
 
       // Assemble the definition.
       val sc = Scheme(Nil, lambdaType)

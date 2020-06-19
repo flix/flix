@@ -109,7 +109,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given def declaration `d0`.
     */
   private def visitDef(d0: ParsedAst.Declaration.Def)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
-    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp0, sp2) =>
+    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
@@ -120,11 +120,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val effVal = visitEff(effOpt)
 
       mapN(annVal, modVal, formalsVal, expVal, effVal) {
-        case (as, mod, fs, exp, eff) =>
-          val ts = fs.map(_.tpe.get)
-          val e = mkCurried(fs.tail, exp, loc)
-          val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
+        case (as, mod, fparams, exp, eff) =>
+          val ts = fparams.map(_.tpe.get)
+          val tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, loc))
       }
   }
 
@@ -348,8 +347,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(lambda), traverse(args)(e => visitExp(e))) {
         case (e, as) =>
-          val es = getApplyArgsCheckIfEmpty(as, sp1, sp2)
-          mkApplyCurried(e, es, loc)
+          val es = getArguments(as, sp1, sp2)
+          WeededAst.Expression.Apply(e, es, loc)
       }
 
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
@@ -360,7 +359,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) =>
           val loc = mkSL(leftMostSourcePosition(exp1), sp2)
           val lambda = WeededAst.Expression.VarOrDef(name, loc)
-          mkApplyCurried(lambda, List(e1, e2), loc)
+          WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
       }
 
     case ParsedAst.Expression.Postfix(exp, ident, exps, sp2) =>
@@ -373,7 +372,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val loc = mkSL(sp1, sp2)
           val qname = Name.mkQName(ident)
           val lambda = WeededAst.Expression.VarOrDef(qname, loc)
-          mkApplyCurried(lambda, e :: es, loc)
+          WeededAst.Expression.Apply(lambda, e :: es, loc)
       }
 
     case ParsedAst.Expression.Lambda(sp1, fparams0, exp, sp2) =>
@@ -490,8 +489,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // No pattern match.
           val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
-          val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
-          WeededAst.Expression.Apply(inner, value, loc)
+          val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
+          WeededAst.Expression.Apply(inner, List(value), loc)
         case (pat, value, body) =>
           // Full-blown pattern match.
           val lambdaIdent = Name.Ident(SourcePosition.Unknown, "pat$0", SourcePosition.Unknown)
@@ -502,8 +501,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
-          val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
-          WeededAst.Expression.Apply(inner, value, loc)
+          val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
+          WeededAst.Expression.Apply(inner, List(value), loc)
       }
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
@@ -1408,7 +1407,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Check if the argument list is empty. If so, invoke the function with the Unit value.
           val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
           val b = WeededAst.Expression.VarOrDef(qname, loc)
-          val e = mkApplyCurried(b, as, loc)
+          val e = WeededAst.Expression.Apply(b, as, loc)
           WeededAst.Predicate.Body.Guard(e, loc)
       }
   }
@@ -1550,7 +1549,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               case as =>
                 val lam = WeededAst.Expression.VarOrDef(law, loc)
                 val fun = WeededAst.Expression.VarOrDef(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
-                val exp = mkApplyCurried(lam, fun :: as, loc)
+                val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
                 WeededAst.Declaration.Property(law, defn, exp, loc)
             }
         })
@@ -1752,20 +1751,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Returns a curried apply expression for the given `base` and `args` argument expressions.
-    */
-  private def mkApplyCurried(base: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
-    args.foldLeft(base) {
-      case (eacc, arg) => WeededAst.Expression.Apply(eacc, arg, loc)
-    }
-  }
-
-  /**
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
   private def mkApplyFqn(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
     val lambda = WeededAst.Expression.VarOrDef(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
-    mkApplyCurried(lambda, args, mkSL(sp1, sp2))
+    WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 
   /**
@@ -1782,7 +1772,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     *
     * If so, returns a list with a single unit expression.
     */
-  private def getApplyArgsCheckIfEmpty(args0: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): List[WeededAst.Expression] = args0 match {
+  private def getArguments(args0: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): List[WeededAst.Expression] = args0 match {
     case Nil => List(WeededAst.Expression.Unit(mkSL(sp1, sp2)))
     case as => as
   }

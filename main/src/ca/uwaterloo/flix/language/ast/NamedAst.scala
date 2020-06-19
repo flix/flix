@@ -27,7 +27,6 @@ object NamedAst {
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   latticesOps: Map[NamedAst.Type, NamedAst.LatticeOps],
-                  named: Map[Symbol.DefnSym, NamedAst.Expression],
                   properties: Map[Name.NName, List[NamedAst.Property]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
@@ -96,7 +95,7 @@ object NamedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Apply(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Apply(exp: NamedAst.Expression, exps: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class Lambda(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

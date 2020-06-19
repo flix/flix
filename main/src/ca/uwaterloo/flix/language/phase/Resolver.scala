@@ -49,25 +49,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-
-    val namedVal = prog0.named.map {
-      case (sym, exp0) => Expressions.resolve(exp0, Map.empty, Name.RootNS, prog0).map {
-        case exp =>
-          // Introduce a synthetic definition for the expression.
-          val doc = Ast.Doc(Nil, SourceLocation.Unknown)
-          val ann = Ast.Annotations.Empty
-          val mod = Ast.Modifiers(Ast.Modifier.Public :: Ast.Modifier.EntryPoint :: Nil)
-          val tparams = Nil
-          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
-          val fparams = List(fparam)
-          val sc = Scheme(Nil, Type.freshTypeVar())
-          val eff = Type.freshTypeVar()
-          val loc = SourceLocation.Unknown
-          val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, sc, eff, loc)
-          sym -> defn
-      }
-    }
-
     val enumsVal = prog0.enums.flatMap {
       case (ns0, enums) => enums.map {
         case (_, enum) => resolve(enum, ns0, prog0) map {
@@ -90,12 +71,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     for {
       definitions <- sequence(definitionsVal)
-      named <- sequence(namedVal)
       enums <- sequence(enumsVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      definitions.toMap ++ named.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
+      definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
 
@@ -135,7 +115,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
         eff <- lookupType(eff0, ns0, prog0)
-      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams.head, exp, scheme, eff, loc)
+      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
   }
 
   /**
@@ -213,7 +193,35 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Def(qname, tvar, loc) =>
           lookupDef(qname, ns0, prog0) map {
-            case sym => ResolvedAst.Expression.Def(sym, tvar, loc)
+            case defn =>
+              //
+              // We must curry the definition. Otherwise we would not be here.
+              //
+              // We introduce /n/ lambda expressions around the definition expression.
+              //
+
+              // Find the arity of the function definition.
+              val arity = defn.fparams.length
+
+              // Introduce a fresh variable symbol for each argument of the function definition.
+              val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
+
+              // Introduce a formal parameter for each variable symbol.
+              val fparams = varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+
+              // The definition expression.
+              val defExp = ResolvedAst.Expression.Def(defn.sym, tvar, loc)
+
+              // The arguments passed to the definition (i.e. the fresh variable symbols).
+              val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
+
+              // The apply expression inside the lambda.
+              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+
+              // The curried lambda expressions.
+              fparams.foldRight(applyExp: ResolvedAst.Expression) {
+                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshTypeVar(), loc)
+              }
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -262,11 +270,44 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
+        case NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(qname, _, _), exps, loc) =>
+          //
+          // Special Case: We are applying a known function. Check if we have the right number of arguments.
+          //
+          // If so, we can perform a direct call. Otherwise we have to introduce lambdas.
+          //
+          flatMapN(lookupDef(qname, ns0, prog0)) {
+            case defn =>
+              if (defn.fparams.length == exps.length) {
+                // Case 1: Hooray! We can call the function directly.
+                for {
+                  es <- traverse(exps)(visit(_, tenv0))
+                } yield {
+                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshTypeVar(), loc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+                }
+              } else {
+                // Case 2: We have to curry. (See below).
+                for {
+                  e <- visit(exp, tenv0)
+                  es <- traverse(exps)(visit(_, tenv0))
+                } yield {
+                  es.foldLeft(e) {
+                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+                  }
+                }
+              }
+          }
+
+        case NamedAst.Expression.Apply(exp, exps, loc) =>
           for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Apply(e1, e2, tvar, evar, loc)
+            e <- visit(exp, tenv0)
+            es <- traverse(exps)(visit(_, tenv0))
+          } yield {
+            es.foldLeft(e) {
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+            }
+          }
 
         case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {
@@ -819,7 +860,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[Symbol.DefnSym, ResolutionError] = {
+  def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Def, ResolutionError] = {
     val defOpt = tryLookupDef(qname, ns0, prog0)
 
     defOpt match {
@@ -1081,7 +1122,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield Type.mkArrow(tparams, eff, tresult)
+      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult)
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for (
@@ -1182,12 +1223,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[Symbol.DefnSym, ResolutionError] = {
+  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Def, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
     if (defn0.mod.isPublic)
-      return defn0.sym.toSuccess
+      return defn0.toSuccess
 
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
@@ -1195,7 +1236,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val prefixNs = defn0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
-      return defn0.sym.toSuccess
+      return defn0.toSuccess
 
     //
     // The definition is not accessible.
