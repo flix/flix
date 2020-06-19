@@ -1437,7 +1437,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
+  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructorDeprecatedWillBeRemoved match {
     case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object").toSuccess
 
     case Type.Cst(TypeConstructor.Bool) => classOf[Boolean].toSuccess

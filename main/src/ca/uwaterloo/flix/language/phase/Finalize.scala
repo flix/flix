@@ -532,7 +532,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
   // TODO: Should be private
   def visitType(t0: Type): MonoType = {
-    val base = t0.typeConstructor
+    val base = t0.typeConstructorDeprecatedWillBeRemoved
     val args = t0.typeArguments.map(visitType)
 
     base match {

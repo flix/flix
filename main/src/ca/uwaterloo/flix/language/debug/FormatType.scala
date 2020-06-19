@@ -49,7 +49,7 @@ object FormatType {
     }
 
     def formatSchemaField(name: String, tpe: Type): String = {
-      val typeConstructor = tpe.typeConstructor
+      val typeConstructor = tpe.typeConstructorDeprecatedWillBeRemoved
       val fullName = typeConstructor match {
         case Type.Cst(TypeConstructor.Relation) => name
         case Type.Cst(TypeConstructor.Lattice) => s"$name<>"
@@ -59,7 +59,7 @@ object FormatType {
         case Type.Cst(TypeConstructor.Relation) | Type.Cst(TypeConstructor.Lattice) =>
           tpe.typeArguments match {
             case Nil => "(???)"
-            case arg :: tail => arg.typeConstructor match {
+            case arg :: tail => arg.typeConstructorDeprecatedWillBeRemoved match {
               case Type.Cst(TypeConstructor.Unit) => formatApply("()", tail)
               case Type.Cst(TypeConstructor.Tuple(_)) => formatApply(formatType(arg), tail)
               case _ => formatApply(s"(${formatType(arg)})", tail)
@@ -82,7 +82,7 @@ object FormatType {
 
 
     def visit(tpe: Type)(implicit audience: Audience): String = {
-      val base = tpe.typeConstructor
+      val base = tpe.typeConstructorDeprecatedWillBeRemoved
       val args = tpe.typeArguments
 
       base match {

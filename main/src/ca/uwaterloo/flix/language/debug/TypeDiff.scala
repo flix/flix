@@ -85,8 +85,8 @@ object TypeDiff {
     *   * `diff(Option[Int32], Option[Bool]) => Enum[Mismatch(Int32, Bool)]`
     */
   def diff(tpe1: Type, tpe2: Type): TypeDiff = {
-    val tyCon1 = tpe1.typeConstructor
-    val tyCon2 = tpe2.typeConstructor
+    val tyCon1 = tpe1.typeConstructorDeprecatedWillBeRemoved
+    val tyCon2 = tpe2.typeConstructorDeprecatedWillBeRemoved
 
     (tyCon1, tyCon2) match {
       case (Type.Var(_, _, _), _) => TypeDiff.Other

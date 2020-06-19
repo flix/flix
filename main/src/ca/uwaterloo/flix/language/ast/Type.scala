@@ -45,22 +45,31 @@ sealed trait Type {
   }
 
   /**
-    * Returns the type constructor of `this` type.
+    * Optionally returns the type constructor of `this` type.
     *
     * For example,
     *
     * {{{
-    * Celsius                       =>      Celsius
-    * Option[Int]                   =>      Option
-    * Arrow[Bool, Char]             =>      Arrow
-    * Tuple[Bool, Int]              =>      Tuple
-    * Result[Bool, Int]             =>      Result
-    * Result[Bool][Int]             =>      Result
-    * Option[Result[Bool, Int]]     =>      Option
+    * x                             =>      None
+    * Celsius                       =>      Some(Celsius)
+    * Option[Int]                   =>      Some(Option)
+    * Arrow[Bool, Char]             =>      Some(Arrow)
+    * Tuple[Bool, Int]              =>      Some(Tuple)
+    * Result[Bool, Int]             =>      Some(Result)
+    * Result[Bool][Int]             =>      Some(Result)
+    * Option[Result[Bool, Int]]     =>      Some(Option)
     * }}}
     */
-  def typeConstructor: Type = this match {
+  def typeConstructor: Option[TypeConstructor] = this match {
+    case Type.Var(_, _, _) => None
+    case Type.Cst(tc) => Some(tc)
+    case Type.Lambda(_, _) => None
     case Type.Apply(t1, _) => t1.typeConstructor
+  }
+
+  // TODO: Remove
+  def typeConstructorDeprecatedWillBeRemoved: Type = this match {
+    case Type.Apply(t1, _) => t1.typeConstructorDeprecatedWillBeRemoved
     case _ => this
   }
 
