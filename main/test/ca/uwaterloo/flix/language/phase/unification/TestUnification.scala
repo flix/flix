@@ -218,11 +218,6 @@ class TestUnification extends FunSuite with TestUtils {
     assert(isOk(result))
   }
 
-  test("Unify.Arrow") {
-    val result = Unification.unifyTypes(Type.Arrow(3, Type.Cst(TypeConstructor.True)), Type.Arrow(3, Type.Cst(TypeConstructor.True)))
-    assert(isOk(result))
-  }
-
   test("Unify.Enum.01") {
     val sym = Symbol.mkEnumSym("Color")
     val result = Unification.unifyTypes(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), Type.Cst(TypeConstructor.Enum(sym, Kind.Star)))
