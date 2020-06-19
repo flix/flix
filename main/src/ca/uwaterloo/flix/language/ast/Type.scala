@@ -47,6 +47,10 @@ sealed trait Type {
   /**
     * Optionally returns the type constructor of `this` type.
     *
+    * Return `None` if the type constructor is a variable.
+    *
+    * Otherwise returns `Some(tc)` where `tc` is the left-most type constructor.
+    *
     * For example,
     *
     * {{{
