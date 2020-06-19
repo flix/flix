@@ -49,24 +49,24 @@ object FormatType {
     }
 
     def formatSchemaField(name: String, tpe: Type): String = {
-      val typeConstructor = tpe.typeConstructorDeprecatedWillBeRemoved
+      val typeConstructor = tpe.typeConstructor
       val fullName = typeConstructor match {
-        case Type.Cst(TypeConstructor.Relation) => name
-        case Type.Cst(TypeConstructor.Lattice) => s"$name<>"
+        case Some(TypeConstructor.Relation) => name
+        case Some(TypeConstructor.Lattice) => s"$name<>"
         case _ => s"$name?"
       }
       val arg = typeConstructor match {
-        case Type.Cst(TypeConstructor.Relation) | Type.Cst(TypeConstructor.Lattice) =>
+        case Some(TypeConstructor.Relation) | Some(TypeConstructor.Lattice) =>
           tpe.typeArguments match {
             case Nil => "(???)"
-            case arg :: tail => arg.typeConstructorDeprecatedWillBeRemoved match {
-              case Type.Cst(TypeConstructor.Unit) => formatApply("()", tail)
-              case Type.Cst(TypeConstructor.Tuple(_)) => formatApply(formatType(arg), tail)
+            case arg :: tail => arg.typeConstructor match {
+              case Some(TypeConstructor.Unit) => formatApply("()", tail)
+              case Some(TypeConstructor.Tuple(_)) => formatApply(formatType(arg), tail)
               case _ => formatApply(s"(${formatType(arg)})", tail)
             }
           }
-        case Type.Cst(TypeConstructor.Unit) => "()"
-        case Type.Cst(TypeConstructor.Tuple(_)) => formatType(tpe)
+        case Some(TypeConstructor.Unit) => "()"
+        case Some(TypeConstructor.Tuple(_)) => formatType(tpe)
         case _ => s"(${formatType(tpe)})"
 
       }
