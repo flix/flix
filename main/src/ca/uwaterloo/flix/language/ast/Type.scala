@@ -67,7 +67,7 @@ sealed trait Type {
   def typeConstructor: Option[TypeConstructor] = this match {
     case Type.Var(_, _, _) => None
     case Type.Cst(tc) => Some(tc)
-    case Type.Lambda(_, _) => None
+    case Type.Lambda(_, _) => None // TODO: throw ex instead?
     case Type.Apply(t1, _) => t1.typeConstructor
   }
 
