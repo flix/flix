@@ -33,8 +33,9 @@ sealed trait Type {
 
   /**
     * Returns the type variables in `this` type.
+    *
+    * Returns a sorted set to ensure that the compiler is deterministic.
     */
-  // NB: This must be a sorted set to ensure that the compiler is deterministic.
   def typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
     case Type.Cst(TypeConstructor.Arrow(_, eff)) => eff.typeVars
