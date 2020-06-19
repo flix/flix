@@ -274,6 +274,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           //
           // Special Case: We are applying a known function. Check if we have the right number of arguments.
           //
+          // If so, we can perform a direct call. Otherwise we have two introduce lambdas.
+          //
           flatMapN(lookupDef(qname, ns0, prog0)) {
             case defn =>
               if (defn.fparams.length == exps.length) {
