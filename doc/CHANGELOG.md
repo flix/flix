@@ -2,6 +2,16 @@
 
 HEAD:
 
+Version 0.13.0:
+- Significantly improved compilation time.
+- Significantly improved the execution time of some Flix programs.
+- Added @Time and @Space annotations.
+- Added keywords for the logical operators: not, and, or.
+- Reintroduce multi-threaded compilation.
+- Various minor improvements to the standard library.
+- Various minor bug fixes to the compiler.
+- Removed binary literals from the language.
+
 Version 0.12.0:
 
 - Sets and Maps are now backed by Red-Black Trees. 
