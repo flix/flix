@@ -1437,59 +1437,64 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructorDeprecatedWillBeRemoved match {
-    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object").toSuccess
+  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
+    case None =>
+      ResolutionError.IllegalType(tpe, loc).toFailure
 
-    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean].toSuccess
+    case Some(tc) => tc match {
+      case TypeConstructor.Unit => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Char) => classOf[Char].toSuccess
+      case TypeConstructor.Bool => classOf[Boolean].toSuccess
 
-    case Type.Cst(TypeConstructor.Float32) => classOf[Float].toSuccess
+      case TypeConstructor.Char => classOf[Char].toSuccess
 
-    case Type.Cst(TypeConstructor.Float64) => classOf[Double].toSuccess
+      case TypeConstructor.Float32 => classOf[Float].toSuccess
 
-    case Type.Cst(TypeConstructor.Int8) => classOf[Byte].toSuccess
+      case TypeConstructor.Float64 => classOf[Double].toSuccess
 
-    case Type.Cst(TypeConstructor.Int16) => classOf[Short].toSuccess
+      case TypeConstructor.Int8 => classOf[Byte].toSuccess
 
-    case Type.Cst(TypeConstructor.Int32) => classOf[Int].toSuccess
+      case TypeConstructor.Int16 => classOf[Short].toSuccess
 
-    case Type.Cst(TypeConstructor.Int64) => classOf[Long].toSuccess
+      case TypeConstructor.Int32 => classOf[Int].toSuccess
 
-    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger").toSuccess
+      case TypeConstructor.Int64 => classOf[Long].toSuccess
 
-    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String").toSuccess
+      case TypeConstructor.BigInt => Class.forName("java.math.BigInteger").toSuccess
 
-    case Type.Cst(TypeConstructor.Channel) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
 
-    case Type.Cst(TypeConstructor.Enum(_, _)) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Ref) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Enum(_, _) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Array) =>
-      tpe.typeArguments match {
-        case elmTyp :: Nil =>
-          mapN(getJVMType(elmTyp, loc)) {
-            case elmClass =>
-              // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
-              java.lang.reflect.Array.newInstance(elmClass, 0).getClass
-          }
-        case _ => ResolutionError.IllegalType(tpe, loc).toFailure
-      }
+      case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
+      case TypeConstructor.Array =>
+        tpe.typeArguments match {
+          case elmTyp :: Nil =>
+            mapN(getJVMType(elmTyp, loc)) {
+              case elmClass =>
+                // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+                java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+            }
+          case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+        }
 
-    case Type.Cst(TypeConstructor.RecordEmpty) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Native(clazz) => clazz.toSuccess
 
-    case Type.Cst(TypeConstructor.RecordExtend(_)) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.RecordEmpty => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.SchemaEmpty) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.RecordExtend(_) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.SchemaExtend(_)) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
 
-    case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+      case TypeConstructor.SchemaExtend(_) => Class.forName("java.lang.Object").toSuccess
+
+      case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+    }
   }
 
   /**
