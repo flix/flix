@@ -1258,6 +1258,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is a type variable.
       */
+      // TODO: Deprecated
     def isVar(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
       case Type.Var(_, _, _) => true
       case _ => false
@@ -1266,6 +1267,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is an arrow type.
       */
+    // TODO: Deprecated
     def isArrow(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
       case Type.Cst(TypeConstructor.Arrow(_, _)) => true
       case _ => false
@@ -1274,14 +1276,16 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is a channel type.
       */
-    def isChannel(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
-      case Type.Cst(TypeConstructor.Channel) => true
+    // TODO: Deprecated
+    def isChannel(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Some(TypeConstructor.Channel) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is an enum type.
       */
+    // TODO: Deprecated
     def isEnum(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
       case _ => false
@@ -1290,6 +1294,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is a native type.
       */
+    // TODO: Deprecated
     def isNative(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
       case Type.Cst(TypeConstructor.Native(_)) => true
       case _ => false
@@ -1298,14 +1303,16 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is a tuple type.
       */
-    def isTuple(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
-      case Type.Cst(TypeConstructor.Tuple(l)) => true
+    // TODO: Deprecated
+    def isTuple(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Some(TypeConstructor.Tuple(_)) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is a relation type.
       */
+    // TODO: Deprecated
     def isRelation(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
       case Type.Cst(TypeConstructor.Relation) => true
       case _ => false
@@ -1314,6 +1321,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is a lattice type.
       */
+    // TODO: Deprecated
     def isLattice(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
       case Type.Cst(TypeConstructor.Lattice) => true
       case _ => false
@@ -1322,6 +1330,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is a record type.
       */
+    // TODO: Deprecated
     def isRecord(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
       case Type.Cst(TypeConstructor.RecordEmpty) => true
       case Type.Cst(TypeConstructor.RecordExtend(_)) => true
@@ -1331,6 +1340,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is a schema type.
       */
+    // TODO: Deprecated
     def isSchema(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
       case Type.Cst(TypeConstructor.SchemaEmpty) => true
       case Type.Cst(TypeConstructor.SchemaExtend(_)) => true
