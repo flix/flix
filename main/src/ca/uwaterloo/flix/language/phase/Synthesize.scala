@@ -1226,7 +1226,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns the enum symbol of the given enum type `tpe`.
       */
     def getEnumSym(tpe: Type): Symbol.EnumSym = {
-      val Type.Cst(TypeConstructor.Enum(sym, _)) = tpe.typeConstructorDeprecatedWillBeRemoved
+      val Some(TypeConstructor.Enum(sym, _)) = tpe.typeConstructor
       sym
     }
 
@@ -1259,8 +1259,8 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a type variable.
       */
     // TODO: Deprecated
-    def isVar(tpe: Type): Boolean = tpe.typeConstructorDeprecatedWillBeRemoved match {
-      case Type.Var(_, _, _) => true
+    def isVar(tpe: Type): Boolean = tpe.typeConstructor match {
+      case None => true
       case _ => false
     }
 
