@@ -785,8 +785,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |def foo(x: Int): Int -> Int =
          |    _y -> foo(123, x)
          |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    compile(input, DefaultOptions).get
   }
 
   test("UnconditionalRecursion.04") {
@@ -834,8 +833,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    (_y -> foo(x))(x)
          |}
          |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    compile(input, DefaultOptions).get
   }
 
   test("UselessExpression.01") {
