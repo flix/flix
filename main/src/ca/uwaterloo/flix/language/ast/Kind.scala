@@ -42,6 +42,11 @@ sealed trait Kind {
 object Kind {
 
   /**
+    * The kind of kind variables.
+    */
+  case class Var(id: Int) extends Kind
+
+  /**
     * The kind of all nullary type expressions.
     */
   case object Star extends Kind
@@ -77,6 +82,7 @@ object Kind {
     */
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
+      case Kind.Var(id) => s"k$id"
       case Kind.Star => "*"
       case Kind.Record => "Record"
       case Kind.Schema => "Schema"
