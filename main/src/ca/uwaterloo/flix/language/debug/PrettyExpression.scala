@@ -60,6 +60,9 @@ object PrettyExpression {
 
     case Expression.Binary(op, exp1, exp2, _, _, _) => op match {
       case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
+      case BinaryOperator.Minus => s"${pretty(exp1)} - ${pretty(exp2)}"
+      case BinaryOperator.Times => s"${pretty(exp1)} * ${pretty(exp2)}"
+      case BinaryOperator.Divide => s"${pretty(exp1)} / ${pretty(exp2)}"
       case BinaryOperator.LogicalAnd => s"${pretty(exp1)} && ${pretty(exp2)}"
       case BinaryOperator.LogicalOr => s"${pretty(exp1)} || ${pretty(exp2)}"
       // TODO: Rest
