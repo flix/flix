@@ -93,18 +93,34 @@ sealed trait Type {
   }
 
   /**
+    * Returns the argument types of `this` arrow type.
     *
+    * NB: Assumes that `this` type is an arrow.
     */
-  def arrowArgTypes: List[Type] = ??? // TODO
+  def arrowArgTypes: List[Type] = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.take(n)
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
 
   /**
-    * Returns the result type of an arrow type.
+    * Returns the result type of `this` arrow type.
     *
-    * Assumes that `this` type is an arrow.
+    * NB: Assumes that `this` type is an arrow.
     */
-  def arrowResultType: Type = ??? // TODO
+  def arrowResultType: Type = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.drop(n - 1).head
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
 
-  def arrowEffectType: Type = ??? // TODO
+  /**
+    * Returns the effect type of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowEffectType: Type = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.drop(n).head
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
 
   /**
     * Returns the size of `this` type.
