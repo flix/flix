@@ -135,9 +135,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               val inferredScheme = Scheme(inferredType.typeVars.toList, inferredType)
 
               ///
+              /// Infer types for annotations.
+              ///
+              val annVal = visitAnnotations(ann, root)
+
+              ///
               /// Reassemble everything.
               ///
-              Validation.Success((TypedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, declaredScheme, inferredScheme, declaredEff, loc), subst))
+              Validation.mapN(annVal) {
+                case as =>
+                  (TypedAst.Def(doc, as, mod, sym, tparams, fparams, exp, declaredScheme, inferredScheme, declaredEff, loc), subst)
+              }
 
             case Err(e) => Validation.Failure(LazyList(e))
           }
@@ -261,6 +269,48 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
     // Sequence the results and sort the properties by their source location.
     Validation.sequence(results)
+  }
+
+  /**
+    * Visits all annotations.
+    */
+  private def visitAnnotations(ann: List[ResolvedAst.Annotation], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.Annotations, TypeError] = {
+    Validation.mapN(Validation.traverse(ann)(inferAnnotation(_, root))) {
+      case as => if (as.isEmpty) Ast.Annotations.Empty else Ast.Annotations(as)
+    }
+  }
+
+  /**
+    * Performs type inference on the given annotation `ann0`.
+    */
+  private def inferAnnotation(ann0: ResolvedAst.Annotation, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.Annotation, TypeError] = ann0 match {
+    case ResolvedAst.Annotation(ident, exps, loc) =>
+      //
+      // Perform type inference on the arguments.
+      //
+      val result = for {
+        (tpes, effs) <- seqM(exps.map(inferExp(_, root))).map(_.unzip)
+        _ <- unifyTypM(Type.Pure :: effs, loc)
+      } yield Type.Int32
+
+      //
+      // Run the type inference monad.
+      //
+      val initialSubst = Substitution.empty
+      result.run(initialSubst).toValidation.map {
+        case t =>
+          ident.name match {
+            case "benchmark" => Ast.Annotation.Benchmark(loc)
+            case "deprecated" => Ast.Annotation.Deprecated(loc)
+            case "law" => Ast.Annotation.Law(loc)
+            case "lint" => Ast.Annotation.Lint(loc)
+            case "test" => Ast.Annotation.Test(loc)
+            case "unchecked" => Ast.Annotation.Unchecked(loc)
+            case "Time" => Ast.Annotation.Time(loc)
+            case "Space" => Ast.Annotation.Space(loc)
+            case name => throw InternalCompilerException(s"Unexpected annotation: '$name'.")
+          }
+      }
   }
 
   /**

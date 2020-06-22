@@ -112,6 +112,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         fparamType <- lookupType(fparam.tpe, ns0, prog0)
         fparams <- resolveFormalParams(fparams0, ns0, prog0)
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
+        ann <- traverse(ann)(visitAnnotation(_, ns0, prog0))
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
         eff <- lookupType(eff0, ns0, prog0)
@@ -166,10 +167,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
     */
-  private def resolve(a0: NamedAst.Attribute, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Attribute, ResolutionError] = {
+  private def visitAttribute(a0: NamedAst.Attribute, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Attribute, ResolutionError] = {
     for {
       tpe <- lookupType(a0.tpe, ns0, prog0)
     } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
+  }
+
+  /**
+    * Performs name resolution on the given annotation `a0` in the given namespace `ns0`.
+    */
+  private def visitAnnotation(a0: NamedAst.Annotation, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Annotation, ResolutionError] = {
+    for {
+      args <- traverse(a0.args)(Expressions.resolve(_, Map.empty, ns0, prog0))
+    } yield ResolvedAst.Annotation(a0.ident, args, a0.loc)
   }
 
   object Expressions {
@@ -177,6 +187,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
       */
+    // TODO: Why is this tenv here?
     def resolve(exp0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
       /**
         * Local visitor.
