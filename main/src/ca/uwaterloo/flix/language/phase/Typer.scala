@@ -274,16 +274,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Visits all annotations.
     */
-  private def visitAnnotations(ann: List[ResolvedAst.Annotation], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.Annotations, TypeError] = {
-    Validation.mapN(Validation.traverse(ann)(inferAnnotation(_, root))) {
-      case as => if (as.isEmpty) Ast.Annotations.Empty else Ast.Annotations(as)
-    }
+  private def visitAnnotations(ann: List[ResolvedAst.Annotation], root: ResolvedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.Annotation], TypeError] = {
+    Validation.traverse(ann)(inferAnnotation(_, root))
   }
 
   /**
     * Performs type inference on the given annotation `ann0`.
     */
-  private def inferAnnotation(ann0: ResolvedAst.Annotation, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.Annotation, TypeError] = ann0 match {
+  private def inferAnnotation(ann0: ResolvedAst.Annotation, root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Annotation, TypeError] = ann0 match {
     case ResolvedAst.Annotation(name, exps, loc) =>
       //
       // Perform type inference on the arguments.
@@ -294,11 +292,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       } yield Type.Int32
 
       //
-      // Run the type inference monad.
+      // Run the type inference monad with an empty substitution.
       //
       val initialSubst = Substitution.empty
       result.run(initialSubst).toValidation.map {
-        case t => name
+        case (subst, _) =>
+          val es = exps.map(reassembleExp(_, root, subst))
+          TypedAst.Annotation(name, es, loc)
       }
   }
 

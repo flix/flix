@@ -18,14 +18,13 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.errors.RedundancyError._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
-
-import scala.annotation.tailrec
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
@@ -606,8 +605,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
-    !decl.ann.isTest &&
-      !decl.ann.isLint &&
+    !isTest(decl.ann) &&
+      !isLint(decl.ann) &&
       !decl.mod.isPublic &&
       !decl.sym.name.equals("main") &&
       !decl.sym.name.startsWith("_") &&
