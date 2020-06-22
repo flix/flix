@@ -26,6 +26,7 @@ import scala.collection.immutable.SortedSet
   * Representation of types.
   */
 sealed trait Type {
+
   /**
     * The kind of `this` type.
     */
@@ -33,34 +34,42 @@ sealed trait Type {
 
   /**
     * Returns the type variables in `this` type.
+    *
+    * Returns a sorted set to ensure that the compiler is deterministic.
     */
-  // NB: This must be a sorted set to ensure that the compiler is deterministic.
   def typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
+    case Type.Cst(TypeConstructor.Arrow(_, eff)) => eff.typeVars
     case Type.Cst(tc) => SortedSet.empty
-    case Type.Arrow(_, eff) => eff.typeVars
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
   /**
-    * Returns the type constructor of `this` type.
+    * Optionally returns the type constructor of `this` type.
+    *
+    * Return `None` if the type constructor is a variable.
+    *
+    * Otherwise returns `Some(tc)` where `tc` is the left-most type constructor.
     *
     * For example,
     *
     * {{{
-    * Celsius                       =>      Celsius
-    * Option[Int]                   =>      Option
-    * Arrow[Bool, Char]             =>      Arrow
-    * Tuple[Bool, Int]              =>      Tuple
-    * Result[Bool, Int]             =>      Result
-    * Result[Bool][Int]             =>      Result
-    * Option[Result[Bool, Int]]     =>      Option
+    * x                             =>      None
+    * Celsius                       =>      Some(Celsius)
+    * Option[Int]                   =>      Some(Option)
+    * Arrow[Bool, Char]             =>      Some(Arrow)
+    * Tuple[Bool, Int]              =>      Some(Tuple)
+    * Result[Bool, Int]             =>      Some(Result)
+    * Result[Bool][Int]             =>      Some(Result)
+    * Option[Result[Bool, Int]]     =>      Some(Option)
     * }}}
     */
-  def typeConstructor: Type = this match {
+  def typeConstructor: Option[TypeConstructor] = this match {
+    case Type.Var(_, _, _) => None
+    case Type.Cst(tc) => Some(tc)
     case Type.Apply(t1, _) => t1.typeConstructor
-    case _ => this
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$this'.")
   }
 
   /**
@@ -88,8 +97,8 @@ sealed trait Type {
     */
   def size: Int = this match {
     case Type.Var(_, _, _) => 1
+    case Type.Cst(TypeConstructor.Arrow(_, eff)) => eff.size + 1
     case Type.Cst(tc) => 1
-    case Type.Arrow(_, eff) => eff.size + 1
     case Type.Lambda(_, tpe) => tpe.size + 1
     case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
   }
@@ -243,13 +252,6 @@ object Type {
   }
 
   /**
-    * A type expression that represents functions.
-    */
-  case class Arrow(arity: Int, eff: Type) extends Type {
-    def kind: Kind = Kind.Arrow((0 until arity).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
-  /**
     * A type expression that represents a type abstraction [x] => tpe.
     */
   case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
@@ -306,7 +308,7 @@ object Type {
   /**
     * Constructs the arrow type A -> B & e.
     */
-  def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = Apply(Apply(Arrow(2, e), a), b)
+  def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = Apply(Apply(Type.Cst(TypeConstructor.Arrow(2, e)), a), b)
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
@@ -341,7 +343,7 @@ object Type {
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
-    val arrow = Arrow(as.length + 1, e)
+    val arrow = Type.Cst(TypeConstructor.Arrow(as.length + 1, e))
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }

@@ -85,8 +85,8 @@ object Scheme {
           Type.Var(x, k, newRigidity)
         case Some(tvar) => tvar
       }
+      case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, visitType(eff)))
       case Type.Cst(_) => tpe0
-      case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
       case Type.Apply(tpe1, tpe2) => Type.Apply(visitType(tpe1), visitType(tpe2))
       case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }

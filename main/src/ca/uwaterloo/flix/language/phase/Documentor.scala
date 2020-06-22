@@ -126,7 +126,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the effect of the given function type `tpe0`.
     */
   private def getEffectType(tpe0: Type): Type = tpe0.typeConstructor match {
-    case Type.Arrow(_, eff) => eff
+    case Some(TypeConstructor.Arrow(_, eff)) => eff
     case _ => tpe0
   }
 

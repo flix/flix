@@ -304,11 +304,11 @@ object Indexer {
     */
   private def visitType(tpe0: Type, loc: SourceLocation): Index = tpe0 match {
     case Type.Var(_, _, _) => Index.empty
+    case Type.Cst(TypeConstructor.Arrow(_, eff)) => visitType(eff, loc)
     case Type.Cst(tc) => tc match {
       case TypeConstructor.Enum(sym, _) => Index.useOf(sym, loc)
       case _ => Index.empty
     }
-    case Type.Arrow(_, eff) => visitType(eff, loc)
     case Type.Lambda(_, tpe) => visitType(tpe, loc)
     case Type.Apply(tpe1, tpe2) => visitType(tpe1, loc) ++ visitType(tpe2, loc)
   }

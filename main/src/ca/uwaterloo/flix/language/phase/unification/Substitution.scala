@@ -58,6 +58,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
     def visit(t: Type): Type =
       t match {
         case x: Type.Var => m.getOrElse(x, x)
+        case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, visit(eff)))
         case Type.Cst(tc) => t
         case Type.Apply(t1, t2) =>
           val y = visit(t2)
@@ -68,7 +69,6 @@ case class Substitution(m: Map[Type.Var, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Or), x) => BoolUnification.mkOr(x, y)
             case x => Type.Apply(x, y)
           }
-        case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
       }
 

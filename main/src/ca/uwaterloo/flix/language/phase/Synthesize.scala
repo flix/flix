@@ -797,7 +797,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Arrow(l, _), _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Arrow(l, _)), _) => Expression.Int32(123, sl)
 
         case _ =>
 
@@ -1069,7 +1069,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Cst(TypeConstructor.Channel), _) => Expression.Str("<<channel>>", sl)
 
-        case Type.Apply(Type.Arrow(l, _), _) => Expression.Str("<<clo>>", sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Arrow(l, _)), _) => Expression.Str("<<clo>>", sl)
 
         case _ =>
           //
@@ -1226,7 +1226,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns the enum symbol of the given enum type `tpe`.
       */
     def getEnumSym(tpe: Type): Symbol.EnumSym = {
-      val Type.Cst(TypeConstructor.Enum(sym, _)) = tpe.typeConstructor
+      val Some(TypeConstructor.Enum(sym, _)) = tpe.typeConstructor
       sym
     }
 
@@ -1258,82 +1258,92 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if `tpe` is a type variable.
       */
+    // TODO: Deprecated
     def isVar(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Var(_, _, _) => true
+      case None => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is an arrow type.
       */
+    // TODO: Deprecated
     def isArrow(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Arrow(_, _) => true
+      case Some(TypeConstructor.Arrow(_, _)) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is a channel type.
       */
+    // TODO: Deprecated
     def isChannel(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Channel) => true
+      case Some(TypeConstructor.Channel) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is an enum type.
       */
+    // TODO: Deprecated
     def isEnum(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
+      case Some(TypeConstructor.Enum(_, _)) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is a native type.
       */
+    // TODO: Deprecated
     def isNative(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Native(_)) => true
+      case Some(TypeConstructor.Native(_)) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is a tuple type.
       */
+    // TODO: Deprecated
     def isTuple(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Tuple(l)) => true
+      case Some(TypeConstructor.Tuple(_)) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is a relation type.
       */
+    // TODO: Deprecated
     def isRelation(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Relation) => true
+      case Some(TypeConstructor.Relation) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is a lattice type.
       */
+    // TODO: Deprecated
     def isLattice(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Lattice) => true
+      case Some(TypeConstructor.Lattice) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is a record type.
       */
+    // TODO: Deprecated
     def isRecord(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.RecordEmpty) => true
-      case Type.Cst(TypeConstructor.RecordExtend(_)) => true
+      case Some(TypeConstructor.RecordEmpty) => true
+      case Some(TypeConstructor.RecordExtend(_)) => true
       case _ => false
     }
 
     /**
       * Returns `true` if `tpe` is a schema type.
       */
+    // TODO: Deprecated
     def isSchema(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.SchemaEmpty) => true
-      case Type.Cst(TypeConstructor.SchemaExtend(_)) => true
+      case Some(TypeConstructor.SchemaEmpty) => true
+      case Some(TypeConstructor.SchemaExtend(_)) => true
       case _ => false
     }
 

@@ -709,7 +709,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Lattice) => 0
       case Type.Cst(TypeConstructor.RecordEmpty) => 0
       case Type.Cst(TypeConstructor.SchemaEmpty) => 0
-      case Type.Arrow(length, _) => length
+      case Type.Cst(TypeConstructor.Arrow(length, _)) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
