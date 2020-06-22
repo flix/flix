@@ -179,7 +179,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   private def visitAnnotation(a0: NamedAst.Annotation, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Annotation, ResolutionError] = {
     for {
       args <- traverse(a0.args)(Expressions.resolve(_, Map.empty, ns0, prog0))
-    } yield ResolvedAst.Annotation(a0.ident, args, a0.loc)
+    } yield ResolvedAst.Annotation(a0.name, args, a0.loc)
   }
 
   object Expressions {

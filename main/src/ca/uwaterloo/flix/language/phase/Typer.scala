@@ -284,7 +284,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Performs type inference on the given annotation `ann0`.
     */
   private def inferAnnotation(ann0: ResolvedAst.Annotation, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.Annotation, TypeError] = ann0 match {
-    case ResolvedAst.Annotation(ident, exps, loc) =>
+    case ResolvedAst.Annotation(name, exps, loc) =>
       //
       // Perform type inference on the arguments.
       //
@@ -298,18 +298,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       //
       val initialSubst = Substitution.empty
       result.run(initialSubst).toValidation.map {
-        case t =>
-          ident.name match {
-            case "benchmark" => Ast.Annotation.Benchmark(loc)
-            case "deprecated" => Ast.Annotation.Deprecated(loc)
-            case "law" => Ast.Annotation.Law(loc)
-            case "lint" => Ast.Annotation.Lint(loc)
-            case "test" => Ast.Annotation.Test(loc)
-            case "unchecked" => Ast.Annotation.Unchecked(loc)
-            case "Time" => Ast.Annotation.Time(loc)
-            case "Space" => Ast.Annotation.Space(loc)
-            case name => throw InternalCompilerException(s"Unexpected annotation: '$name'.")
-          }
+        case t => name
       }
   }
 

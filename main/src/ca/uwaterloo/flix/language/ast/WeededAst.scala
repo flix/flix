@@ -322,7 +322,7 @@ object WeededAst {
 
   }
 
-  case class Annotation(ident: Name.Ident, args: List[WeededAst.Expression], loc: SourceLocation)
+  case class Annotation(name: Ast.Annotation, args: List[WeededAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 

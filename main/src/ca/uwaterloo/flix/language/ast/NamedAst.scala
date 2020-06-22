@@ -311,7 +311,7 @@ object NamedAst {
 
   case class Scheme(quantifiers: List[ast.Type.Var], base: NamedAst.Type)
 
-  case class Annotation(ident: Name.Ident, args: List[NamedAst.Expression], loc: SourceLocation)
+  case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
 

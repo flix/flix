@@ -1163,9 +1163,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Translates the given weeded annotation to a named annotation.
     */
   private def visitAnnotation(ann: WeededAst.Annotation, env0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Annotation, NameError] = ann match {
-    case WeededAst.Annotation(ident, args, loc) =>
+    case WeededAst.Annotation(name, args, loc) =>
       mapN(traverse(args)(visitExp(_, env0, uenv0, tenv0))) {
-        case as => NamedAst.Annotation(ident, as, loc)
+        case as => NamedAst.Annotation(name, as, loc)
       }
   }
 

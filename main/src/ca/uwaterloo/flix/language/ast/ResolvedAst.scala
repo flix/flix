@@ -248,7 +248,7 @@ object ResolvedAst {
 
   }
 
-  case class Annotation(ident: Name.Ident, exps: List[ResolvedAst.Expression], loc: SourceLocation)
+  case class Annotation(name: Ast.Annotation, exps: List[ResolvedAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
