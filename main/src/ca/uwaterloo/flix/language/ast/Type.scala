@@ -93,6 +93,20 @@ sealed trait Type {
   }
 
   /**
+    *
+    */
+  def arrowArgTypes: List[Type] = ??? // TODO
+
+  /**
+    * Returns the result type of an arrow type.
+    *
+    * Assumes that `this` type is an arrow.
+    */
+  def arrowResultType: Type = ??? // TODO
+
+  def arrowEffectType: Type = ??? // TODO
+
+  /**
     * Returns the size of `this` type.
     */
   def size: Int = this match {
