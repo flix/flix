@@ -82,147 +82,165 @@ object FormatType {
 
 
     def visit(tpe: Type)(implicit audience: Audience): String = {
-      val base = tpe.typeConstructorDeprecatedWillBeRemoved
+      val base = tpe.typeConstructor
       val args = tpe.typeArguments
 
       base match {
-        case tvar@Type.Var(id, kind, _) => audience match {
-          case Audience.Internal => kind match {
-            case Effect => s"''$id"
-            case _ => s"'$id"
+        case None => tpe match {
+          case tvar@Type.Var(id, kind, _) => audience match {
+            case Audience.Internal => kind match {
+              case Effect => s"''$id"
+              case _ => s"'$id"
+            }
+            case Audience.External => tvar.getText.getOrElse(renameMap(tvar.id))
           }
-          case Audience.External => tvar.getText.getOrElse(renameMap(tvar.id))
+          case Type.Lambda(tvar, tpe) => audience match {
+            case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
+            case Audience.External => s"${tvar.getText.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
+          }
+          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
         }
 
-        case Type.Cst(TypeConstructor.Unit) => formatApply("Unit", args)
-        case Type.Cst(TypeConstructor.Bool) => formatApply("Bool", args)
-        case Type.Cst(TypeConstructor.Char) => formatApply("Char", args)
-        case Type.Cst(TypeConstructor.Float32) => formatApply("Float32", args)
-        case Type.Cst(TypeConstructor.Float64) => formatApply("Float64", args)
-        case Type.Cst(TypeConstructor.Int8) => formatApply("Int8", args)
-        case Type.Cst(TypeConstructor.Int16) => formatApply("Int16", args)
-        case Type.Cst(TypeConstructor.Int32) => formatApply("Int32", args)
-        case Type.Cst(TypeConstructor.Int64) => formatApply("Int64", args)
-        case Type.Cst(TypeConstructor.BigInt) => formatApply("BigInt", args)
-        case Type.Cst(TypeConstructor.Str) => formatApply("String", args)
-        case Type.Cst(TypeConstructor.RecordEmpty) => formatApply("{ }", args)
-        case Type.Cst(TypeConstructor.SchemaEmpty) => formatApply("#{ }", args)
-        case Type.Cst(TypeConstructor.True) => formatApply("Pure", args)
-        case Type.Cst(TypeConstructor.False) => formatApply("Impure", args)
+        case Some(tc) => tc match {
+          case TypeConstructor.Unit => formatApply("Unit", args)
 
-        case Type.Cst(TypeConstructor.Array) => formatApply("Array", args)
-        case Type.Cst(TypeConstructor.Channel) => formatApply("Channel", args)
-        case Type.Cst(TypeConstructor.Enum(sym, _)) => formatApply(sym.toString, args)
-        case Type.Cst(TypeConstructor.Lattice) => formatApply("Lattice", args)
-        case Type.Cst(TypeConstructor.Relation) => formatApply("Relation", args)
-        case Type.Cst(TypeConstructor.Ref) => formatApply("Ref", args)
+          case TypeConstructor.Bool => formatApply("Bool", args)
 
-        case Type.Cst(TypeConstructor.RecordExtend(label)) => args.length match {
-          case 0 => s"{ $label: ??? }"
-          case 1 => s"{ $label: ${visit(args.head)} | ??? }"
-          case 2 => formatWellFormedRecord(tpe)
-          case _ => formatApply(s"RecordExtend($label)", args)
-        }
+          case TypeConstructor.Char => formatApply("Char", args)
 
-        case Type.Cst(TypeConstructor.SchemaExtend(name)) => args.length match {
-          case 0 => s"#{ $name?(???) }"
-          case 1 => s"#{ ${formatSchemaField(name, args.head)} | ??? }"
-          case 2 => formatWellFormedSchema(tpe)
-          case _ => formatApply(s"SchemaExtend($name)", args)
-        }
+          case TypeConstructor.Float32 => formatApply("Float32", args)
 
-        case Type.Cst(TypeConstructor.Tuple(length)) =>
-          val elements = args.take(length).map(visit)
-          val applyParams = args.drop(length) // excess elements
-          val tuple = elements.padTo(length, "???").mkString("(", ", ", ")")
-          formatApply(tuple, applyParams)
+          case TypeConstructor.Float64 => formatApply("Float64", args)
 
-        case Type.Cst(TypeConstructor.Tag(sym, tag)) => // TODO better unhappy case handling
-          if (args.lengthIs == 2)
-            s"$tag${args.head}"
-          else
-            formatApply(tag, args)
+          case TypeConstructor.Int8 => formatApply("Int8", args)
 
-        case Type.Cst(TypeConstructor.Not) => args match {
-          case (t1: Type.Var) :: Nil => s"¬${visit(t1)}"
-          case t1 :: Nil => s"¬(${visit(t1)})"
-          case Nil => "¬???"
-          case _ => formatApply("¬", args)
-        }
+          case TypeConstructor.Int16 => formatApply("Int16", args)
 
-        case Type.Cst(TypeConstructor.And) => args match {
-          case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1)} ∧ ${visit(t2)}"
-          case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∧ (${visit(t2)})"
-          case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∧ ${visit(t2)}"
-          case t1 :: t2 :: Nil => s"(${visit(t1)}) ∧ (${visit(t2)})"
-          case (t1: Type.Var) :: Nil => s"${visit(t1)} ∧ ???"
-          case t1 :: Nil => s"(${visit(t1)}) ∧ ???"
-          case Nil => s"??? ∧ ???"
-          case _ => formatApply("∧", args)
-        }
+          case TypeConstructor.Int32 => formatApply("Int32", args)
 
-        case Type.Cst(TypeConstructor.Or) => args match {
-          case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1)} ∨ ${visit(t2)}"
-          case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∨ (${visit(t2)})"
-          case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∨ ${visit(t2)}"
-          case t1 :: t2 :: Nil => s"(${visit(t1)}) ∨ (${visit(t2)})"
-          case (t1: Type.Var) :: Nil => s"${visit(t1)} ∨ ???"
-          case t1 :: Nil => s"(${visit(t1)}) ∨ ???"
-          case Nil => s"??? ∨ ???"
-          case _ => formatApply("∨", args)
-        }
+          case TypeConstructor.Int64 => formatApply("Int64", args)
 
-        case Type.Cst(TypeConstructor.Arrow(arity, eff)) =>
-          if (arity < 2) {
-            formatApply(s"Arrow$arity", args)
-          } else {
+          case TypeConstructor.BigInt => formatApply("BigInt", args)
 
-            // Retrieve and result type.
-            val types = args.take(arity).map(visit)
-            val applyParams = args.drop(arity) // excess args
-            val typeStrings = types.padTo(arity, "???")
+          case TypeConstructor.Str => formatApply("String", args)
 
+          case TypeConstructor.RecordEmpty => formatApply("{ }", args)
 
-            // Format the arguments.
-            val argPart = typeStrings.init.mkString(" -> ")
-            // Format the arrow.
-            val arrowPart = eff match {
-              case Type.Cst(TypeConstructor.False) => " ~> "
-              case _ => " -> "
-            }
-            // Format the effect.
-            val effPart = eff match {
-              case Type.Cst(TypeConstructor.True) => ""
-              case Type.Cst(TypeConstructor.False) => ""
-              case _: Type.Var => s" & ${visit(eff)}"
-              case _ => " & (" + visit(eff) + ")"
-            }
-            // Format the result type.
-            val resultPart = typeStrings.last
+          case TypeConstructor.SchemaEmpty => formatApply("#{ }", args)
 
-            // Put everything together.
-            val applyPart = argPart + arrowPart + resultPart + effPart
-            if (applyParams.isEmpty) {
-              applyPart
+          case TypeConstructor.True => formatApply("Pure", args) // TODO: Need to format True/False based on where they occur...
+
+          case TypeConstructor.False => formatApply("Impure", args) // TODO: Need to format True/False based on where they occur...
+
+          case TypeConstructor.Array => formatApply("Array", args)
+
+          case TypeConstructor.Channel => formatApply("Channel", args)
+
+          case TypeConstructor.Enum(sym, _) => formatApply(sym.toString, args)
+
+          case TypeConstructor.Lattice => formatApply("Lattice", args)
+
+          case TypeConstructor.Relation => formatApply("Relation", args)
+
+          case TypeConstructor.Ref => formatApply("Ref", args)
+
+          case TypeConstructor.RecordExtend(label) => args.length match {
+            case 0 => s"{ $label: ??? }"
+            case 1 => s"{ $label: ${visit(args.head)} | ??? }"
+            case 2 => formatWellFormedRecord(tpe)
+            case _ => formatApply(s"RecordExtend($label)", args)
+          }
+
+          case TypeConstructor.SchemaExtend(name) => args.length match {
+            case 0 => s"#{ $name?(???) }"
+            case 1 => s"#{ ${formatSchemaField(name, args.head)} | ??? }"
+            case 2 => formatWellFormedSchema(tpe)
+            case _ => formatApply(s"SchemaExtend($name)", args)
+          }
+
+          case TypeConstructor.Tuple(length) =>
+            val elements = args.take(length).map(visit)
+            val applyParams = args.drop(length) // excess elements
+            val tuple = elements.padTo(length, "???").mkString("(", ", ", ")")
+            formatApply(tuple, applyParams)
+
+          case TypeConstructor.Tag(sym, tag) => // TODO better unhappy case handling
+            if (args.lengthIs == 2)
+              s"$tag${args.head}"
+            else
+              formatApply(tag, args)
+
+          case TypeConstructor.Not => args match {
+            case (t1: Type.Var) :: Nil => s"¬${visit(t1)}"
+            case t1 :: Nil => s"¬(${visit(t1)})"
+            case Nil => "¬???"
+            case _ => formatApply("¬", args)
+          }
+
+          case TypeConstructor.And => args match {
+            case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1)} ∧ ${visit(t2)}"
+            case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∧ (${visit(t2)})"
+            case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∧ ${visit(t2)}"
+            case t1 :: t2 :: Nil => s"(${visit(t1)}) ∧ (${visit(t2)})"
+            case (t1: Type.Var) :: Nil => s"${visit(t1)} ∧ ???"
+            case t1 :: Nil => s"(${visit(t1)}) ∧ ???"
+            case Nil => s"??? ∧ ???"
+            case _ => formatApply("∧", args)
+          }
+
+          case TypeConstructor.Or => args match {
+            case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1)} ∨ ${visit(t2)}"
+            case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∨ (${visit(t2)})"
+            case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∨ ${visit(t2)}"
+            case t1 :: t2 :: Nil => s"(${visit(t1)}) ∨ (${visit(t2)})"
+            case (t1: Type.Var) :: Nil => s"${visit(t1)} ∨ ???"
+            case t1 :: Nil => s"(${visit(t1)}) ∨ ???"
+            case Nil => s"??? ∨ ???"
+            case _ => formatApply("∨", args)
+          }
+
+          case TypeConstructor.Arrow(arity, eff) =>
+            if (arity < 2) {
+              formatApply(s"Arrow$arity", args)
             } else {
-              formatApply(s"($applyPart)", applyParams)
+
+              // Retrieve and result type.
+              val types = args.take(arity).map(visit)
+              val applyParams = args.drop(arity) // excess args
+              val typeStrings = types.padTo(arity, "???")
+
+              // Format the arguments.
+              val argPart = typeStrings.init.mkString(" -> ")
+              // Format the arrow.
+              val arrowPart = eff match {
+                case Type.Cst(TypeConstructor.False) => " ~> "
+                case _ => " -> "
+              }
+              // Format the effect.
+              val effPart = eff match {
+                case Type.Cst(TypeConstructor.True) => ""
+                case Type.Cst(TypeConstructor.False) => ""
+                case _: Type.Var => s" & ${visit(eff)}"
+                case _ => " & (" + visit(eff) + ")"
+              }
+              // Format the result type.
+              val resultPart = typeStrings.last
+
+              // Put everything together.
+              val applyPart = argPart + arrowPart + resultPart + effPart
+              if (applyParams.isEmpty) {
+                applyPart
+              } else {
+                formatApply(s"($applyPart)", applyParams)
+              }
             }
-          }
 
-        case Type.Lambda(tvar, tpe) => audience match {
-          case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-          case Audience.External => s"${tvar.getText.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
+          case TypeConstructor.Native(clazz) => s"${clazz.getSimpleName}"
         }
-
-        case Type.Cst(TypeConstructor.Native(clazz)) => s"${clazz.getSimpleName}"
-
-        case Type.Apply(_, _) => throw InternalCompilerException("Unexpected type: Apply") // Should be impossible
-
       }
     }
 
     visit(tpe)
-
   }
 
   /**
@@ -236,16 +254,16 @@ object FormatType {
       val args = d.typeArguments
 
       base match {
-          case TypeDiff.Arrow =>
-            intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
-          case TypeDiff.Enum =>
-            vt << "*"
-            intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-          case TypeDiff.Tuple =>
-            intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
-          case TypeDiff.Other =>
-            vt << "*"
-            intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
+        case TypeDiff.Arrow =>
+          intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
+        case TypeDiff.Enum =>
+          vt << "*"
+          intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
+        case TypeDiff.Tuple =>
+          intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
+        case TypeDiff.Other =>
+          vt << "*"
+          intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         case TypeDiff.Mismatch(tpe1, _) => vt << color(formatType(tpe1))
         case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
       }

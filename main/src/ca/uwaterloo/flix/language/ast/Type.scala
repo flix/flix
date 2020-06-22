@@ -26,6 +26,7 @@ import scala.collection.immutable.SortedSet
   * Representation of types.
   */
 sealed trait Type {
+
   /**
     * The kind of `this` type.
     */
@@ -69,12 +70,6 @@ sealed trait Type {
     case Type.Cst(tc) => Some(tc)
     case Type.Apply(t1, _) => t1.typeConstructor
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$this'.")
-  }
-
-  // TODO: Remove
-  def typeConstructorDeprecatedWillBeRemoved: Type = this match {
-    case Type.Apply(t1, _) => t1.typeConstructorDeprecatedWillBeRemoved
-    case _ => this
   }
 
   /**
