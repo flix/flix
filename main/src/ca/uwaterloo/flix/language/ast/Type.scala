@@ -298,7 +298,7 @@ object Type {
       * The kind of a type application can unique be determined
       * from the kind of the first type argument `t1`.
       */
-    def kind: Kind = {
+    val kind: Kind = {
       tpe1.kind match {
         case Kind.Arrow(kparams, k) => kparams match {
           case _ :: Nil => k
