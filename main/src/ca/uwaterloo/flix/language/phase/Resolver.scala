@@ -1093,7 +1093,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
           } yield {
-            val tpe = simplify(ts.foldLeft(t)(Type.Apply))
+            val tpe = Type.simplify(ts.foldLeft(t)(Type.Apply))
             Type.mkSchemaExtend(qname.ident.name, tpe, r)
           }
       }
@@ -1139,7 +1139,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for (
         tpe1 <- lookupType(base0, ns0, root);
         tpe2 <- lookupType(targ0, ns0, root)
-      ) yield simplify(Type.Apply(tpe1, tpe2))
+      ) yield Type.simplify(Type.Apply(tpe1, tpe2))
 
     case NamedAst.Type.Pure(loc) =>
       Type.Pure.toSuccess
@@ -1329,40 +1329,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case (tparam, acc) => Type.Lambda(tparam.tpe, acc)
     }
 
-  /**
-    * Returns a simplified (evaluated) form of the given type `tpe0`.
-    *
-    * Performs beta-reduction of type abstractions and applications.
-    */
-  private def simplify(tpe0: Type): Type = {
-    def eval(t: Type, subst: Map[Type.Var, Type]): Type = t match {
-      case tvar: Type.Var => subst.getOrElse(tvar, tvar)
-
-      case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eval(eff, subst)))
-
-      case Type.Cst(_) => t
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkRecordExtend(label, t1, t2)
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkSchemaExtend(sym, t1, t2)
-
-      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
-
-      // TODO: Does not take variable capture into account.
-      case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
-        case (Type.Lambda(tvar, tpe3), t2) => eval(tpe3, subst + (tvar -> t2))
-        case (t1, t2) => Type.Apply(t1, t2)
-      }
-    }
-
-    eval(tpe0, Map.empty)
-  }
 
   /**
     * Returns the class reflection object for the given `className`.
