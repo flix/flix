@@ -770,57 +770,55 @@ object Synthesize extends Phase[Root, Root] {
       // TODO: Improve by adding coercion operator.
 
       // Determine the hash code based on the type `tpe`.
-      tpe match {
-        case Type.Cst(TypeConstructor.Unit) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Bool) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Char) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Float32) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Float64) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Int8) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Int16) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Int32) => exp0
-        case Type.Cst(TypeConstructor.Int64) => Expression.Int32(123, sl)
+      tpe.typeConstructor match {
+        case None =>
+          throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
 
-        case Type.Cst(TypeConstructor.BigInt) =>
-          val method = classOf[java.math.BigInteger].getMethod("hashCode")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+        case Some(tc) => tc match {
 
-        case Type.Cst(TypeConstructor.Str) =>
-          val method = classOf[java.lang.String].getMethod("hashCode")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+          case TypeConstructor.Unit => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Int32(123, sl)
+          case TypeConstructor.Bool => Expression.Int32(123, sl)
 
-        case Type.Cst(TypeConstructor.Native(clazz)) =>
-          val method = classOf[java.lang.Object].getMethod("hashCode")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+          case TypeConstructor.Char => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
+          case TypeConstructor.Float32 => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Arrow(l, _)), _) => Expression.Int32(123, sl)
+          case TypeConstructor.Float64 => Expression.Int32(123, sl)
 
-        case _ =>
+          case TypeConstructor.Int8 => Expression.Int32(123, sl)
 
-          //
-          // Closure Case.
-          //
-          if (isArrow(tpe)) {
+          case TypeConstructor.Int16 => Expression.Int32(123, sl)
+
+          case TypeConstructor.Int32 => exp0
+
+          case TypeConstructor.Int64 => Expression.Int32(123, sl)
+
+          case TypeConstructor.BigInt =>
+            val method = classOf[java.math.BigInteger].getMethod("hashCode")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.Str =>
+            val method = classOf[java.lang.String].getMethod("hashCode")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.Array => Expression.Int32(123, sl)
+
+          case TypeConstructor.Arrow(l, _) =>
             val method = classOf[java.lang.Object].getMethod("hashCode")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
-          }
+            Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
 
-          //
-          // Channel Case.
-          //
-          if (isChannel(tpe)) {
+          case TypeConstructor.Channel =>
             val method = classOf[java.lang.Object].getMethod("hashCode")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
-          }
+            Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
 
-          //
-          // Enum case.
-          //
-          if (isEnum(tpe)) {
+          case TypeConstructor.Native(clazz) =>
+            val method = classOf[java.lang.Object].getMethod("hashCode")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.Ref => Expression.Int32(123, sl)
+
+          case TypeConstructor.Enum(sym, kind) =>
             //
             // Assume we have an enum:
             //
@@ -878,13 +876,9 @@ object Synthesize extends Phase[Root, Root] {
             }
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs, Type.Int32, Type.Pure, sl)
-          }
+            Expression.Match(matchValue, rs, Type.Int32, Type.Pure, sl)
 
-          //
-          // Tuple case.
-          //
-          if (isTuple(tpe)) {
+          case TypeConstructor.Tuple(_) =>
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -935,10 +929,21 @@ object Synthesize extends Phase[Root, Root] {
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Int32, Type.Pure, sl)
-          }
+            Expression.Match(matchValue, rule :: Nil, Type.Int32, Type.Pure, sl)
 
-          throw InternalCompilerException(s"Unknown type '$tpe'.")
+          case TypeConstructor.RecordEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.RecordExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.SchemaEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.SchemaExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Tag(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.True => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.False => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Not => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.And => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Or => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+        }
       }
     }
 
@@ -1070,14 +1075,6 @@ object Synthesize extends Phase[Root, Root] {
             val method = classOf[java.lang.Object].getMethod("toString")
             Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
 
-          case TypeConstructor.Relation =>
-            val method = classOf[java.lang.Object].getMethod("toString")
-            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
-
-          case TypeConstructor.Lattice =>
-            val method = classOf[java.lang.Object].getMethod("toString")
-            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
-
           case TypeConstructor.RecordEmpty =>
             Expression.Str("<<record>>", sl)
 
@@ -1197,6 +1194,8 @@ object Synthesize extends Phase[Root, Root] {
             // Assemble the entire match expression.
             Expression.Match(matchValue, rs, Type.Str, Type.Pure, sl)
 
+          case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
           case TypeConstructor.Tag(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
           case TypeConstructor.True => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
           case TypeConstructor.False => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
