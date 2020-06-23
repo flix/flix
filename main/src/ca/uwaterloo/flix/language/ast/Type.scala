@@ -471,14 +471,34 @@ object Type {
   }
 
   /**
-    * Returns the type `And(eff1, eff2)`.
+    * Returns the type `Not(tpe0)`.
     */
-  def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
-    case (Type.Cst(TypeConstructor.True), _) => eff2
-    case (_, Type.Cst(TypeConstructor.True)) => eff1
+  def mkNot(tpe0: Type): Type = tpe0 match {
+    case Type.True => Type.False
+    case Type.False => Type.True
+    case _ => Type.Apply(Type.Cst(TypeConstructor.Not), tpe0)
+  }
+
+  /**
+    * Returns the type `And(tpe1, tpe2)`.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.True)) => tpe1
     case (Type.Cst(TypeConstructor.False), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False)) => Type.False
-    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), tpe1), tpe2)
+  }
+
+  /**
+    * Returns the type `Or(tpe1, tpe2)`.
+    */
+  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True), _) => Type.True
+    case (_, Type.Cst(TypeConstructor.True)) => Type.True
+    case (Type.Cst(TypeConstructor.False), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.False)) => tpe1
+    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), tpe1), tpe2)
   }
 
   /**

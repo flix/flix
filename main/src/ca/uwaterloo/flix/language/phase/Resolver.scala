@@ -1149,17 +1149,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
-        case t => Type.Apply(Type.Cst(TypeConstructor.Not), t)
+        case t => Type.mkNot(t)
       }
 
     case NamedAst.Type.And(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), t1), t2)
+        case (t1, t2) => Type.mkAnd(t1, t2)
       }
 
     case NamedAst.Type.Or(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), t1), t2)
+        case (t1, t2) => Type.mkOr(t1, t2)
       }
 
   }
