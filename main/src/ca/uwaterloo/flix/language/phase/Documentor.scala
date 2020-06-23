@@ -98,7 +98,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Compute the formal parameters.
     val fparams = defn0.fparams.collect {
-      case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
+      case FormalParam(psym, mod, tpe, loc) if tpe != Type.Unit => JObject(
         JField("name", JString(psym.text)),
         JField("type", JString(FormatType.formatType(tpe)))
       )
