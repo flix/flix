@@ -456,6 +456,27 @@ object Type {
   }
 
   /**
+    * Returns the type `And(eff1, eff2)`.
+    */
+  def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+    case (Type.Cst(TypeConstructor.True), _) => eff2
+    case (_, Type.Cst(TypeConstructor.True)) => eff1
+    case (Type.Cst(TypeConstructor.False), _) => Type.False
+    case (_, Type.Cst(TypeConstructor.False)) => Type.False
+    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+  }
+
+  /**
+    * Returns the type `And(eff1, And(eff2, eff3))`.
+    */
+  def mkAnd(eff1: Type, eff2: Type, eff3: Type): Type = mkAnd(eff1, mkAnd(eff2, eff3))
+
+  /**
+    * Returns the type `And(eff1, And(eff2, ...))`.
+    */
+  def mkAnd(effs: List[Type]): Type = effs.foldLeft(Type.Pure: Type)(mkAnd)
+
+  /**
     * Returns a simplified (evaluated) form of the given type `tpe0`.
     *
     * Performs beta-reduction of type abstractions and applications.
