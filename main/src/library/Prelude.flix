@@ -76,6 +76,16 @@ pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 pub def panic(m: String): a = ?panic
 
 ///
+/// Meta-programming facility to express the time complexity of a function `f`.
+///
+pub def time(_f: a -> Int32): Int32 = 1
+
+///
+/// Meta-programming facility to express the space complexity of a function `f`.
+///
+pub def space(_f: a -> Int32): Int32 = 1
+
+///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
 ///
 law commutative(f: (a, a) -> b): Bool =

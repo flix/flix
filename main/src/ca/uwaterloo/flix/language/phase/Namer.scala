@@ -264,11 +264,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
         case fparams =>
           val env0 = getVarEnv(fparams)
-
-          mapN(visitExp(exp, env0, uenv0, tenv), getScheme(tparams, tpe, uenv0, tenv), visitType(eff0, uenv0, tenv)) {
-            case (e, sc, eff) =>
+          val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
+          val expVal = visitExp(exp, env0, uenv0, tenv)
+          val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
+          val tpeVal = visitType(eff0, uenv0, tenv)
+          mapN(annVal, expVal, schemeVal, tpeVal) {
+            case (as, e, sc, eff) =>
               val sym = Symbol.mkDefnSym(ns0, ident)
-              NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
+              NamedAst.Def(doc, as, mod, sym, tparams, fparams, e, sc, eff, loc)
           }
       }
   }
@@ -1154,6 +1157,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
     case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
+  }
+
+  /**
+    * Translates the given weeded annotation to a named annotation.
+    */
+  private def visitAnnotation(ann: WeededAst.Annotation, env0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Annotation, NameError] = ann match {
+    case WeededAst.Annotation(name, args, loc) =>
+      mapN(traverse(args)(visitExp(_, env0, uenv0, tenv0))) {
+        case as => NamedAst.Annotation(name, as, loc)
+      }
   }
 
   /**
