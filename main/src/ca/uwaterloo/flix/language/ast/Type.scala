@@ -409,6 +409,21 @@ object Type {
   }
 
   /**
+    * Returns the type `Array[tpe]`.
+    */
+  def mkArray(elmType: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Array), elmType)
+
+  /**
+    * Returns the type `Channel[tpe]`.
+    */
+  def mkChannel(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Channel), tpe)
+
+  /**
+    * Returns the type `Ref[tpe]`.
+    */
+  def mkRef(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Ref), tpe)
+
+  /**
     * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
     *
     * A tag type can be understood as a "function type" from the `caseType` to the `resultType`.
