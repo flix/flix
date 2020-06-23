@@ -384,7 +384,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
           lambdaType <- unifyTypM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType), loc)
           resultTyp <- unifyTypM(tvar, lambdaBodyType, loc)
-          resultEff <- unifyEffM(evar, mkAnd(lambdaBodyEff :: eff :: effs), loc)
+          resultEff <- unifyEffM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) => op match {
@@ -423,7 +423,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Minus =>
@@ -431,7 +431,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Times =>
@@ -439,7 +439,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Divide =>
@@ -447,7 +447,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Modulo =>
@@ -455,7 +455,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Exponentiate =>
@@ -463,7 +463,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Equal | BinaryOperator.NotEqual =>
@@ -472,7 +472,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypM(tpe1, tpe2, loc)
             resultTyp <- unifyTypM(tvar, Type.Bool, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
@@ -481,7 +481,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypM(tpe1, tpe2, loc)
             resultTyp <- unifyTypM(tvar, Type.Bool, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Spaceship =>
@@ -490,7 +490,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypM(tpe1, tpe2, loc)
             resultTyp <- unifyTypM(tvar, Type.Int32, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
@@ -498,7 +498,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyTypM(tvar, tpe1, tpe2, Type.Bool, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultType, resultEff)
 
         case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor =>
@@ -506,7 +506,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
@@ -515,7 +515,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             (tpe2, eff2) <- visitExp(exp2)
             lhsType <- unifyTypM(tvar, tpe1, loc)
             rhsType <- unifyTypM(tpe2, Type.Int32, loc)
-            resultEff = mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (lhsType, resultEff)
       }
 
@@ -526,7 +526,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe3, eff3) <- visitExp(exp3)
           condType <- unifyTypM(Type.Bool, tpe1, loc)
           resultTyp <- unifyTypM(tpe2, tpe3, loc)
-          resultEff = mkAnd(eff1, eff2, eff3)
+          resultEff = Type.mkAnd(eff1, eff2, eff3)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Stm(exp1, exp2, loc) =>
@@ -534,7 +534,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
-          resultEff = mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
@@ -543,7 +543,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe2, eff2) <- visitExp(exp2)
           boundVar <- unifyTypM(sym.tvar, tpe1, loc)
           resultTyp = tpe2
-          resultEff = mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Match(exp, rules, loc) =>
@@ -559,7 +559,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           guardType <- unifyTypM(Type.Bool :: guardTypes, loc)
           (bodyTypes, bodyEffects) <- seqM(bodies map visitExp).map(_.unzip)
           resultTyp <- unifyTypM(bodyTypes, loc)
-          resultEff = mkAnd(eff :: guardEffects ::: bodyEffects)
+          resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
@@ -569,7 +569,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe3, eff3) <- visitExp(exp3)
           boundVar <- unifyTypM(sym.tvar, tpe1, loc)
           resultTyp <- unifyTypM(tpe2, tpe3, loc)
-          resultEff = mkAnd(eff1, eff2, eff3)
+          resultEff = Type.mkAnd(eff1, eff2, eff3)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
@@ -596,7 +596,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Tuple(elms, loc) =>
         for {
           (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
-          resultEff = mkAnd(elementEffects)
+          resultEff = Type.mkAnd(elementEffects)
         } yield (Type.mkTuple(elementTypes), resultEff)
 
       case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
@@ -632,7 +632,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           resultTyp <- unifyTypM(tvar, Type.mkRecordExtend(label, tpe1, tpe2), loc)
-          resultEff = mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.RecordRestrict(label, exp, tvar, loc) =>
@@ -657,14 +657,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         if (elms.isEmpty) {
           for {
-            resultTyp <- unifyTypM(tvar, mkArray(Type.freshTypeVar()), loc)
+            resultTyp <- unifyTypM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
             resultEff = Type.Impure
           } yield (resultTyp, resultEff)
         } else {
           for {
             (elementTypes, _) <- seqM(elms.map(visitExp)).map(_.unzip)
             elementType <- unifyTypM(elementTypes, loc)
-            resultTyp <- unifyTypM(tvar, mkArray(elementType), loc)
+            resultTyp <- unifyTypM(tvar, Type.mkArray(elementType), loc)
             resultEff = Type.Impure
           } yield (resultTyp, resultEff)
         }
@@ -679,7 +679,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe1, _) <- visitExp(exp1)
           (tpe2, _) <- visitExp(exp2)
           lengthType <- unifyTypM(tpe2, Type.Int32, loc)
-          resultTyp <- unifyTypM(tvar, mkArray(tpe1), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkArray(tpe1), loc)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -692,7 +692,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe1, _) <- visitExp(exp1)
           (tpe2, _) <- visitExp(exp2)
-          arrayType <- unifyTypM(tpe1, mkArray(tvar), loc)
+          arrayType <- unifyTypM(tpe1, Type.mkArray(tvar), loc)
           indexType <- unifyTypM(tpe2, Type.Int32, loc)
           resultEff = Type.Impure
         } yield (tvar, resultEff)
@@ -706,7 +706,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val elementType = Type.freshTypeVar()
         for {
           (tpe, eff) <- visitExp(exp)
-          arrayType <- unifyTypM(tpe, mkArray(elementType), loc)
+          arrayType <- unifyTypM(tpe, Type.mkArray(elementType), loc)
           resultEff = eff
         } yield (Type.Int32, resultEff)
 
@@ -720,7 +720,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe1, _) <- visitExp(exp1)
           (tpe2, _) <- visitExp(exp2)
           (tpe3, _) <- visitExp(exp3)
-          arrayType <- unifyTypM(tpe1, mkArray(tpe3), loc)
+          arrayType <- unifyTypM(tpe1, Type.mkArray(tpe3), loc)
           indexType <- unifyTypM(tpe2, Type.Int32, loc)
           resultEff = Type.Impure
         } yield (Type.Unit, resultEff)
@@ -738,7 +738,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe3, _) <- visitExp(exp3)
           fstIndexType <- unifyTypM(tpe2, Type.Int32, loc)
           lstIndexType <- unifyTypM(tpe3, Type.Int32, loc)
-          resultTyp <- unifyTypM(tpe1, mkArray(elementType), loc)
+          resultTyp <- unifyTypM(tpe1, Type.mkArray(elementType), loc)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -750,7 +750,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         for {
           (tpe, _) <- visitExp(exp)
-          resultTyp = mkRefType(tpe)
+          resultTyp = Type.mkRef(tpe)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -763,7 +763,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val elementType = Type.freshTypeVar()
         for {
           (typ, _) <- visitExp(exp)
-          refType <- unifyTypM(typ, mkRefType(elementType), loc)
+          refType <- unifyTypM(typ, Type.mkRef(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
@@ -777,7 +777,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe1, _) <- visitExp(exp1)
           (tpe2, _) <- visitExp(exp2)
-          refType <- unifyTypM(tpe1, mkRefType(tpe2), loc)
+          refType <- unifyTypM(tpe1, Type.mkRef(tpe2), loc)
           resultTyp = Type.Unit
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
@@ -823,7 +823,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (ruleTypes, ruleEffects) <- seqM(rulesType).map(_.unzip)
           ruleType <- unifyTypM(ruleTypes, loc)
           resultTyp <- unifyTypM(tpe, ruleType, loc)
-          resultEff = mkAnd(eff :: ruleEffects)
+          resultEff = Type.mkAnd(eff :: ruleEffects)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) =>
@@ -898,7 +898,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe, _) <- visitExp(exp)
           lengthType <- unifyTypM(tpe, Type.Int32, loc)
-          resultTyp <- liftM(mkChannel(declaredType))
+          resultTyp <- liftM(Type.mkChannel(declaredType))
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -911,7 +911,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val elementType = Type.freshTypeVar()
         for {
           (tpe, _) <- visitExp(exp)
-          channelType <- unifyTypM(tpe, mkChannel(elementType), loc)
+          channelType <- unifyTypM(tpe, Type.mkChannel(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
@@ -925,7 +925,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (tpe1, _) <- visitExp(exp1)
           (tpe2, _) <- visitExp(exp2)
-          resultTyp <- unifyTypM(tvar, tpe1, mkChannel(tpe2), loc)
+          resultTyp <- unifyTypM(tvar, tpe1, Type.mkChannel(tpe2), loc)
           resultEff = Type.Impure
         } yield (resultTyp, resultEff)
 
@@ -950,7 +950,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           rule match {
             case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
               (channelType, _) <- visitExp(chan)
-              _ <- unifyTypM(channelType, mkChannel(Type.freshTypeVar()), loc)
+              _ <- unifyTypM(channelType, Type.mkChannel(Type.freshTypeVar()), loc)
             } yield liftM(Type.Unit)
           }
         }
@@ -1005,7 +1005,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           resultTyp <- unifyTypM(tpe1, tpe2, mkAnySchemaType(), loc)
-          resultEff = mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.FixpointSolve(exp, loc) =>
@@ -1048,7 +1048,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe2, eff2) <- visitExp(exp2)
           schemaType <- unifyTypM(tpe1, tpe2, mkAnySchemaType(), loc)
           resultTyp = Type.Bool
-          resultEff = mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tvar, loc) =>
@@ -1070,7 +1070,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
           resultTyp <- unifyTypM(tvar, initType, loc) // the result of the fold is the same type as init
-          resultEff = mkAnd(eff1, eff2, eff3)
+          resultEff = Type.mkAnd(eff1, eff2, eff3)
         } yield (resultTyp, resultEff)
     }
 
@@ -1161,7 +1161,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        val eff = mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -1169,21 +1169,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val tpe = e2.tpe
-        val eff = mkAnd(e1.eff, e2.eff, e3.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
       case ResolvedAst.Expression.Stm(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
-        val eff = mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Stm(e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
-        val eff = mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.Match(matchExp, rules, loc) =>
@@ -1197,7 +1197,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         val tpe = rs.head.exp.tpe
         val eff = rs.foldLeft(e1.eff) {
-          case (acc, TypedAst.MatchRule(_, g, b)) => mkAnd(g.eff, b.eff, acc)
+          case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkAnd(g.eff, b.eff, acc)
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
@@ -1206,7 +1206,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val tpe = e2.tpe // TODO
-        val eff = mkAnd(e1.eff, e2.eff, e3.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
@@ -1217,7 +1217,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Tuple(elms, loc) =>
         val es = elms.map(visitExp(_, subst0))
         val tpe = Type.mkTuple(es.map(_.tpe))
-        val eff = mkAnd(es.map(_.eff))
+        val eff = Type.mkAnd(es.map(_.eff))
         TypedAst.Expression.Tuple(es, tpe, eff, loc)
 
       case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
@@ -1231,7 +1231,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
         val v = visitExp(value, subst0)
         val r = visitExp(rest, subst0)
-        val eff = mkAnd(v.eff, r.eff)
+        val eff = Type.mkAnd(v.eff, r.eff)
         TypedAst.Expression.RecordExtend(label, v, r, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
@@ -1276,7 +1276,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Ref(exp, loc) =>
         val e = visitExp(exp, subst0)
-        val tpe = mkRefType(e.tpe)
+        val tpe = Type.mkRef(e.tpe)
         val eff = Type.Impure
         TypedAst.Expression.Ref(e, tpe, eff, loc)
 
@@ -1318,7 +1318,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             TypedAst.CatchRule(sym, clazz, b)
         }
         val tpe = rs.head.exp.tpe
-        val eff = mkAnd(rs.map(_.exp.eff))
+        val eff = Type.mkAnd(rs.map(_.exp.eff))
         TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) =>
@@ -1367,7 +1367,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)
         val eff = Type.Impure
-        TypedAst.Expression.NewChannel(e, mkChannel(tpe), eff, loc)
+        TypedAst.Expression.NewChannel(e, Type.mkChannel(tpe), eff, loc)
 
       case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1405,7 +1405,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e1.tpe
-        val eff = mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointSolve(exp, loc) =>
@@ -1423,14 +1423,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Bool
-        val eff = mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointFold(name, init, f, constraints, tvar, loc) =>
         val e1 = visitExp(init, subst0)
         val e2 = visitExp(f, subst0)
         val e3 = visitExp(constraints, subst0)
-        val eff = mkAnd(e1.eff, e2.eff, e3.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.FixpointFold(name, e1, e2, e3, subst0(tvar), eff, loc)
     }
 
@@ -1531,14 +1531,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for (
           elementTypes <- seqM(elms map visit);
           elementType <- unifyTypAllowEmptyM(elementTypes, loc);
-          resultType <- unifyTypM(tvar, mkArray(elementType), loc)
+          resultType <- unifyTypM(tvar, Type.mkArray(elementType), loc)
         ) yield resultType
 
       case ResolvedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
           elementType <- unifyTypAllowEmptyM(elementTypes, loc);
-          arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
+          arrayType <- unifyTypM(tvar, Type.mkArray(elementType), loc);
           resultType <- unifyTypM(varSym.tvar, arrayType, loc)
         ) yield resultType
 
@@ -1546,7 +1546,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for (
           elementTypes <- seqM(elms map visit);
           elementType <- unifyTypAllowEmptyM(elementTypes, loc);
-          arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
+          arrayType <- unifyTypM(tvar, Type.mkArray(elementType), loc);
           resultType <- unifyTypM(varSym.tvar, arrayType, loc)
         ) yield resultType
 
@@ -1613,7 +1613,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       for {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip)
-        pureTermEffects <- unifyEffM(Type.Pure, mkAnd(termEffects), loc)
+        pureTermEffects <- unifyEffM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
       } yield Type.mkSchemaExtend(name, predicateType, Type.freshTypeVar())
 
@@ -1788,49 +1788,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     else if (c.isArray) {
       val comp = c.getComponentType
       val elmType = getFlixType(comp)
-      mkArray(elmType)
+      Type.mkArray(elmType)
     }
     // otherwise native type
     else {
       Type.Cst(TypeConstructor.Native(c))
     }
   }
-
-  /**
-    * Returns the type `Array[tpe]`.
-    */
-  private def mkArray(elmType: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Array), elmType)
-
-  /**
-    * Returns the type `Channel[tpe]`.
-    */
-  private def mkChannel(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Channel), tpe)
-
-  /**
-    * Returns the type `Ref[tpe]`.
-    */
-  private def mkRefType(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Ref), tpe)
-
-  /**
-    * Returns the type `And(eff1, eff2)`.
-    */
-  private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
-    case (Type.Cst(TypeConstructor.True), _) => eff2
-    case (_, Type.Cst(TypeConstructor.True)) => eff1
-    case (Type.Cst(TypeConstructor.False), _) => Type.Impure
-    case (_, Type.Cst(TypeConstructor.False)) => Type.Impure
-    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
-  }
-
-  /**
-    * Returns the type `And(eff1, And(eff2, eff3))`.
-    */
-  private def mkAnd(eff1: Type, eff2: Type, eff3: Type): Type = mkAnd(eff1, mkAnd(eff2, eff3))
-
-  /**
-    * Returns the type `And(eff1, And(eff2, ...))`.
-    */
-  private def mkAnd(effs: List[Type]): Type = effs.foldLeft(Type.Pure: Type)(mkAnd)
 
   /**
     * Computes and prints statistics about the given substitution.

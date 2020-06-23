@@ -20,10 +20,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 
 import scala.collection.mutable
 
@@ -416,48 +416,48 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns an expression that performs a three-way comparison between `e1` and `e2`.
       */
-    def mkSpaceship(exp1: Expression, exp2: Expression, loc: SourceLocation): Expression = exp1.tpe match {
-      case Type.Cst(TypeConstructor.Unit) =>
+    def mkSpaceship(exp1: Expression, exp2: Expression, loc: SourceLocation): Expression = exp1.tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) =>
         // There Unit value is equal to itself.
         Expression.Int32(0, loc)
 
-      case Type.Cst(TypeConstructor.Bool) =>
+      case Some(TypeConstructor.Bool) =>
         val method = classOf[java.lang.Boolean].getMethod("compare", classOf[Boolean], classOf[Boolean])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Char) =>
+      case Some(TypeConstructor.Char) =>
         val method = classOf[java.lang.Character].getMethod("compare", classOf[Char], classOf[Char])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Float32) =>
+      case Some(TypeConstructor.Float32) =>
         val method = classOf[java.lang.Float].getMethod("compare", classOf[Float], classOf[Float])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Float64) =>
+      case Some(TypeConstructor.Float64) =>
         val method = classOf[java.lang.Double].getMethod("compare", classOf[Double], classOf[Double])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Int8) =>
+      case Some(TypeConstructor.Int8) =>
         val method = classOf[java.lang.Byte].getMethod("compare", classOf[Byte], classOf[Byte])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Int16) =>
+      case Some(TypeConstructor.Int16) =>
         val method = classOf[java.lang.Short].getMethod("compare", classOf[Short], classOf[Short])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Int32) =>
+      case Some(TypeConstructor.Int32) =>
         val method = classOf[java.lang.Integer].getMethod("compare", classOf[Int], classOf[Int])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Int64) =>
+      case Some(TypeConstructor.Int64) =>
         val method = classOf[java.lang.Long].getMethod("compare", classOf[Long], classOf[Long])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.BigInt) =>
+      case Some(TypeConstructor.BigInt) =>
         val method = classOf[java.math.BigInteger].getMethod("compareTo", classOf[java.math.BigInteger])
         Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Str) =>
+      case Some(TypeConstructor.Str) =>
         val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String])
         Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
 
@@ -1232,15 +1232,15 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if the given type `tpe` is a primitive type.
       */
-    def isPrimitive(tpe: Type): Boolean = tpe match {
-      case Type.Cst(TypeConstructor.Bool) => true
-      case Type.Cst(TypeConstructor.Char) => true
-      case Type.Cst(TypeConstructor.Float32) => true
-      case Type.Cst(TypeConstructor.Float64) => true
-      case Type.Cst(TypeConstructor.Int8) => true
-      case Type.Cst(TypeConstructor.Int16) => true
-      case Type.Cst(TypeConstructor.Int32) => true
-      case Type.Cst(TypeConstructor.Int64) => true
+    def isPrimitive(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Some(TypeConstructor.Bool) => true
+      case Some(TypeConstructor.Char) => true
+      case Some(TypeConstructor.Float32) => true
+      case Some(TypeConstructor.Float64) => true
+      case Some(TypeConstructor.Int8) => true
+      case Some(TypeConstructor.Int16) => true
+      case Some(TypeConstructor.Int32) => true
+      case Some(TypeConstructor.Int64) => true
       case _ => false
     }
 
