@@ -1232,15 +1232,15 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if the given type `tpe` is a primitive type.
       */
-    def isPrimitive(tpe: Type): Boolean = tpe match {
-      case Type.Cst(TypeConstructor.Bool) => true
-      case Type.Cst(TypeConstructor.Char) => true
-      case Type.Cst(TypeConstructor.Float32) => true
-      case Type.Cst(TypeConstructor.Float64) => true
-      case Type.Cst(TypeConstructor.Int8) => true
-      case Type.Cst(TypeConstructor.Int16) => true
-      case Type.Cst(TypeConstructor.Int32) => true
-      case Type.Cst(TypeConstructor.Int64) => true
+    def isPrimitive(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Some(TypeConstructor.Bool) => true
+      case Some(TypeConstructor.Char) => true
+      case Some(TypeConstructor.Float32) => true
+      case Some(TypeConstructor.Float64) => true
+      case Some(TypeConstructor.Int8) => true
+      case Some(TypeConstructor.Int16) => true
+      case Some(TypeConstructor.Int32) => true
+      case Some(TypeConstructor.Int64) => true
       case _ => false
     }
 

@@ -73,6 +73,16 @@ sealed trait Type {
   }
 
   /**
+    * Returns a list of all type constructors in `this` type.
+    */
+  def typeConstructors: List[TypeConstructor] = this match {
+    case Type.Var(_, _, _) => Nil
+    case Type.Cst(tc) => tc :: Nil
+    case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$this'.")
+  }
+
+  /**
     * Returns the type arguments of `this` type.
     *
     * For example,

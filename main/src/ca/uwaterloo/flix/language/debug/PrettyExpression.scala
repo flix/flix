@@ -83,8 +83,8 @@ object PrettyExpression {
     //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
 
-    case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe match {
-      case Type.Cst(TypeConstructor.Unit) => tag
+    case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) => tag
       case _ => s"$tag${pretty(exp)}"
     }
 

@@ -691,40 +691,34 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param tpe the type to count
       * @return the number of arguments a type constructor expects
       */
-    def countTypeArgs(tpe: Type): Int = tpe match {
-      case Type.Var(_, _, _) => 0
-      case Type.Cst(TypeConstructor.Unit) => 0
-      case Type.Cst(TypeConstructor.Bool) => 0
-      case Type.Cst(TypeConstructor.Char) => 0
-      case Type.Cst(TypeConstructor.Float32) => 0
-      case Type.Cst(TypeConstructor.Float64) => 0
-      case Type.Cst(TypeConstructor.Int8) => 0
-      case Type.Cst(TypeConstructor.Int16) => 0
-      case Type.Cst(TypeConstructor.Int32) => 0
-      case Type.Cst(TypeConstructor.Int64) => 0
-      case Type.Cst(TypeConstructor.BigInt) => 0
-      case Type.Cst(TypeConstructor.Str) => 0
-      case Type.Cst(TypeConstructor.Ref) => 0
-      case Type.Cst(TypeConstructor.Relation) => 0
-      case Type.Cst(TypeConstructor.Lattice) => 0
-      case Type.Cst(TypeConstructor.RecordEmpty) => 0
-      case Type.Cst(TypeConstructor.SchemaEmpty) => 0
-      case Type.Cst(TypeConstructor.Arrow(length, _)) => length
-      case Type.Cst(TypeConstructor.Array) => 1
-      case Type.Cst(TypeConstructor.Channel) => 1
-      case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
-      case Type.Cst(TypeConstructor.Tag(sym, tag)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-      case Type.Cst(TypeConstructor.Native(clazz)) => 0
-      case Type.Cst(TypeConstructor.Tuple(l)) => l
-      case Type.Cst(TypeConstructor.RecordExtend(_)) => 2
-      case Type.Cst(TypeConstructor.SchemaExtend(_)) => 2
-      case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
-      case Type.Cst(TypeConstructor.True) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-      case Type.Cst(TypeConstructor.False) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-      case Type.Cst(TypeConstructor.Not) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-      case Type.Cst(TypeConstructor.And) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-      case Type.Cst(TypeConstructor.Or) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    def countTypeArgs(tpe: Type): Int = tpe.typeConstructor match {
+      case None => 0
+      case Some(TypeConstructor.Unit) => 0
+      case Some(TypeConstructor.Bool) => 0
+      case Some(TypeConstructor.Char) => 0
+      case Some(TypeConstructor.Float32) => 0
+      case Some(TypeConstructor.Float64) => 0
+      case Some(TypeConstructor.Int8) => 0
+      case Some(TypeConstructor.Int16) => 0
+      case Some(TypeConstructor.Int32) => 0
+      case Some(TypeConstructor.Int64) => 0
+      case Some(TypeConstructor.BigInt) => 0
+      case Some(TypeConstructor.Str) => 0
+      case Some(TypeConstructor.Ref) => 0
+      case Some(TypeConstructor.Relation) => 0
+      case Some(TypeConstructor.Lattice) => 0
+      case Some(TypeConstructor.RecordEmpty) => 0
+      case Some(TypeConstructor.SchemaEmpty) => 0
+      case Some(TypeConstructor.Arrow(length, _)) => length
+      case Some(TypeConstructor.Array) => 1
+      case Some(TypeConstructor.Channel) => 1
+      case Some(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
+      case Some(TypeConstructor.Tag(sym, tag)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Some(TypeConstructor.Native(clazz)) => 0
+      case Some(TypeConstructor.Tuple(l)) => l
+      case Some(TypeConstructor.RecordExtend(_)) => 2
+      case Some(TypeConstructor.SchemaExtend(_)) => 2
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
     /**
