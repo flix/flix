@@ -93,6 +93,47 @@ sealed trait Type {
   }
 
   /**
+    * Applies `f` to every type variable in `this` type.
+    */
+  def map(f: Type.Var => Type.Var): Type = this match {
+    case tvar: Type.Var => f(tvar)
+    case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eff.map(f)))
+    case Type.Cst(_) => this
+    case Type.Lambda(tvar, tpe) => Type.Lambda(f(tvar), tpe.map(f))
+    case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
+  }
+
+  /**
+    * Returns the argument types of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowArgTypes: List[Type] = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.take(n)
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
+    * Returns the result type of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowResultType: Type = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.drop(n - 1).head
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
+    * Returns the effect type of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowEffectType: Type = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.drop(n).head
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
     * Returns the size of `this` type.
     */
   def size: Int = this match {
