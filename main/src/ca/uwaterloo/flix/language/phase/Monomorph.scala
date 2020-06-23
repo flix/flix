@@ -717,19 +717,19 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * Returns `None` if no such function exists or more than one such function exist.
       */
-    def lookupEq(tpe: Type): Option[Symbol.DefnSym] = tpe match {
+    def lookupEq(tpe: Type): Option[Symbol.DefnSym] = tpe.typeConstructor match {
       // Equality cannot be overriden for primitive types.
-      case Type.Cst(TypeConstructor.Unit) => None
-      case Type.Cst(TypeConstructor.Bool) => None
-      case Type.Cst(TypeConstructor.Char) => None
-      case Type.Cst(TypeConstructor.Float32) => None
-      case Type.Cst(TypeConstructor.Float64) => None
-      case Type.Cst(TypeConstructor.Int8) => None
-      case Type.Cst(TypeConstructor.Int16) => None
-      case Type.Cst(TypeConstructor.Int32) => None
-      case Type.Cst(TypeConstructor.Int64) => None
-      case Type.Cst(TypeConstructor.BigInt) => None
-      case Type.Cst(TypeConstructor.Str) => None
+      case Some(TypeConstructor.Unit) => None
+      case Some(TypeConstructor.Bool) => None
+      case Some(TypeConstructor.Char) => None
+      case Some(TypeConstructor.Float32) => None
+      case Some(TypeConstructor.Float64) => None
+      case Some(TypeConstructor.Int8) => None
+      case Some(TypeConstructor.Int16) => None
+      case Some(TypeConstructor.Int32) => None
+      case Some(TypeConstructor.Int64) => None
+      case Some(TypeConstructor.BigInt) => None
+      case Some(TypeConstructor.Str) => None
       case _ => lookupIn("__eq", tpe, eqDefs)
     }
 
@@ -738,19 +738,19 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * Returns `None` if no such function exists or more than one such function exist.
       */
-    def lookupCmp(tpe: Type): Option[Symbol.DefnSym] = tpe match {
+    def lookupCmp(tpe: Type): Option[Symbol.DefnSym] = tpe.typeConstructor match {
       // Ordering cannot be overriden for primitive types.
-      case Type.Cst(TypeConstructor.Unit) => None
-      case Type.Cst(TypeConstructor.Bool) => None
-      case Type.Cst(TypeConstructor.Char) => None
-      case Type.Cst(TypeConstructor.Float32) => None
-      case Type.Cst(TypeConstructor.Float64) => None
-      case Type.Cst(TypeConstructor.Int8) => None
-      case Type.Cst(TypeConstructor.Int16) => None
-      case Type.Cst(TypeConstructor.Int32) => None
-      case Type.Cst(TypeConstructor.Int64) => None
-      case Type.Cst(TypeConstructor.BigInt) => None
-      case Type.Cst(TypeConstructor.Str) => None
+      case Some(TypeConstructor.Unit) => None
+      case Some(TypeConstructor.Bool) => None
+      case Some(TypeConstructor.Char) => None
+      case Some(TypeConstructor.Float32) => None
+      case Some(TypeConstructor.Float64) => None
+      case Some(TypeConstructor.Int8) => None
+      case Some(TypeConstructor.Int16) => None
+      case Some(TypeConstructor.Int32) => None
+      case Some(TypeConstructor.Int64) => None
+      case Some(TypeConstructor.BigInt) => None
+      case Some(TypeConstructor.Str) => None
       case _ => lookupIn("__cmp", tpe, cmpDefs)
     }
 

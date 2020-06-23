@@ -22,11 +22,13 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
+import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatExpression, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
@@ -51,7 +53,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     if (flix.options.documentor) {
       // Collect all public definitions and group them by namespace.
       val defsByNS = root.defs.filter {
-        case (sym, defn) => defn.mod.isPublic && !defn.ann.isBenchmark && !defn.ann.isLaw && !defn.ann.isTest
+        case (sym, defn) => defn.mod.isPublic && !isBenchmark(defn.ann) && !isLaw(defn.ann) && !isTest(defn.ann)
       }.groupBy(_._1.namespace)
 
       // Convert all definitions to JSON objects.
@@ -96,7 +98,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Compute the formal parameters.
     val fparams = defn0.fparams.collect {
-      case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
+      case FormalParam(psym, mod, tpe, loc) if tpe != Type.Unit => JObject(
         JField("name", JString(psym.text)),
         JField("type", JString(FormatType.formatType(tpe)))
       )
@@ -107,14 +109,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val effect = getEffectType(defn0.declaredScheme.base)
 
     // Construct the JSON object.
-    JObject(List(
-      JField("name", JString(defn0.sym.name)),
-      JField("tparams", JArray(tparams)),
-      JField("fparams", JArray(fparams)),
-      JField("result", JString(FormatType.formatType(result))),
-      JField("effect", JString(FormatType.formatType(effect))),
-      JField("comment", JString(defn0.doc.text.trim))
-    ))
+    ("name" -> defn0.sym.name) ~
+      ("tparams" -> tparams) ~
+      ("fparams" -> fparams) ~
+      ("result" -> FormatType.formatType(result)) ~
+      ("effect" -> FormatType.formatType(effect)) ~
+      ("time" -> getTime(defn0)) ~
+      ("space" -> getSpace(defn0)) ~
+      ("comment" -> defn0.doc.text.trim)
   }
 
   /**
@@ -128,6 +130,22 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def getEffectType(tpe0: Type): Type = tpe0.typeConstructor match {
     case Some(TypeConstructor.Arrow(_, eff)) => eff
     case _ => tpe0
+  }
+
+  /**
+    * Optionally returns the time complexity of the given definition `defn0`.
+    */
+  private def getTime(defn0: Def): Option[String] = defn0.ann.collectFirst {
+    case Annotation(Ast.Annotation.Time(_), exp :: _, _) =>
+      PrettyExpression.pretty(exp)
+  }
+
+  /**
+    * Optionally returns the space complexity of the given definition `defn0`.
+    */
+  private def getSpace(defn0: Def): Option[String] = defn0.ann.collectFirst {
+    case Annotation(Ast.Annotation.Space(_), exp :: _, _) =>
+      PrettyExpression.pretty(exp)
   }
 
   /**

@@ -60,6 +60,9 @@ object PrettyExpression {
 
     case Expression.Binary(op, exp1, exp2, _, _, _) => op match {
       case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
+      case BinaryOperator.Minus => s"${pretty(exp1)} - ${pretty(exp2)}"
+      case BinaryOperator.Times => s"${pretty(exp1)} * ${pretty(exp2)}"
+      case BinaryOperator.Divide => s"${pretty(exp1)} / ${pretty(exp2)}"
       case BinaryOperator.LogicalAnd => s"${pretty(exp1)} && ${pretty(exp2)}"
       case BinaryOperator.LogicalOr => s"${pretty(exp1)} || ${pretty(exp2)}"
       // TODO: Rest
@@ -80,8 +83,8 @@ object PrettyExpression {
     //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
 
-    case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe match {
-      case Type.Cst(TypeConstructor.Unit) => tag
+    case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) => tag
       case _ => s"$tag${pretty(exp)}"
     }
 

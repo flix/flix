@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import scala.collection.mutable
 
@@ -825,11 +825,9 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns the set of predicate symbols that appears in the given row type `tpe`.
     */
-  private def predicateSymbolsOf(tpe: Type): Set[String] = tpe match {
-    case Type.Var(_, _, _) => Set.empty
-    case Type.Cst(TypeConstructor.SchemaEmpty) => Set.empty
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) => predicateSymbolsOf(rest) + sym
-    case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
+  private def predicateSymbolsOf(tpe: Type): Set[String] = tpe.typeConstructors.foldLeft(Set.empty[String]) {
+    case (acc, TypeConstructor.SchemaExtend(sym)) => acc + sym.toString
+    case (acc, _) => acc
   }
 
 }

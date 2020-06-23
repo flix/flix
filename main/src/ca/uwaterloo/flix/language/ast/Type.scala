@@ -73,6 +73,16 @@ sealed trait Type {
   }
 
   /**
+    * Returns a list of all type constructors in `this` type.
+    */
+  def typeConstructors: List[TypeConstructor] = this match {
+    case Type.Var(_, _, _) => Nil
+    case Type.Cst(tc) => tc :: Nil
+    case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$this'.")
+  }
+
+  /**
     * Returns the type arguments of `this` type.
     *
     * For example,
@@ -90,6 +100,47 @@ sealed trait Type {
   def typeArguments: List[Type] = this match {
     case Type.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
+  }
+
+  /**
+    * Applies `f` to every type variable in `this` type.
+    */
+  def map(f: Type.Var => Type.Var): Type = this match {
+    case tvar: Type.Var => f(tvar)
+    case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eff.map(f)))
+    case Type.Cst(_) => this
+    case Type.Lambda(tvar, tpe) => Type.Lambda(f(tvar), tpe.map(f))
+    case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
+  }
+
+  /**
+    * Returns the argument types of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowArgTypes: List[Type] = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.take(n)
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
+    * Returns the result type of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowResultType: Type = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.drop(n - 1).head
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
+    * Returns the effect type of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowEffectType: Type = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.drop(n).head
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 
   /**
@@ -358,6 +409,21 @@ object Type {
   }
 
   /**
+    * Returns the type `Array[tpe]`.
+    */
+  def mkArray(elmType: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Array), elmType)
+
+  /**
+    * Returns the type `Channel[tpe]`.
+    */
+  def mkChannel(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Channel), tpe)
+
+  /**
+    * Returns the type `Ref[tpe]`.
+    */
+  def mkRef(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Ref), tpe)
+
+  /**
     * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
     *
     * A tag type can be understood as a "function type" from the `caseType` to the `resultType`.
@@ -403,4 +469,81 @@ object Type {
   def mkSchemaExtend(name: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
   }
+
+  /**
+    * Returns the type `Not(tpe0)`.
+    */
+  def mkNot(tpe0: Type): Type = tpe0 match {
+    case Type.True => Type.False
+    case Type.False => Type.True
+    case _ => Type.Apply(Type.Cst(TypeConstructor.Not), tpe0)
+  }
+
+  /**
+    * Returns the type `And(tpe1, tpe2)`.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.True)) => tpe1
+    case (Type.Cst(TypeConstructor.False), _) => Type.False
+    case (_, Type.Cst(TypeConstructor.False)) => Type.False
+    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), tpe1), tpe2)
+  }
+
+  /**
+    * Returns the type `Or(tpe1, tpe2)`.
+    */
+  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True), _) => Type.True
+    case (_, Type.Cst(TypeConstructor.True)) => Type.True
+    case (Type.Cst(TypeConstructor.False), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.False)) => tpe1
+    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), tpe1), tpe2)
+  }
+
+  /**
+    * Returns the type `And(eff1, And(eff2, eff3))`.
+    */
+  def mkAnd(eff1: Type, eff2: Type, eff3: Type): Type = mkAnd(eff1, mkAnd(eff2, eff3))
+
+  /**
+    * Returns the type `And(eff1, And(eff2, ...))`.
+    */
+  def mkAnd(effs: List[Type]): Type = effs.foldLeft(Type.Pure: Type)(mkAnd)
+
+  /**
+    * Returns a simplified (evaluated) form of the given type `tpe0`.
+    *
+    * Performs beta-reduction of type abstractions and applications.
+    */
+  def simplify(tpe0: Type): Type = {
+    def eval(t: Type, subst: Map[Type.Var, Type]): Type = t match {
+      case tvar: Type.Var => subst.getOrElse(tvar, tvar)
+
+      case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eval(eff, subst)))
+
+      case Type.Cst(_) => t
+
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
+        val t1 = eval(tpe, subst)
+        val t2 = eval(rest, subst)
+        Type.mkRecordExtend(label, t1, t2)
+
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) =>
+        val t1 = eval(tpe, subst)
+        val t2 = eval(rest, subst)
+        Type.mkSchemaExtend(sym, t1, t2)
+
+      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
+
+      // TODO: Does not take variable capture into account.
+      case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
+        case (Type.Lambda(tvar, tpe3), t2) => eval(tpe3, subst + (tvar -> t2))
+        case (t1, t2) => Type.Apply(t1, t2)
+      }
+    }
+
+    eval(tpe0, Map.empty)
+  }
+
 }

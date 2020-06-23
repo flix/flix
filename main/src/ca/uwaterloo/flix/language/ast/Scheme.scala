@@ -73,25 +73,20 @@ object Scheme {
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
-    def visitType(tpe0: Type): Type = tpe0 match {
-      case Type.Var(x, k, rigidity) => freshVars.get(x) match {
-        case None =>
-          // Determine the rigidity of the free type variable.
-          val newRigidity = mode match {
-            case InstantiateMode.Flexible => rigidity
-            case InstantiateMode.Rigid => Rigidity.Rigid
-            case InstantiateMode.Mixed => Rigidity.Rigid
-          }
-          Type.Var(x, k, newRigidity)
-        case Some(tvar) => tvar
-      }
-      case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, visitType(eff)))
-      case Type.Cst(_) => tpe0
-      case Type.Apply(tpe1, tpe2) => Type.Apply(visitType(tpe1), visitType(tpe2))
-      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+    baseType.map {
+      case Type.Var(x, k, rigidity) =>
+        freshVars.get(x) match {
+          case None =>
+            // Determine the rigidity of the free type variable.
+            val newRigidity = mode match {
+              case InstantiateMode.Flexible => rigidity
+              case InstantiateMode.Rigid => Rigidity.Rigid
+              case InstantiateMode.Mixed => Rigidity.Rigid
+            }
+            Type.Var(x, k, newRigidity)
+          case Some(tvar) => tvar
+        }
     }
-
-    visitType(baseType)
   }
 
   /**

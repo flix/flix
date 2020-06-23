@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -415,48 +416,48 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns an expression that performs a three-way comparison between `e1` and `e2`.
       */
-    def mkSpaceship(exp1: Expression, exp2: Expression, loc: SourceLocation): Expression = exp1.tpe match {
-      case Type.Cst(TypeConstructor.Unit) =>
+    def mkSpaceship(exp1: Expression, exp2: Expression, loc: SourceLocation): Expression = exp1.tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) =>
         // There Unit value is equal to itself.
         Expression.Int32(0, loc)
 
-      case Type.Cst(TypeConstructor.Bool) =>
+      case Some(TypeConstructor.Bool) =>
         val method = classOf[java.lang.Boolean].getMethod("compare", classOf[Boolean], classOf[Boolean])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Char) =>
+      case Some(TypeConstructor.Char) =>
         val method = classOf[java.lang.Character].getMethod("compare", classOf[Char], classOf[Char])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Float32) =>
+      case Some(TypeConstructor.Float32) =>
         val method = classOf[java.lang.Float].getMethod("compare", classOf[Float], classOf[Float])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Float64) =>
+      case Some(TypeConstructor.Float64) =>
         val method = classOf[java.lang.Double].getMethod("compare", classOf[Double], classOf[Double])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Int8) =>
+      case Some(TypeConstructor.Int8) =>
         val method = classOf[java.lang.Byte].getMethod("compare", classOf[Byte], classOf[Byte])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Int16) =>
+      case Some(TypeConstructor.Int16) =>
         val method = classOf[java.lang.Short].getMethod("compare", classOf[Short], classOf[Short])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Int32) =>
+      case Some(TypeConstructor.Int32) =>
         val method = classOf[java.lang.Integer].getMethod("compare", classOf[Int], classOf[Int])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Int64) =>
+      case Some(TypeConstructor.Int64) =>
         val method = classOf[java.lang.Long].getMethod("compare", classOf[Long], classOf[Long])
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.BigInt) =>
+      case Some(TypeConstructor.BigInt) =>
         val method = classOf[java.math.BigInteger].getMethod("compareTo", classOf[java.math.BigInteger])
         Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
 
-      case Type.Cst(TypeConstructor.Str) =>
+      case Some(TypeConstructor.Str) =>
         val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String])
         Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
 
@@ -488,7 +489,7 @@ object Synthesize extends Phase[Root, Root] {
       val paramY = FormalParam(freshY, Ast.Modifiers.Empty, tpe, sl)
 
       // Annotations and modifiers.
-      val ann = Ast.Annotations.Empty
+      val ann = Nil
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Type and formal parameters.
@@ -526,49 +527,46 @@ object Synthesize extends Phase[Root, Root] {
       /*
        * Match on the type to determine what equality expression to generate.
        */
-      tpe match {
-        case Type.Cst(TypeConstructor.Unit) => default
-        case Type.Cst(TypeConstructor.Bool) => default
-        case Type.Cst(TypeConstructor.Char) => default
-        case Type.Cst(TypeConstructor.Float32) => default
-        case Type.Cst(TypeConstructor.Float64) => default
-        case Type.Cst(TypeConstructor.Int8) => default
-        case Type.Cst(TypeConstructor.Int16) => default
-        case Type.Cst(TypeConstructor.Int32) => default
-        case Type.Cst(TypeConstructor.Int64) => default
-        case Type.Cst(TypeConstructor.BigInt) => default
-        case Type.Cst(TypeConstructor.Str) => default
+      tpe.typeConstructor match {
+        case None =>
+          throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
 
-        case _ =>
+        case Some(tc) => tc match {
+          case TypeConstructor.Unit => default
 
-          //
-          // Arrow Case.
-          //
-          if (isArrow(tpe)) {
+          case TypeConstructor.Bool => default
+
+          case TypeConstructor.Char => default
+
+          case TypeConstructor.Float32 => default
+
+          case TypeConstructor.Float64 => default
+
+          case TypeConstructor.Int8 => default
+
+          case TypeConstructor.Int16 => default
+
+          case TypeConstructor.Int32 => default
+
+          case TypeConstructor.Int64 => default
+
+          case TypeConstructor.BigInt => default
+
+          case TypeConstructor.Str => default
+
+          case TypeConstructor.Arrow(_, _) =>
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
-          }
+            Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
 
-          //
-          // Channel Case.
-          //
-          if (isChannel(tpe)) {
+          case TypeConstructor.Channel =>
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
-          }
+            Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
 
-          //
-          // Native Case.
-          //
-          if (isNative(tpe)) {
+          case TypeConstructor.Native(_) =>
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
-          }
+            Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
 
-          //
-          // Enum Case.
-          //
-          if (isEnum(tpe)) {
+          case TypeConstructor.Enum(_, _) =>
             //
             // Assume we have an enum:
             //
@@ -634,13 +632,9 @@ object Synthesize extends Phase[Root, Root] {
             val default = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs ::: default :: Nil, Type.Bool, Type.Pure, sl)
-          }
+            Expression.Match(matchValue, rs ::: default :: Nil, Type.Bool, Type.Pure, sl)
 
-          //
-          // Tuple Case.
-          //
-          if (isTuple(tpe)) {
+          case TypeConstructor.Tuple(_) =>
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -692,10 +686,23 @@ object Synthesize extends Phase[Root, Root] {
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Bool, Type.Pure, sl)
-          }
+            Expression.Match(matchValue, rule :: Nil, Type.Bool, Type.Pure, sl)
 
-          throw InternalCompilerException(s"Unknown type '$tpe'.")
+          case TypeConstructor.Array => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Ref => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.RecordEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.RecordExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.SchemaEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.SchemaExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Tag(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.True => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.False => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Not => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.And => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Or => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+        }
       }
     }
 
@@ -734,7 +741,7 @@ object Synthesize extends Phase[Root, Root] {
       val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
 
       // Annotations and modifiers.
-      val ann = Ast.Annotations.Empty
+      val ann = Nil
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Type and formal parameters.
@@ -770,57 +777,51 @@ object Synthesize extends Phase[Root, Root] {
       // TODO: Improve by adding coercion operator.
 
       // Determine the hash code based on the type `tpe`.
-      tpe match {
-        case Type.Cst(TypeConstructor.Unit) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Bool) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Char) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Float32) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Float64) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Int8) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Int16) => Expression.Int32(123, sl)
-        case Type.Cst(TypeConstructor.Int32) => exp0
-        case Type.Cst(TypeConstructor.Int64) => Expression.Int32(123, sl)
+      tpe.typeConstructor match {
+        case None =>
+          throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
 
-        case Type.Cst(TypeConstructor.BigInt) =>
-          val method = classOf[java.math.BigInteger].getMethod("hashCode")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+        case Some(tc) => tc match {
 
-        case Type.Cst(TypeConstructor.Str) =>
-          val method = classOf[java.lang.String].getMethod("hashCode")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+          case TypeConstructor.Unit => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Int32(123, sl)
+          case TypeConstructor.Bool => Expression.Int32(123, sl)
 
-        case Type.Cst(TypeConstructor.Native(clazz)) =>
-          val method = classOf[java.lang.Object].getMethod("hashCode")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+          case TypeConstructor.Char => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
+          case TypeConstructor.Float32 => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Arrow(l, _)), _) => Expression.Int32(123, sl)
+          case TypeConstructor.Float64 => Expression.Int32(123, sl)
 
-        case _ =>
+          case TypeConstructor.Int8 => Expression.Int32(123, sl)
 
-          //
-          // Closure Case.
-          //
-          if (isArrow(tpe)) {
+          case TypeConstructor.Int16 => Expression.Int32(123, sl)
+
+          case TypeConstructor.Int32 => exp0
+
+          case TypeConstructor.Int64 => Expression.Int32(123, sl)
+
+          case TypeConstructor.BigInt =>
+            val method = classOf[java.math.BigInteger].getMethod("hashCode")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.Str =>
+            val method = classOf[java.lang.String].getMethod("hashCode")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.Arrow(l, _) =>
             val method = classOf[java.lang.Object].getMethod("hashCode")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
-          }
+            Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
 
-          //
-          // Channel Case.
-          //
-          if (isChannel(tpe)) {
+          case TypeConstructor.Channel =>
             val method = classOf[java.lang.Object].getMethod("hashCode")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
-          }
+            Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
 
-          //
-          // Enum case.
-          //
-          if (isEnum(tpe)) {
+          case TypeConstructor.Native(clazz) =>
+            val method = classOf[java.lang.Object].getMethod("hashCode")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.Enum(sym, kind) =>
             //
             // Assume we have an enum:
             //
@@ -878,13 +879,9 @@ object Synthesize extends Phase[Root, Root] {
             }
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs, Type.Int32, Type.Pure, sl)
-          }
+            Expression.Match(matchValue, rs, Type.Int32, Type.Pure, sl)
 
-          //
-          // Tuple case.
-          //
-          if (isTuple(tpe)) {
+          case TypeConstructor.Tuple(_) =>
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -935,10 +932,23 @@ object Synthesize extends Phase[Root, Root] {
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Int32, Type.Pure, sl)
-          }
+            Expression.Match(matchValue, rule :: Nil, Type.Int32, Type.Pure, sl)
 
-          throw InternalCompilerException(s"Unknown type '$tpe'.")
+          case TypeConstructor.Array => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Ref => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.RecordEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.RecordExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.SchemaEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.SchemaExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Tag(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.True => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.False => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Not => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.And => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Or => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+        }
       }
     }
 
@@ -977,7 +987,7 @@ object Synthesize extends Phase[Root, Root] {
       val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
 
       // Annotations and modifiers.
-      val ann = Ast.Annotations.Empty
+      val ann = Nil
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Type and formal parameters.
@@ -1009,73 +1019,130 @@ object Synthesize extends Phase[Root, Root] {
       val exp0 = Expression.Var(varX, tpe, sl)
 
       // Determine the string representation based on the type `tpe`.
-      tpe match {
-        case Type.Cst(TypeConstructor.Unit) =>
-          Expression.Str("()", sl)
+      tpe.typeConstructor match {
+        case None =>
+          throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
 
-        case Type.Cst(TypeConstructor.Bool) =>
-          val method = classOf[java.lang.Boolean].getMethod("toString", classOf[Boolean])
-          Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
+        case Some(tc) => tc match {
+          case TypeConstructor.Unit =>
+            Expression.Str("()", sl)
 
-        case Type.Cst(TypeConstructor.Char) =>
-          val method = classOf[java.lang.Character].getMethod("toString", classOf[Char])
-          Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
+          case TypeConstructor.Bool =>
+            val method = classOf[java.lang.Boolean].getMethod("toString", classOf[Boolean])
+            Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.Float32) =>
-          val method = classOf[java.lang.Float].getMethod("toString", classOf[Float])
-          Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
+          case TypeConstructor.Char =>
+            val method = classOf[java.lang.Character].getMethod("toString", classOf[Char])
+            Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.Float64) =>
-          val method = classOf[java.lang.Double].getMethod("toString", classOf[Double])
-          Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
+          case TypeConstructor.Float32 =>
+            val method = classOf[java.lang.Float].getMethod("toString", classOf[Float])
+            Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.Int8) =>
-          val method = classOf[java.lang.Byte].getMethod("toString", classOf[Byte])
-          Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
+          case TypeConstructor.Float64 =>
+            val method = classOf[java.lang.Double].getMethod("toString", classOf[Double])
+            Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.Int16) =>
-          val method = classOf[java.lang.Short].getMethod("toString", classOf[Short])
-          Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
+          case TypeConstructor.Int8 =>
+            val method = classOf[java.lang.Byte].getMethod("toString", classOf[Byte])
+            Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.Int32) =>
-          val method = classOf[java.lang.Integer].getMethod("toString", classOf[Int])
-          Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
+          case TypeConstructor.Int16 =>
+            val method = classOf[java.lang.Short].getMethod("toString", classOf[Short])
+            Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.Int64) =>
-          val method = classOf[java.lang.Long].getMethod("toString", classOf[Long])
-          Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
+          case TypeConstructor.Int32 =>
+            val method = classOf[java.lang.Integer].getMethod("toString", classOf[Int])
+            Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.BigInt) =>
-          val method = classOf[java.math.BigInteger].getMethod("toString")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+          case TypeConstructor.Int64 =>
+            val method = classOf[java.lang.Long].getMethod("toString", classOf[Long])
+            Expression.InvokeStaticMethod(method, List(exp0), Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.Array) =>
-          val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+          case TypeConstructor.BigInt =>
+            val method = classOf[java.math.BigInteger].getMethod("toString")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
 
-        case Type.Cst(TypeConstructor.Channel) =>
-          val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+          case TypeConstructor.Str => exp0
 
-        case Type.Cst(TypeConstructor.Native(clazz)) =>
-          val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+          case TypeConstructor.Arrow(l, _) =>
+            Expression.Str("<<closure>>", sl)
 
-        case Type.Cst(TypeConstructor.Str) => exp0
+          case TypeConstructor.Array =>
+            Expression.Str("<<array>>", sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Str("<<ref>>", sl)
+          case TypeConstructor.Channel =>
+            Expression.Str("<<channel>>", sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Str("<<array>>", sl)
+          case TypeConstructor.Ref => Expression.Str("<<ref>>", sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Channel), _) => Expression.Str("<<channel>>", sl)
+          case TypeConstructor.Native(clazz) =>
+            val method = classOf[java.lang.Object].getMethod("toString")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
 
-        case Type.Apply(Type.Cst(TypeConstructor.Arrow(l, _)), _) => Expression.Str("<<clo>>", sl)
+          case TypeConstructor.RecordEmpty =>
+            Expression.Str("<<record>>", sl)
 
-        case _ =>
-          //
-          // Enum case.
-          //
-          if (isEnum(tpe)) {
+          case TypeConstructor.RecordExtend(label) =>
+            Expression.Str("<<record>>", sl)
+
+          case TypeConstructor.SchemaEmpty =>
+            val method = classOf[java.lang.Object].getMethod("toString")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.SchemaExtend(_) =>
+            val method = classOf[java.lang.Object].getMethod("toString")
+            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.Tuple(_) =>
+            //
+            // Assume we have a tuple (a, b, c)
+            //
+            // then we generate the expression:
+            //
+            //   match exp0 with {
+            //     case (x1, x2, x3) => "(" + recurse(x1) + ", " + recurse(x2) + ", " + recurse(x3) + ")"
+            //   }
+            //
+            // where recurse is a recursive call to this procedure.
+            //
+
+            // The types of the tuple elements.
+            val elementTypes = getElementTypes(tpe)
+
+            // The expression `exp0` to match against, simply `exp0`.
+            val matchValue = exp0
+
+            // Introduce fresh variables for each component of the tuple.
+            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x")).toList
+
+            // The pattern of the rule.
+            val p = Pattern.Tuple((freshVarsX zip elementTypes).map {
+              case (freshVar, elmType) => Pattern.Var(freshVar, elmType, sl)
+            }, tpe, sl)
+
+            // The guard of the rule (simply true).
+            val g = Expression.True(sl)
+
+            // The elements of the tuple.
+            val inner = (freshVarsX zip elementTypes).map {
+              case (freshX, elementType) => mkApplyToString(Expression.Var(freshX, elementType, sl))
+            }
+
+            // Construct the string expression (e1, e2, e3, ...)
+            val b = concatAll(
+              Expression.Str("(", sl) ::
+                intersperse(inner, Expression.Str(", ", sl)) :::
+                Expression.Str(")", sl) :: Nil
+            )
+
+            // Put the components together.
+            val rule = MatchRule(p, g, b)
+
+            // Assemble the entire match expression.
+            Expression.Match(matchValue, rule :: Nil, Type.Str, Type.Pure, sl)
+
+          case TypeConstructor.Enum(_, _) =>
             //
             // Assume we have an enum:
             //
@@ -1129,96 +1196,18 @@ object Synthesize extends Phase[Root, Root] {
                 // Put the components together.
                 MatchRule(p, g, b)
             }
-
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs, Type.Str, Type.Pure, sl)
-          }
+            Expression.Match(matchValue, rs, Type.Str, Type.Pure, sl)
 
-          //
-          // Relation case.
-          //
-          if (isRelation(tpe)) {
-            val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
-          }
-
-          //
-          // Lattice case.
-          //
-          if (isLattice(tpe)) {
-            val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
-          }
-
-          //
-          // Tuple case.
-          //
-          if (isTuple(tpe)) {
-            //
-            // Assume we have a tuple (a, b, c)
-            //
-            // then we generate the expression:
-            //
-            //   match exp0 with {
-            //     case (x1, x2, x3) => "(" + recurse(x1) + ", " + recurse(x2) + ", " + recurse(x3) + ")"
-            //   }
-            //
-            // where recurse is a recursive call to this procedure.
-            //
-
-            // The types of the tuple elements.
-            val elementTypes = getElementTypes(tpe)
-
-            // The expression `exp0` to match against, simply `exp0`.
-            val matchValue = exp0
-
-            // Introduce fresh variables for each component of the tuple.
-            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x")).toList
-
-            // The pattern of the rule.
-            val p = Pattern.Tuple((freshVarsX zip elementTypes).map {
-              case (freshVar, elmType) => Pattern.Var(freshVar, elmType, sl)
-            }, tpe, sl)
-
-            // The guard of the rule (simply true).
-            val g = Expression.True(sl)
-
-            // The elements of the tuple.
-            val inner = (freshVarsX zip elementTypes).map {
-              case (freshX, elementType) => mkApplyToString(Expression.Var(freshX, elementType, sl))
-            }
-
-            // Construct the string expression (e1, e2, e3, ...)
-            val b = concatAll(
-              Expression.Str("(", sl) ::
-                intersperse(inner, Expression.Str(", ", sl)) :::
-                Expression.Str(")", sl) :: Nil
-            )
-
-            // Put the components together.
-            val rule = MatchRule(p, g, b)
-
-            // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Str, Type.Pure, sl)
-          }
-
-          //
-          // Records
-          //
-          if (isRecord(tpe)) {
-            // TODO: Implement toString for records.
-            return Expression.Str("<<record>>", sl)
-          }
-
-          //
-          // Schema
-          //
-          if (isSchema(tpe)) {
-            val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
-          }
-
-          throw InternalCompilerException(s"Unknown type '$tpe'.")
+          case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Tag(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.True => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.False => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Not => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.And => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case TypeConstructor.Or => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+        }
       }
     }
 
@@ -1243,15 +1232,15 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns `true` if the given type `tpe` is a primitive type.
       */
-    def isPrimitive(tpe: Type): Boolean = tpe match {
-      case Type.Cst(TypeConstructor.Bool) => true
-      case Type.Cst(TypeConstructor.Char) => true
-      case Type.Cst(TypeConstructor.Float32) => true
-      case Type.Cst(TypeConstructor.Float64) => true
-      case Type.Cst(TypeConstructor.Int8) => true
-      case Type.Cst(TypeConstructor.Int16) => true
-      case Type.Cst(TypeConstructor.Int32) => true
-      case Type.Cst(TypeConstructor.Int64) => true
+    def isPrimitive(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Some(TypeConstructor.Bool) => true
+      case Some(TypeConstructor.Char) => true
+      case Some(TypeConstructor.Float32) => true
+      case Some(TypeConstructor.Float64) => true
+      case Some(TypeConstructor.Int8) => true
+      case Some(TypeConstructor.Int16) => true
+      case Some(TypeConstructor.Int32) => true
+      case Some(TypeConstructor.Int64) => true
       case _ => false
     }
 
@@ -1270,80 +1259,6 @@ object Synthesize extends Phase[Root, Root] {
     // TODO: Deprecated
     def isArrow(tpe: Type): Boolean = tpe.typeConstructor match {
       case Some(TypeConstructor.Arrow(_, _)) => true
-      case _ => false
-    }
-
-    /**
-      * Returns `true` if `tpe` is a channel type.
-      */
-    // TODO: Deprecated
-    def isChannel(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.Channel) => true
-      case _ => false
-    }
-
-    /**
-      * Returns `true` if `tpe` is an enum type.
-      */
-    // TODO: Deprecated
-    def isEnum(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.Enum(_, _)) => true
-      case _ => false
-    }
-
-    /**
-      * Returns `true` if `tpe` is a native type.
-      */
-    // TODO: Deprecated
-    def isNative(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.Native(_)) => true
-      case _ => false
-    }
-
-    /**
-      * Returns `true` if `tpe` is a tuple type.
-      */
-    // TODO: Deprecated
-    def isTuple(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.Tuple(_)) => true
-      case _ => false
-    }
-
-    /**
-      * Returns `true` if `tpe` is a relation type.
-      */
-    // TODO: Deprecated
-    def isRelation(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.Relation) => true
-      case _ => false
-    }
-
-    /**
-      * Returns `true` if `tpe` is a lattice type.
-      */
-    // TODO: Deprecated
-    def isLattice(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.Lattice) => true
-      case _ => false
-    }
-
-    /**
-      * Returns `true` if `tpe` is a record type.
-      */
-    // TODO: Deprecated
-    def isRecord(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.RecordEmpty) => true
-      case Some(TypeConstructor.RecordExtend(_)) => true
-      case _ => false
-    }
-
-    /**
-      * Returns `true` if `tpe` is a schema type.
-      */
-    // TODO: Deprecated
-    def isSchema(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.SchemaEmpty) => true
-      case Some(TypeConstructor.SchemaExtend(_)) => true
       case _ => false
     }
 
@@ -1394,7 +1309,7 @@ object Synthesize extends Phase[Root, Root] {
      * (a) Every type that appears as return type of some definition.
      */
     val typesInDefs: Set[Type] = root.defs.collect {
-      case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (ann.isBenchmark || ann.isTest || sym.name == "main") => exp.tpe
+      case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (isBenchmark(ann) || isTest(ann) || sym.name == "main") => exp.tpe
     }.toSet
 
     /*

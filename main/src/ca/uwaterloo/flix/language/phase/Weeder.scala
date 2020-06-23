@@ -143,7 +143,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val e = mkCurried(fs.tail, exp, loc)
           val ts = fs.map(_.tpe.get)
           val t = mkCurriedArrow(ts, WeededAst.Type.Pure(loc), visitType(tpe), loc)
-          val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
+          val ann = Nil
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
           List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, WeededAst.Type.Pure(loc), loc))
       }
@@ -1415,7 +1415,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given sequence of parsed annotation `xs`.
     */
-  private def visitAnnotationOrProperty(xs: Seq[ParsedAst.AnnotationOrProperty]): Validation[Ast.Annotations, WeederError] = {
+  private def visitAnnotationOrProperty(xs: Seq[ParsedAst.AnnotationOrProperty])(implicit flix: Flix): Validation[List[WeededAst.Annotation], WeederError] = {
     // collect seen annotations.
     val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
@@ -1430,27 +1430,29 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
     }
 
-    sequence(result).map(as => Ast.Annotations(as))
+    sequence(result)
   }
 
   /**
     * Weeds the given parsed annotation `past`.
     */
-  private def visitAnnotation(past: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = {
-    /*
-     * Check for `UndefinedAnnotation`.
-     */
+  private def visitAnnotation(past: ParsedAst.Annotation)(implicit flix: Flix): Validation[WeededAst.Annotation, WeederError] = {
     val loc = mkSL(past.sp1, past.sp2)
-    past.ident.name match {
-      case "benchmark" => Ast.Annotation.Benchmark(loc).toSuccess
-      case "deprecated" => Ast.Annotation.Deprecated(loc).toSuccess
-      case "law" => Ast.Annotation.Law(loc).toSuccess
-      case "lint" => Ast.Annotation.Lint(loc).toSuccess
-      case "test" => Ast.Annotation.Test(loc).toSuccess
-      case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
-      case "Time" => Ast.Annotation.Time(loc).toSuccess
-      case "Space" => Ast.Annotation.Space(loc).toSuccess
-      case name => WeederError.UndefinedAnnotation(name, loc).toFailure
+    val argsVal = traverse(past.args.getOrElse(Nil))(visitExp)
+
+    flatMapN(argsVal) {
+      case args =>
+        past.ident.name match {
+          case "benchmark" => WeededAst.Annotation(Ast.Annotation.Benchmark(loc), args, loc).toSuccess
+          case "deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
+          case "law" => WeededAst.Annotation(Ast.Annotation.Law(loc), args, loc).toSuccess
+          case "lint" => WeededAst.Annotation(Ast.Annotation.Lint(loc), args, loc).toSuccess
+          case "test" => WeededAst.Annotation(Ast.Annotation.Test(loc), args, loc).toSuccess
+          case "unchecked" => WeededAst.Annotation(Ast.Annotation.Unchecked(loc), args, loc).toSuccess
+          case "Time" => WeededAst.Annotation(Ast.Annotation.Time(loc), args, loc).toSuccess
+          case "Space" => WeededAst.Annotation(Ast.Annotation.Space(loc), args, loc).toSuccess
+          case name => WeederError.UndefinedAnnotation(name, loc).toFailure
+        }
     }
   }
 
@@ -2008,7 +2010,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     // Documentation, annotations, and modifiers for the generated main.
     val doc = Ast.Doc(Nil, loc)
-    val ann = Ast.Annotations.Empty
+    val ann = Nil
     val mod = Ast.Modifiers.Empty
     val ident = Name.Ident(sp1, "main", sp2)
 

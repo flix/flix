@@ -334,8 +334,8 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * A double or float uses two slots on the stack.
     * Everything else uses one slot.
     */
-  private def getStackSize(tpe: Type): Int = tpe match {
-    case Type.Cst(TypeConstructor.Int64) | Type.Cst(TypeConstructor.Float64) => 2
+  private def getStackSize(tpe: Type): Int = tpe.typeConstructor match {
+    case Some(TypeConstructor.Int64) | Some(TypeConstructor.Float64) => 2
     case _ => 1
   }
 

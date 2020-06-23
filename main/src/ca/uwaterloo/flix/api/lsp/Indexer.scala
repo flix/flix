@@ -15,10 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.ast.TypedAst.FormalParam
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
 
 object Indexer {
 
@@ -302,16 +301,11 @@ object Indexer {
   /**
     * Returns a reverse index for the given type `tpe0` at the given source location `loc`.
     */
-  private def visitType(tpe0: Type, loc: SourceLocation): Index = tpe0 match {
-    case Type.Var(_, _, _) => Index.empty
-    case Type.Cst(TypeConstructor.Arrow(_, eff)) => visitType(eff, loc)
-    case Type.Cst(tc) => tc match {
-      case TypeConstructor.Enum(sym, _) => Index.useOf(sym, loc)
-      case _ => Index.empty
+  private def visitType(tpe0: Type, loc: SourceLocation): Index =
+    tpe0.typeConstructors.foldLeft(Index.empty) {
+      case (idx, TypeConstructor.Enum(sym, _)) => idx ++ Index.useOf(sym, loc)
+      case (idx, _) => idx
     }
-    case Type.Lambda(_, tpe) => visitType(tpe, loc)
-    case Type.Apply(tpe1, tpe2) => visitType(tpe1, loc) ++ visitType(tpe2, loc)
-  }
 
   /**
     * Returns a reverse index for the given constraint `c0`.

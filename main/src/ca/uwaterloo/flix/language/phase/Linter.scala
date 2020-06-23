@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{ConstraintParam, _}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 
 import scala.annotation.tailrec
 
@@ -71,7 +72,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * - a non-lint.
     * - a non-test.
     */
-  private def isTarget(defn: TypedAst.Def): Boolean = !defn.ann.isBenchmark && !defn.ann.isLint && !defn.ann.isTest
+  private def isTarget(defn: TypedAst.Def): Boolean = !isBenchmark(defn.ann) && !isLint(defn.ann) && !isTest(defn.ann)
 
   /**
     * Searches for lint instances in the given definition `defn0`.
@@ -568,7 +569,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns all lints in the given AST `root`.
     */
   private def lintsOf(root: Root): List[Lint] = root.defs.foldLeft(Nil: List[Lint]) {
-    case (acc, (sym, defn)) if defn.ann.isLint => lintOf(sym, defn.exp) match {
+    case (acc, (sym, defn)) if isLint(defn.ann) => lintOf(sym, defn.exp) match {
       case None => acc
       case Some(l) => l :: acc
     }
