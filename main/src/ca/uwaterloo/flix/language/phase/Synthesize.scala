@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 
 import scala.collection.mutable
 
@@ -488,7 +489,7 @@ object Synthesize extends Phase[Root, Root] {
       val paramY = FormalParam(freshY, Ast.Modifiers.Empty, tpe, sl)
 
       // Annotations and modifiers.
-      val ann = Ast.Annotations.Empty
+      val ann = Nil
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Type and formal parameters.
@@ -734,7 +735,7 @@ object Synthesize extends Phase[Root, Root] {
       val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
 
       // Annotations and modifiers.
-      val ann = Ast.Annotations.Empty
+      val ann = Nil
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Type and formal parameters.
@@ -977,7 +978,7 @@ object Synthesize extends Phase[Root, Root] {
       val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
 
       // Annotations and modifiers.
-      val ann = Ast.Annotations.Empty
+      val ann = Nil
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Type and formal parameters.
@@ -1394,7 +1395,7 @@ object Synthesize extends Phase[Root, Root] {
      * (a) Every type that appears as return type of some definition.
      */
     val typesInDefs: Set[Type] = root.defs.collect {
-      case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (ann.isBenchmark || ann.isTest || sym.name == "main") => exp.tpe
+      case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (isBenchmark(ann) || isTest(ann) || sym.name == "main") => exp.tpe
     }.toSet
 
     /*

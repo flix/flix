@@ -56,9 +56,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given definition `def0` to the SimplifiedAst.
       */
     def visitDef(def0: TypedAst.Def): SimplifiedAst.Def = {
+      val ann = if (def0.ann.isEmpty) Ast.Annotations.Empty else Ast.Annotations(def0.ann.map(a => a.name))
       val fs = def0.fparams.map(visitFormalParam)
       val exp = visitExp(def0.exp)
-      SimplifiedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, def0.inferredScheme.base, def0.loc)
+      SimplifiedAst.Def(ann, def0.mod, def0.sym, fs, exp, def0.inferredScheme.base, def0.loc)
     }
 
     /**

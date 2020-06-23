@@ -135,9 +135,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               val inferredScheme = Scheme(inferredType.typeVars.toList, inferredType)
 
               ///
+              /// Infer types for annotations.
+              ///
+              val annVal = visitAnnotations(ann, root)
+
+              ///
               /// Reassemble everything.
               ///
-              Validation.Success((TypedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, declaredScheme, inferredScheme, declaredEff, loc), subst))
+              Validation.mapN(annVal) {
+                case as =>
+                  (TypedAst.Def(doc, as, mod, sym, tparams, fparams, exp, declaredScheme, inferredScheme, declaredEff, loc), subst)
+              }
 
             case Err(e) => Validation.Failure(LazyList(e))
           }
@@ -261,6 +269,37 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
     // Sequence the results and sort the properties by their source location.
     Validation.sequence(results)
+  }
+
+  /**
+    * Visits all annotations.
+    */
+  private def visitAnnotations(ann: List[ResolvedAst.Annotation], root: ResolvedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.Annotation], TypeError] = {
+    Validation.traverse(ann)(inferAnnotation(_, root))
+  }
+
+  /**
+    * Performs type inference on the given annotation `ann0`.
+    */
+  private def inferAnnotation(ann0: ResolvedAst.Annotation, root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Annotation, TypeError] = ann0 match {
+    case ResolvedAst.Annotation(name, exps, loc) =>
+      //
+      // Perform type inference on the arguments.
+      //
+      val result = for {
+        (tpes, effs) <- seqM(exps.map(inferExp(_, root))).map(_.unzip)
+        _ <- unifyTypM(Type.Pure :: effs, loc)
+      } yield Type.Int32
+
+      //
+      // Run the type inference monad with an empty substitution.
+      //
+      val initialSubst = Substitution.empty
+      result.run(initialSubst).toValidation.map {
+        case (subst, _) =>
+          val es = exps.map(reassembleExp(_, root, subst))
+          TypedAst.Annotation(name, es, loc)
+      }
   }
 
   /**
