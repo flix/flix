@@ -25,8 +25,6 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
-import scala.annotation.tailrec
-
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
   *
@@ -229,7 +227,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         innerUsed and shadowedVar - fparam.sym
 
-    case Expression.Apply(defn@Expression.Def(sym, _, _), exps, _, _, _)  if (env0.recursionContext.isRecursiveCall(sym, exps.length)) =>
+    case Expression.Apply(defn@Expression.Def(sym, _, _), exps, _, _, _)
+      if env0.recursionContext.isRecursiveCall(sym, exps.length) =>
       val us1 = visitExp(defn, env0)
       val us2 = visitExps(exps, env0)
       (us1 and us2).withUnconditionalRecursion
