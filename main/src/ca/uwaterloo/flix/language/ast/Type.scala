@@ -40,6 +40,7 @@ sealed trait Type {
   def typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
     case Type.Cst(TypeConstructor.Arrow(_, eff)) => eff.typeVars
+    case Type.Cst(TypeConstructor.Nullable(nullity)) => nullity.typeVars
     case Type.Cst(tc) => SortedSet.empty
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -108,6 +109,7 @@ sealed trait Type {
   def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
     case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eff.map(f)))
+    case Type.Cst(TypeConstructor.Nullable(nullity)) => Type.Cst(TypeConstructor.Nullable(nullity.map(f)))
     case Type.Cst(_) => this
     case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, tpe.map(f))
     case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
@@ -539,6 +541,11 @@ object Type {
   }
 
   /**
+    * Returns the type `Nullable[tpe0, nullity]`.
+    */
+  def mkNullable(tpe0: Type, nullity: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Nullable(nullity)), tpe0)
+
+  /**
     * Construct a relation type with the given list of type arguments `ts0`.
     */
   def mkRelation(ts0: List[Type]): Type = {
@@ -615,6 +622,8 @@ object Type {
       case tvar: Type.Var => subst.getOrElse(tvar, tvar)
 
       case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eval(eff, subst)))
+
+      case Type.Cst(TypeConstructor.Nullable(nullity)) => Type.Cst(TypeConstructor.Nullable(eval(nullity, subst)))
 
       case Type.Cst(_) => t
 

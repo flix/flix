@@ -85,6 +85,8 @@ object Unification {
 
         BoolUnification.unify(eff1, eff2)
 
+      case (Type.Cst(TypeConstructor.Nullable(nullity1)), Type.Cst(TypeConstructor.Nullable(nullity2))) => BoolUnification.unify(nullity1, nullity2)
+
       case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
 
       case _ if tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool =>
@@ -147,7 +149,7 @@ object Unification {
           Err(UnificationError.OccursCheck(tvar, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshVar(Kind.Record)
+          val restRow2 = Type.freshTypeVar()
           val type2 = Type.mkRecordExtend(label1, fieldType1, restRow2)
           val subst = Substitution.singleton(tvar, type2)
           Ok((subst, restRow2))
