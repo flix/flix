@@ -584,7 +584,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Nullify(exp, loc) =>
         for {
           (tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkNullable(tpe, Type.freshTypeVar())
+          resultTyp = Type.mkNullable(tpe, Type.False)
           resultEff = eff
         } yield (resultTyp, resultEff)
 
