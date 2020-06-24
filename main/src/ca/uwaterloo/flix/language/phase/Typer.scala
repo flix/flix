@@ -572,7 +572,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           (tpe3, eff3) <- visitExp(exp3)
-          boundVar <- unifyTypM(sym.tvar, elmTyp, loc)
+          boundVar <- unifyTypM(sym.tvar, Type.mkNullable(elmTyp, Type.False), loc)
           matchType <- unifyTypM(tpe1, Type.mkNullable(elmTyp, nul1), loc)
           thenType <- unifyTypM(tpe2, Type.mkNullable(resTyp, nul2), loc)
           elseType <- unifyTypM(tpe3, Type.mkNullable(resTyp, nul3), loc)
@@ -584,7 +584,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Nullify(exp, loc) =>
         for {
           (tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkNullable(tpe, Type.True)
+          resultTyp = Type.mkNullable(tpe, Type.freshTypeVar())
           resultEff = eff
         } yield (resultTyp, resultEff)
 
