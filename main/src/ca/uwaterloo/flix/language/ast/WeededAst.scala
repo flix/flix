@@ -118,6 +118,8 @@ object WeededAst {
 
     case class MatchNull(name: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Nullify(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression

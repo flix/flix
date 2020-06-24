@@ -189,12 +189,12 @@ object TypeConstructor {
     def kind: Kind = Kind.mkArrow(l)
   }
 
-  /**
-    * A type constructor for nullable types.
-    */
-  case object Nullable extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Effect ->: Kind.Star
-  }
+//  /**
+//    * A type constructor for nullable types.
+//    */
+//  case object Nullable extends TypeConstructor {
+//    def kind: Kind = Kind.Star ->: Kind.Effect ->: Kind.Star
+//  }
 
   /**
     * A type constructor for relations.

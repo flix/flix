@@ -379,6 +379,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.MatchNull(sym, e1, e2, e3, loc)
 
+        case NamedAst.Expression.Nullify(exp, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Nullify(e, loc)
+
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
           case None =>
             // Case 1: The tag has does not have an expression.

@@ -605,6 +605,15 @@ object ParsedAst {
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Nullify Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the nullified expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Nullify(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Match Null Expression.
       *
       * @param sp1  the position of the first character in the expression.

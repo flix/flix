@@ -572,6 +572,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2, eff3)
         } yield (resultTyp, resultEff)
 
+      case ResolvedAst.Expression.Nullify(exp, loc) =>
+        for {
+          (tpe, eff) <- visitExp(exp)
+          resultTyp = tpe
+          resultEff = eff
+        } yield (resultTyp, resultEff)
+
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         // Lookup the enum declaration.
         val decl = root.enums(sym)
@@ -1208,6 +1215,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = e2.tpe // TODO
         val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
+
+      case ResolvedAst.Expression.Nullify(exp, loc) =>
+        visitExp(exp, subst0)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
