@@ -563,12 +563,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
+        val elmTyp = Type.freshTypeVar()
+        val resTyp = Type.freshTypeVar()
+        val nul1 = Type.freshEffectVar()
+        val nul2 = Type.freshEffectVar()
+        val nul3 = Type.freshEffectVar()
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           (tpe3, eff3) <- visitExp(exp3)
-          boundVar <- unifyTypM(sym.tvar, tpe1, loc)
-          resultTyp <- unifyTypM(tpe2, tpe3, loc)
+          boundVar <- unifyTypM(sym.tvar, elmTyp, loc)
+          matchType <- unifyTypM(tpe1, Type.mkNullable(elmTyp, nul1), loc)
+          thenType <- unifyTypM(tpe2, Type.mkNullable(resTyp, nul2), loc)
+          elseType <- unifyTypM(tpe3, Type.mkNullable(resTyp, nul3), loc)
+          resultNul = Type.mkOr(Type.mkAnd(nul1, nul2), nul3)
+          resultTyp = Type.mkNullable(elmTyp, resultNul)
           resultEff = Type.mkAnd(eff1, eff2, eff3)
         } yield (resultTyp, resultEff)
 
