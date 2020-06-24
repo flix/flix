@@ -593,6 +593,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.SchemaExtend(label) => MonoType.SchemaExtend(label, args.head, args(1))
 
+          case TypeConstructor.Nullable(_) => args.head
+
           case TypeConstructor.True => MonoType.Unit
 
           case TypeConstructor.False => MonoType.Unit
