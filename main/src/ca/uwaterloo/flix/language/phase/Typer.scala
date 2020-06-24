@@ -334,7 +334,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         liftM(Type.Unit, Type.Pure)
 
       case ResolvedAst.Expression.Null(tpe, loc) =>
-        liftM(tpe, Type.Pure)
+        liftM(Type.mkNullable(tpe, Type.True), Type.Pure)
 
       case ResolvedAst.Expression.True(loc) =>
         liftM(Type.Bool, Type.Pure)
