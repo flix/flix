@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.tc.Show
 
 /**
@@ -71,6 +72,10 @@ object Kind {
     */
   case class Arrow(kparams: List[Kind], kr: Kind) extends Kind {
     assert(kparams.nonEmpty)
+  }
+
+  def freshKindVar()(implicit flix: Flix): Kind.Var = {
+    Kind.Var(flix.genSym.freshId())
   }
 
   /////////////////////////////////////////////////////////////////////////////
