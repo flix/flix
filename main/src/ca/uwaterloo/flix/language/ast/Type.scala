@@ -318,7 +318,7 @@ object Type {
       *
       * The kind of a type application can unique be determined from the kind of the first type argument `t1`.
       */
-    def kind: Kind = {
+    val kind: Kind = {
       tpe1.kind match {
         case Kind.Arrow(_, k2) => k2
         case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1''")

@@ -813,7 +813,7 @@ object JvmOps {
     case MonoType.Native(clazz) => Type.mkNative(clazz)
     case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
-    case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), args map hackMonoType2Type)
+    case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(args.length))), args map hackMonoType2Type)
 
     case MonoType.Relation(attr) =>
       val base = Type.Cst(TypeConstructor.Relation): Type
