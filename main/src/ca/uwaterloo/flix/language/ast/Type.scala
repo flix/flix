@@ -69,7 +69,7 @@ sealed trait Type {
     case Type.Var(_, _, _) => None
     case Type.Cst(tc) => Some(tc)
     case Type.Apply(t1, _) => t1.typeConstructor
-    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$this'.")
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
 
   /**
@@ -79,7 +79,7 @@ sealed trait Type {
     case Type.Var(_, _, _) => Nil
     case Type.Cst(tc) => tc :: Nil
     case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
-    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$this'.")
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
 
   /**
@@ -306,7 +306,7 @@ object Type {
     * A type expression that represents a type abstraction [x] => tpe.
     */
   case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: tpe.kind
   }
 
   /**
@@ -332,8 +332,10 @@ object Type {
   /**
     * Returns a fresh type variable.
     */
-  def freshTypeVar(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var =
-    Type.Var(flix.genSym.freshId(), k, m)
+  def freshTypeVar(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
+    val id = flix.genSym.freshId()
+    Type.Var(id, k, m)
+  }
 
   /**
     * Returns a fresh type variable of effect kind.

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Rigidity, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -77,7 +77,15 @@ object Unification {
 
     case (_, x: Type.Var) => unifyVar(x, tpe1)
 
-    case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 => BoolUnification.unify(eff1, eff2)
+    case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 =>
+//      if (eff1.kind != Kind.Effect) {
+//        throw InternalCompilerException(s"Unexpected illegal kind: ${eff1.kind} for ${tpe1}")
+//      }
+//      if (eff2.kind != Kind.Effect) {
+//        throw InternalCompilerException(s"Unexpected illegal kind: ${eff2.kind} for ${tpe2}")
+//      }
+
+      BoolUnification.unify(eff1, eff2)
 
     case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
 

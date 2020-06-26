@@ -1093,7 +1093,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
           } yield {
-            val tpe = Type.simplify(ts.foldLeft(t)(Type.Apply))
+            val tpe = Type.simplify(Type.mkApply(t, ts))
             Type.mkSchemaExtend(qname.ident.name, tpe, r)
           }
       }

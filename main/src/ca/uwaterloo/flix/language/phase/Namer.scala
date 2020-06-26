@@ -1276,6 +1276,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
     }
 
+    // TODO: Need to carefully consider which are type vars and which are effect vars.
+
     // Compute the type variables that occur in the return type.
     val typeVarsReturnType = freeVars(returnType).map(_.name)
 
