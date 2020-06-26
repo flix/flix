@@ -110,18 +110,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 2.1: The enum does not exist in the namespace. Update it.
           val sym = Symbol.mkEnumSym(ns0, ident)
+
+          // Compute the type parameters.
           val tparams = tparams0 match {
             case TypeParams.Elided => Nil // TODO: Support type parameter elision?
             case TypeParams.Explicit(tps) => tps map {
               case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
             }
           }
+
+          // Compute the kind of the enum.
+          val kind = Kind.mkArrow(tparams.length)
+
           val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
           val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
           val enumType = if (quantifiers.isEmpty)
-            NamedAst.Type.Enum(sym)
+            NamedAst.Type.Enum(sym, kind)
           else {
-            val base = NamedAst.Type.Enum(sym)
+            val base = NamedAst.Type.Enum(sym, kind)
             quantifiers.foldLeft(base: NamedAst.Type) {
               case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
             }
@@ -129,7 +135,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
           mapN(casesOf(cases, uenv0, tenv)) {
             case cases =>
-              val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, loc)
+              val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, kind, loc)
               val enums = enums0 + (ident.name -> enum)
               prog0.copy(enums = prog0.enums + (ns0 -> enums))
           }

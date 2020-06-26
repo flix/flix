@@ -30,7 +30,7 @@ sealed trait Kind {
     *   - `Kind.Star ->: Kind.Star ->: Kind.Star`
     *   - `Kind.Star ->: (Kind.Star ->: Kind.Star)`
     */
-  def ->:(left: Kind): Kind = Kind.Arrow(List(left), this)
+  def ->:(left: Kind): Kind = Kind.Arrow(left, this)
 
   /**
     * Returns a human readable representation of `this` kind.
@@ -62,10 +62,21 @@ object Kind {
   case object Effect extends Kind
 
   /**
-    * The kind of type expressions that take a sequence of kinds `kparams` to a kind `kr`.
+    * The kind of type expressions k1 -> k2.
     */
-  case class Arrow(kparams: List[Kind], kr: Kind) extends Kind {
-    assert(kparams.nonEmpty)
+  case class Arrow(k1: Kind, k2: Kind) extends Kind
+
+  /**
+    * Returns the kind: * -> (* ... -> *)
+    */
+  def mkArrow(length: Int): Kind = {
+    if (length == 0) {
+      return Kind.Star
+    }
+
+    (0 until length + 1).foldRight(Kind.Star: Kind) {
+      case (_, acc) => Arrow(Kind.Star, acc)
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -81,10 +92,8 @@ object Kind {
       case Kind.Record => "Record"
       case Kind.Schema => "Schema"
       case Kind.Effect => "Effect"
-      case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
-      case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"
-      case Kind.Arrow(kparams, Kind.Star) => s"(${kparams.mkString(", ")}) -> *"
-      case Kind.Arrow(kparams, kr) => s"(${kparams.mkString(", ")}) -> ($kr)"
+      case Kind.Arrow(k1, Kind.Star) => s"$k1 -> *"
+      case Kind.Arrow(k1, k2) => s"$k1 -> ($k2)"
     }
   }
 

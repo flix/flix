@@ -688,20 +688,7 @@ object Synthesize extends Phase[Root, Root] {
             // Assemble the entire match expression.
             Expression.Match(matchValue, rule :: Nil, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Array => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Ref => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.RecordEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.RecordExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.SchemaEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.SchemaExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Tag(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.True => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.False => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Not => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.And => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Or => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
         }
       }
     }
@@ -934,20 +921,7 @@ object Synthesize extends Phase[Root, Root] {
             // Assemble the entire match expression.
             Expression.Match(matchValue, rule :: Nil, Type.Int32, Type.Pure, sl)
 
-          case TypeConstructor.Array => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Ref => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.RecordEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.RecordExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.SchemaEmpty => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.SchemaExtend(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Tag(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.True => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.False => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Not => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.And => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Or => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
         }
       }
     }
@@ -1199,14 +1173,7 @@ object Synthesize extends Phase[Root, Root] {
             // Assemble the entire match expression.
             Expression.Match(matchValue, rs, Type.Str, Type.Pure, sl)
 
-          case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Tag(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.True => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.False => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Not => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.And => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-          case TypeConstructor.Or => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
+          case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
         }
       }
     }

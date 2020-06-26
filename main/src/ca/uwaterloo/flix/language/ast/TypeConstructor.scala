@@ -90,7 +90,7 @@ object TypeConstructor {
     * A type constructor that represents the type of functions.
     */
   case class Arrow(arity: Int, eff: Type) extends TypeConstructor { // TODO: Move effect.
-    def kind: Kind = Kind.Arrow((0 until arity).map(_ => Kind.Star).toList, Kind.Star)
+    def kind: Kind = Kind.mkArrow(arity)
   }
 
   /**
@@ -152,9 +152,9 @@ object TypeConstructor {
     */
   case class Tag(sym: Symbol.EnumSym, tag: String) extends TypeConstructor {
     /**
-      * The shape of a tag is "like" a function `caseType` -> `resultType`.
+      * The shape of a tag is "like" a function `caseType` -> (`resultType`) -> *.
       */
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star ->: Kind.Star
   }
 
   /**
@@ -186,7 +186,7 @@ object TypeConstructor {
     /**
       * The shape of a tuple is (t1, ..., tn).
       */
-    def kind: Kind = ??? // TODO
+    def kind: Kind = Kind.mkArrow(l)
   }
 
   /**
