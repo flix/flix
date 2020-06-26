@@ -1058,7 +1058,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // ---------------------------------------------------
         // fold P exp1 exp2 exp3 : b
         //
-        val freshPredicateNameTypeVar = Type.freshTypeVar()
+        val freshPredicateNameTypeVar = Type.freshTypeVar(Kind.Star ->: Kind.Star)
         val tupleType = Type.freshTypeVar()
         val freshRestTypeVar = Type.freshTypeVar()
         for {
