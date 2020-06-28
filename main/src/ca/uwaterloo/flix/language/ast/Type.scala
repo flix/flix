@@ -223,6 +223,11 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str)
 
   /**
+    * Represents the Array type constructor.
+    */
+  val Array: Type = Type.Cst(TypeConstructor.Array)
+
+  /**
     * Represents the type of an empty record.
     */
   val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty)
@@ -412,7 +417,7 @@ object Type {
   /**
     * Returns the type `Array[tpe]`.
     */
-  def mkArray(elmType: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Array), elmType)
+  def mkArray(elmType: Type): Type = Apply(Array, elmType)
 
   /**
     * Returns the type `Channel[tpe]`.
