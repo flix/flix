@@ -115,7 +115,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val tparams = tparams0 match {
             case TypeParams.Elided => Nil // TODO: Support type parameter elision?
             case TypeParams.Explicit(tps) => tps map {
-              case p => NamedAst.TypeParam(p, Type.freshTypeVarUnknownKind(), loc)
+              case p =>
+                // We use a kind variable since we do not know the kind of the type variable.
+                val tvar = Type.freshVar(Kind.freshVar())
+                NamedAst.TypeParam(p, tvar, loc)
             }
           }
 
@@ -155,7 +158,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val tparams = tparams0 match {
             case TypeParams.Elided => Nil
             case TypeParams.Explicit(tps) => tps map {
-              case p => NamedAst.TypeParam(p, Type.freshTypeVarUnknownKind(), loc)
+              case p =>
+                // We use a kind variable since we do not know the kind of the type variable.
+                val tvar = Type.freshVar(Kind.freshVar())
+                NamedAst.TypeParam(p, tvar, loc)
             }
           }
           val tenv = getTypeEnv(tparams)
@@ -288,7 +294,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit flix: Flix): Map[String, Type.Var] =
     idents.foldLeft(Map.empty[String, Type.Var]) {
       case (macc, ident) => macc.get(ident.name) match {
-        case None => macc + (ident.name -> Type.freshTypeVarUnknownKind())
+        case None =>
+          // We use a kind variable since we do not know the kind of the type variable.
+          val tvar = Type.freshVar(Kind.freshVar())
+          macc + (ident.name -> tvar)
         case Some(tvar) => macc
       }
     }
@@ -1257,7 +1266,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
     case p =>
       // Generate a fresh type variable for the type parameter.
-      val tvar = Type.freshTypeVarUnknownKind()
+      // We use a kind variable since we do not know the kind of the type variable.
+      val tvar = Type.freshVar(Kind.freshVar())
       // Remember the original textual name.
       tvar.setText(p.name)
       NamedAst.TypeParam(p, tvar, p.loc)
@@ -1286,7 +1296,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     typeVars.toList.sorted.map {
       case name =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        val tvar = Type.freshTypeVarUnknownKind()
+        // We use a kind variable since we do not know the kind of the type variable.
+        val tvar = Type.freshVar(Kind.freshVar())
         tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, loc)
     }
@@ -1308,7 +1319,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     typeVars.toList.sorted.map {
       case name =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        val tvar = Type.freshTypeVarUnknownKind()
+        // We use a kind variable since we do not know the kind of the type variable.
+        val tvar = Type.freshVar(Kind.freshVar())
         tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, loc)
     }
