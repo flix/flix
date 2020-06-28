@@ -466,7 +466,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.RecordEmpty(loc) =>
-      NamedAst.Expression.RecordEmpty(Type.freshVar(Kind.Star), loc).toSuccess
+      NamedAst.Expression.RecordEmpty(Type.freshVar(Kind.Record), loc).toSuccess
 
     case WeededAst.Expression.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
@@ -684,7 +684,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, env0, uenv0, tenv0))) {
         case cs =>
-          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Star), loc)
+          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Schema), loc)
       }
 
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
