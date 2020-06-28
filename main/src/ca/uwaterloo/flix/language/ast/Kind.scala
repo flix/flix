@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.tc.Show
 
 /**
@@ -27,10 +28,11 @@ sealed trait Kind {
     * Constructs an arrow kind.
     *
     * This is a right-associative operator, i.e., the following two kinds are equivalent:
+    *
     *   - `Kind.Star ->: Kind.Star ->: Kind.Star`
     *   - `Kind.Star ->: (Kind.Star ->: Kind.Star)`
     */
-  def ->:(left: Kind): Kind = Kind.Arrow(List(left), this)
+  def ->:(left: Kind): Kind = Kind.Arrow(left, this)
 
   /**
     * Returns a human readable representation of `this` kind.
@@ -42,30 +44,51 @@ sealed trait Kind {
 object Kind {
 
   /**
-    * The kind of all nullary type expressions.
+    * Represents a kind variable.
+    */
+  case class Var(id: Int) extends Kind
+
+  /**
+    * Represents the kind of types.
     */
   case object Star extends Kind
 
   /**
-    * The kind of records.
+    * Represents the kind of boolean formulas.
+    */
+  case object Bool extends Kind
+
+  /**
+    * Represents the kind of records.
     */
   case object Record extends Kind
 
   /**
-    * The kind of schemas.
+    * Represents the kind of schemas.
     */
   case object Schema extends Kind
 
   /**
-    * The kind of effects.
+    * Represents the kind of type expressions `k1 -> k2`.
     */
-  case object Effect extends Kind
+  case class Arrow(k1: Kind, k2: Kind) extends Kind
 
   /**
-    * The kind of type expressions that take a sequence of kinds `kparams` to a kind `kr`.
+    * Returns a fresh kind variable.
     */
-  case class Arrow(kparams: List[Kind], kr: Kind) extends Kind {
-    assert(kparams.nonEmpty)
+  def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
+
+  /**
+    * Returns the kind: * -> (* ... -> *)
+    */
+  def mkArrow(length: Int): Kind = {
+    if (length == 0) {
+      return Star
+    }
+
+    (0 until length + 1).foldRight(Star: Kind) {
+      case (_, acc) => Arrow(Star, acc)
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -77,14 +100,13 @@ object Kind {
     */
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
-      case Kind.Star => "*"
-      case Kind.Record => "Record"
-      case Kind.Schema => "Schema"
-      case Kind.Effect => "Effect"
-      case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
-      case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"
-      case Kind.Arrow(kparams, Kind.Star) => s"(${kparams.mkString(", ")}) -> *"
-      case Kind.Arrow(kparams, kr) => s"(${kparams.mkString(", ")}) -> ($kr)"
+      case Var(id) => "'" + id
+      case Star => "*"
+      case Bool => "Bool"
+      case Record => "Record"
+      case Schema => "Schema"
+      case Arrow(k1, Kind.Star) => s"$k1 -> *"
+      case Arrow(k1, k2) => s"$k1 -> ($k2)"
     }
   }
 

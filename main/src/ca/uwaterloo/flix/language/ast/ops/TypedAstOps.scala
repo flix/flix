@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.ast.ops
 import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Law, Lint, Test}
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object TypedAstOps {
 
@@ -146,7 +146,7 @@ object TypedAstOps {
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         rules.foldLeft(visitExp(exp, env0)) {
-          case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.Cst(TypeConstructor.Native(null))))
+          case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.mkNative(null)))
         }
 
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>

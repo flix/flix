@@ -808,12 +808,12 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
-    case MonoType.Array(elm) => Type.mkApply(Type.Cst(TypeConstructor.Array), hackMonoType2Type(elm) :: Nil)
-    case MonoType.Channel(elm) => Type.mkApply(Type.Cst(TypeConstructor.Channel), hackMonoType2Type(elm) :: Nil)
-    case MonoType.Native(clazz) => Type.Cst(TypeConstructor.Native(clazz))
-    case MonoType.Ref(elm) => Type.Apply(Type.Cst(TypeConstructor.Ref), hackMonoType2Type(elm))
+    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm))
+    case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm))
+    case MonoType.Native(clazz) => Type.mkNative(clazz)
+    case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
-    case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), args map hackMonoType2Type)
+    case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(args.length))), args map hackMonoType2Type)
 
     case MonoType.Relation(attr) =>
       val base = Type.Cst(TypeConstructor.Relation): Type
@@ -831,7 +831,7 @@ object JvmOps {
       }
       Type.Apply(base, args)
 
-    case MonoType.Tuple(length) => Type.Cst(TypeConstructor.Tuple(0)) // hack
+    case MonoType.Tuple(length) => Type.mkTuple(Nil) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.mkRecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty

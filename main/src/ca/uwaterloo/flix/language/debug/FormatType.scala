@@ -17,7 +17,7 @@
 
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.Kind.Effect
+import ca.uwaterloo.flix.language.ast.Kind.Bool
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
@@ -89,7 +89,7 @@ object FormatType {
         case None => tpe match {
           case tvar@Type.Var(id, kind, _) => audience match {
             case Audience.Internal => kind match {
-              case Effect => s"''$id"
+              case Bool => s"''$id"
               case _ => s"'$id"
             }
             case Audience.External => tvar.getText.getOrElse(renameMap(tvar.id))

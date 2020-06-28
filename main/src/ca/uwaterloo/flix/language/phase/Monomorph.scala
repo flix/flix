@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Scheme, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -77,7 +77,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Recursively replaces every type variable with the unit type.
         */
       def visit(t: Type): Type = t match {
-        case Type.Var(_, _, _) => Type.Unit
+        case Type.Var(_, kind, _) => kind match {
+          case Kind.Bool =>
+            // TODO: Exactly how should type variables be monomorphed?
+            Type.True
+          case _ => Type.Unit
+        }
         case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, visit(eff)))
         case Type.Cst(_) => t
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) => rest match {

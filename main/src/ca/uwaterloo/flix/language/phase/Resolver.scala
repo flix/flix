@@ -132,7 +132,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield {
           val freeVars = e0.tparams.map(_.tpe)
           val caseType = t
-          val enumType = Type.mkApply(Type.Cst(TypeConstructor.Enum(e0.sym, Kind.Star)), freeVars)
+          val enumType = Type.mkApply(Type.Cst(TypeConstructor.Enum(e0.sym, e0.kind)), freeVars)
           val base = Type.mkApply(Type.Cst(TypeConstructor.Tag(e0.sym, tag.name)), List(caseType, enumType))
           val sc = Scheme(freeVars, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
@@ -227,11 +227,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
 
               // The apply expression inside the lambda.
-              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
 
               // The curried lambda expressions.
               fparams.foldRight(applyExp: ResolvedAst.Expression) {
-                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshTypeVar(), loc)
+                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshVar(Kind.Star), loc)
               }
           }
 
@@ -294,8 +294,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 for {
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
-                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshTypeVar(), loc)
-                  ResolvedAst.Expression.Apply(base, es, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshVar(Kind.Star), loc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
                 }
               } else {
                 // Case 2: We have to curry. (See below).
@@ -304,7 +304,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
                   es.foldLeft(e) {
-                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
                   }
                 }
               }
@@ -316,7 +316,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             es <- traverse(exps)(visit(_, tenv0))
           } yield {
             es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
             }
           }
 
@@ -403,16 +403,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val freshVar = Symbol.freshVarSym("x")
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVar(), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshVar(Kind.Star), loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), loc)
+                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshVar(Kind.Star), loc)
 
                   // Assemble the lambda expressions.
-                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVar(), loc)
+                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshVar(Kind.Star), loc)
                 }
             }
           case Some(exp) =>
@@ -1060,8 +1060,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
       }
 
-    case NamedAst.Type.Enum(sym) =>
-      Type.Cst(TypeConstructor.Enum(sym, Kind.Star)).toSuccess
+    case NamedAst.Type.Enum(sym, kind) =>
+      Type.Cst(TypeConstructor.Enum(sym, kind)).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
@@ -1093,7 +1093,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
           } yield {
-            val tpe = Type.simplify(ts.foldLeft(t)(Type.Apply))
+            val tpe = Type.simplify(Type.mkApply(t, ts))
             Type.mkSchemaExtend(qname.ident.name, tpe, r)
           }
       }
@@ -1294,7 +1294,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.Cst(TypeConstructor.Enum(enum.sym, Kind.Star))
+      case enum => Type.Cst(TypeConstructor.Enum(enum.sym, enum0.kind))
     }
 
   /**

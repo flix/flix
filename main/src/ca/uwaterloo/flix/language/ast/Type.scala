@@ -69,7 +69,7 @@ sealed trait Type {
     case Type.Var(_, _, _) => None
     case Type.Cst(tc) => Some(tc)
     case Type.Apply(t1, _) => t1.typeConstructor
-    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$this'.")
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
 
   /**
@@ -79,7 +79,7 @@ sealed trait Type {
     case Type.Var(_, _, _) => Nil
     case Type.Cst(tc) => tc :: Nil
     case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
-    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$this'.")
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
 
   /**
@@ -164,7 +164,7 @@ sealed trait Type {
 object Type {
 
   /////////////////////////////////////////////////////////////////////////////
-  // Type Constants                                                          //
+  // Constants                                                               //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -253,8 +253,9 @@ object Type {
   val Impure: Type = False
 
   /////////////////////////////////////////////////////////////////////////////
-  // Types                                                                   //
+  // Constructors                                                            //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * A type variable expression.
     */
@@ -306,7 +307,7 @@ object Type {
     * A type expression that represents a type abstraction [x] => tpe.
     */
   case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: tpe.kind
   }
 
   /**
@@ -316,35 +317,35 @@ object Type {
     /**
       * Returns the kind of `this` type.
       *
-      * The kind of a type application can unique be determined
-      * from the kind of the first type argument `t1`.
+      * The kind of a type application can unique be determined from the kind of the first type argument `t1`.
       */
-    def kind: Kind = {
+    val kind: Kind = {
       tpe1.kind match {
-        case Kind.Arrow(kparams, k) => kparams match {
-          case _ :: Nil => k
-          case _ :: tail => Kind.Arrow(tail, k)
-          case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1''")
-        }
-        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1''")
+        case Kind.Arrow(k1, k2) =>
+          // TODO: Kind check (but only for boolean formulas for now).
+          //          if (k1 == Kind.Bool) {
+          //            val k3 = tpe2.kind
+          //            if (k3 != Kind.Bool && !k3.isInstanceOf[Kind.Var]) {
+          //               throw InternalCompilerException(s"Unexpected non-bool kind: '$k3'.")
+          //            }
+          //          }
+          k2
+        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1'.")
       }
     }
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Helper Functions                                                        //
+  // Utility Functions                                                       //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Returns a fresh type variable.
-    */
-  def freshTypeVar(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var =
-    Type.Var(flix.genSym.freshId(), k, m)
 
   /**
-    * Returns a fresh type variable of effect kind.
+    * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshEffectVar()(implicit flix: Flix): Type.Var =
-    Type.Var(flix.genSym.freshId(), Kind.Effect)
+  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
+    val id = flix.genSym.freshId()
+    Type.Var(id, k, r)
+  }
 
   /**
     * Constructs the pure arrow type A -> B.
@@ -455,6 +456,11 @@ object Type {
       case (acc, x) => Apply(acc, x)
     }
   }
+
+  /**
+    * Constructs the a native type.
+    */
+  def mkNative(clazz: Class[_]): Type = Type.Cst(TypeConstructor.Native(clazz))
 
   /**
     * Constructs a RecordExtend type.
