@@ -227,11 +227,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
 
               // The apply expression inside the lambda.
-              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshTypeVar(), Type.freshVarWithKind(Kind.Effect), loc)
+              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshVarWithKind(Kind.Star), Type.freshVarWithKind(Kind.Effect), loc)
 
               // The curried lambda expressions.
               fparams.foldRight(applyExp: ResolvedAst.Expression) {
-                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshTypeVar(), loc)
+                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshVarWithKind(Kind.Star), loc)
               }
           }
 
@@ -294,8 +294,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 for {
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
-                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshTypeVar(), loc)
-                  ResolvedAst.Expression.Apply(base, es, Type.freshTypeVar(), Type.freshVarWithKind(Kind.Effect), loc)
+                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshVarWithKind(Kind.Star), loc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshVarWithKind(Kind.Star), Type.freshVarWithKind(Kind.Effect), loc)
                 }
               } else {
                 // Case 2: We have to curry. (See below).
@@ -304,7 +304,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
                   es.foldLeft(e) {
-                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshVarWithKind(Kind.Effect), loc)
+                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVarWithKind(Kind.Star), Type.freshVarWithKind(Kind.Effect), loc)
                   }
                 }
               }
@@ -316,7 +316,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             es <- traverse(exps)(visit(_, tenv0))
           } yield {
             es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshVarWithKind(Kind.Effect), loc)
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVarWithKind(Kind.Star), Type.freshVarWithKind(Kind.Effect), loc)
             }
           }
 
@@ -403,16 +403,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val freshVar = Symbol.freshVarSym("x")
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVar(), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshVarWithKind(Kind.Star), loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), loc)
+                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshVarWithKind(Kind.Star), loc)
 
                   // Assemble the lambda expressions.
-                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVar(), loc)
+                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshVarWithKind(Kind.Star), loc)
                 }
             }
           case Some(exp) =>
