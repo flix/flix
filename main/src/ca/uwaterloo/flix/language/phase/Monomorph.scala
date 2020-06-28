@@ -72,32 +72,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
-    def apply(tpe: Type): Type = {
-      /**
-        * Recursively replaces every type variable with the unit type.
-        */
-      def visit(t: Type): Type = t match {
-        case Type.Var(_, kind, _) => kind match {
-          case Kind.Bool =>
-            // TODO: Exactly how should type variables be monomorphed?
-            Type.True
-          case _ => Type.Unit
-        }
-        case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, visit(eff)))
-        case Type.Cst(_) => t
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) => rest match {
-          case Type.Var(_, _, _) => Type.mkRecordExtend(label, visit(tpe), Type.RecordEmpty)
-          case _ => Type.mkRecordExtend(label, visit(tpe), visit(rest))
-        }
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) => rest match {
-          case Type.Var(_, _, _) => Type.mkSchemaExtend(sym, visit(tpe), Type.SchemaEmpty)
-          case _ => Type.mkSchemaExtend(sym, visit(tpe), visit(rest))
-        }
-        case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
-        case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$t'.")
-      }
-
-      visit(s(tpe))
+    def apply(tpe: Type): Type = s(tpe).map {
+      case Type.Var(_, Kind.Bool, _) => Type.True
+      case Type.Var(_, Kind.Record, _) => Type.RecordEmpty
+      case Type.Var(_, Kind.Schema, _) => Type.SchemaEmpty
+      case _ => Type.Unit
     }
   }
 

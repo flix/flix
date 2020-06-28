@@ -105,11 +105,11 @@ sealed trait Type {
   /**
     * Applies `f` to every type variable in `this` type.
     */
-  def map(f: Type.Var => Type.Var): Type = this match {
+  def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
     case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eff.map(f)))
     case Type.Cst(_) => this
-    case Type.Lambda(tvar, tpe) => Type.Lambda(f(tvar), tpe.map(f))
+    case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, tpe.map(f))
     case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
   }
 
