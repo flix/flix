@@ -342,7 +342,9 @@ object Type {
   /**
     * Returns a fresh type variable.
     */
-  def freshTypeVarDeprecated(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
+  // TODO: We need to replace every usage of this function with one that gives the correct kind.
+  // However, in some cases, it is hard for us to know the actual kind. Need kind inference?
+  def freshTypeVarUnknownKind(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
     val id = flix.genSym.freshId()
     Type.Var(id, k, m)
   }
