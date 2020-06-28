@@ -67,7 +67,7 @@ object Scheme {
           case InstantiateMode.Rigid => Rigidity.Rigid
           case InstantiateMode.Mixed => Rigidity.Flexible
         }
-        macc + (tvar.id -> Type.freshVarWithKind(tvar.kind, rigidity))
+        macc + (tvar.id -> Type.freshVar(tvar.kind, rigidity))
     }
 
     /**

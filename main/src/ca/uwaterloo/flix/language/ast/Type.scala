@@ -332,19 +332,19 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * Returns a fresh type variable.
+    * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshTypeVar(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
+  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
     val id = flix.genSym.freshId()
-    Type.Var(id, k, m)
+    Type.Var(id, k, r)
   }
 
   /**
-    * Returns a fresh type variable of the given kind `k` and rigidity `r`.
+    * Returns a fresh type variable.
     */
-  def freshVarWithKind(k: Kind, r: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
+  def freshTypeVarDeprecated(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
     val id = flix.genSym.freshId()
-    Type.Var(id, k, r)
+    Type.Var(id, k, m)
   }
 
   /**
