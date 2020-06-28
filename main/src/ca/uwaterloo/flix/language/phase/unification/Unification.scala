@@ -78,11 +78,8 @@ object Unification {
     case (_, x: Type.Var) => unifyVar(x, tpe1)
 
     case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 =>
-//      if (eff1.kind != Kind.Effect) {
-//        throw InternalCompilerException(s"Unexpected illegal kind: ${eff1.kind} for ${tpe1}")
-//      }
-//      if (eff2.kind != Kind.Effect) {
-//        throw InternalCompilerException(s"Unexpected illegal kind: ${eff2.kind} for ${tpe2}")
+//      if (eff1.kind != Kind.Bool && eff2.kind != Kind.Bool) {
+//        println(s"Non-boolean kinds: ${eff1} and ${eff2}.")
 //      }
 
       BoolUnification.unify(eff1, eff2)
