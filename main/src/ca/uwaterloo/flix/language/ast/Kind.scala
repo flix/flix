@@ -102,7 +102,7 @@ object Kind {
     def show(a: Kind): String = a match {
       case Var(id) => "'" + id
       case Star => "*"
-      case Bool => "Effect"
+      case Bool => "Bool"
       case Record => "Record"
       case Schema => "Schema"
       case Arrow(k1, Kind.Star) => s"$k1 -> *"

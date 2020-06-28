@@ -335,7 +335,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Hole(name, loc) =>
       val tpe = Type.freshVar(Kind.Star)
-      NamedAst.Expression.Hole(name, tpe, Type.freshVar(Kind.Star), loc).toSuccess
+      val eff = Type.freshVar(Kind.Bool)
+      NamedAst.Expression.Hole(name, tpe, eff, loc).toSuccess
 
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map {
