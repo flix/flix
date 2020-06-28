@@ -27,6 +27,7 @@ sealed trait Kind {
     * Constructs an arrow kind.
     *
     * This is a right-associative operator, i.e., the following two kinds are equivalent:
+    *
     *   - `Kind.Star ->: Kind.Star ->: Kind.Star`
     *   - `Kind.Star ->: (Kind.Star ->: Kind.Star)`
     */
@@ -42,27 +43,32 @@ sealed trait Kind {
 object Kind {
 
   /**
-    * The kind of all nullary type expressions.
+    * Represents a kind variable.
+    */
+  case class Var(id: Int) extends Kind
+
+  /**
+    * Represents the kind of types.
     */
   case object Star extends Kind
 
   /**
-    * The kind of records.
+    * Represents the kind of boolean formulas.
+    */
+  case object Bool extends Kind
+
+  /**
+    * Represents the kind of records.
     */
   case object Record extends Kind
 
   /**
-    * The kind of schemas.
+    * Represents the kind of schemas.
     */
   case object Schema extends Kind
 
   /**
-    * The kind of effects.
-    */
-  case object Effect extends Kind
-
-  /**
-    * The kind of type expressions k1 -> k2.
+    * Represents the kind of type expressions `k1 -> k2`.
     */
   case class Arrow(k1: Kind, k2: Kind) extends Kind
 
@@ -88,10 +94,11 @@ object Kind {
     */
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
+      case Kind.Var(id) => "'" + id
       case Kind.Star => "*"
+      case Kind.Bool => "Effect"
       case Kind.Record => "Record"
       case Kind.Schema => "Schema"
-      case Kind.Effect => "Effect"
       case Kind.Arrow(k1, Kind.Star) => s"$k1 -> *"
       case Kind.Arrow(k1, k2) => s"$k1 -> ($k2)"
     }

@@ -56,7 +56,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Arrow.External.02") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
-    val effectType = Type.Var(2, Kind.Effect, Rigidity.Rigid)
+    val effectType = Type.Var(2, Kind.Bool, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType)
 
     val expected = "a -> b & c"
@@ -171,7 +171,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Arrow.Internal.02") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
-    val effectType = Type.Var(2, Kind.Effect, Rigidity.Rigid)
+    val effectType = Type.Var(2, Kind.Bool, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType)
 
     val expected = "'0 -> '1 & ''2"
@@ -386,7 +386,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Arrow.External.03") {
-    val eff = Type.Var(0, Kind.Effect, Rigidity.Flexible)
+    val eff = Type.Var(0, Kind.Bool, Rigidity.Flexible)
     eff.setText("e")
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2, eff)), List(Type.Str, Type.Float32, Type.Int8))
 

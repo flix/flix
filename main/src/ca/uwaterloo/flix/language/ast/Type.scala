@@ -329,7 +329,7 @@ object Type {
           //              throw InternalCompilerException(s"Unexpected non-bool kind: '$k2'.")
           //          }
           k2
-        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1''")
+        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1'.")
       }
     }
   }

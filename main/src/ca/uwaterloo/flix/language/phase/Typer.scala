@@ -378,7 +378,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshVar(Kind.Star)
-        val lambdaBodyEff = Type.freshVar(Kind.Effect)
+        val lambdaBodyEff = Type.freshVar(Kind.Bool)
         for {
           (tpe, eff) <- visitExp(exp)
           (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
@@ -801,7 +801,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (actualTyp, actualEff) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, actualTyp, expectedTyp.getOrElse(tvar), loc)
-          resultEff <- unifyEffM(actualEff, expectedEff.getOrElse(Type.freshVar(Kind.Effect)), loc)
+          resultEff <- unifyEffM(actualEff, expectedEff.getOrElse(Type.freshVar(Kind.Bool)), loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, loc) =>

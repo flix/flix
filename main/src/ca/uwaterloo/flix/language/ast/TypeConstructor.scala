@@ -207,35 +207,35 @@ object TypeConstructor {
     * A type constructor that represent the Boolean True.
     */
   case object True extends TypeConstructor {
-    def kind: Kind = Kind.Effect
+    def kind: Kind = Kind.Bool
   }
 
   /**
     * A type constructor that represents the Boolean False.
     */
   case object False extends TypeConstructor {
-    def kind: Kind = Kind.Effect
+    def kind: Kind = Kind.Bool
   }
 
   /**
     * A type constructor that represents the negation of an effect.
     */
   case object Not extends TypeConstructor {
-    def kind: Kind = Kind.Effect ->: Kind.Effect
+    def kind: Kind = Kind.Bool ->: Kind.Bool
   }
 
   /**
     * A type constructor that represents the conjunction of two effects.
     */
   case object And extends TypeConstructor {
-    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
+    def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
   }
 
   /**
     * A type constructor that represents the disjunction of two effects.
     */
   case object Or extends TypeConstructor {
-    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
+    def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
   }
 
 }
