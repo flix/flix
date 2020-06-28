@@ -228,6 +228,16 @@ object Type {
   val Array: Type = Type.Cst(TypeConstructor.Array)
 
   /**
+    * Represents the Relation type constructor.
+    */
+  val Relation: Type = Type.Cst(TypeConstructor.Relation)
+
+  /**
+    * Represents the Lattice type constructor.
+    */
+  val Lattice: Type = Type.Cst(TypeConstructor.Lattice)
+
+  /**
     * Represents the type of an empty record.
     */
   val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty)
@@ -480,6 +490,16 @@ object Type {
   def mkSchemaExtend(name: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
   }
+
+  /**
+    * Construct a relation type with the given list of type arguments `ts`.
+    */
+  def mkRelation(ts: List[Type]): Type = Apply(Relation, mkTuple(ts))
+
+  /**
+    * Construct a lattice type with the given list of type arguments `ts`.
+    */
+  def mkLattice(ts: List[Type]): Type = Apply(Lattice, mkTuple(ts))
 
   /**
     * Returns the type `Not(tpe0)`.
