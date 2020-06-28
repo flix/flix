@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.tc.Show
 
 /**
@@ -73,15 +74,20 @@ object Kind {
   case class Arrow(k1: Kind, k2: Kind) extends Kind
 
   /**
+    * Returns a fresh kind variable.
+    */
+  def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
+
+  /**
     * Returns the kind: * -> (* ... -> *)
     */
   def mkArrow(length: Int): Kind = {
     if (length == 0) {
-      return Kind.Star
+      return Star
     }
 
-    (0 until length + 1).foldRight(Kind.Star: Kind) {
-      case (_, acc) => Arrow(Kind.Star, acc)
+    (0 until length + 1).foldRight(Star: Kind) {
+      case (_, acc) => Arrow(Star, acc)
     }
   }
 
@@ -94,13 +100,13 @@ object Kind {
     */
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
-      case Kind.Var(id) => "'" + id
-      case Kind.Star => "*"
-      case Kind.Bool => "Effect"
-      case Kind.Record => "Record"
-      case Kind.Schema => "Schema"
-      case Kind.Arrow(k1, Kind.Star) => s"$k1 -> *"
-      case Kind.Arrow(k1, k2) => s"$k1 -> ($k2)"
+      case Var(id) => "'" + id
+      case Star => "*"
+      case Bool => "Effect"
+      case Record => "Record"
+      case Schema => "Schema"
+      case Arrow(k1, Kind.Star) => s"$k1 -> *"
+      case Arrow(k1, k2) => s"$k1 -> ($k2)"
     }
   }
 
