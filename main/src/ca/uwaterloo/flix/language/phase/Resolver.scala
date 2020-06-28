@@ -546,7 +546,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, clazz, body) =>
-              val exceptionType = Type.Cst(TypeConstructor.Native(clazz))
+              val exceptionType = Type.mkNative(clazz)
               visit(body, tenv0 + (sym -> exceptionType)) map {
                 case b => ResolvedAst.CatchRule(sym, clazz, b)
               }
@@ -1124,7 +1124,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case "java.math.BigInteger" => Type.BigInt.toSuccess
         case "java.lang.String" => Type.Str.toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
-          case clazz => Type.Cst(TypeConstructor.Native(clazz))
+          case clazz => Type.mkNative(clazz)
         }
       }
 
