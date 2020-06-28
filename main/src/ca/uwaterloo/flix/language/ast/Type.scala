@@ -440,6 +440,11 @@ object Type {
   def mkRef(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Ref), tpe)
 
   /**
+    * Construct the enum type `Sym[ts]`.
+    */
+  def mkEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length))), ts)
+
+  /**
     * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
     *
     * A tag type can be understood as a "function type" from the `caseType` to the `resultType`.
