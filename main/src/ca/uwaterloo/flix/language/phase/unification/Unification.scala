@@ -149,7 +149,7 @@ object Unification {
           Err(UnificationError.OccursCheck(tvar, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshTypeVar()
+          val restRow2 = Type.freshVar(Kind.Record)
           val type2 = Type.mkRecordExtend(label1, fieldType1, restRow2)
           val subst = Substitution.singleton(tvar, type2)
           Ok((subst, restRow2))
