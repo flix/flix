@@ -240,7 +240,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatIllFormedType.Record.External.03") {
+  ignore("FormatIllFormedType.Record.External.03") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.RecordExtend("x")), List(Type.Int32, Type.Int32, Type.Str))
 
     val expected = "RecordExtend(x)[Int32, Int32, String]"
@@ -267,7 +267,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatIllFormedType.Schema.External.03") {
+  ignore("FormatIllFormedType.Schema.External.03") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.SchemaExtend("X")), List(Type.Int32, Type.Int32, Type.Str))
 
     val expected = "SchemaExtend(X)[Int32, Int32, String]"
@@ -303,7 +303,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatIllFormedType.Effect.External.02") {
+  ignore("FormatIllFormedType.Effect.External.02") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Not), List(Type.Pure, Type.Impure))
 
     val expected = "¬[Pure, Impure]"
@@ -330,7 +330,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatIllFormedType.Effect.External.05") {
+  ignore("FormatIllFormedType.Effect.External.05") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.And), List(Type.Pure, Type.Impure, Type.Impure))
 
     val expected = "∧[Pure, Impure, Impure]"
@@ -358,7 +358,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatIllFormedType.Effect.External.08") {
+  ignore("FormatIllFormedType.Effect.External.08") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Or), List(Type.Pure, Type.Impure, Type.Impure))
 
     val expected = "∨[Pure, Impure, Impure]"
