@@ -145,7 +145,7 @@ object Unification {
           Err(UnificationError.OccursCheck(tvar, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshTypeVar()
+          val restRow2 = Type.freshVarWithKind(Kind.Record)
           val type2 = Type.mkRecordExtend(label1, fieldType1, restRow2)
           val subst = Substitution.singleton(tvar, type2)
           Ok((subst, restRow2))
@@ -190,7 +190,7 @@ object Unification {
           Err(UnificationError.OccursCheck(tvar, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshTypeVar()
+          val restRow2 = Type.freshVarWithKind(Kind.Schema)
           val type2 = Type.mkSchemaExtend(label1, fieldType1, restRow2)
           val subst = Substitution.singleton(tvar, type2)
           Ok((subst, restRow2))
@@ -300,7 +300,7 @@ object Unification {
     */
   def unifyTypAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
-      liftM(Type.freshTypeVar())
+      liftM(Type.freshVarWithKind(Kind.Star))
     else
       unifyTypM(ts, loc)
   }

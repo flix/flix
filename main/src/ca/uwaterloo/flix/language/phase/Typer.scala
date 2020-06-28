@@ -801,7 +801,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (actualTyp, actualEff) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, actualTyp, expectedTyp.getOrElse(tvar), loc)
-          resultEff <- unifyEffM(actualEff, expectedEff.getOrElse(Type.freshEffectVar()), loc)
+          resultEff <- unifyEffM(actualEff, expectedEff.getOrElse(Type.freshVarWithKind(Kind.Effect)), loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, loc) =>

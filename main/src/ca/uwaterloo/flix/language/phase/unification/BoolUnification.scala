@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
-import ca.uwaterloo.flix.language.ast.{Rigidity, Scheme, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
@@ -109,7 +109,7 @@ object BoolUnification {
       val t0 = Substitution.singleton(x, Type.False)(f)
       val t1 = Substitution.singleton(x, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
+      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVarWithKind(Kind.Effect), mkNot(se(t1)))))
       st ++ se
   }
 

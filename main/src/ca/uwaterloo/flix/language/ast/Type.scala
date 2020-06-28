@@ -338,10 +338,12 @@ object Type {
   }
 
   /**
-    * Returns a fresh type variable of effect kind.
+    * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshEffectVar()(implicit flix: Flix): Type.Var =
-    Type.Var(flix.genSym.freshId(), Kind.Effect)
+  def freshVarWithKind(k: Kind, r: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
+    val id = flix.genSym.freshId()
+    Type.Var(id, k, r)
+  }
 
   /**
     * Constructs the pure arrow type A -> B.

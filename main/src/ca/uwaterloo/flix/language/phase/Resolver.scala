@@ -227,7 +227,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
 
               // The apply expression inside the lambda.
-              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshTypeVar(), Type.freshVarWithKind(Kind.Effect), loc)
 
               // The curried lambda expressions.
               fparams.foldRight(applyExp: ResolvedAst.Expression) {
@@ -295,7 +295,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
                   val base = ResolvedAst.Expression.Def(defn.sym, Type.freshTypeVar(), loc)
-                  ResolvedAst.Expression.Apply(base, es, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshTypeVar(), Type.freshVarWithKind(Kind.Effect), loc)
                 }
               } else {
                 // Case 2: We have to curry. (See below).
@@ -304,7 +304,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
                   es.foldLeft(e) {
-                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshVarWithKind(Kind.Effect), loc)
                   }
                 }
               }
@@ -316,7 +316,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             es <- traverse(exps)(visit(_, tenv0))
           } yield {
             es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshTypeVar(), Type.freshVarWithKind(Kind.Effect), loc)
             }
           }
 
