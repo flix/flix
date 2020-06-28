@@ -59,61 +59,73 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
-    case (x: Type.Var, y: Type.Var) =>
-      // Case 1: Check if the type variables are syntactically the same.
-      if (x.id == y.id && x.kind == y.kind)
-        return Result.Ok(Substitution.empty)
-      // Case 2: The left type variable is flexible.
-      if (x.rigidity == Rigidity.Flexible)
-        return Result.Ok(Substitution.singleton(x, y))
-      // Case 3: The right type variable is flexible.
-      if (y.rigidity == Rigidity.Flexible)
-        return Result.Ok(Substitution.singleton(y, x))
-      // Case 4: Both type variables are rigid.
-      Result.Err(UnificationError.RigidVar(x, y))
+  def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+    //
+    // Case 1: Boolean Unification.
+    //
+//    if (tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool) {
+//      return BoolUnification.unify(tpe1, tpe2)
+//    }
 
-    case (x: Type.Var, _) => unifyVar(x, tpe2)
+    //
+    // Case 2: Ordinary Unification.
+    //
+    (tpe1, tpe2) match {
+      case (x: Type.Var, y: Type.Var) =>
+        // Case 1: Check if the type variables are syntactically the same.
+        if (x.id == y.id && x.kind == y.kind)
+          return Result.Ok(Substitution.empty)
+        // Case 2: The left type variable is flexible.
+        if (x.rigidity == Rigidity.Flexible)
+          return Result.Ok(Substitution.singleton(x, y))
+        // Case 3: The right type variable is flexible.
+        if (y.rigidity == Rigidity.Flexible)
+          return Result.Ok(Substitution.singleton(y, x))
+        // Case 4: Both type variables are rigid.
+        Result.Err(UnificationError.RigidVar(x, y))
 
-    case (_, x: Type.Var) => unifyVar(x, tpe1)
+      case (x: Type.Var, _) => unifyVar(x, tpe2)
 
-    case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 =>
-//      if (eff1.kind != Kind.Bool && eff2.kind != Kind.Bool) {
-//        println(s"Non-boolean kinds: ${eff1} and ${eff2}.")
-//      }
+      case (_, x: Type.Var) => unifyVar(x, tpe1)
 
-      BoolUnification.unify(eff1, eff2)
+      case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 =>
+        //      if (eff1.kind != Kind.Bool && eff2.kind != Kind.Bool) {
+        //        println(s"Non-boolean kinds: ${eff1} and ${eff2}.")
+        //      }
 
-    case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
+        BoolUnification.unify(eff1, eff2)
 
-    case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_)), _), restRow1), row2) =>
-      // Attempt to write the row to match.
-      rewriteRecordRow(row2, row1) flatMap {
-        case (subst1, restRow2) =>
-          unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
-            case subst2 => Result.Ok(subst2 @@ subst1)
+      case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
+
+      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_)), _), restRow1), row2) =>
+        // Attempt to write the row to match.
+        rewriteRecordRow(row2, row1) flatMap {
+          case (subst1, restRow2) =>
+            unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
+              case subst2 => Result.Ok(subst2 @@ subst1)
+            }
+        }
+
+      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(_)), _), restRow1), row2) =>
+        // Attempt to write the row to match.
+        rewriteSchemaRow(row2, row1) flatMap {
+          case (subst1, restRow2) =>
+            unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
+              case subst2 => Result.Ok(subst2 @@ subst1)
+            }
+        }
+
+      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
+        unifyTypes(t11, t21) match {
+          case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
+            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
+            case Result.Err(e) => Result.Err(e)
           }
-      }
-
-    case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(_)), _), restRow1), row2) =>
-      // Attempt to write the row to match.
-      rewriteSchemaRow(row2, row1) flatMap {
-        case (subst1, restRow2) =>
-          unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
-            case subst2 => Result.Ok(subst2 @@ subst1)
-          }
-      }
-
-    case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-      unifyTypes(t11, t21) match {
-        case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
-          case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
           case Result.Err(e) => Result.Err(e)
         }
-        case Result.Err(e) => Result.Err(e)
-      }
 
-    case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+      case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+    }
   }
 
   /**
