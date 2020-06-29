@@ -132,8 +132,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield {
           val freeVars = e0.tparams.map(_.tpe)
           val caseType = t
-          val enumType = Type.mkApply(Type.Cst(TypeConstructor.Enum(e0.sym, e0.kind)), freeVars)
-          val base = Type.mkApply(Type.Cst(TypeConstructor.Tag(e0.sym, tag.name)), List(caseType, enumType))
+          val enumType = Type.mkEnum(e0.sym, freeVars)
+          val base = Type.mkTag(e0.sym, tag.name, caseType, enumType)
           val sc = Scheme(freeVars, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
         }
@@ -546,7 +546,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, clazz, body) =>
-              val exceptionType = Type.Cst(TypeConstructor.Native(clazz))
+              val exceptionType = Type.mkNative(clazz)
               visit(body, tenv0 + (sym -> exceptionType)) map {
                 case b => ResolvedAst.CatchRule(sym, clazz, b)
               }
@@ -1024,9 +1024,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
       case "String" => Type.Str.toSuccess
-      case "Array" => Type.Cst(TypeConstructor.Array).toSuccess
-      case "Channel" => Type.Cst(TypeConstructor.Channel).toSuccess
-      case "Ref" => Type.Cst(TypeConstructor.Ref).toSuccess
+      case "Array" => Type.Array.toSuccess
+      case "Channel" => Type.Channel.toSuccess
+      case "Ref" => Type.Ref.toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1061,7 +1061,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
 
     case NamedAst.Type.Enum(sym, kind) =>
-      Type.Cst(TypeConstructor.Enum(sym, kind)).toSuccess
+      Type.mkEnum(sym, kind).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
@@ -1104,27 +1104,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         r <- lookupType(rest, ns0, root)
       } yield den match {
         case Ast.Denotation.Relational =>
-          Type.mkSchemaExtend(ident.name, mkRelationType(ts), r)
+          Type.mkSchemaExtend(ident.name, Type.mkRelation(ts), r)
         case Ast.Denotation.Latticenal =>
-          Type.mkSchemaExtend(ident.name, mkLatticeType(ts), r)
+          Type.mkSchemaExtend(ident.name, Type.mkLattice(ts), r)
       }
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-      } yield mkRelationType(ts)
+      } yield Type.mkRelation(ts)
 
     case NamedAst.Type.Lattice(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-      } yield mkLatticeType(ts)
+      } yield Type.mkLattice(ts)
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
         case "java.math.BigInteger" => Type.BigInt.toSuccess
         case "java.lang.String" => Type.Str.toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
-          case clazz => Type.Cst(TypeConstructor.Native(clazz))
+          case clazz => Type.mkNative(clazz)
         }
       }
 
@@ -1162,30 +1162,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case (t1, t2) => Type.mkOr(t1, t2)
       }
 
-  }
-
-  /**
-    * Returns a relation type for the given term types `ts`.
-    */
-  private def mkRelationType(ts: List[Type]): Type = {
-    val t = ts match {
-      case Nil => Type.Unit
-      case x :: Nil => x
-      case xs => Type.mkTuple(xs)
-    }
-    Type.Apply(Type.Cst(TypeConstructor.Relation), t)
-  }
-
-  /**
-    * Returns a lattice type for the given term types `ts`.
-    */
-  private def mkLatticeType(ts: List[Type]): Type = {
-    val t = ts match {
-      case Nil => Type.Unit
-      case x :: Nil => x
-      case xs => Type.mkTuple(xs)
-    }
-    Type.Apply(Type.Cst(TypeConstructor.Lattice), t)
   }
 
   /**
@@ -1294,7 +1270,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.Cst(TypeConstructor.Enum(enum.sym, enum0.kind))
+      case enum => Type.mkEnum(enum.sym, enum0.kind)
     }
 
   /**

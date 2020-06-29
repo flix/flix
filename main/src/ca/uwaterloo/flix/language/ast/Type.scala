@@ -105,11 +105,11 @@ sealed trait Type {
   /**
     * Applies `f` to every type variable in `this` type.
     */
-  def map(f: Type.Var => Type.Var): Type = this match {
+  def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
     case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eff.map(f)))
     case Type.Cst(_) => this
-    case Type.Lambda(tvar, tpe) => Type.Lambda(f(tvar), tpe.map(f))
+    case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, tpe.map(f))
     case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
   }
 
@@ -221,6 +221,37 @@ object Type {
     * Represents the String type.
     */
   val Str: Type = Type.Cst(TypeConstructor.Str)
+
+  /**
+    * Represents the Array type constructor.
+    *
+    * NB: This type has kind: * -> *.
+    */
+  val Array: Type = Type.Cst(TypeConstructor.Array)
+
+  /**
+    * Represents the Channel type constructor.
+    *
+    * NB: This type has kind: * -> *.
+    */
+  val Channel: Type = Type.Cst(TypeConstructor.Channel)
+
+  /**
+    * Represents the Reference type constructor.
+    *
+    * NB: This type has kind: * -> *.
+    */
+  val Ref: Type = Type.Cst(TypeConstructor.Ref)
+
+  /**
+    * Represents the Relation type constructor.
+    */
+  val Relation: Type = Type.Cst(TypeConstructor.Relation)
+
+  /**
+    * Represents the Lattice type constructor.
+    */
+  val Lattice: Type = Type.Cst(TypeConstructor.Lattice)
 
   /**
     * Represents the type of an empty record.
@@ -412,17 +443,27 @@ object Type {
   /**
     * Returns the type `Array[tpe]`.
     */
-  def mkArray(elmType: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Array), elmType)
+  def mkArray(elmType: Type): Type = Apply(Array, elmType)
 
   /**
     * Returns the type `Channel[tpe]`.
     */
-  def mkChannel(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Channel), tpe)
+  def mkChannel(tpe: Type): Type = Type.Apply(Channel, tpe)
 
   /**
     * Returns the type `Ref[tpe]`.
     */
-  def mkRef(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Ref), tpe)
+  def mkRef(tpe: Type): Type = Type.Apply(Ref, tpe)
+
+  /**
+    * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkEnum(sym: Symbol.EnumSym, k: Kind): Type = Type.Cst(TypeConstructor.Enum(sym, k))
+
+  /**
+    * Construct the enum type `Sym[ts]`.
+    */
+  def mkEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length))), ts)
 
   /**
     * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
@@ -474,6 +515,32 @@ object Type {
     */
   def mkSchemaExtend(name: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
+  }
+
+  /**
+    * Construct a relation type with the given list of type arguments `ts0`.
+    */
+  def mkRelation(ts0: List[Type]): Type = {
+    val ts = ts0 match {
+      case Nil => Type.Unit
+      case x :: Nil => x
+      case xs => mkTuple(xs)
+    }
+
+    Apply(Relation, ts)
+  }
+
+  /**
+    * Construct a lattice type with the given list of type arguments `ts0`.
+    */
+  def mkLattice(ts0: List[Type]): Type = {
+    val ts = ts0 match {
+      case Nil => Type.Unit
+      case x :: Nil => x
+      case xs => mkTuple(xs)
+    }
+
+    Apply(Lattice, ts)
   }
 
   /**

@@ -32,6 +32,8 @@ class TestUnification extends FunSuite with TestUtils {
 
   implicit val flix: Flix = new Flix()
 
+  val loc: SourceLocation = SourceLocation.Unknown
+
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //
   /////////////////////////////////////////////////////////////////////////////
@@ -218,12 +220,6 @@ class TestUnification extends FunSuite with TestUtils {
     assert(isOk(result))
   }
 
-  test("Unify.Enum.01") {
-    val sym = Symbol.mkEnumSym("Color")
-    val result = Unification.unifyTypes(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), Type.Cst(TypeConstructor.Enum(sym, Kind.Star)))
-    assert(isOk(result))
-  }
-
   test("Unify.01") {
     val tpe1 = Type.Var(1, Kind.Star)
     val tpe2 = Type.Bool
@@ -330,7 +326,7 @@ class TestUnification extends FunSuite with TestUtils {
 
   test("Unify.13") {
     val tpe1 = Type.Var(1, Kind.Schema)
-    val field = Type.Apply(Type.Cst(TypeConstructor.Relation), Type.Bool)
+    val field = Type.mkRelation(List(Type.Bool))
     val label = "x"
     val tpe2 = Type.mkSchemaExtend(label, field, tpe1)
     val result = Unification.unifyTypes(tpe1, tpe2)
@@ -392,7 +388,5 @@ class TestUnification extends FunSuite with TestUtils {
     case Result.Ok(_) => true
     case Result.Err(_) => false
   }
-
-  val loc: SourceLocation = SourceLocation.Unknown
 
 }

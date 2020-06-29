@@ -1691,7 +1691,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], root: ResolvedAst.Root)(implicit flix: Flix): Type = den match {
     case Denotation.Relational =>
-      val base = Type.Cst(TypeConstructor.Relation): Type
+      val base = Type.Relation
       val args = ts match {
         case Nil => Type.Unit
         case x :: Nil => x
@@ -1699,7 +1699,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       }
       Type.Apply(base, args)
     case Denotation.Latticenal =>
-      val base = Type.Cst(TypeConstructor.Lattice): Type
+      val base = Type.Lattice
       val args = ts match {
         case Nil => Type.Unit
         case x :: Nil => x
@@ -1793,7 +1793,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
     // otherwise native type
     else {
-      Type.Cst(TypeConstructor.Native(c))
+      Type.mkNative(c)
     }
   }
 
