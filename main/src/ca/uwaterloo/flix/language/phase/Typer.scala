@@ -611,7 +611,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           case (acc, nullityRow) => Type.mkOr(acc, mkEqRow(nullityVars, nullityRow))
         }
 
-        println(nullityMatrix)
+        println("Nullity Vars:")
+        println("  " + nullityVars)
+
+        println("Nullity Matrix:")
+        print("  ")
+        println(nullityMatrix.mkString("\n  "))
+
+        println("Formula: " + formula)
 
         for {
           xs <- seqM(exps.zip(nullityVars).map(p => visitMatchExp(p._1, p._2)))
