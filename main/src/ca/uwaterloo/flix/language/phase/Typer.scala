@@ -567,33 +567,22 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val arity = exps.length
         for (ResolvedAst.MatchNullRule(pat, _) <- rules) {
           if (pat.length != arity)
-            throw InternalCompilerException(s"Mismatched arities at: $loc")
+            throw InternalCompilerException(s"Mismatched arity at: $loc")
         }
+
+        def visitRule(r: ResolvedAst.MatchNullRule): InferMonad[(Type, Type)] = r match {
+          case ResolvedAst.MatchNullRule(_, exp) => visitExp(exp)
+        }
+
+        def visitRules(rs: List[ResolvedAst.MatchNullRule]): InferMonad[List[(Type, Type)]] =
+          seqM(rs.map(visitRule))
 
         for {
           (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
-          resultTyp = Type.Unit
-          resultEff = Type.Pure
+          foo <- visitRules(rules)
+          resultTyp <- unifyTypM(foo.map(_._1), loc)
+          resultEff = Type.mkAnd(effs ::: foo.map(_._2))
         } yield (resultTyp, resultEff)
-
-      // TODO
-      //        val elmTyp = Type.freshVar(Kind.Star)
-      //        val resTyp = Type.freshVar(Kind.Star)
-      //        val nul1 = Type.freshVar(Kind.Bool)
-      //        val nul2 = Type.freshVar(Kind.Bool)
-      //        val nul3 = Type.freshVar(Kind.Bool)
-      //        for {
-      //          (tpe1, eff1) <- visitExp(exp1)
-      //          (tpe2, eff2) <- visitExp(exp2)
-      //          (tpe3, eff3) <- visitExp(exp3)
-      //          boundVar <- unifyTypM(sym.tvar, Type.mkNullable(elmTyp, Type.False), loc)
-      //          matchType <- unifyTypM(tpe1, Type.mkNullable(elmTyp, nul1), loc)
-      //          thenType <- unifyTypM(tpe2, Type.mkNullable(resTyp, nul2), loc)
-      //          elseType <- unifyTypM(tpe3, Type.mkNullable(resTyp, nul3), loc)
-      //          resultNul = Type.mkOr(Type.mkAnd(nul1, nul2), nul3)
-      //          resultTyp = Type.mkNullable(elmTyp, resultNul)
-      //          resultEff = Type.mkAnd(eff1, eff2, eff3)
-      //        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Nullify(exp, loc) =>
         for {
