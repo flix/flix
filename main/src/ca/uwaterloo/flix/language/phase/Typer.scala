@@ -570,18 +570,32 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             throw InternalCompilerException(s"Mismatched arity at: $loc")
         }
 
+        // Introduce a nullity variable for each exp.
+        val nullityVars = exps.map(_ => Type.freshVar(Kind.Bool))
+
+        def visitMatchExp(exp: ResolvedAst.Expression, nullityVar: Type.Var): InferMonad[(Type, Type)] = {
+          val freshElmVar = Type.freshVar(Kind.Star)
+          for {
+            (tpe, eff) <- visitExp(exp)
+            _ <- unifyTypM(tpe, Type.mkNullable(freshElmVar, nullityVar), loc)
+          } yield (tpe, eff)
+        }
+
         def visitRule(r: ResolvedAst.MatchNullRule): InferMonad[(Type, Type)] = r match {
-          case ResolvedAst.MatchNullRule(_, exp) => visitExp(exp)
+          case ResolvedAst.MatchNullRule(_, exp0) =>
+            for {
+              (tpe, eff) <- visitExp(exp0)
+            } yield (tpe, eff)
         }
 
         def visitRules(rs: List[ResolvedAst.MatchNullRule]): InferMonad[List[(Type, Type)]] =
           seqM(rs.map(visitRule))
 
         for {
-          (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
-          foo <- visitRules(rules)
-          resultTyp <- unifyTypM(foo.map(_._1), loc)
-          resultEff = Type.mkAnd(effs ::: foo.map(_._2))
+          xs <- seqM(exps.zip(nullityVars).map(p => visitMatchExp(p._1, p._2)))
+          //          foo <- visitRules(rules)
+          resultTyp = Type.Str
+          resultEff = Type.Pure
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Nullify(exp, loc) =>
