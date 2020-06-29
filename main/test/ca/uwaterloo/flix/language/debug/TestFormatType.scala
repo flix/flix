@@ -77,7 +77,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Arrow.External.04") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3, Type.Impure)), List(Type.Int8, Type.Int16, Type.Int32))
+    val tpe = Type.mkImpureUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32)
 
     val expected = "Int8 -> Int16 ~> Int32"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -86,18 +86,17 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Arrow.External.05") {
-    val effType = Type.mkApply(Type.Cst(TypeConstructor.And), List(Type.Pure, Type.Impure))
-    val tpe = Type.mkArrowWithEffect(Type.BigInt, effType, Type.Bool)
+    val eff = Type.mkAnd(Type.Var(1, Kind.Bool, Rigidity.Flexible), Type.Var(2, Kind.Bool, Rigidity.Flexible))
+    val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool)
 
-    val expected = "BigInt -> Bool & ((Pure) ∧ (Impure))"
+    val expected = "BigInt -> Bool & (a ∧ b)"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
 
   test("FormatWellFormedType.Schema.External.01") {
-    val tupleType = Type.mkTuple(List(Type.Int32, Type.Str))
-    val relationType = Type.mkApply(Type.Cst(TypeConstructor.Relation), List(tupleType))
+    val relationType = Type.mkRelation(Type.Int32 :: Type.Str :: Nil)
     val tpe = Type.mkSchemaExtend("S", relationType, Type.SchemaEmpty)
 
     val expected = "#{ S(Int32, String) }"
