@@ -781,16 +781,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def MatchNull: Rule1[ParsedAst.Expression.MatchNull] = {
-      def nullCase: Rule1[ParsedAst.Expression] = rule {
-        atomic("case") ~ WS ~ atomic("null") ~ WS ~ atomic("=>") ~ WS ~ Expression
-      }
-
-      def nonNullCase: Rule2[Name.Ident, ParsedAst.Expression] = rule {
-        atomic("case") ~ WS ~ Names.Variable ~ WS ~ atomic("=>") ~ WS ~ Expression
+      def MatchNullRule: Rule1[ParsedAst.MatchNullRule] = rule {
+        atomic("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ParsedAst.MatchNullRule
       }
 
       rule {
-        SP ~ atomic("match?") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ nullCase ~ WS ~ nonNullCase ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
+        SP ~ atomic("match?") ~ WS ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ "{" ~ optWS ~ oneOrMore(MatchNullRule).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
       }
     }
 

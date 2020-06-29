@@ -616,13 +616,12 @@ object ParsedAst {
     /**
       * Match Null Expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param exp1 the match expression.
-      * @param exp2 the null case expression.
-      * @param exp3 the non-null case expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param exps  the match expressions.
+      * @param rules the rules of the pattern match.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class MatchNull(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, name: Name.Ident, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class MatchNull(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], rules: Seq[MatchNullRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -1442,6 +1441,12 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * @param pat the pattern of the rule.
+    * @param exp the body expression of the rule.
+    */
+  case class MatchNullRule(pat: Seq[Name.Ident], exp: ParsedAst.Expression)
 
   /**
     * A select channel rule consists of an identifier, a channel expression, and a body expression.

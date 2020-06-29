@@ -711,10 +711,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.MatchNull(sp1, exp1, exp2, name, exp3, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => WeededAst.Expression.MatchNull(name, e1, e2, e3, mkSL(sp1, sp2))
-      }
+    case ParsedAst.Expression.MatchNull(sp1, exps, rules, sp2) =>
+      ???
 
     case ParsedAst.Expression.Nullify(sp1, exp, sp2) =>
       mapN(visitExp(exp)) {
@@ -1897,7 +1895,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.MatchNull(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.MatchNull(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Nullify(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
