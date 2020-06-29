@@ -1690,22 +1690,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns the relation or lattice type of `name` with the term types `ts`.
     */
   private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], root: ResolvedAst.Root)(implicit flix: Flix): Type = den match {
-    case Denotation.Relational =>
-      val base = Type.Relation
-      val args = ts match {
-        case Nil => Type.Unit
-        case x :: Nil => x
-        case l => Type.mkTuple(l)
-      }
-      Type.Apply(base, args)
-    case Denotation.Latticenal =>
-      val base = Type.Lattice
-      val args = ts match {
-        case Nil => Type.Unit
-        case x :: Nil => x
-        case l => Type.mkTuple(l)
-      }
-      Type.Apply(base, args)
+    case Denotation.Relational => Type.mkRelation(ts)
+    case Denotation.Latticenal => Type.mkLattice(ts)
   }
 
   /**
