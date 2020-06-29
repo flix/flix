@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.ParsedAst.MatchNullRule
 import ca.uwaterloo.flix.language.ast.WeededAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -442,7 +441,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.MatchNull(exps, rules, loc) =>
-      ???
+      val expsVal = traverse(exps)(visitExp(_, env0, uenv0, tenv0))
+      val rulesVal = traverse(rules) {
+        case WeededAst.MatchNullRule(pat0, exp0) =>
+          val env1 = pat0.foldLeft(Map.empty[String, Symbol.VarSym]) {
+            case (acc, None) => acc
+            case (acc, Some(ident)) => acc + (ident.name -> Symbol.freshVarSym(ident))
+          }
+          val pat = pat0.map(_.map(ident => env1(ident.name)))
+          mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
+            case e => NamedAst.MatchNullRule(pat, e)
+          }
+      }
+      mapN(expsVal, rulesVal) {
+        case (es, rs) => NamedAst.Expression.MatchNull(es, rs, loc)
+      }
 
     case WeededAst.Expression.Nullify(exp, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {

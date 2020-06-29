@@ -111,7 +111,7 @@ object NamedAst {
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
-    case class MatchNull(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class MatchNull(exps: List[NamedAst.Expression], rules: List[NamedAst.MatchNullRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Nullify(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -336,6 +336,8 @@ object NamedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
+
+  case class MatchNullRule(pat: List[Option[Symbol.VarSym]], exp: NamedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 

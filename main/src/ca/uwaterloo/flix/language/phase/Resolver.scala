@@ -372,12 +372,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, loc)
 
-        case NamedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-            e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.MatchNull(sym, e1, e2, e3, loc)
+        case NamedAst.Expression.MatchNull(exps, rules, loc) =>
+          ???
 
         case NamedAst.Expression.Nullify(exp, loc) =>
           for {
