@@ -578,7 +578,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           for {
             (tpe, eff) <- visitExp(exp)
             _ <- unifyTypM(tpe, Type.mkNullable(freshElmVar, nullityVar), loc)
-          } yield (tpe, eff)
+          } yield (freshElmVar, eff)
         }
 
         def visitRule(r: ResolvedAst.MatchNullRule): InferMonad[(Type, Type)] = r match {
@@ -593,9 +593,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         for {
           xs <- seqM(exps.zip(nullityVars).map(p => visitMatchExp(p._1, p._2)))
-          //          foo <- visitRules(rules)
-          resultTyp = Type.Str
-          resultEff = Type.Pure
+          (ruleTypes, ruleEffects) <- visitRules(rules).map(_.unzip)
+          resultTyp <- unifyTypM(ruleTypes, loc)
+          resultEff = Type.mkAnd(ruleEffects)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Nullify(exp, loc) =>
