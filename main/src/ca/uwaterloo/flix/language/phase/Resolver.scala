@@ -132,8 +132,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield {
           val freeVars = e0.tparams.map(_.tpe)
           val caseType = t
-          val enumType = Type.mkApply(Type.Cst(TypeConstructor.Enum(e0.sym, e0.kind)), freeVars)
-          val base = Type.mkApply(Type.Cst(TypeConstructor.Tag(e0.sym, tag.name)), List(caseType, enumType))
+          val enumType = Type.mkEnum(e0.sym, freeVars)
+          val base = Type.mkTag(e0.sym, tag.name, caseType, enumType)
           val sc = Scheme(freeVars, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
         }
@@ -1061,7 +1061,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
 
     case NamedAst.Type.Enum(sym, kind) =>
-      Type.Cst(TypeConstructor.Enum(sym, kind)).toSuccess
+      Type.mkEnum(sym, kind).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
@@ -1294,7 +1294,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.Cst(TypeConstructor.Enum(enum.sym, enum0.kind))
+      case enum => Type.mkEnum(enum.sym, enum0.kind)
     }
 
   /**

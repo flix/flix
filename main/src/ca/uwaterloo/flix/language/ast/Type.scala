@@ -456,6 +456,11 @@ object Type {
   def mkRef(tpe: Type): Type = Type.Apply(Ref, tpe)
 
   /**
+    * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkEnum(sym: Symbol.EnumSym, k: Kind): Type = Type.Cst(TypeConstructor.Enum(sym, k))
+
+  /**
     * Construct the enum type `Sym[ts]`.
     */
   def mkEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length))), ts)
