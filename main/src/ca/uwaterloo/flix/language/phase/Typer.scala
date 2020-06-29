@@ -591,10 +591,33 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         def visitRules(rs: List[ResolvedAst.MatchNullRule]): InferMonad[List[(Type, Type)]] =
           seqM(rs.map(visitRule))
 
+        def nullityRow(r: ResolvedAst.MatchNullRule): List[Type] = r match {
+          case ResolvedAst.MatchNullRule(pat, _) => pat.map {
+            case None => Type.freshVar(Kind.Bool)
+            case Some(_) => Type.False
+          }
+        }
+
+        /**
+          * Forces the boolean formulas in `xs` to be pairwise equal to `ys`.
+          */
+        def mkEqRow(xs: List[Type], ys: List[Type]): Type = xs.zip(ys).foldLeft(Type.True) {
+          case (acc, (x, y)) => Type.mkAnd(acc, Type.mkOr(Type.mkAnd(x, y), Type.mkAnd(Type.mkNot(x), Type.mkNot(y))))
+        }
+
+        val nullityMatrix = rules.map(nullityRow)
+
+        val formula = nullityMatrix.foldLeft(Type.False) { // False is neutral w.r.t. or.
+          case (acc, nullityRow) => Type.mkOr(acc, mkEqRow(nullityVars, nullityRow))
+        }
+
+        println(nullityMatrix)
+
         for {
           xs <- seqM(exps.zip(nullityVars).map(p => visitMatchExp(p._1, p._2)))
           (ruleTypes, ruleEffects) <- visitRules(rules).map(_.unzip)
           resultTyp <- unifyTypM(ruleTypes, loc)
+          _ <- unifyEffM(formula, Type.True, loc)
           resultEff = Type.mkAnd(ruleEffects)
         } yield (resultTyp, resultEff)
 
