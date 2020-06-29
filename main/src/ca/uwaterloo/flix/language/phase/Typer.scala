@@ -562,24 +562,25 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
-        val elmTyp = Type.freshVar(Kind.Star)
-        val resTyp = Type.freshVar(Kind.Star)
-        val nul1 = Type.freshVar(Kind.Bool)
-        val nul2 = Type.freshVar(Kind.Bool)
-        val nul3 = Type.freshVar(Kind.Bool)
-        for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
-          (tpe3, eff3) <- visitExp(exp3)
-          boundVar <- unifyTypM(sym.tvar, Type.mkNullable(elmTyp, Type.False), loc)
-          matchType <- unifyTypM(tpe1, Type.mkNullable(elmTyp, nul1), loc)
-          thenType <- unifyTypM(tpe2, Type.mkNullable(resTyp, nul2), loc)
-          elseType <- unifyTypM(tpe3, Type.mkNullable(resTyp, nul3), loc)
-          resultNul = Type.mkOr(Type.mkAnd(nul1, nul2), nul3)
-          resultTyp = Type.mkNullable(elmTyp, resultNul)
-          resultEff = Type.mkAnd(eff1, eff2, eff3)
-        } yield (resultTyp, resultEff)
+      case ResolvedAst.Expression.MatchNull(exps, rules, loc) =>
+        ???
+      //        val elmTyp = Type.freshVar(Kind.Star)
+      //        val resTyp = Type.freshVar(Kind.Star)
+      //        val nul1 = Type.freshVar(Kind.Bool)
+      //        val nul2 = Type.freshVar(Kind.Bool)
+      //        val nul3 = Type.freshVar(Kind.Bool)
+      //        for {
+      //          (tpe1, eff1) <- visitExp(exp1)
+      //          (tpe2, eff2) <- visitExp(exp2)
+      //          (tpe3, eff3) <- visitExp(exp3)
+      //          boundVar <- unifyTypM(sym.tvar, Type.mkNullable(elmTyp, Type.False), loc)
+      //          matchType <- unifyTypM(tpe1, Type.mkNullable(elmTyp, nul1), loc)
+      //          thenType <- unifyTypM(tpe2, Type.mkNullable(resTyp, nul2), loc)
+      //          elseType <- unifyTypM(tpe3, Type.mkNullable(resTyp, nul3), loc)
+      //          resultNul = Type.mkOr(Type.mkAnd(nul1, nul2), nul3)
+      //          resultTyp = Type.mkNullable(elmTyp, resultNul)
+      //          resultEff = Type.mkAnd(eff1, eff2, eff3)
+      //        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Nullify(exp, loc) =>
         for {
@@ -1217,13 +1218,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val e3 = visitExp(exp3, subst0)
-        val tpe = e2.tpe // TODO
-        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
-        TypedAst.Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
+      case ResolvedAst.Expression.MatchNull(exps, rules, loc) =>
+        // TODO
+        println("Typecheck success")
+        System.exit(1)
+        throw null
 
       case ResolvedAst.Expression.Nullify(exp, loc) =>
         visitExp(exp, subst0)
