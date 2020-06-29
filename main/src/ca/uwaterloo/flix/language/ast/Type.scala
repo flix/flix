@@ -224,8 +224,24 @@ object Type {
 
   /**
     * Represents the Array type constructor.
+    *
+    * NB: This type has kind: * -> *.
     */
   val Array: Type = Type.Cst(TypeConstructor.Array)
+
+  /**
+    * Represents the Channel type constructor.
+    *
+    * NB: This type has kind: * -> *.
+    */
+  val Channel: Type = Type.Cst(TypeConstructor.Channel)
+
+  /**
+    * Represents the Reference type constructor.
+    *
+    * NB: This type has kind: * -> *.
+    */
+  val Ref: Type = Type.Cst(TypeConstructor.Ref)
 
   /**
     * Represents the Relation type constructor.
@@ -432,12 +448,12 @@ object Type {
   /**
     * Returns the type `Channel[tpe]`.
     */
-  def mkChannel(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Channel), tpe)
+  def mkChannel(tpe: Type): Type = Type.Apply(Channel, tpe)
 
   /**
     * Returns the type `Ref[tpe]`.
     */
-  def mkRef(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Ref), tpe)
+  def mkRef(tpe: Type): Type = Type.Apply(Ref, tpe)
 
   /**
     * Construct the enum type `Sym[ts]`.
