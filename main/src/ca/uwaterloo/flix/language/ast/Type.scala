@@ -518,14 +518,30 @@ object Type {
   }
 
   /**
-    * Construct a relation type with the given list of type arguments `ts`.
+    * Construct a relation type with the given list of type arguments `ts0`.
     */
-  def mkRelation(ts: List[Type]): Type = Apply(Relation, mkTuple(ts))
+  def mkRelation(ts0: List[Type]): Type = {
+    val ts = ts0 match {
+      case Nil => Type.Unit
+      case x :: Nil => x
+      case xs => mkTuple(xs)
+    }
+
+    Apply(Relation, ts)
+  }
 
   /**
-    * Construct a lattice type with the given list of type arguments `ts`.
+    * Construct a lattice type with the given list of type arguments `ts0`.
     */
-  def mkLattice(ts: List[Type]): Type = Apply(Lattice, mkTuple(ts))
+  def mkLattice(ts0: List[Type]): Type = {
+    val ts = ts0 match {
+      case Nil => Type.Unit
+      case x :: Nil => x
+      case xs => mkTuple(xs)
+    }
+
+    Apply(Lattice, ts)
+  }
 
   /**
     * Returns the type `Not(tpe0)`.

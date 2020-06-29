@@ -1104,20 +1104,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         r <- lookupType(rest, ns0, root)
       } yield den match {
         case Ast.Denotation.Relational =>
-          Type.mkSchemaExtend(ident.name, mkRelationType(ts), r)
+          Type.mkSchemaExtend(ident.name, Type.mkRelation(ts), r)
         case Ast.Denotation.Latticenal =>
-          Type.mkSchemaExtend(ident.name, mkLatticeType(ts), r)
+          Type.mkSchemaExtend(ident.name, Type.mkLattice(ts), r)
       }
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-      } yield mkRelationType(ts)
+      } yield Type.mkRelation(ts)
 
     case NamedAst.Type.Lattice(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-      } yield mkLatticeType(ts)
+      } yield Type.mkLattice(ts)
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
@@ -1162,30 +1162,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case (t1, t2) => Type.mkOr(t1, t2)
       }
 
-  }
-
-  /**
-    * Returns a relation type for the given term types `ts`.
-    */
-  private def mkRelationType(ts: List[Type]): Type = {
-    val t = ts match {
-      case Nil => Type.Unit
-      case x :: Nil => x
-      case xs => Type.mkTuple(xs)
-    }
-    Type.Apply(Type.Cst(TypeConstructor.Relation), t)
-  }
-
-  /**
-    * Returns a lattice type for the given term types `ts`.
-    */
-  private def mkLatticeType(ts: List[Type]): Type = {
-    val t = ts match {
-      case Nil => Type.Unit
-      case x :: Nil => x
-      case xs => Type.mkTuple(xs)
-    }
-    Type.Apply(Type.Cst(TypeConstructor.Lattice), t)
   }
 
   /**
