@@ -712,7 +712,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Expression.MatchNull(sp1, exps, rules, sp2) =>
-      ???
+      val expsVal = traverse(exps)(visitExp)
+      val rulesVal = traverse(rules) {
+        case ParsedAst.MatchNullRule(pat, exp) =>
+          val p = pat.map(ident => if (ident.name.startsWith("_")) None else Some(ident)).toList
+          mapN(visitExp(exp)) {
+            case e => WeededAst.MatchNullRule(p, e)
+          }
+      }
+      mapN(expsVal, rulesVal) {
+        case (es, rs) => WeededAst.Expression.MatchNull(es, rs, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Expression.Nullify(sp1, exp, sp2) =>
       mapN(visitExp(exp)) {
