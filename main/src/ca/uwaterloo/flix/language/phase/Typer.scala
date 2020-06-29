@@ -563,14 +563,20 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.MatchNull(exps, rules, loc) =>
-        // Ensure that arities line up.
+        // Ensure that the arity line up.
         val arity = exps.length
         for (ResolvedAst.MatchNullRule(pat, _) <- rules) {
           if (pat.length != arity)
             throw InternalCompilerException(s"Mismatched arities at: $loc")
         }
 
-        ???
+        for {
+          (tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip)
+          resultTyp = Type.Unit
+          resultEff = Type.Pure
+        } yield (resultTyp, resultEff)
+
+      // TODO
       //        val elmTyp = Type.freshVar(Kind.Star)
       //        val resTyp = Type.freshVar(Kind.Star)
       //        val nul1 = Type.freshVar(Kind.Bool)
