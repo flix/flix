@@ -781,12 +781,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def MatchNull: Rule1[ParsedAst.Expression.MatchNull] = {
+      // TODO: Do we really want parentheses?
+      def MatchOne: Rule1[Seq[ParsedAst.Expression]] = rule {
+        Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+      }
+
+      def MatchMany: Rule1[Seq[ParsedAst.Expression]] = rule {
+        "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      }
+
       def MatchNullRule: Rule1[ParsedAst.MatchNullRule] = rule {
         atomic("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ParsedAst.MatchNullRule
       }
 
       rule {
-        SP ~ atomic("match?") ~ WS ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ "{" ~ optWS ~ oneOrMore(MatchNullRule).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
+        SP ~ atomic("match?") ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(MatchNullRule).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
       }
     }
 
