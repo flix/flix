@@ -68,7 +68,6 @@ sealed trait Type {
   def typeConstructor: Option[TypeConstructor] = this match {
     case Type.Var(_, _, _) => None
     case Type.Cst(tc) => Some(tc)
-    //case Type.Apply(Type.Cst(TypeConstructor.Nullable(_)), t2) => t2.typeConstructor // TODO: Unwrap Nullable type?
     case Type.Apply(t1, _) => t1.typeConstructor
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
