@@ -119,14 +119,13 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Enum.External.07") {
-    val enumConstructor = TypeConstructor.Enum(Symbol.mkEnumSym("Triplet"), Kind.Star ->: Kind.Star ->: Kind.Star ->: Kind.Star)
     val tvar1 = Type.Var(1, Kind.Star, Rigidity.Flexible)
     val tvar2 = Type.Var(2, Kind.Star, Rigidity.Flexible)
     val tvar3 = Type.Var(3, Kind.Star, Rigidity.Flexible)
     tvar1.setText("a")
     tvar2.setText("b")
     tvar3.setText("c")
-    val tpe = Type.mkApply(Type.Cst(enumConstructor), List(tvar1, tvar2, tvar3))
+    val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3))
 
     val expected = "Triplet[a, b, c]"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -201,14 +200,13 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Enum.Internal.07") {
-    val enumConstructor = TypeConstructor.Enum(Symbol.mkEnumSym("Triplet"), Kind.Star ->: Kind.Star ->: Kind.Star ->: Kind.Star)
     val tvar1 = Type.Var(1, Kind.Star, Rigidity.Flexible)
     val tvar2 = Type.Var(2, Kind.Star, Rigidity.Flexible)
     val tvar3 = Type.Var(3, Kind.Star, Rigidity.Flexible)
     tvar1.setText("a")
     tvar2.setText("b")
     tvar3.setText("c")
-    val tpe = Type.mkApply(Type.Cst(enumConstructor), List(tvar1, tvar2, tvar3))
+    val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3))
 
     val expected = "Triplet['1, '2, '3]"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -413,7 +411,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatTypeDiff.Enum.01") {
-    val map = Type.Cst(TypeConstructor.Enum(Symbol.mkEnumSym("Map"), Kind.Star ->: Kind.Star ->: Kind.Star))
+    val map = Type.mkEnum(Symbol.mkEnumSym("Map"), Kind.Star ->: Kind.Star ->: Kind.Star)
     val tpe1 = Type.mkApply(map, List(Type.Int32, Type.Bool))
     val tpe2 = Type.mkApply(map, List(Type.Int32, Type.Str))
 
