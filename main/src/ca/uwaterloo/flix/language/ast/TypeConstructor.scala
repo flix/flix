@@ -192,8 +192,8 @@ object TypeConstructor {
   /**
     * A type constructor for nullable types.
     */
-  case class Nullable(nullity: Type) extends TypeConstructor { // TODO: Move Boolean formula
-    def kind: Kind = Kind.Star ->: Kind.Star
+  case object Nullable extends TypeConstructor {
+    def kind: Kind = Kind.Bool ->: Kind.Star ->: Kind.Star
   }
 
   /**

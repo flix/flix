@@ -164,8 +164,8 @@ object FormatType {
             val tuple = elements.padTo(length, "???").mkString("(", ", ", ")")
             formatApply(tuple, applyParams)
 
-          case TypeConstructor.Nullable(nullity) =>
-            s"Nullable[${args.map(visit).mkString(", ")}, ${visit(nullity)}]"
+          case TypeConstructor.Nullable =>
+            s"Nullable[${args.map(visit).mkString(", ")}]"
 
           case TypeConstructor.Tag(sym, tag) => // TODO better unhappy case handling
             if (args.lengthIs == 2)

@@ -1037,8 +1037,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Array" => Type.Array.toSuccess
       case "Channel" => Type.Channel.toSuccess
       case "Ref" => Type.Ref.toSuccess
-      case "Nullable" => Type.Cst(TypeConstructor.Nullable(Type.True)).toSuccess
-      case "NonNull" => Type.Cst(TypeConstructor.Nullable(Type.False)).toSuccess
+      case "Nullable" => Type.Apply(Type.Cst(TypeConstructor.Nullable), Type.True).toSuccess
+      case "NonNull" => Type.Apply(Type.Cst(TypeConstructor.Nullable), Type.False).toSuccess
 
       // Disambiguate type.
       case typeName =>

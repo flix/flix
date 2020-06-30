@@ -59,7 +59,6 @@ case class Substitution(m: Map[Type.Var, Type]) {
       t match {
         case x: Type.Var => m.getOrElse(x, x)
         case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, visit(eff)))
-        case Type.Cst(TypeConstructor.Nullable(nullity)) => Type.Cst(TypeConstructor.Nullable(visit(nullity)))
         case Type.Cst(tc) => t
         case Type.Apply(t1, t2) =>
           val y = visit(t2)

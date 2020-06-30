@@ -85,8 +85,6 @@ object Unification {
 
         BoolUnification.unify(eff1, eff2)
 
-      case (Type.Cst(TypeConstructor.Nullable(nullity1)), Type.Cst(TypeConstructor.Nullable(nullity2))) => BoolUnification.unify(nullity1, nullity2)
-
       case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
 
       case _ if tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool =>
