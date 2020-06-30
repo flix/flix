@@ -289,7 +289,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Effect.External.01") {
-    val tpe = Type.Cst(TypeConstructor.Not)
+    val tpe = Type.Not
 
     val expected = "¬???"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -298,7 +298,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   ignore("FormatIllFormedType.Effect.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Not), List(Type.Pure, Type.Impure))
+    val tpe = Type.mkApply(Type.Not, List(Type.Pure, Type.Impure))
 
     val expected = "¬[Pure, Impure]"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -307,7 +307,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Effect.External.03") {
-    val tpe = Type.Cst(TypeConstructor.And)
+    val tpe = Type.And
 
     val expected = "??? ∧ ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -316,7 +316,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Effect.External.04") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.And), Type.Pure)
+    val tpe = Type.Apply(Type.And, Type.Pure)
 
     val expected = "(Pure) ∧ ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -325,7 +325,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   ignore("FormatIllFormedType.Effect.External.05") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.And), List(Type.Pure, Type.Impure, Type.Impure))
+    val tpe = Type.mkApply(Type.And, List(Type.Pure, Type.Impure, Type.Impure))
 
     val expected = "∧[Pure, Impure, Impure]"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -335,7 +335,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
 
   test("FormatIllFormedType.Effect.External.06") {
-    val tpe = Type.Cst(TypeConstructor.Or)
+    val tpe = Type.Or
 
     val expected = "??? ∨ ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -344,7 +344,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Effect.External.07") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.Or), Type.Pure)
+    val tpe = Type.Apply(Type.Or, Type.Pure)
 
     val expected = "(Pure) ∨ ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -353,7 +353,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   ignore("FormatIllFormedType.Effect.External.08") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Or), List(Type.Pure, Type.Impure, Type.Impure))
+    val tpe = Type.mkApply(Type.Or, List(Type.Pure, Type.Impure, Type.Impure))
 
     val expected = "∨[Pure, Impure, Impure]"
     val actual = FormatType.formatType(tpe)(Audience.External)

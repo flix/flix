@@ -162,7 +162,7 @@ object BoolUnification {
     case OR(x, NOT(y)) =>
       mkAnd(mkNot(x), y)
 
-    case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
+    case _ => Type.Apply(Type.Not, eff0)
   }
 
   /**
@@ -257,7 +257,7 @@ object BoolUnification {
       //        println(s.substring(0, Math.min(len, 300)))
       //      }
 
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+      Type.Apply(Type.Apply(Type.And, eff1), eff2)
   }
 
   /**

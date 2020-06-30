@@ -283,6 +283,27 @@ object Type {
     */
   val Impure: Type = False
 
+  /**
+    * Represents the Not type constructor.
+    *
+    * NB: This type has kind: * -> *.
+    */
+  val Not: Type = Type.Cst(TypeConstructor.Not)
+
+  /**
+    * Represents the And type constructor.
+    *
+    * NB: This type has kind: * -> (* -> *).
+    */
+  val And: Type = Type.Cst(TypeConstructor.And)
+
+  /**
+    * Represents the Or type constructor.
+    *
+    * NB: This type has kind: * -> (* -> *).
+    */
+  val Or: Type = Type.Cst(TypeConstructor.Or)
+
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
   /////////////////////////////////////////////////////////////////////////////
@@ -549,7 +570,7 @@ object Type {
   def mkNot(tpe0: Type): Type = tpe0 match {
     case Type.True => Type.False
     case Type.False => Type.True
-    case _ => Type.Apply(Type.Cst(TypeConstructor.Not), tpe0)
+    case _ => Type.Apply(Type.Not, tpe0)
   }
 
   /**
@@ -560,7 +581,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True)) => tpe1
     case (Type.Cst(TypeConstructor.False), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False)) => Type.False
-    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), tpe1), tpe2)
+    case _ => Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
   }
 
   /**
@@ -571,7 +592,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True)) => Type.True
     case (Type.Cst(TypeConstructor.False), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False)) => tpe1
-    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), tpe1), tpe2)
+    case _ => Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
   }
 
   /**
