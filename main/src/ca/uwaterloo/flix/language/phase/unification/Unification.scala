@@ -60,16 +60,6 @@ object Unification {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    //
-    // Case 1: Boolean Unification.
-    //
-//    if (tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool) {
-//      return BoolUnification.unify(tpe1, tpe2)
-//    }
-
-    //
-    // Case 2: Ordinary Unification.
-    //
     (tpe1, tpe2) match {
       case (x: Type.Var, y: Type.Var) =>
         // Case 1: Check if the type variables are syntactically the same.
