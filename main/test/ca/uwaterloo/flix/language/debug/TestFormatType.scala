@@ -106,10 +106,8 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Schema.External.02") {
-    val tupleType1 = Type.Str
-    val tupleType2 = Type.mkTuple(List(Type.Int32, Type.Str))
-    val latticeType1 = Type.Apply(Type.Cst(TypeConstructor.Lattice), tupleType1)
-    val latticeType2 = Type.Apply(Type.Cst(TypeConstructor.Lattice), tupleType2)
+    val latticeType1 = Type.mkLattice(List(Type.Str))
+    val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
     val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
     restType.setText("theRest")
     val tpe = Type.mkSchemaExtend("A", latticeType1, Type.mkSchemaExtend("B", latticeType2, restType))
@@ -180,8 +178,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Schema.Internal.01") {
-    val tupleType = Type.mkTuple(List(Type.Int32, Type.Str))
-    val relationType = Type.Apply(Type.Cst(TypeConstructor.Relation), tupleType)
+    val relationType = Type.mkRelation(List(Type.Int32, Type.Str))
     val tpe = Type.mkSchemaExtend("S", relationType, Type.SchemaEmpty)
 
     val expected = "#{ S(Int32, String) }"
@@ -191,10 +188,8 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Schema.Internal.02") {
-    val tupleType1 = Type.Str
-    val tupleType2 = Type.mkTuple(List(Type.Int32, Type.Str))
-    val latticeType1 = Type.Apply(Type.Cst(TypeConstructor.Lattice), tupleType1)
-    val latticeType2 = Type.Apply(Type.Cst(TypeConstructor.Lattice), tupleType2)
+    val latticeType1 = Type.mkLattice(List(Type.Str))
+    val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
     val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
     restType.setText("theRest")
     val tpe = Type.mkSchemaExtend("A", latticeType1, Type.mkSchemaExtend("B", latticeType2, restType))

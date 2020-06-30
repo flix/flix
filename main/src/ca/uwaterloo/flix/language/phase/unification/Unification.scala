@@ -97,6 +97,9 @@ object Unification {
 
       case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
 
+      case _ if tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool =>
+        BoolUnification.unify(tpe1, tpe2)
+
       case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_)), _), restRow1), row2) =>
         // Attempt to write the row to match.
         rewriteRecordRow(row2, row1) flatMap {
