@@ -1146,18 +1146,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      Apply ~ optional(
+      Nullable ~ optional(
         (optWS ~ atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
           (optWS ~ atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
       )
     }
 
-    def Apply: Rule1[ParsedAst.Type] = rule {
-      Nullable ~ zeroOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
+    def Nullable: Rule1[ParsedAst.Type] = rule {
+      Apply ~ optional(atomic("?") ~ SP ~> ParsedAst.Type.Nullable)
     }
 
-    def Nullable: Rule1[ParsedAst.Type] = rule {
-      Primary ~ optional(atomic("?") ~ SP ~> ParsedAst.Type.Nullable)
+    def Apply: Rule1[ParsedAst.Type] = rule {
+      Primary ~ zeroOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {

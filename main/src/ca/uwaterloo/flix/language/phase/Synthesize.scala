@@ -992,8 +992,14 @@ object Synthesize extends Phase[Root, Root] {
       // An expression that evaluates to the value of varX.
       val exp0 = Expression.Var(varX, tpe, sl)
 
+      // Compute the type constructor. Unwrap if nullable type.
+      val typeConstructor = tpe.typeConstructor.flatMap {
+        case TypeConstructor.Nullable => tpe.typeArguments(1).typeConstructor
+        case tc => Some(tc)
+      }
+
       // Determine the string representation based on the type `tpe`.
-      tpe.typeConstructor match {
+      typeConstructor match {
         case None =>
           throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
 

@@ -27,6 +27,11 @@ namespace Test/Exp/Null {
     @test
     def testRecordNull07(): {fstName: String?, lstName: String} = {fstName = null, lstName = "Luke"}
 
+    @test
+    def testOptionNull01(): Option[String]? = null
+
+    @test
+    def testOptionNull02(): Option[String?] = Some(null)
 
 
 
