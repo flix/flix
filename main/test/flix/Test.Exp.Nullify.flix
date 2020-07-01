@@ -45,6 +45,40 @@ namespace Test/Exp/Nullify {
     @test
     def testNullifyTuple03(): (String?, String?)? = ("Hello"?, "World"?)?
 
+    @test
+    def testNullifyOption01(): Option[String]? = None?
 
+    @test
+    def testNullifyOption02(): Option[String]? = Some("Hello World")?
+
+    @test
+    def testNullifyOption03(): Option[String?] = None
+
+    @test
+    def testNullifyOption04(): Option[String?] = Some("Hello World"?)
+
+    @test
+    def testNullifyOption05(): Option[String?]? = None?
+
+    @test
+    def testNullifyOption06(): Option[String?]? = Some(null)?
+
+    @test
+    def testNullifyOption07(): Option[String?]? = Some("Hello World"?)?
+
+    pub enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
+    pub enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
+
+    pub enum List[t] {
+        case Nil,
+        case Cons(t, List[t])
+    }
 
 }
