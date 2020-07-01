@@ -43,6 +43,27 @@ namespace Test/Exp/Null {
     def testNullableRef03(): Ref[String?] & Impure = ref null
 
     @test
+    def testNullableTuple01(): (String, String)? = null
+
+    @test
+    def testNullableTuple02(): (String?, String)? = null
+
+    @test
+    def testNullableTuple03(): (String, String?)? = null
+
+    @test
+    def testNullableTuple04(): (String?, String?)? = null
+
+    @test
+    def testNullableTuple05(): (String, String?) = ("Lucky", null)
+
+    @test
+    def testNullableTuple06(): (String?, String) = (null, "Luke")
+
+    @test
+    def testNullableTuple07(): (String?, String?) = (null, null)
+
+    @test
     def testNullableOption01(): Option[String]? = null
 
     @test
