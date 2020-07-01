@@ -85,28 +85,28 @@ namespace Test/Exp/Nullify {
     def testNullifyList06(): List[String?]? = ("Hello World"? :: Nil)?
 
     @test
-    def testNullifyList01(): Result[String, String]? = Ok("Hello World")?
+    def testNullifyResult01(): Result[String, String]? = Ok("Hello World")?
 
     @test
-    def testNullifyList02(): Result[String, String]? = Err("Hello World")?
+    def testNullifyResult02(): Result[String, String]? = Err("Hello World")?
 
     @test
-    def testNullifyList03(): Result[String?, String] = Ok("Hello World"?)
+    def testNullifyResult03(): Result[String?, String] = Ok("Hello World"?)
 
     @test
-    def testNullifyList04(): Result[String, String?] = Err("Hello World"?)
+    def testNullifyResult04(): Result[String, String?] = Err("Hello World"?)
 
     @test
-    def testNullifyList05(): Result[String?, String?] = Ok("Hello World"?)
+    def testNullifyResult05(): Result[String?, String?] = Ok("Hello World"?)
 
     @test
-    def testNullifyList06(): Result[String?, String?] = Err("Hello World"?)
+    def testNullifyResult06(): Result[String?, String?] = Err("Hello World"?)
 
     @test
-    def testNullifyList07(): Result[String?, String?]? = Ok("Hello World"?)?
+    def testNullifyResult07(): Result[String?, String?]? = Ok("Hello World"?)?
 
     @test
-    def testNullifyList08(): Result[String?, String?]? = Err("Hello World"?)?
+    def testNullifyResult08(): Result[String?, String?]? = Err("Hello World"?)?
 
     @test
     def testNullifyArrow01(): (String -> String)? = (_ -> "Hello World")?
