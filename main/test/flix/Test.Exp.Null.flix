@@ -36,6 +36,24 @@ namespace Test/Exp/Null {
     @test
     def testOptionNull03(): Option[String?]? = null
 
+    @test
+    def testResultNull01(): Result[String, String]? = null
+
+    @test
+    def testResultNull02(): Result[String, String?]? = null
+
+    @test
+    def testResultNull03(): Result[String?, String]? = null
+
+    @test
+    def testResultNull04(): Result[String?, String?]? = null
+
+    @test
+    def testResultNull05(): Result[String?, String] = Ok(null)
+
+    @test
+    def testResultNull06(): Result[String, String?] = Err(null)
+
 
     pub enum Option[t] {
         case None,
