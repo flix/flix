@@ -7,6 +7,18 @@ namespace Test/Exp/Null {
     def testNullableString01(): String? = null
 
     @test
+    def testNullableArray01(): Array[String]? = null
+
+    @test
+    def testNullableArray02(): Array[String?]? = null
+
+    @test
+    def testNullableArray03(): Array[String?] & Impure = [null; 10]
+
+    @test
+    def testNullableArray04(): Array[String?] & Impure = [null, null, null]
+
+    @test
     def testNullableChannel01(): Channel[String]? = null
 
     @test
