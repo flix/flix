@@ -117,6 +117,36 @@ namespace Test/Exp/Null {
     @test
     def testNullableResult06(): Result[String, String?] = Err(null)
 
+    @test
+    def testNullableArrow01(): (String -> String)? = null
+
+    @test
+    def testNullableArrow02(): (String -> String?)? = null
+
+    @test
+    def testNullableArrow03(): (String? -> String)? = null
+
+    @test
+    def testNullableArrow04(): (String? -> String?)? = null
+
+    @test
+    def testNullableArrow05(): ((String, String) -> String?)? = null
+
+    @test
+    def testNullableArrow06(): ((String?, String) -> String?)? = null
+
+    @test
+    def testNullableArrow07(): ((String, String?) -> String?)? = null
+
+    @test
+    def testNullableArrow08(): ((String?, String?) -> String?)? = null
+
+    @test
+    def testNullableArrow09(): (String -> String?) = _x -> null
+
+    @test
+    def testNullableArrow10(): (String? -> String) = _x -> "abc"
+
     pub enum Option[t] {
         case None,
         case Some(t)
