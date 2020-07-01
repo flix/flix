@@ -37,6 +37,21 @@ namespace Test/Exp/Null {
     def testOptionNull03(): Option[String?]? = null
 
     @test
+    def testListNull01(): List[String]? = null
+
+    @test
+    def testListNull02(): List[String?] = Nil
+
+    @test
+    def testListNull03(): List[String?]? = null
+
+    @test
+    def testListNull04(): List[String?] = null :: Nil
+
+    @test
+    def testListNull05(): List[String?] = null :: null :: Nil
+
+    @test
     def testResultNull01(): Result[String, String]? = null
 
     @test
