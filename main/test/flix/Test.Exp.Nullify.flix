@@ -108,6 +108,17 @@ namespace Test/Exp/Nullify {
     @test
     def testNullifyList08(): Result[String?, String?]? = Err("Hello World"?)?
 
+    @test
+    def testNullifyArrow01(): (String -> String)? = (_ -> "Hello World")?
+
+    @test
+    def testNullifyArrow02(): String -> String? = _ -> "Hello World"?
+
+    @test
+    def testNullifyArrow03(): String? -> String = _ -> "Hello World"
+
+    @test
+    def testNullifyArrow04(): (String? -> String?)? = (_ -> "Hello World"?)?
 
     pub enum Option[t] {
         case None,
