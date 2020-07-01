@@ -33,6 +33,8 @@ namespace Test/Exp/Null {
     @test
     def testOptionNull02(): Option[String?] = Some(null)
 
+    @test
+    def testOptionNull03(): Option[String?]? = null
 
 
     pub enum Option[t] {
