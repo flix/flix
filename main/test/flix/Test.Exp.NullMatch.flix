@@ -4,12 +4,12 @@ namespace Test/Exp/NullMatch {
     def testUseCase01(): Bool =
         let f = (x, y) -> {
             let s = match? x {
-                case null => y
+                case _ => y
                 case w => w
             };
             toUpperCase(s)
         };
-        f("hello", "world") == "HELLO"
+        f("hello"?, "world"?) == "HELLO"
 
     @test
     def testUseCase02(): Bool =
@@ -237,5 +237,7 @@ namespace Test/Exp/NullMatch {
         case Nil,
         case Cons(t, List[t])
     }
+
+    pub def toUpperCase(_: NonNull[String]): String = ""
 
 }
