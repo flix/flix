@@ -66,6 +66,25 @@ namespace Test/Exp/Nullify {
     @test
     def testNullifyOption07(): Option[String?]? = Some("Hello World"?)?
 
+    @test
+    def testNullifyList01(): List[String]? = Nil?
+
+    @test
+    def testNullifyList02(): List[String]? = ("Hello World" :: Nil)?
+
+    @test
+    def testNullifyList03(): List[String?] = Nil
+
+    @test
+    def testNullifyList04(): List[String?] = "Hello World"? :: Nil
+
+    @test
+    def testNullifyList05(): List[String?]? = Nil?
+
+    @test
+    def testNullifyList06(): List[String?]? = ("Hello World"? :: Nil)?
+
+
     pub enum Option[t] {
         case None,
         case Some(t)
