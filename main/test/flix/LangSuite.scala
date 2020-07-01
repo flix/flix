@@ -94,6 +94,7 @@ class LangSuite extends Suites(
   // Null.
   //
   new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
+  new FlixTest("Test.Exp.Nullify", "main/test/flix/Test.Exp.Nullify.flix"),
   //new FlixTest("Test.Exp.NullMatch", "main/test/flix/Test.Exp.NullMatch.flix"),
 
   //
