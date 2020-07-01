@@ -663,7 +663,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | MatchNull | Nullify | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Nullify | MatchNull | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -781,7 +781,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def MatchNull: Rule1[ParsedAst.Expression.MatchNull] = {
-      // TODO: Do we really want parentheses?
       def MatchOne: Rule1[Seq[ParsedAst.Expression]] = rule {
         Expression ~> ((e: ParsedAst.Expression) => Seq(e))
       }
@@ -790,12 +789,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def MatchNullRule: Rule1[ParsedAst.MatchNullRule] = rule {
+
+      def CaseOne: Rule1[ParsedAst.MatchNullRule] = rule {
+        atomic("case") ~ WS ~ Names.Variable ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ((x: Name.Ident, e: ParsedAst.Expression) => ParsedAst.MatchNullRule(Seq(x), e))
+      }
+
+      def CaseMany: Rule1[ParsedAst.MatchNullRule] = rule {
         atomic("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ParsedAst.MatchNullRule
       }
 
       rule {
-        SP ~ atomic("match?") ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(MatchNullRule).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
+        SP ~ atomic("match?") ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
       }
     }
 
