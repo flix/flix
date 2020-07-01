@@ -629,9 +629,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Nullify(exp, loc) =>
+        val nullity = Type.freshVar(Kind.Bool)
         for {
           (tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkNullable(tpe, Type.False)
+          resultTyp = Type.mkNullable(tpe, nullity)
           resultEff = eff
         } yield (resultTyp, resultEff)
 
