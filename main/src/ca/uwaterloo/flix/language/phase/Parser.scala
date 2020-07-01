@@ -663,7 +663,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Nullify | MatchNull | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | MatchNull | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -803,10 +803,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Nullify: Rule1[ParsedAst.Expression.Nullify] = rule {
-      SP ~ atomic("nullify") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Nullify
-    }
-
     def TryCatch: Rule1[ParsedAst.Expression] = {
       def CatchRule: Rule1[ParsedAst.CatchRule] = rule {
         atomic("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
@@ -865,7 +861,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayStore: Rule1[ParsedAst.Expression] = rule {
-      Apply ~ optional(oneOrMore(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]") ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
+      Nullify ~ optional(oneOrMore(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]") ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
+    }
+
+    def Nullify: Rule1[ParsedAst.Expression] = rule {
+      Apply ~ optional("?" ~ SP ~> ParsedAst.Expression.Nullify)
     }
 
     def Apply: Rule1[ParsedAst.Expression] = rule {

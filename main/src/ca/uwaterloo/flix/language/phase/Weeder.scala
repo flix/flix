@@ -724,7 +724,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (es, rs) => WeededAst.Expression.MatchNull(es, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Nullify(sp1, exp, sp2) =>
+    case ParsedAst.Expression.Nullify(exp, sp2) =>
+      val sp1 = leftMostSourcePosition(exp)
       mapN(visitExp(exp)) {
         case e => WeededAst.Expression.Nullify(e, mkSL(sp1, sp2))
       }
@@ -1914,7 +1915,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.MatchNull(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Nullify(sp1, _, _) => sp1
+    case ParsedAst.Expression.Nullify(exp, _) => leftMostSourcePosition(exp)
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1

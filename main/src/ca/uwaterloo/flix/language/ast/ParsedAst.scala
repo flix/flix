@@ -607,11 +607,10 @@ object ParsedAst {
     /**
       * Nullify Expression.
       *
-      * @param sp1 the position of the first character in the expression.
       * @param exp the nullified expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Nullify(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Nullify(exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Match Null Expression.
