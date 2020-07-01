@@ -84,6 +84,30 @@ namespace Test/Exp/Nullify {
     @test
     def testNullifyList06(): List[String?]? = ("Hello World"? :: Nil)?
 
+    @test
+    def testNullifyList01(): Result[String, String]? = Ok("Hello World")?
+
+    @test
+    def testNullifyList02(): Result[String, String]? = Err("Hello World")?
+
+    @test
+    def testNullifyList03(): Result[String?, String] = Ok("Hello World"?)
+
+    @test
+    def testNullifyList04(): Result[String, String?] = Err("Hello World"?)
+
+    @test
+    def testNullifyList05(): Result[String?, String?] = Ok("Hello World"?)
+
+    @test
+    def testNullifyList06(): Result[String?, String?] = Err("Hello World"?)
+
+    @test
+    def testNullifyList07(): Result[String?, String?]? = Ok("Hello World"?)?
+
+    @test
+    def testNullifyList08(): Result[String?, String?]? = Err("Hello World"?)?
+
 
     pub enum Option[t] {
         case None,
