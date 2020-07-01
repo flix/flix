@@ -43,7 +43,7 @@ namespace Test/Exp/Nullify {
     def testNullifyTuple03(): (String, String?)? = ("Hello", "World"?)?
 
     @test
-    def testNullifyTuple03(): (String?, String?)? = ("Hello"?, "World"?)?
+    def testNullifyTuple04(): (String?, String?)? = ("Hello"?, "World"?)?
 
     @test
     def testNullifyOption01(): Option[String]? = None?
