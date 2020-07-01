@@ -1249,6 +1249,14 @@ object ParsedAst {
     case class Native(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Nullable Type.
+      *
+      * @param tpe the nullable type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Nullable(tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Type Application.
       *
       * @param base    the base type.

@@ -1153,7 +1153,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
-      Primary ~ zeroOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
+      Nullable ~ zeroOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
+    }
+
+    def Nullable: Rule1[ParsedAst.Type] = rule {
+      Primary ~ optional(atomic("?") ~ SP ~> ParsedAst.Type.Nullable)
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {

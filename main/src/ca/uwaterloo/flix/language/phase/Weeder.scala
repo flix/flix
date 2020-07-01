@@ -1617,8 +1617,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
       }
 
-    case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
-
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
@@ -1654,6 +1652,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case Some(f) => visitType(f)
       }
       mkCurriedArrow(ts, eff, tr, loc)
+
+    case ParsedAst.Type.Native(sp1, fqn, sp2) =>
+      WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
+
+    case ParsedAst.Type.Nullable(tpe, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe)
+      val loc = mkSL(sp1, sp2)
+      val qname = Name.mkQName("Nullable", sp1, sp2)
+      val base = WeededAst.Type.Ambiguous(qname, loc)
+      WeededAst.Type.Apply(base, visitType(tpe), loc)
 
     case ParsedAst.Type.Apply(t1, args, sp2) =>
       // Curry the type arguments.
@@ -1957,11 +1965,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
-    case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.UnaryImpureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.ImpureArrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.PolymorphicArrow(sp1, _, _, _, _) => sp1
+    case ParsedAst.Type.Native(sp1, _, _) => sp1
+    case ParsedAst.Type.Nullable(tpe, _) => leftMostSourcePosition(tpe)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Pure(sp1, _) => sp1
     case ParsedAst.Type.Impure(sp1, _) => sp1
