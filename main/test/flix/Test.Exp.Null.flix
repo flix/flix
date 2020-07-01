@@ -21,4 +21,28 @@ namespace Test/Exp/Null {
     @test
     def testRecordNull05(): {fstName: String?, lstName: String?} = {fstName = null, lstName = null}
 
+    @test
+    def testRecordNull06(): {fstName: String, lstName: String?} = {fstName = "Lucky", lstName = null}
+
+    @test
+    def testRecordNull07(): {fstName: String?, lstName: String} = {fstName = null, lstName = "Luke"}
+
+
+
+
+    pub enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
+    pub enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
+
+    pub enum List[t] {
+        case Nil,
+        case Cons(t, List[t])
+    }
+
 }
