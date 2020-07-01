@@ -7,6 +7,12 @@ namespace Test/Exp/Null {
     def testNullableString01(): String? = null
 
     @test
+    def testNullableChannel01(): Channel[String]? = null
+
+    @test
+    def testNullableChannel02(): Channel[String?]? = null
+
+    @test
     def testNullableRecord01(): {}? = null
 
     @test
@@ -26,6 +32,15 @@ namespace Test/Exp/Null {
 
     @test
     def testNullableRecord07(): {fstName: String?, lstName: String} = {fstName = null, lstName = "Luke"}
+
+    @test
+    def testNullableRef01(): Ref[String]? = null
+
+    @test
+    def testNullableRef02(): Ref[String?]? = null
+
+    @test
+    def testNullableRef03(): Ref[String?] & Impure = ref null
 
     @test
     def testNullableOption01(): Option[String]? = null
