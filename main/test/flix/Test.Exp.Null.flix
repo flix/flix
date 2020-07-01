@@ -1,74 +1,73 @@
 namespace Test/Exp/Null {
 
     @test
-    def testUnitNull01(): Unit? = null
+    def testNullableUnit01(): Unit? = null
 
     @test
-    def testStringNull01(): String? = null
+    def testNullableString01(): String? = null
 
     @test
-    def testRecordNull01(): {}? = null
+    def testNullableRecord01(): {}? = null
 
     @test
-    def testRecordNull02(): {name: String}? = null
+    def testNullableRecord02(): {name: String}? = null
 
     @test
-    def testRecordNull03(): {name: String?} = {name = null}
+    def testNullableRecord03(): {name: String?} = {name = null}
 
     @test
-    def testRecordNull04(): {fstName: String, lstName: String}? = null
+    def testNullableRecord04(): {fstName: String, lstName: String}? = null
 
     @test
-    def testRecordNull05(): {fstName: String?, lstName: String?} = {fstName = null, lstName = null}
+    def testNullableRecord05(): {fstName: String?, lstName: String?} = {fstName = null, lstName = null}
 
     @test
-    def testRecordNull06(): {fstName: String, lstName: String?} = {fstName = "Lucky", lstName = null}
+    def testNullableRecord06(): {fstName: String, lstName: String?} = {fstName = "Lucky", lstName = null}
 
     @test
-    def testRecordNull07(): {fstName: String?, lstName: String} = {fstName = null, lstName = "Luke"}
+    def testNullableRecord07(): {fstName: String?, lstName: String} = {fstName = null, lstName = "Luke"}
 
     @test
-    def testOptionNull01(): Option[String]? = null
+    def testNullableOption01(): Option[String]? = null
 
     @test
-    def testOptionNull02(): Option[String?] = Some(null)
+    def testNullableOption02(): Option[String?] = Some(null)
 
     @test
-    def testOptionNull03(): Option[String?]? = null
+    def testNullableOption03(): Option[String?]? = null
 
     @test
-    def testListNull01(): List[String]? = null
+    def testNullableList01(): List[String]? = null
 
     @test
-    def testListNull02(): List[String?] = Nil
+    def testNullableList02(): List[String?] = Nil
 
     @test
-    def testListNull03(): List[String?]? = null
+    def testNullableList03(): List[String?]? = null
 
     @test
-    def testListNull04(): List[String?] = null :: Nil
+    def testNullableList04(): List[String?] = null :: Nil
 
     @test
-    def testListNull05(): List[String?] = null :: null :: Nil
+    def testNullableList05(): List[String?] = null :: null :: Nil
 
     @test
-    def testResultNull01(): Result[String, String]? = null
+    def testNullableResult01(): Result[String, String]? = null
 
     @test
-    def testResultNull02(): Result[String, String?]? = null
+    def testNullableResult02(): Result[String, String?]? = null
 
     @test
-    def testResultNull03(): Result[String?, String]? = null
+    def testNullableResult03(): Result[String?, String]? = null
 
     @test
-    def testResultNull04(): Result[String?, String?]? = null
+    def testNullableResult04(): Result[String?, String?]? = null
 
     @test
-    def testResultNull05(): Result[String?, String] = Ok(null)
+    def testNullableResult05(): Result[String?, String] = Ok(null)
 
     @test
-    def testResultNull06(): Result[String, String?] = Err(null)
-
+    def testNullableResult06(): Result[String, String?] = Err(null)
 
     pub enum Option[t] {
         case None,
