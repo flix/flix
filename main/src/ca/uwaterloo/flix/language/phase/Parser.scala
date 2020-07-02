@@ -1146,10 +1146,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      Nullable ~ optional(
+      Or ~ optional(
         (optWS ~ atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
           (optWS ~ atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
       )
+    }
+
+    def Or: Rule1[ParsedAst.Type] = rule {
+      And ~ zeroOrMore(WS ~ atomic("or") ~ WS ~ Type ~> ParsedAst.Type.Or)
+    }
+
+    def And: Rule1[ParsedAst.Type] = rule {
+      Nullable ~ zeroOrMore(WS ~ atomic("and") ~ WS ~ Type ~> ParsedAst.Type.And)
     }
 
     def Nullable: Rule1[ParsedAst.Type] = rule {
@@ -1161,7 +1169,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | Schema | Native | True | False | Pure | Impure | Var | Ambiguous
+      Arrow | Tuple | Record | Schema | Native | True | False | Pure | Impure | Not | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1241,6 +1249,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Impure: Rule1[ParsedAst.Type] = rule {
       SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.False
+    }
+
+    def Not: Rule1[ParsedAst.Type] = rule {
+      atomic("not") ~ WS ~ Type ~> ParsedAst.Type.Not
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {
