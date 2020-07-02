@@ -20,11 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 
 import scala.collection.immutable.Seq
 
-/**
-  * ParsedAst super-type.
-  */
-sealed trait ParsedAst
-
 object ParsedAst {
 
   /**
@@ -32,7 +27,7 @@ object ParsedAst {
     *
     * @param roots the roots of the abstract syntax trees in the program.
     */
-  case class Program(roots: List[ParsedAst.Root]) extends ParsedAst
+  case class Program(roots: List[ParsedAst.Root])
 
   /**
     * Root. A collection of imports and declarations.
@@ -42,12 +37,12 @@ object ParsedAst {
     * @param decls the declarations in the abstract syntax tree.
     * @param sp2   the position of the last character in the source.
     */
-  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
+  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
 
   /**
     * Declarations.
     */
-  sealed trait Declaration extends ParsedAst
+  sealed trait Declaration
 
   object Declaration {
 
@@ -417,7 +412,7 @@ object ParsedAst {
   /**
     * Expressions.
     */
-  sealed trait Expression extends ParsedAst
+  sealed trait Expression
 
   object Expression {
 
@@ -979,7 +974,7 @@ object ParsedAst {
   /**
     * Patterns.
     */
-  sealed trait Pattern extends ParsedAst {
+  sealed trait Pattern {
 
     /**
       * Returns the left most source position in sub-tree of `this` pattern.
@@ -1068,7 +1063,7 @@ object ParsedAst {
   /**
     * Predicates.
     */
-  sealed trait Predicate extends ParsedAst
+  sealed trait Predicate
 
   object Predicate {
 
@@ -1140,7 +1135,7 @@ object ParsedAst {
   /**
     * Types.
     */
-  sealed trait Type extends ParsedAst
+  sealed trait Type
 
   object Type {
 
@@ -1323,7 +1318,7 @@ object ParsedAst {
     * @param tpe   the type of the declared tag
     * @param sp2   the position of the last character in the case declaration.
     */
-  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
+  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
   /**
     * Class Constraint.
@@ -1331,7 +1326,7 @@ object ParsedAst {
     * @param head the head atom of the constraint.
     * @param body the sequence of body atoms of the constraint.
     */
-  case class ClassConstraint(head: ParsedAst.SimpleClass, body: Seq[ParsedAst.SimpleClass]) extends ParsedAst
+  case class ClassConstraint(head: ParsedAst.SimpleClass, body: Seq[ParsedAst.SimpleClass])
 
   /**
     * Impl Constraint.
@@ -1339,12 +1334,12 @@ object ParsedAst {
     * @param head the head atom of the constraint.
     * @param body the sequence of body atoms of the constraint.
     */
-  case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
+  case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass])
 
   /**
     * Disallow Constraint.
     */
-  case class DisallowConstraint(body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
+  case class DisallowConstraint(body: Seq[ParsedAst.ComplexClass])
 
   /**
     * Simple Class Atom.
@@ -1354,7 +1349,7 @@ object ParsedAst {
     * @param args  the type variables.
     * @param sp2   the position of the last character in the atom.
     */
-  case class SimpleClass(sp1: SourcePosition, qname: Name.QName, args: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
+  case class SimpleClass(sp1: SourcePosition, qname: Name.QName, args: Seq[Name.Ident], sp2: SourcePosition)
 
   sealed trait ComplexClass
 
@@ -1408,7 +1403,7 @@ object ParsedAst {
     * @param lines the lines of the comment.
     * @param sp2   the position of the last character in the comment.
     */
-  case class Doc(sp1: SourcePosition, lines: Seq[String], sp2: SourcePosition) extends ParsedAst
+  case class Doc(sp1: SourcePosition, lines: Seq[String], sp2: SourcePosition)
 
   /**
     * Context Bound.
@@ -1418,7 +1413,7 @@ object ParsedAst {
     * @param tparams the type params of the class.
     * @param sp2     the position of the last character in the context bound.
     */
-  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
+  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.Type], sp2: SourcePosition)
 
   /**
     * Formal Parameter.
@@ -1429,7 +1424,7 @@ object ParsedAst {
     * @param tpe   the optional type of the argument.
     * @param sp2   the position of the last character in the formal parameter.
     */
-  case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
+  case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition)
 
   /**
     * A catch rule consists of an identifier, a Java name, and a body expression.
@@ -1438,7 +1433,7 @@ object ParsedAst {
     * @param fqn   the fully-qualified Java name.
     * @param exp   the body expression.
     */
-  case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression) extends ParsedAst
+  case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression)
 
   /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
@@ -1447,7 +1442,7 @@ object ParsedAst {
     * @param guard the optional guard of the rule.
     * @param exp   the body expression of the rule.
     */
-  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression)
 
   /**
     * @param pat the pattern of the rule.
@@ -1462,7 +1457,7 @@ object ParsedAst {
     * @param chan  the channel expression of the rule.
     * @param exp   the body expression of the rule.
     */
-  case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
+  case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression)
 
   /**
     * Modifier.
@@ -1471,12 +1466,12 @@ object ParsedAst {
     * @param name the name of the modifier.
     * @param sp2  the position of the last character in the modifier.
     */
-  case class Modifier(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
+  case class Modifier(sp1: SourcePosition, name: String, sp2: SourcePosition)
 
   /**
     * A common super-type for annotations or properties.
     */
-  sealed trait AnnotationOrProperty extends ParsedAst
+  sealed trait AnnotationOrProperty
 
   /**
     * Annotation.
