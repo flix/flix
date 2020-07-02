@@ -302,15 +302,24 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
 
-        case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
-          // Generate a fresh symbol for the bound variable.
-          val freshSym = Symbol.freshVarSym(sym)
-          val env1 = env0 + (sym -> freshSym)
-
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          val e3 = visitExp(exp3, env1)
-          Expression.MatchNull(freshSym, e1, e2, e3, tpe, eff, loc)
+        case Expression.MatchNull(exps, rules, tpe, eff, loc) =>
+          val es = exps.map(visitExp(_, env0))
+          val rs = rules.map {
+            case MatchNullRule(pat, exp) =>
+              val x = pat.map {
+                case None => (None, Map.empty)
+                case Some(sym) =>
+                  val freshVar = Symbol.freshVarSym(sym)
+                  (Some(sym), Map(sym -> freshVar))
+              }
+              val p = x.map(_._1)
+              val env1 = x.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+                case (acc, m) => acc ++ m
+              }
+              val e = visitExp(exp, env0 ++ env1)
+              MatchNullRule(p, e)
+          }
+          Expression.MatchNull(es, rs, tpe, eff, loc)
 
         case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
