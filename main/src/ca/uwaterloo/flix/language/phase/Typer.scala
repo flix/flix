@@ -611,7 +611,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           case (acc, nullityRow) => Type.mkOr(acc, mkEqRow(nullityVars, nullityRow))
         }
 
-        println("Nullity Vars:")
+        println(s"Nullity Vars (at $loc):")
         println("  " + nullityVars)
 
         println("Nullity Matrix:")

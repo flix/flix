@@ -310,7 +310,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
                 case None => (None, Map.empty)
                 case Some(sym) =>
                   val freshVar = Symbol.freshVarSym(sym)
-                  (Some(sym), Map(sym -> freshVar))
+                  (Some(freshVar), Map(sym -> freshVar))
               }
               val p = x.map(_._1)
               val env1 = x.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
