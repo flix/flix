@@ -1,96 +1,133 @@
 namespace Test/Typ/Gen/Bool/Null {
 
-    pub def testNullableVar01(x: Null[false, String]): Bool =
+    pub def testNullableOneVar01(x: Null[false, String]): Bool =
         match? x {
             case y => y == "Hello World"
         }
 
-    pub def testNullableWild01(x: Null[n, String]): Bool =
+    pub def testNullableOneVar02(x: Null[n, String]): Bool =
         match? x {
             case _ => true
         }
 
-    pub def testNullableWild02(x: Null[true, String]): Bool =
+    pub def testNullableOneVar03(x: Null[true, String]): Bool =
         match? x {
             case _ => true
         }
 
-    pub def testNullableWild03(x: Null[false, String]): Bool =
+    pub def testNullableOneVar04(x: Null[false, String]): Bool =
         match? x {
             case _ => true
         }
 
-//    pub def testNullableExhaustive01(x: Null[n, String]): Bool =
+    pub def testNullableOneVarExhaustive01(x: Null[false, String]): Bool =
+        match? x {
+            case y => y == "Hello World"
+            case _ => true
+        }
+
+    pub def testNullableOneVarExhaustive02(x: Null[true, String]): Bool =
+        match? x {
+            case y => y == "Hello World"
+            case _ => true
+        }
+
+    // TODO
+//    pub def testNullableOneVarExhaustive03(x: Null[n, String]): Bool =
 //        match? x {
 //            case y => y == "Hello World"
 //            case _ => true
 //        }
 
-    pub def testNullableExhaustive02(x: Null[true, String]): Bool =
-        match? x {
-            case y => y == "Hello World"
-            case _ => true
-        }
-
-    pub def testNullableExhaustive03(x: Null[false, String]): Bool =
-        match? x {
-            case y => y == "Hello World"
-            case _ => true
-        }
-
-    pub def testNullableMultiVar01(x: Null[false, String], y: Null[false, String]): Bool =
+    pub def testNullableTwoVar01(x: Null[false, String], y: Null[false, String]): Bool =
         match? (x, y) {
             case (a, b) => a == "Hello" && b == "World"
         }
 
-    pub def testNullableMultiVar02(x: Null[false, String], y: Null[n, String]): Bool =
+    pub def testNullableTwoVar02(x: Null[false, String], y: Null[n, String]): Bool =
         match? (x, y) {
             case (a, _) => a == "Hello"
         }
 
-    pub def testNullableMultiVar03(x: Null[false, String], y: Null[true, String]): Bool =
+    pub def testNullableTwoVar03(x: Null[false, String], y: Null[true, String]): Bool =
         match? (x, y) {
             case (a, _) => a == "Hello"
         }
 
-    pub def testNullableMultiVar04(x: Null[false, String], y: Null[false, String]): Bool =
+    pub def testNullableTwoVar04(x: Null[false, String], y: Null[false, String]): Bool =
         match? (x, y) {
             case (a, _) => a == "Hello"
         }
 
-    pub def testNullableMultiVar05(x: Null[n, String], y: Null[false, String]): Bool =
+    pub def testNullableTwoVar05(x: Null[n, String], y: Null[false, String]): Bool =
         match? (x, y) {
             case (_, b) => b == "World"
         }
 
-    pub def testNullableMultiVar06(x: Null[true, String], y: Null[false, String]): Bool =
+    pub def testNullableTwoVar06(x: Null[true, String], y: Null[false, String]): Bool =
         match? (x, y) {
             case (_, b) => b == "World"
         }
 
-    pub def testNullableMultiVar07(x: Null[false, String], y: Null[false, String]): Bool =
+    pub def testNullableTwoVar07(x: Null[false, String], y: Null[false, String]): Bool =
         match? (x, y) {
             case (_, b) => b == "World"
         }
 
-    pub def testNullableMultiVar08(x: Null[false, String], y: Null[false, String]): Bool =
-        match? (x, y) {
-            case (a, _) => a == "Hello"
-            case (_, b) => b == "World"
-        }
-
-    pub def testNullableMultiVar09(x: Null[false, String], y: Null[true, String]): Bool =
+    pub def testNullableTwoVar08(x: Null[false, String], y: Null[false, String]): Bool =
         match? (x, y) {
             case (a, _) => a == "Hello"
             case (_, b) => b == "World"
         }
 
-    pub def testNullableMultiVar10(x: Null[true, String], y: Null[false, String]): Bool =
+    pub def testNullableTwoVar09(x: Null[false, String], y: Null[true, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+        }
+
+    pub def testNullableTwoVar10(x: Null[true, String], y: Null[false, String]): Bool =
         match? (x, y) {
             case (a, _) => a == "Hello"
             case (_, b) => b == "World"
         }
 
     // TODO: More polymorphic cases.
+
+    pub def testNullableTwoVarExhaustive01(x: Null[false, String], y: Null[false, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+            case (_, _) => true
+        }
+
+    pub def testNullableTwoVarExhaustive02(x: Null[true, String], y: Null[false, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+            case (_, _) => true
+        }
+
+    pub def testNullableTwoVarExhaustive03(x: Null[false, String], y: Null[true, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+            case (_, _) => true
+        }
+
+    pub def testNullableTwoVarExhaustive04(x: Null[true, String], y: Null[true, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+            case (_, _) => true
+        }
+
+    // TODO
+//    pub def testNullableTwoVarExhaustive05(x: Null[n, String], y: Null[m, String]): Bool =
+//        match? (x, y) {
+//            case (a, _) => a == "Hello"
+//            case (_, b) => b == "World"
+//            case (_, _) => true
+//        }
 
 }
