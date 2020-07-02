@@ -4,8 +4,8 @@ namespace Test/Exp/NullMatch {
     def testUseCase01(): Bool =
         let f = (x, y) -> {
             let s = match? x {
-                case _ => y
                 case w => w
+                case _ => y
             };
             toUpperCase(s)
         };
@@ -15,8 +15,8 @@ namespace Test/Exp/NullMatch {
 //    def testUseCase02(): Bool =
 //        let f = (x, y) -> {
 //            let s = match? x {
-//                case _ => y
 //                case w => w
+//                case _ => y
 //            };
 //            toUpperCase(s)
 //        };
@@ -26,12 +26,12 @@ namespace Test/Exp/NullMatch {
     def testUseCase03(): Bool =
         let f = (x, y) -> {
             let s = match? x {
-                case _ => y
                 case w => w
+                case _ => y
             };
             toUpperCase(s)
         };
-        f(null, "world"?) == "HELLO"
+        f(null, "world"?) == "WORLD"
 
     @test
     def testUseCase04(): Bool =
