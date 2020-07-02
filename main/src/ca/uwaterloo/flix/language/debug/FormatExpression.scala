@@ -36,7 +36,7 @@ object FormatExpression {
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"IfThenElse($exp1, $exp2, $exp3)"
     case TypedAst.Expression.Stm(exp1, exp2, _, _, _) => s"Stm($exp1, $exp2)"
     case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => s"Match($exp, ${rules.mkString(", ")})"
-    case TypedAst.Expression.MatchNull(sym, exp1, exp2, exp3, _, _, _) => s"MatchNull($sym, $exp1, $exp2, $exp3)"
+    case TypedAst.Expression.MatchNull(exps, rules, _, _, _) => s"MatchNull($exps, $rules)"
     case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => s"Tag($sym, $tag, $exp)"
     case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => s"Tuple(${elms.mkString(", ")})"
     case TypedAst.Expression.RecordEmpty(tpe, loc) => s"RecordEmpty"

@@ -81,8 +81,19 @@ object TypedAstOps {
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
-      case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0 + (sym -> exp1.tpe))
+      case Expression.MatchNull(exps, rules, tpe, eff, loc) =>
+        val m1 = exps.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+          case (acc, exp) => acc ++ visitExp(exp, env0)
+        }
+        val m2 = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+          case (acc, MatchNullRule(pat, exp)) =>
+            val env1 = (pat.zip(exps)).foldLeft(Map.empty[Symbol.VarSym, Type]) {
+              case (acc, (Some(sym), exp)) => acc + (sym -> exp.tpe)
+              case (acc, (None, exp)) => acc
+            }
+            acc ++ visitExp(exp, env0 ++ env1)
+        }
+        m1 ++ m2
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
