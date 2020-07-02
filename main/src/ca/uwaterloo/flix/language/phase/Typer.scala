@@ -1266,10 +1266,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
       case ResolvedAst.Expression.MatchNull(exps, rules, loc) =>
-        // TODO
-        println("Typecheck success")
-        System.exit(1)
-        throw null
+        val es = exps.map(visitExp(_, subst0))
+        val rs = rules.map {
+          case ResolvedAst.MatchNullRule(pat, exp) =>
+            TypedAst.MatchNullRule(pat, visitExp(exp, subst0))
+        }
+        val tpe = rs.head.exp.tpe
+        val eff = Type.mkAnd(rs.map(_.exp.eff))
+        TypedAst.Expression.MatchNull(es, rs, tpe, eff, loc)
 
       case ResolvedAst.Expression.Nullify(exp, loc) =>
         visitExp(exp, subst0)
