@@ -90,6 +90,13 @@ namespace Test/Exp/NullMatch {
             case x => false
         }
 
+    @test
+    def testMatchNullableString01(): Bool =
+        match? "Hello World"? {
+            case _ => true
+            case x => false
+        }
+
     pub enum Option[t] {
         case None,
         case Some(t)
