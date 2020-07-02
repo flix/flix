@@ -43,15 +43,15 @@ namespace Test/Exp/NullMatch {
         };
         f({ssn = "123"?, name = "Lucky Luke"?})
 
-    @test
-    def testUseCase05(): Bool =
-        let f = p -> {
-            match? (p.ssn, p.name) {
-                case (ssn, _)  => isMaleSSN(ssn)
-                case (_, name) => isMaleName(name)
-            }
-        };
-        f({ssn = null, name = "Lucky Luke"?})
+//    @test
+//    def testUseCase05(): Bool =
+//        let f = p -> {
+//            match? (p.ssn, p.name) {
+//                case (ssn, _)  => isMaleSSN(ssn)
+//                case (_, name) => isMaleName(name)
+//            }
+//        };
+//        f({ssn = null, name = "Lucky Luke"?})
 
 //    @test
 //    def testUseCase06(): Bool =
@@ -96,6 +96,8 @@ namespace Test/Exp/NullMatch {
             case _ => true
             case x => false
         }
+
+
 
     pub enum Option[t] {
         case None,
