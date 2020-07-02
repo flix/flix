@@ -86,15 +86,65 @@ namespace Test/Exp/NullMatch {
     @test
     def testMatchNullableUnit01(): Bool =
         match? ()? {
-            case _ => true
-            case x => false
+            case x => true
+            case _ => false
         }
 
     @test
     def testMatchNullableString01(): Bool =
         match? "Hello World"? {
-            case _ => true
-            case x => false
+            case x => true
+            case _ => false
+        }
+
+    @test
+    def testMatchNullableArray01(): Bool =
+        match? []? {
+            case x => true
+            case _ => false
+        }
+
+    @test
+    def testMatchNullableRecord01(): Bool =
+        match? {}? {
+            case x => true
+            case _ => false
+        }
+
+    @test
+    def testMatchNullableRecord02(): Bool =
+        match? {name = "Lucky Luke"}? {
+            case x => true
+            case _ => false
+        }
+
+    @test
+    def testMatchNullableRecord03(): Bool =
+        match? {fstName = "Lucky", lstName = "Luke"}? {
+            case x => true
+            case _ => false
+        }
+
+//      TODO
+//    @test
+//    def testMatchNullableTuple01(): Bool =
+//        match? (123, 456)? {
+//            case x => true
+//            case _ => false
+//        }
+
+    @test
+    def testMatchNullableOption01(): Bool =
+        match? None? {
+            case x => true
+            case _ => false
+        }
+
+    @test
+    def testMatchNullableOption02(): Bool =
+        match? Some(123)? {
+            case x => true
+            case _ => false
         }
 
 
