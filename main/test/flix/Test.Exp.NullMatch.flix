@@ -163,4 +163,12 @@ namespace Test/Exp/NullMatch {
             s.toUpperCase() as & Pure
     }
 
+    def isMaleSSN(_: String): Bool = true
+
+    def isMaleName(_: String): Bool = true
+
+    def isMaleFullName(_: String, _: String): Bool = true
+
+    def isMaleLicense(_: String): Bool = true
+
 }
