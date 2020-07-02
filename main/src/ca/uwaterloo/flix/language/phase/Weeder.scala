@@ -142,10 +142,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (fs, exp) =>
           val e = mkCurried(fs.tail, exp, loc)
           val ts = fs.map(_.tpe.get)
-          val t = mkCurriedArrow(ts, WeededAst.Type.Pure(loc), visitType(tpe), loc)
+          val t = mkCurriedArrow(ts, WeededAst.Type.True(loc), visitType(tpe), loc)
           val ann = Nil
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, WeededAst.Type.Pure(loc), loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, WeededAst.Type.True(loc), loc))
       }
   }
 
@@ -1622,7 +1622,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      val eff = WeededAst.Type.Impure(loc)
+      val eff = WeededAst.Type.False(loc)
       mkArrow(t1, eff, t2, loc)
 
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, effOpt, sp2) =>
@@ -1631,7 +1631,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t2 = visitType(tpe2)
       val eff = effOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.Pure(loc)
+        case None => WeededAst.Type.True(loc)
         case Some(f) => visitType(f)
       }
       mkArrow(t1, eff, t2, loc)
@@ -1640,7 +1640,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       val ts = tparams.map(visitType)
       val tr = visitType(tresult)
-      val eff = WeededAst.Type.Impure(loc)
+      val eff = WeededAst.Type.False(loc)
       mkCurriedArrow(ts, eff, tr, loc)
 
     case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, effOpt, sp2) =>
@@ -1649,7 +1649,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tr = visitType(tresult)
       val eff = effOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.Pure(loc)
+        case None => WeededAst.Type.True(loc)
         case Some(f) => visitType(f)
       }
       mkCurriedArrow(ts, eff, tr, loc)
@@ -1671,11 +1671,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (acc, t2) => WeededAst.Type.Apply(acc, visitType(t2), mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Type.Pure(sp1, sp2) =>
-      WeededAst.Type.Pure(mkSL(sp1, sp2))
+    case ParsedAst.Type.True(sp1, sp2) =>
+      WeededAst.Type.True(mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Impure(sp1, sp2) =>
-      WeededAst.Type.Impure(mkSL(sp1, sp2))
+    case ParsedAst.Type.False(sp1, sp2) =>
+      WeededAst.Type.False(mkSL(sp1, sp2))
 
     case ParsedAst.Type.Not(eff) =>
       val t = visitType(eff)
@@ -1707,14 +1707,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def mkCurriedArrow(tparams: Seq[WeededAst.Type], eff: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
     val base = mkArrow(tparams.last, eff, tresult, loc)
-    tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.Pure(loc), _, loc))
+    tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.True(loc), _, loc))
   }
 
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
   private def visitEff(effOpt: Option[ParsedAst.Type])(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
-    case None => WeededAst.Type.Pure(SourceLocation.Unknown).toSuccess
+    case None => WeededAst.Type.True(SourceLocation.Unknown).toSuccess
     case Some(tpe) => visitType(tpe).toSuccess
   }
 
@@ -1973,8 +1973,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Nullable(tpe, _) => leftMostSourcePosition(tpe)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
-    case ParsedAst.Type.Pure(sp1, _) => sp1
-    case ParsedAst.Type.Impure(sp1, _) => sp1
+    case ParsedAst.Type.True(sp1, _) => sp1
+    case ParsedAst.Type.False(sp1, _) => sp1
     case ParsedAst.Type.Not(eff) => leftMostSourcePosition(eff)
     case ParsedAst.Type.And(tpe1, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(eff1, _) => leftMostSourcePosition(eff1)
@@ -2049,13 +2049,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
     val castedExp = WeededAst.Expression.Cast(outerExp, Some(WeededAst.Type.Native("java.lang.Object", loc)), None, loc)
     val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", castedExp, Nil, Nil, loc)
-    val castedToStringExp = WeededAst.Expression.Cast(toStringExp, None, Some(WeededAst.Type.Pure(loc)), loc)
+    val castedToStringExp = WeededAst.Expression.Cast(toStringExp, None, Some(WeededAst.Type.True(loc)), loc)
 
     // The type and effect of the generated main.
     val argType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
     val resultType = StringType
-    val tpe = mkArrow(argType, WeededAst.Type.Pure(loc), resultType, loc)
-    val eff = WeededAst.Type.Pure(loc)
+    val tpe = mkArrow(argType, WeededAst.Type.True(loc), resultType, loc)
+    val eff = WeededAst.Type.True(loc)
 
     // Construct the declaration.
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, castedToStringExp, tpe, eff, loc)

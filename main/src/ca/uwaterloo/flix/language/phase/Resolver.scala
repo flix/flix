@@ -1037,6 +1037,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Array" => Type.Array.toSuccess
       case "Channel" => Type.Channel.toSuccess
       case "Ref" => Type.Ref.toSuccess
+      case "Null" => Type.Cst(TypeConstructor.Nullable).toSuccess
       case "Nullable" => Type.Apply(Type.Cst(TypeConstructor.Nullable), Type.True).toSuccess
       case "NonNull" => Type.Apply(Type.Cst(TypeConstructor.Nullable), Type.False).toSuccess
 
@@ -1153,11 +1154,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tpe2 <- lookupType(targ0, ns0, root)
       ) yield Type.simplify(Type.Apply(tpe1, tpe2))
 
-    case NamedAst.Type.Pure(loc) =>
-      Type.Pure.toSuccess
+    case NamedAst.Type.True(loc) =>
+      Type.True.toSuccess
 
-    case NamedAst.Type.Impure(loc) =>
-      Type.Impure.toSuccess
+    case NamedAst.Type.False(loc) =>
+      Type.False.toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(lookupType(tpe, ns0, root)) {

@@ -1161,7 +1161,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | Schema | Native | Pure | Impure | Var | Ambiguous
+      Arrow | Tuple | Record | Schema | Native | True | False | Pure | Impure | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1227,12 +1227,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Type.Native
     }
 
+    def True: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("true") ~ SP ~> ParsedAst.Type.True
+    }
+
+    def False: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("false") ~ SP ~> ParsedAst.Type.False
+    }
+
     def Pure: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("Pure") ~ SP ~> ParsedAst.Type.Pure
+      SP ~ atomic("Pure") ~ SP ~> ParsedAst.Type.True
     }
 
     def Impure: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.Impure
+      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.False
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {

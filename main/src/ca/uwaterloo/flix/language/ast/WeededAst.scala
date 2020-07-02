@@ -302,9 +302,9 @@ object WeededAst {
 
     case class Apply(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Pure(loc: SourceLocation) extends WeededAst.Type
+    case class True(loc: SourceLocation) extends WeededAst.Type
 
-    case class Impure(loc: SourceLocation) extends WeededAst.Type
+    case class False(loc: SourceLocation) extends WeededAst.Type
 
     case class Not(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 

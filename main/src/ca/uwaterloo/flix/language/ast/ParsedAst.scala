@@ -1265,43 +1265,43 @@ object ParsedAst {
     case class Apply(base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Pure Effect.
+      * The True type constructor.
       *
       * @param sp1 the position of the first character in the type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+    case class True(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Impure Effect.
+      * The False type constructor.
       *
       * @param sp1 the position of the first character in the type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+    case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Not Effect.
+      * The Not type constructor.
       *
-      * @param eff the negated effect.
+      * @param tpe the negated type.
       */
-    case class Not(eff: ParsedAst.Type) extends ParsedAst.Type
+    case class Not(tpe: ParsedAst.Type) extends ParsedAst.Type
 
     /**
-      * And Effect.
+      * The And type constructor.
       *
-      * @param eff1 the 1st effect.
-      * @param eff2 the 2nd effect.
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
       */
-    case class And(eff1: ParsedAst.Type, eff2: ParsedAst.Type) extends ParsedAst.Type
+    case class And(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type) extends ParsedAst.Type
 
     /**
-      * Or Effect.
+      * The Or type constructor.
       *
-      * @param eff1 the 1st effect.
-      * @param eff2 the 2nd effect.
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
       */
-    case class Or(eff1: ParsedAst.Type, eff2: ParsedAst.Type) extends ParsedAst.Type
+    case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type) extends ParsedAst.Type
 
   }
 

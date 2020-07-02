@@ -979,11 +979,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (t1, t2) => NamedAst.Type.Apply(t1, t2, loc)
       }
 
-    case WeededAst.Type.Pure(loc) =>
-      NamedAst.Type.Pure(loc).toSuccess
+    case WeededAst.Type.True(loc) =>
+      NamedAst.Type.True(loc).toSuccess
 
-    case WeededAst.Type.Impure(loc) =>
-      NamedAst.Type.Impure(loc).toSuccess
+    case WeededAst.Type.False(loc) =>
+      NamedAst.Type.False(loc).toSuccess
 
     case WeededAst.Type.Not(tpe, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
@@ -1164,8 +1164,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Pure(loc) => Nil
-    case WeededAst.Type.Impure(loc) => Nil
+    case WeededAst.Type.True(loc) => Nil
+    case WeededAst.Type.False(loc) => Nil
     case WeededAst.Type.Not(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.And(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)

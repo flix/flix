@@ -299,9 +299,9 @@ object NamedAst {
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Pure(loc: SourceLocation) extends NamedAst.Type
+    case class True(loc: SourceLocation) extends NamedAst.Type
 
-    case class Impure(loc: SourceLocation) extends NamedAst.Type
+    case class False(loc: SourceLocation) extends NamedAst.Type
 
     case class Not(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
