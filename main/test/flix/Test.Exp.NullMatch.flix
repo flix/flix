@@ -148,6 +148,42 @@ namespace Test/Exp/NullMatch {
         }
 
 
+    @test
+    def testMatchNullableList01(): Bool =
+        match? Nil? {
+            case x => true
+            case _ => false
+        }
+
+    // TODO
+//    @test
+//    def testMatchNullableList02(): Bool =
+//        match? (1 :: Nil)? {
+//            case x => true
+//            case _ => false
+//        }
+
+    @test
+    def testMatchNullableResult01(): Bool =
+        match? Ok(123)? {
+            case x => true
+            case _ => false
+        }
+
+    @test
+    def testMatchNullableResult02(): Bool =
+        match? Err(123)? {
+            case x => true
+            case _ => false
+        }
+
+    // TODO
+//    @test
+//    def testMatchNullableArrow01(): Bool =
+//        match? (w -> w)? {
+//            case x => true
+//            case _ => false
+//        }
 
     pub enum Option[t] {
         case None,
