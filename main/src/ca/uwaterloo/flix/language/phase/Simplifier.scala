@@ -1169,15 +1169,21 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
       val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
         case (TypedAst.MatchNullRule(pat, body), acc) =>
-          val init = SimplifiedAst.Expression.True : SimplifiedAst.Expression
-          val condExp = freshMatchVars.zip(pat).foldRight(init) {
-            case ((sym, None), acc) => acc
-            case ((sym, Some(sym2)), acc) =>  // TODO: Whcih syms?
-              val isNullExp = SimplifiedAst.Expression.InvokeStaticMethod(???, List(SimplifiedAst.Expression.Var(sym, ???, loc)), ???, ???)
-              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.BitwiseAnd, isNullExp,  acc, Type.Bool, loc)
+          val init = SimplifiedAst.Expression.True: SimplifiedAst.Expression
+          val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
+            case (((freshMatchVar, None), matchExp), acc) => acc
+            case (((freshMatchVar, Some(matchVar)), matchExp), acc) =>
+              val method = classOf[java.util.Objects].getMethod("nonNull", classOf[java.lang.Object])
+              val isNullExp = SimplifiedAst.Expression.InvokeStaticMethod(method, List(SimplifiedAst.Expression.Var(matchVar, matchExp.tpe, loc)), Type.Bool, loc)
+              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNullExp, acc, Type.Bool, loc)
           }
-          // TODO: Bind all the variables.
-          val thenExp = visitExp(body)
+          val bodyExp = visitExp(body)
+          val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
+            case (((freshMatchVar, None), matchExp), acc) => acc
+            case (((freshMatchVar, Some(matchVar)), matchExp), acc) =>
+              val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
+              SimplifiedAst.Expression.Let(matchVar, varExp, acc, acc.tpe, loc)
+          }
           val elseExp = acc
           SimplifiedAst.Expression.IfThenElse(condExp, thenExp, elseExp, tpe, loc)
       }
