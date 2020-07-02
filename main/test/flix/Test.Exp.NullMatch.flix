@@ -63,6 +63,16 @@ namespace Test/Exp/NullMatch {
         };
         f({ssn = "123", name = null})
 
+    @test
+    def testUseCase08(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.fstName, p.lstName) {
+                case (ssn, _, _)           => isMaleSSN(ssn)
+                case (_, fstName, lstName) => isMaleFullName(fstName, lstName)
+            }
+        };
+        f({ssn = null, fstName = "Lucky"?, lstName = "Luke"?})
+
 //
 //    @test
 //    def testUnitNullMatch01(): Bool =
