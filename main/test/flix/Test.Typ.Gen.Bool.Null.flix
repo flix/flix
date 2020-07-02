@@ -183,4 +183,39 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, b, c) => b == "World" && c == "!"
         }
 
+    // TODO
+//    pub def testNullableThreeVar11(x: Null[n, String], y: Null[false, String], z: Null[not n, String]): Bool =
+//        match? (x, y, z) {
+//            case (a, b, _) => a == "Hello" && b == "World"
+//            case (_, b, c) => b == "World" && c == "!"
+//        }
+
+    pub def testNullableThreeVar12(x: Null[false, String], y: Null[false, String], z: Null[false, String]): Bool =
+        match? (x, y, z) {
+            case (a, _, _) => a == "Hello"
+            case (_, b, _) => b == "World"
+            case (_, _, c) => c == "!"
+        }
+
+    pub def testNullableThreeVar13(x: Null[true, String], y: Null[true, String], z: Null[false, String]): Bool =
+        match? (x, y, z) {
+            case (a, _, _) => a == "Hello"
+            case (_, b, _) => b == "World"
+            case (_, _, c) => c == "!"
+        }
+
+    pub def testNullableThreeVar14(x: Null[true, String], y: Null[false, String], z: Null[true, String]): Bool =
+        match? (x, y, z) {
+            case (a, _, _) => a == "Hello"
+            case (_, b, _) => b == "World"
+            case (_, _, c) => c == "!"
+        }
+
+    pub def testNullableThreeVar15(x: Null[false, String], y: Null[false, String], z: Null[true, String]): Bool =
+        match? (x, y, z) {
+            case (a, _, _) => a == "Hello"
+            case (_, b, _) => b == "World"
+            case (_, _, c) => c == "!"
+        }
+
 }
