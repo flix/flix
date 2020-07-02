@@ -165,4 +165,22 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, _, c) => c == "!"
         }
 
+    pub def testNullableThreeVar08(x: Null[false, String], y: Null[false, String], z: Null[false, String]): Bool =
+        match? (x, y, z) {
+            case (a, b, _) => a == "Hello" && b == "World"
+            case (_, b, c) => b == "World" && c == "!"
+        }
+
+    pub def testNullableThreeVar09(x: Null[true, String], y: Null[false, String], z: Null[false, String]): Bool =
+        match? (x, y, z) {
+            case (a, b, _) => a == "Hello" && b == "World"
+            case (_, b, c) => b == "World" && c == "!"
+        }
+
+    pub def testNullableThreeVar10(x: Null[false, String], y: Null[false, String], z: Null[true, String]): Bool =
+        match? (x, y, z) {
+            case (a, b, _) => a == "Hello" && b == "World"
+            case (_, b, c) => b == "World" && c == "!"
+        }
+
 }

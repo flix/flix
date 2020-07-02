@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -124,4 +123,31 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.OccursCheckError](result)
   }
+
+  test("TestLeq.Null.01") {
+    val input =
+      """
+        |pub def testNullableThreeVar11(x: Null[false, String], y: Null[true, String], z: Null[false, String]): Bool =
+        |    match? (x, y, z) {
+        |        case (a, b, _) => a == "Hello" && b == "World"
+        |        case (_, b, c) => b == "World" && c == "!"
+        |    }
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Null.02") {
+    val input =
+      """
+        |pub def testNullableThreeVar11(x: Null[true, String], y: Null[false, String], z: Null[true, String]): Bool =
+        |    match? (x, y, z) {
+        |        case (a, b, _) => a == "Hello" && b == "World"
+        |        case (_, b, c) => b == "World" && c == "!"
+        |    }
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
 }
