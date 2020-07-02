@@ -33,114 +33,36 @@ namespace Test/Exp/NullMatch {
         };
         f(null, "world"?) == "HELLO"
 
-//
-//    @test
-//    def testUseCase04(): Bool =
-//        let f = p -> {
-//            match? p.ssn {
-//                case null => isMaleName(p.name)
-//                case ssn  => isMaleSSN(ssn)
-//            }
-//        };
-//        f({ssn = "123", name = "Lucky Luke"})
-//
-//    @test
-//    def testUseCase05(): Bool =
-//        let f = p -> {
-//            match? p.ssn {
-//                case null => isMaleName(p.name)
-//                case ssn  => isMaleSSN(ssn)
-//            }
-//        };
-//        f({ssn = null, name = "Lucky Luke"})
-//
-//    @test
-//    def testUseCase06(): Bool =
-//        let f = p -> {
-//            match? p.ssn {
-//                case null => isMaleName(p.name)
-//                case ssn  => isMaleSSN(ssn)
-//            }
-//        };
-//        f({ssn = "123", name = null})
-//
-//    @test
-//    def testUseCase07(): Bool =
-//        let f = p -> {
-//            match? p.ssn {
-//                case null => isMaleFullName(p.fstName, p.lstName)
-//                case ssn  => isMaleSSN(ssn)
-//            }
-//        };
-//        f({ssn = "123", fstName = "Lucky", lstName = "Luke"})
-//
-//    @test
-//    def testUseCase08(): Bool =
-//        let f = p -> {
-//            match? p.ssn {
-//                case null => isMaleFullName(p.fstName, p.lstName)
-//                case ssn  => isMaleSSN(ssn)
-//            }
-//        };
-//        f({ssn = null, fstName = "Lucky", lstName = "Luke"})
-//
-//    @test
-//    def testUseCase09(): Bool =
-//        let f = p -> {
-//            match? p.ssn {
-//                case null => isMaleFullName(p.fstName, p.lstName)
-//                case ssn  => isMaleSSN(ssn)
-//            }
-//        };
-//        f({ssn = "123", fstName = null, lstName = null})
-//
-//    @test
-//    def testUseCase10(): Bool =
-//        let f = p -> {
-//            match? p.fstName {
-//                case null => true
-//                case fstName => fstName == "Lucky" && p.lstName == "Luke"
-//            }
-//        };
-//        f({fstName = "Lucky", lstName = "Luke"})
-//
-//    @test
-//    def testUseCase11(): Bool =
-//        let f = p -> {
-//            match? p.fstName {
-//                case null => true
-//                case fstName => fstName == "Lucky" && p.lstName == "Luke"
-//            }
-//        };
-//        f({fstName = null, lstName = "Luke"})
-//
-//    @test
-//    def testUseCase12(): Bool =
-//        let f = p -> {
-//            match? p.fstName {
-//                case null => true
-//                case fstName => fstName == "Lucky" && p.lstName == "Luke"
-//            }
-//        };
-//        f({fstName = null, lstName = null})
-//
-//    @test
-//    def testUseCase13(): Bool =
-//        let f = p -> {
-//            match? p.ssn {
-//                case null => match? p.license {
-//                    case null    => isMaleName(p.name)
-//                    case license => isMaleLicense(license)
-//                }
-//                case ssn => isMaleSSN(ssn)
-//            }
-//        };
-//        f({ssn = null, name = null, license = "123"})
-//
-//    def isMaleSSN(_: String): Bool = true
-//    def isMaleName(_: String): Bool = true
-//    def isMaleFullName(_: String, _: String): Bool = true
-//    def isMaleLicense(_: String): Bool = true
+    @test
+    def testUseCase04(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.name) {
+                case (ssn, _)  => isMaleSSN(ssn)
+                case (_, name) => isMaleName(name)
+            }
+        };
+        f({ssn = "123"?, name = "Lucky Luke"?})
+
+    @test
+    def testUseCase05(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.name) {
+                case (ssn, _)  => isMaleSSN(ssn)
+                case (_, name) => isMaleName(name)
+            }
+        };
+        f({ssn = null, name = "Lucky Luke"?})
+
+    @test
+    def testUseCase06(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.name) {
+                case (ssn, _)  => isMaleSSN(ssn)
+                case (_, name) => isMaleName(name)
+            }
+        };
+        f({ssn = "123", name = null})
+
 //
 //    @test
 //    def testUnitNullMatch01(): Bool =
