@@ -73,4 +73,24 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, b) => b == "World"
         }
 
+    pub def testNullableMultiVar08(x: Null[false, String], y: Null[false, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+        }
+
+    pub def testNullableMultiVar09(x: Null[false, String], y: Null[true, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+        }
+
+    pub def testNullableMultiVar10(x: Null[true, String], y: Null[false, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+        }
+
+    // TODO: More polymorphic cases.
+
 }
