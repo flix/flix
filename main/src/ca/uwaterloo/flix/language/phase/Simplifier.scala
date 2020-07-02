@@ -366,19 +366,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
       case TypedAst.Expression.MatchNull(exps, rules, tpe, eff, loc) =>
-        // TODO
-        ???
-      //        val e1 = visitExp(exp1)
-      //        val e2 = visitExp(exp2)
-      //        val e3 = visitExp(exp3)
-      //
-      //        val x = Symbol.freshVarSym()
-      //        val isNull = classOf[java.util.Objects].getMethod("isNull", classOf[Object])
-      //        val thenExp = e2
-      //        val cond = SimplifiedAst.Expression.InvokeStaticMethod(isNull, List(SimplifiedAst.Expression.Var(x, e1.tpe, loc)), Type.Bool, loc)
-      //        val elseExp = SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Var(x, exp1.tpe, loc), e3, e3.tpe, loc)
-      //        val ite = SimplifiedAst.Expression.IfThenElse(cond, thenExp, elseExp, thenExp.tpe, loc)
-      //        SimplifiedAst.Expression.Let(x, e1, ite, thenExp.tpe, loc)
+        patternMatchNull(exps, rules, tpe, loc)
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tag(sym, tag, visitExp(e), tpe, loc)
@@ -938,7 +926,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       SimplifiedAst.Expression.Let(matchVar, matchExp, branch, tpe, loc)
     }
 
-
     /**
       * Returns an expression that matches the given list of patterns `xs` against the given list of variables `ys`.
       *
@@ -1131,6 +1118,77 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
       }
+
+    /**
+      * Eliminates pattern matching on null by translations to labels and jumps.
+      */
+    def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.MatchNullRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
+      //
+      // Given the code:
+      //
+      // match (x, y, ...) with {
+      //   case PATTERN_1 => BODY_1
+      //   case PATTERN_2 => BODY_2
+      //   ...
+      //   case PATTERN_N => BODY_N
+      // }
+      //
+      // The structure of the generated code is as follows:
+      //
+      // let matchVar1 = x;
+      // let matchVar2 = y;
+      // ...
+      //
+      //   if (matchVar_i != null && ... matchVar_j != null)
+      //    BODY_1
+      //   else
+      //     if (matchVar_i != null && ... matchVar_j != null) =>
+      //      BODY_2
+      //   ...
+      //   else
+      //     MatchError
+      //
+
+      //
+      // Translate the match expressions.
+      //
+      val exps = exps0.map(visitExp)
+
+      //
+      // Introduce a fresh variable for each match expression.
+      //
+      val freshMatchVars = exps.map(_ => Symbol.freshVarSym("matchVar"))
+
+      //
+      // The unmatched error.
+      //
+      val unmatchedExp = SimplifiedAst.Expression.MatchError(tpe, loc)
+
+      //
+      // All the if-then-else branching.
+      //
+      val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
+        case (TypedAst.MatchNullRule(pat, body), acc) =>
+          val init = SimplifiedAst.Expression.True : SimplifiedAst.Expression
+          val condExp = freshMatchVars.zip(pat).foldRight(init) {
+            case ((sym, None), acc) => acc
+            case ((sym, Some(sym2)), acc) =>  // TODO: Whcih syms?
+              val isNullExp = SimplifiedAst.Expression.InvokeStaticMethod(???, List(SimplifiedAst.Expression.Var(sym, ???, loc)), ???, ???)
+              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.BitwiseAnd, isNullExp,  acc, Type.Bool, loc)
+          }
+          // TODO: Bind all the variables.
+          val thenExp = visitExp(body)
+          val elseExp = acc
+          SimplifiedAst.Expression.IfThenElse(condExp, thenExp, elseExp, tpe, loc)
+      }
+
+      //
+      // Let bind the match variables.
+      //
+      freshMatchVars.zip(exps).foldRight(branches: SimplifiedAst.Expression) {
+        case ((sym, matchExp), acc) => SimplifiedAst.Expression.Let(sym, matchExp, acc, tpe, loc)
+      }
+    }
 
     //
     // Main computation.
