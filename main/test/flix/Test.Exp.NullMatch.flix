@@ -83,7 +83,12 @@ namespace Test/Exp/NullMatch {
         };
         f({ssn = "123"?, fstName = null, lstName = null})
 
-
+    @test
+    def testMatchNullableUnit01(): Bool =
+        match? ()? {
+            case _ => true
+            case x => false
+        }
 
     pub enum Option[t] {
         case None,
