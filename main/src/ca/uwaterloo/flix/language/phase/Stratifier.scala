@@ -167,9 +167,13 @@ object Stratifier extends Phase[Root, Root] {
         case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
       }
 
-    case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
+    case Expression.MatchNull(exps, rules, tpe, eff, loc) =>
+      val expsVal = traverse(exps)(visitExp)
+      val rulesVal = traverse(rules) {
+        case MatchNullRule(pat, exp) => mapN(visitExp(exp))(MatchNullRule(pat, _))
+      }
+      mapN(expsVal, rulesVal) {
+        case (es, rs) => Expression.MatchNull(es, rs, tpe, eff, loc)
       }
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
@@ -458,8 +462,14 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, MatchRule(_, g, b)) => acc + dependencyGraphOfExp(g) + dependencyGraphOfExp(b)
       }
 
-    case Expression.MatchNull(_, exp1, exp2, exp3, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
+    case Expression.MatchNull(exps, rules, _, _, _) =>
+      val dg1 = exps.foldLeft(DependencyGraph.empty) {
+        case (acc, exp) => acc + dependencyGraphOfExp(exp)
+      }
+      val dg2 = rules.foldLeft(DependencyGraph.empty) {
+        case (acc, MatchNullRule(_, exp)) => acc + dependencyGraphOfExp(exp)
+      }
+      dg1 + dg2
 
     case Expression.Tag(_, _, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
@@ -826,7 +836,7 @@ object Stratifier extends Phase[Root, Root] {
     * Returns the set of predicate symbols that appears in the given row type `tpe`.
     */
   private def predicateSymbolsOf(tpe: Type): Set[String] = tpe.typeConstructors.foldLeft(Set.empty[String]) {
-    case (acc, TypeConstructor.SchemaExtend(sym)) => acc + sym.toString
+    case (acc, TypeConstructor.SchemaExtend(sym)) => acc + sym
     case (acc, _) => acc
   }
 

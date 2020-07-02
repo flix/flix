@@ -365,18 +365,20 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
-      case TypedAst.Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-
-        val x = Symbol.freshVarSym()
-        val isNull = classOf[java.util.Objects].getMethod("isNull", classOf[Object])
-        val thenExp = e2
-        val cond = SimplifiedAst.Expression.InvokeStaticMethod(isNull, List(SimplifiedAst.Expression.Var(x, e1.tpe, loc)), Type.Bool, loc)
-        val elseExp = SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Var(x, exp1.tpe, loc), e3, e3.tpe, loc)
-        val ite = SimplifiedAst.Expression.IfThenElse(cond, thenExp, elseExp, thenExp.tpe, loc)
-        SimplifiedAst.Expression.Let(x, e1, ite, thenExp.tpe, loc)
+      case TypedAst.Expression.MatchNull(exps, rules, tpe, eff, loc) =>
+        // TODO
+        ???
+      //        val e1 = visitExp(exp1)
+      //        val e2 = visitExp(exp2)
+      //        val e3 = visitExp(exp3)
+      //
+      //        val x = Symbol.freshVarSym()
+      //        val isNull = classOf[java.util.Objects].getMethod("isNull", classOf[Object])
+      //        val thenExp = e2
+      //        val cond = SimplifiedAst.Expression.InvokeStaticMethod(isNull, List(SimplifiedAst.Expression.Var(x, e1.tpe, loc)), Type.Bool, loc)
+      //        val elseExp = SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Var(x, exp1.tpe, loc), e3, e3.tpe, loc)
+      //        val ite = SimplifiedAst.Expression.IfThenElse(cond, thenExp, elseExp, thenExp.tpe, loc)
+      //        SimplifiedAst.Expression.Let(x, e1, ite, thenExp.tpe, loc)
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tag(sym, tag, visitExp(e), tpe, loc)
