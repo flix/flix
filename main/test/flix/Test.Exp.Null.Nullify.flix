@@ -1,4 +1,4 @@
-namespace Test/Exp/Nullify {
+namespace Test/Exp/Null/Nullify {
 
     @test
     def testNullifyUnit01(): Unit? = ()?

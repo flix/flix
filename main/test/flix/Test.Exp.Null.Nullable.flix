@@ -1,4 +1,4 @@
-namespace Test/Exp/Null {
+namespace Test/Exp/Null/Nullable {
 
     @test
     def testNullableUnit01(): Unit? = null

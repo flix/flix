@@ -1,5 +1,5 @@
 // TODO: Rename file.
-namespace Test/Exp/NullMatch {
+namespace Test/Exp/Null/Match {
 
     @test
     def testUseCase01(): Bool =
