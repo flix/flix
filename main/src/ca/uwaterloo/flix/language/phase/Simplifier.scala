@@ -365,7 +365,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
-      case TypedAst.Expression.MatchNull(exps, rules, tpe, eff, loc) =>
+      case TypedAst.Expression.NullMatch(exps, rules, tpe, eff, loc) =>
         patternMatchNull(exps, rules, tpe, loc)
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>
@@ -1122,7 +1122,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Eliminates pattern matching on null by translations to labels and jumps.
       */
-    def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.MatchNullRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
+    def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.NullRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
       //
       // Given the code:
       //
@@ -1168,19 +1168,19 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       // All the if-then-else branching.
       //
       val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
-        case (TypedAst.MatchNullRule(pat, body), acc) =>
+        case (TypedAst.NullRule(pat, body), acc) =>
           val init = SimplifiedAst.Expression.True: SimplifiedAst.Expression
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
-            case (((freshMatchVar, None), matchExp), acc) => acc
-            case (((freshMatchVar, Some(matchVar)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.NullPattern.Wild(_)), matchExp), acc) => acc
+            case (((freshMatchVar, TypedAst.NullPattern.Var(matchVar, _)), matchExp), acc) =>
               val method = classOf[java.util.Objects].getMethod("nonNull", classOf[java.lang.Object])
               val isNullExp = SimplifiedAst.Expression.InvokeStaticMethod(method, List(SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)), Type.Bool, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNullExp, acc, Type.Bool, loc)
           }
           val bodyExp = visitExp(body)
           val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
-            case (((freshMatchVar, None), matchExp), acc) => acc
-            case (((freshMatchVar, Some(matchVar)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.NullPattern.Wild(_)), matchExp), acc) => acc
+            case (((freshMatchVar, TypedAst.NullPattern.Var(matchVar, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               SimplifiedAst.Expression.Let(matchVar, varExp, acc, acc.tpe, loc)
           }

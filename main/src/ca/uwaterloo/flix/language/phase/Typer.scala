@@ -594,7 +594,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         /**
           * Forces the boolean variables in `xs` to be pairwise equal to the non-variables in the null rule `r`.
           */
-          // TODO: DOC
+        // TODO: DOC
         def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.NullRule): Type =
           xs.zip(r.pat).foldLeft(Type.True) {
             case (acc, (x, ResolvedAst.NullPattern.Wild(_))) =>
@@ -1262,14 +1262,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val rs = rules.map {
           case ResolvedAst.NullRule(pat0, exp) =>
             val pat = pat0.map {
-              case ResolvedAst.NullPattern.Wild(_) => None
-              case ResolvedAst.NullPattern.Var(sym, _) => Some(sym) // TODO
+              case ResolvedAst.NullPattern.Wild(loc) => TypedAst.NullPattern.Wild(loc)
+              case ResolvedAst.NullPattern.Var(sym, loc) => TypedAst.NullPattern.Var(sym, loc)
             }
-            TypedAst.MatchNullRule(pat, visitExp(exp, subst0))
+            TypedAst.NullRule(pat, visitExp(exp, subst0))
         }
         val tpe = rs.head.exp.tpe
         val eff = Type.mkAnd(rs.map(_.exp.eff))
-        TypedAst.Expression.MatchNull(es, rs, tpe, eff, loc)
+        TypedAst.Expression.NullMatch(es, rs, tpe, eff, loc)
 
       case ResolvedAst.Expression.Nullify(exp, loc) =>
         visitExp(exp, subst0)

@@ -159,7 +159,7 @@ object TypedAst {
 
     case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class MatchNull(exps: List[TypedAst.Expression], rules: List[TypedAst.MatchNullRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class NullMatch(exps: List[TypedAst.Expression], rules: List[TypedAst.NullRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -333,6 +333,16 @@ object TypedAst {
 
   }
 
+  sealed trait NullPattern
+
+  object NullPattern {
+
+    case class Wild(loc: SourceLocation) extends NullPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NullPattern
+
+  }
+
   sealed trait Predicate {
     def loc: SourceLocation
   }
@@ -391,7 +401,7 @@ object TypedAst {
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
 
-  case class MatchNullRule(pat: List[Option[Symbol.VarSym]], exp: TypedAst.Expression)
+  case class NullRule(pat: List[TypedAst.NullPattern], exp: TypedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 

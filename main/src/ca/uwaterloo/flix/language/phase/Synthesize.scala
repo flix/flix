@@ -151,12 +151,12 @@ object Synthesize extends Phase[Root, Root] {
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
-      case Expression.MatchNull(exps, rules, tpe, eff, loc) =>
+      case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
         val es = exps.map(visitExp)
         val rs = rules.map {
-          case MatchNullRule(pat, exp) => MatchNullRule(pat, visitExp(exp))
+          case NullRule(pat, exp) => NullRule(pat, visitExp(exp))
         }
-        Expression.MatchNull(es, rs, tpe, eff, loc)
+        Expression.NullMatch(es, rs, tpe, eff, loc)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = visitExp(exp)

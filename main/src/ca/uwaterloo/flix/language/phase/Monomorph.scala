@@ -302,24 +302,24 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
 
-        case Expression.MatchNull(exps, rules, tpe, eff, loc) =>
+        case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
           val es = exps.map(visitExp(_, env0))
           val rs = rules.map {
-            case MatchNullRule(pat, exp) =>
+            case NullRule(pat, exp) =>
               val x = pat.map {
-                case None => (None, Map.empty)
-                case Some(sym) =>
+                case NullPattern.Wild(loc) => (NullPattern.Wild(loc), Map.empty)
+                case NullPattern.Var(sym, loc) =>
                   val freshVar = Symbol.freshVarSym(sym)
-                  (Some(freshVar), Map(sym -> freshVar))
+                  (NullPattern.Var(freshVar, loc), Map(sym -> freshVar))
               }
               val p = x.map(_._1)
               val env1 = x.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
                 case (acc, m) => acc ++ m
               }
               val e = visitExp(exp, env0 ++ env1)
-              MatchNullRule(p, e)
+              NullRule(p, e)
           }
-          Expression.MatchNull(es, rs, tpe, eff, loc)
+          Expression.NullMatch(es, rs, tpe, eff, loc)
 
         case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
