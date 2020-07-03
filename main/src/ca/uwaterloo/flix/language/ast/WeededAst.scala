@@ -116,7 +116,7 @@ object WeededAst {
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class MatchNull(exps: List[WeededAst.Expression], rules: List[WeededAst.MatchNullRule], loc: SourceLocation) extends WeededAst.Expression
+    case class NullMatch(exps: List[WeededAst.Expression], rules: List[WeededAst.NullMatchRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Nullify(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -244,6 +244,17 @@ object WeededAst {
 
   }
 
+  sealed trait NullPattern
+
+  object NullPattern {
+
+    case object Wild extends NullPattern
+
+    case class Var(ident: Name.Ident) extends NullPattern
+
+  }
+
+
   sealed trait Predicate
 
   object Predicate {
@@ -338,7 +349,7 @@ object WeededAst {
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
 
-  case class MatchNullRule(pat: List[Option[Name.Ident]], exp: WeededAst.Expression)
+  case class NullMatchRule(pat: List[WeededAst.NullPattern], exp: WeededAst.Expression)
 
   case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
 

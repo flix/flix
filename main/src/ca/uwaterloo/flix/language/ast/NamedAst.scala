@@ -111,7 +111,7 @@ object NamedAst {
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
-    case class MatchNull(exps: List[NamedAst.Expression], rules: List[NamedAst.MatchNullRule], loc: SourceLocation) extends NamedAst.Expression
+    case class NullMatch(exps: List[NamedAst.Expression], rules: List[NamedAst.NullRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Nullify(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -239,6 +239,16 @@ object NamedAst {
 
   }
 
+  sealed trait NullPattern
+
+  object NullPattern {
+
+    case object Wild extends NullPattern
+
+    case class Var(ident: Name.Ident) extends NullPattern
+
+  }
+
   sealed trait Predicate
 
   object Predicate {
@@ -337,7 +347,7 @@ object NamedAst {
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class MatchNullRule(pat: List[Option[Symbol.VarSym]], exp: NamedAst.Expression)
+  case class NullRule(pat: List[Option[Symbol.VarSym]], exp: NamedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 

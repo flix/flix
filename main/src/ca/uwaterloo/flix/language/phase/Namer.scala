@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.WeededAst.TypeParams
+import ca.uwaterloo.flix.language.ast.WeededAst.{NullPattern, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -440,21 +440,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
       }
 
-    case WeededAst.Expression.MatchNull(exps, rules, loc) =>
+    case WeededAst.Expression.NullMatch(exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, env0, uenv0, tenv0))
       val rulesVal = traverse(rules) {
-        case WeededAst.MatchNullRule(pat0, exp0) =>
+        case WeededAst.NullMatchRule(pat0, exp0) =>
           val env1 = pat0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-            case (acc, None) => acc
-            case (acc, Some(ident)) => acc + (ident.name -> Symbol.freshVarSym(ident))
+            case (acc, WeededAst.NullPattern.Wild) => acc
+            case (acc, WeededAst.NullPattern.Var(ident)) => acc + (ident.name -> Symbol.freshVarSym(ident))
           }
-          val pat = pat0.map(_.map(ident => env1(ident.name)))
+          val pat = pat0.map {
+            case WeededAst.NullPattern.Wild => None
+            case WeededAst.NullPattern.Var(ident) => Some(env1(ident.name))
+          }
           mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
-            case e => NamedAst.MatchNullRule(pat, e)
+            case e => NamedAst.NullRule(pat, e)
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expression.MatchNull(es, rs, loc)
+        case (es, rs) => NamedAst.Expression.NullMatch(es, rs, loc)
       }
 
     case WeededAst.Expression.Nullify(exp, loc) =>
@@ -1058,8 +1061,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
-    case WeededAst.Expression.MatchNull(exps, rules, loc) => exps.flatMap(freeVars) ++ rules.flatMap {
-      case WeededAst.MatchNullRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatten)
+    case WeededAst.Expression.NullMatch(exps, rules, loc) => exps.flatMap(freeVars) ++ rules.flatMap {
+      case WeededAst.NullMatchRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
     }
     case WeededAst.Expression.Nullify(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
@@ -1144,6 +1147,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None => freeElms
         case Some(value) => freeElms.appended(value)
       }
+  }
+
+  /**
+    * Returns all free variables in the given null pattern `pat0`.
+    */
+  private def freeVars(pat0: WeededAst.NullPattern): List[Name.Ident] = pat0 match {
+    case NullPattern.Wild => Nil
+    case NullPattern.Var(ident) => ident :: Nil
   }
 
   /**

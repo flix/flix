@@ -372,10 +372,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, loc)
 
-        case NamedAst.Expression.MatchNull(exps, rules, loc) =>
+        case NamedAst.Expression.NullMatch(exps, rules, loc) =>
           val expsVal = traverse(exps)(visit(_, tenv0))
           val rulesVal = traverse(rules) {
-            case NamedAst.MatchNullRule(pat0, exp0) =>
+            case NamedAst.NullRule(pat0, exp0) =>
               mapN(visit(exp0, tenv0)) {
                 case e => ResolvedAst.MatchNullRule(pat0, e)
               }
