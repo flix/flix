@@ -91,7 +91,29 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, b) => b == "World"
         }
 
-    // TODO: More polymorphic cases.
+    pub def testNullableTwoVar11(x: Null[n, String], y: Null[not n, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+        }
+
+    pub def testNullableTwoVar12(x: Null[not n, String], y: Null[n, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+        }
+
+    pub def testNullableTwoVar13(x: Null[n1, String], y: Null[not n1 or n2, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+        }
+
+    pub def testNullableTwoVar14(x: Null[not n1 or n2, String], y: Null[n1, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+        }
 
     pub def testNullableTwoVarExhaustive01(x: Null[false, String], y: Null[false, String]): Bool =
         match? (x, y) {
@@ -187,28 +209,62 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, b, c) => b == "World" && c == "!"
         }
 
-    pub def testNullableThreeVar12(x: Null[false, String], y: Null[false, String], z: Null[false, String]): Bool =
+    pub def testNullableThreeVar12(x: Null[not n, String], y: Null[false, String], z: Null[n, String]): Bool =
+        match? (x, y, z) {
+            case (a, b, _) => a == "Hello" && b == "World"
+            case (_, b, c) => b == "World" && c == "!"
+        }
+
+    pub def testNullableThreeVar13(x: Null[false, String], y: Null[false, String], z: Null[false, String]): Bool =
         match? (x, y, z) {
             case (a, _, _) => a == "Hello"
             case (_, b, _) => b == "World"
             case (_, _, c) => c == "!"
         }
 
-    pub def testNullableThreeVar13(x: Null[true, String], y: Null[true, String], z: Null[false, String]): Bool =
+    pub def testNullableThreeVar14(x: Null[true, String], y: Null[true, String], z: Null[false, String]): Bool =
         match? (x, y, z) {
             case (a, _, _) => a == "Hello"
             case (_, b, _) => b == "World"
             case (_, _, c) => c == "!"
         }
 
-    pub def testNullableThreeVar14(x: Null[true, String], y: Null[false, String], z: Null[true, String]): Bool =
+    pub def testNullableThreeVar15(x: Null[true, String], y: Null[false, String], z: Null[true, String]): Bool =
         match? (x, y, z) {
             case (a, _, _) => a == "Hello"
             case (_, b, _) => b == "World"
             case (_, _, c) => c == "!"
         }
 
-    pub def testNullableThreeVar15(x: Null[false, String], y: Null[false, String], z: Null[true, String]): Bool =
+    pub def testNullableThreeVar16(x: Null[false, String], y: Null[false, String], z: Null[true, String]): Bool =
+        match? (x, y, z) {
+            case (a, _, _) => a == "Hello"
+            case (_, b, _) => b == "World"
+            case (_, _, c) => c == "!"
+        }
+
+    pub def testNullableThreeVar17(x: Null[n, String], y: Null[n, String], z: Null[not n, String]): Bool =
+        match? (x, y, z) {
+            case (a, _, _) => a == "Hello"
+            case (_, b, _) => b == "World"
+            case (_, _, c) => c == "!"
+        }
+
+    pub def testNullableThreeVar18(x: Null[n, String], y: Null[not n, String], z: Null[not n, String]): Bool =
+        match? (x, y, z) {
+            case (a, _, _) => a == "Hello"
+            case (_, b, _) => b == "World"
+            case (_, _, c) => c == "!"
+        }
+
+    pub def testNullableThreeVar19(x: Null[not n, String], y: Null[n, String], z: Null[not n, String]): Bool =
+        match? (x, y, z) {
+            case (a, _, _) => a == "Hello"
+            case (_, b, _) => b == "World"
+            case (_, _, c) => c == "!"
+        }
+
+    pub def testNullableThreeVar20(x: Null[not n, String], y: Null[not n, String], z: Null[n, String]): Bool =
         match? (x, y, z) {
             case (a, _, _) => a == "Hello"
             case (_, b, _) => b == "World"
