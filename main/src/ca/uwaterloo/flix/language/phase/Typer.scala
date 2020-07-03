@@ -563,7 +563,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.NullMatch(exps, rules, loc) =>
-        // Introduce a nullity variable for each exp.
+        //
+        // Introduce a nullity variable for each match expression `exps`.
+        //
         val nullityVars = exps.map(_ => Type.freshVar(Kind.Bool))
 
         def visitMatchExp(exp: ResolvedAst.Expression, nullityVar: Type.Var): InferMonad[(Type, Type)] = {
@@ -581,13 +583,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             } yield (tpe, eff)
         }
 
-        def visitRules(rs: List[ResolvedAst.NullRule]): InferMonad[List[(Type, Type)]] =
-          seqM(rs.map(visitRule))
-
         /**
-          * Forces the boolean variables in `xs` to be pairwise equal to the non-variables in the null rule `r`.
+          * Constructs the inner disjunction for a specific null rule.
+          *
+          * Specifically, forces the boolean variables in `xs` to be
+          * pairwise equal to `False` if a non-null variable is present.
           */
-        // TODO: DOC
         def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.NullRule): Type =
           xs.zip(r.pat).foldLeft(Type.True) {
             case (acc, (x, ResolvedAst.NullPattern.Wild(_))) =>
@@ -598,18 +599,18 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               Type.mkAnd(acc, Type.mkEquiv(x, Type.False))
           }
 
-        //
-        // Build the outer disjunction of row formulas.
-        //
-        val outerDisj = rules.foldLeft(Type.False) {
+        /**
+          * Constructs the outer disjunction of nullity constraints.
+          */
+        def mkOuterDisj(rs: List[ResolvedAst.NullRule]): Type = rs.foldLeft(Type.False) {
           case (acc, rule) => Type.mkOr(acc, mkInnerConj(nullityVars, rule))
         }
 
         for {
           xs <- seqM(exps.zip(nullityVars).map(p => visitMatchExp(p._1, p._2)))
-          (ruleTypes, ruleEffects) <- visitRules(rules).map(_.unzip)
+          (ruleTypes, ruleEffects) <- seqM(rules.map(visitRule)).map(_.unzip)
           resultTyp <- unifyTypM(ruleTypes, loc)
-          _ <- unifyEffM(outerDisj, Type.True, loc)
+          _ <- unifyEffM(mkOuterDisj(rules), Type.True, loc)
           resultEff = Type.mkAnd(ruleEffects)
         } yield (resultTyp, resultEff)
 
