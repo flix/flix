@@ -445,12 +445,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val rulesVal = traverse(rules) {
         case WeededAst.NullMatchRule(pat0, exp0) =>
           val env1 = pat0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-            case (acc, WeededAst.NullPattern.Wild) => acc
-            case (acc, WeededAst.NullPattern.Var(ident)) => acc + (ident.name -> Symbol.freshVarSym(ident))
+            case (acc, WeededAst.NullPattern.Wild(loc)) => acc
+            case (acc, WeededAst.NullPattern.Var(ident, loc)) => acc + (ident.name -> Symbol.freshVarSym(ident))
           }
           val pat = pat0.map {
-            case WeededAst.NullPattern.Wild => NamedAst.NullPattern.Wild
-            case WeededAst.NullPattern.Var(ident) => NamedAst.NullPattern.Var(env1(ident.name))
+            case WeededAst.NullPattern.Wild(loc) => NamedAst.NullPattern.Wild(loc)
+            case WeededAst.NullPattern.Var(ident, loc) => NamedAst.NullPattern.Var(env1(ident.name), loc)
           }
           mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
             case e => NamedAst.NullRule(pat, e)
@@ -1153,8 +1153,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns all free variables in the given null pattern `pat0`.
     */
   private def freeVars(pat0: WeededAst.NullPattern): List[Name.Ident] = pat0 match {
-    case NullPattern.Wild => Nil
-    case NullPattern.Var(ident) => ident :: Nil
+    case NullPattern.Wild(_) => Nil
+    case NullPattern.Var(ident, _) => ident :: Nil
   }
 
   /**

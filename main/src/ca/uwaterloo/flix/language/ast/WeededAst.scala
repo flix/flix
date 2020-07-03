@@ -248,9 +248,9 @@ object WeededAst {
 
   object NullPattern {
 
-    case object Wild extends NullPattern
+    case class Wild(loc: SourceLocation) extends NullPattern
 
-    case class Var(ident: Name.Ident) extends NullPattern
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends NullPattern
 
   }
 

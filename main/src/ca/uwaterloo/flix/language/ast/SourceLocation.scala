@@ -23,7 +23,6 @@ object SourceLocation {
     * Returns the source location constructed from the source positions `b` and `e.`
     */
   def mk(b: SourcePosition, e: SourcePosition): SourceLocation = {
-    assert(b.source == e.source)
     val lineAt = b.input match {
       case None => (i: Int) => ""
       case Some(input) => (i: Int) => input.getLine(i)

@@ -593,8 +593,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         def nullityRow(r: ResolvedAst.NullRule): List[Type] = r match {
           case ResolvedAst.NullRule(pat, _) => pat.map {
-            case ResolvedAst.NullPattern.Wild => Type.freshVar(Kind.Bool)
-            case ResolvedAst.NullPattern.Var(_) => Type.False
+            case ResolvedAst.NullPattern.Wild(_) => Type.freshVar(Kind.Bool)
+            case ResolvedAst.NullPattern.Var(_, _) => Type.False
           }
         }
 
@@ -1270,8 +1270,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val rs = rules.map {
           case ResolvedAst.NullRule(pat0, exp) =>
             val pat = pat0.map {
-              case ResolvedAst.NullPattern.Wild => None
-              case ResolvedAst.NullPattern.Var(sym) => Some(sym) // TODO
+              case ResolvedAst.NullPattern.Wild(_) => None
+              case ResolvedAst.NullPattern.Var(sym, _) => Some(sym) // TODO
             }
             TypedAst.MatchNullRule(pat, visitExp(exp, subst0))
         }
