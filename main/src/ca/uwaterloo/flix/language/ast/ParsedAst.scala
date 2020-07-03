@@ -1473,10 +1473,12 @@ object ParsedAst {
   /**
     * A null pattern match rule.
     *
+    * @param sp1 the position of the first character in the rule.
     * @param pat the pattern of the rule.
     * @param exp the body expression of the rule.
+    * @param sp2 the position of the first character in the rule.
     */
-  case class NullRule(pat: Seq[ParsedAst.NullPattern], exp: ParsedAst.Expression)
+  case class NullRule(sp1: SourcePosition, pat: Seq[ParsedAst.NullPattern], exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * A select channel rule consists of an identifier, a channel expression, and a body expression.

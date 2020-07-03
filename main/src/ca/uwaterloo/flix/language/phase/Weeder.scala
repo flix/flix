@@ -712,9 +712,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Expression.NullMatch(sp1, exps, rules, sp2) =>
+      //
+      // Check for mismatched arity of `exps` and `rules`.
+      //
+      val expectedArity = exps.length
+      for (ParsedAst.NullRule(sp1, pat, _, sp2) <- rules){
+        val actualArity = pat.length
+        if (actualArity != expectedArity) {
+          return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
+        }
+      }
+
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ParsedAst.NullRule(pat, exp) =>
+        case ParsedAst.NullRule(_, pat, exp, _) =>
           val p = pat.map {
             case ParsedAst.NullPattern.Wild(sp1, sp2) => WeededAst.NullPattern.Wild(mkSL(sp1, sp2))
             case ParsedAst.NullPattern.Var(sp1, ident, sp2) => WeededAst.NullPattern.Var(ident, mkSL(sp1, sp2))

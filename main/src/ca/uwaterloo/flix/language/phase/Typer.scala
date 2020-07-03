@@ -563,13 +563,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.NullMatch(exps, rules, loc) =>
-        // Ensure that the arity line up.
-        val arity = exps.length
-        for (ResolvedAst.NullRule(pat, _) <- rules) {
-          if (pat.length != arity)
-            throw InternalCompilerException(s"Mismatched arity at: $loc")
-        }
-
         // Introduce a nullity variable for each exp.
         val nullityVars = exps.map(_ => Type.freshVar(Kind.Bool))
 

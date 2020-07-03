@@ -794,11 +794,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def CaseOne: Rule1[ParsedAst.NullRule] = rule {
-        atomic("case") ~ WS ~ NullPattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ((x: ParsedAst.NullPattern, e: ParsedAst.Expression) => ParsedAst.NullRule(Seq(x), e))
+        SP ~ atomic("case") ~ WS ~ NullPattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~>
+          ((sp1: SourcePosition, x: ParsedAst.NullPattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.NullRule(sp1, Seq(x), e, sp2))
       }
 
       def CaseMany: Rule1[ParsedAst.NullRule] = rule {
-        atomic("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(NullPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ParsedAst.NullRule
+        SP ~ atomic("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(NullPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.NullRule
       }
 
       rule {
