@@ -449,8 +449,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case (acc, WeededAst.NullPattern.Var(ident)) => acc + (ident.name -> Symbol.freshVarSym(ident))
           }
           val pat = pat0.map {
-            case WeededAst.NullPattern.Wild => None
-            case WeededAst.NullPattern.Var(ident) => Some(env1(ident.name))
+            case WeededAst.NullPattern.Wild => NamedAst.NullPattern.Wild
+            case WeededAst.NullPattern.Var(ident) => NamedAst.NullPattern.Var(env1(ident.name))
           }
           mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
             case e => NamedAst.NullRule(pat, e)

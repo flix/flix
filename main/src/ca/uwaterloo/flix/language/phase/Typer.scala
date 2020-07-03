@@ -562,10 +562,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.MatchNull(exps, rules, loc) =>
+      case ResolvedAst.Expression.NullMatch(exps, rules, loc) =>
         // Ensure that the arity line up.
         val arity = exps.length
-        for (ResolvedAst.MatchNullRule(pat, _) <- rules) {
+        for (ResolvedAst.NullRule(pat, _) <- rules) {
           if (pat.length != arity)
             throw InternalCompilerException(s"Mismatched arity at: $loc")
         }
@@ -581,20 +581,20 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (freshElmVar, eff)
         }
 
-        def visitRule(r: ResolvedAst.MatchNullRule): InferMonad[(Type, Type)] = r match {
-          case ResolvedAst.MatchNullRule(_, exp0) =>
+        def visitRule(r: ResolvedAst.NullRule): InferMonad[(Type, Type)] = r match {
+          case ResolvedAst.NullRule(_, exp0) =>
             for {
               (tpe, eff) <- visitExp(exp0)
             } yield (tpe, eff)
         }
 
-        def visitRules(rs: List[ResolvedAst.MatchNullRule]): InferMonad[List[(Type, Type)]] =
+        def visitRules(rs: List[ResolvedAst.NullRule]): InferMonad[List[(Type, Type)]] =
           seqM(rs.map(visitRule))
 
-        def nullityRow(r: ResolvedAst.MatchNullRule): List[Type] = r match {
-          case ResolvedAst.MatchNullRule(pat, _) => pat.map {
-            case None => Type.freshVar(Kind.Bool)
-            case Some(_) => Type.False
+        def nullityRow(r: ResolvedAst.NullRule): List[Type] = r match {
+          case ResolvedAst.NullRule(pat, _) => pat.map {
+            case ResolvedAst.NullPattern.Wild => Type.freshVar(Kind.Bool)
+            case ResolvedAst.NullPattern.Var(_) => Type.False
           }
         }
 
@@ -1265,10 +1265,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.MatchNull(exps, rules, loc) =>
+      case ResolvedAst.Expression.NullMatch(exps, rules, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
-          case ResolvedAst.MatchNullRule(pat, exp) =>
+          case ResolvedAst.NullRule(pat0, exp) =>
+            val pat = pat0.map {
+              case ResolvedAst.NullPattern.Wild => None
+              case ResolvedAst.NullPattern.Var(sym) => Some(sym) // TODO
+            }
             TypedAst.MatchNullRule(pat, visitExp(exp, subst0))
         }
         val tpe = rs.head.exp.tpe

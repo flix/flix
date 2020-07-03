@@ -96,7 +96,7 @@ object ResolvedAst {
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class MatchNull(exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.MatchNullRule], loc: SourceLocation) extends ResolvedAst.Expression
+    case class NullMatch(exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.NullRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Nullify(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -224,6 +224,16 @@ object ResolvedAst {
 
   }
 
+  sealed trait NullPattern
+
+  object NullPattern {
+
+    case object Wild extends NullPattern
+
+    case class Var(sym: Symbol.VarSym) extends NullPattern
+
+  }
+
   sealed trait Predicate
 
   object Predicate {
@@ -268,14 +278,13 @@ object ResolvedAst {
 
   }
 
-
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
-  case class MatchNullRule(pat: List[Option[Symbol.VarSym]], exp: ResolvedAst.Expression)
+  case class NullRule(pat: List[ResolvedAst.NullPattern], exp: ResolvedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 

@@ -245,7 +245,7 @@ object NamedAst {
 
     case object Wild extends NullPattern
 
-    case class Var(ident: Name.Ident) extends NullPattern
+    case class Var(sym: Symbol.VarSym) extends NullPattern
 
   }
 
@@ -347,7 +347,7 @@ object NamedAst {
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class NullRule(pat: List[Option[Symbol.VarSym]], exp: NamedAst.Expression)
+  case class NullRule(pat: List[NamedAst.NullPattern], exp: NamedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
