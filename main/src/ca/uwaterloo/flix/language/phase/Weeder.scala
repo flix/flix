@@ -711,13 +711,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.MatchNull(sp1, exps, rules, sp2) =>
+    case ParsedAst.Expression.NullMatch(sp1, exps, rules, sp2) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ParsedAst.MatchNullRule(pat, exp) =>
-          val p = pat.map(ident => if (ident.name.startsWith("_")) WeededAst.NullPattern.Wild else WeededAst.NullPattern.Var(ident)).toList
+        case ParsedAst.NullRule(pat, exp) =>
+          val p = pat.map {
+            case ParsedAst.NullPattern.Wild(sp1, sp2) => WeededAst.NullPattern.Wild
+            case ParsedAst.NullPattern.Var(sp1, ident, sp2) => WeededAst.NullPattern.Var(ident)
+          }
           mapN(visitExp(exp)) {
-            case e => WeededAst.NullMatchRule(p, e)
+            case e => WeededAst.NullMatchRule(p.toList, e)
           }
       }
       mapN(expsVal, rulesVal) {
@@ -1914,7 +1917,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.MatchNull(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NullMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Nullify(exp, _) => leftMostSourcePosition(exp)
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1

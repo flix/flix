@@ -608,14 +608,14 @@ object ParsedAst {
     case class Nullify(exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Match Null Expression.
+      * Null Match Expression.
       *
       * @param sp1   the position of the first character in the expression.
       * @param exps  the match expressions.
       * @param rules the rules of the pattern match.
       * @param sp2   the position of the last character in the expression.
       */
-    case class MatchNull(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], rules: Seq[MatchNullRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class NullMatch(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], rules: Seq[NullRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -1061,6 +1061,32 @@ object ParsedAst {
   }
 
   /**
+    * Null Patterns.
+    */
+  sealed trait NullPattern
+
+  object NullPattern {
+
+    /**
+      * A wildcard pattern.
+      *
+      * @param sp1 the position of the first character in the pattern.
+      * @param sp2 the position of the last character in the pattern.
+      */
+    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.NullPattern
+
+    /**
+      * A variable pattern.
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param ident the name of the variable.
+      * @param sp2   the position of the last character in the pattern.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.NullPattern
+
+  }
+
+  /**
     * Predicates.
     */
   sealed trait Predicate
@@ -1445,10 +1471,12 @@ object ParsedAst {
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression)
 
   /**
+    * A null pattern match rule.
+    *
     * @param pat the pattern of the rule.
     * @param exp the body expression of the rule.
     */
-  case class MatchNullRule(pat: Seq[Name.Ident], exp: ParsedAst.Expression)
+  case class NullRule(pat: Seq[ParsedAst.NullPattern], exp: ParsedAst.Expression)
 
   /**
     * A select channel rule consists of an identifier, a channel expression, and a body expression.

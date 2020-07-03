@@ -780,7 +780,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def MatchNull: Rule1[ParsedAst.Expression.MatchNull] = {
+    def MatchNull: Rule1[ParsedAst.Expression.NullMatch] = {
       def MatchOne: Rule1[Seq[ParsedAst.Expression]] = rule {
         Expression ~> ((e: ParsedAst.Expression) => Seq(e))
       }
@@ -789,17 +789,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-
-      def CaseOne: Rule1[ParsedAst.MatchNullRule] = rule {
-        atomic("case") ~ WS ~ Names.Variable ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ((x: Name.Ident, e: ParsedAst.Expression) => ParsedAst.MatchNullRule(Seq(x), e))
+      def NullPattern: Rule1[ParsedAst.NullPattern] = rule {
+        (SP ~ atomic("_") ~ SP ~> ParsedAst.NullPattern.Wild) | (SP ~ Names.Variable ~ SP ~> ParsedAst.NullPattern.Var)
       }
 
-      def CaseMany: Rule1[ParsedAst.MatchNullRule] = rule {
-        atomic("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ParsedAst.MatchNullRule
+      def CaseOne: Rule1[ParsedAst.NullRule] = rule {
+        atomic("case") ~ WS ~ NullPattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ((x: ParsedAst.NullPattern, e: ParsedAst.Expression) => ParsedAst.NullRule(Seq(x), e))
+      }
+
+      def CaseMany: Rule1[ParsedAst.NullRule] = rule {
+        atomic("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(NullPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~> ParsedAst.NullRule
       }
 
       rule {
-        SP ~ atomic("match?") ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
+        SP ~ atomic("match?") ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NullMatch
       }
     }
 
