@@ -1,38 +1,37 @@
-// TODO: Rename file.
 namespace Test/Exp/Null/Match {
 
     @test
     def testUseCase01(): Bool =
         let f = (x, y) -> {
-            let s = match? x {
-                case w => w
-                case _ => y
+            let s = match? (x, y) {
+                case (x, _) => x
+                case (_, y) => y
             };
             toUpperCase(s)
         };
         f("hello"?, "world"?) == "HELLO"
 
-//    @test
-//    def testUseCase02(): Bool =
-//        let f = (x, y) -> {
-//            let s = match? x {
-//                case w => w
-//                case _ => y
-//            };
-//            toUpperCase(s)
-//        };
-//        f("hello"?, null) == "HELLO"
-
     @test
-    def testUseCase03(): Bool =
+    def testUseCase02(): Bool =
         let f = (x, y) -> {
-            let s = match? x {
-                case w => w
-                case _ => y
+            let s = match? (x, y) {
+                case (x, _) => x
+                case (_, y) => y
             };
             toUpperCase(s)
         };
         f(null, "world"?) == "WORLD"
+
+    @test
+    def testUseCase03(): Bool =
+        let f = (x, y) -> {
+            let s = match? (x, y) {
+                case (x, _) => x
+                case (_, y) => y
+            };
+            toUpperCase(s)
+        };
+        f("hello"?, null) == "HELLO"
 
     @test
     def testUseCase04(): Bool =
@@ -44,45 +43,25 @@ namespace Test/Exp/Null/Match {
         };
         f({ssn = "123"?, name = "Lucky Luke"?})
 
-//    @test
-//    def testUseCase05(): Bool =
-//        let f = p -> {
-//            match? (p.ssn, p.name) {
-//                case (ssn, _)  => isMaleSSN(ssn)
-//                case (_, name) => isMaleName(name)
-//            }
-//        };
-//        f({ssn = null, name = "Lucky Luke"?})
+    @test
+    def testUseCase05(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.name) {
+                case (ssn, _)  => isMaleSSN(ssn)
+                case (_, name) => isMaleName(name)
+            }
+        };
+        f({ssn = null, name = "Lucky Luke"?})
 
-//    @test
-//    def testUseCase06(): Bool =
-//        let f = p -> {
-//            match? (p.ssn, p.name) {
-//                case (ssn, _)  => isMaleSSN(ssn)
-//                case (_, name) => isMaleName(name)
-//            }
-//        };
-//        f({ssn = "123"?, name = null})
-
-//    @test
-//    def testUseCase08(): Bool =
-//        let f = p -> {
-//            match? (p.ssn, p.fstName, p.lstName) {
-//                case (ssn, _, _)           => isMaleSSN(ssn)
-//                case (_, fstName, lstName) => isMaleFullName(fstName, lstName)
-//            }
-//        };
-//        f({ssn = null, fstName = "Lucky"?, lstName = "Luke"?})
-
-//    @test
-//    def testUseCase09(): Bool =
-//        let f = p -> {
-//            match? (p.ssn, p.fstName, p.lstName) {
-//                case (ssn, _, _)           => isMaleSSN(ssn)
-//                case (_, fstName, lstName) => isMaleFullName(fstName, lstName)
-//            }
-//        };
-//        f({ssn = "123"?, fstName = null, lstName = null})
+    @test
+    def testUseCase06(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.name) {
+                case (ssn, _)  => isMaleSSN(ssn)
+                case (_, name) => isMaleName(name)
+            }
+        };
+        f({ssn = "123"?, name = null})
 
     @test
     def testMatchNullableUnit01(): Bool =
@@ -126,13 +105,13 @@ namespace Test/Exp/Null/Match {
             case _ => false
         }
 
-//      TODO
-//    @test
-//    def testMatchNullableTuple01(): Bool =
-//        match? (123, 456)? {
-//            case x => true
-//            case _ => false
-//        }
+    @test
+    def testMatchNullableTuple01(): Bool =
+        let v = (123, 456);
+        match? v? {
+            case x => true
+            case _ => false
+        }
 
     @test
     def testMatchNullableOption01(): Bool =
@@ -156,13 +135,13 @@ namespace Test/Exp/Null/Match {
             case _ => false
         }
 
-    // TODO
-//    @test
-//    def testMatchNullableList02(): Bool =
-//        match? (1 :: Nil)? {
-//            case x => true
-//            case _ => false
-//        }
+    @test
+    def testMatchNullableList02(): Bool =
+        let v = (1 :: Nil);
+        match? v? {
+            case x => true
+            case _ => false
+        }
 
     @test
     def testMatchNullableResult01(): Bool =
@@ -177,14 +156,6 @@ namespace Test/Exp/Null/Match {
             case x => true
             case _ => false
         }
-
-    // TODO
-//    @test
-//    def testMatchNullableArrow01(): Bool =
-//        match? (w -> w)? {
-//            case x => true
-//            case _ => false
-//        }
 
     pub enum Option[t] {
         case None,

@@ -13,12 +13,6 @@ namespace Test/Exp/Null/Nullable {
     def testNullableArray02(): Array[String?]? = null
 
     @test
-    def testNullableArray03(): Array[String?] & Impure = [null; 10]
-
-    @test
-    def testNullableArray04(): Array[String?] & Impure = [null, null, null]
-
-    @test
     def testNullableChannel01(): Channel[String]? = null
 
     @test
@@ -50,9 +44,6 @@ namespace Test/Exp/Null/Nullable {
 
     @test
     def testNullableRef02(): Ref[String?]? = null
-
-    @test
-    def testNullableRef03(): Ref[String?] & Impure = ref null
 
     @test
     def testNullableTuple01(): (String, String)? = null
