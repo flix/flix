@@ -602,12 +602,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               acc
             case (acc, (x, ResolvedAst.NullPattern.Var(y, _))) =>
               // Case 2: We have a variable. We must force `x` to be non-null.
-              Type.mkAnd(acc, mkEq(x, Type.False))
+              Type.mkAnd(acc, Type.mkEquiv(x, Type.False))
           }
-
-        // TODO: Move
-        // TODO: Add doc for bool equiv.
-        def mkEq(x: Type, y: Type): Type = Type.mkOr(Type.mkAnd(x, y), Type.mkAnd(Type.mkNot(x), Type.mkNot(y)))
 
         //
         // Build the outer disjunction of row formulas.

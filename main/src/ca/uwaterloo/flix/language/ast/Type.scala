@@ -592,6 +592,16 @@ object Type {
   }
 
   /**
+    * Returns the type `And(eff1, And(eff2, eff3))`.
+    */
+  def mkAnd(eff1: Type, eff2: Type, eff3: Type): Type = mkAnd(eff1, mkAnd(eff2, eff3))
+
+  /**
+    * Returns the type `And(eff1, And(eff2, ...))`.
+    */
+  def mkAnd(effs: List[Type]): Type = effs.foldLeft(Type.Pure: Type)(mkAnd)
+
+  /**
     * Returns the type `Or(tpe1, tpe2)`.
     */
   def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
@@ -603,14 +613,11 @@ object Type {
   }
 
   /**
-    * Returns the type `And(eff1, And(eff2, eff3))`.
+    * Returns a Boolean type that represents the equivalence of `x` and `y`.
+    *
+    * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
     */
-  def mkAnd(eff1: Type, eff2: Type, eff3: Type): Type = mkAnd(eff1, mkAnd(eff2, eff3))
-
-  /**
-    * Returns the type `And(eff1, And(eff2, ...))`.
-    */
-  def mkAnd(effs: List[Type]): Type = effs.foldLeft(Type.Pure: Type)(mkAnd)
+  def mkEquiv(x: Type, y: Type): Type = Type.mkOr(Type.mkAnd(x, y), Type.mkAnd(Type.mkNot(x), Type.mkNot(y)))
 
   /**
     * Returns a simplified (evaluated) form of the given type `tpe0`.
