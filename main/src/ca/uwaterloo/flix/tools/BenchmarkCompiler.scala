@@ -125,8 +125,9 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Jvm.PutField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"))
     flix.addInput("Test.Exp.Jvm.PutStaticField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"))
     flix.addInput("Test.Exp.Let.MatchStar.flix", LocalResource.get("/test/flix/Test.Exp.Let.MatchStar.flix"))
-    flix.addInput("Test.Exp.Null.flix", LocalResource.get("/test/flix/Test.Exp.Null.flix"))
-    flix.addInput("Test.Exp.NullMatch.flix", LocalResource.get("/test/flix/Test.Exp.NullMatch.flix"))
+    flix.addInput("Test.Exp.Null.Match.flix", LocalResource.get("/test/flix/Test.Exp.Null.Match.flix"))
+    flix.addInput("Test.Exp.Null.Nullable.flix", LocalResource.get("/test/flix/Test.Exp.Null.Nullable.flix"))
+    flix.addInput("Test.Exp.Null.Nullify.flix", LocalResource.get("/test/flix/Test.Exp.Null.Nullify.flix"))
     flix.addInput("Test.Exp.Reference.Assign.flix", LocalResource.get("/test/flix/Test.Exp.Reference.Assign.flix"))
     flix.addInput("Test.Exp.Reference.Deref.flix", LocalResource.get("/test/flix/Test.Exp.Reference.Deref.flix"))
     flix.addInput("Test.Exp.Reference.Precedence.flix", LocalResource.get("/test/flix/Test.Exp.Reference.Precedence.flix"))
@@ -135,6 +136,8 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Stm.flix", LocalResource.get("/test/flix/Test.Exp.Stm.flix"))
     flix.addInput("Test.Exp.Tag.flix", LocalResource.get("/test/flix/Test.Exp.Tag.flix"))
     flix.addInput("Test.Exp.Tag.Lambda.flix", LocalResource.get("/test/flix/Test.Exp.Tag.Lambda.flix"))
+
+    flix.addInput("Test.Typ.Gen.Bool.Null.flix", LocalResource.get("/test/flix/Test.Typ.Gen.Bool.Null.flix"))
 
     flix.addInput("Test.Use.Tag.flix", LocalResource.get("/test/flix/Test.Use.Tag.flix"))
 
