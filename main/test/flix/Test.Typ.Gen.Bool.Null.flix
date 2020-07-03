@@ -32,12 +32,11 @@ namespace Test/Typ/Gen/Bool/Null {
             case _ => true
         }
 
-    // TODO
-//    pub def testNullableOneVarExhaustive03(x: Null[n, String]): Bool =
-//        match? x {
-//            case y => y == "Hello World"
-//            case _ => true
-//        }
+    pub def testNullableOneVarExhaustive03(x: Null[n, String]): Bool =
+        match? x {
+            case y => y == "Hello World"
+            case _ => true
+        }
 
     pub def testNullableTwoVar01(x: Null[false, String], y: Null[false, String]): Bool =
         match? (x, y) {
@@ -122,13 +121,12 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, _) => true
         }
 
-    // TODO
-//    pub def testNullableTwoVarExhaustive05(x: Null[n, String], y: Null[m, String]): Bool =
-//        match? (x, y) {
-//            case (a, _) => a == "Hello"
-//            case (_, b) => b == "World"
-//            case (_, _) => true
-//        }
+    pub def testNullableTwoVarExhaustive05(x: Null[n, String], y: Null[m, String]): Bool =
+        match? (x, y) {
+            case (a, _) => a == "Hello"
+            case (_, b) => b == "World"
+            case (_, _) => true
+        }
 
     pub def testNullableThreeVar01(x: Null[false, String], y: Null[false, String], z: Null[false, String]): Bool =
         match? (x, y, z) {
@@ -183,12 +181,11 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, b, c) => b == "World" && c == "!"
         }
 
-    // TODO
-//    pub def testNullableThreeVar11(x: Null[n, String], y: Null[false, String], z: Null[not n, String]): Bool =
-//        match? (x, y, z) {
-//            case (a, b, _) => a == "Hello" && b == "World"
-//            case (_, b, c) => b == "World" && c == "!"
-//        }
+    pub def testNullableThreeVar11(x: Null[n, String], y: Null[false, String], z: Null[not n, String]): Bool =
+        match? (x, y, z) {
+            case (a, b, _) => a == "Hello" && b == "World"
+            case (_, b, c) => b == "World" && c == "!"
+        }
 
     pub def testNullableThreeVar12(x: Null[false, String], y: Null[false, String], z: Null[false, String]): Bool =
         match? (x, y, z) {

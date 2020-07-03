@@ -591,40 +591,36 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         def visitRules(rs: List[ResolvedAst.NullRule]): InferMonad[List[(Type, Type)]] =
           seqM(rs.map(visitRule))
 
-        def nullityRow(r: ResolvedAst.NullRule): List[Type] = r match {
-          case ResolvedAst.NullRule(pat, _) => pat.map {
-            case ResolvedAst.NullPattern.Wild(_) => Type.freshVar(Kind.Bool)
-            case ResolvedAst.NullPattern.Var(_, _) => Type.False
-          }
-        }
-
         /**
-          * Forces the boolean formulas in `xs` to be pairwise equal to `ys`.
+          * Forces the boolean variables in `xs` to be pairwise equal to the non-variables in the null rule `r`.
           */
-        def mkEqRow(xs: List[Type], ys: List[Type]): Type = xs.zip(ys).foldLeft(Type.True) {
-          case (acc, (x, y)) => Type.mkAnd(acc, Type.mkOr(Type.mkAnd(x, y), Type.mkAnd(Type.mkNot(x), Type.mkNot(y))))
+          // TODO: DOC
+        def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.NullRule): Type =
+          xs.zip(r.pat).foldLeft(Type.True) {
+            case (acc, (x, ResolvedAst.NullPattern.Wild(_))) =>
+              // Case 1: We have a wildcard. No constraint is generated.
+              acc
+            case (acc, (x, ResolvedAst.NullPattern.Var(y, _))) =>
+              // Case 2: We have a variable. We must force `x` to be non-null.
+              Type.mkAnd(acc, mkEq(x, Type.False))
+          }
+
+        // TODO: Move
+        // TODO: Add doc for bool equiv.
+        def mkEq(x: Type, y: Type): Type = Type.mkOr(Type.mkAnd(x, y), Type.mkAnd(Type.mkNot(x), Type.mkNot(y)))
+
+        //
+        // Build the outer disjunction of row formulas.
+        //
+        val outerDisj = rules.foldLeft(Type.False) {
+          case (acc, rule) => Type.mkOr(acc, mkInnerConj(nullityVars, rule))
         }
-
-        val nullityMatrix = rules.map(nullityRow)
-
-        val formula = nullityMatrix.foldLeft(Type.False) { // False is neutral w.r.t. or.
-          case (acc, nullityRow) => Type.mkOr(acc, mkEqRow(nullityVars, nullityRow))
-        }
-
-        println(s"Nullity Vars (at $loc):")
-        println("  " + nullityVars)
-
-        println("Nullity Matrix:")
-        print("  ")
-        println(nullityMatrix.mkString("\n  "))
-
-        println("Formula: " + formula)
 
         for {
           xs <- seqM(exps.zip(nullityVars).map(p => visitMatchExp(p._1, p._2)))
           (ruleTypes, ruleEffects) <- visitRules(rules).map(_.unzip)
           resultTyp <- unifyTypM(ruleTypes, loc)
-          _ <- unifyEffM(formula, Type.True, loc)
+          _ <- unifyEffM(outerDisj, Type.True, loc)
           resultEff = Type.mkAnd(ruleEffects)
         } yield (resultTyp, resultEff)
 
