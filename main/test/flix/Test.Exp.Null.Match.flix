@@ -4,8 +4,8 @@ namespace Test/Exp/Null/Match {
     def testUseCase01(): Bool =
         let f = (x, y) -> {
             let s = match? (x, y) {
-                case (x, _) => x
-                case (_, y) => y
+                case (a, _) => a
+                case (_, b) => b
             };
             toUpperCase(s)
         };
@@ -15,8 +15,8 @@ namespace Test/Exp/Null/Match {
     def testUseCase02(): Bool =
         let f = (x, y) -> {
             let s = match? (x, y) {
-                case (x, _) => x
-                case (_, y) => y
+                case (a, _) => a
+                case (_, b) => b
             };
             toUpperCase(s)
         };
@@ -26,8 +26,8 @@ namespace Test/Exp/Null/Match {
     def testUseCase03(): Bool =
         let f = (x, y) -> {
             let s = match? (x, y) {
-                case (x, _) => x
-                case (_, y) => y
+                case (a, _) => a
+                case (_, b) => b
             };
             toUpperCase(s)
         };
