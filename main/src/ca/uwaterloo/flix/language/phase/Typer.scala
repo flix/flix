@@ -627,6 +627,24 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           case (acc, rule) => Type.mkOr(acc, mkInnerConj(vars, rule))
         }
 
+        /**
+          * Performs type inference and unification with the `matchTypes` against the given null rules `rs`.
+          */
+        def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[ResolvedAst.NullRule]): InferMonad[List[List[Type]]] = {
+          def unifyWithRule(r: ResolvedAst.NullRule): InferMonad[List[Type]] = {
+            seqM(matchTypes.zip(r.pat).map {
+              case (matchType, ResolvedAst.NullPattern.Wild(_)) =>
+                // Case 1: The null pattern is wildcard. No variable is bound and no type information to constrain.
+                liftM(matchType)
+              case (matchType, ResolvedAst.NullPattern.Var(sym, loc)) =>
+                // Case 2: The null pattern is a variable. Must constraint the type of the local variable with the type of the match expression.
+                unifyTypM(matchType, sym.tvar, loc)
+            })
+          }
+
+          seqM(rs.map(unifyWithRule))
+        }
+
         //
         // Introduce a nullity variable for each match expression `exps`.
         //
@@ -638,6 +656,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           _ <- unifyEffM(mkOuterDisj(rules0, nullityVars), Type.True, loc)
           (matchTyp, matchEff) <- visitMatchExps(exps0, nullityVars)
+          _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
           resultTyp <- unifyTypM(ruleBodyTyp, loc)
           resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)

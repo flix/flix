@@ -165,11 +165,9 @@ namespace Test/Exp/Null/Match {
         case Cons(t, List[t])
     }
 
-    pub def toUpperCase(s: NonNull[String]): String =
+    pub def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase();
-        match? s {
-            case x => x.toUpperCase() as & Pure
-        }
+        s.toUpperCase() as & Pure
 
     pub def isMaleSSN(_: String): Bool = true
 
