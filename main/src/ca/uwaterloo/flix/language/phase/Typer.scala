@@ -596,12 +596,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of list of the types and effects of the rule expressions.
           */
-        def visitRules(rs: List[ResolvedAst.NullRule]): InferMonad[(List[Type], List[Type])] = {
-          def visitRule(r: ResolvedAst.NullRule): InferMonad[(Type, Type)] = r match {
+        def visitRuleBodies(rs: List[ResolvedAst.NullRule]): InferMonad[(List[Type], List[Type])] = {
+          def visitRuleBody(r: ResolvedAst.NullRule): InferMonad[(Type, Type)] = r match {
             case ResolvedAst.NullRule(_, exp0) => visitExp(exp0)
           }
 
-          seqM(rs.map(visitRule)).map(_.unzip)
+          seqM(rs.map(visitRuleBody)).map(_.unzip)
         }
 
         /**
@@ -638,9 +638,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           _ <- unifyEffM(mkOuterDisj(rules0, nullityVars), Type.True, loc)
           (matchTyp, matchEff) <- visitMatchExps(exps0, nullityVars)
-          (ruleTypes, ruleEffects) <- visitRules(rules0)
-          resultTyp <- unifyTypM(ruleTypes, loc)
-          resultEff = Type.mkAnd(matchEff ::: ruleEffects)
+          (ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
+          resultTyp <- unifyTypM(ruleBodyTyp, loc)
+          resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
