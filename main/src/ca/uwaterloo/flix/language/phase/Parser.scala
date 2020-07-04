@@ -663,7 +663,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | MatchNull | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | NullMatch | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -780,7 +780,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def MatchNull: Rule1[ParsedAst.Expression.NullMatch] = {
+    def NullMatch: Rule1[ParsedAst.Expression.NullMatch] = {
       def MatchOne: Rule1[Seq[ParsedAst.Expression]] = rule {
         Expression ~> ((e: ParsedAst.Expression) => Seq(e))
       }
