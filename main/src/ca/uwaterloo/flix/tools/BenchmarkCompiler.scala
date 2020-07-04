@@ -137,7 +137,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Tag.flix", LocalResource.get("/test/flix/Test.Exp.Tag.flix"))
     flix.addInput("Test.Exp.Tag.Lambda.flix", LocalResource.get("/test/flix/Test.Exp.Tag.Lambda.flix"))
 
-    flix.addInput("Test.Typ.Gen.Bool.Null.flix", LocalResource.get("/test/flix/Test.Typ.Gen.Bool.Null.flix"))
+    // flix.addInput("Test.Typ.Gen.Bool.Null.flix", LocalResource.get("/test/flix/Test.Typ.Gen.Bool.Null.flix")) // TODO: Improve performance and then enable.
 
     flix.addInput("Test.Use.Tag.flix", LocalResource.get("/test/flix/Test.Use.Tag.flix"))
 
