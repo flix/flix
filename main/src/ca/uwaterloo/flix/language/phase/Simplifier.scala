@@ -1120,13 +1120,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       }
 
     /**
-      * Eliminates pattern matching on null by translations to labels and jumps.
+      * Eliminates pattern matching on null by translations to if-then-else expressions.
       */
     def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.NullRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
       //
       // Given the code:
       //
-      // match (x, y, ...) with {
+      // match? (x, y, ...) {
       //   case PATTERN_1 => BODY_1
       //   case PATTERN_2 => BODY_2
       //   ...
@@ -1139,12 +1139,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       // let matchVar2 = y;
       // ...
       //
-      //   if (matchVar_i != null && ... matchVar_j != null)
-      //    BODY_1
-      //   else
-      //     if (matchVar_i != null && ... matchVar_j != null) =>
-      //      BODY_2
-      //   ...
+      // if (matchVar_i != null && ... matchVar_i != null)
+      //   BODY_1
+      // else
+      //   if (matchVar_i != null && ... matchVar_j != null) =>
+      //     BODY_2
+      // ...
       //   else
       //     MatchError
       //
@@ -1160,12 +1160,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       val freshMatchVars = exps.map(_ => Symbol.freshVarSym("matchVar"))
 
       //
-      // The unmatched error.
+      // The default unmatched error expression.
       //
       val unmatchedExp = SimplifiedAst.Expression.MatchError(tpe, loc)
 
       //
-      // All the if-then-else branching.
+      // All the if-then-else branches.
       //
       val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
         case (TypedAst.NullRule(pat, body), acc) =>
