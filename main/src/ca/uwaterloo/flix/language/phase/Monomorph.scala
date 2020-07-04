@@ -306,14 +306,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = exps.map(visitExp(_, env0))
           val rs = rules.map {
             case NullRule(pat, exp) =>
-              val x = pat.map {
+              val patAndEnv = pat.map {
                 case NullPattern.Wild(loc) => (NullPattern.Wild(loc), Map.empty)
                 case NullPattern.Var(sym, loc) =>
                   val freshVar = Symbol.freshVarSym(sym)
                   (NullPattern.Var(freshVar, loc), Map(sym -> freshVar))
               }
-              val p = x.map(_._1)
-              val env1 = x.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+              val p = patAndEnv.map(_._1)
+              val env1 = patAndEnv.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
                 case (acc, m) => acc ++ m
               }
               val e = visitExp(exp, env0 ++ env1)
