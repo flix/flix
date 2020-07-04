@@ -404,6 +404,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Lambda(fparam, body, loc)
       }
 
+    case ParsedAst.Expression.Nullify(exp, sp2) =>
+      val sp1 = leftMostSourcePosition(exp)
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Expression.Nullify(e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
       visitExp(exp) map {
@@ -736,12 +742,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
       mapN(expsVal, rulesVal) {
         case (es, rs) => WeededAst.Expression.NullMatch(es, rs, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.Nullify(exp, sp2) =>
-      val sp1 = leftMostSourcePosition(exp)
-      mapN(visitExp(exp)) {
-        case e => WeededAst.Expression.Nullify(e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
@@ -1920,6 +1920,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Nullify(exp, _) => leftMostSourcePosition(exp)
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
@@ -1929,7 +1930,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NullMatch(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Nullify(exp, _) => leftMostSourcePosition(exp)
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1

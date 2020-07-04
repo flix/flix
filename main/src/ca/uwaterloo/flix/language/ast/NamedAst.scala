@@ -99,6 +99,8 @@ object NamedAst {
 
     case class Lambda(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Nullify(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Unary(op: UnaryOperator, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Binary(op: BinaryOperator, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -112,8 +114,6 @@ object NamedAst {
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class NullMatch(exps: List[NamedAst.Expression], rules: List[NamedAst.NullRule], loc: SourceLocation) extends NamedAst.Expression
-
-    case class Nullify(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

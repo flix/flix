@@ -387,6 +387,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (resultTyp, resultEff)
 
+      case ResolvedAst.Expression.Nullify(exp, loc) =>
+        val nullity = Type.freshVar(Kind.Bool)
+        for {
+          (tpe, eff) <- visitExp(exp)
+          resultTyp = Type.mkNullable(tpe, nullity)
+          resultEff = eff
+        } yield (resultTyp, resultEff)
+
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) => op match {
         case UnaryOperator.LogicalNot =>
           for {
@@ -612,14 +620,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypM(ruleTypes, loc)
           _ <- unifyEffM(mkOuterDisj(rules), Type.True, loc)
           resultEff = Type.mkAnd(ruleEffects)
-        } yield (resultTyp, resultEff)
-
-      case ResolvedAst.Expression.Nullify(exp, loc) =>
-        val nullity = Type.freshVar(Kind.Bool)
-        for {
-          (tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkNullable(tpe, nullity)
-          resultEff = eff
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
@@ -1203,6 +1203,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val t = subst0(tvar)
         TypedAst.Expression.Lambda(p, e, t, loc)
 
+      case ResolvedAst.Expression.Nullify(exp, loc) =>
+        visitExp(exp, subst0)
+
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
@@ -1264,9 +1267,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = rs.head.exp.tpe
         val eff = Type.mkAnd(rs.map(_.exp.eff))
         TypedAst.Expression.NullMatch(es, rs, tpe, eff, loc)
-
-      case ResolvedAst.Expression.Nullify(exp, loc) =>
-        visitExp(exp, subst0)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

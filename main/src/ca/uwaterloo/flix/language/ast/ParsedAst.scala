@@ -516,6 +516,14 @@ object ParsedAst {
     case class LambdaMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Nullify Expression.
+      *
+      * @param exp the nullified expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Nullify(exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Unary Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -598,14 +606,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Nullify Expression.
-      *
-      * @param exp the nullified expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Nullify(exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Null Match Expression.

@@ -393,6 +393,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
 
+    case WeededAst.Expression.Nullify(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.Nullify(e, loc)
+      }
+
     case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, uenv0, tenv0) map {
       case e => NamedAst.Expression.Unary(op, e, Type.freshVar(Kind.Star), loc)
     }
@@ -458,11 +463,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
       mapN(expsVal, rulesVal) {
         case (es, rs) => NamedAst.Expression.NullMatch(es, rs, loc)
-      }
-
-    case WeededAst.Expression.Nullify(exp, loc) =>
-      mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.Nullify(e, loc)
       }
 
     case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>
@@ -1053,6 +1053,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Str(lit, loc) => Nil
     case WeededAst.Expression.Apply(exp, exps, loc) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
+    case WeededAst.Expression.Nullify(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
@@ -1064,7 +1065,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.NullMatch(exps, rules, loc) => exps.flatMap(freeVars) ++ rules.flatMap {
       case WeededAst.NullMatchRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
     }
-    case WeededAst.Expression.Nullify(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.RecordEmpty(loc) => Nil
