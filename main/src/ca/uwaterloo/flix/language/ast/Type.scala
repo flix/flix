@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
@@ -592,14 +593,17 @@ object Type {
   }
 
   /**
-    * Returns the type `And(eff1, And(eff2, eff3))`.
+    * Returns the type `And(tpe1, And(tpe2, tpe3))`.
     */
-  def mkAnd(eff1: Type, eff2: Type, eff3: Type): Type = mkAnd(eff1, mkAnd(eff2, eff3))
+  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3))
 
   /**
-    * Returns the type `And(eff1, And(eff2, ...))`.
+    * Returns the type `And(tpe1, And(tpe2, ...))`.
     */
-  def mkAnd(effs: List[Type]): Type = effs.foldLeft(Type.Pure: Type)(mkAnd)
+  def mkAnd(tpes: List[Type]): Type = tpes match {
+    case Nil => Type.True
+    case x :: xs => mkAnd(x, mkAnd(xs))
+  }
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
