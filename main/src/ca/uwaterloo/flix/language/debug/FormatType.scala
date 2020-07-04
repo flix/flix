@@ -98,7 +98,7 @@ object FormatType {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
             case Audience.External => s"${tvar.getText.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
           }
-          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+          case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
         }
 
         case Some(tc) => tc match {
@@ -163,6 +163,9 @@ object FormatType {
             val applyParams = args.drop(length) // excess elements
             val tuple = elements.padTo(length, "???").mkString("(", ", ", ")")
             formatApply(tuple, applyParams)
+
+          case TypeConstructor.Nullable =>
+            s"Nullable[${args.map(visit).mkString(", ")}]"
 
           case TypeConstructor.Tag(sym, tag) => // TODO better unhappy case handling
             if (args.lengthIs == 2)

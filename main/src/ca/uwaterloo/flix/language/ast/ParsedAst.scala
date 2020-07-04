@@ -20,11 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 
 import scala.collection.immutable.Seq
 
-/**
-  * ParsedAst super-type.
-  */
-sealed trait ParsedAst
-
 object ParsedAst {
 
   /**
@@ -32,7 +27,7 @@ object ParsedAst {
     *
     * @param roots the roots of the abstract syntax trees in the program.
     */
-  case class Program(roots: List[ParsedAst.Root]) extends ParsedAst
+  case class Program(roots: List[ParsedAst.Root])
 
   /**
     * Root. A collection of imports and declarations.
@@ -42,12 +37,12 @@ object ParsedAst {
     * @param decls the declarations in the abstract syntax tree.
     * @param sp2   the position of the last character in the source.
     */
-  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
+  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
 
   /**
     * Declarations.
     */
-  sealed trait Declaration extends ParsedAst
+  sealed trait Declaration
 
   object Declaration {
 
@@ -417,7 +412,7 @@ object ParsedAst {
   /**
     * Expressions.
     */
-  sealed trait Expression extends ParsedAst
+  sealed trait Expression
 
   object Expression {
 
@@ -521,6 +516,14 @@ object ParsedAst {
     case class LambdaMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Nullify Expression.
+      *
+      * @param exp the nullified expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Nullify(exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Unary Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -605,15 +608,14 @@ object ParsedAst {
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Match Null Expression.
+      * Null Match Expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param exp1 the match expression.
-      * @param exp2 the null case expression.
-      * @param exp3 the non-null case expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param exps  the match expressions.
+      * @param rules the rules of the pattern match.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class MatchNull(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, name: Name.Ident, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class NullMatch(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], rules: Seq[NullRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -972,7 +974,7 @@ object ParsedAst {
   /**
     * Patterns.
     */
-  sealed trait Pattern extends ParsedAst {
+  sealed trait Pattern {
 
     /**
       * Returns the left most source position in sub-tree of `this` pattern.
@@ -1059,9 +1061,35 @@ object ParsedAst {
   }
 
   /**
+    * Null Patterns.
+    */
+  sealed trait NullPattern
+
+  object NullPattern {
+
+    /**
+      * A wildcard pattern.
+      *
+      * @param sp1 the position of the first character in the pattern.
+      * @param sp2 the position of the last character in the pattern.
+      */
+    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.NullPattern
+
+    /**
+      * A variable pattern.
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param ident the name of the variable.
+      * @param sp2   the position of the last character in the pattern.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.NullPattern
+
+  }
+
+  /**
     * Predicates.
     */
-  sealed trait Predicate extends ParsedAst
+  sealed trait Predicate
 
   object Predicate {
 
@@ -1133,7 +1161,7 @@ object ParsedAst {
   /**
     * Types.
     */
-  sealed trait Type extends ParsedAst
+  sealed trait Type
 
   object Type {
 
@@ -1241,6 +1269,14 @@ object ParsedAst {
     case class Native(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Nullable Type.
+      *
+      * @param tpe the nullable type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Nullable(tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Type Application.
       *
       * @param base    the base type.
@@ -1250,43 +1286,43 @@ object ParsedAst {
     case class Apply(base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Pure Effect.
+      * The True type constructor.
       *
       * @param sp1 the position of the first character in the type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+    case class True(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Impure Effect.
+      * The False type constructor.
       *
       * @param sp1 the position of the first character in the type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+    case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Not Effect.
+      * The Not type constructor.
       *
-      * @param eff the negated effect.
+      * @param tpe the negated type.
       */
-    case class Not(eff: ParsedAst.Type) extends ParsedAst.Type
+    case class Not(tpe: ParsedAst.Type) extends ParsedAst.Type
 
     /**
-      * And Effect.
+      * The And type constructor.
       *
-      * @param eff1 the 1st effect.
-      * @param eff2 the 2nd effect.
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
       */
-    case class And(eff1: ParsedAst.Type, eff2: ParsedAst.Type) extends ParsedAst.Type
+    case class And(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type) extends ParsedAst.Type
 
     /**
-      * Or Effect.
+      * The Or type constructor.
       *
-      * @param eff1 the 1st effect.
-      * @param eff2 the 2nd effect.
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
       */
-    case class Or(eff1: ParsedAst.Type, eff2: ParsedAst.Type) extends ParsedAst.Type
+    case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type) extends ParsedAst.Type
 
   }
 
@@ -1308,7 +1344,7 @@ object ParsedAst {
     * @param tpe   the type of the declared tag
     * @param sp2   the position of the last character in the case declaration.
     */
-  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
+  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
   /**
     * Class Constraint.
@@ -1316,7 +1352,7 @@ object ParsedAst {
     * @param head the head atom of the constraint.
     * @param body the sequence of body atoms of the constraint.
     */
-  case class ClassConstraint(head: ParsedAst.SimpleClass, body: Seq[ParsedAst.SimpleClass]) extends ParsedAst
+  case class ClassConstraint(head: ParsedAst.SimpleClass, body: Seq[ParsedAst.SimpleClass])
 
   /**
     * Impl Constraint.
@@ -1324,12 +1360,12 @@ object ParsedAst {
     * @param head the head atom of the constraint.
     * @param body the sequence of body atoms of the constraint.
     */
-  case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
+  case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass])
 
   /**
     * Disallow Constraint.
     */
-  case class DisallowConstraint(body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
+  case class DisallowConstraint(body: Seq[ParsedAst.ComplexClass])
 
   /**
     * Simple Class Atom.
@@ -1339,7 +1375,7 @@ object ParsedAst {
     * @param args  the type variables.
     * @param sp2   the position of the last character in the atom.
     */
-  case class SimpleClass(sp1: SourcePosition, qname: Name.QName, args: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
+  case class SimpleClass(sp1: SourcePosition, qname: Name.QName, args: Seq[Name.Ident], sp2: SourcePosition)
 
   sealed trait ComplexClass
 
@@ -1393,7 +1429,7 @@ object ParsedAst {
     * @param lines the lines of the comment.
     * @param sp2   the position of the last character in the comment.
     */
-  case class Doc(sp1: SourcePosition, lines: Seq[String], sp2: SourcePosition) extends ParsedAst
+  case class Doc(sp1: SourcePosition, lines: Seq[String], sp2: SourcePosition)
 
   /**
     * Context Bound.
@@ -1403,7 +1439,7 @@ object ParsedAst {
     * @param tparams the type params of the class.
     * @param sp2     the position of the last character in the context bound.
     */
-  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
+  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.Type], sp2: SourcePosition)
 
   /**
     * Formal Parameter.
@@ -1414,7 +1450,7 @@ object ParsedAst {
     * @param tpe   the optional type of the argument.
     * @param sp2   the position of the last character in the formal parameter.
     */
-  case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
+  case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition)
 
   /**
     * A catch rule consists of an identifier, a Java name, and a body expression.
@@ -1423,7 +1459,7 @@ object ParsedAst {
     * @param fqn   the fully-qualified Java name.
     * @param exp   the body expression.
     */
-  case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression) extends ParsedAst
+  case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression)
 
   /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
@@ -1432,7 +1468,17 @@ object ParsedAst {
     * @param guard the optional guard of the rule.
     * @param exp   the body expression of the rule.
     */
-  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression)
+
+  /**
+    * A null pattern match rule.
+    *
+    * @param sp1 the position of the first character in the rule.
+    * @param pat the pattern of the rule.
+    * @param exp the body expression of the rule.
+    * @param sp2 the position of the first character in the rule.
+    */
+  case class NullRule(sp1: SourcePosition, pat: Seq[ParsedAst.NullPattern], exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * A select channel rule consists of an identifier, a channel expression, and a body expression.
@@ -1441,7 +1487,7 @@ object ParsedAst {
     * @param chan  the channel expression of the rule.
     * @param exp   the body expression of the rule.
     */
-  case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
+  case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression)
 
   /**
     * Modifier.
@@ -1450,12 +1496,12 @@ object ParsedAst {
     * @param name the name of the modifier.
     * @param sp2  the position of the last character in the modifier.
     */
-  case class Modifier(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
+  case class Modifier(sp1: SourcePosition, name: String, sp2: SourcePosition)
 
   /**
     * A common super-type for annotations or properties.
     */
-  sealed trait AnnotationOrProperty extends ParsedAst
+  sealed trait AnnotationOrProperty
 
   /**
     * Annotation.

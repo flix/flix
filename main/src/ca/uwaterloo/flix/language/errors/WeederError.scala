@@ -371,6 +371,25 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate a mismatched arity.
+    *
+    * @param expected the expected arity.
+    * @param actual   the actual arity.
+    * @param loc      the location where mismatch occurs.
+    */
+  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << s">> Mismatched arity: expected: $expected, actual: $actual." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched arity.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
     *
     * @param name the name of the variable.

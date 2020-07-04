@@ -141,8 +141,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
           case (acc, MatchRule(_, guard, body)) => visitExp(guard, lint0) ::: visitExp(body, lint0) ::: acc
         }
 
-      case Expression.MatchNull(_, exp1, exp2, exp3, _, _, _) =>
-        visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
+      case Expression.NullMatch(exps, rules, _, _, _) =>
+        exps.flatMap(visitExp(_, lint0)) ++ rules.flatMap {
+          case NullRule(_, exp) => visitExp(exp, lint0)
+        }
 
       case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, lint0)
 
@@ -752,16 +754,17 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         val e = apply(exp)
-        val rs = rules map {
+        val rs = rules.map {
           case MatchRule(pat, guard, exp) => MatchRule(apply(pat), apply(guard), apply(exp))
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
-      case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        val e3 = apply(exp3)
-        Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
+      case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
+        val es = exps.map(apply)
+        val rs = rules.map {
+          case NullRule(pat, exp) => NullRule(pat, apply(exp))
+        }
+        Expression.NullMatch(es, rs, tpe, eff, loc)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = apply(exp)

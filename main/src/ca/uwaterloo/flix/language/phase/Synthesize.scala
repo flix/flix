@@ -151,11 +151,12 @@ object Synthesize extends Phase[Root, Root] {
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
-      case Expression.MatchNull(sym, exp1, exp2, exp3, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        Expression.MatchNull(sym, e1, e2, e3, tpe, eff, loc)
+      case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
+        val es = exps.map(visitExp)
+        val rs = rules.map {
+          case NullRule(pat, exp) => NullRule(pat, visitExp(exp))
+        }
+        Expression.NullMatch(es, rs, tpe, eff, loc)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -992,8 +993,14 @@ object Synthesize extends Phase[Root, Root] {
       // An expression that evaluates to the value of varX.
       val exp0 = Expression.Var(varX, tpe, sl)
 
+      // Compute the type constructor. Unwrap if nullable type.
+      val typeConstructor = tpe.typeConstructor.flatMap {
+        case TypeConstructor.Nullable => tpe.typeArguments(1).typeConstructor
+        case tc => Some(tc)
+      }
+
       // Determine the string representation based on the type `tpe`.
-      tpe.typeConstructor match {
+      typeConstructor match {
         case None =>
           throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
 

@@ -663,7 +663,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | MatchNull | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | NullMatch | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -780,17 +780,30 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def MatchNull: Rule1[ParsedAst.Expression.MatchNull] = {
-      def nullCase: Rule1[ParsedAst.Expression] = rule {
-        atomic("case") ~ WS ~ atomic("null") ~ WS ~ atomic("=>") ~ WS ~ Expression
+    def NullMatch: Rule1[ParsedAst.Expression.NullMatch] = {
+      def MatchOne: Rule1[Seq[ParsedAst.Expression]] = rule {
+        Expression ~> ((e: ParsedAst.Expression) => Seq(e))
       }
 
-      def nonNullCase: Rule2[Name.Ident, ParsedAst.Expression] = rule {
-        atomic("case") ~ WS ~ Names.Variable ~ WS ~ atomic("=>") ~ WS ~ Expression
+      def MatchMany: Rule1[Seq[ParsedAst.Expression]] = rule {
+        "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      }
+
+      def NullPattern: Rule1[ParsedAst.NullPattern] = rule {
+        (SP ~ atomic("_") ~ SP ~> ParsedAst.NullPattern.Wild) | (SP ~ Names.Variable ~ SP ~> ParsedAst.NullPattern.Var)
+      }
+
+      def CaseOne: Rule1[ParsedAst.NullRule] = rule {
+        SP ~ atomic("case") ~ WS ~ NullPattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~>
+          ((sp1: SourcePosition, x: ParsedAst.NullPattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.NullRule(sp1, Seq(x), e, sp2))
+      }
+
+      def CaseMany: Rule1[ParsedAst.NullRule] = rule {
+        SP ~ atomic("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(NullPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.NullRule
       }
 
       rule {
-        SP ~ atomic("match?") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ nullCase ~ WS ~ nonNullCase ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchNull
+        SP ~ atomic("match?") ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NullMatch
       }
     }
 
@@ -852,7 +865,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayStore: Rule1[ParsedAst.Expression] = rule {
-      Apply ~ optional(oneOrMore(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]") ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
+      Nullify ~ optional(oneOrMore(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]") ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
+    }
+
+    def Nullify: Rule1[ParsedAst.Expression] = rule {
+      Apply ~ optional("?" ~ SP ~> ParsedAst.Expression.Nullify)
     }
 
     def Apply: Rule1[ParsedAst.Expression] = rule {
@@ -1133,10 +1150,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      Apply ~ optional(
+      Or ~ optional(
         (optWS ~ atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
           (optWS ~ atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
       )
+    }
+
+    def Or: Rule1[ParsedAst.Type] = rule {
+      And ~ zeroOrMore(WS ~ atomic("or") ~ WS ~ Type ~> ParsedAst.Type.Or)
+    }
+
+    def And: Rule1[ParsedAst.Type] = rule {
+      Nullable ~ zeroOrMore(WS ~ atomic("and") ~ WS ~ Type ~> ParsedAst.Type.And)
+    }
+
+    def Nullable: Rule1[ParsedAst.Type] = rule {
+      Apply ~ optional(atomic("?") ~ SP ~> ParsedAst.Type.Nullable)
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1144,7 +1173,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | Schema | Native | Pure | Impure | Var | Ambiguous
+      Arrow | Tuple | Record | Schema | Native | True | False | Pure | Impure | Not | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1210,12 +1239,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Type.Native
     }
 
+    def True: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("true") ~ SP ~> ParsedAst.Type.True
+    }
+
+    def False: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("false") ~ SP ~> ParsedAst.Type.False
+    }
+
     def Pure: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("Pure") ~ SP ~> ParsedAst.Type.Pure
+      SP ~ atomic("Pure") ~ SP ~> ParsedAst.Type.True
     }
 
     def Impure: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.Impure
+      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.False
+    }
+
+    def Not: Rule1[ParsedAst.Type] = rule {
+      atomic("not") ~ WS ~ Type ~> ParsedAst.Type.Not
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {

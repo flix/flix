@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -74,9 +74,17 @@ object Unification {
         // Case 4: Both type variables are rigid.
         Result.Err(UnificationError.RigidVar(x, y))
 
-      case (x: Type.Var, _) => unifyVar(x, tpe2)
+      case (x: Type.Var, _) =>
+        if (x.kind == Kind.Bool || tpe2.kind == Kind.Bool)
+          BoolUnification.unify(x, tpe2)
+        else
+          unifyVar(x, tpe2)
 
-      case (_, x: Type.Var) => unifyVar(x, tpe1)
+      case (_, x: Type.Var) =>
+        if (x.kind == Kind.Bool || tpe1.kind == Kind.Bool)
+          BoolUnification.unify(x, tpe1)
+        else
+          unifyVar(x, tpe1)
 
       case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 =>
         //      if (eff1.kind != Kind.Bool && eff2.kind != Kind.Bool) {

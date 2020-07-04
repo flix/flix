@@ -327,6 +327,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             p <- Params.resolve(fparam, ns0, prog0)
           } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
 
+        case NamedAst.Expression.Nullify(exp, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Nullify(e, loc)
+
         case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
@@ -372,12 +377,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, loc)
 
-        case NamedAst.Expression.MatchNull(sym, exp1, exp2, exp3, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-            e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.MatchNull(sym, e1, e2, e3, loc)
+        case NamedAst.Expression.NullMatch(exps, rules, loc) =>
+          val expsVal = traverse(exps)(visit(_, tenv0))
+          val rulesVal = traverse(rules) {
+            case NamedAst.NullRule(pat0, exp0) =>
+              val p = pat0.map {
+                case NamedAst.NullPattern.Wild(loc) => ResolvedAst.NullPattern.Wild(loc)
+                case NamedAst.NullPattern.Var(sym, loc) => ResolvedAst.NullPattern.Var(sym, loc)
+              }
+              mapN(visit(exp0, tenv0)) {
+                case e => ResolvedAst.NullRule(p, e)
+              }
+          }
+          mapN(expsVal, rulesVal) {
+            case (es, rs) => ResolvedAst.Expression.NullMatch(es, rs, loc)
+          }
 
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
           case None =>
@@ -1027,6 +1041,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Array" => Type.Array.toSuccess
       case "Channel" => Type.Channel.toSuccess
       case "Ref" => Type.Ref.toSuccess
+      case "Null" => Type.Cst(TypeConstructor.Nullable).toSuccess
+      case "Nullable" => Type.Apply(Type.Cst(TypeConstructor.Nullable), Type.True).toSuccess
+      case "NonNull" => Type.Apply(Type.Cst(TypeConstructor.Nullable), Type.False).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1141,11 +1158,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tpe2 <- lookupType(targ0, ns0, root)
       ) yield Type.simplify(Type.Apply(tpe1, tpe2))
 
-    case NamedAst.Type.Pure(loc) =>
-      Type.Pure.toSuccess
+    case NamedAst.Type.True(loc) =>
+      Type.True.toSuccess
 
-    case NamedAst.Type.Impure(loc) =>
-      Type.Impure.toSuccess
+    case NamedAst.Type.False(loc) =>
+      Type.False.toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(lookupType(tpe, ns0, root)) {

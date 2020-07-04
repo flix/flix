@@ -218,6 +218,28 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
 
+  test("MismatchedArity.01") {
+    val input =
+      """def f(): Bool =
+        |    match? 123 {
+        |        case (x, y) => x == y
+        |    }
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MismatchedArity](result)
+  }
+
+  test("MismatchedArity.02") {
+    val input =
+      """def f(): Bool =
+        |    match? (123, 456) {
+        |        case x => x == x
+        |    }
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MismatchedArity](result)
+  }
+
   test("NonLinearPattern.01") {
     val input =
       """def f(): Bool = match (21, 42) with {

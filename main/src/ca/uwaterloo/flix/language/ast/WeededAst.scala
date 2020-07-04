@@ -104,6 +104,8 @@ object WeededAst {
 
     case class Lambda(fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Nullify(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Unary(op: UnaryOperator, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Binary(op: BinaryOperator, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -116,7 +118,7 @@ object WeededAst {
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class MatchNull(name: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class NullMatch(exps: List[WeededAst.Expression], rules: List[WeededAst.NullMatchRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -242,6 +244,17 @@ object WeededAst {
 
   }
 
+  sealed trait NullPattern
+
+  object NullPattern {
+
+    case class Wild(loc: SourceLocation) extends NullPattern
+
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends NullPattern
+
+  }
+
+
   sealed trait Predicate
 
   object Predicate {
@@ -300,9 +313,9 @@ object WeededAst {
 
     case class Apply(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Pure(loc: SourceLocation) extends WeededAst.Type
+    case class True(loc: SourceLocation) extends WeededAst.Type
 
-    case class Impure(loc: SourceLocation) extends WeededAst.Type
+    case class False(loc: SourceLocation) extends WeededAst.Type
 
     case class Not(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
@@ -335,6 +348,8 @@ object WeededAst {
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
+
+  case class NullMatchRule(pat: List[WeededAst.NullPattern], exp: WeededAst.Expression)
 
   case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
 

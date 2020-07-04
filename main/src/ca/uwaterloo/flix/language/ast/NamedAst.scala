@@ -99,6 +99,8 @@ object NamedAst {
 
     case class Lambda(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Nullify(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Unary(op: UnaryOperator, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Binary(op: BinaryOperator, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -111,7 +113,7 @@ object NamedAst {
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
-    case class MatchNull(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class NullMatch(exps: List[NamedAst.Expression], rules: List[NamedAst.NullRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -237,6 +239,16 @@ object NamedAst {
 
   }
 
+  sealed trait NullPattern
+
+  object NullPattern {
+
+    case class Wild(loc: SourceLocation) extends NullPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NullPattern
+
+  }
+
   sealed trait Predicate
 
   object Predicate {
@@ -297,9 +309,9 @@ object NamedAst {
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Pure(loc: SourceLocation) extends NamedAst.Type
+    case class True(loc: SourceLocation) extends NamedAst.Type
 
-    case class Impure(loc: SourceLocation) extends NamedAst.Type
+    case class False(loc: SourceLocation) extends NamedAst.Type
 
     case class Not(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
@@ -334,6 +346,8 @@ object NamedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
+
+  case class NullRule(pat: List[NamedAst.NullPattern], exp: NamedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 

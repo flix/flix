@@ -310,12 +310,19 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
       usedMatch and usedRules.reduceLeft(_ or _)
 
-    case Expression.MatchNull(sym, exp1, exp2, exp3, _, _, _) =>
-      val usedMatch = visitExp(exp1, env0)
-      val usedThen = visitExp(exp2, env0)
-      val usedElse = visitExp(exp3, env0)
+    case Expression.NullMatch(exps, rules, _, _, _) =>
       // TODO: Null: Check unused and shadowed variables.
-      usedMatch and usedThen and (usedElse - sym)
+      val usedMatch = visitExps(exps, env0)
+      val usedRules = rules.map {
+        case NullRule(pat, exp) =>
+          val fvs = pat.collect {
+            case NullPattern.Var(sym, _) => sym
+          }
+          val extendedEnv = env0 ++ fvs
+          val usedBody = visitExp(exp, extendedEnv)
+          usedBody -- fvs
+      }
+      usedMatch and usedRules.reduceLeft(_ or _)
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
       val us = visitExp(exp, env0)
@@ -813,5 +820,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         call == this.call && nParams == this.nParams
       }
     }
+
   }
+
 }
