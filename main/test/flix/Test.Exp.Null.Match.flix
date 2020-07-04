@@ -78,13 +78,6 @@ namespace Test/Exp/Null/Match {
         }
 
     @test
-    def testMatchNullableArray01(): Bool =
-        match? []? {
-            case x => true
-            case _ => false
-        }
-
-    @test
     def testMatchNullableRecord01(): Bool =
         match? {}? {
             case x => true

@@ -575,9 +575,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
           *
-          * Returns a list of types and effects.
+          * Returns a pair of lists of the types and effects of the match expressions.
           */
-        def visitMatchExps(exps: List[ResolvedAst.Expression], vars: List[Type.Var]): InferMonad[List[(Type, Type)]] = {
+        def visitMatchExps(exps: List[ResolvedAst.Expression], vars: List[Type.Var]): InferMonad[(List[Type], List[Type])] = {
           def visitMatchExp(exp: ResolvedAst.Expression, nullityVar: Type.Var): InferMonad[(Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
@@ -588,13 +588,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
           seqM(exps.zip(vars).map {
             case (matchExp, nullityVar) => visitMatchExp(matchExp, nullityVar)
-          })
+          }).map(_.unzip)
         }
 
         /**
           * Performs type inference of the given null rules `rs`.
           *
-          * Returns a pair of list of types and effects.
+          * Returns a pair of list of the types and effects of the rule expressions.
           */
         def visitRules(rs: List[ResolvedAst.NullRule]): InferMonad[(List[Type], List[Type])] = {
           def visitRule(r: ResolvedAst.NullRule): InferMonad[(Type, Type)] = r match {
@@ -636,11 +636,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Put everything together.
         //
         for {
-          _ <- visitMatchExps(exps0, nullityVars)
           _ <- unifyEffM(mkOuterDisj(rules0, nullityVars), Type.True, loc)
+          (matchTyp, matchEff) <- visitMatchExps(exps0, nullityVars)
           (ruleTypes, ruleEffects) <- visitRules(rules0)
           resultTyp <- unifyTypM(ruleTypes, loc)
-          resultEff = Type.mkAnd(ruleEffects)
+          resultEff = Type.mkAnd(matchEff ::: ruleEffects)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
