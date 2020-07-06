@@ -25,7 +25,7 @@ namespace Domain/IntervalInf {
     ///
     /// Returns the canonical representation of the given IntervalInf `e`.
     ///
-    def norm(e: IntervalInf): IntervalInf = match e with {
+    def norm(e: IntervalInf): IntervalInf = match e {
         case Bot            => Bot
         case Range(b, e)    => if (b <= e) Range(b, e) else Bot
         case Upper(e)       => Upper(e)
@@ -37,7 +37,7 @@ namespace Domain/IntervalInf {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: IntervalInf, e2: IntervalInf): Bool = match (e1, e2) with {
+    def leq(e1: IntervalInf, e2: IntervalInf): Bool = match (e1, e2) {
         case (Bot, _)                       => true
         case (Range(b1, e1), Range(b2, e2)) => b2 <= b1 && e1 <= e2
         case (Range(b1, e1), Upper(e2))     => e1 <= e2
@@ -52,7 +52,7 @@ namespace Domain/IntervalInf {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative /* slow #associative */
-    def lub(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
+    def lub(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
         case (Bot, x)                       => x
         case (x, Bot)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.min(b1, b2), BigInt.max(e1, e2)))
@@ -69,7 +69,7 @@ namespace Domain/IntervalInf {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative /* slow #associative */
-    def glb(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
+    def glb(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
         case (Top, x)                       => x
         case (x, Top)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.max(b1, b2), BigInt.min(e1, e2)))
@@ -94,7 +94,7 @@ namespace Domain/IntervalInf {
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    def inc(e: IntervalInf): IntervalInf = match e with {
+    def inc(e: IntervalInf): IntervalInf = match e {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b + 1ii, e + 1ii))
         case Upper(e)       => norm(Upper(e + 1ii))
@@ -107,7 +107,7 @@ namespace Domain/IntervalInf {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    def dec(e: IntervalInf): IntervalInf = match e with {
+    def dec(e: IntervalInf): IntervalInf = match e {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
         case Upper(e)       => norm(Upper(e - 1ii))
@@ -120,7 +120,7 @@ namespace Domain/IntervalInf {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative
-    def plus(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
+    def plus(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
@@ -138,7 +138,7 @@ namespace Domain/IntervalInf {
 //    ///
 //    #safe2((x, y) -> x - y)
 //    #strict2 #monotone2
-//    def minus(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
+//    def minus(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
 //        case (Bot, _)                       => Bot
 //        case (_, Bot)                       => Bot
 //        case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 - e2, e1 - b2))
@@ -150,7 +150,7 @@ namespace Domain/IntervalInf {
     ///
     #safe2((x, y) -> x * y)
     #strict2  #monotone2 /**/ /* slow? #commutative */
-    def times(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
+    def times(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) =>
@@ -169,7 +169,7 @@ namespace Domain/IntervalInf {
       */
     #safeBelnap2((x, y) -> x == y)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
-    def eq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) with {
+    def eq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2)) => {
@@ -198,7 +198,7 @@ namespace Domain/IntervalInf {
       */
    #safeBelnap2((x, y) -> x < y)
    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
-    def less(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) with {
+    def less(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   =>

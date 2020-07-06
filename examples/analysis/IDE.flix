@@ -8,33 +8,33 @@ namespace IDE {
 
     def equ(e1: Value, e2: Value): Bool = e1 == e2
 
-    def lub(e1: Value, e2: Value): Value = match (e1, e2) with {
+    def lub(e1: Value, e2: Value): Value = match (e1, e2) {
         case (Value.Bot, x) => x
         case (x, Value.Bot) => x
         case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Top
         case _ => Value.Top
     }
 
-    def leq(e1: Value, e2: Value): Bool = match (e1, e2) with {
+    def leq(e1: Value, e2: Value): Bool = match (e1, e2) {
         case (Value.Bot, _) => true
         case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2
         case (_, Value.Top) => true
         case _ => false
     }
 
-    def sum(e1: Value, e2: Int): Value = match e1 with {
+    def sum(e1: Value, e2: Int): Value = match e1 {
         case Value.Cst(n) => Value.Cst(n+e2)
         case _ => e1
     }
 
-    def prod(e1: Value, e2: Int): Value = match (e1, e2) with {
+    def prod(e1: Value, e2: Int): Value = match (e1, e2) {
         case (Value.Cst(n), _) => Value.Cst(n*e2)
         case (Value.Bot, _) => Value.Bot
         case (_, zero) => if(zero == 0) Value.Cst(0) else e1
         case _ => e1
     }
 
-    def glb(e1: Value, e2: Value): Value = match (e1, e2) with {
+    def glb(e1: Value, e2: Value): Value = match (e1, e2) {
         case (Value.Top, x) => x
         case (x, Value.Top) => x
         case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Bot
@@ -48,9 +48,9 @@ namespace IDE {
         case NonBotTrans(Int,Int,Value)
     }
 
-  def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) with {
+  def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
     case (_,Transformer.BotTrans) => Transformer.BotTrans
-    case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c with {
+    case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
       case Value.Bot => Transformer.BotTrans
       case Value.Top => Transformer.NonBotTrans(0,0,Value.Top)
       case Value.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
@@ -61,12 +61,12 @@ namespace IDE {
 
     // from paper: f = \l. a*l+b meet c; f(Top) = Top
     // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-    def apply(t: Transformer, l: Value): Value = match t with {
+    def apply(t: Transformer, l: Value): Value = match t {
         case Transformer.BotTrans => Value.Bot
         case Transformer.NonBotTrans(a, b, c) => if(l==Value.Bot) Value.Bot else lub(sum(prod(l,a),b),c)
     }
 
-    def translub(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) with {
+    def translub(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
         case (Transformer.BotTrans, _) => t2
         case (_, Transformer.BotTrans) => t1
         case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>

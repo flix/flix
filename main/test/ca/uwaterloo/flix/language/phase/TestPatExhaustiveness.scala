@@ -29,7 +29,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Char.01") {
     val input =
-      """def f(x: Char): Int = match x with {
+      """def f(x: Char): Int = match x {
         |  case 'a' => 1
         |  case 'b' => 2
         |  case 'c' => 3
@@ -41,7 +41,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Int32.01") {
     val input =
-      """def f(x: Int): Int = match x with {
+      """def f(x: Int): Int = match x {
         |  case 1 => 1
         |  case 2 => 2
         |  case 3 => 3
@@ -53,7 +53,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Int64.01") {
     val input =
-      """def f(x: Int64): Int = match x with {
+      """def f(x: Int64): Int = match x {
         |  case 1i64 => 1
         |  case 2i64 => 2
         |  case 3i64 => 3
@@ -65,7 +65,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Str.01") {
     val input =
-      """def f(x: Str): Int = match x with {
+      """def f(x: Str): Int = match x {
         |  case "foo" => 1
         |  case "bar" => 2
         |  case "baz" => 3
@@ -82,7 +82,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case Blu
         |}
         |
-        |def f(x: (Color, Color)): Int = match x with {
+        |def f(x: (Color, Color)): Int = match x {
         |  case (Color.Red() ,_ ) => 1
         |  case (_, Color.Blu) => 2
         |}
@@ -93,7 +93,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Tuples.02") {
     val input =
-      """def f(x: (Int8, (Str, Str))): Int = match x with {
+      """def f(x: (Int8, (Str, Str))): Int = match x {
         |  case (5i8, ("five", _)) => 5
         |  case (6i8, (_, "six")) => 6
         |  case (7i8, (_,_)) => 7
@@ -105,7 +105,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Tuples.03") {
     val input =
-      """def f(x: (Int, Int, Int, Int, Int)): Int = match x with {
+      """def f(x: (Int, Int, Int, Int, Int)): Int = match x {
         |  case (1,2,3,4,5) => 1
         |  case (_,2,3,4,5) => 1
         |  case (1,_,3,4,5) => 1
@@ -124,7 +124,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Lst(Int32, IntList),
         |   case Empty
         |}
-        |def f(i: Int32, xs: IntList): Int32 = match (i, xs) with {
+        |def f(i: Int32, xs: IntList): Int32 = match (i, xs) {
         |  case (0, Lst(x, _)) => x
         |  case (p, Lst(x, rs)) => x
         |}
@@ -139,7 +139,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Lst(Int32, IntList),
         |   case Empty
         |}
-        |def f(l1: IntList, l2: IntList): Int32 = match (l1, l2) with {
+        |def f(l1: IntList, l2: IntList): Int32 = match (l1, l2) {
         |  case (Empty, Empty) => 0
         |  case (Lst(x,xs), Lst(y,ys)) => 1
         |}
@@ -154,7 +154,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Lst(Int32, IntList),
         |   case Empty
         |}
-        |def f(xs: IntList): Int32 = match xs with {
+        |def f(xs: IntList): Int32 = match xs {
         |  case Empty => 42
         |}
       """.stripMargin
@@ -189,7 +189,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case Good
         |}
         |
-        |def f(x: Evil): Evil = match x with {
+        |def f(x: Evil): Evil = match x {
         |  case Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, _))))))) => Evil(Good, Good)
         |}
       """.stripMargin
@@ -234,11 +234,11 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Lst(Int32, IntList),
         |   case Empty
         |}
-        |def f(xs: IntList): Int32 = match xs with {
+        |def f(xs: IntList): Int32 = match xs {
         |  case Empty => 0
-        |  case Lst(y,ys) => match ys with {
+        |  case Lst(y,ys) => match ys {
         |      case Empty => 0
-        |      case Lst(z,zs) => match zs with {
+        |      case Lst(z,zs) => match zs {
         |           case Empty => 0
         |      }
         |  }
@@ -257,7 +257,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |}
         |
         |def f(l: List[Int]): Int = let foo = 42 ;
-        |     match l with {
+        |     match l {
         |         case Nil => 42
         |     }
       """.stripMargin

@@ -533,7 +533,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    case Bar
          |  }
          |
-         |  def f(b: B): Int = match b with {
+         |  def f(b: B): Int = match b {
          |    case B.Qux => 42
          |  }
          |}

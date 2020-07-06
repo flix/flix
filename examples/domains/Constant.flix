@@ -23,7 +23,7 @@ namespace Domain/Constant {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) with {
+    def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
         case (_, Top)           => true
@@ -34,7 +34,7 @@ namespace Domain/Constant {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, x)           => x
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
@@ -45,7 +45,7 @@ namespace Domain/Constant {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
@@ -56,7 +56,7 @@ namespace Domain/Constant {
     /// The lattice height function.
     ///
     #nonNegative #decreasing(equ, leq)
-    pub def height(e: Constant): BigInt = match e with {
+    pub def height(e: Constant): BigInt = match e {
         case Top    => 0ii
         case Cst(_) => 1ii
         case Bot    => 2ii
@@ -72,7 +72,7 @@ namespace Domain/Constant {
      */
     #safe1(x -> x + 1)
     #strict1 #monotone1
-    pub def inc(e: Constant): Constant = match e with {
+    pub def inc(e: Constant): Constant = match e {
         case Bot    => Bot
         case Cst(n) => Cst(n + 1)
         case Top    => Top
@@ -83,7 +83,7 @@ namespace Domain/Constant {
     ///
     #safe1(x -> x - 1)
     #strict1 #monotone1
-    pub def dec(e: Constant): Constant = match e with {
+    pub def dec(e: Constant): Constant = match e {
         case Bot    => Bot
         case Cst(n) => Cst(n - 1)
         case Top    => Top
@@ -94,7 +94,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
-    pub def plus(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def plus(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
@@ -106,7 +106,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    pub def minus(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def minus(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
@@ -118,7 +118,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x * y)
     #strict2 #monotone2 #commutative #associative
-    pub def times(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def times(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
@@ -130,7 +130,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x / y)
     #strict2 #monotone2
-    pub def divide(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def divide(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 / n2)
@@ -142,7 +142,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x % y)
     #strict2 #monotone2
-    pub def modulo(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def modulo(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 % n2)
@@ -154,7 +154,7 @@ namespace Domain/Constant {
     ///
     #safe1(x -> ~~~x)
     #strict1 #monotone1
-    pub def negate(e: Constant): Constant = match e with {
+    pub def negate(e: Constant): Constant = match e {
         case Bot       => Bot
         case Cst(n)    => Cst(~~~ n)
         case Top       => Top
@@ -165,7 +165,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x &&& y)
     #strict2 #monotone2 #commutative #associative
-    pub def and(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def and(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 &&& n2)
@@ -177,7 +177,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x ||| y)
     #strict2 #monotone2 #commutative #associative
-    pub def or(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def or(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 ||| n2)
@@ -189,7 +189,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x ^^^ y)
     #strict2 #monotone2 #commutative #associative
-    pub def xor(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def xor(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 ^^^ n2)
@@ -201,7 +201,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x <<< y)
     #strict2 #monotone2
-    pub def leftShift(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def leftShift(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 <<< n2)
@@ -214,7 +214,7 @@ namespace Domain/Constant {
     ///
     #safe2((x, y) -> x >>> y)
     #strict2 #monotone2
-    pub def rightShift(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+    pub def rightShift(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 >>> n2)
@@ -228,7 +228,7 @@ namespace Domain/Constant {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    pub def eq(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
         case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
@@ -250,7 +250,7 @@ namespace Domain/Constant {
     #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def less(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) with {
+    pub def less(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
         case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)

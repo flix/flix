@@ -53,7 +53,7 @@ enum BExp {
 //
 // We now define a small interpreter for arithmetic expressions.
 //
-def evalAExp(e: AExp): Int = match e with {
+def evalAExp(e: AExp): Int = match e {
     case Cst(i)                 => i
     case Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
     case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
@@ -66,7 +66,7 @@ def evalAExp(e: AExp): Int = match e with {
 //
 // and here is the small interpreter for boolean expressions.
 //
-def evalBExp(e: BExp): Bool = match e with {
+def evalBExp(e: BExp): Bool = match e {
     case True           => true
     case False          => false
     case Not(e1)        => !evalBExp(e1)
@@ -156,7 +156,7 @@ enum Inst {
 //
 // The append function appends two lists and is defined in the bottom of this file.
 //
-def compileAExp(e: AExp): List[Inst] = match e with {
+def compileAExp(e: AExp): List[Inst] = match e {
     case Cst(i)         => Push(i) :: Nil
     case Plus(e1, e2)   =>
         let is1 = compileAExp(e1);
@@ -180,7 +180,7 @@ def compileAExp(e: AExp): List[Inst] = match e with {
 //
 // and a compiler for boolean expressions:
 //
-def compileBExp(e: BExp): List[Inst] = match e with {
+def compileBExp(e: BExp): List[Inst] = match e {
     case True           => Push(1) :: Nil
     case False          => Push(0) :: Nil
     case Not(e1)         =>
@@ -240,7 +240,7 @@ def testCompileBExp5(): List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 //
 // Finally, we write an interpreter for the stack-based language:
 //
-def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructions, stack) with {
+def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructions, stack) {
     case (Nil, x :: _) => x
     case ((Push(i)) :: rs, st) => evalInst(rs, i :: st)
     case (Add :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 + i2) :: st)

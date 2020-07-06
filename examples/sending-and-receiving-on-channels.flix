@@ -1,6 +1,6 @@
 /// A function that sends every element of a list
 def send(o: Channel[Int], l: List[Int]): Unit & Impure =
-    match l with {
+    match l {
         case Nil     => ()
         case x :: xs => o <- x; send(o, xs)
     }
@@ -8,7 +8,7 @@ def send(o: Channel[Int], l: List[Int]): Unit & Impure =
 /// A function that receives n elements
 /// and collects them into a list.
 def recv(i: Channel[Int], n: Int): List[Int] & Impure =
-    match n with {
+    match n {
         case 0 => Nil
         case _ => (<- i) :: recv(i, n - 1)
     }

@@ -50,7 +50,7 @@ enum BExp {
 //
 // We now define a small interpreter for arithmetic expressions.
 //
-def evalAExp(e: AExp): Int = match e with {
+def evalAExp(e: AExp): Int = match e {
     case Cst(i)                 => i
     case Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
     case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
@@ -64,7 +64,7 @@ def evalAExp(e: AExp): Int = match e with {
 //
 // and here is the small interpreter for boolean expressions.
 //
-def evalBExp(e: BExp): Bool = match e with {
+def evalBExp(e: BExp): Bool = match e {
     case True           => true
     case False          => false
     case Not(e1)        => !evalBExp(e1)

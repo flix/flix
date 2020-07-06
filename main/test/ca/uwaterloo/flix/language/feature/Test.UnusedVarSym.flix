@@ -16,38 +16,38 @@ def unusedVarSym03(): Int =
 
 @test
 def unusedVarSym04(): Int =
-    match 123 with {
+    match 123 {
         case _foo => 456
     }
 
 @test
 def unusedVarSym05(): Int =
-    match (1, 2) with {
+    match (1, 2) {
         case (x, _y) => x
     }
 
 @test
 def unusedVarSym06(): Int =
-    match (1, 2) with {
+    match (1, 2) {
         case (_x, y) => y
     }
 
 @test
 def unusedVarSym07(): Int =
-    match (1, 2) with {
+    match (1, 2) {
         case (_x, _y) => 123
     }
 
 @test
 def unusedVarSym08(): Int =
-    match Some(123) with {
+    match Some(123) {
         case None => 456
         case Some(_foo) => 789
     }
 
 @test
 def unusedVarSym09(): Int =
-    match Ok(123) with {
+    match Ok(123) {
         case Ok(_foo) => 456
         case Err(_bar) => 789
     }

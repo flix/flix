@@ -578,7 +578,7 @@ object Synthesize extends Phase[Root, Root] {
             //
             // then we generate the expression:
             //
-            //   match (e1, e2) with {
+            //   match (e1, e2) {
             //     case (None(freshX), None(freshY)) => recurse(tpe, freshX, freshY)
             //     case (Some(freshX), Some(freshY)) => recurse(tpe, freshX, freshY)
             //     case _                            => false
@@ -641,7 +641,7 @@ object Synthesize extends Phase[Root, Root] {
             //
             // then we generate the expression:
             //
-            //   match (e1, e2) with {
+            //   match (e1, e2) {
             //     case ((x1, x2, x3), (y1, y2, y3)) => recurse(x1, y1) && recurse(x2, y2) && recurse(x2, y2)
             //   }
             //
@@ -820,7 +820,7 @@ object Synthesize extends Phase[Root, Root] {
             //
             // then we generate the expression:
             //
-            //   match e with {
+            //   match e {
             //     case (None(freshX)) => 1 + recurse(freshX)
             //     case (Some(freshX)) => 2 + recurse(freshX)
             //   }
@@ -875,7 +875,7 @@ object Synthesize extends Phase[Root, Root] {
             //
             // then we generate the expression:
             //
-            //   match exp0 with {
+            //   match exp0 {
             //     case (x1, x2, x3) => recurse(x1) + recurse(x2) + recurse(x3)
             //   }
             //
@@ -1081,7 +1081,7 @@ object Synthesize extends Phase[Root, Root] {
             //
             // then we generate the expression:
             //
-            //   match exp0 with {
+            //   match exp0 {
             //     case (x1, x2, x3) => "(" + recurse(x1) + ", " + recurse(x2) + ", " + recurse(x3) + ")"
             //   }
             //
@@ -1134,7 +1134,7 @@ object Synthesize extends Phase[Root, Root] {
             //
             // then we generate the expression:
             //
-            //   match e with {
+            //   match e {
             //     case (None(freshX)) => "None(" + recurse(freshX) + ")"
             //     case (Some(freshX)) => "Some(" + recurse(freshX) + ")"
             //   }

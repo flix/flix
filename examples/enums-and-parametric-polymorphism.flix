@@ -8,7 +8,7 @@ enum Tree[a] {
 /// A higher-order function that transforms a tree with
 /// elements of type a to a tree with elements of type b.
 def map[a, b](f: a -> b, t: Tree[a]): Tree[b] =
-  match t with {
+  match t {
     case Leaf(x)    => Leaf(f(x))
     case Node(l, r) => Node(map(f, l), map(f, r))
   }
