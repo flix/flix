@@ -242,7 +242,7 @@ class TestWeeder extends FunSuite with TestUtils {
 
   test("NonLinearPattern.01") {
     val input =
-      """def f(): Bool = match (21, 42) with {
+      """def f(): Bool = match (21, 42) {
         |  case (x, x) => true
         |}
       """.stripMargin
@@ -252,7 +252,7 @@ class TestWeeder extends FunSuite with TestUtils {
 
   test("NonLinearPattern.02") {
     val input =
-      """def f(): Bool = match (21, 42, 84) with {
+      """def f(): Bool = match (21, 42, 84) {
         |  case (x, x, x) => true
         |}
       """.stripMargin
@@ -262,7 +262,7 @@ class TestWeeder extends FunSuite with TestUtils {
 
   test("NonLinearPattern.03") {
     val input =
-      """def f(): Bool = match (1, (2, (3, 4))) with {
+      """def f(): Bool = match (1, (2, (3, 4))) {
         |  case (x, (y, (z, x))) => true
         |}
       """.stripMargin

@@ -37,7 +37,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Int =
-         |    match (123, 456) with {
+         |    match (123, 456) {
          |        case (_x, _y) => _x + _y
          |    }
          |
@@ -180,7 +180,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Int =
         |    let x = 123;
-        |    match (456, 789) with {
+        |    match (456, 789) {
         |        case (x, _) => x
         |    }
         |
@@ -194,7 +194,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Int =
         |    let x = 123;
-        |    match (456, 789) with {
+        |    match (456, 789) {
         |        case (_, x) => x
         |    }
         |
@@ -208,7 +208,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Int =
         |    let x = 123;
-        |    match (456, 789) with {
+        |    match (456, 789) {
         |        case (u, v) => u + v
         |        case (x, y) => x + y
         |    }
@@ -223,7 +223,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Int =
         |    let x = 123;
-        |    match (456, 789) with {
+        |    match (456, 789) {
         |        case (u, v) => u + v
         |        case (y, x) => x + y
         |    }
@@ -262,7 +262,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Int =
         |    let x = 123;
-        |    match (456, 789) with {
+        |    match (456, 789) {
         |        case (u, v) => u + v
         |        case (y, x) => x + y
         |    }
@@ -661,7 +661,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |}
          |
          |pub def f(x: Option[Int]): Int =
-         |    match x with {
+         |    match x {
          |        case y => 123
          |    }
          |
@@ -679,7 +679,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |}
          |
          |pub def f(x: Option[Int]): Int =
-         |    match x with {
+         |    match x {
          |        case None    => 123
          |        case Some(y) => 456
          |    }
@@ -698,7 +698,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |}
          |
          |pub def f(x: Option[(Int, Int)]): Int =
-         |    match x with {
+         |    match x {
          |        case None         => 123
          |        case Some((y, z)) => z
          |    }
@@ -782,7 +782,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnconditionalRecursion.03") {
     val input =
       s"""
-         |def foo(x: Int): Int = match x with {
+         |def foo(x: Int): Int = match x {
          |    case 0 => foo(999)
          |    case _ => foo(123)
          |}

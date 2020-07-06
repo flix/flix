@@ -855,7 +855,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
       // Given the code:
       //
-      // match x with {
+      // match x {
       //   case PATTERN_1 => BODY_1
       //   case PATTERN_2 => BODY_2
       //   ...
