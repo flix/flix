@@ -26,19 +26,19 @@
 
   def equ(e1: SULattice, e2: SULattice): Bool = e1 == e2
 
-  def leq(e1: SULattice, e2: SULattice): Bool = match (e1, e2) with {
+  def leq(e1: SULattice, e2: SULattice): Bool = match (e1, e2) {
     case (SULattice.Bottom, _) => true
     case (_, SULattice.Top) => true
     case (SULattice.Single(s1), SULattice.Single(s2)) => s1 == s2
     case _ => false
   }
-  def lub(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
+  def lub(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) {
     case (SULattice.Bottom, _) => e2
     case (_, SULattice.Bottom) => e1
     case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top
     case _ => SULattice.Top
   }
-  def glb(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
+  def glb(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) {
     case (SULattice.Top, _) => e2
     case (_, SULattice.Top) => e1
     case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
@@ -82,7 +82,7 @@ Pt(p,b) :- FILoad(p,q,_), Pt(q,a), PtH(a,b).
 // Preserve
 // ---------
 //su-after(l,a,t) :- su-before(l,a,t), NOT kill(l,a).
-def killNot(a: Str, e: SULattice): Bool = match e with {
+def killNot(a: Str, e: SULattice): Bool = match e {
   case SULattice.Bottom => false
   case SULattice.Single(s) => a != s
   case SULattice.Top => true
@@ -93,7 +93,7 @@ SU(l2,a;t) :- CFG(l1, l2), SU(l1,a;t), killNot(a, k), Kill(l2;k).
 //
 // PtSu
 // ---------
-def filter(e: SULattice, p: Str): Bool = match e with {
+def filter(e: SULattice, p: Str): Bool = match e {
   case SULattice.Bottom => false
   case SULattice.Single(s) => p == s
   case SULattice.Top => true

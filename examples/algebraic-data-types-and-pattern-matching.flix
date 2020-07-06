@@ -7,7 +7,7 @@ enum Shape {
 
 /// Computes the area of the given shape using
 /// pattern matching and basic arithmetic.
-def area(s: Shape): Int = match s with {
+def area(s: Shape): Int = match s {
     case Circle(r)       => 3 * (r * r)
     case Square(w)       => w * w
     case Rectangle(h, w) => h * w

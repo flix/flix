@@ -8,7 +8,7 @@ def aList(): List[Int] = 1 :: 2 :: 3 :: Nil
 def bList(): List[Int] = aList() ::: aList()
 
 /// We can use pattern matching to take a list apart:
-def length[a](l: List[a]): Int = match l with {
+def length[a](l: List[a]): Int = match l {
   case Nil     => 0
   case x :: xs => 1 + length(xs)
 }

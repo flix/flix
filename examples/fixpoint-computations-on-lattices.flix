@@ -14,7 +14,7 @@ enum Sign {
 def equ(e1: Sign, e2: Sign): Bool = e1 == e2
 
 /// The partial order relation on the lattice elements.
-def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
+def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
     case (Bot, _)   => true
     case (Neg, Neg) => true
     case (Zer, Zer) => true
@@ -24,7 +24,7 @@ def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
 }
 
 /// The least upper bound relation on the lattice elements.
-def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
     case (Bot, x)   => x
     case (x, Bot)   => x
     case (Neg, Neg) => Neg
@@ -34,7 +34,7 @@ def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
 }
 
 /// The greatest lower bound relation on the lattice elements.
-def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
     case (Top, x)   => x
     case (x, Top)   => x
     case (Neg, Neg) => Neg

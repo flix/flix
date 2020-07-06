@@ -25,7 +25,7 @@ namespace Belnap {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    pub def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
+    pub def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) {
         case (Bot, _)       => true
         case (True, True)   => true
         case (False, False) => true
@@ -37,7 +37,7 @@ namespace Belnap {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    pub def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Bot, x)       => x
         case (x, Bot)       => x
         case (True, True)   => True
@@ -49,7 +49,7 @@ namespace Belnap {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    pub def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Top, x)       => x
         case (x, Top)       => x
         case (True, True)   => True
@@ -61,7 +61,7 @@ namespace Belnap {
     /// The lattice height function.
     ///
     #nonNegative #decreasing(equ, leq)
-    pub def height(e: Belnap): BigInt = match e with {
+    pub def height(e: Belnap): BigInt = match e {
         case Top    => 0ii
         case True   => 1ii
         case False  => 1ii
@@ -78,7 +78,7 @@ namespace Belnap {
     ///
     #safe1(x -> !x)
     #strict1 #monotone1
-    pub def not(e: Belnap): Belnap = match e with {
+    pub def not(e: Belnap): Belnap = match e {
         case Bot    => Bot
         case True   => False
         case False  => True
@@ -90,7 +90,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x && y)
     #strict2 #monotone2 #commutative #associative
-    pub def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => True
@@ -105,7 +105,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x || y)
     #strict2 #monotone2 #commutative #associative
-    pub def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => True
@@ -120,7 +120,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x ⊕ y)
     #strict2 #monotone2 #commutative #associative
-    pub def xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => False
@@ -135,7 +135,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x → y)
     #strict2 #monotone2
-    pub def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Bot, _)         => Bot
         case (_, Bot)         => Bot
         case (True, True)     => True
@@ -150,7 +150,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x ↔ y)
     #strict2 #monotone2 #commutative #associative
-    pub def bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => True

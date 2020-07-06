@@ -27,7 +27,7 @@ namespace Domain/ParitySign {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-    def leq(x: ParitySign, y: ParitySign): Bool = match (x, y) with {
+    def leq(x: ParitySign, y: ParitySign): Bool = match (x, y) {
         case (Bot, _)       => true
         case (ONeg, ONeg)   => true
         case (Zer, Zer)     => true
@@ -43,7 +43,7 @@ namespace Domain/ParitySign {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    def lub(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
+    def lub(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) {
         case (Bot, x)       => x
         case (x, Bot)       => x
         case (ONeg, ONeg)   => ONeg
@@ -61,7 +61,7 @@ namespace Domain/ParitySign {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    def glb(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
+    def glb(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) {
         case (Top, x)       => x
         case (x, Top)       => x
         case (ONeg, ONeg)   => ONeg
@@ -90,7 +90,7 @@ namespace Domain/ParitySign {
     ///
     /// Over-approximates integer `increment`.
     ///
-    pub def inc(e: ParitySign): ParitySign = match e with {
+    pub def inc(e: ParitySign): ParitySign = match e {
         case Bot    => Bot
         case ONeg   => ENeg
         case Zer    => OPos
@@ -103,7 +103,7 @@ namespace Domain/ParitySign {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    pub def dec(e: ParitySign): ParitySign = match e with {
+    pub def dec(e: ParitySign): ParitySign = match e {
         case Bot    => Bot
         case ONeg   => ENeg
         case Zer    => ONeg
@@ -116,7 +116,7 @@ namespace Domain/ParitySign {
     ///
     /// Over-approximates integer `addition`.
     ///
-    pub def plus(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
+    pub def plus(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) {
         case (Bot, _)   => Bot
         case (_, Bot)   => Bot
         // case (ONeg, ONeg) => Even // TODO: Need Even and Odd

@@ -1,20 +1,20 @@
  /// Mooo's `n` times on channel `c`.
 def mooo(c: Channel[Str], n: Int): Unit & Impure =
-    match n with {
+    match n {
         case 0 => ()
         case x => c <- "Mooo!"; mooo(c, x - 1)
     }
 
 /// Meow's `n` times on channel `c`.
 def meow(c: Channel[Str], n: Int): Unit & Impure =
-    match n with {
+    match n {
         case 0 => ()
         case x => c <- "Meow!"; meow(c, x - 1)
     }
 
 /// Hiss'es `n` times on channel `c`.
 def hiss(c: Channel[Str], n: Int): Unit & Impure =
-    match n with {
+    match n {
         case 0 => ()
         case x => c <- "Hiss!"; hiss(c, x - 1)
     }

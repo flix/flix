@@ -36,7 +36,7 @@ enum EvaluationContext {
 ///
 /// Returns `true` if the given expression `e0` is a value.
 ///
-def isValue(e0: Expression): Bool = match e0 with {
+def isValue(e0: Expression): Bool = match e0 {
     case Abs(x, e) => true
     case _         => false
 }
@@ -54,7 +54,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 ///
 /// Returns the expression itself (and the empty evaluation context) if the expression is irreducible.
 ///
-def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
+def redex(e0: Expression): (Expression, EvaluationContext) = match e0 {
     case Var(x) =>
         // A variable cannot be reduced.
         (Var(x), Hole)
@@ -83,7 +83,7 @@ def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
 /// Returns an expression reconstructed from the given evaluation context `ec0`
 /// with the given expression `e0` replacing the hole in the context.
 ///
-def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 with {
+def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 {
     case Hole         => e0
     case EApp1(ec, e) => App(recompose(e0, ec), e)
     case EApp2(v, ec) => App(v, recompose(e0, ec))
@@ -94,7 +94,7 @@ def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 wi
 ///
 def step(e0: Expression): Expression =
     let (rdx, ec) = redex(e0);
-    match rdx with {
+    match rdx {
         case App(Abs(x, e1), e2) =>
             // Perform beta-reduction: Use alpha-renaming to avoid capture.
             recompose(substitute(e1, x, alpha(e2, Map.empty())), ec)
@@ -105,7 +105,7 @@ def step(e0: Expression): Expression =
 ///
 /// Replaces every occurrence of the variable `x` in the expression `e0` with the expression `r0`.
 ///
-def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 with {
+def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 {
     case Var(y)      => if (x == y) r0 else Var(y)
     case Abs(y, e)   => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
     case App(e1, e2) => App(substitute(e1, x, r0), substitute(e2, x, r0))
@@ -114,10 +114,10 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 wi
 ///
 /// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
 ///
-def alpha(e0: Expression, m: Map[Int, Int]): Expression = match e0 with {
+def alpha(e0: Expression, m: Map[Int, Int]): Expression = match e0 {
     case Var(x) =>
         // Check if we need to rename the variable.
-        match Map.get(x, m) with {
+        match Map.get(x, m) {
             case None    => Var(x)
             case Some(y) => Var(y)
         }

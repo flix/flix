@@ -23,7 +23,7 @@ namespace Domain/Parity {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) with {
+    def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
         case (Bot, _)       => true
         case (Odd, Odd)     => true
         case (Even, Even)   => true
@@ -35,7 +35,7 @@ namespace Domain/Parity {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #commutative #associative #upperBound #leastUpperBound
-    def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (Bot, x)       => x
         case (x, Bot)       => x
         case (Odd, Odd)     => Odd
@@ -47,7 +47,7 @@ namespace Domain/Parity {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #commutative #associative #lowerBound #greatestLowerBound
-    def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (Top, x)       => x
         case (x, Top)       => x
         case (Odd, Odd)     => Odd
@@ -59,7 +59,7 @@ namespace Domain/Parity {
     /// The lattice height function.
     ///
     #nonNegative #decreasing(equ, leq)
-    pub def height(e: Parity): BigInt = match e with {
+    pub def height(e: Parity): BigInt = match e {
         case Top    => 0ii
         case Odd    => 1ii
         case Even   => 1ii
@@ -76,7 +76,7 @@ namespace Domain/Parity {
     ///
     #safe1(x -> x + 1)
     #strict1 #monotone1
-    pub def inc(e: Parity): Parity = match e with {
+    pub def inc(e: Parity): Parity = match e {
         case Bot  => Bot
         case Odd  => Even
         case Even => Odd
@@ -88,7 +88,7 @@ namespace Domain/Parity {
     ///
     #safe1(x -> x - 1)
     #strict1 #monotone1
-    pub def dec(e: Parity): Parity = match e with {
+    pub def dec(e: Parity): Parity = match e {
         case Bot  => Bot
         case Odd  => Even
         case Even => Odd
@@ -100,7 +100,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
-    pub def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (_, Bot)       => Bot
         case (Bot, _)       => Bot
         case (Odd, Odd)     => Even
@@ -115,7 +115,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    pub def minus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def minus(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (_, Bot)       => Bot
         case (Bot, _)       => Bot
         case (Odd, Odd)     => Even
@@ -130,7 +130,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x * y)
     #strict2 #monotone2 #commutative #associative
-    pub def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def times(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (_, Bot)       => Bot
         case (Bot, _)       => Bot
         case (Odd, Odd)     => Odd
@@ -145,7 +145,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x / y)
     #strict2 #monotone2
-    pub def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) {
        case (_, Bot)    => Bot
        case (Bot, _)    => Bot
        case _           => Top
@@ -156,7 +156,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x % y)
     #strict2 #monotone2
-    pub def modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) {
        case (_, Bot)        => Bot
        case (Bot, _)        => Bot
        case (Odd, Odd)      => Top
@@ -171,7 +171,7 @@ namespace Domain/Parity {
     ///
     #safe1(x -> ~~~x)
     #strict1 #monotone1
-    pub def negate(e: Parity): Parity = match e with {
+    pub def negate(e: Parity): Parity = match e {
         case Bot    => Bot
         case Odd    => Even
         case Even   => Odd
@@ -183,7 +183,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x &&& y)
     #strict2 #monotone2 #commutative #associative
-    pub def and(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def and(e1: Parity, e2: Parity): Parity = match (e1, e2) {
        case (_, Bot)        => Bot
        case (Bot, _)        => Bot
        case (Odd, Odd)      => Odd
@@ -198,7 +198,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x ||| y)
     #strict2 #monotone2 #commutative #associative
-    pub def or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def or(e1: Parity, e2: Parity): Parity = match (e1, e2) {
       case (_, Bot)         => Bot
       case (Bot, _)         => Bot
       case (Odd, Odd)       => Odd
@@ -213,7 +213,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x ^^^ y)
     #strict2 #monotone2 #commutative #associative
-    pub def xor(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def xor(e1: Parity, e2: Parity): Parity = match (e1, e2) {
       case (_, Bot)         => Bot
       case (Bot, _)         => Bot
       case (Odd, Odd)       => Even
@@ -228,7 +228,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x <<< y)
     #strict2 #monotone2
-    pub def leftShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def leftShift(e1: Parity, e2: Parity): Parity = match (e1, e2) {
       case (_, Bot)         => Bot
       case (Bot, _)         => Bot
       case (Odd, Odd)       => Even
@@ -243,7 +243,7 @@ namespace Domain/Parity {
     ///
     #safe2((x, y) -> x >>> y)
     #strict2 #monotone2
-    pub def rightShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    pub def rightShift(e1: Parity, e2: Parity): Parity = match (e1, e2) {
       case (_, Bot)     => Bot
       case (Bot, _)     => Bot
       case _            => Top
@@ -256,7 +256,7 @@ namespace Domain/Parity {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    pub def eq(e1: Parity, e2: Parity): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: Parity, e2: Parity): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)       => Belnap/Belnap.Bot
         case (_, Bot)       => Belnap/Belnap.Bot
         case (Odd, Even)    => Belnap/Belnap.False
@@ -279,7 +279,7 @@ namespace Domain/Parity {
     #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def less(e1: Parity, e2: Parity): Belnap.Belnap = match (e1, e2) with {
+    pub def less(e1: Parity, e2: Parity): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
         case _          => Belnap/Belnap.Top

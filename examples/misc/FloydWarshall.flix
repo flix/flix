@@ -24,7 +24,7 @@ def equ(e1: Dist, e2: Dist): Bool = e1 == e2
 ///
 /// Returns `true` if the distance `e1` is greater than or equal to the distance `e2`.
 ///
-def leq(e1: Dist, e2: Dist): Bool = match (e1, e2) with {
+def leq(e1: Dist, e2: Dist): Bool = match (e1, e2) {
   case (_, Top) => true
   case (Bot, _) => true
   case (Dst(n1), Dst(n2)) => n1 >= n2
@@ -34,7 +34,7 @@ def leq(e1: Dist, e2: Dist): Bool = match (e1, e2) with {
 ///
 /// Returns the shorter distance of `e1` and `e2`.
 ///
-def lub(e1: Dist, e2: Dist): Dist = match (e1, e2) with {
+def lub(e1: Dist, e2: Dist): Dist = match (e1, e2) {
   case (Bot, x) => x
   case (x, Bot) => x
   case (Dst(n1), Dst(n2)) => Dst(Int32.min(n1, n2))
@@ -44,7 +44,7 @@ def lub(e1: Dist, e2: Dist): Dist = match (e1, e2) with {
 ///
 /// Returns the greater distance of `e1` and `e2`.
 ///
-def glb(e1: Dist, e2: Dist): Dist = match (e1, e2) with {
+def glb(e1: Dist, e2: Dist): Dist = match (e1, e2) {
   case (Top, x) => x
   case (x, Top) => x
   case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))
@@ -66,7 +66,7 @@ ShortestDist(a, a; Top) :- ShortestDist(a, a; d), negativeDist(d).
 /// Transfer function.
 /// Returns the sum of two given distances.
 ///
-def sum(e1: Dist, e2: Dist): Dist = match (e1, e2) with {
+def sum(e1: Dist, e2: Dist): Dist = match (e1, e2) {
   case (Top, _) => Top
   case (_, Top) => Top
   case (Dst(n1), Dst(n2)) => Dst(n1 + n2)
@@ -77,7 +77,7 @@ def sum(e1: Dist, e2: Dist): Dist = match (e1, e2) with {
 /// Filter function.
 /// Returns `true` if the given distance `d` is negative.
 ///
-def negativeDist(d: Dist): Bool = match d with {
+def negativeDist(d: Dist): Bool = match d {
   case Top => true
   case Dst(x) => x < 0
   case _ => false

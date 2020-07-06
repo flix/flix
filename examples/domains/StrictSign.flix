@@ -23,7 +23,7 @@ namespace Domain/StrictSign {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
+    def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
         case (Bot, _)   => true
         case (Neg, Neg) => true
         case (Zer, Zer) => true
@@ -36,7 +36,7 @@ namespace Domain/StrictSign {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Bot, x)   => x
         case (x, Bot)   => x
         case (Neg, Neg) => Neg
@@ -49,7 +49,7 @@ namespace Domain/StrictSign {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Top, x)   => x
         case (x, Top)   => x
         case (Neg, Neg) => Neg
@@ -62,7 +62,7 @@ namespace Domain/StrictSign {
     /// The lattice height function.
     ///
     #nonNegative #decreasing(equ, leq)
-    pub def height(e: Sign): BigInt = match e with {
+    pub def height(e: Sign): BigInt = match e {
         case Top    => 0ii
         case Neg    => 1ii
         case Zer    => 1ii
@@ -84,7 +84,7 @@ namespace Domain/StrictSign {
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    pub def inc(e: Sign): Sign = match e with {
+    pub def inc(e: Sign): Sign = match e {
         case Bot => Bot
         case Neg => Top
         case Zer => Pos
@@ -97,7 +97,7 @@ namespace Domain/StrictSign {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    pub def dec(e: Sign): Sign = match e with {
+    pub def dec(e: Sign): Sign = match e {
         case Bot => Bot
         case Neg => Neg
         case Zer => Neg
@@ -110,7 +110,7 @@ namespace Domain/StrictSign {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
-    pub def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    pub def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Bot, _)   => Bot
         case (_, Bot)   => Bot
         case (Neg, Neg) => Neg
@@ -130,7 +130,7 @@ namespace Domain/StrictSign {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    pub def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    pub def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Bot, _)   => Bot
         case (_, Bot)   => Bot
         case (Neg, Neg) => Top
@@ -150,7 +150,7 @@ namespace Domain/StrictSign {
     ///
     #safe2((x, y) -> x * y)
     #strict2 #monotone2 #commutative #associative
-    pub def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    pub def times(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Bot, _)   => Bot
         case (_, Bot)   => Bot
         case (Neg, Neg) => Pos
@@ -172,7 +172,7 @@ namespace Domain/StrictSign {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    pub def eq(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
         case (Neg, Neg) => Belnap/Belnap.Top
@@ -202,7 +202,7 @@ namespace Domain/StrictSign {
     #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def less(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) with {
+    pub def less(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
         case (Neg, Zer) => Belnap/Belnap.True

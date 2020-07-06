@@ -19,7 +19,7 @@ enum Type {
 
 /// We can now write a function that given an expression extended
 /// with a tpe: Type field returns its type!
-def typeOf[r](e: Exp[{tpe: Type | r}]): Type = match e with {
+def typeOf[r](e: Exp[{tpe: Type | r}]): Type = match e {
     case True   => TBool
     case False  => TBool
     case Cst(_) => TInt
@@ -30,7 +30,7 @@ def typeOf[r](e: Exp[{tpe: Type | r}]): Type = match e with {
 /// We can write a function that takes an untyped expression
 /// and returns a typed expression decorated with the type.
 /// For simplicity, the actual checks have been omitted.
-def typeCheck(e: Exp[{}]): Exp[{tpe: Type}] = match e with {
+def typeCheck(e: Exp[{}]): Exp[{tpe: Type}] = match e {
     case True   => True
     case False  => False
     case Cst(i) => Cst({value = i.value, tpe = TInt})
@@ -54,7 +54,7 @@ def main(): Type =
 
 /// We can extend the function above to be one that is polymorphic
 /// in whatever other fields an expression may be decorated with:
-def typeCheck2[r](e: Exp[r]): Exp[{tpe: Type | r}] = match e with {
+def typeCheck2[r](e: Exp[r]): Exp[{tpe: Type | r}] = match e {
     case True   => True
     case False  => False
     case Cst(i) => Cst({ +tpe = TInt | { value = i.value | i}})

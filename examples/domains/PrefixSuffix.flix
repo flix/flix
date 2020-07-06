@@ -25,7 +25,7 @@ namespace Domain/PrefixSuffix {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = match (e1, e2) with {
+    def leq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = match (e1, e2) {
         case (Bot, _)                           => true
         case (PreSuf(p1, s1), PreSuf(p2, s2))   => p1 == p2 && s1 == s2
         case (PreSuf(p1, _), Pre(p2))           => p1 == p2
@@ -40,7 +40,7 @@ namespace Domain/PrefixSuffix {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
+    def lub(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
         case (Bot, x)                           => x
         case (x, Bot)                           => x
         case (PreSuf(p1, s1), PreSuf(p2, s2))   => {
@@ -62,7 +62,7 @@ namespace Domain/PrefixSuffix {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
+    def glb(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
         case (Top, x)                           => x
         case (x, Top)                           => x
         case (PreSuf(p1, s1), PreSuf(p2, s2))   => if (p1 == p2 && s1 == s2) PreSuf(p1, s1) else Bot
@@ -81,7 +81,7 @@ namespace Domain/PrefixSuffix {
     /// The lattice height function.
     ///
     #nonNegative #decreasing(equ, leq)
-    pub def height(e: PrefixSuffix): BigInt = match e with {
+    pub def height(e: PrefixSuffix): BigInt = match e {
         case Top            => 0ii
         case Pre(_)         => 1ii
         case Suf(_)         => 1ii
@@ -93,7 +93,7 @@ namespace Domain/PrefixSuffix {
     /// Over-approximates `concatenate`.
     ///
     #strict2 #monotone2 #associative
-    pub def concatenate(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
+    pub def concatenate(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (PreSuf(p1, _), PreSuf(_, s2)) => PreSuf(p1, s2)
@@ -118,7 +118,7 @@ namespace Domain/PrefixSuffix {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    pub def eq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)            => Belnap/Belnap.Bot
         case (_, Bot)            => Belnap/Belnap.Bot
         case (PreSuf(p1, s1), PreSuf(p2, s2)) => {

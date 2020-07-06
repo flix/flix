@@ -63,7 +63,7 @@ def inc(x: Int): Int = x + 1
 def add(x: Int, y: Int): Int = x + y
 def sum(x: Int, y: Int, z: Int): Int = x + y + z
 
-def isEmpty[a](xs: List[a]): Bool = match xs with {
+def isEmpty[a](xs: List[a]): Bool = match xs {
     case Nil => true
     case _ => false
 }

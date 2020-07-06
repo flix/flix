@@ -28,7 +28,7 @@ namespace Domain/IntervalAlt {
     ///
     /// Returns the canonical representation of the given IntervalAlt `e`.
     ///
-    def norm(x: IntervalAlt): IntervalAlt = match x with {
+    def norm(x: IntervalAlt): IntervalAlt = match x {
         case Bot            => Bot
         case Range(b, e)    => if (b <= e) (if (e - b <= maxWidth()) Range(b, e) else Top) else Bot
         case Top            => Top
@@ -43,7 +43,7 @@ namespace Domain/IntervalAlt {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(x: IntervalAlt, y: IntervalAlt): Bool = match (x, y) with {
+    def leq(x: IntervalAlt, y: IntervalAlt): Bool = match (x, y) {
         case (Bot, _)                       => true
         case (Range(b1, e1), Range(b2, e2)) => b2 <= b1 && e1 <= e2
         case (_, Top)                       => true
@@ -54,7 +54,7 @@ namespace Domain/IntervalAlt {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound
-    def lub(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) with {
+    def lub(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
         case (Bot, _)                       => y
         case (_, Bot)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.min(b1, b2), BigInt.max(e1, e2)))
@@ -65,7 +65,7 @@ namespace Domain/IntervalAlt {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound
-    def glb(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) with {
+    def glb(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
         case (Top, _)                       => y
         case (_, Top)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.max(b1, b2), BigInt.min(e1, e2)))
@@ -76,7 +76,7 @@ namespace Domain/IntervalAlt {
     /// The lattice height function.
     ///
     #nonNegative #decreasing(equ, leq)
-    pub def height(x: IntervalAlt): BigInt = match x with {
+    pub def height(x: IntervalAlt): BigInt = match x {
         case Top            => 0ii
         case Range(b, e)    => 99ii - (e - b)
         case Bot            => 100ii
@@ -92,7 +92,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    pub def inc(x: IntervalAlt): IntervalAlt = match x with {
+    pub def inc(x: IntervalAlt): IntervalAlt = match x {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b + 1ii, e + 1ii))
         case Top            => Top
@@ -103,7 +103,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    pub def dec(x: IntervalAlt): IntervalAlt = match x with {
+    pub def dec(x: IntervalAlt): IntervalAlt = match x {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
         case Top            => Top
@@ -114,7 +114,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2
-    pub def plus(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) with {
+    pub def plus(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
@@ -126,7 +126,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    pub def minus(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) with {
+    pub def minus(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 - e2, e1 - b2))
@@ -138,7 +138,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe2((x, y) -> x * y)
     #strict2 /* #monotone2 loops/timeout */
-    pub def times(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) with {
+    pub def times(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) =>
@@ -153,7 +153,7 @@ namespace Domain/IntervalAlt {
       */
     #safeBelnap2((x, y) -> x == y)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
-    pub def eq(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = match (x, y) with {
+    pub def eq(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = match (x, y) {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2)) => {
@@ -176,7 +176,7 @@ namespace Domain/IntervalAlt {
       */
     #safeBelnap2((x, y) -> x < y)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
-    pub def less(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = match (x, y) with {
+    pub def less(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = match (x, y) {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   =>
