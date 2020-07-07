@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Scheme, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
@@ -43,18 +43,20 @@ object BoolUnification {
     }
 
     eff1 match {
-      case x: Type.Var if eff2 eq Type.True =>
-        return Ok(Substitution.singleton(x, Type.True))
-      case x: Type.Var if eff2 eq Type.False =>
-        return Ok(Substitution.singleton(x, Type.False))
+      case x: Type.Var if x.rigidity eq Rigidity.Flexible =>
+        if (eff2 eq Type.True)
+          return Ok(Substitution.singleton(x, Type.True))
+        if (eff2 eq Type.False)
+          return Ok(Substitution.singleton(x, Type.False))
       case _ => // nop
     }
 
     eff2 match {
-      case y: Type.Var if eff1 eq Type.True =>
-        return Ok(Substitution.singleton(y, Type.True))
-      case y: Type.Var if eff1 eq Type.False =>
-        return Ok(Substitution.singleton(y, Type.False))
+      case y: Type.Var if y.rigidity eq Rigidity.Flexible =>
+        if (eff1 eq Type.True)
+          return Ok(Substitution.singleton(y, Type.True))
+        if (eff1 eq Type.False)
+          return Ok(Substitution.singleton(y, Type.False))
       case _ => // nop
     }
 
