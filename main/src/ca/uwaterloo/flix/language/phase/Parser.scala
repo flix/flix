@@ -790,7 +790,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NullPattern: Rule1[ParsedAst.NullPattern] = rule {
-        (SP ~ atomic("_") ~ SP ~> ParsedAst.NullPattern.Wild) | (SP ~ Names.Variable ~ SP ~> ParsedAst.NullPattern.Var)
+        (SP ~ atomic("_") ~ SP ~> ParsedAst.NullPattern.Wild) |
+          (SP ~ atomic("null") ~ SP ~> ParsedAst.NullPattern.Null) |
+          (SP ~ Names.Variable ~ SP ~> ParsedAst.NullPattern.Var)
       }
 
       def CaseOne: Rule1[ParsedAst.NullRule] = rule {

@@ -452,10 +452,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val env1 = pat0.foldLeft(Map.empty[String, Symbol.VarSym]) {
             case (acc, WeededAst.NullPattern.Wild(loc)) => acc
             case (acc, WeededAst.NullPattern.Var(ident, loc)) => acc + (ident.name -> Symbol.freshVarSym(ident))
+            case (acc, WeededAst.NullPattern.Null(loc)) => acc
           }
           val p = pat0.map {
             case WeededAst.NullPattern.Wild(loc) => NamedAst.NullPattern.Wild(loc)
             case WeededAst.NullPattern.Var(ident, loc) => NamedAst.NullPattern.Var(env1(ident.name), loc)
+            case WeededAst.NullPattern.Null(loc) => NamedAst.NullPattern.Null(loc)
           }
           mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
             case e => NamedAst.NullRule(p, e)
@@ -1160,6 +1162,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def freeVars(pat0: WeededAst.NullPattern): List[Name.Ident] = pat0 match {
     case NullPattern.Wild(_) => Nil
     case NullPattern.Var(ident, _) => ident :: Nil
+    case NullPattern.Null(_) => Nil
   }
 
   /**

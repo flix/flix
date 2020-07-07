@@ -232,6 +232,8 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NullPattern
 
+    case class Null(loc: SourceLocation) extends NullPattern
+
   }
 
   sealed trait Predicate

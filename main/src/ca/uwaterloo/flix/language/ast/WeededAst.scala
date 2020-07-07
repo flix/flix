@@ -252,6 +252,8 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends NullPattern
 
+    case class Null(loc: SourceLocation) extends NullPattern
+
   }
 
 

@@ -618,6 +618,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             case (acc, (x, ResolvedAst.NullPattern.Var(y, _))) =>
               // Case 2: We have a variable. We must force `x` to be non-null.
               Type.mkAnd(acc, Type.mkEquiv(x, Type.False))
+            case (acc, (x, ResolvedAst.NullPattern.Null(_))) =>
+              // Case 3: We have a null constant. No constraint is generated.
+              acc
           }
 
         /**
@@ -639,6 +642,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               case (matchType, ResolvedAst.NullPattern.Var(sym, loc)) =>
                 // Case 2: The null pattern is a variable. Must constraint the type of the local variable with the type of the match expression.
                 unifyTypM(matchType, sym.tvar, loc)
+              case (matchType, ResolvedAst.NullPattern.Null(_)) =>
+                // Case 3: The null pattern is a null constant. No variable is bound and no type information to constrain.
+                liftM(matchType)
             })
           }
 
@@ -1301,6 +1307,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val pat = pat0.map {
               case ResolvedAst.NullPattern.Wild(loc) => TypedAst.NullPattern.Wild(loc)
               case ResolvedAst.NullPattern.Var(sym, loc) => TypedAst.NullPattern.Var(sym, loc)
+              case ResolvedAst.NullPattern.Null(loc) => TypedAst.NullPattern.Null(loc)
             }
             TypedAst.NullRule(pat, visitExp(exp, subst0))
         }
