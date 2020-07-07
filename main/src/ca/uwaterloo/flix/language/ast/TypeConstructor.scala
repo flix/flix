@@ -193,7 +193,7 @@ object TypeConstructor {
     * A type constructor for nullable types.
     */
   case object Nullable extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
 
   /**

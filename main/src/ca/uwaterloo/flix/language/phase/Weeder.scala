@@ -722,7 +722,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       // Check for mismatched arity of `exps` and `rules`.
       //
       val expectedArity = exps.length
-      for (ParsedAst.NullRule(sp1, pat, _, sp2) <- rules){
+      for (ParsedAst.NullRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
           return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
@@ -1672,11 +1672,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Nullable(tpe, sp2) =>
+      val t = visitType(tpe)
       val sp1 = leftMostSourcePosition(tpe)
       val loc = mkSL(sp1, sp2)
-      val qname = Name.mkQName("Nullable", sp1, sp2)
-      val base = WeededAst.Type.Ambiguous(qname, loc)
-      WeededAst.Type.Apply(base, visitType(tpe), loc)
+      WeededAst.Type.Nullable(t, loc)
 
     case ParsedAst.Type.Apply(t1, args, sp2) =>
       // Curry the type arguments.

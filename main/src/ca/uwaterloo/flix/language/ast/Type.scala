@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
@@ -540,11 +539,9 @@ object Type {
   }
 
   /**
-    * Returns the type `Nullable[nullity, tpe0]`.
-    *
-    * NB: Note the argument order.
+    * Returns the type `Nullable[tpe0, nullity]`.
     */
-  def mkNullable(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Nullable), nullity), tpe0)
+  def mkNullable(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Nullable), tpe0), nullity)
 
   /**
     * Construct a relation type with the given list of type arguments `ts0`.
