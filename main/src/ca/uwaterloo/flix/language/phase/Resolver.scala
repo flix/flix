@@ -1042,8 +1042,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Channel" => Type.Channel.toSuccess
       case "Ref" => Type.Ref.toSuccess
       case "Null" => Type.Cst(TypeConstructor.Nullable).toSuccess
-      case "Nullable" => Type.Apply(Type.Cst(TypeConstructor.Nullable), Type.True).toSuccess
-      case "NonNull" => Type.Apply(Type.Cst(TypeConstructor.Nullable), Type.False).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1144,6 +1142,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case clazz => Type.mkNative(clazz)
         }
       }
+
+    case NamedAst.Type.Nullable(tpe, loc) =>
+      for {
+        t <- lookupType(tpe, ns0, root)
+      } yield Type.mkNullable(t, Type.True)
 
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
       for {
