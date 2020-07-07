@@ -159,7 +159,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.GeneralizationError](result)
   }
 
 }
