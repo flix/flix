@@ -105,6 +105,15 @@ namespace Test/Exp/Null/Nullify {
     @test
     def testNullifyArrow04(): (String? -> String?)? = (_ -> "Hello World"?)?
 
+    @test
+    def testNullifyArrow05(): (String ? true -> String) = _ -> "Hello World"
+
+    @test
+    def testNullifyArrow06(): (String -> String ? true) = _ -> "Hello World"?
+
+    @test
+    def testNullifyArrow07(): (String ? true -> String ? true) = _ -> "Hello World"?
+
     pub enum Option[t] {
         case None,
         case Some(t)
