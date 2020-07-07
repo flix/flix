@@ -1271,10 +1271,11 @@ object ParsedAst {
     /**
       * Nullable Type.
       *
-      * @param tpe the nullable type.
-      * @param sp2 the position of the last character in the type.
+      * @param tpe     the nullable type.
+      * @param nullity the optional nullity.
+      * @param sp2     the position of the last character in the type.
       */
-    case class Nullable(tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class Nullable(tpe: ParsedAst.Type, nullity: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Type Application.

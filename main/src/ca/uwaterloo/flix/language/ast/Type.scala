@@ -539,7 +539,7 @@ object Type {
   }
 
   /**
-    * Returns the type `Nullable[tpe0, nullity]`.
+    * Returns the type `tpe0 ? nullity`.
     */
   def mkNullable(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Nullable), tpe0), nullity)
 

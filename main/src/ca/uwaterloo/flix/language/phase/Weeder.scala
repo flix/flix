@@ -1671,11 +1671,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Native(sp1, fqn, sp2) =>
       WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Nullable(tpe, sp2) =>
-      val t = visitType(tpe)
+    case ParsedAst.Type.Nullable(tpe, optNullity, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val loc = mkSL(sp1, sp2)
-      WeededAst.Type.Nullable(t, loc)
+      val t = visitType(tpe)
+      val n = optNullity match {
+        case None => WeededAst.Type.True(loc)
+        case Some(nullity) => visitType(nullity)
+      }
+      WeededAst.Type.Nullable(t, n, loc)
 
     case ParsedAst.Type.Apply(t1, args, sp2) =>
       // Curry the type arguments.
@@ -1984,7 +1988,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.ImpureArrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.PolymorphicArrow(sp1, _, _, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
-    case ParsedAst.Type.Nullable(tpe, _) => leftMostSourcePosition(tpe)
+    case ParsedAst.Type.Nullable(tpe, _, _) => leftMostSourcePosition(tpe)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.True(sp1, _) => sp1
     case ParsedAst.Type.False(sp1, _) => sp1

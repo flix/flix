@@ -301,7 +301,7 @@ object NamedAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
-    case class Nullable(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Nullable(tpe: NamedAst.Type, nullity: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Relation(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
