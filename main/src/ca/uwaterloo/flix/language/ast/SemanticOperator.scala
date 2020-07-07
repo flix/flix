@@ -769,9 +769,14 @@ object SemanticOperator {
   object ObjectOp {
 
     /**
-      * IsNull.
+      * Null equality.
       */
     case object EqNull extends ObjectOp
+
+    /**
+      * Null inequality.
+      */
+    case object NeqNull extends ObjectOp
 
   }
 

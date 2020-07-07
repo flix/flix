@@ -64,6 +64,72 @@ namespace Test/Exp/Null/Match {
         f({ssn = "123"?, name = null})
 
     @test
+    def testUseCase07(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.name) {
+                case (ssn, null)  => isMaleSSN(ssn)
+                case (null, name) => isMaleName(name)
+                case (ssn, name)  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = "123"?, name = "Lucky Luke"?})
+
+    @test
+    def testUseCase08(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.name) {
+                case (ssn, null)  => isMaleSSN(ssn)
+                case (null, name) => isMaleName(name)
+                case (ssn, name)  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = null, name = "Lucky Luke"?})
+
+    @test
+    def testUseCase09(): Bool =
+        let f = p -> {
+            match? (p.ssn, p.name) {
+                case (ssn, null)  => isMaleSSN(ssn)
+                case (null, name) => isMaleName(name)
+                case (ssn, name)  => isMaleSSN(ssn)
+            }
+        };
+        f({ssn = "123"?, name = null})
+
+    @test
+    def testUseCase10(): Bool =
+        let f = p -> {
+            match? (p.x, p.y) {
+                case (x, y)    => 1
+                case (null, y) => 2
+                case (x, null) => 3
+            }
+        };
+        f({x = "a"?, y = "b"?}) == 1
+
+    @test
+    def testUseCase11(): Bool =
+        let f = p -> {
+            match? (p.x, p.y) {
+                case (x, y)    => 1
+                case (null, y) => 2
+                case (x, null) => 3
+            }
+        };
+        f({x = null, y = "b"?}) == 2
+
+    @test
+    def testUseCase12(): Bool =
+        let f = p -> {
+            match? (p.x, p.y) {
+                case (x, y)    => 1
+                case (null, y) => 2
+                case (x, null) => 3
+            }
+        };
+        f({x = "a"?, y = null}) == 3
+
+    @test
     def testMatchNullableUnit01(): Bool =
         match? ()? {
             case x => true
@@ -71,10 +137,52 @@ namespace Test/Exp/Null/Match {
         }
 
     @test
+    def testMatchNullableUnit02(): Bool =
+        match? null {
+            case x => false
+            case _ => true
+        }
+
+    @test
+    def testMatchNullableUnit03(): Bool =
+        match? ()? {
+            case null => false
+            case x    => true
+        }
+
+    @test
+    def testMatchNullableUnit04(): Bool =
+        match? null {
+            case null => true
+            case x    => false
+        }
+
+    @test
     def testMatchNullableString01(): Bool =
         match? "Hello World"? {
             case x => true
             case _ => false
+        }
+
+    @test
+    def testMatchNullableString02(): Bool =
+        match? null {
+            case x => false
+            case _ => true
+        }
+
+    @test
+    def testMatchNullableString03(): Bool =
+        match? "Hello World"? {
+            case null => false
+            case x    => true
+        }
+
+    @test
+    def testMatchNullableString04(): Bool =
+        match? null {
+            case null => true
+            case x    => false
         }
 
     @test

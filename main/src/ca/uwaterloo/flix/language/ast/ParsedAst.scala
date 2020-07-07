@@ -1084,6 +1084,11 @@ object ParsedAst {
       */
     case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.NullPattern
 
+    /**
+      * The `null` constant pattern.
+      */
+    case class Null(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.NullPattern
+
   }
 
   /**
