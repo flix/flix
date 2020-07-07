@@ -762,6 +762,20 @@ object SemanticOperator {
   }
 
   /**
+    * Object Operators.
+    */
+  sealed trait ObjectOp extends SemanticOperator
+
+  object ObjectOp {
+
+    /**
+      * IsNull.
+      */
+    case object EqNull extends ObjectOp
+
+  }
+
+  /**
     * String Operators.
     */
   sealed trait StringOp extends SemanticOperator
