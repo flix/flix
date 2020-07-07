@@ -150,4 +150,16 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedEffects](result)
   }
 
+  test("TestLeq.Null.03") {
+    val input =
+      """
+        |def f(x: String ? n, y: String ? n): Bool =
+        |    match? (x, y) {
+        |        case (a, _) => a == "Hello"
+        |    }
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
 }
