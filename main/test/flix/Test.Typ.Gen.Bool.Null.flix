@@ -143,7 +143,7 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, _) => true
         }
 
-    pub def testNullableTwoVarExhaustive05(x: String ? n, y: Nullable[String, m]): Bool =
+    pub def testNullableTwoVarExhaustive05(x: String ? n, y: String ? m): Bool =
         match? (x, y) {
             case (a, _) => a == "Hello"
             case (_, b) => b == "World"
