@@ -97,6 +97,39 @@ namespace Test/Exp/Null/Match {
         f({ssn = "123"?, name = null})
 
     @test
+    def testUseCase10(): Bool =
+        let f = p -> {
+            match? (p.x, p.y) {
+                case (x, y)    => 1
+                case (null, y) => 2
+                case (x, null) => 3
+            }
+        };
+        f({x = "a"?, y = "b"?}) == 1
+
+    @test
+    def testUseCase11(): Bool =
+        let f = p -> {
+            match? (p.x, p.y) {
+                case (x, y)    => 1
+                case (null, y) => 2
+                case (x, null) => 3
+            }
+        };
+        f({x = null, y = "b"?}) == 2
+
+    @test
+    def testUseCase12(): Bool =
+        let f = p -> {
+            match? (p.x, p.y) {
+                case (x, y)    => 1
+                case (null, y) => 2
+                case (x, null) => 3
+            }
+        };
+        f({x = "a"?, y = null}) == 3
+
+    @test
     def testMatchNullableUnit01(): Bool =
         match? ()? {
             case x => true
