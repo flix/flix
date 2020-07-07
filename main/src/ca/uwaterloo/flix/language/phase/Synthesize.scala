@@ -995,7 +995,7 @@ object Synthesize extends Phase[Root, Root] {
 
       // Compute the type constructor. Unwrap if nullable type.
       val typeConstructor = tpe.typeConstructor.flatMap {
-        case TypeConstructor.Nullable => tpe.typeArguments(1).typeConstructor
+        case TypeConstructor.Nullable => tpe.typeArguments(0).typeConstructor
         case tc => Some(tc)
       }
 
