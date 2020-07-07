@@ -127,7 +127,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Null.01") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: Nullable[String, false], y: Nullable[String, true], z: Nullable[String, false]): Bool =
+        |pub def testNullableThreeVar11(x: String ? false, y: String ? true, z: String ? false): Bool =
         |    match? (x, y, z) {
         |        case (a, b, _) => a == "Hello" && b == "World"
         |        case (_, b, c) => b == "World" && c == "!"
@@ -140,7 +140,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Null.02") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: Nullable[String, true], y: Nullable[String, false], z: Nullable[String, true]): Bool =
+        |pub def testNullableThreeVar11(x: String ? true, y: String ? false, z: String ? true): Bool =
         |    match? (x, y, z) {
         |        case (a, b, _) => a == "Hello" && b == "World"
         |        case (_, b, c) => b == "World" && c == "!"
