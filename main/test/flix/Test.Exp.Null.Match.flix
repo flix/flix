@@ -99,6 +99,27 @@ namespace Test/Exp/Null/Match {
         }
 
     @test
+    def testMatchNullableString02(): Bool =
+        match? null {
+            case x => false
+            case _ => true
+        }
+
+    @test
+    def testMatchNullableString03(): Bool =
+        match? "Hello World"? {
+            case null => false
+            case x    => true
+        }
+
+    @test
+    def testMatchNullableString04(): Bool =
+        match? null {
+            case null => true
+            case x    => false
+        }
+
+    @test
     def testMatchNullableRecord01(): Bool =
         match? {}? {
             case x => true
