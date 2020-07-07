@@ -278,8 +278,21 @@ object GenExpression {
       visitor.visitJumpInsn(GOTO, entryPoint)
 
     case Expression.Unary(sop, op, exp, _, _) =>
-      // TODO: Ramin: Must not use `op`, should only use `sop`.
-      compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop)
+      sop match {
+        case SemanticOperator.ObjectOp.EqNull =>
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+          val condElse = new Label()
+          val condEnd = new Label()
+          visitor.visitJumpInsn(IFNULL, condElse)
+          visitor.visitInsn(ICONST_1)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitLabel(condEnd)
+        case _ =>
+          // TODO: Ramin: Must not use `op`, should only use `sop`.
+          compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop)
+      }
 
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
       // TODO: Ramin: Must not use `op`, should only use `sop`.

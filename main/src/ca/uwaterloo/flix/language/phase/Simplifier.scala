@@ -1173,8 +1173,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
             case (((freshMatchVar, TypedAst.NullPattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.NullPattern.Var(matchVar, _)), matchExp), acc) =>
-              val method = classOf[java.util.Objects].getMethod("nonNull", classOf[java.lang.Object])
-              val isNullExp = SimplifiedAst.Expression.InvokeStaticMethod(method, List(SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)), Type.Bool, loc)
+              val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
+              val isNullExp = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.EqNull, null, varExp, Type.Bool, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNullExp, acc, Type.Bool, loc)
           }
           val bodyExp = visitExp(body)
