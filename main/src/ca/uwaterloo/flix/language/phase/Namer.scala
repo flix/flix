@@ -972,9 +972,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
-    case WeededAst.Type.Nullable(tpe, loc) =>
-      mapN(visitType(tpe, uenv0, tenv0)) {
-        case t => NamedAst.Type.Nullable(t, loc)
+    case WeededAst.Type.Nullable(tpe, nullity, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0), visitType(nullity, uenv0, tenv0)) {
+        case (t, n) => NamedAst.Type.Nullable(t, n, loc)
       }
 
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
@@ -1178,7 +1178,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Nullable(tpe, loc) => freeVars(tpe)
+    case WeededAst.Type.Nullable(tpe, nullity, loc) => freeVars(tpe) ::: freeVars(nullity)
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
