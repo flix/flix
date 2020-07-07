@@ -1174,8 +1174,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case (((freshMatchVar, TypedAst.NullPattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.NullPattern.Var(matchVar, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val isNullExp = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.EqNull, null, varExp, Type.Bool, loc)
-              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNullExp, acc, Type.Bool, loc)
+              val isNotNull = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.NeqNull, null, varExp, Type.Bool, loc)
+              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNotNull, acc, Type.Bool, loc)
           }
           val bodyExp = visitExp(body)
           val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
