@@ -1388,7 +1388,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
     mapN(visitType(tpe, uenv0, tenv0)) {
-      case t => NamedAst.Scheme(tparams0.map(_.tpe), t)
+      case t => NamedAst.Scheme(tparams0.map(_.tpe), t, /* TODO */ None)
     }
   }
 

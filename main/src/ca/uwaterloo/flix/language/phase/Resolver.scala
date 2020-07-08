@@ -21,8 +21,9 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.phase.unification.BoolUnification
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{Result, Validation}
 
 import scala.collection.mutable
 
@@ -877,10 +878,31 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given scheme `sc0`.
     */
-  def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, prog0: NamedAst.Root): Validation[Scheme, ResolutionError] = {
-    for {
-      base <- lookupType(sc0.base, ns0, prog0)
-    } yield Scheme(sc0.quantifiers, base)
+  def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[Scheme, ResolutionError] = sc0 match {
+    case NamedAst.Scheme(quantifiers0, base0, cond0) =>
+      // Resolve the scheme and condition.
+      val baseVal = lookupType(base0, ns0, prog0)
+      val condVal = cond0 match {
+        case None => None.toSuccess
+        case Some(tpe) => mapN(lookupType(tpe, ns0, prog0))(Some(_))
+      }
+
+      flatMapN(baseVal, condVal) {
+        case (base, None) =>
+          // Case 1: No side-condition. Simply return the scheme.
+          Scheme(quantifiers0, base).toSuccess
+        case (base, Some(bf)) =>
+          // Case 2: A side-condition is present. Compute the mgu with true and apply the substitution.
+          BoolUnification.unify(bf, Type.True) match {
+            case Result.Ok(subst) =>
+              val resultType = subst(base)
+              Scheme(resultType.typeVars.toList, resultType).toSuccess
+
+            case Result.Err(e) =>
+              println(e)
+              ??? // TODO
+          }
+      }
   }
 
   /**
