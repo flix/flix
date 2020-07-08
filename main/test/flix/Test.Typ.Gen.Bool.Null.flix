@@ -103,13 +103,13 @@ namespace Test/Typ/Gen/Bool/Null {
             case (_, b) => b == "World"
         }
 
-    pub def testNullableTwoVar13(x: String ? n1, y: String ? (not n1 or n2)): Bool =
+    pub def testNullableTwoVar13(x: String ? n1, y: String ? (not n1 and n2)): Bool =
         match? (x, y) {
             case (a, _) => a == "Hello"
             case (_, b) => b == "World"
         }
 
-    pub def testNullableTwoVar14(x: String ? (not n1 or n2), y: String ? n1): Bool =
+    pub def testNullableTwoVar14(x: String ? (not n1 and n2), y: String ? n1): Bool =
         match? (x, y) {
             case (a, _) => a == "Hello"
             case (_, b) => b == "World"
