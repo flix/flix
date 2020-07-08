@@ -134,7 +134,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 
   test("TestLeq.Null.02") {
@@ -147,7 +147,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 
   test("TestLeq.Null.03") {

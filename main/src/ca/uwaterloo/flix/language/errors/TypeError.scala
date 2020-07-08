@@ -90,7 +90,7 @@ object TypeError {
     * @param fullType2 the second optional full type in which the second boolean formula occurs.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
+  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the effects '$baseType1' and '$baseType2'."
 
     def message: VirtualTerminal = {
@@ -106,11 +106,16 @@ object TypeError {
           vt << NewLine
         case _ => // nop
       }
-      vt << "Possible fixes:" << NewLine
+      vt << "If the Boolean formula describes purity:" << NewLine
       vt << NewLine
       vt << "  (1) Did you forget to mark the function as impure?" << NewLine
       vt << "  (2) Are you trying to pass a pure function where an impure is required?" << NewLine
       vt << "  (3) Are you trying to pass an impure function where a pure is required?" << NewLine
+      vt << NewLine
+      vt
+      vt << "If the Boolean formula describes nullability:" << NewLine
+      vt << NewLine
+      vt << "  (1) Are you trying to pass null where a non-null value is required?" << NewLine
       vt << NewLine
       vt
     }
