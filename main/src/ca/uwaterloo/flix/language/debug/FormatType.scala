@@ -165,7 +165,27 @@ object FormatType {
             formatApply(tuple, applyParams)
 
           case TypeConstructor.Nullable =>
-            s"Nullable[${args.map(visit).mkString(", ")}]"
+            val arity = args.length
+            if (arity == 0)
+              "Nullable[???, ???]"
+            else if (arity == 1)
+              s"Nullable[${visit(args(0))}, ???}"
+            else if (arity == 2) {
+              args(1) match {
+                case Type.True =>
+                  val tpe1 = visit(args(0))
+                  s"$tpe1?"
+                case Type.False =>
+                  val tpe1 = visit(args(0))
+                  s"$tpe1"
+                case _ =>
+                  val tpe1 = visit(args(0))
+                  val tpe2 = visit(args(1))
+                  s"$tpe1 ? $tpe2"
+              }
+            }
+            else
+              s"Nullable[${args.map(visit).mkString(", ")}]"
 
           case TypeConstructor.Tag(sym, tag) => // TODO better unhappy case handling
             if (args.lengthIs == 2)
