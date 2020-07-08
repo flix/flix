@@ -1262,7 +1262,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Not: Rule1[ParsedAst.Type] = rule {
-      // NB: We use Nullable here because it is "below" Or and And in precedence.
+      // NB: We must not use Type here because it gives the wrong precedence.
       atomic("not") ~ WS ~ Nullable ~> ParsedAst.Type.Not
     }
 
