@@ -128,9 +128,9 @@ object FormatType {
 
           case TypeConstructor.SchemaEmpty => formatApply("#{ }", args)
 
-          case TypeConstructor.True => formatApply("Pure", args) // TODO: Need to format True/False based on where they occur...
+          case TypeConstructor.True => formatApply("true", args)
 
-          case TypeConstructor.False => formatApply("Impure", args) // TODO: Need to format True/False based on where they occur...
+          case TypeConstructor.False => formatApply("false", args)
 
           case TypeConstructor.Array => formatApply("Array", args)
 
