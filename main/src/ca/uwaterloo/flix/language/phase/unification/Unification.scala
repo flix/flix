@@ -253,7 +253,7 @@ object Unification {
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
 
-        case Result.Err(UnificationError.MismatchedEffects(baseType1, baseType2)) =>
+        case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
           Err(TypeError.MismatchedEffects(baseType1, baseType2, loc))
 
         case Result.Err(UnificationError.MismatchedArity(baseType1, baseType2)) =>
@@ -332,7 +332,7 @@ object Unification {
           Ok(subst, subst(eff1))
 
         case Result.Err(e) => e match {
-          case UnificationError.MismatchedEffects(baseType1, baseType2) =>
+          case UnificationError.MismatchedBools(baseType1, baseType2) =>
             Err(TypeError.MismatchedEffects(baseType1, baseType2, loc))
 
           case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")

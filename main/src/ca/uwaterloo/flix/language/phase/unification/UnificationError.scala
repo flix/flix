@@ -33,12 +33,12 @@ object UnificationError {
   case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
-    * An unification error due to a mismatch between the effects `eff1` and `eff2`.
+    * An unification error due to a mismatch between the boolean formulas `tpe1` and `tpe2`.
     *
-    * @param eff1 the first effect.
-    * @param eff2 the second effect.
+    * @param tpe1 the first boolean formula.
+    * @param tpe2 the second boolean formula.
     */
-  case class MismatchedEffects(eff1: Type, eff2: Type) extends UnificationError
+  case class MismatchedBools(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
     * An unification error due to a mismatch between the arity of `ts1` and `ts2`.

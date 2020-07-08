@@ -91,7 +91,7 @@ object BoolUnification {
 
       Ok(subst)
     } catch {
-      case BooleanUnificationException => Err(UnificationError.MismatchedEffects(eff1, eff2))
+      case BooleanUnificationException => Err(UnificationError.MismatchedBools(eff1, eff2))
     }
   }
 
