@@ -91,12 +91,12 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
-    def summary: String = s"Unable to unify the effects '$baseType1' and '$baseType2'."
+    def summary: String = s"Unable to unify the Boolean formulas '$baseType1' and '$baseType2'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the boolean formulas: '" << Red(FormatType.formatType(baseType1)) << "' and '" << Red(FormatType.formatType(baseType2)) << "'." << NewLine
+      vt << ">> Unable to unify the Boolean formulas: '" << Red(FormatType.formatType(baseType1)) << "' and '" << Red(FormatType.formatType(baseType2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched boolean formulas.") << NewLine
       (fullType1, fullType2) match {
