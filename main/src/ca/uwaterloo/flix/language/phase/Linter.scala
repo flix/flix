@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedA
 import ca.uwaterloo.flix.language.errors.LinterError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 
 import scala.annotation.tailrec
@@ -284,11 +284,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * NB: Only intended for program variables.
     */
   private def unifyVar(sym1: Symbol.VarSym, tpe1: Type, sym2: Symbol.VarSym, tpe2: Type)(implicit flix: Flix): Option[Substitution] = {
-    if (Unification.isInstance(tpe2, tpe1))
+    if (isInstance(tpe2, tpe1))
       Some(Substitution.singleton(sym1, Expression.Var(sym2, tpe2, SourceLocation.Unknown)))
     else
       None
   }
+
+  /**
+    * Returns `true` if `tpe1` is an instance of `tpe2`.
+    */
+  def isInstance(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean =
+    Unification.unifyTypes(tpe1, tpe2) match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
+    }
 
   /**
     * Optionally returns a substitution that makes `lint0` and `exp0` equal.
@@ -330,7 +339,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       if (metaVars.contains(sym)) {
         // Case 1: We are unifying a meta-variable.
         // Determine if we can unify the type of the meta-variable and the expression.
-        if (Unification.isInstance(varTyp, expTyp))
+        if (isInstance(varTyp, expTyp))
           Some(Substitution.singleton(sym, exp0))
         else
           None

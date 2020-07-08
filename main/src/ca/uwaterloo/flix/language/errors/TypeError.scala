@@ -112,7 +112,6 @@ object TypeError {
       vt << "  (2) Are you trying to pass a pure function where an impure is required?" << NewLine
       vt << "  (3) Are you trying to pass an impure function where a pure is required?" << NewLine
       vt << NewLine
-      vt
       vt << "If the Boolean formula describes nullability:" << NewLine
       vt << NewLine
       vt << "  (1) Are you trying to pass null where a non-null value is required?" << NewLine
