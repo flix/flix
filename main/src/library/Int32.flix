@@ -236,12 +236,9 @@ namespace Int32 {
     pub def flipBit(x: Int32, position: Int32): Int32 = x ^^^ (1 <<< position)
 
     ///
-    /// Returns the logarithm of `x` to base `b`.
-    /// The result is rounded down to the nearest integer.
+    /// Returns the integer binary logarithm of `x`.
     ///
-    pub def log(x: Int32, b: Int32): Int32 =
-        import java.lang.Math:log(Float64);
-        Float64.clampToInt32((log(toFloat64(x)) / log(toFloat64(b))), 0, Int32.maxValue(), 0) as & Pure
+    pub def log2(x: Int32): Int32 = size() - numberOfLeadingZeros(x) - 1
 
     ///
     /// Returns the factorial of `x`.
