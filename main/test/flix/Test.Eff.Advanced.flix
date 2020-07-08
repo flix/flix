@@ -58,19 +58,19 @@ namespace Test/Eff/Advanced {
     def requiresImpure(_f: a -> b & Impure): Unit = ()
 
     /// A function that requires a pure and an impure function.
-    def requiresPureAndImpure1(_f: a -> b & e, _g: a -> b & {{not e}}): Unit = ()
+    def requiresPureAndImpure1(_f: a -> b & e, _g: a -> b & (not e)): Unit = ()
 
     /// A function that requires a pure and an impure function.
-    def requiresPureAndImpure2(_f: a -> b & {{not e}}, _g: a -> b & e): Unit = ()
+    def requiresPureAndImpure2(_f: a -> b & (not e), _g: a -> b & e): Unit = ()
 
     /// A function that requires at most one pure function.
-    def requiresAtmostOnePure1(_f: a -> b & e1, _g: a -> b & {{not e1 /\ e2}}): Unit = ()
+    def requiresAtmostOnePure1(_f: a -> b & e1, _g: a -> b & (not e1 and e2)): Unit = ()
 
     /// A function that requires at most one pure function.
-    def requiresAtmostOnePure2(_f: a -> b & {{not e1 /\ e2}}, _g: a -> b & e1): Unit = ()
+    def requiresAtmostOnePure2(_f: a -> b & (not e1 and e2), _g: a -> b & e1): Unit = ()
 
     // First and last must be the same. Middle must be the inverse.
-    def requiresTwoAndOne(_f: a -> b & e, _g: a -> b & {{not e}}, _h: a -> b & e): Unit = ()
+    def requiresTwoAndOne(_f: a -> b & e, _g: a -> b & (not e), _h: a -> b & e): Unit = ()
 
     // A unSAT instance.
     //pub def yikes(_f: a -> b & {{(x \/ y \/ z) /\ (x \/ y \/ not z) /\ (x \/ not y \/ z) /\ (x \/ not y \/ not z) /\ (not x \/ y \/ z) /\ (not x \/ y \/ not z) /\ (not x \/ not y \/ z) /\ (not x \/ not y \/ not z)}}): Unit = ()

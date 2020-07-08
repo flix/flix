@@ -25,7 +25,7 @@ pub def curry(f: (a, b) -> c & e): a -> (b -> c & e) = x -> y -> f(x, y)
 /// Returns the result of uncurrying the function `f`.
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
-pub def uncurry(f: a -> (b -> c & e1) & e2): (a, b) -> c & {e1, e2} = (x, y) -> (y |> f(x))
+pub def uncurry(f: a -> (b -> c & e1) & e2): (a, b) -> c & (e1 and e2) = (x, y) -> (y |> f(x))
 
 ///
 /// Returns the first component of `t`.
@@ -54,7 +54,7 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & {e1, e2} = x -> g(f(x))
+pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & (e1 and e2) = x -> g(f(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
