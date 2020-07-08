@@ -391,7 +391,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val nullity = Type.freshVar(Kind.Bool)
         for {
           (tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkNullable(tpe, Type.False)
+          resultTyp = Type.mkNullable(tpe, nullity)
           resultEff = eff
         } yield (resultTyp, resultEff)
 
