@@ -82,10 +82,12 @@ object TypeError {
   }
 
   /**
-    * Mismatched Effects.
+    * Mismatched Boolean Formulas.
     *
-    * @param baseType1 the first effect.
-    * @param baseType2 the second effect.
+    * @param baseType1 the first boolean formula.
+    * @param baseType2 the second boolean formula.
+    * @param fullType1 the first optional full type in which the first boolean formula occurs.
+    * @param fullType2 the second optional full type in which the second boolean formula occurs.
     * @param loc       the location where the error occurred.
     */
   case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
@@ -94,9 +96,16 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the effects: '" << Red(FormatType.formatType(baseType1)) << "' and '" << Red(FormatType.formatType(baseType2)) << "'." << NewLine
+      vt << ">> Unable to unify the boolean formulas: '" << Red(FormatType.formatType(baseType1)) << "' and '" << Red(FormatType.formatType(baseType2)) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "mismatched effects.") << NewLine
+      vt << Code(loc, "mismatched boolean formulas.") << NewLine
+      (fullType1, fullType2) match {
+        case (Some(ft1), Some(ft2)) =>
+          vt << "Type One: " << Cyan(FormatType.formatType(ft1)) << NewLine
+          vt << "Type Two: " << Magenta(FormatType.formatType(ft2)) << NewLine
+          vt << NewLine
+        case _ => // nop
+      }
       vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1) Did you forget to mark the function as impure?" << NewLine
