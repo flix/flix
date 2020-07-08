@@ -167,7 +167,7 @@ class TestMain extends FunSuite {
   test("--Xno-effects") {
     val args = Array("--Xno-effects", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoeffects)
+    assert(opts.xnoboolunification)
   }
 
   test("--Xno-stratifier") {

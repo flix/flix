@@ -42,7 +42,7 @@ object Options {
     writeClassFiles = true,
     xallowredundancies = false,
     xlinter = false,
-    xnoeffects = false,
+    xnoboolunification = false,
     xnostratifier = false,
     xstatistics = false
   )
@@ -83,7 +83,7 @@ object Options {
   * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
   * @param xlinter            enables the semantic linter.
-  * @param xnoeffects         disables effect checking.
+  * @param xnoboolunification disables boolean unification.
   * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        prints compiler statistics.
   */
@@ -105,7 +105,7 @@ case class Options(core: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
                    xlinter: Boolean,
-                   xnoeffects: Boolean,
+                   xnoboolunification: Boolean,
                    xnostratifier: Boolean,
                    xstatistics: Boolean
                   )

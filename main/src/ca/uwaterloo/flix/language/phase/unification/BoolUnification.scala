@@ -30,9 +30,9 @@ object BoolUnification {
     */
   def unify(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
-    /// Return immediately if effects are disabled.
+    /// Return immediately if Boolean unification is disabled.
     ///
-    if (flix.options.xnoeffects)
+    if (flix.options.xnoboolunification)
       return Ok(Substitution.empty)
 
     ///
