@@ -87,10 +87,6 @@ object Unification {
           unifyVar(x, tpe1)
 
       case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 =>
-        //      if (eff1.kind != Kind.Bool && eff2.kind != Kind.Bool) {
-        //        println(s"Non-boolean kinds: ${eff1} and ${eff2}.")
-        //      }
-
         BoolUnification.unify(eff1, eff2)
 
       case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
