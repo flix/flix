@@ -236,6 +236,22 @@ namespace Int32 {
     pub def flipBit(x: Int32, position: Int32): Int32 = x ^^^ (1 <<< position)
 
     ///
+    /// Returns the integer binary logarithm of `x`.
+    ///
+    pub def log2(x: Int32): Int32 = highestOneBitPosition(x)
+
+    ///
+    /// Returns the factorial of `x`.
+    ///
+    pub def factorial(x: Int32): Int32 = factorialHelper(x, 1)
+
+    ///
+    /// Helper function for `factorial`.
+    ///
+    def factorialHelper(x: Int32, acc: Int32): Int32 =
+        if (x == 0) acc else factorialHelper(x - 1, x * acc)
+
+    ///
     /// Return a string representation of `x`.
     ///
     pub def toString(x: Int32): String =
@@ -363,7 +379,6 @@ namespace Int32 {
         let mini32 = Int16.toInt32(minimum);
         let maxi32 = Int16.toInt32(maximum);
         valueOf(clamp(x, mini32, maxi32)).shortValue() as & Pure
-
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
