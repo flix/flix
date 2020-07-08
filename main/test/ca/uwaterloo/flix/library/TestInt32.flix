@@ -611,6 +611,15 @@ namespace TestInt32 {
     @test
     def log204(): Bool = Int32.log2(256) == 8
 
+    @test
+    def log205(): Bool = Int32.log2(1) == 0
+
+    @test
+    def log206(): Bool = Int32.log2(12345678) == 23
+
+    @test
+    def log207(): Bool = Int32.log2(20) == 4
+
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -622,10 +631,19 @@ namespace TestInt32 {
     def factorial02(): Bool = Int32.factorial(1) == 1
 
     @test
-    def factorial03(): Bool = Int32.factorial(5) == 120
+    def factorial03(): Bool = Int32.factorial(2) == 2
 
     @test
-    def factorial04(): Bool = Int32.factorial(10) == 3628800
+    def factorial04(): Bool = Int32.factorial(3) == 6
+
+    @test
+    def factorial05(): Bool = Int32.factorial(4) == 24
+
+    @test
+    def factorial06(): Bool = Int32.factorial(5) == 120
+
+    @test
+    def factorial07(): Bool = Int32.factorial(10) == 3628800
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
