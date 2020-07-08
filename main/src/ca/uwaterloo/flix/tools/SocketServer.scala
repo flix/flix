@@ -118,12 +118,6 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       case _ => false
     }
 
-    // --Xno-effects
-    val xnoeffects = json \\ "xnoeffects" match {
-      case JBool(b) => b
-      case _ => false
-    }
-
     // --Xno-stratifier
     val xnostratifier = json \\ "xnostratifier" match {
       case JBool(b) => b
@@ -135,7 +129,6 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       core = xcore,
       writeClassFiles = false,
       xallowredundancies = xallowredundancies,
-      xnoeffects = xnoeffects,
       xnostratifier = xnostratifier,
     )
 

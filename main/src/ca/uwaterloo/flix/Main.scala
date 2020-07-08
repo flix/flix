@@ -20,10 +20,10 @@ import java.io.{File, PrintWriter}
 import java.net.BindException
 import java.nio.file.Paths
 
+import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
-import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
@@ -97,7 +97,7 @@ object Main {
       writeClassFiles = !cmdOpts.interactive,
       xallowredundancies = cmdOpts.xallowredundancies,
       xlinter = cmdOpts.xlinter,
-      xnoeffects = cmdOpts.xnoeffects,
+      xnoboolunification = cmdOpts.xnoboolunification,
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics
     )
@@ -235,7 +235,7 @@ object Main {
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
                      xinvariants: Boolean = false,
-                     xnoeffects: Boolean = false,
+                     xnoboolunification: Boolean = false,
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
@@ -384,8 +384,8 @@ object Main {
         text("[experimental] enables the semantic linter.")
 
       // Xno-effects
-      opt[Unit]("Xno-effects").action((_, c) => c.copy(xnoeffects = true)).
-        text("[experimental] disables effect checking.")
+      opt[Unit]("Xno-bool-unification").action((_, c) => c.copy(xnoboolunification = true)).
+        text("[experimental] disables bool unification.")
 
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
