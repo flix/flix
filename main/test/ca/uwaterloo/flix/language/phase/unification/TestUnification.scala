@@ -335,13 +335,13 @@ class TestUnification extends FunSuite with TestUtils {
 
   test("unifyM.01") {
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypM(Type.Bool, Type.Bool, loc).run(subst0)
+    val result = Unification.unifyTypeM(Type.Bool, Type.Bool, loc).run(subst0)
     assert(isOk(result))
   }
 
   test("unifyM.02") {
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypM(Type.Bool, Type.Char, loc).run(subst0)
+    val result = Unification.unifyTypeM(Type.Bool, Type.Char, loc).run(subst0)
     assert(!isOk(result))
   }
 
@@ -349,7 +349,7 @@ class TestUnification extends FunSuite with TestUtils {
     val tpe1 = Type.Var(1, Kind.Star)
     val tpe2 = Type.Bool
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypM(tpe1, tpe2, loc).run(subst0)
+    val result = Unification.unifyTypeM(tpe1, tpe2, loc).run(subst0)
     val (subst, tpe) = result.get
     assertResult(Type.Bool)(subst(tpe1))
     assertResult(Type.Bool)(subst(tpe2))
@@ -358,25 +358,25 @@ class TestUnification extends FunSuite with TestUtils {
 
   test("seqM.01") {
     val subst0 = Substitution.empty
-    val res1 = Unification.unifyTypM(Type.Bool, Type.Bool, loc)
-    val res2 = Unification.unifyTypM(Type.Char, Type.Char, loc)
+    val res1 = Unification.unifyTypeM(Type.Bool, Type.Bool, loc)
+    val res2 = Unification.unifyTypeM(Type.Char, Type.Char, loc)
     val result = seqM(List(res1, res2)).run(subst0)
     assert(isOk(result))
   }
 
   test("seqM.02") {
     val subst0 = Substitution.empty
-    val res1 = Unification.unifyTypM(Type.Bool, Type.Char, loc)
-    val res2 = Unification.unifyTypM(Type.Bool, Type.Char, loc)
+    val res1 = Unification.unifyTypeM(Type.Bool, Type.Char, loc)
+    val res2 = Unification.unifyTypeM(Type.Bool, Type.Char, loc)
     val result = seqM(List(res1, res2)).run(subst0)
     assert(!isOk(result))
   }
 
   test("seqM.03") {
     val subst0 = Substitution.empty
-    val res1 = Unification.unifyTypM(Type.Var(1, Kind.Star), Type.Bool, loc)
-    val res2 = Unification.unifyTypM(Type.Var(2, Kind.Star), Type.Char, loc)
-    val res3 = Unification.unifyTypM(Type.Var(3, Kind.Star), Type.mkTuple(List(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))), loc)
+    val res1 = Unification.unifyTypeM(Type.Var(1, Kind.Star), Type.Bool, loc)
+    val res2 = Unification.unifyTypeM(Type.Var(2, Kind.Star), Type.Char, loc)
+    val res3 = Unification.unifyTypeM(Type.Var(3, Kind.Star), Type.mkTuple(List(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))), loc)
     val result = seqM(List(res1, res2, res3)).run(subst0)
     val (subst, tpe) = result.get
     assertResult(Type.Bool)(subst.m(Type.Var(1, Kind.Star)))

@@ -316,7 +316,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatIllFormedType.Effect.External.04") {
     val tpe = Type.Apply(Type.And, Type.Pure)
 
-    val expected = "(Pure) ∧ ???"
+    val expected = "(true) ∧ ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -344,7 +344,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatIllFormedType.Effect.External.07") {
     val tpe = Type.Apply(Type.Or, Type.Pure)
 
-    val expected = "(Pure) ∨ ???"
+    val expected = "(true) ∨ ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)

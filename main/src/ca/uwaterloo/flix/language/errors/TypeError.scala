@@ -41,6 +41,7 @@ object TypeError {
     */
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
     def summary: String = s"The type scheme '${FormatScheme.formatScheme(inferred)}' cannot be generalized to '${FormatScheme.formatScheme(declared)}'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -67,6 +68,7 @@ object TypeError {
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the types '$fullType1' and '$fullType2'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -80,25 +82,39 @@ object TypeError {
   }
 
   /**
-    * Mismatched Effects.
+    * Mismatched Boolean Formulas.
     *
-    * @param eff1 the first effect.
-    * @param eff2 the second effect.
-    * @param loc  the location where the error occurred.
+    * @param baseType1 the first boolean formula.
+    * @param baseType2 the second boolean formula.
+    * @param fullType1 the first optional full type in which the first boolean formula occurs.
+    * @param fullType2 the second optional full type in which the second boolean formula occurs.
+    * @param loc       the location where the error occurred.
     */
-  case class MismatchedEffects(eff1: Type, eff2: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Unable to unify the effects '$eff1' and '$eff2'."
+  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
+    def summary: String = s"Unable to unify the Boolean formulas '$baseType1' and '$baseType2'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the effects: '" << Red(FormatType.formatType(eff1)) << "' and '" << Red(FormatType.formatType(eff2)) << "'." << NewLine
+      vt << ">> Unable to unify the Boolean formulas: '" << Red(FormatType.formatType(baseType1)) << "' and '" << Red(FormatType.formatType(baseType2)) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "mismatched effects.") << NewLine
-      vt << "Possible fixes:" << NewLine
+      vt << Code(loc, "mismatched boolean formulas.") << NewLine
+      (fullType1, fullType2) match {
+        case (Some(ft1), Some(ft2)) =>
+          vt << "Type One: " << Cyan(FormatType.formatType(ft1)) << NewLine
+          vt << "Type Two: " << Magenta(FormatType.formatType(ft2)) << NewLine
+          vt << NewLine
+        case _ => // nop
+      }
+      vt << "If the Boolean formula describes purity:" << NewLine
       vt << NewLine
       vt << "  (1) Did you forget to mark the function as impure?" << NewLine
       vt << "  (2) Are you trying to pass a pure function where an impure is required?" << NewLine
       vt << "  (3) Are you trying to pass an impure function where a pure is required?" << NewLine
+      vt << NewLine
+      vt << "If the Boolean formula describes nullability:" << NewLine
+      vt << NewLine
+      vt << "  (1) Are you trying to pass null where a non-null value is required?" << NewLine
       vt << NewLine
       vt
     }
@@ -158,6 +174,7 @@ object TypeError {
     */
   case class UndefinedField(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Missing field '$fieldName' of type '$fieldType'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -182,6 +199,7 @@ object TypeError {
     */
   case class UndefinedPredicate(predName: String, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Missing predicate '$predName' of type '$predType'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -204,6 +222,7 @@ object TypeError {
     */
   case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unexpected non-record type '$tpe'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -221,6 +240,7 @@ object TypeError {
     */
   case class NonSchemaType(tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unexpected non-schema type '$tpe'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -229,4 +249,5 @@ object TypeError {
       vt << Code(loc, "unexpected non-schema type.") << NewLine
     }
   }
+
 }

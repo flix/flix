@@ -26,9 +26,9 @@ import scala.annotation.tailrec
 object BoolUnification {
 
   /**
-    * Returns the most general unifier of the two given effects `eff1` and `eff2`.
+    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Return immediately if effects are disabled.
     ///
@@ -38,24 +38,24 @@ object BoolUnification {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
-    if (eff1 eq eff2) {
+    if (tpe1 eq tpe2) {
       return Ok(Substitution.empty)
     }
 
-    eff1 match {
+    tpe1 match {
       case x: Type.Var if x.rigidity eq Rigidity.Flexible =>
-        if (eff2 eq Type.True)
+        if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x, Type.True))
-        if (eff2 eq Type.False)
+        if (tpe2 eq Type.False)
           return Ok(Substitution.singleton(x, Type.False))
       case _ => // nop
     }
 
-    eff2 match {
+    tpe2 match {
       case y: Type.Var if y.rigidity eq Rigidity.Flexible =>
-        if (eff1 eq Type.True)
+        if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y, Type.True))
-        if (eff1 eq Type.False)
+        if (tpe1 eq Type.False)
           return Ok(Substitution.singleton(y, Type.False))
       case _ => // nop
     }
@@ -63,17 +63,17 @@ object BoolUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(eff1, eff2)
+    booleanUnification(tpe1, tpe2)
   }
 
   /**
-    * Returns the most general unifier of the two given effects `eff1` and `eff2`.
+    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def booleanUnification(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // The boolean expression we want to show is 0.
-    val query = mkEq(eff1, eff2)
+    val query = mkEq(tpe1, tpe2)
 
-    // The free and flexible type (effect) variables in the query.
+    // The free and flexible type variables in the query.
     val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
 
     // Eliminate all variables.
@@ -91,7 +91,7 @@ object BoolUnification {
 
       Ok(subst)
     } catch {
-      case BooleanUnificationException => Err(UnificationError.MismatchedEffects(eff1, eff2))
+      case BooleanUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2))
     }
   }
 
@@ -138,15 +138,15 @@ object BoolUnification {
 
 
   /**
-    * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
+    * To unify two Boolean formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
     */
   private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
   /**
-    * Returns the negation of the effect `eff0`.
+    * Returns the negation of the Boolean formula `tpe0`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def mkNot(eff0: Type): Type = eff0 match {
+  def mkNot(tpe0: Type): Type = tpe0 match {
     case Type.True =>
       Type.False
 
@@ -164,22 +164,22 @@ object BoolUnification {
     case OR(x, NOT(y)) =>
       mkAnd(mkNot(x), y)
 
-    case _ => Type.Apply(Type.Not, eff0)
+    case _ => Type.Apply(Type.Not, tpe0)
   }
 
   /**
-    * Returns the conjunction of the two effects `eff1` and `eff2`.
+    * Returns the conjunction of the two Boolean formulas `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
     // T ∧ x => x
     case (Type.True, _) =>
-      eff2
+      tpe2
 
     // x ∧ T => x
     case (_, Type.True) =>
-      eff1
+      tpe1
 
     // F ∧ x => F
     case (Type.False, _) =>
@@ -250,7 +250,7 @@ object BoolUnification {
       Type.False
 
     // x ∧ x => x
-    case _ if eff1 == eff2 => eff1
+    case _ if tpe1 == tpe2 => tpe1
 
     case _ =>
       //      val s = s"And($eff1, $eff2)"
@@ -259,22 +259,22 @@ object BoolUnification {
       //        println(s.substring(0, Math.min(len, 300)))
       //      }
 
-      Type.Apply(Type.Apply(Type.And, eff1), eff2)
+      Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
   }
 
   /**
-    * Returns the disjunction of the two effects `eff1` and `eff2`.
+    * Returns the disjunction of the two Boolean formulas `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
     // T ∨ x => T
     case (Type.True, _) =>
       Type.True
 
     // F ∨ y => y
     case (Type.False, _) =>
-      eff2
+      tpe2
 
     // x ∨ T => T
     case (_, Type.True) =>
@@ -282,7 +282,7 @@ object BoolUnification {
 
     // x ∨ F => x
     case (_, Type.False) =>
-      eff1
+      tpe1
 
     // x ∨ (y ∨ x) => x ∨ y
     case (x1, OR(y, x2)) if x1 == x2 =>
@@ -315,8 +315,8 @@ object BoolUnification {
     case (AND(_, x1), x2) if x1 == x2 => x1
 
     // x ∨ x => x
-    case _ if eff1 == eff2 =>
-      eff1
+    case _ if tpe1 == tpe2 =>
+      tpe1
 
     case _ =>
 
@@ -326,12 +326,12 @@ object BoolUnification {
       //                println(s.substring(0, Math.min(len, 300)))
       //              }
 
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), tpe1), tpe2)
   }
 
   private object NOT {
     @inline
-    def unapply(eff: Type): Option[Type] = eff match {
+    def unapply(tpe: Type): Option[Type] = tpe match {
       case Type.Apply(Type.Cst(TypeConstructor.Not), x) => Some(x)
       case _ => None
     }
@@ -339,7 +339,7 @@ object BoolUnification {
 
   private object AND {
     @inline
-    def unapply(eff: Type): Option[(Type, Type)] = eff match {
+    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x), y) => Some((x, y))
       case _ => None
     }
@@ -347,7 +347,7 @@ object BoolUnification {
 
   private object OR {
     @inline
-    def unapply(eff: Type): Option[(Type, Type)] = eff match {
+    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => Some((x, y))
       case _ => None
     }

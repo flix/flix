@@ -87,10 +87,6 @@ object Unification {
           unifyVar(x, tpe1)
 
       case (Type.Cst(TypeConstructor.Arrow(l1, eff1)), Type.Cst(TypeConstructor.Arrow(l2, eff2))) if l1 == l2 =>
-        //      if (eff1.kind != Kind.Bool && eff2.kind != Kind.Bool) {
-        //        println(s"Non-boolean kinds: ${eff1} and ${eff2}.")
-        //      }
-
         BoolUnification.unify(eff1, eff2)
 
       case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
@@ -219,15 +215,6 @@ object Unification {
   }
 
   /**
-    * Returns `true` if `tpe1` is an instance of `tpe2`.
-    */
-  def isInstance(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean =
-    Unification.unifyTypes(tpe1, tpe2) match {
-      case Ok(_) => true
-      case Err(_) => false
-    }
-
-  /**
     * Lifts the given type `tpe` into the inference monad.
     */
   def liftM(tpe: Type): InferMonad[Type] = InferMonad(s => Ok((s, s(tpe))))
@@ -241,7 +228,7 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
-  def unifyTypM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     InferMonad((s: Substitution) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
@@ -253,8 +240,8 @@ object Unification {
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
 
-        case Result.Err(UnificationError.MismatchedEffects(baseType1, baseType2)) =>
-          Err(TypeError.MismatchedEffects(baseType1, baseType2, loc))
+        case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
+          Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), loc))
 
         case Result.Err(UnificationError.MismatchedArity(baseType1, baseType2)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
@@ -284,21 +271,21 @@ object Unification {
   /**
     * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyTypM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypM(List(tpe1, tpe2, tpe3), loc)
+  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3), loc)
 
   /**
     * Unifies the four given types `tpe1`, `tpe2`, `tpe3` and `tpe4`.
     */
-  def unifyTypM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypM(List(tpe1, tpe2, tpe3, tpe4), loc)
+  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3, tpe4), loc)
 
   /**
     * Unifies all the types in the given non-empty list `ts`.
     */
-  def unifyTypM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
-        case tpe => visit(unifyTypM(tpe, y, loc), ys)
+        case tpe => visit(unifyTypeM(tpe, y, loc), ys)
       }
     }
 
@@ -308,32 +295,32 @@ object Unification {
   /**
     * Unifies all the types in the given (possibly empty) list `ts`.
     */
-  def unifyTypAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
       liftM(Type.freshVar(Kind.Star))
     else
-      unifyTypM(ts, loc)
+      unifyTypeM(ts, loc)
   }
 
   /**
-    * Unifies the two given effects `eff1` and `eff2`.
+    * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unifyEffM(eff1: Type, eff2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     // Determine if effect checking is enabled.
     if (flix.options.xnoeffects)
       return liftM(Type.Pure)
 
     InferMonad((s: Substitution) => {
-      val effect1 = s(eff1)
-      val effect2 = s(eff2)
-      BoolUnification.unify(effect1, effect2) match {
+      val bf1 = s(tpe1)
+      val bf2 = s(tpe2)
+      BoolUnification.unify(bf1, bf2) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
-          Ok(subst, subst(eff1))
+          Ok(subst, subst(tpe1))
 
         case Result.Err(e) => e match {
-          case UnificationError.MismatchedEffects(baseType1, baseType2) =>
-            Err(TypeError.MismatchedEffects(baseType1, baseType2, loc))
+          case UnificationError.MismatchedBools(baseType1, baseType2) =>
+            Err(TypeError.MismatchedBools(baseType1, baseType2, None, None, loc))
 
           case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")
         }
@@ -343,18 +330,19 @@ object Unification {
   }
 
   /**
-    * Unifies the three given effects `eff1`, `eff2`, and `eff3`.
+    * Unifies the three given Boolean formulas `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyEffM(eff1: Type, eff2: Type, eff3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyEffM(List(eff1, eff2, eff3), loc)
+  def unifyBoolM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] =
+    unifyBoolM(List(tpe1, tpe2, tpe3), loc)
 
   /**
-    * Unifies all the effects in the given non-empty list `fs`.
+    * Unifies all the Boolean formulas in the given non-empty list `fs`.
     */
-  def unifyEffM(fs: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyBoolM(fs: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
-        case tpe => visit(unifyEffM(tpe, y, loc), ys)
+        case tpe => visit(unifyBoolM(tpe, y, loc), ys)
       }
     }
 
