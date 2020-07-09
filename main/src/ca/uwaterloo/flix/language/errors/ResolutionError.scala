@@ -33,6 +33,8 @@ sealed trait ResolutionError extends CompilationError {
 
 object ResolutionError {
 
+  implicit val audience: Audience = Audience.External
+
   /**
     * Ambiguous Name Error.
     *
@@ -388,7 +390,7 @@ object ResolutionError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unsatisfiable condition: '" << Red(FormatType.formatType(tpe)(Audience.External)) << "'." << NewLine
+      vt << ">> Unsatisfiable condition: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unsatisfiable condition.") << NewLine
     }
