@@ -82,7 +82,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * Definition.
      */
-    case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+    case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, cond0, loc) =>
       // Check if the definition already exists.
       val defns = prog0.defs.getOrElse(ns0, Map.empty)
       defns.get(ident.name) match {
@@ -269,7 +269,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, cond0, loc) =>
       val tparams = getTypeParams(tparams0, fparams0, tpe, loc)
 
       val tenv = tenv0 ++ getTypeEnv(tparams)
@@ -278,7 +278,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val env0 = getVarEnv(fparams)
           val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
           val expVal = visitExp(exp, env0, uenv0, tenv)
-          val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
+          val schemeVal = getScheme(tparams, tpe, cond0, uenv0, tenv)
           val tpeVal = visitType(eff0, uenv0, tenv)
           mapN(annVal, expVal, schemeVal, tpeVal) {
             case (as, e, sc, eff) =>
@@ -1384,11 +1384,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
+    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` (with cond0) under the given environments `uenv0` and `tenv0`.
     */
-  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
-    mapN(visitType(tpe, uenv0, tenv0)) {
-      case t => NamedAst.Scheme(tparams0.map(_.tpe), t, /* TODO */ None)
+  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, cond0: Option[WeededAst.Type], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+    val condVal = cond0 match {
+      case None => None.toSuccess
+      case Some(c) => mapN(visitType(c, uenv0, tenv0))(Some(_))
+    }
+    mapN(visitType(tpe, uenv0, tenv0), condVal) {
+      case (t, c) => NamedAst.Scheme(tparams0.map(_.tpe), t, c)
     }
   }
 
