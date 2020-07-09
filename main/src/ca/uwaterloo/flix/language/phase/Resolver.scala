@@ -893,15 +893,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           Scheme(quantifiers0, base).toSuccess
         case (base, Some((bf, loc))) =>
           // Case 2: A side-condition is present. Compute the mgu with true and apply the substitution.
-          BoolUnification.unify(bf, Type.True) match {
-            case Result.Ok(subst) =>
-              // Case 2.1: Unification succeeded. We can compute the updated scheme.
-              val resultType = subst(base)
-              Scheme(resultType.typeVars.toList, resultType).toSuccess // TODO: Reuse vars?
 
-            case Result.Err(_) =>
-              // Case 2.2: Unification failed. Report an error.
-              ResolutionError.UnsatisfiableCondition(bf, loc).toFailure
+          // Ensure that bf is a Boolean formula at the type level.
+          if (bf.kind != Kind.Bool) {
+            // Case 2.1: We have a non-Boolean formula. Bail out.
+            ResolutionError.UnsatisfiableCondition(bf, loc).toFailure
+          } else {
+            // Case 2.2: We have a Boolean formula. Compute a subst. by unifying it with True.
+            BoolUnification.unify(bf, Type.True) match {
+              case Result.Ok(subst) =>
+                // Case 2.2.1: Unification succeeded. We can compute the updated scheme.
+                val resultType = subst(base)
+                Scheme(quantifiers0, resultType).toSuccess
+
+              case Result.Err(_) =>
+                // Case 2.2.2: Unification failed. Report an error.
+                ResolutionError.UnsatisfiableCondition(bf, loc).toFailure
+            }
           }
       }
   }
