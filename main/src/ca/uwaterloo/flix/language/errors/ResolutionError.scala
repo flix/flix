@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -42,6 +43,7 @@ object ResolutionError {
     */
   case class AmbiguousName(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous name."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -67,6 +69,7 @@ object ResolutionError {
     */
   case class AmbiguousType(qn: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous type."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -92,6 +95,7 @@ object ResolutionError {
     */
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous tag."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -116,6 +120,7 @@ object ResolutionError {
     */
   case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal type."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -134,6 +139,7 @@ object ResolutionError {
     */
   case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -154,6 +160,7 @@ object ResolutionError {
     */
   case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -174,6 +181,7 @@ object ResolutionError {
     */
   case class RecursionLimit(ident: Symbol.TypeAliasSym, limit: Int, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -194,6 +202,7 @@ object ResolutionError {
     */
   case class UndefinedName(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined name."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -214,6 +223,7 @@ object ResolutionError {
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined tag."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -234,6 +244,7 @@ object ResolutionError {
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined type"
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -253,6 +264,7 @@ object ResolutionError {
     */
   case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined class."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -272,6 +284,7 @@ object ResolutionError {
     */
   case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined constructor."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -360,6 +373,24 @@ object ResolutionError {
         vt << "  " << stripAccessModifier(field.toString) << NewLine
       }
       vt
+    }
+  }
+
+  /**
+    * Unsatisfiable Condition.
+    *
+    * @param tpe the unsatisfiable Boolean formula.
+    * @param loc the location where the error occurred.
+    */
+  case class UnsatisfiableCondition(tpe: Type, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Unsatisfiable condition."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unsatisfiable condition: '" << Red(FormatType.formatType(tpe)(Audience.External)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unsatisfiable condition.") << NewLine
     }
   }
 

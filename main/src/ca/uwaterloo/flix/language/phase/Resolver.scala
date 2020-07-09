@@ -884,23 +884,24 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val baseVal = lookupType(base0, ns0, root)
       val condVal = cond0 match {
         case None => None.toSuccess
-        case Some(tpe) => mapN(lookupType(tpe, ns0, root))(Some(_))
+        case Some(tpe) => mapN(lookupType(tpe, ns0, root))(t => Some((t, tpe.loc)))
       }
 
       flatMapN(baseVal, condVal) {
         case (base, None) =>
           // Case 1: No side-condition. Simply return the scheme.
           Scheme(quantifiers0, base).toSuccess
-        case (base, Some(bf)) =>
+        case (base, Some((bf, loc))) =>
           // Case 2: A side-condition is present. Compute the mgu with true and apply the substitution.
           BoolUnification.unify(bf, Type.True) match {
             case Result.Ok(subst) =>
+              // Case 2.1: Unification succeeded. We can compute the updated scheme.
               val resultType = subst(base)
-              Scheme(resultType.typeVars.toList, resultType).toSuccess
+              Scheme(resultType.typeVars.toList, resultType).toSuccess // TODO: Reuse vars?
 
-            case Result.Err(e) =>
-              println(e)
-              ??? // TODO
+            case Result.Err(_) =>
+              // Case 2.2: Unification failed. Report an error.
+              ResolutionError.UnsatisfiableCondition(bf, loc).toFailure
           }
       }
   }
@@ -1097,7 +1098,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
       }
 
-    case NamedAst.Type.Enum(sym, kind) =>
+    case NamedAst.Type.Enum(sym, kind, loc) =>
       Type.mkEnum(sym, kind).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
