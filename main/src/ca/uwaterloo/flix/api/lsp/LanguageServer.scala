@@ -20,8 +20,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -145,6 +145,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
       case JString("goto") => Request.parseGoto(json)
       case JString("uses") => Request.parseUses(json)
+      case JString("complete") => Request.parseComplete(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -264,6 +265,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           log(s"No entry for: '$uri,' at '$pos'.")
           Reply.NotFound()
       }
+
+    case Request.Complete(uri, pos) =>
+      // TODO: Fake it till you make it:
+      val items = Nil
+      Reply.Completions(items)
 
     case Request.Shutdown =>
       ws.close(1000, "Shutting down...")

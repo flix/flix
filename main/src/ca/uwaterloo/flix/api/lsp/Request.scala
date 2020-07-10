@@ -65,6 +65,11 @@ object Request {
   case class Uses(uri: Path, pos: Position) extends Request
 
   /**
+    * A request for code completion.
+    */
+  case class Complete(uri: Path, pos: Position) extends Request
+
+  /**
     * A request to shutdown the language server.
     */
   case object Shutdown extends Request
@@ -123,6 +128,20 @@ object Request {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
     } yield Request.Uses(Paths.get(doc).normalize(), pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Complete]] request.
+    */
+  def parseComplete(json: json4s.JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      doc <- docRes
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Complete(Paths.get(doc).normalize(), pos)
   }
 
 }
