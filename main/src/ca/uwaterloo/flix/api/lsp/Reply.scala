@@ -108,7 +108,7 @@ object Reply {
   /**
     * A reply that represents all code completions.
     */
-  case class Completions(results: List[Location]) extends Reply {
+  case class Completions(results: List[CompletionItem]) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("success")),

@@ -21,7 +21,9 @@ import java.util.Date
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -80,6 +82,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * The current reverse index. The index is empty until the source code is compiled.
     */
   var index: Index = Index.empty
+
+  /**
+    * The audience used for formatting.
+    */
+  implicit val audience: Audience = Audience.External
 
   /**
     * Invoked when the server is started.
@@ -268,8 +275,25 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.Complete(uri, pos) =>
       // TODO: Fake it till you make it:
-      val items = Nil
-      Reply.Completions(items)
+      val items = List(
+        CompletionItem("Hello!", None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
+        CompletionItem("Goodbye!", None, Some(TextEdit(Range(pos, pos), "Farewell!")))
+      )
+      val default = Reply.Completions(items)
+
+      index.query(uri, pos) match {
+        case Some(Entity.Exp(exp)) => exp match {
+          case Expression.Hole(sym, _, _, _) =>
+            // TODO: This is just a first approximation. Have to check the types etc.
+            val holeCtx = TypedAstOps.holesOf(root)(sym)
+            val items = holeCtx.env.map {
+              case (sym, tpe) => CompletionItem(sym.text, Some(FormatType.formatType(tpe)), Some(TextEdit(Range(pos, pos), sym.text)))
+            }
+            Reply.Completions(items.toList)
+          case _ => default
+        }
+        case None => default
+      }
 
     case Request.Shutdown =>
       ws.close(1000, "Shutting down...")
