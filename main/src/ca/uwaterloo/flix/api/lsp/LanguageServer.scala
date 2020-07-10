@@ -292,7 +292,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             Reply.Completions(items.toList)
           case _ => default
         }
-        case None => default
+        case _ => default
       }
 
     case Request.Shutdown =>
