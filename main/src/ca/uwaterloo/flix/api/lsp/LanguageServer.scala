@@ -276,8 +276,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Complete(uri, pos) =>
       // TODO: Fake it till you make it:
       val items = List(
-        CompletionItem("Hello!", None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
-        CompletionItem("Goodbye!", None, Some(TextEdit(Range(pos, pos), "Farewell!")))
+        CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
+        CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
       )
       val default = Reply.Completions(items)
 
@@ -287,7 +287,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             // TODO: This is just a first approximation. Have to check the types etc.
             val holeCtx = TypedAstOps.holesOf(root)(sym)
             val items = holeCtx.env.map {
-              case (sym, tpe) => CompletionItem(sym.text, Some(FormatType.formatType(tpe)), Some(TextEdit(Range(pos, pos), sym.text)))
+              case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
             }
             Reply.Completions(items.toList)
           case _ => default
