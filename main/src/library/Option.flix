@@ -173,21 +173,33 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    pub def sequence(xs: List[Option[a]]): Option[List[a]] = match xs {
-        case Nil            => Some(Nil)
-        case None :: _      => None
-        case Some(y) :: ys  => map(zs -> y :: zs, sequence(ys))
+    pub def sequence(xs: List[Option[a]]): Option[List[a]] =
+        sequenceHelper(xs, _ -> None, ys -> Some(ys))
+
+    ///
+    /// Helper function for `sequence`.
+    ///
+    def sequenceHelper(xs: List[Option[a]], fk: Unit -> Option[List[a]], sk: List[a] -> Option[List[a]]): Option[List[a]] = match xs {
+        case Nil            => sk(Nil)
+        case None :: _      => fk()
+        case Some(y) :: rs  => sequenceHelper(rs, fk, ys -> sk(y :: ys))
     }
 
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e = match xs {
-        case Nil        => Some(Nil)
-        case y :: ys    =>
-            let* z = f(y);
-            let* zs = traverse(f, ys);
-            Some(z :: zs)
+    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e =
+        traverseHelper(f, xs, _ -> None, ys -> Some(ys))
+
+    ///
+    /// Helper function for `traverse`.
+    ///
+    def traverseHelper(f: a -> Option[b] & f, xs: List[a], fk: Unit -> Option[List[b]], sk: List[b] -> Option[List[b]]): Option[List[b]] & f = match xs {
+        case Nil            => sk(Nil)
+        case x :: rs        => match f(x) {
+            case None    => fk()
+            case Some(y) => traverseHelper(f, rs, fk, ys -> sk(y :: ys))
+        }
     }
 
     ///

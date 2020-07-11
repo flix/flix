@@ -151,6 +151,40 @@ namespace Result {
     }
 
     ///
+    /// Returns `Ok(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Ok(v_i)`.
+    /// Otherwise returns the first `Err` encountered.
+    ///
+    pub def sequence(xs: List[Result[a, e]]): Result[List[a], e] =
+        sequenceHelper(xs, e -> Err(e), ys -> Ok(ys))
+
+    ///
+    /// Helper function for `sequence`.
+    ///
+    def sequenceHelper(xs: List[Result[a, e]], fk: e -> Result[List[a], e], sk: List[a] -> Result[List[a], e]): Result[List[a], e] = match xs {
+        case Nil            => sk(Nil)
+        case Err(e) :: _    => fk(e)
+        case Ok(y) :: rs    => sequenceHelper(rs, fk, ys -> sk(y :: ys))
+    }
+
+    ///
+    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Ok(v_i)`.
+    /// Otherwise returns the first `Err` encountered.
+    ///
+    pub def traverse(f: a -> Result[b, e] & f, xs: List[a]): Result[List[b], e] & f =
+        traverseHelper(f, xs, e -> Err(e), ys -> Ok(ys))
+
+    ///
+    /// Helper function for `traverse`.
+    ///
+    def traverseHelper(f: a -> Result[b, e] & f, xs: List[a], fk: e -> Result[List[b], e], sk: List[b] -> Result[List[b], e]): Result[List[b], e] & f = match xs {
+        case Nil            => sk(Nil)
+        case x :: rs        => match f(x) {
+            case Err(e) => fk(e)
+            case Ok(y)  => traverseHelper(f, rs, fk, ys -> sk(y :: ys))
+        }
+    }
+
+    ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
     ///
     pub def toList(r: Result[t, e]): List[t] = match r {

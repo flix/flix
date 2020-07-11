@@ -63,9 +63,14 @@ namespace List {
     /// Returns the length of `xs`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def length(xs: List[a]): Int32 = match xs {
-        case Nil => 0
-        case _ :: rs => 1 + length(rs)
+    pub def length(xs: List[a]): Int32 = lengthHelper(xs, 0)
+
+    ///
+    /// Helper function for `length`.
+    ///
+    def lengthHelper(xs: List[a], ac: Int32): Int32 = match xs {
+        case _ :: rs => lengthHelper(rs, ac + 1)
+        case Nil => ac
     }
 
     ///
@@ -145,7 +150,13 @@ namespace List {
     /// Returns `Nil` if `b >= e`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def range(b: Int32, e: Int32): List[Int32] = if (b >= e) Nil else b :: range(b + 1, e)
+    pub def range(b: Int32, e: Int32): List[Int32] = rangeHelper(b, e, xs -> xs)
+
+    ///
+    /// Helper function for `range`.
+    ///
+    def rangeHelper(b: Int32, e: Int32, k: List[Int32] -> List[Int32]): List[Int32] =
+        if (b >= e) k(Nil) else rangeHelper(b + 1, e, xs -> k(b :: xs))
 
     ///
     /// Returns a list with the element `a` repeated `n` times.
@@ -153,7 +164,14 @@ namespace List {
     /// Returns `Nil` if `n < 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(a: a, n: Int32): List[a] = if (n <= 0) Nil else a :: repeat(a, n - 1)
+    pub def repeat(a: a, n: Int32): List[a] = repeatHelper(a, n, xs -> xs)
+
+    ///
+    /// Helper function for `repeat`.
+    ///
+    def repeatHelper(a: a, n: Int32, k: List[a] -> List[a]): List[a] =
+        if (n <= 0) k(Nil) else repeatHelper(a, n - 1, xs -> k(a :: xs))
+
 
     ///
     /// Alias for `scanLeft`.
