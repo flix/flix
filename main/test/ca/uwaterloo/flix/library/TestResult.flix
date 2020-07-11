@@ -194,6 +194,57 @@ def foldRight04(): Bool = Result.foldRight((i, b) -> if (i == 2 && b) true else 
 def foldRight05(): Bool = Result.foldRight((i, b) -> if (i == 2 && b) true else false, Ok(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
+// sequence                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def sequence01(): Bool = Result.sequence(Nil) == Ok(Nil)
+
+@test
+def sequence02(): Bool = Result.sequence(Ok(1) :: Nil) == Ok(1 :: Nil)
+
+@test
+def sequence03(): Bool = Result.sequence(Ok(1) :: Ok(2) :: Nil) == Ok(1 :: 2 :: Nil)
+
+@test
+def sequence04(): Bool = Result.sequence(Ok(1) :: Ok(2) :: Ok(3) :: Nil) == Ok(1 :: 2 :: 3 :: Nil)
+
+@test
+def sequence05(): Bool = Result.sequence(Err("one") :: Ok(2) :: Ok(3) :: Nil) == Err("one")
+
+@test
+def sequence06(): Bool = Result.sequence(Ok(1) :: Ok(2) :: Err("three") :: Nil) == Err("three")
+
+@test
+def sequence07(): Bool = Result.sequence(Ok(1) :: Err("two") :: Ok(3) :: Nil) == Err("two")
+
+/////////////////////////////////////////////////////////////////////////////
+// traverse                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def traverse01(): Bool = Result.traverse(x -> Ok(x + 1), Nil) == Ok(Nil)
+
+@test
+def traverse02(): Bool = Result.traverse(x -> Ok(x + 1), 1 :: Nil) == Ok(2 :: Nil)
+
+@test
+def traverse03(): Bool = Result.traverse(x -> Ok(x + 1), 1 :: 2 :: Nil) == Ok(2 :: 3 :: Nil)
+
+@test
+def traverse04(): Bool = Result.traverse(x -> Ok(x + 1), 1 :: 2 :: 3 :: Nil) == Ok(2 :: 3 :: 4 :: Nil)
+
+@test
+def traverse05(): Bool = Result.traverse(x -> if (x == 1) Err("one") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("one")
+
+@test
+def traverse06(): Bool = Result.traverse(x -> if (x == 3) Err("three") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("three")
+
+@test
+def traverse07(): Bool = Result.traverse(x -> if (x == 2) Err("two") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("two")
+
+@test
+def traverse08(): Bool = Result.traverse(_ -> Ok(42), 1 :: 2 :: 3 :: Nil) == Ok(42 :: 42 :: 42 :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
