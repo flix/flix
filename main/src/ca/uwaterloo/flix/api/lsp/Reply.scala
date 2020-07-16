@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import org.json4s.JsonAST.{JArray, JField, JInt, JObject, JString}
+import org.json4s.JsonAST._
 
 /**
   * A common super-type for language server replies.
@@ -98,6 +98,28 @@ object Reply {
     * A reply that represents all usages of a definition.
     */
   case class Uses(results: List[Location]) extends Reply {
+    def toJSON: JObject =
+      JObject(
+        JField("status", JString("success")),
+        JField("results", JArray(results.map(_.toJSON))),
+      )
+  }
+
+  /**
+    * A reply that represents a prepared rename.
+    */
+  case class PreparedRename(range: Range) extends Reply {
+    def toJSON: JObject =
+      JObject(
+        JField("status", JString("success")),
+        JField("range", range.toJSON),
+      )
+  }
+
+  /**
+    * A reply that represents all code completions.
+    */
+  case class Completions(results: List[CompletionItem]) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("success")),

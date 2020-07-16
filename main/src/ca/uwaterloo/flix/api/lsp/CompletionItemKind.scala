@@ -1,0 +1,104 @@
+/*
+ * Copyright 2020 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ca.uwaterloo.flix.api.lsp
+
+/**
+  * Represents a `CompletionItemKind` in LSP.
+  */
+sealed trait CompletionItemKind {
+  def toInt: Int = this match {
+    case CompletionItemKind.Text => 1
+    case CompletionItemKind.Method => 2
+    case CompletionItemKind.Function => 3
+    case CompletionItemKind.Constructor => 4
+    case CompletionItemKind.Field => 5
+    case CompletionItemKind.Variable => 6
+    case CompletionItemKind.Class => 7
+    case CompletionItemKind.Interface => 8
+    case CompletionItemKind.Module => 9
+    case CompletionItemKind.Property => 10
+    case CompletionItemKind.Unit => 11
+    case CompletionItemKind.Value => 12
+    case CompletionItemKind.Enum => 13
+    case CompletionItemKind.Keyword => 14
+    case CompletionItemKind.Snippet => 15
+    case CompletionItemKind.Color => 16
+    case CompletionItemKind.File => 17
+    case CompletionItemKind.Reference => 18
+    case CompletionItemKind.Folder => 19
+    case CompletionItemKind.EnumMember => 20
+    case CompletionItemKind.Constant => 21
+    case CompletionItemKind.Struct => 22
+    case CompletionItemKind.Event => 23
+    case CompletionItemKind.Operator => 24
+    case CompletionItemKind.TypeParameter => 25
+  }
+
+}
+
+object CompletionItemKind {
+
+  object Text extends CompletionItemKind
+
+  object Method extends CompletionItemKind
+
+  object Function extends CompletionItemKind
+
+  object Constructor extends CompletionItemKind
+
+  object Field extends CompletionItemKind
+
+  object Variable extends CompletionItemKind
+
+  object Class extends CompletionItemKind
+
+  object Interface extends CompletionItemKind
+
+  object Module extends CompletionItemKind
+
+  object Property extends CompletionItemKind
+
+  object Unit extends CompletionItemKind
+
+  object Value extends CompletionItemKind
+
+  object Enum extends CompletionItemKind
+
+  object Keyword extends CompletionItemKind
+
+  object Snippet extends CompletionItemKind
+
+  object Color extends CompletionItemKind
+
+  object File extends CompletionItemKind
+
+  object Reference extends CompletionItemKind
+
+  object Folder extends CompletionItemKind
+
+  object EnumMember extends CompletionItemKind
+
+  object Constant extends CompletionItemKind
+
+  object Struct extends CompletionItemKind
+
+  object Event extends CompletionItemKind
+
+  object Operator extends CompletionItemKind
+
+  object TypeParameter extends CompletionItemKind
+
+}
