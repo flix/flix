@@ -152,6 +152,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
       case JString("goto") => Request.parseGoto(json)
       case JString("uses") => Request.parseUses(json)
+      case JString("prepareRename") => Request.parsePrepareRename(json)
       case JString("complete") => Request.parseComplete(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
@@ -271,6 +272,24 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case _ =>
           log(s"No entry for: '$uri,' at '$pos'.")
           Reply.NotFound()
+      }
+
+    case Request.PrepareRename(uri, pos) =>
+      index.query(uri, pos) match {
+        case Some(Entity.Exp(exp)) => exp match {
+          case Expression.Def(_, _, loc) =>
+            Reply.PreparedRename(Range.from(loc))
+
+          case Expression.Var(_, _, loc) =>
+            Reply.PreparedRename(Range.from(loc))
+
+          case Expression.Tag(_, _, _, _, _, loc) =>
+            Reply.PreparedRename(Range.from(loc))
+
+          case _ => Reply.NotFound()
+        }
+
+        case _ => Reply.NotFound()
       }
 
     case Request.Complete(uri, pos) =>
