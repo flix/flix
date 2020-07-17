@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -234,4 +234,17 @@ object NameError {
     }
   }
 
+  case class MismatchedTypeParamKinds(name: String, loc1: SourceLocation, kind1: Kind, loc2: SourceLocation, kind2: Kind) extends NameError {
+    def summary: String = "Mismatched type parameter kinds."
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Mismatched kinds for type parameter '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, s"Kind: $kind1") << NewLine // MATT might need FormatKind
+      vt << NewLine
+      vt << Code(loc2, s"Kind: $kind2") << NewLine // MATT better explanation
+    }
+    def loc: SourceLocation = loc1 min loc2
+  }
 }

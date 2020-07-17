@@ -39,6 +39,18 @@ sealed trait Kind {
     */
   override def toString: String = Kind.ShowInstance.show(this)
 
+  /**
+    * Returns true if `left` is a subkind of `this`.
+    * Right-associative.
+    */
+  def <::(left: Kind): Boolean = (left, this) match {
+    case (Kind.Record, Kind.Star) => true
+    case (Kind.Schema, Kind.Star) => true
+    case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) => (k11 <:: k21) && (k12 <:: k22)
+    case _ if (left == this) => true
+    case _ => false
+  }
+
 }
 
 object Kind {
@@ -86,7 +98,7 @@ object Kind {
       return Star
     }
 
-    (0 until length + 1).foldRight(Star: Kind) {
+    (0 until length).foldRight(Star: Kind) { // MATT right?
       case (_, acc) => Arrow(Star, acc)
     }
   }

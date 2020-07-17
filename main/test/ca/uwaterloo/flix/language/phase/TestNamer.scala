@@ -453,4 +453,29 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.UndefinedTypeVar](result)
   }
 
+  test("MismatchedTypeParamKind.01") {
+    val input = "def f(g: Int -> o & o): Int = 123"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.MismatchedTypeParamKinds](result)
+  }
+
+  test("MismatchedTypeParamKind.02") {
+    val input = "def f(g: Int -> Int & e): e = g(123)"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.MismatchedTypeParamKinds](result)
+  }
+
+  // currently doesn't work since we convert empty polymorphic schemas/records to plain tvars
+  ignore("MismatchedTypeParamKind.03") {
+    val input = "def f(s: #{| a}, r: {| a}): Int = 123"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.MismatchedTypeParamKinds](result)
+  }
+
+  test("MismatchedTypeParamKind.04") {
+    val input = "def f(s: #{X(Int) | a}, r: {x: Int | a}): Int = 123"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.MismatchedTypeParamKinds](result)
+  }
+
 }

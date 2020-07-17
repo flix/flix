@@ -277,7 +277,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatIllFormedType.Tuple.External.02") {
+  ignore("FormatIllFormedType.Tuple.External.02") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2)), List(Type.Str, Type.Int32, Type.Float32))
 
     val expected = "(String, Int32)[Float32]"
@@ -377,7 +377,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatIllFormedType.Arrow.External.03") {
+  ignore("FormatIllFormedType.Arrow.External.03") {
     val eff = Type.Var(0, Kind.Bool, Rigidity.Flexible)
     eff.setText("e")
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2, eff)), List(Type.Str, Type.Float32, Type.Int8))

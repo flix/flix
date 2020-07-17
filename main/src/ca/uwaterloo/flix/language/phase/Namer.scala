@@ -270,20 +270,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      val tparams = getTypeParams(tparams0, fparams0, tpe, loc)
-
-      val tenv = tenv0 ++ getTypeEnv(tparams)
-      flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
-        case fparams =>
-          val env0 = getVarEnv(fparams)
-          val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-          val expVal = visitExp(exp, env0, uenv0, tenv)
-          val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
-          val tpeVal = visitType(eff0, uenv0, tenv)
-          mapN(annVal, expVal, schemeVal, tpeVal) {
-            case (as, e, sc, eff) =>
-              val sym = Symbol.mkDefnSym(ns0, ident)
-              NamedAst.Def(doc, as, mod, sym, tparams, fparams, e, sc, eff, loc)
+      flatMapN(getTypeParams(tparams0, fparams0, tpe, loc)) {
+        tparams =>
+          val tenv = tenv0 ++ getTypeEnv(tparams)
+          flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
+            case fparams =>
+              val env0 = getVarEnv(fparams)
+              val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
+              val expVal = visitExp(exp, env0, uenv0, tenv)
+              val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
+              val tpeVal = visitType(eff0, uenv0, tenv)
+              mapN(annVal, expVal, schemeVal, tpeVal) {
+                case (as, e, sc, eff) =>
+                  val sym = Symbol.mkDefnSym(ns0, ident)
+                  NamedAst.Def(doc, as, mod, sym, tparams, fparams, e, sc, eff, loc)
+              }
           }
       }
   }
@@ -552,24 +553,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
-      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
-      flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
-        case p =>
-          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
-            // TODO: Preserve type parameters in NamedAst?
-            case e => NamedAst.Expression.Existential(p, e, loc)
-          }
+      flatMapN(getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)) { // MATT for-construction?
+        tparams =>
+        flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
+          case p =>
+            mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
+              // TODO: Preserve type parameters in NamedAst?
+              case e => NamedAst.Expression.Existential(p, e, loc)
+            }
+        }
       }
 
     case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
       // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
-      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
-      flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
-        case p =>
-          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
-            // TODO: Preserve type parameters in NamedAst?
-            case e => NamedAst.Expression.Universal(p, e, loc)
-          }
+      flatMapN(getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)) { // MATT for-construction?
+        tparams =>
+        flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
+          case p =>
+            mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
+              // TODO: Preserve type parameters in NamedAst?
+              case e => NamedAst.Expression.Universal(p, e, loc)
+            }
+        }
       }
 
     case WeededAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
@@ -1192,6 +1197,32 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
+    * Returns the free vars and their inferred kinds in the given type `tpe0`, with `varKind` assigned if `tpe0` is a type var.
+    */
+  private def freeVarsWithKind(tpe0: WeededAst.Type, varKind: Kind = Kind.Star): List[(Name.Ident, Kind)] = tpe0 match {
+    case WeededAst.Type.Var(ident, loc) => List(ident -> varKind)
+    case WeededAst.Type.Ambiguous(qname, loc) => Nil
+    case WeededAst.Type.Unit(loc) => Nil
+    case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVarsWithKind(_))
+    case WeededAst.Type.RecordEmpty(loc) => Nil
+    case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVarsWithKind(t) ::: freeVarsWithKind(r, Kind.Record)
+    case WeededAst.Type.SchemaEmpty(loc) => Nil
+    case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVarsWithKind(_)) ::: freeVarsWithKind(r, Kind.Schema)
+    case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVarsWithKind(_)) ::: freeVarsWithKind(r, Kind.Schema)
+    case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVarsWithKind(_))
+    case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVarsWithKind(_))
+    case WeededAst.Type.Native(fqm, loc) => Nil
+    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVarsWithKind(_)) ::: freeVarsWithKind(eff, Kind.Bool) ::: freeVarsWithKind(tresult)
+    case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVarsWithKind(tpe1) ++ freeVarsWithKind(tpe2)
+    case WeededAst.Type.True(loc) => Nil
+    case WeededAst.Type.False(loc) => Nil
+    case WeededAst.Type.Not(tpe, loc) => freeVarsWithKind(tpe, Kind.Bool)
+    case WeededAst.Type.And(tpe1, tpe2, loc) => freeVarsWithKind(tpe1, Kind.Bool) ++ freeVarsWithKind(tpe2, Kind.Bool)
+    case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVarsWithKind(tpe1, Kind.Bool) ++ freeVarsWithKind(tpe2, Kind.Bool)
+    case WeededAst.Type.Nullable(tpe, nullity, loc) => freeVarsWithKind(tpe) ++ freeVarsWithKind(nullity, Kind.Bool)
+  }
+
+  /**
     * Returns the free variables in the given constraint `c0`.
     */
   private def freeVarsConstraint(c0: WeededAst.Constraint): List[Name.Ident] = c0 match {
@@ -1293,10 +1324,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given type parameters parameters `tparam0` under the given type environment `tenv0`.
     */
-  private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-      case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0)
+      case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0).toSuccess
     }
   }
 
@@ -1316,31 +1347,49 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and return type.
     */
-  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], returnType: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], returnType: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     // Compute the type variables that occur in the formal parameters.
-    val typeVarsArgs = fparams.foldLeft(Set.empty[String]) {
-      case (acc, WeededAst.FormalParam(_, _, None, _)) => acc
-      case (acc, WeededAst.FormalParam(_, _, Some(tpe), _)) =>
-        freeVars(tpe).foldLeft(acc) {
-          case (innerAcc, ident) => innerAcc + ident.name
-        }
+    val typeVarsArgs = fparams.flatMap {
+      case WeededAst.FormalParam(_, _, Some(tpe), _) => freeVarsWithKind(tpe)
+      case WeededAst.FormalParam(_, _, None, _) => List.empty
     }
 
     // Compute the type variables that occur in the return type.
-    val typeVarsReturnType = freeVars(returnType).map(_.name)
+    val typeVarsReturnType = freeVarsWithKind(returnType)
 
     // Compute the set of type variables.
-    val typeVars = typeVarsArgs ++ typeVarsReturnType
+    val typeVars = typeVarsReturnType ::: typeVarsArgs
 
-    // Construct a (sorted) list of type parameters.
-    typeVars.toList.sorted.map {
-      case name =>
-        val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        // We use a kind variable since we do not know the kind of the type variable.
-        val tvar = Type.freshVar(Kind.freshVar())
-        tvar.setText(name)
-        NamedAst.TypeParam(ident, tvar, loc)
+
+    val kindPerName = typeVars.groupBy(_._1.name).map {
+      case (name, kinds) => min(name, kinds)
     }
+
+    for {
+      kindedNames <- sequence(kindPerName)
+    } yield {
+      kindedNames.sortBy(_._1.name).map {
+        case (id, kind) =>
+          val ident = Name.Ident(SourcePosition.Unknown, id.name, SourcePosition.Unknown) // MATT just use given ident?
+          val tvar = Type.freshVar(kind)
+          tvar.setText(id.name)
+          NamedAst.TypeParam(ident, tvar, loc)
+      }
+    }
+  }
+
+  /**
+    * Return the most specific kind if all kinds form a subkinding relationship
+    */
+  private def min(name: String, kinds: List[(Name.Ident, Kind)]): Validation[(Name.Ident, Kind), NameError.MismatchedTypeParamKinds] = {
+    def min2(kind1: (Name.Ident, Kind), kind2: (Name.Ident, Kind)): Validation[(Name.Ident, Kind), NameError.MismatchedTypeParamKinds] = {
+      (kind1, kind2) match {
+        case ((_, k1), (_, k2)) if k1 <:: k2 => kind1.toSuccess
+        case ((_, k2), (_, k1)) if k2 <:: k1 => kind2.toSuccess
+        case ((n1, k1), (n2, k2)) => NameError.MismatchedTypeParamKinds(name, n1.loc, k1, n2.loc, k2).toFailure
+      }
+    }
+    foldRight(kinds.tail)(kinds.head.toSuccess)(min2)
   }
 
   /**
