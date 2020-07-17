@@ -553,29 +553,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
-      flatMapN(getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)) { // MATT for-construction?
-        tparams =>
-        flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
-          case p =>
-            mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
-              // TODO: Preserve type parameters in NamedAst?
-              case e => NamedAst.Expression.Existential(p, e, loc)
-            }
-        }
-      }
+      for {
+        tparams <- getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
+        p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
+        e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
+      } yield NamedAst.Expression.Existential(p, e, loc) // TODO: Preserve type parameters in NamedAst?
 
     case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
       // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
-      flatMapN(getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)) { // MATT for-construction?
-        tparams =>
-        flatMapN(visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))) {
-          case p =>
-            mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))) {
-              // TODO: Preserve type parameters in NamedAst?
-              case e => NamedAst.Expression.Universal(p, e, loc)
-            }
-        }
-      }
+      for {
+        tparams <- getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
+        p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
+        e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
+      } yield NamedAst.Expression.Universal(p, e, loc) // TODO: Preserve type parameters in NamedAst?
 
     case WeededAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
@@ -1370,7 +1360,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     } yield {
       kindedNames.sortBy(_._1.name).map {
         case (id, kind) =>
-          val ident = Name.Ident(SourcePosition.Unknown, id.name, SourcePosition.Unknown) // MATT just use given ident?
+          val ident = Name.Ident(SourcePosition.Unknown, id.name, SourcePosition.Unknown) // should we just use given ident?
           val tvar = Type.freshVar(kind)
           tvar.setText(id.name)
           NamedAst.TypeParam(ident, tvar, loc)

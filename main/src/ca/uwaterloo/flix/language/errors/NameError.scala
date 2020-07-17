@@ -241,9 +241,9 @@ object NameError {
       vt << Line(kind, source.format) << NewLine
       vt << ">> Mismatched kinds for type parameter '" << Red(name) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc1, s"Kind: $kind1") << NewLine // MATT might need FormatKind
+      vt << Code(loc1, s"Kind: $kind1") << NewLine // TODO might need FormatKind
       vt << NewLine
-      vt << Code(loc2, s"Kind: $kind2") << NewLine // MATT better explanation
+      vt << Code(loc2, s"Kind: $kind2") << NewLine
     }
     def loc: SourceLocation = loc1 min loc2
   }

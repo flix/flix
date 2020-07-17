@@ -98,7 +98,7 @@ object Kind {
       return Star
     }
 
-    (0 until length).foldRight(Star: Kind) { // MATT right?
+    (0 until length).foldRight(Star: Kind) {
       case (_, acc) => Arrow(Star, acc)
     }
   }
