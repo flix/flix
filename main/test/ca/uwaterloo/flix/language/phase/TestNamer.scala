@@ -465,8 +465,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.MismatchedTypeParamKinds](result)
   }
 
-  // currently doesn't work since we convert empty polymorphic schemas/records to plain tvars
-  ignore("MismatchedTypeParamKind.03") {
+  test("MismatchedTypeParamKind.03") {
     val input = "def f(s: #{| a}, r: {| a}): Int = 123"
     val result = compile(input, DefaultOptions)
     expectError[NameError.MismatchedTypeParamKinds](result)
@@ -474,6 +473,18 @@ class TestNamer extends FunSuite with TestUtils {
 
   test("MismatchedTypeParamKind.04") {
     val input = "def f(s: #{X(Int) | a}, r: {x: Int | a}): Int = 123"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.MismatchedTypeParamKinds](result)
+  }
+
+  test("MismatchedTypeParamKind.05") {
+    val input = "def f(r: {| a}, t: a): Int = 123"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.MismatchedTypeParamKinds](result)
+  }
+
+  test("MismatchedTypeParamKind.06") {
+    val input = "def f(s: #{| a}, t: a): Int = 123"
     val result = compile(input, DefaultOptions)
     expectError[NameError.MismatchedTypeParamKinds](result)
   }

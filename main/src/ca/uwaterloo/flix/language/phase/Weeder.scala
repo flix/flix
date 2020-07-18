@@ -1603,34 +1603,42 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
-      val init = restOpt match {
-        case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
-        case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
-      }
-      fields.foldRight(init: WeededAst.Type) {
-        case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) =>
-          WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
+      if (fields.isEmpty && restOpt.isDefined) {
+        WeededAst.Type.RecordGeneric(WeededAst.Type.Var(restOpt.get, restOpt.get.loc), mkSL(sp1, sp2))
+      } else {
+        val init = restOpt match {
+          case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
+          case Some(base) => WeededAst.Type.Var(base, base.loc)
+        }
+        fields.foldRight(init: WeededAst.Type) {
+          case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) =>
+            WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
+        }
       }
 
     case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
-      val init = restOpt match {
-        case None => WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
-        case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
-      }
+      if (predicates.isEmpty && restOpt.isDefined) {
+       WeededAst.Type.SchemaGeneric(WeededAst.Type.Var(restOpt.get, restOpt.get.loc), mkSL(sp1, sp2))
+      } else {
+        val init = restOpt match {
+          case None => WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
+          case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
+        }
 
-      predicates.foldRight(init: WeededAst.Type) {
-        case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
-          val ts = targs match {
-            case None => Nil
-            case Some(xs) => xs.map(visitType).toList
-          }
-          WeededAst.Type.SchemaExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
+        predicates.foldRight(init: WeededAst.Type) {
+          case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
+            val ts = targs match {
+              case None => Nil
+              case Some(xs) => xs.map(visitType).toList
+            }
+            WeededAst.Type.SchemaExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
 
-        case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
-          WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
+          case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
+            WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
 
-        case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
-          WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
+          case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
+            WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
+        }
       }
 
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>

@@ -936,6 +936,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (t, r) => NamedAst.Type.RecordExtend(label, t, r, loc)
       }
 
+    case WeededAst.Type.RecordGeneric(tvar, loc) =>
+      visitType(tvar, uenv0, tenv0)
+
     case WeededAst.Type.SchemaEmpty(loc) =>
       NamedAst.Type.SchemaEmpty(loc).toSuccess
 
@@ -955,6 +958,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
         case (ts, r) => NamedAst.Type.SchemaExtendWithTypes(ident, den, ts, r, loc)
       }
+
+    case WeededAst.Type.SchemaGeneric(tvar, loc) =>
+      visitType(tvar, uenv0, tenv0)
 
     case WeededAst.Type.Relation(tpes, loc) =>
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
@@ -1170,9 +1176,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Type.RecordEmpty(loc) => Nil
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
+    case WeededAst.Type.RecordGeneric(t, loc) => freeVars(t)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
     case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.SchemaGeneric(t, loc) => freeVars(t)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
@@ -1196,9 +1204,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVarsWithKind(_))
     case WeededAst.Type.RecordEmpty(loc) => Nil
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVarsWithKind(t) ::: freeVarsWithKind(r, Kind.Record)
+    case WeededAst.Type.RecordGeneric(t, loc) => freeVarsWithKind(t, Kind.Record)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
     case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVarsWithKind(_)) ::: freeVarsWithKind(r, Kind.Schema)
     case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVarsWithKind(_)) ::: freeVarsWithKind(r, Kind.Schema)
+    case WeededAst.Type.SchemaGeneric(t, loc) => freeVarsWithKind(t, Kind.Schema)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVarsWithKind(_))
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVarsWithKind(_))
     case WeededAst.Type.Native(fqm, loc) => Nil
@@ -1352,7 +1362,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
 
     val kindPerName = typeVars.groupBy(_._1.name).map {
-      case (name, kinds) => min(name, kinds)
+      case (name, kinds) => checkKinds(name, kinds)
     }
 
     for {
@@ -1369,17 +1379,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Return the most specific kind if all kinds form a subkinding relationship
+    * Checks that all `kinds` are equal, creating a `MismatchedTypeParamKinds` error on failure.
     */
-  private def min(name: String, kinds: List[(Name.Ident, Kind)]): Validation[(Name.Ident, Kind), NameError.MismatchedTypeParamKinds] = {
-    def min2(kind1: (Name.Ident, Kind), kind2: (Name.Ident, Kind)): Validation[(Name.Ident, Kind), NameError.MismatchedTypeParamKinds] = {
+  private def checkKinds(name: String, kinds: List[(Name.Ident, Kind)]): Validation[(Name.Ident, Kind), NameError] = {
+    def check(kind1: (Name.Ident, Kind), kind2: (Name.Ident, Kind)): Validation[(Name.Ident, Kind), NameError] = {
       (kind1, kind2) match {
-        case ((_, k1), (_, k2)) if k1 <:: k2 => kind1.toSuccess
-        case ((_, k2), (_, k1)) if k2 <:: k1 => kind2.toSuccess
+        case ((_, k1), (_, k2)) if k1 == k2 => kind1.toSuccess
         case ((n1, k1), (n2, k2)) => NameError.MismatchedTypeParamKinds(name, n1.loc, k1, n2.loc, k2).toFailure
       }
     }
-    foldRight(kinds.tail)(kinds.head.toSuccess)(min2)
+    foldRight(kinds.tail)(kinds.head.toSuccess)(check)
   }
 
   /**
