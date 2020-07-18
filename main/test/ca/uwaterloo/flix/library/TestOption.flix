@@ -357,6 +357,33 @@ def traverse07(): Bool = Option.traverse(x -> if (x == 2) None else Some(x), 1 :
 def traverse08(): Bool = Option.traverse(_ -> Some(42), 1 :: 2 :: 3 :: Nil) == Some(42 :: 42 :: 42 :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
+// traverseX                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def traverseX01(): Bool = Option.traverseX(x -> Some(x + 1), Nil) == Some()
+
+@test
+def traverseX02(): Bool = Option.traverseX(x -> Some(x + 1), 1 :: Nil) == Some()
+
+@test
+def traverseX03(): Bool = Option.traverseX(x -> Some(x + 1), 1 :: 2 :: Nil) == Some()
+
+@test
+def traverseX04(): Bool = Option.traverseX(x -> Some(x + 1), 1 :: 2 :: 3 :: Nil) == Some()
+
+@test
+def traverseX05(): Bool = Option.traverseX(x -> if (x == 1) None else Some(x), 1 :: 2 :: 3 :: Nil) == None
+
+@test
+def traverseX06(): Bool = Option.traverseX(x -> if (x == 3) None else Some(x), 1 :: 2 :: 3 :: Nil) == None
+
+@test
+def traverseX07(): Bool = Option.traverseX(x -> if (x == 2) None else Some(x), 1 :: 2 :: 3 :: Nil) == None
+
+@test
+def traverseX08(): Bool = Option.traverseX(_ -> Some(42), 1 :: 2 :: 3 :: Nil) == Some()
+
+/////////////////////////////////////////////////////////////////////////////
 // zip                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test

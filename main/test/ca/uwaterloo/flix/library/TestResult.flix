@@ -245,6 +245,34 @@ def traverse07(): Bool = Result.traverse(x -> if (x == 2) Err("two") else Ok(x),
 def traverse08(): Bool = Result.traverse(_ -> Ok(42), 1 :: 2 :: 3 :: Nil) == Ok(42 :: 42 :: 42 :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
+// traverseX                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def traverseX01(): Bool = Result.traverseX(x -> Ok(x + 1), Nil) == Ok()
+
+@test
+def traverseX02(): Bool = Result.traverseX(x -> Ok(x + 1), 1 :: Nil) == Ok()
+
+@test
+def traverseX03(): Bool = Result.traverseX(x -> Ok(x + 1), 1 :: 2 :: Nil) == Ok()
+
+@test
+def traverseX04(): Bool = Result.traverseX(x -> Ok(x + 1), 1 :: 2 :: 3 :: Nil) == Ok()
+
+@test
+def traverseX05(): Bool = Result.traverseX(x -> if (x == 1) Err("one") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("one")
+
+@test
+def traverseX06(): Bool = Result.traverseX(x -> if (x == 3) Err("three") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("three")
+
+@test
+def traverseX07(): Bool = Result.traverseX(x -> if (x == 2) Err("two") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("two")
+
+@test
+def traverseX08(): Bool = Result.traverseX(_ -> Ok(42), 1 :: 2 :: 3 :: Nil) == Ok()
+
+
+/////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test

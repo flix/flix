@@ -81,32 +81,100 @@ namespace Validation {
     ///
     /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
     ///
-    pub def sequence(xs: List[Validation[t, e]]): Validation[List[t], e] = match xs {
-        case Nil     => Success(Nil)
-        case v :: vs => match (v, sequence(vs)) {
-            case (Success(x), Success(rs)) => Success(x :: rs)
-            case (Success(_), Failure(e))  => Failure(e)
-            case (Failure(e), Success(_))  => Failure(e)
-            case (Failure(x), Failure(y))  => Failure(Nel.append(x, y))
-        }
+    pub def sequence(xs: List[Validation[t, e]]): Validation[List[t], e] =
+        sequenceHelperSuccess(xs, ys -> Success(ys))
+
+    ///
+    /// Helper function for `sequence`.
+    ///
+    /// Precondition: no Failure has been encountered.
+    ///
+    def sequenceHelperSuccess(xs: List[Validation[a, e]], sk: List[a] -> Validation[List[a], e]): Validation[List[a], e] = match xs {
+        case Nil              => sk(Nil)
+        case Success(x) :: vs => sequenceHelperSuccess(vs, xs -> sk(x :: xs))
+        case Failure(e) :: vs => sequenceHelperFailure(vs, e)
     }
+
+    ///
+    /// Helper function for `sequence`.
+    ///
+    /// Precondition: at least one Failure has been encountered.
+    ///
+    def sequenceHelperFailure(xs: List[Validation[a, e]], ac: Nel[e]): Validation[List[a], e] = match xs {
+        case Nil              => Failure(ac)
+        case Success(_) :: vs => sequenceHelperFailure(vs, ac)
+        case Failure(e) :: vs => sequenceHelperFailure(vs, Nel.append(ac, e))
+    }
+
 
     ///
     /// Returns `Success(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Success(v_i)`.
     ///
     /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
     ///
-    pub def traverse(f: a -> Validation[b, e] & f, xs: List[a]): Validation[List[b], e] & f = match xs {
-        case Nil        => Success(Nil)
+    pub def traverse(f: a -> Validation[b, e] & f, xs: List[a]): Validation[List[b], e] & f =
+        traverseHelperSuccess(f, xs, ys -> Success(ys))
+
+    ///
+    /// Helper function for `traverse`.
+    ///
+    /// Precondition: no Failure has been encountered.
+    ///
+    def traverseHelperSuccess(f: a -> Validation[b, e] & f, xs: List[a], sk: List[b] -> Validation[List[b], e]): Validation[List[b], e] & f = match xs {
+        case Nil        => sk(Nil)
         case v :: vs    => match f(v) {
-            case Success(x) => match traverse(f, vs) {
-                case Success(rs) => Success(x :: rs)
-                case Failure(e)  => Failure(e)
-            }
-            case Failure(x) => match traverse(f, vs) {
-               case Success(_) => Failure(x)
-               case Failure(y) => Failure(Nel.append(x, y))
-           }
+            case Success(x) => traverseHelperSuccess(f, vs, xs -> sk(x :: xs))
+            case Failure(x) => traverseHelperFailure(f, vs, x)
+        }
+    }
+
+    ///
+    /// Helper function for `traverse`.
+    ///
+    /// Precondition: at least one Failure has been encountered.
+    ///
+    def traverseHelperFailure(f: a -> Validation[b, e] & f, xs: List[a], ac: Nel[e]): Validation[List[b], e] & f = match xs {
+        case Nil        => Failure(ac)
+        case v :: vs    => match f(v) {
+            case Success(_) => traverseHelperFailure(f, vs, ac)
+            case Failure(x) => traverseHelperFailure(f, vs, Nel.append(ac, x))
+        }
+    }
+
+    ///
+    /// Returns `Success()` if each of `f(xs_i)` is `Success(_)`.
+    ///
+    /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
+    ///
+    /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
+    /// of applying `f` to each element but do not care about collecting the results.
+    ///
+    pub def traverseX(f: a -> Validation[b, e] & f, xs: List[a]): Validation[Unit, e] & f =
+        traverseXHelperSuccess(f, xs)
+
+    ///
+    /// Helper function for `traverseX`.
+    ///
+    /// Precondition: no Failure has been encountered.
+    ///
+    def traverseXHelperSuccess(f: a -> Validation[b, e] & f, xs: List[a]): Validation[Unit, e] & f = match xs {
+        case Nil        => Success()
+        case v :: vs    => match f(v) {
+            case Success(_) => traverseXHelperSuccess(f, vs)
+            case Failure(e) => traverseXHelperFailure(f, vs, e)
+        }
+    }
+
+    ///
+    /// Helper function for `traverseX`.
+    ///
+    /// Precondition: at least one Failure has been encountered.
+    ///
+    def traverseXHelperFailure(f: a -> Validation[b, e] & f, xs: List[a], ac: Nel[e]): Validation[Unit, e] & f = match xs {
+        case Nil        => Failure(ac)
+        case v :: vs    => match f(v) {
+            case Success(_) => traverseXHelperFailure(f, vs, ac)
+            case Failure(e) => traverseXHelperFailure(f, vs, Nel.append(ac, e))
         }
     }
 

@@ -185,6 +185,20 @@ namespace Result {
     }
 
     ///
+    /// Returns `Ok()` if each of `f(xs_i)` is `Ok(_)`. Otherwise returns `None`.
+    ///
+    /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
+    /// of applying `f` to each element but do not care about collecting the results.
+    ///
+    pub def traverseX(f: a -> Result[b, e] & f, xs: List[a]): Result[Unit, e] & f = match xs {
+        case Nil            => Ok()
+        case x :: rs        => match f(x) {
+            case Err(e) => Err(e)
+            case Ok(_)  => traverseX(f, rs)
+        }
+    }
+
+    ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
     ///
     pub def toList(r: Result[t, e]): List[t] = match r {
