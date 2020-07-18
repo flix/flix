@@ -220,10 +220,20 @@ namespace List {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def map(f: a -> b & e, xs: List[a]): List[b] & e = match xs {
-        case Nil => Nil
-        case x :: rs => f(x) :: map(f, rs)
+    pub def map(f: a -> b & e, xs: List[a]): List[b] & e =
+        mapHelper(f, xs, ys -> ys)
+
+    ///
+    /// Helper function for `map`.
+    ///
+    def mapHelper(f: a -> b & e, xs: List[a], k: List[b] -> List[b]): List[b] & e = match xs {
+        case Nil => k(Nil)
+        case x :: rs => {
+            let a = f(x);
+            mapHelper(f, rs, ys -> k(a :: ys))
+        }
     }
+
 
     ///
     /// Returns the result of applying `f` to every element in `xs` along with that element's index.

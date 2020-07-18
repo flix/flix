@@ -154,6 +154,31 @@ namespace Validation {
     def traverse07(): Bool = traverse(x -> if (x == 2) Success(x + 1) else Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
+    // traverseX                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverseX01(): Bool = traverseX(x -> Success(x + 1), 1 :: Nil) == Success()
+
+    @test
+    def traverseX02(): Bool = traverseX(x -> Success(x + 1), 1 :: 2 :: Nil) == Success()
+
+    @test
+    def traverseX03(): Bool = traverseX(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil) == Success()
+
+    @test
+    def traverseX04(): Bool = traverseX(x -> Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def traverseX05(): Bool = traverseX(x -> Failure(Nel(x, x :: Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil))
+
+    @test
+    def traverseX06(): Bool = traverseX(x -> if (x != 2) Success(x + 1) else Failure(Nel(42, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(42, Nil))
+
+    @test
+    def traverseX07(): Bool = traverseX(x -> if (x == 2) Success(x + 1) else Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toOption                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
