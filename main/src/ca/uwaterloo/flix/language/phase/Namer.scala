@@ -1353,7 +1353,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], returnType: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     // We use `freeVarsWithKind` to infer the kind for each free type variable in the signature.
-    // Then we
+    // Then we ensure each occurrence of the same name maps to the same kind.
+    // Finally, we create a type param for each name.
 
     // Compute the type variables that occur in the formal parameters.
     val typeVarsWithKindArgs = fparams.flatMap {
