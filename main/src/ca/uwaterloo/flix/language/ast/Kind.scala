@@ -44,10 +44,17 @@ sealed trait Kind {
     * Right-associative.
     */
   def <::(left: Kind): Boolean = (left, this) match {
+    // subkinds
     case (Kind.Record, Kind.Star) => true
     case (Kind.Schema, Kind.Star) => true
+
+    // identities
+    case (Kind.Star, Kind.Star) => true
+    case (Kind.Bool, Kind.Bool) => true
+    case (Kind.Record, Kind.Record) => true
+    case (Kind.Schema, Kind.Schema) => true
+
     case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) => (k11 <:: k21) && (k12 <:: k22)
-    case _ if (left == this) => true
     case _ => false
   }
 

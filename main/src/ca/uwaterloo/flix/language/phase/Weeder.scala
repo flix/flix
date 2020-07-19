@@ -1602,30 +1602,27 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
-      if (fields.isEmpty && restOpt.isDefined) {
-        WeededAst.Type.RecordGeneric(WeededAst.Type.Var(restOpt.get, restOpt.get.loc), mkSL(sp1, sp2))
-      } else {
-        val init = restOpt match {
-          case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
-          case Some(base) => WeededAst.Type.Var(base, base.loc)
-        }
-        fields.foldRight(init: WeededAst.Type) {
+    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) => {
+      def buildRecord(base: WeededAst.Type): WeededAst.Type = {
+        fields.foldRight(base) {
           case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) =>
             WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
         }
       }
 
-    case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
-      if (predicates.isEmpty && restOpt.isDefined) {
-       WeededAst.Type.SchemaGeneric(WeededAst.Type.Var(restOpt.get, restOpt.get.loc), mkSL(sp1, sp2))
-      } else {
-        val init = restOpt match {
-          case None => WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
-          case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
-        }
+      (fields, restOpt) match {
+        // Case 1: `{| r}` Polymorphic record with no fields. `r` must be a `Record` variable.
+        case (Nil, Some(ident)) => WeededAst.Type.RecordGeneric(WeededAst.Type.Var(ident, ident.loc), mkSL(sp1, sp2))
+        // Case 2: `{x: Int}` Nonpolymorphic record. Base must be an empty record.
+        case (_, None) => buildRecord(WeededAst.Type.RecordEmpty(mkSL(sp1, sp2)))
+        // Case 3: `{x: Int | r}` Polymorphic record with field. `r` must be a `Record` variable.
+        case (_, Some(base)) => buildRecord(WeededAst.Type.Var(base, base.loc))
+      }
+    }
 
-        predicates.foldRight(init: WeededAst.Type) {
+    case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
+      def buildSchema(base: WeededAst.Type): WeededAst.Type = {
+        predicates.foldRight(base) {
           case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
             val ts = targs match {
               case None => Nil
@@ -1639,6 +1636,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
             WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
         }
+      }
+
+      (predicates, restOpt) match {
+        // Case 1: `#{| r}` Polymorphic schema with no fields. `r` must be a `Schema` variable.
+        case (Nil, Some(ident)) => WeededAst.Type.SchemaGeneric(WeededAst.Type.Var(restOpt.get, restOpt.get.loc), mkSL(sp1, sp2))
+        // Case 2: `#{X(Int)}` Nonpolymorphic schema. Base must be an empty schema.
+        case (_, None) => buildSchema(WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2)))
+        // Case 3: `#{X(Int) | r}` Polymorphic schema with field. `r` must be a `Schema` variable.
+        case (_, Some(ident)) => buildSchema(WeededAst.Type.Var(ident, mkSL(sp1, sp2)))
       }
 
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
