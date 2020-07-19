@@ -25,6 +25,18 @@ pub enum Nel[a] {
 namespace Nel {
 
     ///
+    /// Returns a new non-empty list containing the single element `x`.
+    ///
+    pub def singleton(x: a): Nel[a] = Nel(x, Nil)
+
+    ///
+    /// Returns the non-empty list `xs` prefixed with the new element `x`.
+    ///
+    pub def cons(x: a, xs: Nel[a]): Nel[a] = match xs {
+        case Nel(y, ys) => Nel(x, y :: ys)
+    }
+
+    ///
     /// Returns the first element of `xs`.
     ///
     pub def head(xs: Nel[a]): a = match xs {
