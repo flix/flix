@@ -552,17 +552,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
-      // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
       for {
-        tparams <- getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
+        tparams <- getTypeParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc)
         p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
         e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
       } yield NamedAst.Expression.Existential(p, e, loc) // TODO: Preserve type parameters in NamedAst?
 
     case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
-      // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
       for {
-        tparams <- getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
+        tparams <- getTypeParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc)
         p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
         e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
       } yield NamedAst.Expression.Universal(p, e, loc) // TODO: Preserve type parameters in NamedAst?
@@ -1349,9 +1347,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Returns the implicit type parameters constructed from the given formal parameters and return type.
+    * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], returnType: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     // We use `freeVarsWithKind` to infer the kind for each free type variable in the signature.
     // Then we ensure each occurrence of the same name maps to the same kind.
     // Finally, we create a type param for each name.
@@ -1362,11 +1360,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.FormalParam(_, _, None, _) => List.empty
     }
 
-    // Compute the type variables that occur in the return type
-    val typeVarsWithKindReturnType = freeVarsWithKind(returnType)
+    // Compute the type variables that occur in the overall type.
+    // This may have some overlap with the free vars in the arguments.
+    // That's ok; it does not affect the result.
+    val typeVarsWithKindOverallType = freeVarsWithKind(tpe)
 
     // Compute the set of type variables.
-    val typeVarsWithKind = typeVarsWithKindReturnType ::: typeVarsWithKindArgs
+    val typeVarsWithKind = typeVarsWithKindOverallType ::: typeVarsWithKindArgs
 
     // create a map of name -> (ident, kind), ensuring all kinds for a given name match
     val kindPerName = foldRight(typeVarsWithKind)(Map.empty[String, (Name.Ident, Kind)].toSuccess) {
