@@ -199,6 +199,49 @@ namespace Result {
     }
 
     ///
+    /// Returns the result of applying `f` to a start value `s` and the elements in `xs`
+    /// going from left to right.
+    ///
+    /// If at any step applying `f` fails (i.e. it produces a `Err(e)` value) the traversal
+    /// of `xs` is short-circuited and `Err(e)` is returned.
+    ///
+    /// If `f` is successfully applied to all elements in `xs` the result is of the form:
+    /// `Ok(f(...f(f(s, x1), x2)..., xn))`.
+    ///
+    pub def foldLeftM(f: (b, a) -> Result[b, e] & f, s: b, xs: List[a]): Result[b, e] & f = match xs {
+        case Nil => Ok(s)
+        case x :: rs => match f(s, x) {
+            case Ok(s1) => foldLeftM(f, s1, rs)
+            case Err(e) => Err(e)
+        }
+    }
+
+    ///
+    /// Returns the result of applying `f` to a start value `s` and the elements in `xs`
+    /// going from right to left.
+    ///
+    /// If at any step applying `f` fails (i.e. it produces a `Err(e)` value) the traversal
+    /// of `xs` is short-circuited and `Err(e)` is returned.
+    ///
+    /// If `f` is successfully applied to all elements in `xs` the result is of the form:
+    /// `Ok(f(x1, ...f(xn-1, f(xn, s))...))`.
+    ///
+    pub def foldRightM(f: (a, b) -> Result[b, e] & f, s: b, xs: List[a]): Result[b, e] & f =
+        foldRightMHelper(f, s, xs, e1 -> Err(e1) as & f, s1 -> Ok(s1) as & f)
+
+    ///
+    /// Helper function for `foldRightM`.
+    ///
+    def foldRightMHelper(f: (a, b) -> Result[b, e] & f, s: b, xs: List[a], fk: e -> Result[b, e] & f, sk: b -> Result[b, e] & f): Result[b, e] & f = match xs {
+        case Nil => sk(s)
+        case x :: rs =>
+            foldRightMHelper(f, s, rs, fk, s1 -> match f(x, s1) {
+                    case Ok(s2) => sk(s2)
+                    case Err(e) => fk(e)
+                })
+    }
+
+    ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
     ///
     pub def toList(r: Result[t, e]): List[t] = match r {
