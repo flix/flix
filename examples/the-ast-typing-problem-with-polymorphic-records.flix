@@ -54,7 +54,7 @@ def main(): Type =
 
 /// We can extend the function above to be one that is polymorphic
 /// in whatever other fields an expression may be decorated with:
-def typeCheck2[r](e: Exp[r]): Exp[{tpe: Type | r}] = match e {
+def typeCheck2[r](e: Exp[{| r}]): Exp[{tpe: Type | r}] = match e {
     case True   => True
     case False  => False
     case Cst(i) => Cst({ +tpe = TInt | { value = i.value | i}})

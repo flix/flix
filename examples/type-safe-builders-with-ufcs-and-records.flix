@@ -20,13 +20,13 @@ def main(): Unit =
 def connection(): {pass: Option[Str]} = {pass = None}
 
 /// The host function extends the options record with a hostname.
-def host[r](o: r, h: Str): {host: Str | r} = {+host = h | o}
+def host[r](o: {| r}, h: Str): {host: Str | r} = {+host = h | o}
 
 /// The port function extends the options record with a port number.
-def port[r](o: r, p: Int): {port: Int | r} = {+port = p | o}
+def port[r](o: {| r}, p: Int): {port: Int | r} = {+port = p | o}
 
 /// The user function extends the options record with a username.
-def user[r](o: r, u: Str): {user: Str | r} = {+user = u | o}
+def user[r](o: {| r}, u: Str): {user: Str | r} = {+user = u | o}
 
 /// The pass function *updates* the options record with a new value
 /// of its pass field. Notice that the options record must already
