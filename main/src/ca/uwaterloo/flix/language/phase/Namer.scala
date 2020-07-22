@@ -1329,21 +1329,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-      case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0).toSuccess
+      case WeededAst.TypeParams.Explicit(tparams0) =>
+       mapN(getImplicitTypeParams(fparams0, tpe, loc)) {
+         implicitTparams => getExplicitTypeParams(tparams0, implicitTparams)
+        }
     }
   }
 
   /**
-    * Returns the explicit type parameters from the given type parameters.
+    * Returns the explicit type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
-    case p =>
-      // Generate a fresh type variable for the type parameter.
-      // We use a kind variable since we do not know the kind of the type variable.
-      val tvar = Type.freshVar(Kind.freshVar())
-      // Remember the original textual name.
-      tvar.setText(p.name)
-      NamedAst.TypeParam(p, tvar, p.loc)
+  private def getExplicitTypeParams(tparams0: List[Name.Ident], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
+    tparams0.map {
+      ident =>
+        // Get the kind for each type variable from the implicit type params.
+        // Use a kind variable if not found; this will be caught later by redundancy checks.
+        val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
+        val tvar = Type.freshVar(kind)
+        // Remember the original textual name.
+        tvar.setText(ident.name)
+        NamedAst.TypeParam(ident, tvar, ident.loc)
+    }
   }
 
   /**
@@ -1388,7 +1395,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             val tvar = Type.freshVar(kind) // use the kind we validated from the parameter context
             tvar.setText(id.name)
             NamedAst.TypeParam(id, tvar, loc) // use the id of the first occurrence of a tparam with this name
-      }
+        }
     }
   }
 
