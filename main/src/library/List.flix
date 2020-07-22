@@ -497,9 +497,14 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = match xs {
-        case Nil => s
-        case x :: rs => f(x, foldRight(f, s, rs))
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = foldRightHelper(f, s, xs, s1 -> s1 as & e)
+
+    ///
+    /// Helper function for `foldRight`.
+    ///
+    def foldRightHelper(f: (a, b) -> b & e, s: b, xs: List[a], k: b -> b & e): b & e = match xs {
+        case Nil => k(s)
+        case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
     }
 
     ///
