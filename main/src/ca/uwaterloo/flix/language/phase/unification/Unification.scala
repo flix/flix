@@ -56,39 +56,34 @@ object Unification {
   }
 
   /**
+    * Unify the two type variables `x` and `y`.
+    */
+  private def unifyVars(x: Type.Var, y: Type.Var)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+    // Case 0: types are identical
+    if (x.id == y.id) {
+      Result.Ok(Substitution.empty)
+    } else {
+      (x.rigidity, y.rigidity) match {
+        // Case 1: x is flexible and a superkind of y
+        case (Rigidity.Flexible, _) if y.kind <:: x.kind => Result.Ok(Substitution.singleton(x, y))
+        // Case 2: y is flexible and a superkind of x
+        case (_, Rigidity.Flexible) if x.kind <:: y.kind => Result.Ok(Substitution.singleton(y, x))
+        // Case 3: both variables are rigid
+        case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
+        // Case 4: at least one variable is flexible but not a superkind of the other
+        case _ => Result.Err(UnificationError.MismatchedKinds(x.kind, y.kind))
+      }
+    }
+  }
+
+
+  /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
-      case (x: Type.Var, y: Type.Var) =>
-        (x.id, y.id, x.rigidity, y.rigidity) match {
-          // Case 1: Check if the type variables are syntactically the same.
-          case (xId, yId, _, _) if xId == yId => Result.Ok(Substitution.empty)
-          // Case 2: Both type variables are flexible
-          case (_, _, Rigidity.Flexible, Rigidity.Flexible) =>
-            if (y.kind <:: x.kind)
-              Result.Ok(Substitution.singleton(x, y))
-            else if (x.kind <:: y.kind)
-              Result.Ok(Substitution.singleton(y, x))
-            else
-              Result.Err(UnificationError.MismatchedKinds(x.kind, y.kind))
-          // Case 3: The left type variable is flexible.
-          case (_, _, Rigidity.Flexible, Rigidity.Rigid) =>
-            if (y.kind <:: x.kind)
-              Result.Ok(Substitution.singleton(x, y))
-            else
-              Result.Err(UnificationError.MismatchedKinds(x.kind, y.kind))
-          // Case 4: The right type variable is flexible.
-          case (_, _, Rigidity.Rigid, Rigidity.Flexible) =>
-            if (x.kind <:: y.kind)
-              Result.Ok(Substitution.singleton(y, x))
-            else
-              Result.Err(UnificationError.MismatchedKinds(x.kind, y.kind))
-          // Case 5: Both type variables are rigid.
-          case (_, _, Rigidity.Rigid, Rigidity.Rigid) =>
-            Result.Err(UnificationError.RigidVar(x, y))
-        }
+      case (x: Type.Var, y: Type.Var) => unifyVars(x, y)
 
       case (x: Type.Var, _) =>
         if (x.kind == Kind.Bool || tpe2.kind == Kind.Bool)
