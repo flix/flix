@@ -7,8 +7,8 @@ enum Exp[r] {
     case True,
     case False,
     case Cst({value: Int | r}),
-    case Add({exp1: Exp[r], exp2: Exp[r] | r}),
-    case Ite({exp1: Exp[r], exp2: Exp[r], exp3: Exp[r] | r})
+    case Add({exp1: Exp[{| r}], exp2: Exp[{| r}] | r}),
+    case Ite({exp1: Exp[{| r}], exp2: Exp[{| r}], exp3: Exp[{| r}] | r})
 }
 
 /// Next, we define a grammar of types:
