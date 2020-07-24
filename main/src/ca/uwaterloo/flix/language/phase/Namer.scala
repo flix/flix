@@ -285,7 +285,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case (macc, ident) => macc.get(ident.name) match {
         case None =>
           // We use a kind variable since we do not know the kind of the type variable.
-          val tvar = Type.freshVar(Kind.Unbound)
+          val tvar = Type.freshVar(Kind.freshVar())
           macc + (ident.name -> tvar)
         case Some(tvar) => macc
       }
@@ -1349,8 +1349,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     tparams0.map {
       ident =>
         // Get the kind for each type variable from the implicit type params.
-        // Use an unbound kind if not found; this will be caught later by redundancy checks.
-        val kind = kindPerName.getOrElse(ident.name, Kind.Unbound)
+        // Use a kind variable if not found; this will be caught later by redundancy checks.
+        val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
         val tvar = Type.freshVar(kind)
         // Remember the original textual name.
         tvar.setText(ident.name)
@@ -1438,8 +1438,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     typeVars.toList.sorted.map {
       case name =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        // We use an unbound kind since we do not know the kind of the type variable.
-        val tvar = Type.freshVar(Kind.Unbound)
+        // We use a kind variable since we do not know the kind of the type variable.
+        val tvar = Type.freshVar(Kind.freshVar())
         tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, loc)
     }

@@ -51,7 +51,7 @@ sealed trait Kind {
     case (Kind.Record, Kind.Record) => true
     case (Kind.Schema, Kind.Schema) => true
 
-    case (_, Kind.Unbound) => true
+    case (_, Kind.Var(_)) => true
 
     // subkinds
     case (Kind.Record, Kind.Star) => true
@@ -66,9 +66,9 @@ sealed trait Kind {
 object Kind {
 
   /**
-    * Placeholder for types that cannot be kinded.
+    * Represents a kind variable.
     */
-  case object Unbound extends Kind
+  case class Var(id: Int) extends Kind
 
   /**
     * Represents the kind of types.
@@ -108,6 +108,11 @@ object Kind {
     }
   }
 
+  /**
+    * Returns a fresh kind variable.
+    */
+  def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
+
   /////////////////////////////////////////////////////////////////////////////
   // Type Class Instances                                                    //
   /////////////////////////////////////////////////////////////////////////////
@@ -117,7 +122,7 @@ object Kind {
     */
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
-      case Unbound => "?"
+      case Var(id) => "'" + id
       case Star => "*"
       case Bool => "Bool"
       case Record => "Record"
