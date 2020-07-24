@@ -18,15 +18,10 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.errors.TypeError.OccursCheckError
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
-import ca.uwaterloo.flix.language.phase.unification.UnificationError.OccursCheck
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.Err
 import org.scalatest.FunSuite
-
-import scala.reflect.ClassTag
 
 class TestUnification extends FunSuite with TestUtils {
 
@@ -329,6 +324,34 @@ class TestUnification extends FunSuite with TestUtils {
     val field = Type.mkRelation(List(Type.Bool))
     val label = "x"
     val tpe2 = Type.mkSchemaExtend(label, field, tpe1)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
+  }
+
+  test("Unify.14") {
+    val tpe1 = Type.Var(1, Kind.Schema)
+    val tpe2 = Type.Var(2, Kind.Record)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
+  }
+
+  test("Unify.15") {
+    val tpe1 = Type.Var(1, Kind.Star, Rigidity.Rigid)
+    val tpe2 = Type.Var(2, Kind.Record, Rigidity.Flexible)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(!isOk(result))
+  }
+
+  test("Unify.16") {
+    val tpe1 = Type.Var(1, Kind.Star, Rigidity.Flexible)
+    val tpe2 = Type.Var(2, Kind.Record, Rigidity.Rigid)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(isOk(result))
+  }
+
+  test("Unify.17") {
+    val tpe1 = Type.Var(1, Kind.Star, Rigidity.Rigid)
+    val tpe2 = Type.Var(2, Kind.Star, Rigidity.Rigid)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
   }

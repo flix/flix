@@ -127,11 +127,11 @@ object TypeError {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unable to unify the types: '" << Red(FormatType.formatType(type1)) << "' and '" << Red(FormatType.formatType(type2)) << "'." << NewLine
-      vt << s"     due to mismatch in kinds '$kind1' and '$kind2'"
-      vt <<
       vt << NewLine
       vt << Code(loc, "mismatched kinds.") << NewLine
       vt << NewLine
+      vt << "Kind One: " << Cyan(kind1.toString) << NewLine
+      vt << "Kind Two: " << Magenta(kind2.toString) << NewLine
     }
   }
 
