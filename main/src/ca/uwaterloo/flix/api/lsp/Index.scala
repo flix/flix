@@ -79,7 +79,7 @@ case class Index(m: Map[(Path, Int), List[Entity]],
         // We have all expressions on that uri and on that line.
 
         // Step 1: Compute all whole range overlap with the given position.
-        val filtered = candidates.filter(e => e.loc.beginCol <= pos.col && pos.col <= e.loc.endCol)
+        val filtered = candidates.filter(e => e.loc.beginCol <= pos.character && pos.character <= e.loc.endCol)
 
         // Step 2: Sort the expressions by their span (i.e. their length).
         val sorted = filtered.sortBy(e => span(e.loc))

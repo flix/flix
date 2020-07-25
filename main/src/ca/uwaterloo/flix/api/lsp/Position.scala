@@ -33,23 +33,23 @@ object Position {
       case JInt(i) => Ok(i.toInt)
       case v => Err(s"Unexpected line number: '$v'.")
     }
-    val columnResult: Result[Int, String] = json \\ "col" match {
+    val columnResult: Result[Int, String] = json \\ "character" match {
       case JInt(i) => Ok(i.toInt)
-      case v => Err(s"Unexpected column number: '$v'.")
+      case v => Err(s"Unexpected character: '$v'.")
     }
     for {
       line <- lineResult
-      column <- columnResult
-    } yield Position(line, column)
+      character <- columnResult
+    } yield Position(line, character)
   }
 }
 
 /**
   * Represent a `Position` in LSP.
   */
-case class Position(line: Int, col: Int) {
+case class Position(line: Int, character: Int) {
   def toJSON: JObject = JObject(
     JField("line", JInt(line)),
-    JField("character", JInt(col))
+    JField("character", JInt(character))
   )
 }

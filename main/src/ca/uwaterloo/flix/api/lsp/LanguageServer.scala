@@ -53,11 +53,11 @@ import org.json4s.native.JsonMethods.parse
   *
   * Get the type and effect of an expression:
   *
-  * -   {"request": "typeAndEffOf", "uri": "Option.flix", "position": {"line": 35, "col": 22}}
+  * -   {"request": "typeAndEffOf", "uri": "Option.flix", "position": {"line": 35, "character": 22}}
   *
   * Get the location of a definition or variable:
   *
-  * -   {"request": "gotoDef", "uri": "Option.flix", "position": {"line": 214, "col": 40}}
+  * -   {"request": "gotoDef", "uri": "Option.flix", "position": {"line": 214, "character": 40}}
   *
   * Shutdown the server:
   *
