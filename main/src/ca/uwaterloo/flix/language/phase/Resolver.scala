@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Sig
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -77,7 +78,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
+      createSyntheticTypeClasses(), definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
 
@@ -1612,29 +1613,28 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     mkPredicate(Ast.Denotation.Latticenal, ts0, loc)
   }
   // MATT docs
-  private def createSyntheticTypeClasses(): Map[Symbol.ClassSym, ResolvedAst.Class]= {
-    // create Eq type class
-    val eqClass = ResolvedAst.Class()
-    val eqSignatures = Sig(Ast.Doc)
-    // create Ord type class
-    ???
+  private def createSyntheticTypeClasses()(implicit flix: Flix): Map[Symbol.ClassSym, ResolvedAst.Class] = {
+    val eqTypeClass = createEqTypeClass()
+    // MATT create Ord type class
+    Map(eqTypeClass.sym -> eqTypeClass)
   }
 
   private def createEqTypeClass()(implicit flix: Flix): ResolvedAst.Class = {
     val classSym = Symbol.mkClassSym(Name.RootNS, mkSynthIdent("Eq"))
 
-    val tparam = Type.freshVar(Kind.Star)
+    val tparamType = Type.freshVar(Kind.Star)
+    val tparam = ResolvedAst.TypeParam(mkSynthIdent("a"), tparamType, SourceLocation.Generated)
     val equalsSig = Sig(doc = ???,
-      ann = ???,
-      mod = ???,
+      ann = Nil,
+      mod = Ast.Modifiers(List(Ast.Modifier.Synthetic)),
       sym = Symbol.mkSigSym(classSym, mkSynthIdent("equals")),
-      tparams = List(ResolvedAst.TypeParam(mkSynthIdent("a"), Type.freshVar(Kind.Star), SourceLocation.Generated)),
-      fparams = List(ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.freshVar(Kind.Star), SourceLocation.Generated)),
-      sc = Scheme.generalize(Type.mkPureUncurriedArrow(List(tparam, tparam), Type.Bool)),
+      tparams = List(tparam),
+      fparams = List(ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, tparamType, SourceLocation.Generated)),
+      sc = Scheme.generalize(Type.mkPureUncurriedArrow(List(tparamType, tparamType), Type.Bool)),
       eff = Type.Pure,
       loc = SourceLocation.Generated)
 
-    ResolvedAst.Class(classSym, equalsSig)
+    ResolvedAst.Class(classSym, List(tparam), List(equalsSig))
   }
 
   private def mkSynthIdent(name: String): Name.Ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)

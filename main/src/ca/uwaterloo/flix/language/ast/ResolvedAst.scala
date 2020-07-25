@@ -33,7 +33,7 @@ object ResolvedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Class(sym: Symbol.ClassSym, signatures: ResolvedAst.Sig)
+  case class Class(sym: Symbol.ClassSym, tparams: List[ResolvedAst.TypeParam], signatures: List[ResolvedAst.Sig])
 
   case class Def(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Type, loc: SourceLocation)
 
