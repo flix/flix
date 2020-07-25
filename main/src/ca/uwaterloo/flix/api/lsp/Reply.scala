@@ -34,7 +34,7 @@ object Reply {
   /**
     * A generic JSON response.
     */
-  case class JSON(result: JObject) extends Reply {
+  case class JSON(result: JValue) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("success")),

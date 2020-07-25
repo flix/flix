@@ -32,10 +32,10 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeExcepti
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.JString
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
+import org.json4s.JsonAST.{JArray, JString, JValue}
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -154,6 +154,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("uses") => Request.parseUses(json)
       case JString("prepareRename") => Request.parsePrepareRename(json)
       case JString("complete") => Request.parseComplete(json)
+      case JString("textDocument/foldingRange") => Request.parseFoldingRange(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -313,6 +314,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         }
         case _ => default
       }
+
+    case Request.FoldingRange(uri) =>
+      // TODO
+      val result = JArray(Nil)
+      Reply.JSON(result)
 
     case Request.Shutdown =>
       ws.close(1000, "Shutting down...")

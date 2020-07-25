@@ -75,6 +75,11 @@ object Request {
   case class PrepareRename(uri: Path, pos: Position) extends Request
 
   /**
+    * A 'textDocument/foldingRange' request.
+    */
+  case class FoldingRange(uri: Path) extends Request
+
+  /**
     * A request to shutdown the language server.
     */
   case object Shutdown extends Request
@@ -147,6 +152,19 @@ object Request {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
     } yield Request.PrepareRename(Paths.get(doc).normalize(), pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[FoldingRange]] request.
+    */
+  def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      doc <- docRes
+    } yield Request.FoldingRange(Paths.get(doc).normalize())
   }
 
   /**
