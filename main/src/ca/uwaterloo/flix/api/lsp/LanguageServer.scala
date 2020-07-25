@@ -318,10 +318,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.FoldingRange(uri) =>
       val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
         case ((sym, defn), acc) =>
-          // TODO: Restrict to those in the right file.
           val loc = defn.exp.loc
-          val foldingRange = FoldingRange(loc.beginLine, Some(loc.beginCol), loc.endLine, Some(loc.endCol), Some(FoldingRangeKind.Region))
-          foldingRange :: acc
+          if (uri.toString != loc.source.name) {
+            acc
+          } else {
+            val foldingRange = FoldingRange(loc.beginLine, Some(loc.beginCol), loc.endLine, Some(loc.endCol), Some(FoldingRangeKind.Region))
+            foldingRange :: acc
+          }
       }
       // TODO: Add enums etc.
       val result = JArray(defsFoldingRanges.map(_.toJSON))
