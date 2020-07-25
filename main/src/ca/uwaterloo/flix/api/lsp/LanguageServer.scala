@@ -32,10 +32,10 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeExcepti
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.JString
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
+import org.json4s.JsonAST.{JArray, JString, JValue}
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -53,11 +53,11 @@ import org.json4s.native.JsonMethods.parse
   *
   * Get the type and effect of an expression:
   *
-  * -   {"request": "typeAndEffOf", "uri": "Option.flix", "position": {"line": 35, "col": 22}}
+  * -   {"request": "typeAndEffOf", "uri": "Option.flix", "position": {"line": 35, "character": 22}}
   *
   * Get the location of a definition or variable:
   *
-  * -   {"request": "gotoDef", "uri": "Option.flix", "position": {"line": 214, "col": 40}}
+  * -   {"request": "gotoDef", "uri": "Option.flix", "position": {"line": 214, "character": 40}}
   *
   * Shutdown the server:
   *
@@ -154,6 +154,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("uses") => Request.parseUses(json)
       case JString("prepareRename") => Request.parsePrepareRename(json)
       case JString("complete") => Request.parseComplete(json)
+      case JString("textDocument/foldingRange") => Request.parseFoldingRange(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -313,6 +314,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         }
         case _ => default
       }
+
+    case Request.FoldingRange(uri) =>
+      val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
+        case ((sym, defn), acc) =>
+          val loc = defn.exp.loc
+          if (uri.toString != loc.source.name) {
+            acc
+          } else {
+            val foldingRange = FoldingRange(loc.beginLine, Some(loc.beginCol), loc.endLine, Some(loc.endCol), Some(FoldingRangeKind.Region))
+            foldingRange :: acc
+          }
+      }
+      // TODO: Add enums etc.
+      val result = JArray(defsFoldingRanges.map(_.toJSON))
+      Reply.JSON(result)
 
     case Request.Shutdown =>
       ws.close(1000, "Shutting down...")
