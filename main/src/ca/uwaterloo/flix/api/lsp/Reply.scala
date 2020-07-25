@@ -21,6 +21,7 @@ import org.json4s.JsonAST._
 /**
   * A common super-type for language server replies.
   */
+// TODO: Eventually get rid of these classes.
 trait Reply {
   /**
     * Returns `this` reply as a JSON object.
@@ -29,6 +30,17 @@ trait Reply {
 }
 
 object Reply {
+
+  /**
+    * A generic JSON response.
+    */
+  case class JSON(result: JObject) extends Reply {
+    def toJSON: JObject =
+      JObject(
+        JField("status", JString("success")),
+        JField("results", result)
+      )
+  }
 
   /**
     * A reply that represents that the current compiler version.

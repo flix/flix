@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.api.lsp
   * Represents a `FoldingRangeKind` in LSP.
   */
 sealed trait FoldingRangeKind {
-  def toString: String = this match {
+  override def toString: String = this match {
     case FoldingRangeKind.Comment => "comment"
     case FoldingRangeKind.Imports => "imports"
     case FoldingRangeKind.Region => "region"

@@ -33,5 +33,5 @@ case class FoldingRange(startLine: Int, startCharacter: Option[Int], endLine: In
       ("startCharacter" -> startCharacter) ~
       ("endLine" -> endLine) ~
       ("endCharacter" -> endCharacter) ~
-      ("kind" -> kind.map(_.toJSON))
+      ("kind" -> kind.map(_.toString))
 }
