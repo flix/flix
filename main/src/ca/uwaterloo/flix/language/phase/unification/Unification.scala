@@ -24,6 +24,27 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 object Unification {
 
   /**
+    * Unify the two type variables `x` and `y`.
+    */
+  private def unifyVars(x: Type.Var, y: Type.Var)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+    // Case 0: types are identical
+    if (x.id == y.id) {
+      Result.Ok(Substitution.empty)
+    } else {
+      (x.rigidity, y.rigidity) match {
+        // Case 1: x is flexible and a superkind of y
+        case (Rigidity.Flexible, _) if y.kind <:: x.kind => Result.Ok(Substitution.singleton(x, y))
+        // Case 2: y is flexible and a superkind of x
+        case (_, Rigidity.Flexible) if x.kind <:: y.kind => Result.Ok(Substitution.singleton(y, x))
+        // Case 3: both variables are rigid
+        case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
+        // Case 4: at least one variable is flexible but not a superkind of the other
+        case _ => Result.Err(UnificationError.MismatchedKinds(x.kind, y.kind))
+      }
+    }
+  }
+
+  /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
   private def unifyVar(x: Type.Var, tpe: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
@@ -53,27 +74,6 @@ object Unification {
       tpe.asInstanceOf[Type.Var].setText(x.getText.get)
     }
     Result.Ok(Substitution.singleton(x, tpe))
-  }
-
-  /**
-    * Unify the two type variables `x` and `y`.
-    */
-  private def unifyVars(x: Type.Var, y: Type.Var)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    // Case 0: types are identical
-    if (x.id == y.id) {
-      Result.Ok(Substitution.empty)
-    } else {
-      (x.rigidity, y.rigidity) match {
-        // Case 1: x is flexible and a superkind of y
-        case (Rigidity.Flexible, _) if y.kind <:: x.kind => Result.Ok(Substitution.singleton(x, y))
-        // Case 2: y is flexible and a superkind of x
-        case (_, Rigidity.Flexible) if x.kind <:: y.kind => Result.Ok(Substitution.singleton(y, x))
-        // Case 3: both variables are rigid
-        case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
-        // Case 4: at least one variable is flexible but not a superkind of the other
-        case _ => Result.Err(UnificationError.MismatchedKinds(x.kind, y.kind))
-      }
-    }
   }
 
 

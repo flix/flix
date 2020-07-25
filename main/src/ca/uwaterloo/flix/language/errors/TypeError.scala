@@ -120,13 +120,22 @@ object TypeError {
     }
   }
 
-  case class MismatchedKinds(type1: Type, type2: Type, kind1: Kind, kind2: Kind, loc: SourceLocation) extends TypeError {
+  /**
+    * Mismatched kinds.
+    *
+    * @param tpe1 the first type.
+    * @param tpe2 the second type.
+    * @param kind1 the first kind.
+    * @param kind2 the second kind.
+    * @param loc the location where the error occurred.
+    */
+  case class MismatchedKinds(tpe1: Type, tpe2: Type, kind1: Kind, kind2: Kind, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the kinds '$kind1' and '$kind2'.'"
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the types: '" << Red(FormatType.formatType(type1)) << "' and '" << Red(FormatType.formatType(type2)) << "'." << NewLine
+      vt << ">> Unable to unify the types: '" << Red(FormatType.formatType(tpe1)) << "' and '" << Red(FormatType.formatType(tpe2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched kinds.") << NewLine
       vt << NewLine

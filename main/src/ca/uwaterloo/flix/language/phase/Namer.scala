@@ -1366,7 +1366,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val typeVarsWithKind = cases.flatMap {
       c => freeVarsWithKind(c.tpe)
     }
-    createTypeParams(typeVarsWithKind, loc)
+    freshTypeParamsWithKind(typeVarsWithKind, loc)
   }
 
   /**
@@ -1390,14 +1390,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val typeVarsWithKind = typeVarsWithKindOverallType ::: typeVarsWithKindArgs
 
     // Create a type param for each type variable
-    createTypeParams(typeVarsWithKind, loc)
+    freshTypeParamsWithKind(typeVarsWithKind, loc)
   }
 
   /**
     * Ensure each occurrence of the same name maps to the same kind.
     * Then create a type param for each name.
     */
-  private def createTypeParams(typeVarsWithKind: List[(Name.Ident, Kind)], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+  private def freshTypeParamsWithKind(typeVarsWithKind: List[(Name.Ident, Kind)], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     // create a map of name -> (ident, kind), ensuring all kinds for a given name match
     val kindPerName = foldRight(typeVarsWithKind)(Map.empty[String, (Name.Ident, Kind)].toSuccess) {
       case ((ident0, kind0), acc) => acc.get(ident0.name) match {
