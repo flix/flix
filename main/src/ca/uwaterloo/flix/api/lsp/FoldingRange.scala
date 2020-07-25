@@ -23,30 +23,15 @@ import org.json4s._
   *
   * @param startLine      The zero-based line number from where the folded range starts.
   * @param startCharacter The zero-based character offset from where the folded range starts. If not defined, defaults to the length of the start line.
+  * @param endLine        The zero-based line number where the folded range ends.
+  * @param endCharacter   The zero-based character offset before the folded range ends. If not defined, defaults to the length of the end line.
+  * @param kind           Describes the kind of the folding range such as `comment` or `region`.
   */
-case class FoldingRange(startLine: Int, startCharacter: Option[Int]) {
+case class FoldingRange(startLine: Int, startCharacter: Option[Int], endLine: Int, endCharacter: Option[Int], kind: Option[FoldingRangeKind]) {
   def toJSON: JObject =
     ("startLine" -> startLine) ~
       ("startCharacter" -> startCharacter) ~
-
-
-  //
-  //    /**
-  //      * The zero-based line number where the folded range ends.
-  //      */
-  //    endLine: number;
-  //
-  //    /**
-  //      * The zero-based character offset before the folded range ends. If not defined, defaults to the length of the end line.
-  //      */
-  //    endCharacter?: number;
-  //
-  //    /**
-  //      * Describes the kind of the folding range such as `comment` or `region`. The kind
-  //      * is used to categorize folding ranges and used by commands like 'Fold all comments'. See
-  //      * [FoldingRangeKind](#FoldingRangeKind) for an enumeration of standardized kinds.
-  //      */
-  //    kind?: string;
-  //  }
-
+      ("endLine" -> endLine) ~
+      ("endCharacter" -> endCharacter) ~
+      ("kind" -> kind.map(_.toJSON))
 }
