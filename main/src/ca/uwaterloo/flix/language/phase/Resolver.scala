@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Sig
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation
@@ -1610,4 +1611,32 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   private def mkLattice(ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
     mkPredicate(Ast.Denotation.Latticenal, ts0, loc)
   }
+  // MATT docs
+  private def createSyntheticTypeClasses(): Map[Symbol.ClassSym, ResolvedAst.Class]= {
+    // create Eq type class
+    val eqClass = ResolvedAst.Class()
+    val eqSignatures = Sig(Ast.Doc)
+    // create Ord type class
+    ???
+  }
+
+  private def createEqTypeClass()(implicit flix: Flix): ResolvedAst.Class = {
+    val classSym = Symbol.mkClassSym(Name.RootNS, mkSynthIdent("Eq"))
+
+    val tparam = Type.freshVar(Kind.Star)
+    val equalsSig = Sig(doc = ???,
+      ann = ???,
+      mod = ???,
+      sym = Symbol.mkSigSym(classSym, mkSynthIdent("equals")),
+      tparams = List(ResolvedAst.TypeParam(mkSynthIdent("a"), Type.freshVar(Kind.Star), SourceLocation.Generated)),
+      fparams = List(ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.freshVar(Kind.Star), SourceLocation.Generated)),
+      sc = Scheme.generalize(Type.mkPureUncurriedArrow(List(tparam, tparam), Type.Bool)),
+      eff = Type.Pure,
+      loc = SourceLocation.Generated)
+
+    ResolvedAst.Class(classSym, equalsSig)
+  }
+
+  private def mkSynthIdent(name: String): Name.Ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
+
 }

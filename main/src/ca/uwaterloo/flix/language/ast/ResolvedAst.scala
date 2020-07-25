@@ -25,12 +25,15 @@ import scala.collection.immutable.List
 
 object ResolvedAst {
 
-  case class Root(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
+  case class Root(classes: Map[Symbol.ClassSym, ResolvedAst.Class],
+                  defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                   latticeOps: Map[Type, ResolvedAst.LatticeOps],
                   properties: List[ResolvedAst.Property],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
+
+  case class Class(sym: Symbol.ClassSym, signatures: ResolvedAst.Sig)
 
   case class Def(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Type, loc: SourceLocation)
 
@@ -39,6 +42,8 @@ object ResolvedAst {
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation)
 
   case class LatticeOps(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation)
+
+  case class Sig(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
