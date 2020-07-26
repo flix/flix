@@ -1614,55 +1614,40 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-   * Creates the synthetic type classes `Eq` and `Ord`.
+   * Creates the synthetic type classes.
    */
   private def mkSynthClasses()(implicit flix: Flix): Map[Symbol.ClassSym, ResolvedAst.Class] = {
-    val eqTypeClass = mkEqClass()
-    val ordTypeClass = mkOrdClass(eqTypeClass)
+    val classes = List(mkShowClass())
+    // TODO: Eq, Ord, Hash
 
-    Map(eqTypeClass.sym -> eqTypeClass, ordTypeClass.sym -> ordTypeClass)
+    classes.map(clazz => clazz.sym -> clazz).toMap
   }
 
   /**
-   * Creates the synthetic type class `Eq`.
+   * Creates the synthetic `Show` type class.
+   * {{{
+   *   trait Show[a] {
+   *     def show(x: a): Str
+   *   }
+   * }}}
+   *
    */
-  private def mkEqClass()(implicit flix: Flix): ResolvedAst.Class = {
-    val classSym = Symbol.mkClassSym(Name.RootNS, mkSynthIdent("Eq"))
+  private def mkShowClass()(implicit flix: Flix): ResolvedAst.Class = {
+    val classSym = Symbol.mkClassSym(Name.RootNS, mkSynthIdent("Show"))
 
     val tparamType = Type.freshVar(Kind.Star)
     val tparam = ResolvedAst.TypeParam(mkSynthIdent("a"), tparamType, SourceLocation.Generated)
-    val equalsSig = Sig(doc = synthDoc,
+    val showSig = Sig(doc = synthDoc,
       ann = Nil,
       mod = Ast.Modifiers(List(Ast.Modifier.Synthetic)),
-      sym = Symbol.mkSigSym(classSym, mkSynthIdent("equals")),
+      sym = Symbol.mkSigSym(classSym, mkSynthIdent("show")),
       tparams = List(tparam),
       fparams = List(ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, tparamType, SourceLocation.Generated)),
-      sc = Scheme.generalize(Type.mkPureUncurriedArrow(List(tparamType, tparamType), Type.Bool)),
+      sc = Scheme.generalize(Type.mkPureArrow(tparamType, Type.Str)),
       eff = Type.Pure,
       loc = SourceLocation.Generated)
 
-    ResolvedAst.Class(classSym, List(tparam), List(equalsSig), Nil)
-  }
-
-  /**
-   * Creates the synthetic type class `Ord`, using the given `Eq` type class as a superclass.
-   */
-  private def mkOrdClass(eqTypeClass: ResolvedAst.Class)(implicit flix: Flix): ResolvedAst.Class = {
-    val classSym = Symbol.mkClassSym(Name.RootNS, mkSynthIdent("Ord"))
-
-    val tparamType = Type.freshVar(Kind.Star)
-    val tparam = ResolvedAst.TypeParam(mkSynthIdent("a"), tparamType, SourceLocation.Generated)
-    val leqSig = Sig(doc = synthDoc,
-      ann = Nil,
-      mod = Ast.Modifiers(List(Ast.Modifier.Synthetic)),
-      sym = Symbol.mkSigSym(classSym, mkSynthIdent("leq")),
-      tparams = List(tparam),
-      fparams = List(ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, tparamType, SourceLocation.Generated)),
-      sc = Scheme.generalize(Type.mkPureUncurriedArrow(List(tparamType, tparamType), Type.Bool)),
-      eff = Type.Pure,
-      loc = SourceLocation.Generated)
-
-    ResolvedAst.Class(classSym, List(tparam), List(leqSig), List(eqTypeClass))
+    ResolvedAst.Class(classSym, tparam, List(showSig))
   }
 
   /**
@@ -1673,5 +1658,5 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
    * Synthetic documentation.
    */
-  private val synthDoc: Ast.Doc = Ast.Doc(List(), SourceLocation.Generated) // MATT probably want real docs
+  private val synthDoc: Ast.Doc = Ast.Doc(List(), SourceLocation.Generated)
 }
