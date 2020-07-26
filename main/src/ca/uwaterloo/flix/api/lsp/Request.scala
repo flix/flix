@@ -29,6 +29,8 @@ sealed trait Request
 
 object Request {
 
+  // TODO: Sort
+
   /**
     * A request to return the compiler version.
     */
@@ -73,6 +75,11 @@ object Request {
     * A request to prepare a rename.
     */
   case class PrepareRename(uri: Path, pos: Position) extends Request
+
+  /**
+    * A 'textDocument/codeLens' request.
+    */
+  case class CodeLens(uri: Path) extends Request
 
   /**
     * A 'textDocument/foldingRange' request.
@@ -165,6 +172,19 @@ object Request {
     for {
       doc <- docRes
     } yield Request.FoldingRange(Paths.get(doc).normalize())
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[CodeLens]] request.
+    */
+  def parseCodeLens(json: json4s.JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      doc <- docRes
+    } yield Request.CodeLens(Paths.get(doc).normalize())
   }
 
   /**

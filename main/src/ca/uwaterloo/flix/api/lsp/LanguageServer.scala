@@ -22,7 +22,7 @@ import java.util.Date
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
@@ -36,6 +36,8 @@ import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 import org.json4s.JsonAST.{JArray, JString, JValue}
+
+import scala.collection.mutable
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -76,7 +78,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  var root: Root = _
+  var root: Root = _ // TODO: We should be more careful if root can be null.
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
@@ -154,6 +156,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("uses") => Request.parseUses(json)
       case JString("prepareRename") => Request.parsePrepareRename(json)
       case JString("complete") => Request.parseComplete(json)
+      case JString("textDocument/codeLens") => Request.parseCodeLens(json)
       case JString("textDocument/foldingRange") => Request.parseFoldingRange(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
@@ -314,6 +317,45 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         }
         case _ => default
       }
+
+    case Request.CodeLens(uri) =>
+      //
+      // A mutable collection of code lenses.
+      //
+      val codeLenses = mutable.ListBuffer.empty[CodeLens]
+
+      // TODO: Refactor into separate methods.
+      // TODO: Check that we are in the right file (i.e. uri).
+
+      //
+      // Add a CodeLens for main (if present).
+      //
+      val main = Symbol.mkDefnSym("main")
+      root.defs.get(main) match {
+        case None =>
+          // Case 1: No main. Nothing to be done.
+          ()
+        case Some(defn) =>
+          // Case 2: Main found. Add a CodeLens.
+          val loc = defn.sym.loc
+          val cmd = Command("Run Main", "runMain")
+          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd)))
+      }
+
+      //
+      // Add CodeLenses for unit tests.
+      //
+      for ((sym, defn) <- root.defs) {
+        if (defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
+          val loc = defn.sym.loc
+          val cmd1 = Command("Run Test", "runTest") // TODO: Need extra information about the test.
+          val cmd2 = Command("Run All Tests", "runAllTests")
+          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd1)))
+          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd2)))
+        }
+      }
+
+      Reply.JSON(JArray(codeLenses.map(_.toJSON).toList))
 
     case Request.FoldingRange(uri) =>
       val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
