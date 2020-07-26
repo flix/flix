@@ -176,7 +176,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       val major = Version.CurrentVersion.major
       val minor = Version.CurrentVersion.minor
       val revision = Version.CurrentVersion.revision
-      val json = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+      val json = ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
       Reply.JSON(json)
 
     case Request.Validate(paths) =>
