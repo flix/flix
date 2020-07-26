@@ -20,6 +20,11 @@ import org.json4s._
 
 /**
   * Represents a `Command` in LSP.
+  *
+  * @param title     Title of the command, like `save`.
+  * @param command   The identifier of the actual command handler.
+  * @param arguments Arguments that the command handler should be invoked with.
+  *
   */
 case class Command(title: String, command: String, arguments: List[JValue]) {
   def toJSON: JObject =
