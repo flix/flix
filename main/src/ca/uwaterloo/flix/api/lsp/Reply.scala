@@ -93,17 +93,6 @@ object Reply {
   }
 
   /**
-    * A reply that represents a prepared rename.
-    */
-  case class PreparedRename(range: Range) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("success")),
-        JField("range", range.toJSON),
-      )
-  }
-
-  /**
     * A reply that represents all code completions.
     */
   case class Completions(results: List[CompletionItem]) extends Reply {
