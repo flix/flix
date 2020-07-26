@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.json4s.JValue
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
+
+import org.json4s.JsonDSL._
+import org.json4s._
 
 /**
   * Companion object for [[Position]].
@@ -46,10 +47,10 @@ object Position {
 
 /**
   * Represent a `Position` in LSP.
+  *
+  * @param line      Line position in a document (zero-based).
+  * @param character Character offset on a line in a document (zero-based).
   */
 case class Position(line: Int, character: Int) {
-  def toJSON: JObject = JObject(
-    JField("line", JInt(line)),
-    JField("character", JInt(character))
-  )
+  def toJSON: JObject = ("line" -> line) ~ ("character" -> character)
 }
