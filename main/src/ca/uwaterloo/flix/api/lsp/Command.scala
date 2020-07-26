@@ -15,16 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonDSL._
+import org.json4s._
 
 /**
   * Represents a `Command` in LSP.
   */
-case class Command(title: String, command: String) {
-  def toJSON: JObject = {
-    JObject(
-      JField("title", JString(title)),
-      JField("command", JString(command)),
-    )
-  }
+case class Command(title: String, command: String, arguments: List[JValue]) {
+  def toJSON: JObject =
+    ("title" -> title) ~
+      ("command" -> command) ~
+      ("arguments" -> arguments)
 }

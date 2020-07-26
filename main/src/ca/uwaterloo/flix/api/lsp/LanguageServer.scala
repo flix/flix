@@ -338,7 +338,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case Some(defn) =>
           // Case 2: Main found. Add a CodeLens.
           val loc = defn.sym.loc
-          val cmd = Command("Run Main", "runMain")
+          val cmd = Command("Run Main", "runMain", Nil)
           codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd)))
       }
 
@@ -348,8 +348,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       for ((sym, defn) <- root.defs) {
         if (defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
           val loc = defn.sym.loc
-          val cmd1 = Command("Run Test", "runTest") // TODO: Need extra information about the test.
-          val cmd2 = Command("Run All Tests", "runAllTests")
+          val cmd1 = Command("Run Test", "runTest", Nil) // TODO: Need extra information about the test.
+          val cmd2 = Command("Run All Tests", "runAllTests", Nil)
           codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd1)))
           codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd2)))
         }
