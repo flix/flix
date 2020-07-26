@@ -43,19 +43,6 @@ object Reply {
   }
 
   /**
-    * A reply that represents that compilation was successful.
-    */
-  case class CompilationSuccess(time: Long, version: String) extends Reply {
-    def toJSON: JObject = {
-      JObject(
-        JField("status", JString("success")),
-        JField("time", JString(time.toString)),
-        JField("version", JString(version))
-      )
-    }
-  }
-
-  /**
     * A reply that represents that compilation was unsuccessful.
     */
   case class CompilationFailure(results: List[PublishDiagnosticsParams]) extends Reply {

@@ -200,7 +200,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val e = System.nanoTime() - t
 
           // Send back a status message.
-          Reply.CompilationSuccess(e, Version.CurrentVersion.toString)
+          Reply.JSON(("status" -> "success") ~ ("time" -> e))
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
           implicit val ctx: TerminalContext = NoTerminal
