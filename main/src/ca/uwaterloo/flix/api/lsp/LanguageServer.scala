@@ -37,6 +37,8 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 import org.json4s.JsonAST.{JArray, JString, JValue}
 
+import scala.collection.mutable
+
 /**
   * A Compiler Interface for the Language Server Protocol.
   *
@@ -76,7 +78,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  var root: Root = _
+  var root: Root = _ // TODO: We should be more careful if root can be null.
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
@@ -154,6 +156,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("uses") => Request.parseUses(json)
       case JString("prepareRename") => Request.parsePrepareRename(json)
       case JString("complete") => Request.parseComplete(json)
+      case JString("textDocument/codeLens") => Request.parseCodeLens(json)
       case JString("textDocument/foldingRange") => Request.parseFoldingRange(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
@@ -316,8 +319,25 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       }
 
     case Request.CodeLens(uri) =>
+      //
+      // A mutable collection of code lenses.
+      //
+      val codeLenses = mutable.ListBuffer.empty[CodeLens]
 
-      ??? // TODO: CodeLens
+      //
+      // Add a CodeLens for main (if present).
+      //
+      val main = Symbol.mkDefnSym("main")
+      root.defs.get(main) match {
+        case None =>
+          // Case 1: No main. Nothing to be done.
+          ()
+        case Some(defn) =>
+          // Case 2: Main found. Add a CodeLens.
+          codeLenses.addOne(CodeLens())
+      }
+
+      Reply.JSON(JArray(codeLenses.map(_.toJSON).toList))
 
     case Request.FoldingRange(uri) =>
       val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
