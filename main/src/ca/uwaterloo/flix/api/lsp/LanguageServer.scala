@@ -334,9 +334,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           ()
         case Some(defn) =>
           // Case 2: Main found. Add a CodeLens.
-          codeLenses.addOne(CodeLens())
+          val loc = defn.sym.loc
+          val cmd = Command("Run Main", "runMain")
+          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd)))
       }
-
       Reply.JSON(JArray(codeLenses.map(_.toJSON).toList))
 
     case Request.FoldingRange(uri) =>
