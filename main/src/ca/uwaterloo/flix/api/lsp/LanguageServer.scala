@@ -240,14 +240,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Goto(uri, pos) =>
       index.query(uri, pos) match {
         case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Def(sym, _, loc) => Reply.Goto(mkGotoDef(sym, loc))
-          case Expression.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
-          case Expression.Tag(sym, tag, _, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
+          case Expression.Def(sym, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoDef(sym, loc).toJSON))
+          case Expression.Var(sym, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON))
+          case Expression.Tag(sym, tag, _, _, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON))
           case _ => Reply.NotFound()
         }
         case Some(Entity.Pat(pat)) => pat match {
-          case Pattern.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
-          case Pattern.Tag(sym, tag, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
+          case Pattern.Var(sym, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON))
+          case Pattern.Tag(sym, tag, _, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON))
           case _ => Reply.NotFound()
         }
         case _ =>

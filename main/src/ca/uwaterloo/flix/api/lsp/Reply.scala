@@ -82,17 +82,6 @@ object Reply {
   }
 
   /**
-    * A reply that represents a location link.
-    */
-  case class Goto(locationLink: LocationLink) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("success")),
-        JField("locationLink", locationLink.toJSON),
-      )
-  }
-
-  /**
     * A reply that represents all usages of a definition.
     */
   case class Uses(results: List[Location]) extends Reply {
