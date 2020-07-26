@@ -24,6 +24,27 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 object Unification {
 
   /**
+    * Unify the two type variables `x` and `y`.
+    */
+  private def unifyVars(x: Type.Var, y: Type.Var)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+    // Case 0: types are identical
+    if (x.id == y.id) {
+      Result.Ok(Substitution.empty)
+    } else {
+      (x.rigidity, y.rigidity) match {
+        // Case 1: x is flexible and a superkind of y
+        case (Rigidity.Flexible, _) if y.kind <:: x.kind => Result.Ok(Substitution.singleton(x, y))
+        // Case 2: y is flexible and a superkind of x
+        case (_, Rigidity.Flexible) if x.kind <:: y.kind => Result.Ok(Substitution.singleton(y, x))
+        // Case 3: both variables are rigid
+        case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
+        // Case 4: at least one variable is flexible but not a superkind of the other
+        case _ => Result.Err(UnificationError.MismatchedKinds(x.kind, y.kind))
+      }
+    }
+  }
+
+  /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
   private def unifyVar(x: Type.Var, tpe: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
@@ -43,9 +64,9 @@ object Unification {
 
     // Check if the kind of `x` matches the kind of `tpe`.
 
-    //if (x.kind != tpe.kind) {
-    //  return Result.Err(TypeError.KindError())
-    //}
+    if (!(tpe.kind <:: x.kind)) {
+      return Result.Err(UnificationError.MismatchedKinds(x.kind, tpe.kind))
+    }
 
     // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
     if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
@@ -55,24 +76,14 @@ object Unification {
     Result.Ok(Substitution.singleton(x, tpe))
   }
 
+
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
-      case (x: Type.Var, y: Type.Var) =>
-        // Case 1: Check if the type variables are syntactically the same.
-        if (x.id == y.id && x.kind == y.kind)
-          return Result.Ok(Substitution.empty)
-        // Case 2: The left type variable is flexible.
-        if (x.rigidity == Rigidity.Flexible)
-          return Result.Ok(Substitution.singleton(x, y))
-        // Case 3: The right type variable is flexible.
-        if (y.rigidity == Rigidity.Flexible)
-          return Result.Ok(Substitution.singleton(y, x))
-        // Case 4: Both type variables are rigid.
-        Result.Err(UnificationError.RigidVar(x, y))
+      case (x: Type.Var, y: Type.Var) => unifyVars(x, y)
 
       case (x: Type.Var, _) =>
         if (x.kind == Kind.Bool || tpe2.kind == Kind.Bool)
@@ -263,6 +274,9 @@ object Unification {
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, loc))
+
+        case Result.Err(UnificationError.MismatchedKinds(kind1, kind2)) =>
+          Err(TypeError.MismatchedKinds(type1, type2, kind1, kind2, loc))
       }
     }
     )

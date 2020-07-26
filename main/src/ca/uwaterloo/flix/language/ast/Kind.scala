@@ -51,6 +51,8 @@ sealed trait Kind {
     case (Kind.Record, Kind.Record) => true
     case (Kind.Schema, Kind.Schema) => true
 
+    case (_, Kind.Var(_)) => true
+
     // subkinds
     case (Kind.Record, Kind.Star) => true
     case (Kind.Schema, Kind.Star) => true
@@ -94,11 +96,6 @@ object Kind {
   case class Arrow(k1: Kind, k2: Kind) extends Kind
 
   /**
-    * Returns a fresh kind variable.
-    */
-  def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
-
-  /**
     * Returns the kind: * -> (* ... -> *)
     */
   def mkArrow(length: Int): Kind = {
@@ -110,6 +107,11 @@ object Kind {
       case (_, acc) => Arrow(Star, acc)
     }
   }
+
+  /**
+    * Returns a fresh kind variable.
+    */
+  def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
 
   /////////////////////////////////////////////////////////////////////////////
   // Type Class Instances                                                    //

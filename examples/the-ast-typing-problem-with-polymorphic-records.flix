@@ -7,8 +7,8 @@ enum Exp[r] {
     case True,
     case False,
     case Cst({value: Int | r}),
-    case Add({exp1: Exp[r], exp2: Exp[r] | r}),
-    case Ite({exp1: Exp[r], exp2: Exp[r], exp3: Exp[r] | r})
+    case Add({exp1: Exp[{| r}], exp2: Exp[{| r}] | r}),
+    case Ite({exp1: Exp[{| r}], exp2: Exp[{| r}], exp3: Exp[{| r}] | r})
 }
 
 /// Next, we define a grammar of types:
@@ -54,7 +54,7 @@ def main(): Type =
 
 /// We can extend the function above to be one that is polymorphic
 /// in whatever other fields an expression may be decorated with:
-def typeCheck2[r](e: Exp[r]): Exp[{tpe: Type | r}] = match e {
+def typeCheck2[r](e: Exp[{| r}]): Exp[{tpe: Type | r}] = match e {
     case True   => True
     case False  => False
     case Cst(i) => Cst({ +tpe = TInt | { value = i.value | i}})

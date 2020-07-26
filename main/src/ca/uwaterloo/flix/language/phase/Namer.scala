@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.WeededAst.{NullPattern, TypeParams}
+import ca.uwaterloo.flix.language.ast.WeededAst.NullPattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -112,35 +112,29 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val sym = Symbol.mkEnumSym(ns0, ident)
 
           // Compute the type parameters.
-          val tparams = tparams0 match {
-            case TypeParams.Elided => Nil // TODO: Support type parameter elision?
-            case TypeParams.Explicit(tps) => tps map {
-              case p =>
-                // We use a kind variable since we do not know the kind of the type variable.
-                val tvar = Type.freshVar(Kind.freshVar())
-                NamedAst.TypeParam(p, tvar, loc)
-            }
-          }
+          flatMapN(getTypeParamsFromCases(tparams0, cases.values.toList, loc)) {
+            tparams =>
 
-          // Compute the kind of the enum.
-          val kind = Kind.mkArrow(tparams.length)
+              // Compute the kind of the enum.
+              val kind = Kind.mkArrow(tparams.length)
 
-          val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
-          val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
-          val enumType = if (quantifiers.isEmpty)
-            NamedAst.Type.Enum(sym, kind)
-          else {
-            val base = NamedAst.Type.Enum(sym, kind)
-            quantifiers.foldLeft(base: NamedAst.Type) {
-              case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
-            }
-          }
+              val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
+              val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
+              val enumType = if (quantifiers.isEmpty)
+                NamedAst.Type.Enum(sym, kind)
+              else {
+                val base = NamedAst.Type.Enum(sym, kind)
+                quantifiers.foldLeft(base: NamedAst.Type) {
+                  case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
+                }
+              }
 
-          mapN(casesOf(cases, uenv0, tenv)) {
-            case cases =>
-              val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, kind, loc)
-              val enums = enums0 + (ident.name -> enum)
-              prog0.copy(enums = prog0.enums + (ns0 -> enums))
+              mapN(casesOf(cases, uenv0, tenv)) {
+                case cases =>
+                  val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, kind, loc)
+                  val enums = enums0 + (ident.name -> enum)
+                  prog0.copy(enums = prog0.enums + (ns0 -> enums))
+              }
           }
         case Some(enum) =>
           // Case 2.2: Duplicate definition.
@@ -155,22 +149,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       typealiases0.get(ident.name) match {
         case None =>
           // Case 1: The type alias does not exist in the namespace. Add it.
-          val tparams = tparams0 match {
-            case TypeParams.Elided => Nil
-            case TypeParams.Explicit(tps) => tps map {
-              case p =>
-                // We use a kind variable since we do not know the kind of the type variable.
-                val tvar = Type.freshVar(Kind.freshVar())
-                NamedAst.TypeParam(p, tvar, loc)
-            }
-          }
-          val tenv = getTypeEnv(tparams)
-          mapN(visitType(tpe0, uenv0, tenv)) {
-            case tpe =>
-              val sym = Symbol.mkTypeAliasSym(ns0, ident)
-              val typealias = NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
-              val typealiases = typealiases0 + (ident.name -> typealias)
-              prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
+          flatMapN(getTypeParamsFromFormalParams(tparams0, List.empty, tpe0, loc, allowElision = false)) {
+            tparams =>
+              val tenv = getTypeEnv(tparams)
+              mapN(visitType(tpe0, uenv0, tenv)) {
+                case tpe =>
+                  val sym = Symbol.mkTypeAliasSym(ns0, ident)
+                  val typealias = NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+                  val typealiases = typealiases0 + (ident.name -> typealias)
+                  prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
+              }
           }
         case Some(typealias) =>
           // Case 2: Duplicate type alias.
@@ -270,7 +258,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      flatMapN(getTypeParams(tparams0, fparams0, tpe, loc)) {
+      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
         tparams =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
           flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
@@ -553,14 +541,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       for {
-        tparams <- getTypeParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc)
+        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true)
         p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
         e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
       } yield NamedAst.Expression.Existential(p, e, loc) // TODO: Preserve type parameters in NamedAst?
 
     case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
       for {
-        tparams <- getTypeParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc)
+        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true)
         p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
         e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
       } yield NamedAst.Expression.Universal(p, e, loc) // TODO: Preserve type parameters in NamedAst?
@@ -839,12 +827,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Predicate.Head.Atom(ident, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(ident, den, ts, Type.freshVar(Kind.Schema), loc)
+      } yield NamedAst.Predicate.Head.Atom(ident, den, ts, Type.freshVar(Kind.Star), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
         e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0)
-      } yield NamedAst.Predicate.Head.Union(e, Type.freshVar(Kind.Schema), loc)
+      } yield NamedAst.Predicate.Head.Union(e, Type.freshVar(Kind.Star), loc)
   }
 
   /**
@@ -853,7 +841,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(ident, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0, uenv0))
-      NamedAst.Predicate.Body.Atom(ident, den, polarity, ts, Type.freshVar(Kind.Schema), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(ident, den, polarity, ts, Type.freshVar(Kind.Star), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -1324,35 +1312,68 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Performs naming on the given type parameters parameters `tparam0` under the given type environment `tenv0`.
+    * Performs naming on the given type parameters `tparam0` from the given cases `cases`.
     */
-  private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+  private def getTypeParamsFromCases(tparams0: WeededAst.TypeParams, cases: List[WeededAst.Case], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     tparams0 match {
-      case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-      case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0).toSuccess
+      case WeededAst.TypeParams.Elided => Nil.toSuccess // TODO allow implicit tparams?
+      case WeededAst.TypeParams.Explicit(tparams0) =>
+        mapN(getImplicitTypeParamsFromCases(cases, loc)) {
+          implicitTparams => getExplicitTypeParams(tparams0, implicitTparams)
+        }
     }
   }
 
   /**
-    * Returns the explicit type parameters from the given type parameters.
+    * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
-    case p =>
-      // Generate a fresh type variable for the type parameter.
-      // We use a kind variable since we do not know the kind of the type variable.
-      val tvar = Type.freshVar(Kind.freshVar())
-      // Remember the original textual name.
-      tvar.setText(p.name)
-      NamedAst.TypeParam(p, tvar, p.loc)
+  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, allowElision: Boolean)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] ={
+    tparams0 match {
+      case WeededAst.TypeParams.Elided =>
+        if (allowElision)
+          getImplicitTypeParamsFromFormalParams(fparams, tpe, loc)
+        else
+          Nil.toSuccess
+      case WeededAst.TypeParams.Explicit(tparams0) =>
+        mapN(getImplicitTypeParamsFromFormalParams(fparams, tpe, loc)) {
+          implicitTparams => getExplicitTypeParams(tparams0, implicitTparams)
+        }
+    }
+  }
+
+  /**
+    * Returns the explicit type parameters from the given type parameter names and implicit type parameters.
+    */
+  private def getExplicitTypeParams(tparams0: List[Name.Ident], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
+    tparams0.map {
+      ident =>
+        // Get the kind for each type variable from the implicit type params.
+        // Use a kind variable if not found; this will be caught later by redundancy checks.
+        val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
+        val tvar = Type.freshVar(kind)
+        // Remember the original textual name.
+        tvar.setText(ident.name)
+        NamedAst.TypeParam(ident, tvar, ident.loc)
+    }
+  }
+
+  /**
+    * Returns the implicit type parameters constructed from the given enum cases.
+    */
+  private def getImplicitTypeParamsFromCases(cases: List[WeededAst.Case], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+    // Infer the kind for each type variable in the cases.
+    val typeVarsWithKind = cases.flatMap {
+      c => freeVarsWithKind(c.tpe)
+    }
+    freshTypeParamsWithKind(typeVarsWithKind, loc)
   }
 
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
-    // We use `freeVarsWithKind` to infer the kind for each free type variable in the signature.
-    // Then we ensure each occurrence of the same name maps to the same kind.
-    // Finally, we create a type param for each name.
+  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+    // Infer the kind for each free type variable in the signature.
 
     // Compute the type variables that occur in the formal parameters.
     val typeVarsWithKindArgs = fparams.flatMap {
@@ -1368,6 +1389,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     // Compute the set of type variables.
     val typeVarsWithKind = typeVarsWithKindOverallType ::: typeVarsWithKindArgs
 
+    // Create a type param for each type variable
+    freshTypeParamsWithKind(typeVarsWithKind, loc)
+  }
+
+  /**
+    * Ensure each occurrence of the same name maps to the same kind.
+    * Then create a type param for each name.
+    */
+  private def freshTypeParamsWithKind(typeVarsWithKind: List[(Name.Ident, Kind)], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     // create a map of name -> (ident, kind), ensuring all kinds for a given name match
     val kindPerName = foldRight(typeVarsWithKind)(Map.empty[String, (Name.Ident, Kind)].toSuccess) {
       case ((ident0, kind0), acc) => acc.get(ident0.name) match {
@@ -1388,7 +1418,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             val tvar = Type.freshVar(kind) // use the kind we validated from the parameter context
             tvar.setText(id.name)
             NamedAst.TypeParam(id, tvar, loc) // use the id of the first occurrence of a tparam with this name
-      }
+        }
     }
   }
 

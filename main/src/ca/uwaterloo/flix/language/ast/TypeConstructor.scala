@@ -124,7 +124,7 @@ object TypeConstructor {
     /**
       * The shape of an extended schema is { name: type | rest }
       */
-    def kind: Kind = Kind.Star ->: Kind.Schema ->: Kind.Record
+    def kind: Kind = Kind.Star ->: Kind.Schema ->: Kind.Schema
   }
 
   /**

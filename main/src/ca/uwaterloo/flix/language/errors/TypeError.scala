@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt._
@@ -117,6 +117,30 @@ object TypeError {
       vt << "  (1) Are you trying to pass null where a non-null value is required?" << NewLine
       vt << NewLine
       vt
+    }
+  }
+
+  /**
+    * Mismatched kinds.
+    *
+    * @param tpe1 the first type.
+    * @param tpe2 the second type.
+    * @param kind1 the first kind.
+    * @param kind2 the second kind.
+    * @param loc the location where the error occurred.
+    */
+  case class MismatchedKinds(tpe1: Type, tpe2: Type, kind1: Kind, kind2: Kind, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Unable to unify the kinds '$kind1' and '$kind2'.'"
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to unify the types: '" << Red(FormatType.formatType(tpe1)) << "' and '" << Red(FormatType.formatType(tpe2)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched kinds.") << NewLine
+      vt << NewLine
+      vt << "Kind One: " << Cyan(kind1.toString) << NewLine
+      vt << "Kind Two: " << Magenta(kind2.toString) << NewLine
     }
   }
 
