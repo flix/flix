@@ -36,6 +36,8 @@ import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonDSL._
+import org.json4s._
 
 import scala.collection.mutable
 
@@ -174,7 +176,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       val major = Version.CurrentVersion.major
       val minor = Version.CurrentVersion.minor
       val revision = Version.CurrentVersion.revision
-      Reply.Version(major, minor, revision)
+      val json = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+      Reply.JSON(json)
 
     case Request.Validate(paths) =>
       // Configure the Flix compiler.
