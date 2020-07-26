@@ -29,6 +29,8 @@ sealed trait Request
 
 object Request {
 
+  // TODO: Sort
+
   /**
     * A request to return the compiler version.
     */
@@ -73,6 +75,11 @@ object Request {
     * A request to prepare a rename.
     */
   case class PrepareRename(uri: Path, pos: Position) extends Request
+
+  /**
+    * A 'textDocument/codeLens' request.
+    */
+  case class CodeLens(uri: Path) extends Request
 
   /**
     * A 'textDocument/foldingRange' request.

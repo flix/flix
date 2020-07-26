@@ -315,6 +315,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case _ => default
       }
 
+    case Request.CodeLens(uri) =>
+
+      ??? // TODO: CodeLens
+
     case Request.FoldingRange(uri) =>
       val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
         case ((sym, defn), acc) =>
