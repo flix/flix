@@ -22,7 +22,7 @@ import java.util.Date
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
@@ -324,6 +324,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       //
       val codeLenses = mutable.ListBuffer.empty[CodeLens]
 
+      // TODO: Refactor into separate methods.
+      // TODO: Check that we are in the right file (i.e. uri).
+
       //
       // Add a CodeLens for main (if present).
       //
@@ -338,6 +341,20 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val cmd = Command("Run Main", "runMain")
           codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd)))
       }
+
+      //
+      // Add CodeLenses for unit tests.
+      //
+      for ((sym, defn) <- root.defs) {
+        if (defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
+          val loc = defn.sym.loc
+          val cmd1 = Command("Run Test", "runTest") // TODO: Need extra information about the test.
+          val cmd2 = Command("Run All Tests", "runAllTests")
+          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd1)))
+          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd2)))
+        }
+      }
+
       Reply.JSON(JArray(codeLenses.map(_.toJSON).toList))
 
     case Request.FoldingRange(uri) =>
