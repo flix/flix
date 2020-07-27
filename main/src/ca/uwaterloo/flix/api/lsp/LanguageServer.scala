@@ -356,10 +356,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       val result = JArray(defsFoldingRanges.map(_.toJSON))
       result
 
-    case Request.Shutdown =>
-      ws.close(1000, "Shutting down...")
-      System.exit(0)
-      null
+    case Request.Shutdown => execShutdown(ws)
 
     case Request.Version =>
       val major = Version.CurrentVersion.major
@@ -369,6 +366,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
   }
 
+  /**
+    * Executes the shutdown command.
+    */
+  private def execShutdown(ws: WebSocket): Nothing = {
+    ws.close(1000, "Shutting down...")
+    System.exit(0)
+    throw null
+  }
 
   /**
     * Returns a location link to the given symbol `sym`.
