@@ -170,7 +170,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Process the request.
     */
-  // TODO: Eliminate usage of Path
   // TODO: Add addUri with uri and text
   // TODO: Add delUri with uri
   // TODO: addPartialUri with uri and partial text.
