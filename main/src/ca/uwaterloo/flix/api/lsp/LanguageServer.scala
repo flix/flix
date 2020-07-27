@@ -151,15 +151,15 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Determine the type of request.
     json \\ "request" match {
-      case JString("version") => Ok(Request.Version)
-      case JString("validate") => Request.parseValidate(json)
-      case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
-      case JString("goto") => Request.parseGoto(json)
-      case JString("uses") => Request.parseUses(json)
+      case JString("codeLens") => Request.parseCodeLens(json)
       case JString("complete") => Request.parseComplete(json)
-      case JString("textDocument/codeLens") => Request.parseCodeLens(json)
-      case JString("textDocument/foldingRange") => Request.parseFoldingRange(json)
+      case JString("foldingRange") => Request.parseFoldingRange(json)
+      case JString("goto") => Request.parseGoto(json)
       case JString("shutdown") => Ok(Request.Shutdown)
+      case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
+      case JString("uses") => Request.parseUses(json)
+      case JString("validate") => Request.parseValidate(json)
+      case JString("version") => Ok(Request.Version)
       case s => Err(s"Unsupported request: '$s'.")
     }
   } catch {
