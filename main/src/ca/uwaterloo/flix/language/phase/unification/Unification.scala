@@ -33,9 +33,13 @@ object Unification {
     } else {
       (x.rigidity, y.rigidity) match {
         // Case 1: x is flexible and a superkind of y
-        case (Rigidity.Flexible, _) if y.kind <:: x.kind => Result.Ok(Substitution.singleton(x, y))
+        case (Rigidity.Flexible, _) if y.kind <:: x.kind =>
+          x.getText.foreach(y.setText) // TODO get rid of this insanity
+          Result.Ok(Substitution.singleton(x, y))
         // Case 2: y is flexible and a superkind of x
-        case (_, Rigidity.Flexible) if x.kind <:: y.kind => Result.Ok(Substitution.singleton(y, x))
+        case (_, Rigidity.Flexible) if x.kind <:: y.kind =>
+          y.getText.foreach(x.setText) // TODO get rid of this insanity
+          Result.Ok(Substitution.singleton(y, x))
         // Case 3: both variables are rigid
         case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
         // Case 4: at least one variable is flexible but not a superkind of the other
@@ -68,11 +72,6 @@ object Unification {
       return Result.Err(UnificationError.MismatchedKinds(x.kind, tpe.kind))
     }
 
-    // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
-    if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
-      // TODO: Get rid of this insanity.
-      tpe.asInstanceOf[Type.Var].setText(x.getText.get)
-    }
     Result.Ok(Substitution.singleton(x, tpe))
   }
 

@@ -89,6 +89,11 @@ object BoolUnification {
       //      }
       //    }
 
+      // carry over the old variable names to the new variables
+      subst.m.foreach { // TODO get rid of this insanity
+        case (x, y: Type.Var) => x.getText.foreach(y.setText)
+        case _ => // ignore
+      }
       Ok(subst)
     } catch {
       case BooleanUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2))

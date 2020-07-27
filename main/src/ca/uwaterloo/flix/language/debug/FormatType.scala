@@ -24,9 +24,9 @@ import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
 object FormatType {
 
-  def formatType(tpe: Type)(implicit audience: Audience): String = {
+  def formatType(tpe: Type, varNames: Map[Int, String] = Map.empty)(implicit audience: Audience): String = {
 
-    val renameMap = alphaRenameVars(tpe)
+    val renameMap = alphaRenameVars(tpe, varNames)
 
     def formatWellFormedRecord(record: Type): String = flattenRecord(record) match {
       case FlatNestable(fields, Type.Cst(TypeConstructor.RecordEmpty)) =>
@@ -92,11 +92,11 @@ object FormatType {
               case Bool => s"''$id"
               case _ => s"'$id"
             }
-            case Audience.External => tvar.getText.getOrElse(renameMap(tvar.id))
+            case Audience.External => renameMap(tvar.id)
           }
           case Type.Lambda(tvar, tpe) => audience match {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-            case Audience.External => s"${tvar.getText.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
+            case Audience.External => s"${renameMap(tvar.id)} => ${visit(tpe)}"
           }
           case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
         }
@@ -366,9 +366,21 @@ object FormatType {
   /**
     * Rename the variables in the given type.
     */
-  private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
-    tpe0.typeVars.toList.sortBy(_.id).zipWithIndex.map {
-      case (tvar, index) => tvar.id -> getVarName(index)
-    }.toMap
+  def alphaRenameVars(tpe0: Type, existingNames: Map[Int, String] = Map.empty): Map[Int, String] = {
+
+    // generator of new names
+    val nameGenerator = LazyList.from(0).map(getVarName).iterator
+
+    // first get prenamed vars
+    val tvarsById = tpe0.typeVars.groupBy(_.id)
+    val namePerId = tvarsById.view.mapValues {
+      tvars => tvars.flatMap(_.getText).headOption
+    }.toMap ++ existingNames.view.mapValues(Some(_))
+    val usedNames = namePerId.values.flatten.toSet
+
+    // remove used names from the generator to avoid collision
+    val filteredGenerator = nameGenerator.filterNot(usedNames.contains)
+
+    namePerId.view.mapValues(_.getOrElse(filteredGenerator.next())).toMap
   }
 }

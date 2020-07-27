@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatExpression, FormatType, PrettyExpression}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
@@ -89,6 +89,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given definition `defn0` as a JSON object.
     */
   private def visitDef(defn0: Def): JObject = {
+    // Find the variable id -> name mapping for this defn
+    val varNames = FormatType.alphaRenameVars(defn0.declaredScheme.base)
+
     // Compute the type parameters.
     val tparams = defn0.tparams.map {
       case TypeParam(ident, tpe, loc) => JObject(List(
@@ -100,7 +103,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val fparams = defn0.fparams.collect {
       case FormalParam(psym, mod, tpe, loc) if tpe != Type.Unit => JObject(
         JField("name", JString(psym.text)),
-        JField("type", JString(FormatType.formatType(tpe)))
+        JField("type", JString(FormatType.formatType(tpe, varNames)))
       )
     }
 
@@ -112,8 +115,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     ("name" -> defn0.sym.name) ~
       ("tparams" -> tparams) ~
       ("fparams" -> fparams) ~
-      ("result" -> FormatType.formatType(result)) ~
-      ("effect" -> FormatType.formatType(effect)) ~
+      ("result" -> FormatType.formatType(result, varNames)) ~
+      ("effect" -> FormatType.formatType(effect, varNames)) ~
       ("time" -> getTime(defn0)) ~
       ("space" -> getSpace(defn0)) ~
       ("comment" -> defn0.doc.text.trim)
