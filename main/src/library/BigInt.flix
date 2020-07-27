@@ -79,6 +79,13 @@ namespace BigInt {
     pub def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ (1ii <<< position)
 
     ///
+    /// Returns the integer binary logarithm of `x`.
+    ///
+    pub def log2(x: BigInt): Int32 =
+        import java.math.BigInteger.bitLength();
+        bitLength(x) as & Pure
+
+    ///
     /// Return a string representation of `x`.
     ///
     pub def toString(x: BigInt): String =

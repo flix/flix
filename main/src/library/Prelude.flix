@@ -1,35 +1,41 @@
 ///
 /// The identity function.
 ///
+@Time(1) @Space(1)
 pub def identity(x: a): a = x
 
 ///
 /// Returns the constant function with return value `y`.
 /// That is, returns `f` such that `f(x) = y` for all inputs `x`.
 ///
+@Time(1) @Space(1)
 pub def constant(y: a): b -> a = _ -> y
 
 ///
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///
+@Time(1) @Space(1)
 pub def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 
 ///
 /// Returns the result of currying the function `f`.
 /// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
 ///
+@Time(1) @Space(1)
 pub def curry(f: (a, b) -> c & e): a -> (b -> c & e) = x -> y -> f(x, y)
 
 ///
 /// Returns the result of uncurrying the function `f`.
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
+@Time(1) @Space(1)
 pub def uncurry(f: a -> (b -> c & e1) & e2): (a, b) -> c & (e1 and e2) = (x, y) -> (y |> f(x))
 
 ///
 /// Returns the first component of `t`.
 ///
+@Time(1) @Space(1)
 pub def fst(p: (a, b)): a =
     let (x, _) = p;
         x
@@ -37,6 +43,7 @@ pub def fst(p: (a, b)): a =
 ///
 /// Returns the second component of `t`.
 ///
+@Time(1) @Space(1)
 pub def snd(p: (a, b)): b =
     let (_, y) = p;
         y
@@ -45,6 +52,7 @@ pub def snd(p: (a, b)): b =
 /// Returns the pair `p` with the components swapped.
 /// That is, returns `(y, x)` if `p = (x, y)`.
 ///
+@Time(1) @Space(1)
 pub def swap(p: (a, b)): (b, a) =
     let (x, y) = p;
         (y, x)
@@ -54,6 +62,7 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
+@Time(1) @Space(1)
 pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & (e1 and e2) = x -> g(f(x))
 
 ///
@@ -61,6 +70,7 @@ pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & (e1 and e2) = x -> g(f(x))
 ///
 /// Given a value `x` and a function `f` returns `f(x)`.
 ///
+@Time(1) @Space(1)
 pub def |>(x: a, f: a -> b & e): b & e = f(x)
 
 ///
@@ -68,11 +78,13 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 ///
 /// Given a pair `x` and a function `f` returns `f(x)`.
 ///
+@Time(1) @Space(1)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 
 ///
 /// Panics (crashes) the current process with the given message `m`.
 ///
+@Time(1) @Space(1)
 pub def panic(m: String): a = ?panic
 
 ///

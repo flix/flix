@@ -31,6 +31,7 @@ namespace Result {
     ///
     /// Returns `true` iff `r` is `Ok(v)`.
     ///
+    @Time(1) @Space(1)
     pub def isOk(r: Result[t, e]): Bool = match r {
         case Ok(_) => true
         case Err(_) => false
@@ -39,6 +40,7 @@ namespace Result {
     ///
     /// Returns `true` iff `r` is `Err(w)`.
     ///
+    @Time(1) @Space(1)
     pub def isErr(r: Result[t, e]): Bool = match r {
         case Ok(_) => false
         case Err(_) => true
@@ -47,6 +49,7 @@ namespace Result {
     ///
     /// Returns `v` if `r` is `Ok(v)`. Otherwise returns `d`.
     ///
+    @Time(1) @Space(1)
     pub def getWithDefault(r: Result[t, e], d: t): t = match r {
         case Ok(v) => v
         case Err(_) => d
@@ -55,6 +58,7 @@ namespace Result {
     ///
     /// Returns `Ok(v)` if `r1` is `Ok(v)`. Otherwise returns `r2`.
     ///
+    @Time(1) @Space(1)
     pub def withDefault(r1: Result[t, e1], r2: Result[t, e2]): Result[t, e2] = match r1 {
         case Ok(v) => Ok(v)
         case Err(_) => r2
@@ -63,6 +67,7 @@ namespace Result {
     ///
     /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
     ///
+    @Time(1) @Space(1)
     pub def replace(x: t, y: t, r: Result[t, e]): Result[t, e] = match r {
         case Ok(v) => Ok(if (v == x) y else v)
         case Err(_) => r
@@ -73,6 +78,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def exists(f: t -> Bool, r: Result[t, e]): Bool = match r {
         case Ok(t)  => f(t)
         case Err(_) => false
@@ -84,6 +90,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def forall(f: t -> Bool, r: Result[t, e]): Bool = match r {
         case Ok(t)  => f(t)
         case Err(_) => true
@@ -92,6 +99,7 @@ namespace Result {
     ///
     /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def map(f: t1 -> t2 & f, r: Result[t1, e]): Result[t2, e] & f = match r {
         case Ok(v) => Ok(f(v))
         case Err(w) => Err(w)
@@ -100,6 +108,7 @@ namespace Result {
     ///
     /// Returns `Err(f(e))` if `r` is `Err(e)`. Returns `Ok(v)` if `r` is `Ok(v)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def mapErr(f: e1 -> e2 & f, r: Result[t, e1]): Result[t, e2] & f = match r {
         case Ok(v) => Ok(v)
         case Err(w) => Err(f(w))
@@ -109,6 +118,7 @@ namespace Result {
     ///
     /// Returns `f(v)` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def flatMap(f: t1 -> Result[t2, e] & f, r: Result[t1, e]): Result[t2, e] & f = match r {
         case Ok(v) => f(v)
         case Err(w) => Err(w)
@@ -119,6 +129,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r {
         case Ok(v) => if (f(v)) 1 else 0
         case Err(_) => 0
@@ -129,6 +140,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def find(f: t -> Bool, r: Result[t, e]): Option[t] = match r {
         case Ok(v) => if (f(v)) Some(v) else None
         case Err(_) => None
@@ -137,6 +149,7 @@ namespace Result {
     ///
     /// Returns `f(z, v)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def foldLeft(f: (a, t) -> a & f, z: a, r: Result[t, e]): a & f = match r {
         case Ok(v) => f(z, v)
         case Err(_) => z
@@ -145,6 +158,7 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def foldRight(f: (t, a) -> a & f, r: Result[t, e], z: a): a & f = match r {
         case Ok(v) => f(v, z)
         case Err(_) => z
@@ -244,6 +258,7 @@ namespace Result {
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
     ///
+    @Time(1) @Space(1)
     pub def toList(r: Result[t, e]): List[t] = match r {
         case Ok(v) => v :: Nil
         case Err(_) => Nil
@@ -252,6 +267,7 @@ namespace Result {
     ///
     /// Returns a one-element set of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty set.
     ///
+    @Time(1) @Space(1)
     pub def toSet(r: Result[t, e]): Set[t] = match r {
         case Ok(v)  => Set.singleton(v)
         case Err(_) => Set.empty()
@@ -260,6 +276,7 @@ namespace Result {
     ///
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Ok((k, v))`. Otherwise returns the empty map.
     ///
+    @Time(1) @Space(1)
     pub def toMap(r: Result[(k, v), e]): Map[k, v] = match r {
         case Ok((k, v)) => Map.singleton(k, v)
         case Err(_)     => Map.empty()
@@ -268,6 +285,7 @@ namespace Result {
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.
     ///
+    @Time(1) @Space(1)
     pub def toOption(r: Result[t, e]): Option[t] = match r {
         case Ok(v)  => Some(v)
         case Err(_) => None
@@ -278,6 +296,7 @@ namespace Result {
     ///
     /// The function `f` must be impure.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def foreach(f: t ~> Unit, r: Result[t, e]): Unit & Impure = match r {
         case Ok(v)  => f(v)
         case Err(_) => ()
@@ -286,6 +305,7 @@ namespace Result {
     ///
     /// Applies the function in `r1` to the value in `r2`.
     ///
+    @Time(foldLeft((_, f) -> time(f), 1, r1)) @Space(foldLeft((_, f) -> time(f), 1, r1))
     pub def ap(r1: Result[t -> u & f, e], r2: Result[t, e]): Result[u, e] & f = match r1 {
         case Ok(f)  => match r2 {
             case Ok(a)  => Ok(f(a))
@@ -299,6 +319,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if either of `r1` and `r2` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift2(f: (t1, t2) -> u & f, r1: Result[t1, e], r2: Result[t2, e]): Result[u, e] & f =
         ap(map(f, r1), r2)
 
@@ -307,6 +328,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2` and `r3` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift3(f: (t1, t2, t3) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e]): Result[u, e] & f =
         ap(lift2(f, r1, r2), r3)
 
@@ -315,6 +337,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, `r3` and `r4` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift4(f: (t1, t2, t3, t4) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e]): Result[u, e] & f =
         ap(lift3(f, r1, r2, r3), r4)
 
@@ -323,6 +346,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r5` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift5(f: (t1, t2, t3, t4, t5) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e]): Result[u, e] & f =
         ap(lift4(f, r1, r2, r3, r4), r5)
 
@@ -331,6 +355,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r6` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e]): Result[u, e] & f =
         ap(lift5(f, r1, r2, r3, r4, r5), r6)
 
@@ -339,6 +364,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r7` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e]): Result[u, e] & f=
         ap(lift6(f, r1, r2, r3, r4, r5, r6), r7)
 
@@ -347,6 +373,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r8` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e]): Result[u, e] & f =
         ap(lift7(f, r1, r2, r3, r4, r5, r6, r7), r8)
 
@@ -355,6 +382,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r9` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e], r9: Result[t9, e]): Result[u, e] & f =
         ap(lift8(f, r1, r2, r3, r4, r5, r6, r7, r8), r9)
 
@@ -363,6 +391,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r10` are `Err(e)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e], r9: Result[t9, e], r10: Result[t10, e]): Result[u, e] & f =
         ap(lift9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
 

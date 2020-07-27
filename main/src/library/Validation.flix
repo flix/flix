@@ -27,6 +27,7 @@ namespace Validation {
     ///
     /// Applies the function in `v1` to the value in `v2`.
     ///
+    @Time(1) @Space(1)
     pub def ap(v1: Validation[t -> u & f, e], v2: Validation[t, e]): Validation[u, e] & f = match (v1, v2) {
         case (Success(f), Success(v)) => Success(f(v))
         case (Success(_), Failure(e)) => Failure(e)
@@ -37,6 +38,7 @@ namespace Validation {
     ///
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
     ///
+    @Time(1) @Space(1)
     pub def getWithDefault(v: Validation[t, e], d: t): t = match v {
         case Success(t) => t
         case Failure(_) => d
@@ -45,6 +47,7 @@ namespace Validation {
     ///
     /// Returns `v1` if it is `Success(v)`. Otherwise returns `v2`.
     ///
+    @Time(1) @Space(1)
     pub def withDefault(v1: Validation[t, e], v2: Validation[t, e]): Validation[t, e] = match v1 {
         case Success(_) => v1
         case Failure(_) => v2
@@ -55,6 +58,7 @@ namespace Validation {
     ///
     /// Returns `false` if `v` is `Failure`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def exists(f: t -> Bool, v: Validation[t, e]): Bool = match v {
         case Success(t) => f(t)
         case Failure(_) => false
@@ -63,6 +67,7 @@ namespace Validation {
     ///
     /// Returns `true` if `v` is `Success(t)` and `f(t)` is true or if `v` is `Failure`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def forall(f: t -> Bool, v: Validation[t, e]): Bool = match v {
         case Success(t) => f(t)
         case Failure(_) => true
@@ -71,6 +76,7 @@ namespace Validation {
     ///
     /// Returns `Success(f(v))` if `o` is `Success(v)`. Otherwise returns `v`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def map(f: t -> u & f, v: Validation[t, e]): Validation[u, e] & f = match v {
         case Success(t) => Success(f(t))
         case Failure(e) => Failure(e)
@@ -184,6 +190,7 @@ namespace Validation {
     /// Returns `Some(t)` if `v` is `Success(t)`.
     /// Returns `None` otherwise.
     ///
+    @Time(1) @Space(1)
     pub def toOption(v: Validation[t, e]): Option[t] = match v {
         case Success(t) => Some(t)
         case Failure(_) => None
@@ -195,6 +202,7 @@ namespace Validation {
     /// Returns `Ok(t)` if `v` is `Success(t)`.
     /// Returns `Err(e)` if `v` is `Failure(e)`.
     ///
+    @Time(1) @Space(1)
     pub def toResult(v: Validation[t, e]): Result[t, Nel[e]] = match v {
         case Success(t) => Ok(t)
         case Failure(e) => Err(e)
@@ -206,6 +214,7 @@ namespace Validation {
     /// Returns `t :: Nil` if `v` is `Success(v)`.
     /// Returns `Nil` if `v` is `Failure(e)`.
     ///
+    @Time(1) @Space(1)
     pub def toList(v: Validation[t, e]): List[t] = match v {
         case Success(t) => t :: Nil
         case Failure(_) => Nil
@@ -216,6 +225,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if either or both of `v1` or `v2` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift2(f: (t1, t2) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e]): Validation[u, e] & f =
         ap(map(f, v1), v2)
 
@@ -224,6 +234,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2` and `v3` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift3(f: (t1, t2, t3) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e]): Validation[u, e] & f =
         ap(lift2(f, v1, v2), v3)
 
@@ -232,6 +243,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, `v3` and `v4` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift4(f: (t1, t2, t3, t4) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e]): Validation[u, e] & f=
         ap(lift3(f, v1, v2, v3), v4)
 
@@ -240,6 +252,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v5` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift5(f: (t1, t2, t3, t4, t5) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e]): Validation[u, e] & f =
         ap(lift4(f, v1, v2, v3, v4), v5)
 
@@ -248,6 +261,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v6` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e]): Validation[u, e] & f =
         ap(lift5(f, v1, v2, v3, v4, v5), v6)
 
@@ -256,6 +270,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v7` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e]): Validation[u, e] & f=
         ap(lift6(f, v1, v2, v3, v4, v5, v6), v7)
 
@@ -264,6 +279,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v8` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e]): Validation[u, e] & f =
         ap(lift7(f, v1, v2, v3, v4, v5, v6, v7), v8)
 
@@ -272,6 +288,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v9` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e], v9: Validation[t9, e]): Validation[u, e] & f =
         ap(lift8(f, v1, v2, v3, v4, v5, v6, v7, v8), v9)
 
@@ -280,6 +297,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v10` are `Failure(xs1)`.
     ///
+    @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e], v9: Validation[t9, e], v10: Validation[t10, e]): Validation[u, e] & f =
         ap(lift9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9), v10)
 
