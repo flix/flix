@@ -171,12 +171,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
 
-    case Request.Version =>
-      val major = Version.CurrentVersion.major
-      val minor = Version.CurrentVersion.minor
-      val revision = Version.CurrentVersion.revision
-      ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
-
     case Request.Validate(paths) =>
       // Configure the Flix compiler.
       val flix = new Flix()
@@ -366,6 +360,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       ws.close(1000, "Shutting down...")
       System.exit(0)
       null
+
+    case Request.Version =>
+      val major = Version.CurrentVersion.major
+      val minor = Version.CurrentVersion.minor
+      val revision = Version.CurrentVersion.revision
+      ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+
   }
 
 
