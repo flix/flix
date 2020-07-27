@@ -198,6 +198,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           // Compute elapsed time.
           val e = System.nanoTime() - t
 
+          // TODO: What about deprecations?
+
           // Send back a status message.
           ("status" -> "success") ~ ("time" -> e)
         case Failure(errors) =>

@@ -20,12 +20,20 @@ import org.json4s._
 
 /**
   * Represents a `Diagnostic` in LSP.
+  *
+  * @param range    The range at which the message applies.
+  * @param severity The diagnostic's severity. Can be omitted. If omitted it is up to the client to interpret diagnostics as error, warning, info or hint.
+  * @param code     The diagnostic's code, which might appear in the user interface.
+  * @param source   A human-readable string describing the source of this diagnostic, e.g. 'typescript' or 'super lint'.
+  * @param message  The diagnostic's message.
+  * @param tags     Additional metadata about the diagnostic.
   */
-case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String) {
+case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, tags: List[DiagnosticTag]) {
   def toJSON: JObject =
     ("range" -> range.toJSON) ~
       ("severity" -> severity.map(_.toInt)) ~
       ("code" -> code) ~
       ("source" -> source) ~
-      ("message" -> message)
+      ("message" -> message) ~
+      ("tags" -> tags.map(_.toInt))
 }
