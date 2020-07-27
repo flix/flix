@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import java.net.InetSocketAddress
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -235,23 +236,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.GetEnums(uri) => ??? // TODO
 
-    case Request.Goto(uri, pos) =>
-      index.query(uri, pos) match {
-        case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoDef(sym, loc).toJSON)
-          case Expression.Var(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON)
-          case Expression.Tag(sym, tag, _, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
-          case _ => ("status" -> "failure")
-        }
-        case Some(Entity.Pat(pat)) => pat match {
-          case Pattern.Var(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON)
-          case Pattern.Tag(sym, tag, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
-          case _ => ("status" -> "failure")
-        }
-        case _ =>
-          log(s"No entry for: '$uri,' at '$pos'.")
-          ("status" -> "failure")
-      }
 
     case Request.Uses(uri, pos) =>
       index.query(uri, pos) match {
@@ -279,29 +263,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           ("status" -> "failure")
       }
 
-    case Request.Complete(uri, pos) =>
-      // TODO: Fake it till you make it:
-      val items = List(
-        CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
-        CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
-      )
-      val default = ("status" -> "success") ~ ("results" -> items.map(_.toJSON))
-
-
-      index.query(uri, pos) match {
-        case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Hole(sym, _, _, _) =>
-            // TODO: This is just a first approximation. Have to check the types etc.
-            val holeCtx = TypedAstOps.holesOf(root)(sym)
-            val items = holeCtx.env.map {
-              case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
-            }
-            ("status" -> "success") ~ ("results" -> items.map(_.toJSON))
-          case _ => default
-        }
-        case _ => default
-      }
-
     case Request.FoldingRange(uri) =>
       val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
         case ((sym, defn), acc) =>
@@ -318,13 +279,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       result
 
     case Request.CodeLens(uri) => processCodeLens(uri)
+
+    case Request.Complete(uri, pos) => processComplete(uri, pos)
+
+    case Request.Goto(uri, pos) => processGoto(uri, pos)
+
     case Request.Shutdown => processShutdown()
+
     case Request.Version => processVersion()
 
   }
 
   /**
-    * Processes the codelens request.
+    * Processes a codelens request.
     */
   private def processCodeLens(uri: String): JValue = {
     //
@@ -367,7 +334,54 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
-    * Processes the shutdown request.
+    * Processes a complete request.
+    */
+  private def processComplete(uri: Path, pos: Position): JValue = {
+    // TODO: Fake it till you make it:
+    val items = List(
+      CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
+      CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
+    )
+    val default = ("status" -> "success") ~ ("results" -> items.map(_.toJSON))
+
+
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) => exp match {
+        case Expression.Hole(sym, _, _, _) =>
+          // TODO: This is just a first approximation. Have to check the types etc.
+          val holeCtx = TypedAstOps.holesOf(root)(sym)
+          val items = holeCtx.env.map {
+            case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
+          }
+          ("status" -> "success") ~ ("results" -> items.map(_.toJSON))
+        case _ => default
+      }
+      case _ => default
+    }
+  }
+
+  /**
+    * Processes a goto request.
+    */
+  private def processGoto(uri: Path, pos: Position): JValue = {
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) => exp match {
+        case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoDef(sym, loc).toJSON)
+        case Expression.Var(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON)
+        case Expression.Tag(sym, tag, _, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
+        case _ => ("status" -> "failure")
+      }
+      case Some(Entity.Pat(pat)) => pat match {
+        case Pattern.Var(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON)
+        case Pattern.Tag(sym, tag, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
+        case _ => ("status" -> "failure")
+      }
+      case _ => ("status" -> "failure")
+    }
+  }
+
+  /**
+    * Processes a shutdown request.
     */
   private def processShutdown(): Nothing = {
     System.exit(0)
