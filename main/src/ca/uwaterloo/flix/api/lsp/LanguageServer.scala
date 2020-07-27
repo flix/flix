@@ -232,37 +232,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           ("status" -> "failure")
       }
 
-    case Request.GetDefs(uri) => ??? // TODO
-
-    case Request.GetEnums(uri) => ??? // TODO
-
-
-    case Request.Uses(uri, pos) =>
-      index.query(uri, pos) match {
-        case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Def(sym, _, _) =>
-            val uses = index.usesOf(sym)
-            val locs = uses.toList.map(Location.from)
-            ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
-
-          case Expression.Var(sym, _, _) =>
-            val uses = index.usesOf(sym)
-            val locs = uses.toList.map(Location.from)
-            ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
-
-          case Expression.Tag(sym, _, _, _, _, _) =>
-            val uses = index.usesOf(sym)
-            val locs = uses.toList.map(Location.from)
-            ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
-
-          case _ => ("status" -> "failure")
-        }
-
-        case _ =>
-          log(s"No entry for: '$uri,' at '$pos'.")
-          ("status" -> "failure")
-      }
-
     case Request.FoldingRange(uri) =>
       val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
         case ((sym, defn), acc) =>
@@ -282,9 +251,15 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.Complete(uri, pos) => processComplete(uri, pos)
 
+    case Request.GetDefs(uri) => ??? // TODO
+
+    case Request.GetEnums(uri) => ??? // TODO
+
     case Request.Goto(uri, pos) => processGoto(uri, pos)
 
     case Request.Shutdown => processShutdown()
+
+    case Request.Uses(uri, pos) => processUses(uri, pos)
 
     case Request.Version => processVersion()
 
@@ -386,6 +361,34 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processShutdown(): Nothing = {
     System.exit(0)
     throw null
+  }
+
+  /**
+    * Processes a uses request.
+    */
+  private def processUses(uri: Path, pos: Position): JValue = {
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) => exp match {
+        case Expression.Def(sym, _, _) =>
+          val uses = index.usesOf(sym)
+          val locs = uses.toList.map(Location.from)
+          ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
+
+        case Expression.Var(sym, _, _) =>
+          val uses = index.usesOf(sym)
+          val locs = uses.toList.map(Location.from)
+          ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
+
+        case Expression.Tag(sym, _, _, _, _, _) =>
+          val uses = index.usesOf(sym)
+          val locs = uses.toList.map(Location.from)
+          ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
+
+        case _ => ("status" -> "failure")
+      }
+
+      case _ => ("status" -> "failure")
+    }
   }
 
   /**
