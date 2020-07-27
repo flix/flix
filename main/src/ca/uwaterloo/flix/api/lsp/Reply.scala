@@ -43,17 +43,6 @@ object Reply {
   }
 
   /**
-    * A reply that represents all code completions.
-    */
-  case class Completions(results: List[CompletionItem]) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("success")),
-        JField("results", JArray(results.map(_.toJSON))),
-      )
-  }
-
-  /**
     * A reply that represents that the specified entity was not found.
     */
   case class NotFound() extends Reply {
