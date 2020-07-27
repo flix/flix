@@ -353,6 +353,42 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  private def mkGotoDef(sym: Symbol.DefnSym, loc: SourceLocation): LocationLink = {
+    val defDecl = root.defs(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(defDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  private def mkGotoEnum(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): LocationLink = {
+    val enumDecl = root.enums(sym)
+    val caseDecl = enumDecl.cases(tag)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(caseDecl.loc)
+    val targetSelectionRange = Range.from(caseDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a reference to the variable symbol `sym`.
+    */
+  private def mkGotoVar(sym: Symbol.VarSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
     * Processes a shutdown request.
     */
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
@@ -411,42 +447,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
     ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
-  }
-
-  /**
-    * Returns a location link to the given symbol `sym`.
-    */
-  private def mkGotoDef(sym: Symbol.DefnSym, loc: SourceLocation): LocationLink = {
-    val defDecl = root.defs(sym)
-    val originSelectionRange = Range.from(loc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(defDecl.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-  }
-
-  /**
-    * Returns a location link to the given symbol `sym`.
-    */
-  private def mkGotoEnum(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): LocationLink = {
-    val enumDecl = root.enums(sym)
-    val caseDecl = enumDecl.cases(tag)
-    val originSelectionRange = Range.from(loc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(caseDecl.loc)
-    val targetSelectionRange = Range.from(caseDecl.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-  }
-
-  /**
-    * Returns a reference to the variable symbol `sym`.
-    */
-  private def mkGotoVar(sym: Symbol.VarSym, originLoc: SourceLocation): LocationLink = {
-    val originSelectionRange = Range.from(originLoc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(sym.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
   /**
