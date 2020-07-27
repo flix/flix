@@ -356,23 +356,28 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       val result = JArray(defsFoldingRanges.map(_.toJSON))
       result
 
-    case Request.Shutdown => execShutdown(ws)
-
-    case Request.Version =>
-      val major = Version.CurrentVersion.major
-      val minor = Version.CurrentVersion.minor
-      val revision = Version.CurrentVersion.revision
-      ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+    case Request.Shutdown => processShutdown(ws)
+    case Request.Version => processVersion(ws)
 
   }
 
   /**
-    * Executes the shutdown command.
+    * Executes the shutdown request.
     */
-  private def execShutdown(ws: WebSocket): Nothing = {
+  private def processShutdown(ws: WebSocket): Nothing = {
     ws.close(1000, "Shutting down...")
     System.exit(0)
     throw null
+  }
+
+  /**
+    * Processes the version request.
+    */
+  private def processVersion(ws: WebSocket): JValue = {
+    val major = Version.CurrentVersion.major
+    val minor = Version.CurrentVersion.minor
+    val revision = Version.CurrentVersion.revision
+    ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
   }
 
   /**
