@@ -232,35 +232,15 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           ("status" -> "failure")
       }
 
-    case Request.FoldingRange(uri) =>
-      val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
-        case ((sym, defn), acc) =>
-          val loc = defn.exp.loc
-          if (uri.toString != loc.source.name) {
-            acc
-          } else {
-            val foldingRange = FoldingRange(loc.beginLine, Some(loc.beginCol), loc.endLine, Some(loc.endCol), Some(FoldingRangeKind.Region))
-            foldingRange :: acc
-          }
-      }
-      // TODO: Add enums etc.
-      val result = JArray(defsFoldingRanges.map(_.toJSON))
-      result
 
     case Request.CodeLens(uri) => processCodeLens(uri)
-
     case Request.Complete(uri, pos) => processComplete(uri, pos)
-
+    case Request.FoldingRange(uri) => processFoldingRange(uri)
     case Request.GetDefs(uri) => ??? // TODO
-
     case Request.GetEnums(uri) => ??? // TODO
-
     case Request.Goto(uri, pos) => processGoto(uri, pos)
-
     case Request.Shutdown => processShutdown()
-
     case Request.Uses(uri, pos) => processUses(uri, pos)
-
     case Request.Version => processVersion()
 
   }
@@ -333,6 +313,25 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       }
       case _ => default
     }
+  }
+
+  /**
+    * Processes a folding range request.
+    */
+  private def processFoldingRange(uri: Path): JValue = {
+    val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
+      case ((sym, defn), acc) =>
+        val loc = defn.exp.loc
+        if (uri.toString != loc.source.name) {
+          acc
+        } else {
+          val foldingRange = FoldingRange(loc.beginLine, Some(loc.beginCol), loc.endLine, Some(loc.endCol), Some(FoldingRangeKind.Region))
+          foldingRange :: acc
+        }
+    }
+    // TODO: Add enums etc.
+    val result = JArray(defsFoldingRanges.map(_.toJSON))
+    result
   }
 
   /**
