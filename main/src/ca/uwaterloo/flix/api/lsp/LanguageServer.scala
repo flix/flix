@@ -338,9 +338,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processGoto(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoDef(sym, loc).toJSON)
-        case Expression.Var(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON)
-        case Expression.Tag(sym, tag, _, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
+        case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoDef(sym, loc).toJSON)
+        case Expression.Var(sym, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoVar(sym, loc).toJSON)
+        case Expression.Tag(sym, tag, _, _, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoEnum(sym, tag, loc).toJSON)
         case _ => ("status" -> "failure")
       }
       case Some(Entity.Pat(pat)) => pat match {
@@ -348,7 +348,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case Pattern.Tag(sym, tag, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
         case _ => ("status" -> "failure")
       }
-      case _ => ("status" -> "failure") ~ ("message" -> s"Nothing found for '$uri' at '$pos'.")
+      case _ => ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
     }
   }
 
