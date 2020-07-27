@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.lsp
 
 import java.net.InetSocketAddress
-import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -161,6 +160,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("uses") => Request.parseUses(json)
       case JString("validate") => Request.parseValidate(json)
       case JString("version") => Ok(Request.Version)
+        // TODO: Print commands. TODO: Fix documentations top.
       case s => Err(s"Unsupported request: '$s'.")
     }
   } catch {
@@ -195,7 +195,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a validate request.
     */
-  private def processValidate(paths: List[Path])(implicit ws: WebSocket): JValue = {
+  private def processValidate(paths: List[String])(implicit ws: WebSocket): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for (path <- paths) {
@@ -290,7 +290,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a complete request.
     */
-  private def processComplete(uri: Path, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processComplete(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     // TODO: Fake it till you make it:
     val items = List(
       CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
@@ -317,11 +317,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a folding range request.
     */
-  private def processFoldingRange(uri: Path)(implicit ws: WebSocket): JValue = {
+  private def processFoldingRange(uri: String)(implicit ws: WebSocket): JValue = {
     val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
       case ((sym, defn), acc) =>
         val loc = defn.exp.loc
-        if (uri.toString != loc.source.name) {
+        if (uri != loc.source.name) {
           acc
         } else {
           val foldingRange = FoldingRange(loc.beginLine, Some(loc.beginCol), loc.endLine, Some(loc.endCol), Some(FoldingRangeKind.Region))
@@ -336,7 +336,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a goto request.
     */
-  private def processGoto(uri: Path, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processGoto(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoDef(sym, loc).toJSON)
@@ -364,8 +364,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a type and effect request.
     */
-  private def processTypeAndEffectOf(doc: Path, pos: Position)(implicit ws: WebSocket): JValue = {
-    index.query(doc, pos) match {
+  private def processTypeAndEffectOf(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
         val tpe = exp.tpe.toString
         val eff = exp.eff.toString
@@ -379,7 +379,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a uses request.
     */
-  private def processUses(uri: Path, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processUses(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, _) =>

@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.nio.file.Path
-
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -62,7 +60,7 @@ object Index {
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-case class Index(m: Map[(Path, Int), List[Entity]],
+case class Index(m: Map[(String, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
@@ -71,7 +69,7 @@ case class Index(m: Map[(Path, Int), List[Entity]],
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
     */
   // TODO: Add support for multi-line expressions.
-  def query(uri: Path, pos: Position): Option[Entity] = {
+  def query(uri: String, pos: Position): Option[Entity] = {
     // A key consists of a uri and a line number.
     val key = (uri, pos.line)
     m.get(key).flatMap {
@@ -127,7 +125,7 @@ case class Index(m: Map[(Path, Int), List[Entity]],
     */
   private def +(entity: Entity): Index = {
     // Compute the uri, line, and column of the expression.
-    val uri = Path.of(entity.loc.source.name)
+    val uri = entity.loc.source.name
     val beginLine = entity.loc.beginLine
     val beginCol = entity.loc.beginCol
 
