@@ -240,10 +240,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
   }
 
+  // TODO: Add more logging to ease debugging...
+
   /**
     * Processes a codelens request.
     */
-  private def processCodeLens(uri: String): JValue = {
+  private def processCodeLens(uri: String)(implicit ws: WebSocket): JValue = {
     //
     // A mutable collection of code lenses.
     //
@@ -286,7 +288,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a complete request.
     */
-  private def processComplete(uri: Path, pos: Position): JValue = {
+  private def processComplete(uri: Path, pos: Position)(implicit ws: WebSocket): JValue = {
     // TODO: Fake it till you make it:
     val items = List(
       CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
@@ -313,7 +315,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a folding range request.
     */
-  private def processFoldingRange(uri: Path): JValue = {
+  private def processFoldingRange(uri: Path)(implicit ws: WebSocket): JValue = {
     val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
       case ((sym, defn), acc) =>
         val loc = defn.exp.loc
@@ -332,7 +334,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a goto request.
     */
-  private def processGoto(uri: Path, pos: Position): JValue = {
+  private def processGoto(uri: Path, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoDef(sym, loc).toJSON)
@@ -352,7 +354,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a shutdown request.
     */
-  private def processShutdown(): Nothing = {
+  private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
     throw null
   }
@@ -360,7 +362,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a type and effect request.
     */
-  private def processTypeAndEffectOf(doc: Path, pos: Position): JValue = {
+  private def processTypeAndEffectOf(doc: Path, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(doc, pos) match {
       case Some(Entity.Exp(exp)) =>
         val tpe = exp.tpe.toString
@@ -375,7 +377,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a uses request.
     */
-  private def processUses(uri: Path, pos: Position): JValue = {
+  private def processUses(uri: Path, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, _) =>
@@ -403,7 +405,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes the version request.
     */
-  private def processVersion(): JValue = {
+  private def processVersion()(implicit ws: WebSocket): JValue = {
     val major = Version.CurrentVersion.major
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
