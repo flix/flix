@@ -43,43 +43,6 @@ object Reply {
   }
 
   /**
-    * A reply that represents that compilation was unsuccessful.
-    */
-  case class CompilationFailure(results: List[PublishDiagnosticsParams]) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("failure")),
-        JField("results", JArray(results.map(_.toJSON)))
-      )
-  }
-
-  /**
-    * A reply that represents the type and effect of an expression.
-    */
-  case class EffAndTypeOf(exp: Expression) extends Reply {
-    def toJSON: JObject = {
-      val tpe = exp.tpe.toString
-      val eff = exp.eff.toString
-      val result = s"$tpe & $eff"
-      JObject(
-        JField("status", JString("success")),
-        JField("result", JString(result))
-      )
-    }
-  }
-
-  /**
-    * A reply that represents all usages of a definition.
-    */
-  case class Uses(results: List[Location]) extends Reply {
-    def toJSON: JObject =
-      JObject(
-        JField("status", JString("success")),
-        JField("results", JArray(results.map(_.toJSON))),
-      )
-  }
-
-  /**
     * A reply that represents all code completions.
     */
   case class Completions(results: List[CompletionItem]) extends Reply {

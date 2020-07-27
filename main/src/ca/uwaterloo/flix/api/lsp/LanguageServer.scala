@@ -221,12 +221,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
               PublishDiagnosticsParams(source.name, diagnostics) :: acc
           }
 
-          Reply.CompilationFailure(results)
+          Reply.JSON(("status" -> "failure") ~ ("results" -> results.map(_.toJSON)))
       }
 
     case Request.TypeAndEffectOf(doc, pos) =>
       index.query(doc, pos) match {
-        case Some(Entity.Exp(exp)) => Reply.EffAndTypeOf(exp)
+        case Some(Entity.Exp(exp)) =>
+          val tpe = exp.tpe.toString
+          val eff = exp.eff.toString
+          val result = s"$tpe & $eff"
+          Reply.JSON(("status" -> "success") ~ ("result" -> result))
         case _ =>
           log(s"No entry for: '$doc' at '$pos'.")
           Reply.NotFound()
@@ -260,17 +264,17 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           case Expression.Def(sym, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.Uses(locs)
+            Reply.JSON(("status" -> "success") ~ ("results" -> locs.map(_.toJSON)))
 
           case Expression.Var(sym, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.Uses(locs)
+            Reply.JSON(("status" -> "success") ~ ("results" -> locs.map(_.toJSON)))
 
           case Expression.Tag(sym, _, _, _, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.Uses(locs)
+            Reply.JSON(("status" -> "success") ~ ("results" -> locs.map(_.toJSON)))
 
           case _ => Reply.NotFound()
         }
