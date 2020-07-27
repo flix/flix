@@ -220,19 +220,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           ("status" -> "failure") ~ ("results" -> results.map(_.toJSON))
       }
 
-    case Request.TypeAndEffectOf(doc, pos) =>
-      index.query(doc, pos) match {
-        case Some(Entity.Exp(exp)) =>
-          val tpe = exp.tpe.toString
-          val eff = exp.eff.toString
-          val result = s"$tpe & $eff"
-          ("status" -> "success") ~ ("result" -> result)
-        case _ =>
-          log(s"No entry for: '$doc' at '$pos'.")
-          ("status" -> "failure")
-      }
-
-
     case Request.CodeLens(uri) => processCodeLens(uri)
     case Request.Complete(uri, pos) => processComplete(uri, pos)
     case Request.FoldingRange(uri) => processFoldingRange(uri)
@@ -240,6 +227,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.GetEnums(uri) => ??? // TODO
     case Request.Goto(uri, pos) => processGoto(uri, pos)
     case Request.Shutdown => processShutdown()
+    case Request.TypeAndEffectOf(doc, pos) => processTypeAndEffectOf(doc, pos)
     case Request.Uses(uri, pos) => processUses(uri, pos)
     case Request.Version => processVersion()
 
@@ -360,6 +348,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processShutdown(): Nothing = {
     System.exit(0)
     throw null
+  }
+
+  /**
+    * Processes a type and effect request.
+    */
+  private def processTypeAndEffectOf(doc: Path, pos: Position): JValue = {
+    index.query(doc, pos) match {
+      case Some(Entity.Exp(exp)) =>
+        val tpe = exp.tpe.toString
+        val eff = exp.eff.toString
+        val result = s"$tpe & $eff"
+        ("status" -> "success") ~ ("result" -> result)
+      case _ =>
+        ("status" -> "failure")
+    }
   }
 
   /**
