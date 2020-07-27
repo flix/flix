@@ -302,45 +302,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case _ => default
       }
 
-    case Request.CodeLens(uri) =>
-      //
-      // A mutable collection of code lenses.
-      //
-      val codeLenses = mutable.ListBuffer.empty[CodeLens]
-
-      // TODO: Refactor into separate methods.
-      // TODO: Check that we are in the right file (i.e. uri).
-
-      //
-      // Add a CodeLens for main (if present).
-      //
-      val main = Symbol.mkDefnSym("main")
-      root.defs.get(main) match {
-        case None =>
-          // Case 1: No main. Nothing to be done.
-          ()
-        case Some(defn) =>
-          // Case 2: Main found. Add a CodeLens.
-          val loc = defn.sym.loc
-          val cmd = Command("Run Main", "runMain", Nil)
-          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd)))
-      }
-
-      //
-      // Add CodeLenses for unit tests.
-      //
-      for ((sym, defn) <- root.defs) {
-        if (defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
-          val loc = defn.sym.loc
-          val cmd1 = Command("Run Test", "runTest", Nil) // TODO: Need extra information about the test.
-          val cmd2 = Command("Run All Tests", "runAllTests", Nil)
-          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd1)))
-          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd2)))
-        }
-      }
-
-      JArray(codeLenses.map(_.toJSON).toList)
-
     case Request.FoldingRange(uri) =>
       val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
         case ((sym, defn), acc) =>
@@ -356,16 +317,59 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       val result = JArray(defsFoldingRanges.map(_.toJSON))
       result
 
-    case Request.Shutdown => processShutdown(ws)
-    case Request.Version => processVersion(ws)
+    case Request.CodeLens(uri) => processCodeLens(uri)
+    case Request.Shutdown => processShutdown()
+    case Request.Version => processVersion()
 
   }
 
   /**
-    * Executes the shutdown request.
+    * Processes the codelens request.
     */
-  private def processShutdown(ws: WebSocket): Nothing = {
-    ws.close(1000, "Shutting down...")
+  private def processCodeLens(uri: String): JValue = {
+    //
+    // A mutable collection of code lenses.
+    //
+    val codeLenses = mutable.ListBuffer.empty[CodeLens]
+
+    // TODO: Refactor into separate methods.
+    // TODO: Check that we are in the right file (i.e. uri).
+
+    //
+    // Add a CodeLens for main (if present).
+    //
+    val main = Symbol.mkDefnSym("main")
+    root.defs.get(main) match {
+      case None =>
+        // Case 1: No main. Nothing to be done.
+        ()
+      case Some(defn) =>
+        // Case 2: Main found. Add a CodeLens.
+        val loc = defn.sym.loc
+        val cmd = Command("Run Main", "runMain", Nil)
+        codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd)))
+    }
+
+    //
+    // Add CodeLenses for unit tests.
+    //
+    for ((sym, defn) <- root.defs) {
+      if (defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
+        val loc = defn.sym.loc
+        val cmd1 = Command("Run Test", "runTest", Nil) // TODO: Need extra information about the test.
+        val cmd2 = Command("Run All Tests", "runAllTests", Nil)
+        codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd1)))
+        codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd2)))
+      }
+    }
+
+    JArray(codeLenses.map(_.toJSON).toList)
+  }
+
+  /**
+    * Processes the shutdown request.
+    */
+  private def processShutdown(): Nothing = {
     System.exit(0)
     throw null
   }
@@ -373,7 +377,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes the version request.
     */
-  private def processVersion(ws: WebSocket): JValue = {
+  private def processVersion(): JValue = {
     val major = Version.CurrentVersion.major
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
