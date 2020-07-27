@@ -32,15 +32,15 @@ object Position {
   def parse(json: JValue): Result[Position, String] = {
     val lineResult: Result[Int, String] = json \\ "line" match {
       case JInt(i) => Ok(i.toInt)
-      case v => Err(s"Unexpected line number: '$v'.")
+      case v => Err(s"Unexpected non-integer line number: '$v'.")
     }
-    val columnResult: Result[Int, String] = json \\ "character" match {
+    val characterResult: Result[Int, String] = json \\ "character" match {
       case JInt(i) => Ok(i.toInt)
-      case v => Err(s"Unexpected character: '$v'.")
+      case v => Err(s"Unexpected non-integer character: '$v'.")
     }
     for {
       line <- lineResult
-      character <- columnResult
+      character <- characterResult
     } yield Position(line, character)
   }
 }
