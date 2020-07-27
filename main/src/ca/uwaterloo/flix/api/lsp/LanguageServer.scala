@@ -121,7 +121,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     parseRequest(data)(ws) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
-        val json = JsonMethods.pretty(JsonMethods.render(result.toJSON))
+        val json = JsonMethods.pretty(JsonMethods.render(result))
         ws.send(json)
       case Err(msg) =>
         log(msg)(ws)
@@ -169,14 +169,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Process the request.
     */
-  private def processRequest(request: Request)(implicit ws: WebSocket): Reply = request match {
+  private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
 
     case Request.Version =>
       val major = Version.CurrentVersion.major
       val minor = Version.CurrentVersion.minor
       val revision = Version.CurrentVersion.revision
-      val json = ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
-      Reply.JSON(json)
+      ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
 
     case Request.Validate(paths) =>
       // Configure the Flix compiler.
@@ -200,7 +199,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val e = System.nanoTime() - t
 
           // Send back a status message.
-          Reply.JSON(("status" -> "success") ~ ("time" -> e))
+          ("status" -> "success") ~ ("time" -> e)
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
           implicit val ctx: TerminalContext = NoTerminal
@@ -221,7 +220,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
               PublishDiagnosticsParams(source.name, diagnostics) :: acc
           }
 
-          Reply.JSON(("status" -> "failure") ~ ("results" -> results.map(_.toJSON)))
+          ("status" -> "failure") ~ ("results" -> results.map(_.toJSON))
       }
 
     case Request.TypeAndEffectOf(doc, pos) =>
@@ -230,10 +229,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val tpe = exp.tpe.toString
           val eff = exp.eff.toString
           val result = s"$tpe & $eff"
-          Reply.JSON(("status" -> "success") ~ ("result" -> result))
+          ("status" -> "success") ~ ("result" -> result)
         case _ =>
           log(s"No entry for: '$doc' at '$pos'.")
-          Reply.NotFound()
+          ("status" -> "failure")
       }
 
     case Request.GetDefs(uri) => ??? // TODO
@@ -243,19 +242,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Goto(uri, pos) =>
       index.query(uri, pos) match {
         case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Def(sym, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoDef(sym, loc).toJSON))
-          case Expression.Var(sym, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON))
-          case Expression.Tag(sym, tag, _, _, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON))
-          case _ => Reply.NotFound()
+          case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoDef(sym, loc).toJSON)
+          case Expression.Var(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON)
+          case Expression.Tag(sym, tag, _, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
+          case _ => ("status" -> "failure")
         }
         case Some(Entity.Pat(pat)) => pat match {
-          case Pattern.Var(sym, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON))
-          case Pattern.Tag(sym, tag, _, _, loc) => Reply.JSON(("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON))
-          case _ => Reply.NotFound()
+          case Pattern.Var(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON)
+          case Pattern.Tag(sym, tag, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
+          case _ => ("status" -> "failure")
         }
         case _ =>
           log(s"No entry for: '$uri,' at '$pos'.")
-          Reply.NotFound()
+          ("status" -> "failure")
       }
 
     case Request.Uses(uri, pos) =>
@@ -264,24 +263,24 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           case Expression.Def(sym, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.JSON(("status" -> "success") ~ ("results" -> locs.map(_.toJSON)))
+            ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
 
           case Expression.Var(sym, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.JSON(("status" -> "success") ~ ("results" -> locs.map(_.toJSON)))
+            ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
 
           case Expression.Tag(sym, _, _, _, _, _) =>
             val uses = index.usesOf(sym)
             val locs = uses.toList.map(Location.from)
-            Reply.JSON(("status" -> "success") ~ ("results" -> locs.map(_.toJSON)))
+            ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
 
-          case _ => Reply.NotFound()
+          case _ => ("status" -> "failure")
         }
 
         case _ =>
           log(s"No entry for: '$uri,' at '$pos'.")
-          Reply.NotFound()
+          ("status" -> "failure")
       }
 
     case Request.Complete(uri, pos) =>
@@ -290,7 +289,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
         CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
       )
-      val default = Reply.JSON(("status" -> "success") ~ ("results" -> items.map(_.toJSON)))
+      val default = ("status" -> "success") ~ ("results" -> items.map(_.toJSON))
 
 
       index.query(uri, pos) match {
@@ -301,7 +300,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val items = holeCtx.env.map {
               case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
             }
-            Reply.JSON(("status" -> "success") ~ ("results" -> items.map(_.toJSON)))
+            ("status" -> "success") ~ ("results" -> items.map(_.toJSON))
           case _ => default
         }
         case _ => default
@@ -344,7 +343,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         }
       }
 
-      Reply.JSON(JArray(codeLenses.map(_.toJSON).toList))
+      JArray(codeLenses.map(_.toJSON).toList)
 
     case Request.FoldingRange(uri) =>
       val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
@@ -359,7 +358,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       }
       // TODO: Add enums etc.
       val result = JArray(defsFoldingRanges.map(_.toJSON))
-      Reply.JSON(result)
+      result
 
     case Request.Shutdown =>
       ws.close(1000, "Shutting down...")
