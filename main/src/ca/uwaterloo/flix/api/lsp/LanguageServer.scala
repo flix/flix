@@ -172,6 +172,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
 
+      // TODO: Eliminate usage of Path
+
+      // TODO: Add addUri with uri and text
+      // TODO: Add delUri with uri
+      // TODO: addPartialUri with uri and partial text.
+      // TODO: Add check/validate/compile whatever.
+
     case Request.Validate(paths) =>
       // Configure the Flix compiler.
       val flix = new Flix()
