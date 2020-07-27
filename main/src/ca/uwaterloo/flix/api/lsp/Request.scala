@@ -29,22 +29,15 @@ sealed trait Request
 
 object Request {
 
-  // TODO: Sort
+  /**
+    * A 'textDocument/codeLens' request.
+    */
+  case class CodeLens(uri: Path) extends Request
 
   /**
-    * A request to return the compiler version.
+    * A request for code completion.
     */
-  case object Version extends Request
-
-  /**
-    * A request to validate the source files in `paths`.
-    */
-  case class Validate(paths: List[Path]) extends Request
-
-  /**
-    * A request to get the type and effect of an expression.
-    */
-  case class TypeAndEffectOf(uri: Path, pos: Position) extends Request
+  case class Complete(uri: Path, pos: Position) extends Request
 
   /**
     * A request to get all defs.
@@ -62,21 +55,6 @@ object Request {
   case class Goto(uri: Path, pos: Position) extends Request
 
   /**
-    * A request to find all uses of an entity.
-    */
-  case class Uses(uri: Path, pos: Position) extends Request
-
-  /**
-    * A request for code completion.
-    */
-  case class Complete(uri: Path, pos: Position) extends Request
-
-  /**
-    * A 'textDocument/codeLens' request.
-    */
-  case class CodeLens(uri: Path) extends Request
-
-  /**
     * A 'textDocument/foldingRange' request.
     */
   case class FoldingRange(uri: Path) extends Request
@@ -87,23 +65,30 @@ object Request {
   case object Shutdown extends Request
 
   /**
-    * Tries to parse the given `json` value as a [[Validate]] request.
+    * A request to get the type and effect of an expression.
     */
-  def parseValidate(json: JValue): Result[Request, String] = {
-    json \\ "paths" match {
-      case JArray(arr) =>
-        val xs = arr.collect {
-          case JString(s) => s
-        }
-        Ok(Request.Validate(xs.map(x => Paths.get(x))))
-      case _ => Err("Cannot find property 'paths'. Missing or incorrect type?")
-    }
-  }
+  case class TypeAndEffectOf(uri: Path, pos: Position) extends Request
 
   /**
-    * Tries to parse the given `json` value as a [[TypeAndEffectOf]] request.
+    * A request to find all uses of an entity.
     */
-  def parseTypeAndEffectOf(json: JValue): Result[Request, String] = {
+  case class Uses(uri: Path, pos: Position) extends Request
+
+  /**
+    * A request to validate the source files in `paths`.
+    */
+  case class Validate(paths: List[Path]) extends Request
+
+  /**
+    * A request to return the compiler version.
+    */
+  case object Version extends Request
+
+
+  /**
+    * Tries to parse the given `json` value as a [[Complete]] request.
+    */
+  def parseComplete(json: json4s.JValue): Result[Request, String] = {
     val docRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
@@ -111,7 +96,33 @@ object Request {
     for {
       doc <- docRes
       pos <- Position.parse(json \\ "position")
-    } yield Request.TypeAndEffectOf(Paths.get(doc).normalize(), pos)
+    } yield Request.Complete(Paths.get(doc).normalize(), pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[CodeLens]] request.
+    */
+  def parseCodeLens(json: json4s.JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      doc <- docRes
+    } yield Request.CodeLens(Paths.get(doc).normalize())
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[FoldingRange]] request.
+    */
+  def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      doc <- docRes
+    } yield Request.FoldingRange(Paths.get(doc).normalize())
   }
 
   /**
@@ -129,6 +140,20 @@ object Request {
   }
 
   /**
+    * Tries to parse the given `json` value as a [[TypeAndEffectOf]] request.
+    */
+  def parseTypeAndEffectOf(json: JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      doc <- docRes
+      pos <- Position.parse(json \\ "position")
+    } yield Request.TypeAndEffectOf(Paths.get(doc).normalize(), pos)
+  }
+
+  /**
     * Tries to parse the given `json` value as a [[Uses]] request.
     */
   def parseUses(json: json4s.JValue): Result[Request, String] = {
@@ -143,43 +168,17 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[FoldingRange]] request.
+    * Tries to parse the given `json` value as a [[Validate]] request.
     */
-  def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
+  def parseValidate(json: JValue): Result[Request, String] = {
+    json \\ "paths" match {
+      case JArray(arr) =>
+        val xs = arr.collect {
+          case JString(s) => s
+        }
+        Ok(Request.Validate(xs.map(x => Paths.get(x))))
+      case _ => Err("Cannot find property 'paths'. Missing or incorrect type?")
     }
-    for {
-      doc <- docRes
-    } yield Request.FoldingRange(Paths.get(doc).normalize())
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[CodeLens]] request.
-    */
-  def parseCodeLens(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-    for {
-      doc <- docRes
-    } yield Request.CodeLens(Paths.get(doc).normalize())
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[Complete]] request.
-    */
-  def parseComplete(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-    for {
-      doc <- docRes
-      pos <- Position.parse(json \\ "position")
-    } yield Request.Complete(Paths.get(doc).normalize(), pos)
   }
 
 }
