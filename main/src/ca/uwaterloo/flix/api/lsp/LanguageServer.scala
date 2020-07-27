@@ -160,7 +160,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("uses") => Request.parseUses(json)
       case JString("validate") => Request.parseValidate(json)
       case JString("version") => Ok(Request.Version)
-        // TODO: Print commands. TODO: Fix documentations top.
+      // TODO: Print commands. TODO: Fix documentations top.
       case s => Err(s"Unsupported request: '$s'.")
     }
   } catch {
@@ -348,7 +348,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case Pattern.Tag(sym, tag, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
         case _ => ("status" -> "failure")
       }
-      case _ => ("status" -> "failure")
+      case _ => ("status" -> "failure") ~ ("message" -> s"Nothing found for '$uri' at '$pos'.")
     }
   }
 
