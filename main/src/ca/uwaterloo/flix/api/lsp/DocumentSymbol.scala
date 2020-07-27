@@ -15,18 +15,27 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JArray, JField, JObject, JString}
+import org.json4s.JsonDSL._
+import org.json4s._
 
 /**
   * Represents a `DocumentSymbol` in LSP.
+  *
+  * @param name           The name of this symbol. Will be displayed in the user interface and therefore must not be an
+  *                       empty string or a string only consisting of white spaces.
+  * @param kind           The kind of this symbol.
+  * @param range          The range enclosing this symbol not including leading/trailing whitespace but everything else
+  *                       like comments. This information is typically used to determine if the clients cursor is inside
+  *                       the symbol to reveal in the symbol in the UI.
+  * @param selectionRange The range that should be selected and revealed when this symbol is being picked, e.g the name
+  *                       of a function. Must be contained by the `range`.
+  * @param children       Children of this symbol, e.g. properties of a class.
   */
 case class DocumentSymbol(name: String, kind: SymbolKind, range: Range, selectionRange: Range, children: List[DocumentSymbol]) {
-  def toJSON: JObject = {
-    JObject(
-      JField("name", JString(name)),
-      JField("range", range.toJSON),
-      JField("selectionRange", selectionRange.toJSON),
-      JField("children", JArray(children.map(_.toJSON)))
-    )
-  }
+  def toJSON: JObject =
+    ("name" -> name) ~
+      ("kind" -> kind.toInt) ~
+      ("range" -> range.toJSON) ~
+      ("selectionRange" -> selectionRange.toJSON) ~
+      ("children" -> children.map(_.toJSON))
 }
