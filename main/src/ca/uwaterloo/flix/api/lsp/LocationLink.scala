@@ -15,18 +15,27 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonDSL._
+import org.json4s._
 
 /**
   * Represents a `LocationLink` in LSP.
+  *
+  * @param originSelectionRange Span of the origin of this link. Used as the underlined span for mouse interaction.
+  *                             Defaults to the word range at the mouse position.
+  * @param targetUri            The target resource identifier of this link.
+  * @param targetRange          The full target range of this link. If the target for example is a symbol then target
+  *                             range is the range enclosing this symbol not including leading/trailing whitespace but
+  *                             everything else like comments. This information is typically used to highlight the
+  *                             range in the editor.
+  * @param targetSelectionRange The range that should be selected and revealed when this link is being followed,
+  *                             e.g the name of a function. Must be contained by the the `targetRange`.
+  *                             See also `DocumentSymbol#range`
   */
 case class LocationLink(originSelectionRange: Range, targetUri: String, targetRange: Range, targetSelectionRange: Range) {
-  def toJSON: JObject = {
-    JObject(
-      JField("originSelectionRange", originSelectionRange.toJSON),
-      JField("targetUri", JString(targetUri)),
-      JField("targetRange", targetRange.toJSON),
-      JField("targetSelectionRange", targetSelectionRange.toJSON)
-    )
-  }
+  def toJSON: JObject =
+    ("originSelectionRange" -> originSelectionRange.toJSON) ~
+      ("targetUri" -> targetUri) ~
+      ("targetRange" -> targetRange.toJSON) ~
+      ("targetSelectionRange" -> targetSelectionRange.toJSON)
 }
