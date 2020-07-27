@@ -170,68 +170,18 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Process the request.
     */
+  // TODO: Eliminate usage of Path
+  // TODO: Add addUri with uri and text
+  // TODO: Add delUri with uri
+  // TODO: addPartialUri with uri and partial text.
+  // TODO: Add check/validate/compile whatever.
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
-
-      // TODO: Eliminate usage of Path
-
-      // TODO: Add addUri with uri and text
-      // TODO: Add delUri with uri
-      // TODO: addPartialUri with uri and partial text.
-      // TODO: Add check/validate/compile whatever.
-
-    case Request.Validate(paths) =>
-      // Configure the Flix compiler.
-      val flix = new Flix()
-      for (path <- paths) {
-        log(s"Adding path: '$path'.")
-        flix.addPath(path)
-      }
-
-      // Measure elapsed time.
-      val t = System.nanoTime()
-
-      // Run the compiler up to the type checking phase.
-      flix.check() match {
-        case Success(root) =>
-          // Case 1: Compilation was successful. Build the reverse the reverse index.
-          this.root = root
-          this.index = Indexer.visitRoot(root)
-
-          // Compute elapsed time.
-          val e = System.nanoTime() - t
-
-          // TODO: What about deprecations?
-
-          // Send back a status message.
-          ("status" -> "success") ~ ("time" -> e)
-        case Failure(errors) =>
-          // Case 2: Compilation failed. Send back the error messages.
-          implicit val ctx: TerminalContext = NoTerminal
-
-          // Group the error messages by source.
-          val errorsBySource = errors.toList.groupBy(_.loc.source)
-
-          // Translate each compilation error to a diagnostic.
-          val results = errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
-            case (acc, (source, compilationErrors)) =>
-              val diagnostics = compilationErrors.map {
-                case compilationError =>
-                  val range = Range.from(compilationError.loc)
-                  val code = compilationError.kind
-                  val message = compilationError.summary
-                  Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message, Nil)
-              }
-              PublishDiagnosticsParams(source.name, diagnostics) :: acc
-          }
-
-          ("status" -> "failure") ~ ("results" -> results.map(_.toJSON))
-      }
-
+    case Request.Validate(paths) => processValidate(paths)
     case Request.CodeLens(uri) => processCodeLens(uri)
     case Request.Complete(uri, pos) => processComplete(uri, pos)
     case Request.FoldingRange(uri) => processFoldingRange(uri)
-    case Request.GetDefs(uri) => ??? // TODO
-    case Request.GetEnums(uri) => ??? // TODO
+    case Request.GetDefs(uri) => ??? // TODO: Add getDefs
+    case Request.GetEnums(uri) => ??? // TODO: Add GetEnums
     case Request.Goto(uri, pos) => processGoto(uri, pos)
     case Request.Shutdown => processShutdown()
     case Request.TypeAndEffectOf(doc, pos) => processTypeAndEffectOf(doc, pos)
@@ -241,6 +191,58 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   // TODO: Add more logging to ease debugging...
+
+  /**
+    * Processes a validate request.
+    */
+  private def processValidate(paths: List[Path])(implicit ws: WebSocket): JValue = {
+    // Configure the Flix compiler.
+    val flix = new Flix()
+    for (path <- paths) {
+      log(s"Adding path: '$path'.")
+      flix.addPath(path)
+    }
+
+    // Measure elapsed time.
+    val t = System.nanoTime()
+
+    // Run the compiler up to the type checking phase.
+    flix.check() match {
+      case Success(root) =>
+        // Case 1: Compilation was successful. Build the reverse the reverse index.
+        this.root = root
+        this.index = Indexer.visitRoot(root)
+
+        // Compute elapsed time.
+        val e = System.nanoTime() - t
+
+        // TODO: What about deprecations?
+
+        // Send back a status message.
+        ("status" -> "success") ~ ("time" -> e)
+      case Failure(errors) =>
+        // Case 2: Compilation failed. Send back the error messages.
+        implicit val ctx: TerminalContext = NoTerminal
+
+        // Group the error messages by source.
+        val errorsBySource = errors.toList.groupBy(_.loc.source)
+
+        // Translate each compilation error to a diagnostic.
+        val results = errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
+          case (acc, (source, compilationErrors)) =>
+            val diagnostics = compilationErrors.map {
+              case compilationError =>
+                val range = Range.from(compilationError.loc)
+                val code = compilationError.kind
+                val message = compilationError.summary
+                Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message, Nil)
+            }
+            PublishDiagnosticsParams(source.name, diagnostics) :: acc
+        }
+
+        ("status" -> "failure") ~ ("results" -> results.map(_.toJSON))
+    }
+  }
 
   /**
     * Processes a codelens request.
