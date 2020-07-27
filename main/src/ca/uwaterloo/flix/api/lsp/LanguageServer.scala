@@ -215,7 +215,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
                   val range = Range.from(compilationError.loc)
                   val code = compilationError.kind
                   val message = compilationError.summary
-                  Diagnostic(range, code, message)
+                  Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message)
               }
               PublishDiagnosticsParams(source.name, diagnostics) :: acc
           }

@@ -21,10 +21,11 @@ import org.json4s._
 /**
   * Represents a `Diagnostic` in LSP.
   */
-case class Diagnostic(range: Range, code: String, message: String) {
+case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String) {
   def toJSON: JObject =
     ("range" -> range.toJSON) ~
-      ("severity" -> 1) ~
+      ("severity" -> severity.map(_.toInt)) ~
       ("code" -> code) ~
+      ("source" -> source) ~
       ("message" -> message)
 }
