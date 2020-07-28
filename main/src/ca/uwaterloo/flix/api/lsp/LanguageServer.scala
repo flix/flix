@@ -294,26 +294,25 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a complete request.
     */
   private def processComplete(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    // TODO: Fake it till you make it:
-    val items = List(
-      CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
-      CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
-    )
-    val default = ("status" -> "success") ~ ("results" -> items.map(_.toJSON))
-
+    def mkDefaultCompletions(): JValue = {
+      val items = List(
+        CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
+        CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
+      )
+      ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
+    }
 
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Hole(sym, _, _, _) =>
-          // TODO: This is just a first approximation. Have to check the types etc.
           val holeCtx = TypedAstOps.holesOf(root)(sym)
           val items = holeCtx.env.map {
             case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
           }
-          ("status" -> "success") ~ ("results" -> items.map(_.toJSON))
-        case _ => default
+          ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
+        case _ => mkDefaultCompletions
       }
-      case _ => default
+      case _ => mkDefaultCompletions
     }
   }
 
