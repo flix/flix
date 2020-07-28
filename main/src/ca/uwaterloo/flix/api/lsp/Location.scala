@@ -31,5 +31,5 @@ object Location {
   * Represents a `Location` in LSP.
   */
 case class Location(uri: String, range: Range) {
-  def toJSON: JObject = ("uri" -> uri) ~ ("range" -> range.toJSON)
+  def toJSON: JValue = ("uri" -> uri) ~ ("range" -> range.toJSON)
 }

@@ -32,7 +32,7 @@ import org.json4s._
   * @param children       Children of this symbol, e.g. properties of a class.
   */
 case class DocumentSymbol(name: String, kind: SymbolKind, range: Range, selectionRange: Range, children: List[DocumentSymbol]) {
-  def toJSON: JObject =
+  def toJSON: JValue =
     ("name" -> name) ~
       ("kind" -> kind.toInt) ~
       ("range" -> range.toJSON) ~

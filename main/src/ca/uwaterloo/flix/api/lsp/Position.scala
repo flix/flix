@@ -52,5 +52,5 @@ object Position {
   * @param character Character offset on a line in a document (zero-based).
   */
 case class Position(line: Int, character: Int) {
-  def toJSON: JObject = ("line" -> line) ~ ("character" -> character)
+  def toJSON: JValue = ("line" -> line) ~ ("character" -> character)
 }

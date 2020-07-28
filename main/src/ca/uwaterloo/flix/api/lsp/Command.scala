@@ -27,8 +27,5 @@ import org.json4s._
   *
   */
 case class Command(title: String, command: String, arguments: List[JValue]) {
-  def toJSON: JObject =
-    ("title" -> title) ~
-      ("command" -> command) ~
-      ("arguments" -> arguments)
+  def toJSON: JValue = ("title" -> title) ~ ("command" -> command) ~ ("arguments" -> arguments)
 }

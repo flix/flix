@@ -42,7 +42,7 @@ object Diagnostic {
   * @param tags     Additional metadata about the diagnostic.
   */
 case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, tags: List[DiagnosticTag]) {
-  def toJSON: JObject =
+  def toJSON: JValue =
     ("range" -> range.toJSON) ~
       ("severity" -> severity.map(_.toInt)) ~
       ("code" -> code) ~

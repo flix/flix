@@ -41,5 +41,5 @@ object Range {
   * @param end   The range's end position.
   */
 case class Range(start: Position, end: Position) {
-  def toJSON: JObject = ("start" -> start.toJSON) ~ ("end" -> end.toJSON)
+  def toJSON: JValue = ("start" -> start.toJSON) ~ ("end" -> end.toJSON)
 }

@@ -78,7 +78,7 @@ object LocationLink {
   *                             See also `DocumentSymbol#range`
   */
 case class LocationLink(originSelectionRange: Range, targetUri: String, targetRange: Range, targetSelectionRange: Range) {
-  def toJSON: JObject =
+  def toJSON: JValue =
     ("originSelectionRange" -> originSelectionRange.toJSON) ~
       ("targetUri" -> targetUri) ~
       ("targetRange" -> targetRange.toJSON) ~

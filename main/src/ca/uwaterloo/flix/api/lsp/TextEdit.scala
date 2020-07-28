@@ -25,5 +25,5 @@ import org.json4s._
   * @param newText The string to be inserted. For delete operations use an empty string.
   */
 case class TextEdit(range: Range, newText: String) {
-  def toJSON: JObject = ("range" -> range.toJSON) ~ ("newText" -> newText)
+  def toJSON: JValue = ("range" -> range.toJSON) ~ ("newText" -> newText)
 }

@@ -28,7 +28,7 @@ import org.json4s._
   * @param kind           Describes the kind of the folding range such as `comment` or `region`.
   */
 case class FoldingRange(startLine: Int, startCharacter: Option[Int], endLine: Int, endCharacter: Option[Int], kind: Option[FoldingRangeKind]) {
-  def toJSON: JObject =
+  def toJSON: JValue =
     ("startLine" -> startLine) ~
       ("startCharacter" -> startCharacter) ~
       ("endLine" -> endLine) ~

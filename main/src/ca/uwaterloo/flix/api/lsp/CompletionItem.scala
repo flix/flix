@@ -22,7 +22,7 @@ import org.json4s._
   * Represents a `CompletionItem` in LSP.
   */
 case class CompletionItem(label: String, kind: Option[CompletionItemKind], detail: Option[String], documentation: Option[String], textEdit: Option[TextEdit]) {
-  def toJSON: JObject =
+  def toJSON: JValue =
     ("title" -> label) ~
       ("kind" -> kind.map(_.toInt)) ~
       ("detail" -> detail) ~

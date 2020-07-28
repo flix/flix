@@ -25,5 +25,5 @@ import org.json4s._
   * @param diagnostics An array of diagnostic information items.
   */
 case class PublishDiagnosticsParams(uri: String, diagnostics: List[Diagnostic]) {
-  def toJSON: JObject = ("uri" -> uri) ~ ("diagnostics" -> diagnostics.map(_.toJSON))
+  def toJSON: JValue = ("uri" -> uri) ~ ("diagnostics" -> diagnostics.map(_.toJSON))
 }
