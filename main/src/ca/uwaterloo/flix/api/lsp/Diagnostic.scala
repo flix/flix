@@ -15,8 +15,21 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.CompilationError
 import org.json4s.JsonDSL._
 import org.json4s._
+
+/**
+  * Companion object for [[Diagnostic]].
+  */
+object Diagnostic {
+  def from(compilationError: CompilationError): Diagnostic = {
+    val range = Range.from(compilationError.loc)
+    val code = compilationError.kind
+    val message = compilationError.summary
+    Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message, Nil)
+  }
+}
 
 /**
   * Represents a `Diagnostic` in LSP.

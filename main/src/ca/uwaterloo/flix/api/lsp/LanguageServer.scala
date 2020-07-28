@@ -219,6 +219,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
         // Send back a status message.
         ("status" -> "success") ~ ("time" -> e)
+
       case Failure(errors) =>
         // Case 2: Compilation failed. Send back the error messages.
         implicit val ctx: TerminalContext = NoTerminal
@@ -229,13 +230,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         // Translate each compilation error to a diagnostic.
         val results = errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
           case (acc, (source, compilationErrors)) =>
-            val diagnostics = compilationErrors.map {
-              case compilationError =>
-                val range = Range.from(compilationError.loc)
-                val code = compilationError.kind
-                val message = compilationError.summary
-                Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message, Nil)
-            }
+            val diagnostics = compilationErrors.map(Diagnostic.from)
             PublishDiagnosticsParams(source.name, diagnostics) :: acc
         }
 
