@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.Enum
+import ca.uwaterloo.flix.language.ast.TypedAst.Case
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -33,20 +34,26 @@ object DocumentSymbol {
     val kind = SymbolKind.Function
     val range = Range.from(decl0.sym.loc)
     val selectionRange = Range(Position(decl0.exp.loc.beginLine, 0), Position(decl0.exp.loc.endLine, decl0.exp.loc.endCol))
-    val children = Nil
-    DocumentSymbol(name, kind, range, selectionRange, children)
+    DocumentSymbol(name, kind, range, selectionRange, Nil)
   }
 
   /**
     * Returns the document symbol of the given enum declaration `decl0`.
     */
   def from(decl0: Enum): DocumentSymbol = {
-    val name = decl0.sym.name
-    val kind = SymbolKind.Enum
-    val range = Range.from(decl0.sym.loc)
-    val selectionRange = Range.from(decl0.loc)
-    val children = Nil
-    DocumentSymbol(name, kind, range, selectionRange, children)
+    val enumName = decl0.sym.name
+    val enumKind = SymbolKind.Enum
+    val enumRange = Range.from(decl0.sym.loc)
+    val enumSelectionRange = Range.from(decl0.loc)
+    val enumChildren = decl0.cases.values.map {
+      case Case(_, tag, _, _, loc) =>
+        val tagName = tag.name
+        val tagKind = SymbolKind.EnumMember
+        val tagRange = Range.from(tag.loc)
+        val tagSelectionRange = Range.from(loc)
+        DocumentSymbol(tagName, tagKind, tagRange, tagSelectionRange, Nil)
+    }
+    DocumentSymbol(enumName, enumKind, enumRange, enumSelectionRange, enumChildren.toList)
   }
 
 }
