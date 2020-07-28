@@ -54,7 +54,11 @@ import scala.collection.mutable
   * > {"request": "addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
   * < {"status":"success"}
   *
+  * > {"request": "check"}
+  * < {"status":"success","time":1749621900}
   *
+  * > {"request": "context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
+  * < {"status":"success","result":{"tpe":"Int32","eff":"true"}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
   */
