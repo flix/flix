@@ -15,8 +15,29 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import org.json4s.JsonDSL._
 import org.json4s._
+
+/**
+  * Companion object of [[LocationLink]]
+  */
+object LocationLink {
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  def fromDefSym(sym: Symbol.DefnSym, root: Root, loc: SourceLocation): LocationLink = {
+    val defDecl = root.defs(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(defDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+}
 
 /**
   * Represents a `LocationLink` in LSP.

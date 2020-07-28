@@ -338,31 +338,24 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processGoto(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoDef(sym, loc).toJSON)
+        case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("data" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
         case Expression.Var(sym, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoVar(sym, loc).toJSON)
         case Expression.Tag(sym, tag, _, _, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoEnum(sym, tag, loc).toJSON)
-        case _ => ("status" -> "failure")
+        case _ => mkNotFound(uri, pos)
       }
       case Some(Entity.Pat(pat)) => pat match {
-        case Pattern.Var(sym, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoVar(sym, loc).toJSON)
-        case Pattern.Tag(sym, tag, _, _, loc) => ("result" -> "success") ~ ("locationLink" -> mkGotoEnum(sym, tag, loc).toJSON)
-        case _ => ("status" -> "failure")
+        case Pattern.Var(sym, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoVar(sym, loc).toJSON)
+        case Pattern.Tag(sym, tag, _, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoEnum(sym, tag, loc).toJSON)
+        case _ => mkNotFound(uri, pos)
       }
-      case _ => ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+      case _ => mkNotFound(uri, pos)
     }
   }
 
   /**
-    * Returns a location link to the given symbol `sym`.
+    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
-  private def mkGotoDef(sym: Symbol.DefnSym, loc: SourceLocation): LocationLink = {
-    val defDecl = root.defs(sym)
-    val originSelectionRange = Range.from(loc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(defDecl.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-  }
+  private def mkNotFound(uri: String, pos: Position): JValue = ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   /**
     * Returns a location link to the given symbol `sym`.
