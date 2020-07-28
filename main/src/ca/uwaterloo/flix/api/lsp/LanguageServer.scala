@@ -246,43 +246,50 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a codelens request.
     */
   private def processCodeLens(uri: String)(implicit ws: WebSocket): JValue = {
-    //
-    // A mutable collection of code lenses.
-    //
-    val codeLenses = mutable.ListBuffer.empty[CodeLens]
+    /**
+      * Returns a code lens for main (if present).
+      */
+    def mkCodeLensForMain(): List[CodeLens] = {
+      if (root == null) {
+        return Nil
+      }
 
-    // TODO: Refactor into separate methods.
-    // TODO: Check that we are in the right file (i.e. uri).
-
-    //
-    // Add a CodeLens for main (if present).
-    //
-    val main = Symbol.mkDefnSym("main")
-    root.defs.get(main) match {
-      case None =>
-        // Case 1: No main. Nothing to be done.
-        ()
-      case Some(defn) =>
-        // Case 2: Main found. Add a CodeLens.
-        val loc = defn.sym.loc
-        val cmd = Command("Run Main", "runMain", Nil)
-        codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd)))
-    }
-
-    //
-    // Add CodeLenses for unit tests.
-    //
-    for ((sym, defn) <- root.defs) {
-      if (defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
-        val loc = defn.sym.loc
-        val cmd1 = Command("Run Test", "runTest", Nil) // TODO: Need extra information about the test.
-        val cmd2 = Command("Run All Tests", "runAllTests", Nil)
-        codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd1)))
-        codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd2)))
+      val main = Symbol.mkDefnSym("main")
+      root.defs.get(main) match {
+        case Some(defn) if matchesUri(uri, defn.loc) =>
+          val loc = defn.sym.loc
+          val cmd = Command("Run Main", "runMain", Nil)
+          CodeLens(Range.from(loc), Some(cmd)) :: Nil
+        case _ => Nil
       }
     }
 
-    JArray(codeLenses.map(_.toJSON).toList)
+    /**
+      * Returns a list of code lenses for the unit tests in the program.
+      */
+    def mkCodeLensesForUnitTests(): List[CodeLens] = {
+      // Case 1: No root. Return immediately.
+      if (root == null) {
+        return Nil
+      }
+
+      val result = mutable.ListBuffer.empty[CodeLens]
+      for ((sym, defn) <- root.defs) {
+        if (matchesUri(uri, defn.loc) && defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
+          val loc = defn.sym.loc
+          val cmd = Command("Run All Tests", "runAllTests", Nil)
+          result.addOne(CodeLens(Range.from(loc), Some(cmd)))
+        }
+      }
+      result.toList
+    }
+
+    //
+    // Compute all code lenses.
+    //
+    val allCodeLenses = mkCodeLensForMain() ::: mkCodeLensesForUnitTests()
+
+    JArray(allCodeLenses.map(_.toJSON))
   }
 
   /**
@@ -421,6 +428,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     val revision = Version.CurrentVersion.revision
     ("status" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
   }
+
+  /**
+    * Returns `true` if the given source location `loc` matches the given `uri`.
+    */
+  private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
 
   /**
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
