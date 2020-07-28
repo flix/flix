@@ -153,14 +153,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     json \\ "request" match {
       case JString("codeLens") => Request.parseCodeLens(json)
       case JString("complete") => Request.parseComplete(json)
+      case JString("context") => Request.parseContext(json)
       case JString("foldingRange") => Request.parseFoldingRange(json)
       case JString("goto") => Request.parseGoto(json)
       case JString("shutdown") => Ok(Request.Shutdown)
-      case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
       case JString("uses") => Request.parseUses(json)
       case JString("validate") => Request.parseValidate(json)
       case JString("version") => Ok(Request.Version)
-      // TODO: Print commands. TODO: Fix documentations top.
       case s => Err(s"Unsupported request: '$s'.")
     }
   } catch {
@@ -177,13 +176,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.Validate(paths) => processValidate(paths)
     case Request.CodeLens(uri) => processCodeLens(uri)
+    case Request.Context(uri, pos) => processContext(uri, pos)
     case Request.Complete(uri, pos) => processComplete(uri, pos)
     case Request.FoldingRange(uri) => processFoldingRange(uri)
     case Request.GetDefs(uri) => ??? // TODO: Add getDefs
     case Request.GetEnums(uri) => ??? // TODO: Add GetEnums
     case Request.Goto(uri, pos) => processGoto(uri, pos)
     case Request.Shutdown => processShutdown()
-    case Request.TypeAndEffectOf(doc, pos) => processTypeAndEffectOf(doc, pos)
     case Request.Uses(uri, pos) => processUses(uri, pos)
     case Request.Version => processVersion()
 
@@ -378,7 +377,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a type and effect request.
     */
-  private def processTypeAndEffectOf(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processContext(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
         implicit val _ = Audience.External

@@ -65,7 +65,7 @@ object Request {
   /**
     * A request to get the type and effect of an expression.
     */
-  case class TypeAndEffectOf(uri: String, pos: Position) extends Request
+  case class Context(uri: String, pos: Position) extends Request
 
   /**
     * A request to find all uses of an entity.
@@ -82,7 +82,6 @@ object Request {
     */
   case object Version extends Request
 
-
   /**
     * Tries to parse the given `json` value as a [[Complete]] request.
     */
@@ -95,6 +94,20 @@ object Request {
       uri <- uriRes
       pos <- Position.parse(json \\ "position")
     } yield Request.Complete(uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Context]] request.
+    */
+  def parseContext(json: JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Context(uri, pos)
   }
 
   /**
@@ -135,20 +148,6 @@ object Request {
       uri <- uriRes
       pos <- Position.parse(json \\ "position")
     } yield Request.Goto(uri, pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[TypeAndEffectOf]] request.
-    */
-  def parseTypeAndEffectOf(json: JValue): Result[Request, String] = {
-    val uriRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-    for {
-      uri <- uriRes
-      pos <- Position.parse(json \\ "position")
-    } yield Request.TypeAndEffectOf(uri, pos)
   }
 
   /**
