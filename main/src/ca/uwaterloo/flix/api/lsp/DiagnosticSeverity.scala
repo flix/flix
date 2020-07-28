@@ -16,37 +16,37 @@
 package ca.uwaterloo.flix.api.lsp
 
 /**
-  * Represents a `MessageType` in LSP.
+  * Represents a `DiagnosticSeverity` in LSP.
   */
-sealed trait MessageType {
+sealed trait DiagnosticSeverity {
   def toInt: Int = this match {
-    case MessageType.Error => 1
-    case MessageType.Warning => 2
-    case MessageType.Info => 3
-    case MessageType.Log => 4
+    case DiagnosticSeverity.Error => 1
+    case DiagnosticSeverity.Warning => 2
+    case DiagnosticSeverity.Information => 3
+    case DiagnosticSeverity.Hint => 4
   }
 }
 
-object MessageType {
+object DiagnosticSeverity {
 
   /**
-    * An error message.
+    * Reports an error.
     */
-  case object Error extends MessageType
+  case object Error extends DiagnosticSeverity
 
   /**
-    * A warning message.
+    * Reports a warning.
     */
-  case object Warning extends MessageType
+  case object Warning extends DiagnosticSeverity
 
   /**
-    * An information message.
+    * Reports an information.
     */
-  case object Info extends MessageType
+  case object Information extends DiagnosticSeverity
 
   /**
-    * A log message.
+    * Reports a hint.
     */
-  case object Log extends MessageType
+  case object Hint extends DiagnosticSeverity
 
 }

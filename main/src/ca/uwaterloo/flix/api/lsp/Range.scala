@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import org.json4s.JsonAST.{JField, JObject}
+
+import org.json4s.JsonDSL._
+import org.json4s._
 
 /**
   * Companion object of [[Range]].
@@ -34,10 +36,10 @@ object Range {
 
 /**
   * Represent a `Range` in LSP.
+  *
+  * @param start The range's start position.
+  * @param end   The range's end position.
   */
 case class Range(start: Position, end: Position) {
-  def toJSON: JObject = JObject(
-    JField("start", start.toJSON),
-    JField("end", end.toJSON)
-  )
+  def toJSON: JValue = ("start" -> start.toJSON) ~ ("end" -> end.toJSON)
 }

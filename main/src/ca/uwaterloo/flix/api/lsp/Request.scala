@@ -15,12 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.nio.file.{Path, Paths}
-
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonAST.{JString, JValue}
 
 /**
   * A common super-type for language server requests.
@@ -29,62 +27,45 @@ sealed trait Request
 
 object Request {
 
-  // TODO: Sort
+  /**
+    * A request to add (or update) the given uri with the given source code.
+    */
+  case class AddUri(uri: String, src: String) extends Request
 
   /**
-    * A request to return the compiler version.
+    * A request to remove the given uri.
     */
-  case object Version extends Request
+  case class RemUri(uri: String) extends Request
 
   /**
-    * A request to validate the source files in `paths`.
+    * A request to compile and check all source files.
     */
-  case class Validate(paths: List[Path]) extends Request
+  case class Check() extends Request
 
   /**
     * A request to get the type and effect of an expression.
     */
-  case class TypeAndEffectOf(uri: Path, pos: Position) extends Request
+  case class Context(uri: String, pos: Position) extends Request
 
   /**
-    * A request to get all defs.
+    * A code lens request.
     */
-  case class GetDefs(uri: Path) extends Request
-
-  /**
-    * A request to get all enums.
-    */
-  case class GetEnums(uri: Path) extends Request
-
-  /**
-    * A request to go to a declaration.
-    */
-  case class Goto(uri: Path, pos: Position) extends Request
-
-  /**
-    * A request to find all uses of an entity.
-    */
-  case class Uses(uri: Path, pos: Position) extends Request
+  case class CodeLens(uri: String) extends Request
 
   /**
     * A request for code completion.
     */
-  case class Complete(uri: Path, pos: Position) extends Request
+  case class Complete(uri: String, pos: Position) extends Request
 
   /**
-    * A request to prepare a rename.
+    * A request to go to a declaration.
     */
-  case class PrepareRename(uri: Path, pos: Position) extends Request
+  case class Goto(uri: String, pos: Position) extends Request
 
   /**
-    * A 'textDocument/codeLens' request.
+    * A folding range request.
     */
-  case class CodeLens(uri: Path) extends Request
-
-  /**
-    * A 'textDocument/foldingRange' request.
-    */
-  case class FoldingRange(uri: Path) extends Request
+  case class FoldingRange(uri: String) extends Request
 
   /**
     * A request to shutdown the language server.
@@ -92,113 +73,149 @@ object Request {
   case object Shutdown extends Request
 
   /**
-    * Tries to parse the given `json` value as a [[Validate]] request.
+    * A request for all symbols.
     */
-  def parseValidate(json: JValue): Result[Request, String] = {
-    json \\ "paths" match {
-      case JArray(arr) =>
-        val xs = arr.collect {
-          case JString(s) => s
-        }
-        Ok(Request.Validate(xs.map(x => Paths.get(x))))
-      case _ => Err("Cannot find property 'paths'. Missing or incorrect type?")
+  case class Symbols(uri: String) extends Request
+
+  /**
+    * A request to find all uses of an entity.
+    */
+  case class Uses(uri: String, pos: Position) extends Request
+
+  /**
+    * A request to return the compiler version.
+    */
+  case object Version extends Request
+
+  /**
+    * Tries to parse the given `json` value as a [[AddUri]] request.
+    */
+  def parseAddUri(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
     }
+    val srcRes: Result[String, String] = json \\ "src" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected src: '$s'.")
+    }
+    for {
+      uri <- uriRes
+      src <- srcRes
+    } yield Request.AddUri(uri, src)
   }
 
   /**
-    * Tries to parse the given `json` value as a [[TypeAndEffectOf]] request.
+    * Tries to parse the given `json` value as a [[RemUri]] request.
     */
-  def parseTypeAndEffectOf(json: JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
+  def parseRemUri(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
     }
     for {
-      doc <- docRes
-      pos <- Position.parse(json \\ "position")
-    } yield Request.TypeAndEffectOf(Paths.get(doc).normalize(), pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[Goto]] request.
-    */
-  def parseGoto(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-    for {
-      doc <- docRes
-      pos <- Position.parse(json \\ "position")
-    } yield Request.Goto(Paths.get(doc).normalize(), pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[Uses]] request.
-    */
-  def parseUses(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-    for {
-      doc <- docRes
-      pos <- Position.parse(json \\ "position")
-    } yield Request.Uses(Paths.get(doc).normalize(), pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[PrepareRename]] request.
-    */
-  def parsePrepareRename(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-    for {
-      doc <- docRes
-      pos <- Position.parse(json \\ "position")
-    } yield Request.PrepareRename(Paths.get(doc).normalize(), pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[FoldingRange]] request.
-    */
-  def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-    for {
-      doc <- docRes
-    } yield Request.FoldingRange(Paths.get(doc).normalize())
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[CodeLens]] request.
-    */
-  def parseCodeLens(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-    for {
-      doc <- docRes
-    } yield Request.CodeLens(Paths.get(doc).normalize())
+      uri <- uriRes
+    } yield Request.RemUri(uri)
   }
 
   /**
     * Tries to parse the given `json` value as a [[Complete]] request.
     */
   def parseComplete(json: json4s.JValue): Result[Request, String] = {
-    val docRes: Result[String, String] = json \\ "uri" match {
+    val uriRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
     }
     for {
-      doc <- docRes
+      uri <- uriRes
       pos <- Position.parse(json \\ "position")
-    } yield Request.Complete(Paths.get(doc).normalize(), pos)
+    } yield Request.Complete(uri, pos)
   }
+
+  /**
+    * Tries to parse the given `json` value as a [[Context]] request.
+    */
+  def parseContext(json: JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Context(uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[CodeLens]] request.
+    */
+  def parseCodeLens(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+    } yield Request.CodeLens(uri)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[FoldingRange]] request.
+    */
+  def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+    } yield Request.FoldingRange(uri)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Goto]] request.
+    */
+  def parseGoto(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Goto(uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Symbols]] request.
+    */
+  def parseSymbols(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+    } yield Request.Symbols(uri)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Uses]] request.
+    */
+  def parseUses(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Uses(uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Check]] request.
+    */
+  def parseCheck(json: JValue): Result[Request, String] = Ok(Request.Check())
 
 }

@@ -36,6 +36,8 @@ import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonDSL._
+import org.json4s._
 
 import scala.collection.mutable
 
@@ -45,26 +47,18 @@ import scala.collection.mutable
   * Does not implement the LSP protocol directly, but relies on an intermediate TypeScript server.
   *
   *
-  * Examples:
+  * Example:
   *
-  * When connecting or whenever a source file is changed, the client must issue the request:
+  * $ wscat -c ws://localhost:8000
   *
-  * -   {"request":"validate", "paths":[]}
+  * > {"request": "addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
+  * < {"status":"success"}
   *
-  * If this is successful then the following requests can be made:
+  * > {"request": "check"}
+  * < {"status":"success","time":1749621900}
   *
-  * Get the type and effect of an expression:
-  *
-  * -   {"request": "typeAndEffOf", "uri": "Option.flix", "position": {"line": 35, "character": 22}}
-  *
-  * Get the location of a definition or variable:
-  *
-  * -   {"request": "gotoDef", "uri": "Option.flix", "position": {"line": 214, "character": 40}}
-  *
-  * Shutdown the server:
-  *
-  * -   {"request": "shutdown"}
-  *
+  * > {"request": "context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
+  * < {"status":"success","result":{"tpe":"Int32","eff":"true"}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
   */
@@ -76,9 +70,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
+    * A map from source URIs to source code.
+    */
+  val sources: mutable.Map[String, String] = mutable.Map.empty
+
+  /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  var root: Root = _ // TODO: We should be more careful if root can be null.
+  var root: Root = _
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
@@ -119,8 +118,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     parseRequest(data)(ws) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
-        val json = JsonMethods.pretty(JsonMethods.render(result.toJSON))
-        ws.send(json)
+        val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
+        val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
+        log("Sending reply: " + jsonCompact)(ws)
+        ws.send(jsonPretty)
       case Err(msg) =>
         log(msg)(ws)
         ws.closeConnection(5000, msg)
@@ -149,16 +150,18 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Determine the type of request.
     json \\ "request" match {
-      case JString("version") => Ok(Request.Version)
-      case JString("validate") => Request.parseValidate(json)
-      case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
-      case JString("goto") => Request.parseGoto(json)
-      case JString("uses") => Request.parseUses(json)
-      case JString("prepareRename") => Request.parsePrepareRename(json)
+      case JString("addUri") => Request.parseAddUri(json)
+      case JString("remUri") => Request.parseRemUri(json)
+      case JString("check") => Request.parseCheck(json)
+      case JString("codeLens") => Request.parseCodeLens(json)
       case JString("complete") => Request.parseComplete(json)
-      case JString("textDocument/codeLens") => Request.parseCodeLens(json)
-      case JString("textDocument/foldingRange") => Request.parseFoldingRange(json)
+      case JString("context") => Request.parseContext(json)
+      case JString("foldingRange") => Request.parseFoldingRange(json)
+      case JString("goto") => Request.parseGoto(json)
       case JString("shutdown") => Ok(Request.Shutdown)
+      case JString("symbols") => Request.parseSymbols(json)
+      case JString("uses") => Request.parseUses(json)
+      case JString("version") => Ok(Request.Version)
       case s => Err(s"Unsupported request: '$s'.")
     }
   } catch {
@@ -168,252 +171,290 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Process the request.
     */
-  private def processRequest(request: Request)(implicit ws: WebSocket): Reply = request match {
+  private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
+    case Request.AddUri(uri, src) =>
+      log("Added URI: " + uri)
+      sources += (uri -> src)
+      "status" -> "success"
 
-    case Request.Version =>
-      val major = Version.CurrentVersion.major
-      val minor = Version.CurrentVersion.minor
-      val revision = Version.CurrentVersion.revision
-      Reply.Version(major, minor, revision)
+    case Request.RemUri(uri) =>
+      log("Removed URI: " + uri)
+      sources -= uri
+      "status" -> "success"
 
-    case Request.Validate(paths) =>
-      // Configure the Flix compiler.
-      val flix = new Flix()
-      for (path <- paths) {
-        log(s"Adding path: '$path'.")
-        flix.addPath(path)
-      }
+    case Request.Check() => processCheck()
+    case Request.CodeLens(uri) => processCodeLens(uri)
+    case Request.Context(uri, pos) => processContext(uri, pos)
+    case Request.Complete(uri, pos) => processComplete(uri, pos)
+    case Request.FoldingRange(uri) => processFoldingRange(uri)
+    case Request.Goto(uri, pos) => processGoto(uri, pos)
+    case Request.Shutdown => processShutdown()
+    case Request.Symbols(uri) => processSymbols(uri)
+    case Request.Uses(uri, pos) => processUses(uri, pos)
+    case Request.Version => processVersion()
 
-      // Measure elapsed time.
-      val t = System.nanoTime()
+  }
 
-      // Run the compiler up to the type checking phase.
-      flix.check() match {
-        case Success(root) =>
-          // Case 1: Compilation was successful. Build the reverse the reverse index.
-          this.root = root
-          this.index = Indexer.visitRoot(root)
+  /**
+    * Processes a validate request.
+    */
+  private def processCheck()(implicit ws: WebSocket): JValue = {
+    // Configure the Flix compiler.
+    val flix = new Flix()
+    for ((uri, source) <- sources) {
+      flix.addInput(uri, source)
+    }
 
-          // Compute elapsed time.
-          val e = System.nanoTime() - t
+    // Measure elapsed time.
+    val t = System.nanoTime()
 
-          // Send back a status message.
-          Reply.CompilationSuccess(e, Version.CurrentVersion.toString)
-        case Failure(errors) =>
-          // Case 2: Compilation failed. Send back the error messages.
-          implicit val ctx: TerminalContext = NoTerminal
+    // Run the compiler up to the type checking phase.
+    flix.check() match {
+      case Success(root) =>
+        // Case 1: Compilation was successful. Build the reverse the reverse index.
+        this.root = root
+        this.index = Indexer.visitRoot(root)
 
-          // Group the error messages by source.
-          val errorsBySource = errors.toList.groupBy(_.loc.source)
+        // Compute elapsed time.
+        val e = System.nanoTime() - t
 
-          // Translate each compilation error to a diagnostic.
-          val results = errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
-            case (acc, (source, compilationErrors)) =>
-              val diagnostics = compilationErrors.map {
-                case compilationError =>
-                  val range = Range.from(compilationError.loc)
-                  val code = compilationError.kind
-                  val message = compilationError.summary
-                  Diagnostic(range, code, message)
-              }
-              PublishDiagnosticsParams(source.name, diagnostics) :: acc
-          }
+        // Send back a status message.
+        ("status" -> "success") ~ ("time" -> e)
 
-          Reply.CompilationFailure(results)
-      }
+      case Failure(errors) =>
+        // Case 2: Compilation failed. Send back the error messages.
+        implicit val ctx: TerminalContext = NoTerminal
 
-    case Request.TypeAndEffectOf(doc, pos) =>
-      index.query(doc, pos) match {
-        case Some(Entity.Exp(exp)) => Reply.EffAndTypeOf(exp)
-        case _ =>
-          log(s"No entry for: '$doc' at '$pos'.")
-          Reply.NotFound()
-      }
+        // Group the error messages by source.
+        val errorsBySource = errors.toList.groupBy(_.loc.source)
 
-    case Request.GetDefs(uri) => ??? // TODO
-
-    case Request.GetEnums(uri) => ??? // TODO
-
-    case Request.Goto(uri, pos) =>
-      index.query(uri, pos) match {
-        case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Def(sym, _, loc) => Reply.Goto(mkGotoDef(sym, loc))
-          case Expression.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
-          case Expression.Tag(sym, tag, _, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
-          case _ => Reply.NotFound()
-        }
-        case Some(Entity.Pat(pat)) => pat match {
-          case Pattern.Var(sym, _, loc) => Reply.Goto(mkGotoVar(sym, loc))
-          case Pattern.Tag(sym, tag, _, _, loc) => Reply.Goto(mkGotoEnum(sym, tag, loc))
-          case _ => Reply.NotFound()
-        }
-        case _ =>
-          log(s"No entry for: '$uri,' at '$pos'.")
-          Reply.NotFound()
-      }
-
-    case Request.Uses(uri, pos) =>
-      index.query(uri, pos) match {
-        case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Def(sym, _, _) =>
-            val uses = index.usesOf(sym)
-            val locs = uses.toList.map(Location.from)
-            Reply.Uses(locs)
-
-          case Expression.Var(sym, _, _) =>
-            val uses = index.usesOf(sym)
-            val locs = uses.toList.map(Location.from)
-            Reply.Uses(locs)
-
-          case Expression.Tag(sym, _, _, _, _, _) =>
-            val uses = index.usesOf(sym)
-            val locs = uses.toList.map(Location.from)
-            Reply.Uses(locs)
-
-          case _ => Reply.NotFound()
+        // Translate each compilation error to a diagnostic.
+        val results = errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
+          case (acc, (source, compilationErrors)) =>
+            val diagnostics = compilationErrors.map(Diagnostic.from)
+            PublishDiagnosticsParams(source.name, diagnostics) :: acc
         }
 
-        case _ =>
-          log(s"No entry for: '$uri,' at '$pos'.")
-          Reply.NotFound()
+        ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+    }
+  }
+
+  /**
+    * Processes a codelens request.
+    */
+  private def processCodeLens(uri: String)(implicit ws: WebSocket): JValue = {
+    /**
+      * Returns a code lens for main (if present).
+      */
+    def mkCodeLensForMain(): List[CodeLens] = {
+      if (root == null) {
+        return Nil
       }
 
-    case Request.PrepareRename(uri, pos) =>
-      index.query(uri, pos) match {
-        case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Def(_, _, loc) =>
-            Reply.PreparedRename(Range.from(loc))
+      val main = Symbol.mkDefnSym("main")
+      root.defs.get(main) match {
+        case Some(defn) if matchesUri(uri, defn.loc) =>
+          val loc = defn.sym.loc
+          val cmd = Command("Run Main", "runMain", Nil)
+          CodeLens(Range.from(loc), Some(cmd)) :: Nil
+        case _ => Nil
+      }
+    }
 
-          case Expression.Var(_, _, loc) =>
-            Reply.PreparedRename(Range.from(loc))
+    /**
+      * Returns a list of code lenses for the unit tests in the program.
+      */
+    def mkCodeLensesForUnitTests(): List[CodeLens] = {
+      // Case 1: No root. Return immediately.
+      if (root == null) {
+        return Nil
+      }
 
-          case Expression.Tag(_, _, _, _, _, loc) =>
-            Reply.PreparedRename(Range.from(loc))
-
-          case _ => Reply.NotFound()
+      val result = mutable.ListBuffer.empty[CodeLens]
+      for ((sym, defn) <- root.defs) {
+        if (matchesUri(uri, defn.loc) && defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
+          val loc = defn.sym.loc
+          val cmd = Command("Run All Tests", "runAllTests", Nil)
+          result.addOne(CodeLens(Range.from(loc), Some(cmd)))
         }
-
-        case _ => Reply.NotFound()
       }
+      result.toList
+    }
 
-    case Request.Complete(uri, pos) =>
-      // TODO: Fake it till you make it:
+    //
+    // Compute all code lenses.
+    //
+    val allCodeLenses = mkCodeLensForMain() ::: mkCodeLensesForUnitTests()
+
+    JArray(allCodeLenses.map(_.toJSON))
+  }
+
+  /**
+    * Processes a complete request.
+    */
+  private def processComplete(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    def mkDefaultCompletions(): JValue = {
       val items = List(
         CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
         CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
       )
-      val default = Reply.Completions(items)
+      ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
+    }
 
-      index.query(uri, pos) match {
-        case Some(Entity.Exp(exp)) => exp match {
-          case Expression.Hole(sym, _, _, _) =>
-            // TODO: This is just a first approximation. Have to check the types etc.
-            val holeCtx = TypedAstOps.holesOf(root)(sym)
-            val items = holeCtx.env.map {
-              case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
-            }
-            Reply.Completions(items.toList)
-          case _ => default
-        }
-        case _ => default
-      }
-
-    case Request.CodeLens(uri) =>
-      //
-      // A mutable collection of code lenses.
-      //
-      val codeLenses = mutable.ListBuffer.empty[CodeLens]
-
-      // TODO: Refactor into separate methods.
-      // TODO: Check that we are in the right file (i.e. uri).
-
-      //
-      // Add a CodeLens for main (if present).
-      //
-      val main = Symbol.mkDefnSym("main")
-      root.defs.get(main) match {
-        case None =>
-          // Case 1: No main. Nothing to be done.
-          ()
-        case Some(defn) =>
-          // Case 2: Main found. Add a CodeLens.
-          val loc = defn.sym.loc
-          val cmd = Command("Run Main", "runMain")
-          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd)))
-      }
-
-      //
-      // Add CodeLenses for unit tests.
-      //
-      for ((sym, defn) <- root.defs) {
-        if (defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
-          val loc = defn.sym.loc
-          val cmd1 = Command("Run Test", "runTest") // TODO: Need extra information about the test.
-          val cmd2 = Command("Run All Tests", "runAllTests")
-          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd1)))
-          codeLenses.addOne(CodeLens(Range.from(loc), Some(cmd2)))
-        }
-      }
-
-      Reply.JSON(JArray(codeLenses.map(_.toJSON).toList))
-
-    case Request.FoldingRange(uri) =>
-      val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
-        case ((sym, defn), acc) =>
-          val loc = defn.exp.loc
-          if (uri.toString != loc.source.name) {
-            acc
-          } else {
-            val foldingRange = FoldingRange(loc.beginLine, Some(loc.beginCol), loc.endLine, Some(loc.endCol), Some(FoldingRangeKind.Region))
-            foldingRange :: acc
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) => exp match {
+        case Expression.Hole(sym, _, _, _) =>
+          val holeCtx = TypedAstOps.holesOf(root)(sym)
+          val items = holeCtx.env.map {
+            case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
           }
+          ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
+        case _ => mkDefaultCompletions
       }
-      // TODO: Add enums etc.
-      val result = JArray(defsFoldingRanges.map(_.toJSON))
-      Reply.JSON(result)
-
-    case Request.Shutdown =>
-      ws.close(1000, "Shutting down...")
-      System.exit(0)
-      null
-  }
-
-
-  /**
-    * Returns a location link to the given symbol `sym`.
-    */
-  private def mkGotoDef(sym: Symbol.DefnSym, loc: SourceLocation): LocationLink = {
-    val defDecl = root.defs(sym)
-    val originSelectionRange = Range.from(loc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(defDecl.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+      case _ => mkDefaultCompletions
+    }
   }
 
   /**
-    * Returns a location link to the given symbol `sym`.
+    * Processes a type and effect request.
     */
-  private def mkGotoEnum(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): LocationLink = {
-    val enumDecl = root.enums(sym)
-    val caseDecl = enumDecl.cases(tag)
-    val originSelectionRange = Range.from(loc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(caseDecl.loc)
-    val targetSelectionRange = Range.from(caseDecl.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  private def processContext(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) =>
+        implicit val _ = Audience.External
+        val tpe = FormatType.formatType(exp.tpe)
+        val eff = FormatType.formatType(exp.eff)
+        ("status" -> "success") ~ ("result" -> (("tpe" -> tpe) ~ ("eff" -> eff)))
+      case _ =>
+        mkNotFound(uri, pos)
+    }
   }
 
   /**
-    * Returns a reference to the variable symbol `sym`.
+    * Processes a folding range request.
     */
-  private def mkGotoVar(sym: Symbol.VarSym, originLoc: SourceLocation): LocationLink = {
-    val originSelectionRange = Range.from(originLoc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(sym.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  private def processFoldingRange(uri: String)(implicit ws: WebSocket): JValue = {
+    if (root == null) {
+      return ("status" -> "success") ~ ("result" -> JArray(Nil))
+    }
+
+    val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
+      case ((sym, defn), acc) if matchesUri(uri, defn.loc) => FoldingRange(defn.loc.beginLine, Some(defn.loc.beginCol), defn.loc.endLine, Some(defn.loc.endCol), Some(FoldingRangeKind.Region)) :: acc
+      case (_, acc) => acc
+    }
+    ("status" -> "success") ~ ("result" -> JArray(defsFoldingRanges.map(_.toJSON)))
   }
+
+  /**
+    * Processes a goto request.
+    */
+  private def processGoto(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) => exp match {
+        case Expression.Def(sym, _, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
+
+        case Expression.Var(sym, _, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+
+        case Expression.Tag(sym, tag, _, _, _, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
+
+        case _ => mkNotFound(uri, pos)
+      }
+      case Some(Entity.Pat(pat)) => pat match {
+        case Pattern.Var(sym, _, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+
+        case Pattern.Tag(sym, tag, _, _, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
+
+        case _ => mkNotFound(uri, pos)
+      }
+      case _ => mkNotFound(uri, pos)
+    }
+  }
+
+  /**
+    * Processes a shutdown request.
+    */
+  private def processShutdown()(implicit ws: WebSocket): Nothing = {
+    System.exit(0)
+    throw null
+  }
+
+  /**
+    * Processes a symbols request.
+    */
+  private def processSymbols(uri: String): JValue = {
+    if (root == null) {
+      return ("status" -> "success") ~ ("result" -> JArray(Nil))
+    }
+
+    // Find all definition symbols.
+    val defSymbols = root.defs.values.collect {
+      case decl0 if matchesUri(uri, decl0.loc) => DocumentSymbol.from(decl0)
+    }
+
+    // FInd all enum symbols.
+    val enumSymbols = root.enums.values.collect {
+      case decl0 if matchesUri(uri, decl0.loc) => DocumentSymbol.from(decl0)
+    }
+
+    // Compute all available symbols.
+    val allSymbols = defSymbols ++ enumSymbols
+
+    ("status" -> "success") ~ ("result" -> allSymbols.map(_.toJSON))
+  }
+
+  /**
+    * Processes a uses request.
+    */
+  private def processUses(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) => exp match {
+        case Expression.Def(sym, _, _) =>
+          val uses = index.usesOf(sym)
+          val locs = uses.toList.map(Location.from)
+          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+
+        case Expression.Var(sym, _, _) =>
+          val uses = index.usesOf(sym)
+          val locs = uses.toList.map(Location.from)
+          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+
+        case Expression.Tag(sym, _, _, _, _, _) =>
+          val uses = index.usesOf(sym)
+          val locs = uses.toList.map(Location.from)
+          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+
+        case _ => mkNotFound(uri, pos)
+      }
+
+      case _ => mkNotFound(uri, pos)
+    }
+  }
+
+  /**
+    * Processes the version request.
+    */
+  private def processVersion()(implicit ws: WebSocket): JValue = {
+    val major = Version.CurrentVersion.major
+    val minor = Version.CurrentVersion.minor
+    val revision = Version.CurrentVersion.revision
+    ("status" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+  }
+
+  /**
+    * Returns `true` if the given source location `loc` matches the given `uri`.
+    */
+  private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
+
+  /**
+    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
+    */
+  private def mkNotFound(uri: String, pos: Position): JValue =
+    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   /**
     * Logs the given message `msg` along with information about the connection `ws`.

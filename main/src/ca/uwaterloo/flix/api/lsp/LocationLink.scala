@@ -15,18 +15,72 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JObject, JString}
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import org.json4s.JsonDSL._
+import org.json4s._
+
+/**
+  * Companion object of [[LocationLink]]
+  */
+object LocationLink {
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  def fromDefSym(sym: Symbol.DefnSym, root: Root, loc: SourceLocation): LocationLink = {
+    val defDecl = root.defs(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(defDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  def fromEnumSym(sym: Symbol.EnumSym, tag: String, root: Root, loc: SourceLocation): LocationLink = {
+    val enumDecl = root.enums(sym)
+    val caseDecl = enumDecl.cases(tag)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(caseDecl.loc)
+    val targetSelectionRange = Range.from(caseDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a reference to the variable symbol `sym`.
+    */
+  def fromVarSym(sym: Symbol.VarSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+}
 
 /**
   * Represents a `LocationLink` in LSP.
+  *
+  * @param originSelectionRange Span of the origin of this link. Used as the underlined span for mouse interaction.
+  *                             Defaults to the word range at the mouse position.
+  * @param targetUri            The target resource identifier of this link.
+  * @param targetRange          The full target range of this link. If the target for example is a symbol then target
+  *                             range is the range enclosing this symbol not including leading/trailing whitespace but
+  *                             everything else like comments. This information is typically used to highlight the
+  *                             range in the editor.
+  * @param targetSelectionRange The range that should be selected and revealed when this link is being followed,
+  *                             e.g the name of a function. Must be contained by the the `targetRange`.
+  *                             See also `DocumentSymbol#range`
   */
 case class LocationLink(originSelectionRange: Range, targetUri: String, targetRange: Range, targetSelectionRange: Range) {
-  def toJSON: JObject = {
-    JObject(
-      JField("originSelectionRange", originSelectionRange.toJSON),
-      JField("targetUri", JString(targetUri)),
-      JField("targetRange", targetRange.toJSON),
-      JField("targetSelectionRange", targetSelectionRange.toJSON)
-    )
-  }
+  def toJSON: JValue =
+    ("originSelectionRange" -> originSelectionRange.toJSON) ~
+      ("targetUri" -> targetUri) ~
+      ("targetRange" -> targetRange.toJSON) ~
+      ("targetSelectionRange" -> targetSelectionRange.toJSON)
 }

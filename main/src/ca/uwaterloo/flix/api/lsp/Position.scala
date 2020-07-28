@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.json4s.JValue
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
+
+import org.json4s.JsonDSL._
+import org.json4s._
 
 /**
   * Companion object for [[Position]].
@@ -31,25 +32,25 @@ object Position {
   def parse(json: JValue): Result[Position, String] = {
     val lineResult: Result[Int, String] = json \\ "line" match {
       case JInt(i) => Ok(i.toInt)
-      case v => Err(s"Unexpected line number: '$v'.")
+      case v => Err(s"Unexpected non-integer line number: '$v'.")
     }
-    val columnResult: Result[Int, String] = json \\ "character" match {
+    val characterResult: Result[Int, String] = json \\ "character" match {
       case JInt(i) => Ok(i.toInt)
-      case v => Err(s"Unexpected character: '$v'.")
+      case v => Err(s"Unexpected non-integer character: '$v'.")
     }
     for {
       line <- lineResult
-      character <- columnResult
+      character <- characterResult
     } yield Position(line, character)
   }
 }
 
 /**
   * Represent a `Position` in LSP.
+  *
+  * @param line      Line position in a document (zero-based).
+  * @param character Character offset on a line in a document (zero-based).
   */
 case class Position(line: Int, character: Int) {
-  def toJSON: JObject = JObject(
-    JField("line", JInt(line)),
-    JField("character", JInt(character))
-  )
+  def toJSON: JValue = ("line" -> line) ~ ("character" -> character)
 }

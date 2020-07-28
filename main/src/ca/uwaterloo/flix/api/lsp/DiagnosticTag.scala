@@ -15,15 +15,30 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JObject, JString}
-
 /**
-  * Represents a `MessageActionItem` in LSP.
+  * Represents a `DiagnosticTag` in LSP.
   */
-case class MessageActionItem(title: String) {
-  def toJSON: JObject = {
-    JObject(
-      JField("title", JString(title))
-    )
+sealed trait DiagnosticTag {
+  def toInt: Int = this match {
+    case DiagnosticTag.Unnecessary => 1
+    case DiagnosticTag.Deprecated => 2
   }
+}
+
+object DiagnosticTag {
+
+  /**
+    * Unused or unnecessary code.
+    *
+    * Clients are allowed to render diagnostics with this tag faded out instead of having an error squiggle.
+    */
+  case object Unnecessary extends DiagnosticTag
+
+  /**
+    * Deprecated or obsolete code.
+    *
+    * Clients are allowed to rendered diagnostics with this tag strike through.
+    */
+  case object Deprecated extends DiagnosticTag
+
 }

@@ -15,16 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonDSL._
+import org.json4s._
 
 /**
   * Represents a `TextEdit` in LSP.
+  *
+  * @param range   The range of the text document to be manipulated. To insert text into a document create a range where start === end.
+  * @param newText The string to be inserted. For delete operations use an empty string.
   */
 case class TextEdit(range: Range, newText: String) {
-  def toJSON: JObject = {
-    JObject(
-      JField("range", range.toJSON),
-      JField("newText", JString(newText)),
-    )
-  }
+  def toJSON: JValue = ("range" -> range.toJSON) ~ ("newText" -> newText)
 }

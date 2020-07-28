@@ -25,7 +25,5 @@ import org.json4s._
   * @param command The command this code lens represents.
   */
 case class CodeLens(range: Range, command: Option[Command]) {
-  def toJSON: JObject =
-    ("range" -> range.toJSON) ~
-      ("command" -> command.map(_.toJSON))
+  def toJSON: JValue = ("range" -> range.toJSON) ~ ("command" -> command.map(_.toJSON))
 }

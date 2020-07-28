@@ -15,17 +15,38 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
+import ca.uwaterloo.flix.language.CompilationError
+import org.json4s.JsonDSL._
+import org.json4s._
+
+/**
+  * Companion object for [[Diagnostic]].
+  */
+object Diagnostic {
+  def from(compilationError: CompilationError): Diagnostic = {
+    val range = Range.from(compilationError.loc)
+    val code = compilationError.kind
+    val message = compilationError.summary
+    Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message, Nil)
+  }
+}
 
 /**
   * Represents a `Diagnostic` in LSP.
+  *
+  * @param range    The range at which the message applies.
+  * @param severity The diagnostic's severity. Can be omitted. If omitted it is up to the client to interpret diagnostics as error, warning, info or hint.
+  * @param code     The diagnostic's code, which might appear in the user interface.
+  * @param source   A human-readable string describing the source of this diagnostic, e.g. 'typescript' or 'super lint'.
+  * @param message  The diagnostic's message.
+  * @param tags     Additional metadata about the diagnostic.
   */
-case class Diagnostic(range: Range, code: String, message: String) {
-  def toJSON: JObject =
-    JObject(
-      JField("range", range.toJSON),
-      JField("severity", JInt(1)),
-      JField("code", JString(code)),
-      JField("message", JString(message)),
-    )
+case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, tags: List[DiagnosticTag]) {
+  def toJSON: JValue =
+    ("range" -> range.toJSON) ~
+      ("severity" -> severity.map(_.toInt)) ~
+      ("code" -> code) ~
+      ("source" -> source) ~
+      ("message" -> message) ~
+      ("tags" -> tags.map(_.toInt))
 }

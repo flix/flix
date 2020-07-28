@@ -15,12 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JArray, JField, JObject, JString}
+import org.json4s.JsonDSL._
+import org.json4s._
 
+/**
+  * Represent a `PublishDiagnosticsParams` in LSP.
+  *
+  * @param uri         The URI for which diagnostic information is reported.
+  * @param diagnostics An array of diagnostic information items.
+  */
 case class PublishDiagnosticsParams(uri: String, diagnostics: List[Diagnostic]) {
-  def toJSON: JObject =
-    JObject(
-      JField("uri", JString(uri)),
-      JField("diagnostics", JArray(diagnostics.map(_.toJSON)))
-    )
+  def toJSON: JValue = ("uri" -> uri) ~ ("diagnostics" -> diagnostics.map(_.toJSON))
 }
