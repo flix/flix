@@ -340,7 +340,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case ((sym, defn), acc) if matchesUri(uri, defn.loc) => FoldingRange(defn.loc.beginLine, Some(defn.loc.beginCol), defn.loc.endLine, Some(defn.loc.endCol), Some(FoldingRangeKind.Region)) :: acc
       case (_, acc) => acc
     }
-    JArray(defsFoldingRanges.map(_.toJSON))
+    ("status" -> "success") ~ ("result" -> JArray(defsFoldingRanges.map(_.toJSON)))
   }
 
   /**
