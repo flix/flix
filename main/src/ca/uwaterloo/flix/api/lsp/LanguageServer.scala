@@ -78,6 +78,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
+    * A map from source URIs to source code.
+    */
+  val sources: mutable.Map[String, String] = mutable.Map.empty
+
+  /**
     * The current AST root. The root is null until the source code is compiled.
     */
   var root: Root = _ // TODO: We should be more careful if root can be null.
@@ -175,6 +180,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   // TODO: addPartialUri with uri and partial text.
   // TODO: Add check/validate/compile whatever.
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
+    case Request.AddUri(uri, src) =>
+      sources += (uri -> src)
+      "status" -> "success"
+
+    case Request.RemUri(uri) =>
+      sources -= uri
+      "status" -> "success"
+
     case Request.Validate(paths) => processValidate(paths)
     case Request.CodeLens(uri) => processCodeLens(uri)
     case Request.Context(uri, pos) => processContext(uri, pos)
@@ -198,6 +211,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     for (path <- paths) {
       log(s"Adding path: '$path'.")
       flix.addPath(path)
+    }
+    for ((uri, source) <- sources) {
+      flix.addInput(uri, source)
     }
 
     // Measure elapsed time.

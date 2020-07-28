@@ -28,7 +28,17 @@ sealed trait Request
 object Request {
 
   /**
-    * A 'textDocument/codeLens' request.
+    * A request to add (or update) the given uri with the given source code.
+    */
+  case class AddUri(uri: String, src: String) extends Request
+
+  /**
+    * A request to remove the given uri.
+    */
+  case class RemUri(uri: String) extends Request
+
+  /**
+    * A code lens request.
     */
   case class CodeLens(uri: String) extends Request
 
@@ -53,7 +63,7 @@ object Request {
   case class Goto(uri: String, pos: Position) extends Request
 
   /**
-    * A 'textDocument/foldingRange' request.
+    * A folding range request.
     */
   case class FoldingRange(uri: String) extends Request
 
@@ -81,6 +91,37 @@ object Request {
     * A request to return the compiler version.
     */
   case object Version extends Request
+
+  /**
+    * Tries to parse the given `json` value as a [[AddUri]] request.
+    */
+  def parseAddUri(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    val srcRes: Result[String, String] = json \\ "src" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected src: '$s'.")
+    }
+    for {
+      uri <- uriRes
+      src <- srcRes
+    } yield Request.AddUri(uri, src)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[RemUri]] request.
+    */
+  def parseRemUri(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+    } yield Request.RemUri(uri)
+  }
 
   /**
     * Tries to parse the given `json` value as a [[Complete]] request.
