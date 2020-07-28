@@ -77,7 +77,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  var root: Root = _ // TODO: We should be more careful if root can be null.
+  var root: Root = _
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
