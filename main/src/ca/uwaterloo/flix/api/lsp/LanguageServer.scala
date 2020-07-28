@@ -338,6 +338,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a folding range request.
     */
   private def processFoldingRange(uri: String)(implicit ws: WebSocket): JValue = {
+    if (root == null) {
+      return ("status" -> "success") ~ ("result" -> JArray(Nil))
+    }
+
     val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
       case ((sym, defn), acc) if matchesUri(uri, defn.loc) => FoldingRange(defn.loc.beginLine, Some(defn.loc.beginCol), defn.loc.endLine, Some(defn.loc.endCol), Some(FoldingRangeKind.Region)) :: acc
       case (_, acc) => acc
