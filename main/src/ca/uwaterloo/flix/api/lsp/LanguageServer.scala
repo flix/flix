@@ -241,7 +241,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             PublishDiagnosticsParams(source.name, diagnostics) :: acc
         }
 
-        ("status" -> "failure") ~ ("results" -> results.map(_.toJSON))
+        ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
     }
   }
 
