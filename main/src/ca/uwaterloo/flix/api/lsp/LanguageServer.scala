@@ -377,12 +377,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
-  private def mkNotFound(uri: String, pos: Position): JValue =
-    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
-  /**
     * Processes a shutdown request.
     */
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
@@ -427,6 +421,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     val revision = Version.CurrentVersion.revision
     ("status" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
   }
+
+  /**
+    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
+    */
+  private def mkNotFound(uri: String, pos: Position): JValue =
+    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   /**
     * Logs the given message `msg` along with information about the connection `ws`.
