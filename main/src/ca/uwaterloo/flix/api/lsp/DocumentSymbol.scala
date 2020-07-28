@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Def
+import ca.uwaterloo.flix.language.ast.TypedAst.Enum
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -25,13 +26,25 @@ import org.json4s._
 object DocumentSymbol {
 
   /**
-    * Returns the document symbol of the given definition `defn`.
+    * Returns the document symbol of the given definition declaration `decl0`.
     */
-  def from(defn: Def): DocumentSymbol = {
-    val name = defn.sym.name
+  def from(decl0: Def): DocumentSymbol = {
+    val name = decl0.sym.name
     val kind = SymbolKind.Function
-    val range = Range.from(defn.sym.loc)
-    val selectionRange = Range(Position(defn.exp.loc.beginLine, 0), Position(defn.exp.loc.endLine, defn.exp.loc.endCol))
+    val range = Range.from(decl0.sym.loc)
+    val selectionRange = Range(Position(decl0.exp.loc.beginLine, 0), Position(decl0.exp.loc.endLine, decl0.exp.loc.endCol))
+    val children = Nil
+    DocumentSymbol(name, kind, range, selectionRange, children)
+  }
+
+  /**
+    * Returns the document symbol of the given enum declaration `decl0`.
+    */
+  def from(decl0: Enum): DocumentSymbol = {
+    val name = decl0.sym.name
+    val kind = SymbolKind.Enum
+    val range = Range.from(decl0.sym.loc)
+    val selectionRange = Range.from(decl0.loc)
     val children = Nil
     DocumentSymbol(name, kind, range, selectionRange, children)
   }

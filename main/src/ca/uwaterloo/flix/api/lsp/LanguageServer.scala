@@ -393,11 +393,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Find all definition symbols.
     val defSymbols = root.defs.values.collect {
-      case defn if matchesUri(uri, defn.loc) => DocumentSymbol.from(defn)
+      case decl0 if matchesUri(uri, decl0.loc) => DocumentSymbol.from(decl0)
+    }
+
+    // FInd all enum symbols.
+    val enumSymbols = root.enums.values.collect {
+      case decl0 if matchesUri(uri, decl0.loc) => DocumentSymbol.from(decl0)
     }
 
     // Compute all available symbols.
-    val allSymbols = defSymbols
+    val allSymbols = defSymbols ++ enumSymbols
 
     ("status" -> "success") ~ ("result" -> allSymbols.map(_.toJSON))
   }
