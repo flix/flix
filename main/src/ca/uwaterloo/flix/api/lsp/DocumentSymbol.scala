@@ -24,7 +24,17 @@ import org.json4s._
   */
 object DocumentSymbol {
 
-  def from(defn: Def): DocumentSymbol = ???
+  /**
+    * Returns the document symbol of the given definition `defn`.
+    */
+  def from(defn: Def): DocumentSymbol = {
+    val name = defn.sym.name
+    val kind = SymbolKind.Function
+    val range = Range.from(defn.sym.loc)
+    val selectionRange = Range.from(defn.exp.loc)
+    val children = Nil
+    DocumentSymbol(name, kind, range, selectionRange, children)
+  }
 
 }
 
