@@ -157,6 +157,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Determine the type of request.
     json \\ "request" match {
+      case JString("addUri") => Request.parseAddUri(json)
+      case JString("remUri") => Request.parseRemUri(json)
       case JString("codeLens") => Request.parseCodeLens(json)
       case JString("complete") => Request.parseComplete(json)
       case JString("context") => Request.parseContext(json)
