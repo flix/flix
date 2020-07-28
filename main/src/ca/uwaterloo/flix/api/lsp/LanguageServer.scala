@@ -158,6 +158,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("foldingRange") => Request.parseFoldingRange(json)
       case JString("goto") => Request.parseGoto(json)
       case JString("shutdown") => Ok(Request.Shutdown)
+      case JString("symbols") => Request.parseSymbols(json)
       case JString("uses") => Request.parseUses(json)
       case JString("version") => Ok(Request.Version)
       case s => Err(s"Unsupported request: '$s'.")
