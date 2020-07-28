@@ -47,25 +47,13 @@ import scala.collection.mutable
   * Does not implement the LSP protocol directly, but relies on an intermediate TypeScript server.
   *
   *
-  * Examples:
+  * Example:
   *
-  * When connecting or whenever a source file is changed, the client must issue the request:
+  * $ wscat -c ws://localhost:8000
   *
-  * -   {"request":"validate", "paths":[]}
+  * > {"request": "addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
+  * < {"status":"success"}
   *
-  * If this is successful then the following requests can be made:
-  *
-  * Get the type and effect of an expression:
-  *
-  * -   {"request": "typeAndEffOf", "uri": "Option.flix", "position": {"line": 35, "character": 22}}
-  *
-  * Get the location of a definition or variable:
-  *
-  * -   {"request": "gotoDef", "uri": "Option.flix", "position": {"line": 214, "character": 40}}
-  *
-  * Shutdown the server:
-  *
-  * -   {"request": "shutdown"}
   *
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
@@ -159,6 +147,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     json \\ "request" match {
       case JString("addUri") => Request.parseAddUri(json)
       case JString("remUri") => Request.parseRemUri(json)
+      case JString("check") => Request.parseCheck(json)
       case JString("codeLens") => Request.parseCodeLens(json)
       case JString("complete") => Request.parseComplete(json)
       case JString("context") => Request.parseContext(json)
@@ -166,7 +155,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("goto") => Request.parseGoto(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case JString("uses") => Request.parseUses(json)
-      case JString("validate") => Request.parseValidate(json)
       case JString("version") => Ok(Request.Version)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -183,14 +171,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   // TODO: Add check/validate/compile whatever.
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(uri, src) =>
+      log("Added URI: " + uri)
       sources += (uri -> src)
       "status" -> "success"
 
     case Request.RemUri(uri) =>
+      log("Removed URI: " + uri)
       sources -= uri
       "status" -> "success"
 
-    case Request.Validate(paths) => processValidate(paths)
+    case Request.Check() => processCheck()
     case Request.CodeLens(uri) => processCodeLens(uri)
     case Request.Context(uri, pos) => processContext(uri, pos)
     case Request.Complete(uri, pos) => processComplete(uri, pos)
@@ -207,13 +197,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a validate request.
     */
-  private def processValidate(paths: List[String])(implicit ws: WebSocket): JValue = {
+  private def processCheck()(implicit ws: WebSocket): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
-    for (path <- paths) {
-      log(s"Adding path: '$path'.")
-      flix.addPath(path)
-    }
     for ((uri, source) <- sources) {
       flix.addInput(uri, source)
     }

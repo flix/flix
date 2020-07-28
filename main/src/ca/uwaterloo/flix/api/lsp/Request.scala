@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonAST.{JString, JValue}
 
 /**
   * A common super-type for language server requests.
@@ -36,6 +36,11 @@ object Request {
     * A request to remove the given uri.
     */
   case class RemUri(uri: String) extends Request
+
+  /**
+    * A request to compile and check all source files.
+    */
+  case class Check() extends Request
 
   /**
     * A code lens request.
@@ -81,11 +86,6 @@ object Request {
     * A request to find all uses of an entity.
     */
   case class Uses(uri: String, pos: Position) extends Request
-
-  /**
-    * A request to validate the source files in `paths`.
-    */
-  case class Validate(paths: List[String]) extends Request
 
   /**
     * A request to return the compiler version.
@@ -206,17 +206,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Validate]] request.
+    * Tries to parse the given `json` value as a [[Check]] request.
     */
-  def parseValidate(json: JValue): Result[Request, String] = {
-    json \\ "paths" match {
-      case JArray(arr) =>
-        val xs = arr.collect {
-          case JString(s) => s
-        }
-        Ok(Request.Validate(xs))
-      case _ => Err("Cannot find property 'paths'. Missing or incorrect type?")
-    }
-  }
+  def parseCheck(json: JValue): Result[Request, String] = Ok(Request.Check())
 
 }
