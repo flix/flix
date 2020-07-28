@@ -338,14 +338,24 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processGoto(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Def(sym, _, loc) => ("result" -> "success") ~ ("data" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
-        case Expression.Var(sym, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoVar(sym, loc).toJSON)
-        case Expression.Tag(sym, tag, _, _, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoEnum(sym, tag, loc).toJSON)
+        case Expression.Def(sym, _, loc) =>
+          ("result" -> "success") ~ ("data" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
+
+        case Expression.Var(sym, _, loc) =>
+          ("result" -> "success") ~ ("data" -> LocationLink.fromVarSym(sym, loc).toJSON)
+
+        case Expression.Tag(sym, tag, _, _, _, loc) =>
+          ("result" -> "success") ~ ("data" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
+
         case _ => mkNotFound(uri, pos)
       }
       case Some(Entity.Pat(pat)) => pat match {
-        case Pattern.Var(sym, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoVar(sym, loc).toJSON)
-        case Pattern.Tag(sym, tag, _, _, loc) => ("result" -> "success") ~ ("data" -> mkGotoEnum(sym, tag, loc).toJSON)
+        case Pattern.Var(sym, _, loc) =>
+          ("result" -> "success") ~ ("data" -> LocationLink.fromVarSym(sym, loc).toJSON)
+
+        case Pattern.Tag(sym, tag, _, _, loc) =>
+          ("result" -> "success") ~ ("data" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
+
         case _ => mkNotFound(uri, pos)
       }
       case _ => mkNotFound(uri, pos)
@@ -356,30 +366,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
   private def mkNotFound(uri: String, pos: Position): JValue = ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
-  /**
-    * Returns a location link to the given symbol `sym`.
-    */
-  private def mkGotoEnum(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): LocationLink = {
-    val enumDecl = root.enums(sym)
-    val caseDecl = enumDecl.cases(tag)
-    val originSelectionRange = Range.from(loc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(caseDecl.loc)
-    val targetSelectionRange = Range.from(caseDecl.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-  }
-
-  /**
-    * Returns a reference to the variable symbol `sym`.
-    */
-  private def mkGotoVar(sym: Symbol.VarSym, originLoc: SourceLocation): LocationLink = {
-    val originSelectionRange = Range.from(originLoc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(sym.loc)
-    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-  }
 
   /**
     * Processes a shutdown request.

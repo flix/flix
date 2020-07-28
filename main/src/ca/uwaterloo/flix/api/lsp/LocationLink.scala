@@ -37,6 +37,30 @@ object LocationLink {
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  def fromEnumSym(sym: Symbol.EnumSym, tag: String, root: Root, loc: SourceLocation): LocationLink = {
+    val enumDecl = root.enums(sym)
+    val caseDecl = enumDecl.cases(tag)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(caseDecl.loc)
+    val targetSelectionRange = Range.from(caseDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a reference to the variable symbol `sym`.
+    */
+  def fromVarSym(sym: Symbol.VarSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
 }
 
 /**
