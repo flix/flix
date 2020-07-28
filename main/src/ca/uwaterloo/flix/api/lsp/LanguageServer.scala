@@ -121,7 +121,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     parseRequest(data)(ws) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
-        val json = JsonMethods.pretty(JsonMethods.render(result))
+        val json = JsonMethods.compact(JsonMethods.render(result))
+        log("Sending reply: " + json)(ws)
         ws.send(json)
       case Err(msg) =>
         log(msg)(ws)
