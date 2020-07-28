@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.tools.Tester
+import ca.uwaterloo.flix.tools.Tester.TestResult
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Result}
@@ -157,6 +159,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("foldingRange") => Request.parseFoldingRange(json)
       case JString("goto") => Request.parseGoto(json)
       case JString("runMain") => Ok(Request.RunMain)
+      case JString("runTests") => Ok(Request.RunTests)
       case JString("shutdown") => Ok(Request.Shutdown)
       case JString("symbols") => Request.parseSymbols(json)
       case JString("uses") => Request.parseUses(json)
@@ -188,6 +191,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.FoldingRange(uri) => processFoldingRange(uri)
     case Request.Goto(uri, pos) => processGoto(uri, pos)
     case Request.RunMain => processRunMain()
+    case Request.RunTests => processRunTests()
     case Request.Shutdown => processShutdown()
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
@@ -388,6 +392,34 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
     }
   }
+
+  /**
+    * Processes a request to run all tests. Re-compiles and runs all unit tests.
+    */
+  private def processRunTests(): JValue = {
+    // Configure the Flix compiler.
+    val flix = new Flix()
+    for ((uri, source) <- sources) {
+      flix.addInput(uri, source)
+    }
+
+    flix.compile() match {
+      case Success(t) =>
+        val results: List[JValue] = Tester.test(t).results.map {
+          case TestResult.Success(sym, _) =>
+            ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "success")
+          case TestResult.Failure(sym, m) =>
+            ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "failure") ~ ("message" -> m)
+        }
+
+        ("status" -> "success") ~ ("result" -> JArray(results))
+      case Failure(errors) =>
+        // Case 2: Compilation failed. Send back the error messages.
+        val results = PublishDiagnosticsParams.from(errors)
+        ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+    }
+  }
+
 
   /**
     * Processes a shutdown request.
