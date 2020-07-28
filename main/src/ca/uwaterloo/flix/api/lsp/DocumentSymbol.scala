@@ -31,7 +31,7 @@ object DocumentSymbol {
     val name = defn.sym.name
     val kind = SymbolKind.Function
     val range = Range.from(defn.sym.loc)
-    val selectionRange = Range.from(defn.exp.loc)
+    val selectionRange = Range(Position(defn.exp.loc.beginLine, 0), Position(defn.exp.loc.endLine, defn.exp.loc.endCol))
     val children = Nil
     DocumentSymbol(name, kind, range, selectionRange, children)
   }
