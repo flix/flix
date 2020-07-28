@@ -188,8 +188,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
   }
 
-  // TODO: Add more logging to ease debugging...
-
   /**
     * Processes a validate request.
     */
@@ -339,18 +337,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def processFoldingRange(uri: String)(implicit ws: WebSocket): JValue = {
     val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
-      case ((sym, defn), acc) =>
-        val loc = defn.exp.loc
-        if (uri != loc.source.name) {
-          acc
-        } else {
-          val foldingRange = FoldingRange(loc.beginLine, Some(loc.beginCol), loc.endLine, Some(loc.endCol), Some(FoldingRangeKind.Region))
-          foldingRange :: acc
-        }
+      case ((sym, defn), acc) if matchesUri(uri, defn.loc) => FoldingRange(defn.loc.beginLine, Some(defn.loc.beginCol), defn.loc.endLine, Some(defn.loc.endCol), Some(FoldingRangeKind.Region)) :: acc
+      case (_, acc) => acc
     }
-    // TODO: Add enums etc.
-    val result = JArray(defsFoldingRanges.map(_.toJSON))
-    result
+    JArray(defsFoldingRanges.map(_.toJSON))
   }
 
   /**
