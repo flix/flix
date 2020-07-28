@@ -43,6 +43,11 @@ object Request {
   case class Check() extends Request
 
   /**
+    * A request to get the type and effect of an expression.
+    */
+  case class Context(uri: String, pos: Position) extends Request
+
+  /**
     * A code lens request.
     */
   case class CodeLens(uri: String) extends Request
@@ -51,16 +56,6 @@ object Request {
     * A request for code completion.
     */
   case class Complete(uri: String, pos: Position) extends Request
-
-  /**
-    * A request to get all defs.
-    */
-  case class GetDefs(uri: String) extends Request
-
-  /**
-    * A request to get all enums.
-    */
-  case class GetEnums(uri: String) extends Request
 
   /**
     * A request to go to a declaration.
@@ -78,9 +73,9 @@ object Request {
   case object Shutdown extends Request
 
   /**
-    * A request to get the type and effect of an expression.
+    * A request for all symbols.
     */
-  case class Context(uri: String, pos: Position) extends Request
+  case class Symbols(uri: String) extends Request
 
   /**
     * A request to find all uses of an entity.
@@ -189,6 +184,19 @@ object Request {
       uri <- uriRes
       pos <- Position.parse(json \\ "position")
     } yield Request.Goto(uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Symbols]] request.
+    */
+  def parseSymbols(json: json4s.JValue): Result[Request, String] = {
+    val uriRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      uri <- uriRes
+    } yield Request.Symbols(uri)
   }
 
   /**

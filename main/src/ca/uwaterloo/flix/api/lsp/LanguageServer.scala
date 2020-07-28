@@ -185,10 +185,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Context(uri, pos) => processContext(uri, pos)
     case Request.Complete(uri, pos) => processComplete(uri, pos)
     case Request.FoldingRange(uri) => processFoldingRange(uri)
-    case Request.GetDefs(uri) => ??? // TODO: Add getDefs
-    case Request.GetEnums(uri) => ??? // TODO: Add GetEnums
     case Request.Goto(uri, pos) => processGoto(uri, pos)
     case Request.Shutdown => processShutdown()
+    case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
     case Request.Version => processVersion()
 
@@ -380,6 +379,18 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
     throw null
+  }
+
+  /**
+    * Processes a symbols request.
+    */
+  private def processSymbols(uri: String): JValue = {
+    if (root == null) {
+      return ("status" -> "success") ~ ("result" -> JArray(Nil))
+    }
+
+    ???
+
   }
 
   /**
