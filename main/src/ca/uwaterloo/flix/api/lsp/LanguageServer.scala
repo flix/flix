@@ -353,22 +353,22 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, loc) =>
-          ("result" -> "success") ~ ("data" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
+          ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
 
         case Expression.Var(sym, _, loc) =>
-          ("result" -> "success") ~ ("data" -> LocationLink.fromVarSym(sym, loc).toJSON)
+          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
         case Expression.Tag(sym, tag, _, _, _, loc) =>
-          ("result" -> "success") ~ ("data" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
+          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
 
         case _ => mkNotFound(uri, pos)
       }
       case Some(Entity.Pat(pat)) => pat match {
         case Pattern.Var(sym, _, loc) =>
-          ("result" -> "success") ~ ("data" -> LocationLink.fromVarSym(sym, loc).toJSON)
+          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
         case Pattern.Tag(sym, tag, _, _, loc) =>
-          ("result" -> "success") ~ ("data" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
+          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
 
         case _ => mkNotFound(uri, pos)
       }
@@ -379,7 +379,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
-  private def mkNotFound(uri: String, pos: Position): JValue = ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+  private def mkNotFound(uri: String, pos: Position): JValue =
+    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   /**
     * Processes a shutdown request.
@@ -398,22 +399,22 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case Expression.Def(sym, _, _) =>
           val uses = index.usesOf(sym)
           val locs = uses.toList.map(Location.from)
-          ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
+          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
         case Expression.Var(sym, _, _) =>
           val uses = index.usesOf(sym)
           val locs = uses.toList.map(Location.from)
-          ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
+          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
         case Expression.Tag(sym, _, _, _, _, _) =>
           val uses = index.usesOf(sym)
           val locs = uses.toList.map(Location.from)
-          ("status" -> "success") ~ ("results" -> locs.map(_.toJSON))
+          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
-        case _ => ("status" -> "failure")
+        case _ => mkNotFound(uri, pos)
       }
 
-      case _ => ("status" -> "failure")
+      case _ => mkNotFound(uri, pos)
     }
   }
 
@@ -424,7 +425,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     val major = Version.CurrentVersion.major
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
-    ("result" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+    ("status" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
   }
 
   /**
