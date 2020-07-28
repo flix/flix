@@ -381,7 +381,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case Some(main) =>
           val result = main()
           ("status" -> "success") ~ ("result" -> result.toString)
-
       }
       case Failure(errors) =>
         // Case 2: Compilation failed. Send back the error messages.
