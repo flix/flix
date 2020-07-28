@@ -68,6 +68,16 @@ object Request {
   case class FoldingRange(uri: String) extends Request
 
   /**
+    * A request to run main.
+    */
+  case object RunMain extends Request
+
+  /**
+    * A request to run all tests.
+    */
+  case object RunTests extends Request
+
+  /**
     * A request to shutdown the language server.
     */
   case object Shutdown extends Request
