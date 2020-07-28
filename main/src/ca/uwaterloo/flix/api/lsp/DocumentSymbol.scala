@@ -15,8 +15,18 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.TypedAst.Def
 import org.json4s.JsonDSL._
 import org.json4s._
+
+/**
+  * Companion object of [[DocumentSymbol]].
+  */
+object DocumentSymbol {
+
+  def from(defn: Def): DocumentSymbol = ???
+
+}
 
 /**
   * Represents a `DocumentSymbol` in LSP.

@@ -389,8 +389,15 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       return ("status" -> "success") ~ ("result" -> JArray(Nil))
     }
 
-    ???
+    // Find all definition symbols.
+    val defSymbols = root.defs.values.collect {
+      case defn if matchesUri(uri, defn.loc) => DocumentSymbol.from(defn)
+    }
 
+    // Compute all available symbols.
+    val allSymbols = defSymbols
+
+    ("status" -> "success") ~ ("result" -> allSymbols.map(_.toJSON))
   }
 
   /**
