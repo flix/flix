@@ -26,8 +26,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
-import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.vt.TerminalContext.NoTerminal
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Result}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -367,7 +365,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
-    * Processes a request to run main. Recompiles and runs the program.
+    * Processes a request to run main. Re-compiles and runs the program.
     */
   private def processRunMain(): JValue = {
     // Configure the Flix compiler.
@@ -376,7 +374,20 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       flix.addInput(uri, source)
     }
 
-    ??? // TODO
+    flix.compile() match {
+      case Success(t) => t.getMain match {
+        case None =>
+          ("status" -> "success") ~ ("result" -> "Compilation successful. No main to run.")
+        case Some(main) =>
+          val result = main()
+          ("status" -> "success") ~ ("result" -> result.toString)
+
+      }
+      case Failure(errors) =>
+        // Case 2: Compilation failed. Send back the error messages.
+        val results = PublishDiagnosticsParams.from(errors)
+        ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+    }
   }
 
   /**
