@@ -381,12 +381,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processTypeAndEffectOf(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
-        val tpe = exp.tpe.toString
-        val eff = exp.eff.toString
-        val result = s"$tpe & $eff"
-        ("status" -> "success") ~ ("result" -> result)
+        implicit val _ = Audience.External
+        val tpe = FormatType.formatType(exp.tpe)
+        val eff = FormatType.formatType(exp.eff)
+        ("status" -> "success") ~ ("result" -> (("tpe" -> tpe) ~ ("eff" -> eff)))
       case _ =>
-        ("status" -> "failure")
+        mkNotFound(uri, pos)
     }
   }
 
