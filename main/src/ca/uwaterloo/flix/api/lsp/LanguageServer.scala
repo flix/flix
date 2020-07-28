@@ -313,6 +313,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
+    * Processes a type and effect request.
+    */
+  private def processContext(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) =>
+        implicit val _ = Audience.External
+        val tpe = FormatType.formatType(exp.tpe)
+        val eff = FormatType.formatType(exp.eff)
+        ("status" -> "success") ~ ("result" -> (("tpe" -> tpe) ~ ("eff" -> eff)))
+      case _ =>
+        mkNotFound(uri, pos)
+    }
+  }
+
+  /**
     * Processes a folding range request.
     */
   private def processFoldingRange(uri: String)(implicit ws: WebSocket): JValue = {
@@ -372,21 +387,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
     throw null
-  }
-
-  /**
-    * Processes a type and effect request.
-    */
-  private def processContext(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) =>
-        implicit val _ = Audience.External
-        val tpe = FormatType.formatType(exp.tpe)
-        val eff = FormatType.formatType(exp.eff)
-        ("status" -> "success") ~ ("result" -> (("tpe" -> tpe) ~ ("eff" -> eff)))
-      case _ =>
-        mkNotFound(uri, pos)
-    }
   }
 
   /**
