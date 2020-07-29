@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -580,4 +580,23 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
+  test("NonStarParam.01") {
+    val input =
+      """
+        |def f(a: Result[Int]): Int = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibrary)
+    expectError[ResolutionError.IllegalKind](result)
+  }
+
+  test("NonStarParam.02") {
+    val input =
+      """
+        |enum E {
+        |  case A(Result[Int])
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibrary)
+    expectError[ResolutionError.IllegalKind](result)
+  }
 }

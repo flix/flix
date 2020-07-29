@@ -129,6 +129,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         for {
           tparams <- tparamsVal
           t <- lookupType(tpe, ns0, prog0)
+          _ <- checkProperType(t)
         } yield {
           val freeVars = e0.tparams.map(_.tpe)
           val caseType = t
@@ -849,6 +850,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     def resolve(fparam0: NamedAst.FormalParam, ns0: Name.NName, prog0: NamedAst.Root): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       for {
         t <- lookupType(fparam0.tpe, ns0, prog0)
+        _ <- checkProperType(t)
       } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
     }
 
@@ -1218,6 +1220,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     } else {
       // Case 2: The name is qualified. Look it up in its namespace.
       root.typealiases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
+
+  /**
+    * Asserts that the given type is a proper type: that its kind is a subkind of `*`.
+    */
+  private def checkProperType(tpe: Type): Validation[Unit, ResolutionError] = {
+    if (tpe.kind <:: Kind.Star) {
+      ().toSuccess
+    } else {
+      ResolutionError.IllegalKind().toFailure
     }
   }
 

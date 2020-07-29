@@ -363,6 +363,12 @@ object ResolutionError {
     }
   }
 
+  case class IllegalKind() extends ResolutionError { // MATT to be filled in
+    override def loc: SourceLocation = SourceLocation.Unknown
+    override def summary: String = ""
+    override def message: VirtualTerminal = new VirtualTerminal
+  }
+
   /**
     * Removes all access modifiers from the given string `s`.
     */
