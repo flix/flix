@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
@@ -162,4 +162,33 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
+  test("TestMismatchedKinds.01") {
+    val input = "def f(): {| x} = {a = 2} <+> {a = 2}"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedKinds](result)
+  }
+
+  test("TestMismatchedKinds.02") {
+    val input = "def f(): #{| x} = {a = 2} <+> {a = 2}"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedKinds](result)
+  }
+
+  test("TestMismatchedKinds.03") {
+    val input = "def f(): {a: Int} = {a = 2} <+> {a = 2}"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedKinds](result)
+  }
+
+  test("TestMismatchedKinds.04") {
+    val input = "def f(): Str = 1 |= 2"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedKinds](result)
+  }
+
+  test("TestMismatchedKinds.05") {
+    val input = "def f(): Str = solve \"hello\""
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedKinds](result)
+  }
 }
