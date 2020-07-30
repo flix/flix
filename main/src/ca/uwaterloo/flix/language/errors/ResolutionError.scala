@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -122,6 +122,44 @@ object ResolutionError {
       vt << ">> Illegal type: '" << Red(tpe.toString) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "illegal type.") << NewLine
+    }
+  }
+
+  /**
+    * Illegal Uninhabited Type Error.
+    * @param tpe the uninhabited type.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalUninhabitedType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = "Illegal uninhabited type."
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal uninhabited type: '" << Red(tpe.toString) << "' with kind '" << Red(tpe.kind.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "uninhabited type.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Types in this location must be inhabited."
+      vt << "     Ensure the type has the correct number of parameters."
+    }
+  }
+
+  /**
+    * Illegal Type Application Error.
+    * @param tpe1 the type used as a type constructor.
+    * @param tpe2 the type used as an argument.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalTypeApplication(tpe1: Type, tpe2: Type, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = "Illegal type application."
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal type application: '" << Red(tpe1.toString) << "' applied to '" << Red(tpe2.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal type application.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Ensure the type has the correct number of parameters."
     }
   }
 
@@ -361,12 +399,6 @@ object ResolutionError {
       }
       vt
     }
-  }
-
-  case class IllegalKind() extends ResolutionError { // MATT to be filled in
-    override def loc: SourceLocation = SourceLocation.Unknown
-    override def summary: String = ""
-    override def message: VirtualTerminal = new VirtualTerminal
   }
 
   /**

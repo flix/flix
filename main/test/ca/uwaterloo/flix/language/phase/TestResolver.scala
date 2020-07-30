@@ -580,23 +580,44 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("NonStarParam.01") {
+  test("ImproperType.01") {
     val input =
       """
-        |def f(a: Result[Int]): Int = 123
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(p: P[Int]): Int = 123
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibrary)
-    expectError[ResolutionError.IllegalKind](result)
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
   }
 
-  test("NonStarParam.02") {
+  test("ImproperType.02") {
     val input =
       """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
         |enum E {
-        |  case A(Result[Int])
+        |  case A(P[Int])
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibrary)
-    expectError[ResolutionError.IllegalKind](result)
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalTypeApplication.03") {
+    val input =
+      """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(p: P[Int, String, String]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
   }
 }

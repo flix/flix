@@ -129,7 +129,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         for {
           tparams <- tparamsVal
           t <- lookupType(tpe, ns0, prog0)
-          _ <- checkProperType(t)
+          _ <- checkProperType(t, tag.loc)
         } yield {
           val freeVars = e0.tparams.map(_.tpe)
           val caseType = t
@@ -850,7 +850,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     def resolve(fparam0: NamedAst.FormalParam, ns0: Name.NName, prog0: NamedAst.Root): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       for {
         t <- lookupType(fparam0.tpe, ns0, prog0)
-        _ <- checkProperType(t)
+        _ <- checkProperType(t, fparam0.loc)
       } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
     }
 
@@ -1159,10 +1159,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult)
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
-      for (
-        tpe1 <- lookupType(base0, ns0, root);
+      for {
+        tpe1 <- lookupType(base0, ns0, root)
         tpe2 <- lookupType(targ0, ns0, root)
-      ) yield Type.simplify(Type.Apply(tpe1, tpe2))
+        app <- tryMkApply(tpe1, tpe2, loc)
+      } yield Type.simplify(app)
 
     case NamedAst.Type.True(loc) =>
       Type.True.toSuccess
@@ -1226,11 +1227,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Asserts that the given type is a proper type: that its kind is a subkind of `*`.
     */
-  private def checkProperType(tpe: Type): Validation[Unit, ResolutionError] = {
+  private def checkProperType(tpe: Type, loc: SourceLocation): Validation[Unit, ResolutionError] = {
     if (tpe.kind <:: Kind.Star) {
       ().toSuccess
     } else {
-      ResolutionError.IllegalKind().toFailure
+      ResolutionError.IllegalUninhabitedType(tpe, loc).toFailure
     }
   }
 
@@ -1492,6 +1493,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val sp2 = SourcePosition.Unknown
     val idents = parts.map(s => Name.Ident(sp1, s, sp2))
     Name.NName(sp1, idents, sp2)
+  }
+
+  /**
+    * Tries to apply `tpe1` to `tpe2`. Creates a resolution error if `tpe1` is not a type constructor.
+    */
+  private def tryMkApply(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    tpe1.kind match {
+      case _: Kind.Arrow => Type.Apply(tpe1, tpe2).toSuccess
+      case _ => ResolutionError.IllegalTypeApplication(tpe1, tpe2, loc).toFailure
+    }
   }
 
 }
