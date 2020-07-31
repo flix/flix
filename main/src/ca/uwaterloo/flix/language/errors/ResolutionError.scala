@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatKind, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -31,6 +32,8 @@ sealed trait ResolutionError extends CompilationError {
 }
 
 object ResolutionError {
+
+  private implicit val audience = Audience.External
 
   /**
     * Ambiguous Name Error.
@@ -119,7 +122,7 @@ object ResolutionError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal type: '" << Red(tpe.toString) << "'." << NewLine
+      vt << ">> Illegal type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "illegal type.") << NewLine
     }
@@ -135,7 +138,7 @@ object ResolutionError {
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal uninhabited type: '" << Red(tpe.toString) << "' with kind '" << Red(tpe.kind.toString) << "'." << NewLine
+      vt << ">> Illegal uninhabited type: '" << Red(FormatType.formatType(tpe)) << "' with kind '" << Red(FormatKind.formatKind(tpe.kind)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "uninhabited type.")
       vt << NewLine
@@ -155,7 +158,7 @@ object ResolutionError {
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal type application: '" << Red(tpe1.toString) << "' applied to '" << Red(tpe2.toString) << "'." << NewLine
+      vt << ">> Illegal type application: '" << Red(FormatType.formatType(tpe1)) << "' applied to '" << Red(FormatType.formatType(tpe2)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "illegal type application.")
       vt << NewLine

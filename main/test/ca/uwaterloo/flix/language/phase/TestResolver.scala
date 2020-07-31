@@ -580,7 +580,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("ImproperType.01") {
+  test("IllegalUninhabitedType.01") {
     val input =
       """
         |enum P[a, b] {
@@ -593,7 +593,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalUninhabitedType](result)
   }
 
-  test("ImproperType.02") {
+  test("IllegalUninhabitedType.02") {
     val input =
       """
         |enum P[a, b] {
@@ -608,7 +608,64 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalUninhabitedType](result)
   }
 
-  test("IllegalTypeApplication.03") {
+
+  test("IllegalUninhabitedType.03") {
+    val input =
+      """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(p: P): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.04") {
+    val input =
+      """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |enum E {
+        |  case A(P)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.05") {
+    val input =
+      """
+        |enum P[a, b, c] {
+        |  case C(a, b, c)
+        |}
+        |
+        |def f(p: P[Int, Int]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.06") {
+    val input =
+      """
+        |enum P[a, b, c] {
+        |  case C(a, b, c)
+        |}
+        |
+        |enum E {
+        |  case A(P[Int, Int])
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalTypeApplication.01") {
     val input =
       """
         |enum P[a, b] {
@@ -617,6 +674,36 @@ class TestResolver extends FunSuite with TestUtils {
         |
         |def f(p: P[Int, String, String]): Int = 123
         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.02") {
+    val input =
+      """
+        |type alias R = {x: Int}
+        |
+        |def f(p: R[Int]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.03") {
+    val input =
+      """
+        |rel A(a: Int)
+        |
+        |type alias S = #{ A }
+        |
+        |def f(p: S[Int]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.04") {
+    val input = "def f(p: Str[Int]): Int = 123"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalTypeApplication](result)
   }

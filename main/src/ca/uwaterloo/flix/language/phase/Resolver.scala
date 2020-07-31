@@ -1162,7 +1162,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         tpe1 <- lookupType(base0, ns0, root)
         tpe2 <- lookupType(targ0, ns0, root)
-        app <- tryMkApply(tpe1, tpe2, loc)
+        app <- mkApply(tpe1, tpe2, loc)
       } yield Type.simplify(app)
 
     case NamedAst.Type.True(loc) =>
@@ -1498,7 +1498,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Tries to apply `tpe1` to `tpe2`. Creates a resolution error if `tpe1` is not a type constructor.
     */
-  private def tryMkApply(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+  private def mkApply(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
     tpe1.kind match {
       case _: Kind.Arrow => Type.Apply(tpe1, tpe2).toSuccess
       case _ => ResolutionError.IllegalTypeApplication(tpe1, tpe2, loc).toFailure
