@@ -37,16 +37,43 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Type checks the given AST root.
     */
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
+    val classesVal = visitClasses(root)
     val defsVal = visitDefs(root)
     val enumsVal = visitEnums(root)
     val latticeOpsVal = visitLatticeOps(root)
     val propertiesVal = visitProperties(root)
 
-    Validation.mapN(defsVal, enumsVal, latticeOpsVal, propertiesVal) {
-      case (defs, enums, latticeOps, properties) =>
+    Validation.mapN(classesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
+      case (classes, defs, enums, latticeOps, properties) =>
         val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-        TypedAst.Root(defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
+        TypedAst.Root(classes, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
     }
+  }
+
+  // MATT docs
+  private def visitClasses(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
+
+    def visitSig(sig: ResolvedAst.Sig): Validation[TypedAst.Sig, TypeError] = sig match {
+      case ResolvedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, sc, eff, loc) =>
+        val tparams = getTypeParams(tparams0)
+        val fparams = getFormalParams(fparams0, Substitution.empty)
+        for {
+          ann <- visitAnnotations(ann0, root)
+        } yield TypedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
+    }
+
+    def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
+      case ResolvedAst.Class(sym, tparam, signatures) =>
+        val tparams = getTypeParams(List(tparam))
+        for {
+          sigs <- Validation.traverse(signatures)(visitSig)
+        } yield (sym, TypedAst.Class(sym, tparams.head, sigs))
+    }
+
+    // MATT more inline docs
+    val result = root.classes.values.map(visitClass)
+
+    Validation.sequence(result).map(_.toMap)
   }
 
   /**

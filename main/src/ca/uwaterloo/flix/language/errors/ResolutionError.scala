@@ -211,6 +211,27 @@ object ResolutionError {
     }
   }
 
+  // MATT s/Def/Sig
+  /**
+    * Inaccessible Def Error.
+    *
+    * @param sym the def symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleSig(sym: Symbol.SigSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Inaccessible."
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Definition '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inaccessible definition.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+  }
+
   /**
     * Inaccessible Enum Error.
     *

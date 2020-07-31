@@ -23,7 +23,8 @@ import scala.collection.immutable.List
 
 object NamedAst {
 
-  case class Root(defs: Map[Name.NName, Map[String, NamedAst.Def]],
+  case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
+                  defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   latticesOps: Map[NamedAst.Type, NamedAst.LatticeOps],
@@ -40,6 +41,10 @@ object NamedAst {
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
   case class LatticeOps(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation)
+
+  case class Class(sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, signatures: List[NamedAst.Sig])
+
+  case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
   sealed trait Use
 
@@ -65,9 +70,8 @@ object NamedAst {
 
     case class Def(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    // MATT SigSym or QName?
     // MATT tvar?
-    case class Sig(sym: Symbol.SigSym, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Sig(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

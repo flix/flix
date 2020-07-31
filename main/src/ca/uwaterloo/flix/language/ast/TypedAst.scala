@@ -23,7 +23,8 @@ import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
 
 object TypedAst {
 
-  case class Root(defs: Map[Symbol.DefnSym, TypedAst.Def],
+  case class Root(classes: Map[Symbol.ClassSym, TypedAst.Class],
+                  defs: Map[Symbol.DefnSym, TypedAst.Def],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
                   latticeOps: Map[Type, TypedAst.LatticeOps],
                   properties: List[TypedAst.Property],
@@ -38,6 +39,10 @@ object TypedAst {
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation)
 
   case class LatticeOps(tpe: Type, bot: TypedAst.Expression, top: TypedAst.Expression, equ: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation)
+
+  case class Class(sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, signatures: List[TypedAst.Sig])
+
+  case class Sig(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: Type

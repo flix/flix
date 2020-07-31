@@ -44,6 +44,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def run(prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
+    val classesVal = prog0.classes.flatMap {
+      case (ns0, classes) => classes.map {
+        case (_, clazz) => resolve(clazz, ns0, prog0) map {
+          case s => s.sym -> s
+        }
+      }
+    }
+
     val definitionsVal = prog0.defs.flatMap {
       case (ns0, defs) => defs.map {
         case (_, defn) => resolve(defn, ns0, prog0) map {
@@ -73,12 +81,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
 
     for {
+      classes <- sequence(classesVal).map(_ ++ mkSynthClasses())
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      mkSynthClasses(), definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
+      classes.toMap, definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
 
@@ -102,6 +111,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       } yield ResolvedAst.Constraint(ps, h, bs, c0.loc)
     }
 
+  }
+
+  // MATT docs
+  def resolve(c0: NamedAst.Class, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
+    case NamedAst.Class(sym, tparam0, signatures) =>
+      for {
+        tparams <- resolveTypeParams(List(tparam0), ns0, prog0)
+        sigs <- traverse(signatures)(resolve(_, ns0, prog0))
+      } yield ResolvedAst.Class(sym, tparams.head, sigs)
+  }
+
+  // MATT docs
+  def resolve(s0: NamedAst.Sig, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
+    case NamedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, sc0, eff0, loc) =>
+      for {
+        fparams <- resolveFormalParams(fparams0, ns0, prog0)
+        tparams <- resolveTypeParams(tparams0, ns0, prog0)
+        ann <- traverse(ann0)(visitAnnotation(_, ns0, prog0))
+        scheme <- resolveScheme(sc0, ns0, prog0)
+        eff <- lookupType(eff0, ns0, prog0)
+      } yield ResolvedAst.Sig(doc, ann, mod, sym, tparams, fparams, scheme, eff, loc)
   }
 
   /**
@@ -226,6 +256,39 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
               // The definition expression.
               val defExp = ResolvedAst.Expression.Def(defn.sym, tvar, loc)
+
+              // The arguments passed to the definition (i.e. the fresh variable symbols).
+              val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
+
+              // The apply expression inside the lambda.
+              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+
+              // The curried lambda expressions.
+              fparams.foldRight(applyExp: ResolvedAst.Expression) {
+                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshVar(Kind.Star), loc)
+              }
+          }
+
+        case NamedAst.Expression.Sig(qname, tvar, loc) =>
+          lookupSig(qname, ns0, prog0) map {
+            case sig =>
+              //
+              // We must curry the definition. Otherwise we would not be here.
+              //
+              // We introduce /n/ lambda expressions around the definition expression.
+              //
+
+              // Find the arity of the function definition.
+              val arity = sig.fparams.length
+
+              // Introduce a fresh variable symbol for each argument of the function definition.
+              val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
+
+              // Introduce a formal parameter for each variable symbol.
+              val fparams = varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+
+              // The definition expression.
+              val defExp = ResolvedAst.Expression.Sig(sig.sym, tvar, loc)
 
               // The arguments passed to the definition (i.e. the fresh variable symbols).
               val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
@@ -905,6 +968,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
+  // MATT docs
+  // MATT rearrange?
+  def lookupSig(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Sig, ResolutionError] = {
+    val sigOpt = tryLookupSig(qname, ns0, prog0)
+
+    sigOpt match {
+      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case Some(s) => getSigIfAccessible(s, ns0, qname.loc)
+    }
+  }
+
   /**
     * Tries to a def with the qualified name `qname` in the namespace `ns0`.
     */
@@ -927,6 +1001,38 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       prog0.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
+
+  // MATT s/def/sig
+  /**
+    * Tries to a def with the qualified name `qname` in the namespace `ns0`.
+    */
+  def tryLookupSig(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Sig] = {
+    // Check whether the name is fully-qualified.
+    if (qname.isUnqualified) {
+      // Case 1: Unqualified name. Lookup in the current namespace.
+      val sigOpt = findSig(prog0.classes.getOrElse(ns0, Map.empty), qname)
+
+      sigOpt match {
+        case Some(sig) =>
+          // Case 1.2: Found in the current namespace.
+          Some(sig)
+        case None =>
+          // Case 1.1: Try the global namespace.
+          findSig(prog0.classes.getOrElse(Name.RootNS, Map.empty), qname)
+      }
+    } else {
+      // Case 2: Qualified. Lookup in the given namespace.
+      findSig(prog0.classes.getOrElse(qname.namespace, Map.empty), qname)
+    }
+  }
+
+  // MATT docs
+  def findSig(classes: Map[String, NamedAst.Class], qname: Name.QName): Option[NamedAst.Sig] = {
+    classes.flatMap {
+      case (_, clazz) => clazz.signatures
+    }.find(_.sym.name == qname.ident.name)
+  }
+
 
   /**
     * Finds the enum that maches the given qualified name `qname` and `tag` in the namespace `ns0`.
@@ -1287,6 +1393,38 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
   }
 
+  // MATT s/def/sig
+  /**
+    * Successfully returns the given definition `defn0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * A definition `defn0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the definition is marked public, or
+    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def getSigIfAccessible(sig0: NamedAst.Sig, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Sig, ResolutionError] = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (sig0.mod.isPublic)
+      return sig0.toSuccess
+
+    //
+    // Check if the definition is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = sig0.sym.clazz.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return sig0.toSuccess
+
+    //
+    // The definition is not accessible.
+    //
+    ResolutionError.InaccessibleSig(sig0.sym, ns0, loc).toFailure
+  }
+
   /**
     * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
     *
@@ -1616,11 +1754,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
    * Creates the synthetic type classes.
    */
-  private def mkSynthClasses()(implicit flix: Flix): Map[Symbol.ClassSym, ResolvedAst.Class] = {
+  private def mkSynthClasses()(implicit flix: Flix): List[(Symbol.ClassSym, ResolvedAst.Class)] = {
     val classes = List(mkShowClass())
     // TODO: Eq, Ord, Hash
 
-    classes.map(clazz => clazz.sym -> clazz).toMap
+    classes.map(clazz => clazz.sym -> clazz)
   }
 
   /**

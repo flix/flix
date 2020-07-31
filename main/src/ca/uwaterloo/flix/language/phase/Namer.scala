@@ -42,6 +42,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
+      classes = Map.empty,
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
