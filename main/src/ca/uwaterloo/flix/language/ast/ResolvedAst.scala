@@ -57,6 +57,8 @@ object ResolvedAst {
 
     case class Def(sym: Symbol.DefnSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Sig(sym: Symbol.SigSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression
