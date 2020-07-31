@@ -42,7 +42,7 @@ trait TestUtils {
       val expected = classTag.runtimeClass
       val actuals = errors.map(_.getClass)
 
-      if (!actuals.contains(expected))
+      if (!actuals.exists(expected.isAssignableFrom(_)))
         fail(s"Expected an error of type ${expected.getSimpleName}, but found ${actuals.mkString(", ")}.")
   }
 
