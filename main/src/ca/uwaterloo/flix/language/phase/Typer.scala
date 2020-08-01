@@ -354,6 +354,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypeM(tvar, defType, loc)
         } yield (resultTyp, Type.Pure)
 
+      case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
+        val sig = root.classes.flatMap(_._2.signatures).find(_.sym == sym).get // MATT cleanup/comment
+        val sigType = Scheme.instantiate(sig.sc, InstantiateMode.Flexible)
+        for {
+          resultTyp <- unifyTypeM(tvar, sigType, loc)
+        } yield (resultTyp, Type.Pure)
+
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
         liftM(tvar, evar)
 
@@ -1235,6 +1242,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         TypedAst.Expression.Def(sym, subst0(tvar), loc)
+
+      case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
+        TypedAst.Expression.Sig(sym, subst0(tvar), loc)
 
       case ResolvedAst.Expression.Hole(sym, tpe, evar, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), subst0(evar), loc)

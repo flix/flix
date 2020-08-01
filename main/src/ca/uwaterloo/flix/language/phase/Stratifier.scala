@@ -119,6 +119,8 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Def(_, _, _) => exp0.toSuccess
 
+    case Expression.Sig(_, _, _) => exp0.toSuccess
+
     case Expression.Hole(_, _, _, _) => exp0.toSuccess
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
@@ -429,6 +431,8 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Var(_, _, _) => DependencyGraph.empty
 
     case Expression.Def(_, _, _) => DependencyGraph.empty
+
+    case Expression.Sig(_, _, _) => DependencyGraph.empty
 
     case Expression.Hole(_, _, _, _) => DependencyGraph.empty
 

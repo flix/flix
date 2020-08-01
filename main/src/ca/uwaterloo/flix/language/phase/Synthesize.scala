@@ -70,6 +70,8 @@ object Synthesize extends Phase[Root, Root] {
 
       case Expression.Def(sym, tpe, loc) => exp0
 
+      case Expression.Sig(sym, tpe, loc) => exp0
+
       case Expression.Hole(sym, tpe, eff, loc) => exp0
 
       case Expression.Unit(loc) => exp0

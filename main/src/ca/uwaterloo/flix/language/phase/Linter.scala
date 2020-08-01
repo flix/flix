@@ -723,6 +723,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Def(_, _, _) => exp0
 
+      case Expression.Sig(_, _, _) => exp0
+
       case Expression.Hole(_, _, _, _) => exp0
 
       case Expression.Lambda(fparam, exp, tpe, loc) =>

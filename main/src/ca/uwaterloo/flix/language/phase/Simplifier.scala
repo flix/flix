@@ -70,6 +70,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
 
+      case TypedAst.Expression.Sig(sym, tpe, loc) => ??? // MATT later
+
       case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit

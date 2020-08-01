@@ -154,6 +154,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val newSym = specializeDefSym(sym, subst0(tpe))
           Expression.Def(newSym, subst0(tpe), loc)
 
+        case Expression.Sig(sym, tpe, loc) => Expression.Sig(sym, subst0(tpe), loc) // MATT surely this should match Def?
+
         case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
