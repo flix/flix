@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
@@ -661,6 +660,12 @@ class TestResolver extends FunSuite with TestUtils {
         |  case A(P[Int, Int])
         |}
         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.07") {
+    val input = """def f(x: true): Int = 123"""
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalUninhabitedType](result)
   }
