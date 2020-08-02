@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -580,4 +579,137 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
+  test("IllegalUninhabitedType.01") {
+    val input =
+      """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(p: P[Int]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.02") {
+    val input =
+      """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |enum E {
+        |  case A(P[Int])
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+
+  test("IllegalUninhabitedType.03") {
+    val input =
+      """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(p: P): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.04") {
+    val input =
+      """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |enum E {
+        |  case A(P)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.05") {
+    val input =
+      """
+        |enum P[a, b, c] {
+        |  case C(a, b, c)
+        |}
+        |
+        |def f(p: P[Int, Int]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.06") {
+    val input =
+      """
+        |enum P[a, b, c] {
+        |  case C(a, b, c)
+        |}
+        |
+        |enum E {
+        |  case A(P[Int, Int])
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.07") {
+    val input = """def f(x: true): Int = 123"""
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalTypeApplication.01") {
+    val input =
+      """
+        |enum P[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(p: P[Int, String, String]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.02") {
+    val input =
+      """
+        |type alias R = {x: Int}
+        |
+        |def f(p: R[Int]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.03") {
+    val input =
+      """
+        |rel A(a: Int)
+        |
+        |type alias S = #{ A }
+        |
+        |def f(p: S[Int]): Int = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.04") {
+    val input = "def f(p: Str[Int]): Int = 123"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
 }

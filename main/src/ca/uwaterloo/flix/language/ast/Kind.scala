@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.tc.Show
+import ca.uwaterloo.flix.language.debug.FormatKind
 
 /**
   * A kind represents the "type" of a type expression.
@@ -37,7 +37,7 @@ sealed trait Kind {
   /**
     * Returns a human readable representation of `this` kind.
     */
-  override def toString: String = Kind.ShowInstance.show(this)
+  override def toString: String = FormatKind.formatKind(this)
 
   /**
     * Returns true if `left` is a subkind of `this`.
@@ -112,24 +112,5 @@ object Kind {
     * Returns a fresh kind variable.
     */
   def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Type Class Instances                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Show instance for Type.
-    */
-  implicit object ShowInstance extends Show[Kind] {
-    def show(a: Kind): String = a match {
-      case Var(id) => "'" + id
-      case Star => "*"
-      case Bool => "Bool"
-      case Record => "Record"
-      case Schema => "Schema"
-      case Arrow(Arrow(k11, k12), k2) => s"($k11 -> $k12) -> $k2"
-      case Arrow(k1, k2) => s"$k1 -> $k2"
-    }
-  }
 
 }
