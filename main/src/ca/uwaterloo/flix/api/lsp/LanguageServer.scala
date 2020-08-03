@@ -156,6 +156,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("api/version") => Ok(Request.Version)
       case JString("api/shutdown") => Ok(Request.Shutdown)
 
+      case JString("cmd/benchmark") => Ok(Request.Benchmark)
+      case JString("cmd/main") => Ok(Request.Benchmark)
+      case JString("cmd/test") => Ok(Request.Test)
+
       case JString("lsp/check") => Ok(Request.Check)
       case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/complete") => Request.parseComplete(json)
@@ -165,13 +169,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("lsp/symbols") => Request.parseSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
-      case JString("pkg/benchmark") => Ok(Request.Benchmark)
+      case JString("pkg/benchmark") => ??? // TODO
       case JString("pkg/build") => Request.parsePkgBuild(json)
       case JString("pkg/buildDoc") => Request.parsePkgBuildDoc(json)
       case JString("pkg/buildJar") => Request.parsePkgBuildJar(json)
       case JString("pkg/buildPkg") => Request.parsePkgBuildPkg(json)
-      case JString("pkg/main") => Ok(Request.Main)
-      case JString("pkg/test") => Ok(Request.Test)
+      case JString("pkg/main") => ??? // TODO
+      case JString("pkg/test") => ??? // TODO
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -197,6 +201,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.Version => processVersion()
 
+    case Request.Benchmark => runBenchmarks()
+    case Request.Main => runMain()
+    case Request.Test => runTests()
+
     case Request.Check => processCheck()
     case Request.Codelens(uri) => processCodelens(uri)
     case Request.Context(uri, pos) => processContext(uri, pos)
@@ -206,13 +214,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
 
-    case Request.Benchmark => runBenchmarks()
     case Request.Build(projectRoot) => runBuild(projectRoot)
     case Request.BuildDoc(projectRoot) => runBuildDoc(projectRoot)
     case Request.BuildJar(projectRoot) => runBuildJar(projectRoot)
     case Request.BuildPkg(projectRoot) => runBuildPkg(projectRoot)
-    case Request.Main => runMain()
-    case Request.Test => runTests()
 
   }
 
@@ -393,34 +398,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
-    * Processes a request to build the project.
-    */
-  private def runBuild(projectRoot: Path): JValue = {
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
-  }
-
-  /**
-    * Processes a request to build the documentation.
-    */
-  private def runBuildDoc(projectRoot: Path): JValue = {
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
-  }
-
-  /**
-    * Processes a request to build a jar from the project.
-    */
-  private def runBuildJar(projectRoot: Path): JValue = {
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
-  }
-
-  /**
-    * Processes a request to build a flix package from the project.
-    */
-  private def runBuildPkg(projectRoot: Path): JValue = {
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
-  }
-
-  /**
     * Processes a request to run main. Re-compiles and runs the program.
     */
   private def runMain(): JValue = {
@@ -472,6 +449,33 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     }
   }
 
+  /**
+    * Processes a request to build the project.
+    */
+  private def runBuild(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
+
+  /**
+    * Processes a request to build the documentation.
+    */
+  private def runBuildDoc(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
+
+  /**
+    * Processes a request to build a jar from the project.
+    */
+  private def runBuildJar(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
+
+  /**
+    * Processes a request to build a flix package from the project.
+    */
+  private def runBuildPkg(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
 
   /**
     * Processes a shutdown request.
