@@ -90,7 +90,7 @@ object Request {
   /**
     * A request to run all benchmarks.
     */
-  case object Benchmarks extends Request
+  case object Benchmark extends Request
 
   /**
     * A request to build the project.
@@ -120,7 +120,7 @@ object Request {
   /**
     * A request to run all tests.
     */
-  case object Tests extends Request
+  case object Test extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.

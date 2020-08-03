@@ -164,13 +164,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("lsp/symbols") => Request.parseSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
-      case JString("packager/benchmark") => Ok(Request.Benchmarks)
+      case JString("packager/benchmark") => Ok(Request.Benchmark)
       case JString("packager/build") => Ok(Request.PackagerBuild)
       case JString("packager/buildDoc") => Ok(Request.PackagerBuildDoc)
       case JString("packager/buildJar") => Ok(Request.PackagerBuildJar)
       case JString("packager/buildPkg") => Ok(Request.PackagerBuildPkg)
       case JString("packager/main") => Ok(Request.Main)
-      case JString("packager/test") => Ok(Request.Tests)
+      case JString("packager/test") => Ok(Request.Test)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -199,7 +199,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.FoldingRange(uri) => processFoldingRange(uri)
     case Request.Goto(uri, pos) => processGoto(uri, pos)
     case Request.Main => processRunMain()
-    case Request.Tests => processRunTests()
+    case Request.Test => processRunTests()
     case Request.Shutdown => processShutdown()
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
