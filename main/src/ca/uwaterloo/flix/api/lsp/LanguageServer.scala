@@ -396,7 +396,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to run all benchmarks. Re-compiles and runs the program.
     */
   private def runBenchmarks(): JValue = {
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
+    // TODO: runBenchmarks
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
   /**
@@ -456,7 +457,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def packageBenchmark(projectRoot: Path): JValue = {
     // TODO: packageBenchmark
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
   /**
@@ -464,7 +465,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def runBuild(projectRoot: Path): JValue = {
     // TODO: runBuild
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
   /**
@@ -472,7 +473,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def runBuildDoc(projectRoot: Path): JValue = {
     // TODO: runBuildDoc
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
   /**
@@ -480,7 +481,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def runBuildJar(projectRoot: Path): JValue = {
     // TODO: runBuildJar
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
   /**
@@ -488,7 +489,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def runBuildPkg(projectRoot: Path): JValue = {
     // TODO: runBuildPkg
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
   /**
@@ -496,7 +497,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def packageTest(projectRoot: Path): JValue = {
     // TODO: packageTest
-    ("status" -> "success") ~ ("result" -> "not yet implemented")
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
   /**
