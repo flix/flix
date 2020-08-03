@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import java.net.InetSocketAddress
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -150,12 +151,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Determine the type of request.
     json \\ "request" match {
-      case JString("core/addUri") => Request.parseAddUri(json)
-      case JString("core/remUri") => Request.parseRemUri(json)
-      case JString("core/version") => Ok(Request.Version)
-      case JString("core/shutdown") => Ok(Request.Shutdown)
+      case JString("api/addUri") => Request.parseAddUri(json)
+      case JString("api/remUri") => Request.parseRemUri(json)
+      case JString("api/version") => Ok(Request.Version)
+      case JString("api/shutdown") => Ok(Request.Shutdown)
 
-      case JString("lsp/check") => Request.parseCheck(json)
+      case JString("lsp/check") => Ok(Request.Check)
       case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/context") => Request.parseContext(json)
@@ -164,13 +165,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("lsp/symbols") => Request.parseSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
-      case JString("packager/benchmark") => Ok(Request.Benchmark)
-      case JString("packager/build") => Ok(Request.PackagerBuild)
-      case JString("packager/buildDoc") => Ok(Request.PackagerBuildDoc)
-      case JString("packager/buildJar") => Ok(Request.PackagerBuildJar)
-      case JString("packager/buildPkg") => Ok(Request.PackagerBuildPkg)
-      case JString("packager/main") => Ok(Request.Main)
-      case JString("packager/test") => Ok(Request.Test)
+      case JString("pkg/benchmark") => Ok(Request.Benchmark)
+      case JString("pkg/build") => Request.parsePkgBuild(json)
+      case JString("pkg/buildDoc") => ???
+      case JString("pkg/buildJar") => ???
+      case JString("pkg/buildPkg") => ???
+      case JString("pkg/main") => Ok(Request.Main)
+      case JString("pkg/test") => Ok(Request.Test)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -192,18 +193,26 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       sources -= uri
       "status" -> "success"
 
-    case Request.Check() => processCheck()
-    case Request.CodeLens(uri) => processCodeLens(uri)
+    case Request.Shutdown => processShutdown()
+
+    case Request.Version => processVersion()
+
+    case Request.Check => processCheck()
+    case Request.Codelens(uri) => processCodelens(uri)
     case Request.Context(uri, pos) => processContext(uri, pos)
     case Request.Complete(uri, pos) => processComplete(uri, pos)
     case Request.FoldingRange(uri) => processFoldingRange(uri)
     case Request.Goto(uri, pos) => processGoto(uri, pos)
-    case Request.Main => processRunMain()
-    case Request.Test => processRunTests()
-    case Request.Shutdown => processShutdown()
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
-    case Request.Version => processVersion()
+
+    case Request.Benchmark => runBenchmarks()
+    case Request.PackagerBuild(projectRoot) => runBuild(projectRoot)
+    case Request.PackagerBuildDoc(projectRoot) => runBuildDoc(projectRoot)
+    case Request.PackagerBuildJar(projectRoot) => runBuildJar(projectRoot)
+    case Request.PackagerBuildPkg(projectRoot) => runBuildPkg(projectRoot)
+    case Request.Main => runMain()
+    case Request.Test => runTests()
 
   }
 
@@ -243,7 +252,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a codelens request.
     */
-  private def processCodeLens(uri: String)(implicit ws: WebSocket): JValue = {
+  private def processCodelens(uri: String)(implicit ws: WebSocket): JValue = {
     /**
       * Returns a code lens for main (if present).
       */
@@ -377,9 +386,24 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
+    * Processes a request to run all benchmarks. Re-compiles and runs the program.
+    */
+  private def runBenchmarks(): JValue = {
+    ???
+  }
+
+  private def runBuild(path: Path): JValue = ???
+
+  private def runBuildDoc(path: Path): JValue = ???
+
+  private def runBuildJar(path: Path): JValue = ???
+
+  private def runBuildPkg(path: Path): JValue = ???
+
+  /**
     * Processes a request to run main. Re-compiles and runs the program.
     */
-  private def processRunMain(): JValue = {
+  private def runMain(): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -404,7 +428,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run all tests. Re-compiles and runs all unit tests.
     */
-  private def processRunTests(): JValue = {
+  private def runTests(): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {

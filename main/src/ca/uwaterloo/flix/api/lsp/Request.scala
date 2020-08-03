@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import java.nio.file.{Path, Paths}
+
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
@@ -50,7 +52,7 @@ object Request {
   /**
     * A request to compile and check all source files.
     */
-  case class Check() extends Request
+  case object Check extends Request
 
   /**
     * A request to get the type and effect of an expression.
@@ -60,7 +62,7 @@ object Request {
   /**
     * A code lens request.
     */
-  case class CodeLens(uri: String) extends Request
+  case class Codelens(uri: String) extends Request
 
   /**
     * A request for code completion.
@@ -95,22 +97,22 @@ object Request {
   /**
     * A request to build the project.
     */
-  case object PackagerBuild extends Request
+  case class PackagerBuild(projectRoot: Path) extends Request
 
   /**
     * A request to build the project documentation.
     */
-  case object PackagerBuildDoc extends Request
+  case class PackagerBuildDoc(projectRoot: Path) extends Request
 
   /**
     * A request to build the JAR from the project.
     */
-  case object PackagerBuildJar extends Request
+  case class PackagerBuildJar(projectRoot: Path) extends Request
 
   /**
     * A request to build a Flix package from the project.
     */
-  case object PackagerBuildPkg extends Request
+  case class PackagerBuildPkg(projectRoot: Path) extends Request
 
   /**
     * A request to run main.
@@ -182,7 +184,7 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[CodeLens]] request.
+    * Tries to parse the given `json` value as a [[Codelens]] request.
     */
   def parseCodelens(json: json4s.JValue): Result[Request, String] = {
     val uriRes: Result[String, String] = json \\ "uri" match {
@@ -191,7 +193,7 @@ object Request {
     }
     for {
       uri <- uriRes
-    } yield Request.CodeLens(uri)
+    } yield Request.Codelens(uri)
   }
 
   /**
@@ -249,8 +251,16 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Check]] request.
+    * Tries to parse the given `json` value as a [[PackagerBuild]] request.
     */
-  def parseCheck(json: JValue): Result[Request, String] = Ok(Request.Check())
+  def parsePkgBuild(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackagerBuild(Paths.get(projectRoot))
+  }
 
 }
