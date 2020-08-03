@@ -226,13 +226,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
 
-    case Request.PackageBenchmark(projectRoot) => packageBenchmark(projectRoot)
-    case Request.PackageBuild(projectRoot) => runBuild(projectRoot)
-    case Request.PackageBuildDoc(projectRoot) => runBuildDoc(projectRoot)
-    case Request.PackageBuildJar(projectRoot) => runBuildJar(projectRoot)
-    case Request.PackageBuildPkg(projectRoot) => runBuildPkg(projectRoot)
-    case Request.PackageInit(projectRoot) => runInit(projectRoot)
-    case Request.PackageTest(projectRoot) => packageTest(projectRoot)
+    case Request.PackageBenchmark(projectRoot) => benchmarkPackage(projectRoot)
+    case Request.PackageBuild(projectRoot) => buildPackage(projectRoot)
+    case Request.PackageBuildDoc(projectRoot) => buildDoc(projectRoot)
+    case Request.PackageBuildJar(projectRoot) => buildJar(projectRoot)
+    case Request.PackageBuildPkg(projectRoot) => buildPkg(projectRoot)
+    case Request.PackageInit(projectRoot) => initPackage(projectRoot)
+    case Request.PackageTest(projectRoot) => testPackage(projectRoot)
 
   }
 
@@ -468,7 +468,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run all benchmarks in the project.
     */
-  private def packageBenchmark(projectRoot: Path): JValue = {
+  private def benchmarkPackage(projectRoot: Path): JValue = {
     Packager.benchmark(projectRoot, DefaultOptions)
     ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
@@ -476,7 +476,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to build the project.
     */
-  private def runBuild(projectRoot: Path): JValue = {
+  private def buildPackage(projectRoot: Path): JValue = {
     Packager.build(projectRoot, DefaultOptions) match {
       case None =>
         ("status" -> "failure")
@@ -488,7 +488,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to build the documentation.
     */
-  private def runBuildDoc(projectRoot: Path): JValue = {
+  private def buildDoc(projectRoot: Path): JValue = {
     // TODO: runBuildDoc
     ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
@@ -496,7 +496,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to build a jar from the project.
     */
-  private def runBuildJar(projectRoot: Path): JValue = {
+  private def buildJar(projectRoot: Path): JValue = {
     Packager.buildJar(projectRoot, DefaultOptions)
     ("status" -> "success")
   }
@@ -504,7 +504,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to build a flix package from the project.
     */
-  private def runBuildPkg(projectRoot: Path): JValue = {
+  private def buildPkg(projectRoot: Path): JValue = {
     Packager.buildPkg(projectRoot, DefaultOptions)
     ("status" -> "success")
   }
@@ -512,7 +512,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to init a new flix package.
     */
-  private def runInit(projectRoot: Path): JValue = {
+  private def initPackage(projectRoot: Path): JValue = {
     // TODO: runBuildPkg
     ("status" -> "success")
   }
@@ -520,7 +520,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run all tests in the package.
     */
-  private def packageTest(projectRoot: Path): JValue = {
+  private def testPackage(projectRoot: Path): JValue = {
     // TODO: packageTest
     ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
