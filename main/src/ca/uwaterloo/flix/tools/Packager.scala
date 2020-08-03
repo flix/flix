@@ -18,6 +18,8 @@ import scala.collection.mutable
   */
 object Packager {
 
+  // TODO: Every operation should return a value that determines whether it was successful.
+
   /**
     * Initializes a new flix project at the given path `p`.
     *

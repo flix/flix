@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import java.nio.file.{Path, Paths}
+
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
@@ -38,9 +40,34 @@ object Request {
   case class RemUri(uri: String) extends Request
 
   /**
+    * A request to return the compiler version.
+    */
+  case object Version extends Request
+
+  /**
+    * A request to shutdown the language server.
+    */
+  case object Shutdown extends Request
+
+  /**
+    * A request to run all benchmarks using the added URIs.
+    */
+  case object RunBenchmarks extends Request
+
+  /**
+    * A request to run main using the added URIs.
+    */
+  case object RunMain extends Request
+
+  /**
+    * A request to run all tests using the added URIs.
+    */
+  case object RunTests extends Request
+
+  /**
     * A request to compile and check all source files.
     */
-  case class Check() extends Request
+  case object Check extends Request
 
   /**
     * A request to get the type and effect of an expression.
@@ -50,7 +77,7 @@ object Request {
   /**
     * A code lens request.
     */
-  case class CodeLens(uri: String) extends Request
+  case class Codelens(uri: String) extends Request
 
   /**
     * A request for code completion.
@@ -68,21 +95,6 @@ object Request {
   case class FoldingRange(uri: String) extends Request
 
   /**
-    * A request to run main.
-    */
-  case object RunMain extends Request
-
-  /**
-    * A request to run all tests.
-    */
-  case object RunTests extends Request
-
-  /**
-    * A request to shutdown the language server.
-    */
-  case object Shutdown extends Request
-
-  /**
     * A request for all symbols.
     */
   case class Symbols(uri: String) extends Request
@@ -93,9 +105,39 @@ object Request {
   case class Uses(uri: String, pos: Position) extends Request
 
   /**
-    * A request to return the compiler version.
+    * A request to run all benchmarks in the project.
     */
-  case object Version extends Request
+  case class PackageBenchmark(projectRoot: Path) extends Request
+
+  /**
+    * A request to build the project.
+    */
+  case class PackageBuild(projectRoot: Path) extends Request
+
+  /**
+    * A request to build the project documentation.
+    */
+  case class PackageBuildDoc(projectRoot: Path) extends Request
+
+  /**
+    * A request to build the JAR from the project.
+    */
+  case class PackageBuildJar(projectRoot: Path) extends Request
+
+  /**
+    * A request to build a Flix package from the project.
+    */
+  case class PackageBuildPkg(projectRoot: Path) extends Request
+
+  /**
+    * A request to init a new project.
+    */
+  case class PackageInit(projectRoot: Path) extends Request
+
+  /**
+    * A request to run all tests in the project.
+    */
+  case class PackageTest(projectRoot: Path) extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
@@ -157,16 +199,16 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[CodeLens]] request.
+    * Tries to parse the given `json` value as a [[Codelens]] request.
     */
-  def parseCodeLens(json: json4s.JValue): Result[Request, String] = {
+  def parseCodelens(json: json4s.JValue): Result[Request, String] = {
     val uriRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
     }
     for {
       uri <- uriRes
-    } yield Request.CodeLens(uri)
+    } yield Request.Codelens(uri)
   }
 
   /**
@@ -224,8 +266,94 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Check]] request.
+    * Tries to parse the given `json` value as a [[PackageBenchmark]] request.
     */
-  def parseCheck(json: JValue): Result[Request, String] = Ok(Request.Check())
+  def parsePackageBenchmark(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackageBenchmark(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PackageBuild]] request.
+    */
+  def parsePackageBuild(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackageBuild(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PackageBuildDoc]] request.
+    */
+  def parsePackageBuildDoc(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackageBuildDoc(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PackageBuildJar]] request.
+    */
+  def parsePackageBuildJar(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackageBuildJar(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PackageBuildPkg]] request.
+    */
+  def parsePackageBuildPkg(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackageBuildPkg(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PackageInit]] request.
+    */
+  def parsePackageInit(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackageInit(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PackageTest]] request.
+    */
+  def parsePackageTest(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackageTest(Paths.get(projectRoot))
+  }
 
 }

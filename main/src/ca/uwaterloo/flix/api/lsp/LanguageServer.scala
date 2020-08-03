@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import java.net.InetSocketAddress
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -24,10 +25,12 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.tools.Tester
+import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
+import ca.uwaterloo.flix.util.Options
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Result}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -51,13 +54,13 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"request": "addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
+  * > {"request": "api/addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
   * < {"status":"success"}
   *
-  * > {"request": "check"}
+  * > {"request": "lsp/check"}
   * < {"status":"success","time":1749621900}
   *
-  * > {"request": "context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
+  * > {"request": "lsp/context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
   * < {"status":"success","result":{"tpe":"Int32","eff":"true"}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
@@ -68,6 +71,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * The custom date format to use for logging.
     */
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
+
+  /**
+    * The audience used for formatting.
+    */
+  implicit val DefaultAudience: Audience = Audience.External
+
+  /**
+    * The terminal context used for formatting.
+    */
+  implicit val DefaultTerminalContext: TerminalContext = TerminalContext.NoTerminal
+
+  /**
+    * The default compiler options.
+    */
+  val DefaultOptions: Options = Options.Default
 
   /**
     * A map from source URIs to source code.
@@ -83,11 +101,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * The current reverse index. The index is empty until the source code is compiled.
     */
   var index: Index = Index.empty
-
-  /**
-    * The audience used for formatting.
-    */
-  implicit val audience: Audience = Audience.External
 
   /**
     * Invoked when the server is started.
@@ -150,20 +163,32 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Determine the type of request.
     json \\ "request" match {
-      case JString("addUri") => Request.parseAddUri(json)
-      case JString("remUri") => Request.parseRemUri(json)
-      case JString("check") => Request.parseCheck(json)
-      case JString("codeLens") => Request.parseCodeLens(json)
-      case JString("complete") => Request.parseComplete(json)
-      case JString("context") => Request.parseContext(json)
-      case JString("foldingRange") => Request.parseFoldingRange(json)
-      case JString("goto") => Request.parseGoto(json)
-      case JString("runMain") => Ok(Request.RunMain)
-      case JString("runTests") => Ok(Request.RunTests)
-      case JString("shutdown") => Ok(Request.Shutdown)
-      case JString("symbols") => Request.parseSymbols(json)
-      case JString("uses") => Request.parseUses(json)
-      case JString("version") => Ok(Request.Version)
+      case JString("api/addUri") => Request.parseAddUri(json)
+      case JString("api/remUri") => Request.parseRemUri(json)
+      case JString("api/version") => Ok(Request.Version)
+      case JString("api/shutdown") => Ok(Request.Shutdown)
+
+      case JString("cmd/runBenchmarks") => Ok(Request.RunBenchmarks)
+      case JString("cmd/runMain") => Ok(Request.RunMain)
+      case JString("cmd/runTests") => Ok(Request.RunTests)
+
+      case JString("lsp/check") => Ok(Request.Check)
+      case JString("lsp/codelens") => Request.parseCodelens(json)
+      case JString("lsp/complete") => Request.parseComplete(json)
+      case JString("lsp/context") => Request.parseContext(json)
+      case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
+      case JString("lsp/goto") => Request.parseGoto(json)
+      case JString("lsp/symbols") => Request.parseSymbols(json)
+      case JString("lsp/uses") => Request.parseUses(json)
+
+      case JString("pkg/benchmark") => Request.parsePackageBenchmark(json)
+      case JString("pkg/build") => Request.parsePackageBuild(json)
+      case JString("pkg/buildDoc") => Request.parsePackageBuildDoc(json)
+      case JString("pkg/buildJar") => Request.parsePackageBuildJar(json)
+      case JString("pkg/buildPkg") => Request.parsePackageBuildPkg(json)
+      case JString("pkg/init") => Request.parsePackageInit(json)
+      case JString("pkg/test") => Request.parsePackageTest(json)
+
       case s => Err(s"Unsupported request: '$s'.")
     }
   } catch {
@@ -184,18 +209,30 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       sources -= uri
       "status" -> "success"
 
-    case Request.Check() => processCheck()
-    case Request.CodeLens(uri) => processCodeLens(uri)
+    case Request.Shutdown => processShutdown()
+
+    case Request.Version => processVersion()
+
+    case Request.RunBenchmarks => runBenchmarks()
+    case Request.RunMain => runMain()
+    case Request.RunTests => runTests()
+
+    case Request.Check => processCheck()
+    case Request.Codelens(uri) => processCodelens(uri)
     case Request.Context(uri, pos) => processContext(uri, pos)
     case Request.Complete(uri, pos) => processComplete(uri, pos)
     case Request.FoldingRange(uri) => processFoldingRange(uri)
     case Request.Goto(uri, pos) => processGoto(uri, pos)
-    case Request.RunMain => processRunMain()
-    case Request.RunTests => processRunTests()
-    case Request.Shutdown => processShutdown()
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
-    case Request.Version => processVersion()
+
+    case Request.PackageBenchmark(projectRoot) => benchmarkPackage(projectRoot)
+    case Request.PackageBuild(projectRoot) => buildPackage(projectRoot)
+    case Request.PackageBuildDoc(projectRoot) => buildDoc(projectRoot)
+    case Request.PackageBuildJar(projectRoot) => buildJar(projectRoot)
+    case Request.PackageBuildPkg(projectRoot) => buildPkg(projectRoot)
+    case Request.PackageInit(projectRoot) => initPackage(projectRoot)
+    case Request.PackageTest(projectRoot) => testPackage(projectRoot)
 
   }
 
@@ -235,7 +272,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a codelens request.
     */
-  private def processCodeLens(uri: String)(implicit ws: WebSocket): JValue = {
+  private def processCodelens(uri: String)(implicit ws: WebSocket): JValue = {
     /**
       * Returns a code lens for main (if present).
       */
@@ -369,9 +406,17 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
+    * Processes a request to run all benchmarks. Re-compiles and runs the program.
+    */
+  private def runBenchmarks(): JValue = {
+    // TODO: runBenchmarks
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+  }
+
+  /**
     * Processes a request to run main. Re-compiles and runs the program.
     */
-  private def processRunMain(): JValue = {
+  private def runMain(): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -396,7 +441,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run all tests. Re-compiles and runs all unit tests.
     */
-  private def processRunTests(): JValue = {
+  private def runTests(): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -420,6 +465,65 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     }
   }
 
+  /**
+    * Processes a request to run all benchmarks in the project.
+    */
+  private def benchmarkPackage(projectRoot: Path): JValue = {
+    Packager.benchmark(projectRoot, DefaultOptions)
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+  }
+
+  /**
+    * Processes a request to build the project.
+    */
+  private def buildPackage(projectRoot: Path): JValue = {
+    Packager.build(projectRoot, DefaultOptions) match {
+      case None =>
+        "status" -> "failure"
+      case Some(_) =>
+        "status" -> "success"
+    }
+  }
+
+  /**
+    * Processes a request to build the documentation.
+    */
+  private def buildDoc(projectRoot: Path): JValue = {
+    // TODO: runBuildDoc
+    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+  }
+
+  /**
+    * Processes a request to build a jar from the project.
+    */
+  private def buildJar(projectRoot: Path): JValue = {
+    Packager.buildJar(projectRoot, DefaultOptions)
+    "status" -> "success"
+  }
+
+  /**
+    * Processes a request to build a flix package from the project.
+    */
+  private def buildPkg(projectRoot: Path): JValue = {
+    Packager.buildPkg(projectRoot, DefaultOptions)
+    "status" -> "success"
+  }
+
+  /**
+    * Processes a request to init a new flix package.
+    */
+  private def initPackage(projectRoot: Path): JValue = {
+    Packager.init(projectRoot, DefaultOptions)
+    "status" -> "success"
+  }
+
+  /**
+    * Processes a request to run all tests in the package.
+    */
+  private def testPackage(projectRoot: Path): JValue = {
+    Packager.test(projectRoot, DefaultOptions)
+    "status" -> "success"
+  }
 
   /**
     * Processes a shutdown request.
