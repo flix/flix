@@ -167,9 +167,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
       case JString("pkg/benchmark") => Ok(Request.Benchmark)
       case JString("pkg/build") => Request.parsePkgBuild(json)
-      case JString("pkg/buildDoc") => ???
-      case JString("pkg/buildJar") => ???
-      case JString("pkg/buildPkg") => ???
+      case JString("pkg/buildDoc") => Request.parsePkgBuildDoc(json)
+      case JString("pkg/buildJar") => Request.parsePkgBuildJar(json)
+      case JString("pkg/buildPkg") => Request.parsePkgBuildPkg(json)
       case JString("pkg/main") => Ok(Request.Main)
       case JString("pkg/test") => Ok(Request.Test)
 
@@ -389,16 +389,36 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to run all benchmarks. Re-compiles and runs the program.
     */
   private def runBenchmarks(): JValue = {
-    ???
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
   }
 
-  private def runBuild(path: Path): JValue = ???
+  /**
+    * Processes a request to build the project.
+    */
+  private def runBuild(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
 
-  private def runBuildDoc(path: Path): JValue = ???
+  /**
+    * Processes a request to build the documentation.
+    */
+  private def runBuildDoc(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
 
-  private def runBuildJar(path: Path): JValue = ???
+  /**
+    * Processes a request to build a jar from the project.
+    */
+  private def runBuildJar(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
 
-  private def runBuildPkg(path: Path): JValue = ???
+  /**
+    * Processes a request to build a flix package from the project.
+    */
+  private def runBuildPkg(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
 
   /**
     * Processes a request to run main. Re-compiles and runs the program.

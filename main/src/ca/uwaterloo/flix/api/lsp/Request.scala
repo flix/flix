@@ -263,4 +263,43 @@ object Request {
     } yield Request.PackagerBuild(Paths.get(projectRoot))
   }
 
+  /**
+    * Tries to parse the given `json` value as a [[PackagerBuildDoc]] request.
+    */
+  def parsePkgBuildDoc(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackagerBuildDoc(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PackagerBuildJar]] request.
+    */
+  def parsePkgBuildJar(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackagerBuildJar(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PackagerBuildPkg]] request.
+    */
+  def parsePkgBuildPkg(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PackagerBuildPkg(Paths.get(projectRoot))
+  }
+
 }
