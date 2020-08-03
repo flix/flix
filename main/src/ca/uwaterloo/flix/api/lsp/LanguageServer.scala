@@ -25,10 +25,12 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.tools.Tester
+import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
+import ca.uwaterloo.flix.util.Options
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Result}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -71,6 +73,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
+    * The audience used for formatting.
+    */
+  implicit val DefaultAudience: Audience = Audience.External
+
+  /**
+    * The terminal context used for formatting.
+    */
+  implicit val DefaultTerminalContext: TerminalContext = TerminalContext.NoTerminal
+
+  /**
+    * The default compiler options.
+    */
+  val DefaultOptions: Options = Options.Default
+
+  /**
     * A map from source URIs to source code.
     */
   val sources: mutable.Map[String, String] = mutable.Map.empty
@@ -84,11 +101,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * The current reverse index. The index is empty until the source code is compiled.
     */
   var index: Index = Index.empty
-
-  /**
-    * The audience used for formatting.
-    */
-  implicit val audience: Audience = Audience.External
 
   /**
     * Invoked when the server is started.
@@ -464,8 +476,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to build the project.
     */
   private def runBuild(projectRoot: Path): JValue = {
-    // TODO: runBuild
-    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+    Packager.build(projectRoot, DefaultOptions) match {
+      case None =>
+        ("status" -> "failure")
+      case Some(_) =>
+        ("status" -> "success")
+    }
   }
 
   /**
