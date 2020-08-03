@@ -68,6 +68,11 @@ object Request {
   case class FoldingRange(uri: String) extends Request
 
   /**
+    * A request to run all benchmarks.
+    */
+  case object RunBenchmarks extends Request
+
+  /**
     * A request to run main.
     */
   case object RunMain extends Request
