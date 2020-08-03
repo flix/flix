@@ -513,7 +513,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to init a new flix package.
     */
   private def initPackage(projectRoot: Path): JValue = {
-    // TODO: runBuildPkg
+    Packager.init(projectRoot, DefaultOptions)
     ("status" -> "success")
   }
 
@@ -521,7 +521,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to run all tests in the package.
     */
   private def testPackage(projectRoot: Path): JValue = {
-    // TODO: packageTest
+    Packager.test(projectRoot, DefaultOptions)
     ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
