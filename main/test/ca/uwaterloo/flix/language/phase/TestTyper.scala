@@ -221,4 +221,42 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError](result) // TODO use more specific error once TypeError logic is more defined
   }
+
+  test("TestUninhabitedTypeCast.01") {
+    val input = "def f(): Int = 1 as Pure"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.UninhabitedTypeCast](result)
+  }
+
+  test("TestUninhabitedTypeCast.02") {
+    val input =
+      """
+        |enum E[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(): Int = 1 as E[Int]""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.UninhabitedTypeCast](result)
+  }
+
+  test("TestNonBoolEffectCast.01") {
+    val input = "def f(): Int = 1 as & Int"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.NonBoolEffectCast](result)
+  }
+
+  test("TestNonBoolEffectCast.02") {
+    val input = "def f(): Int = 1 as Int & Int"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.NonBoolEffectCast](result)
+  }
+
+ ignore("IllegalEffect.01") { // MATT currently causes stack overflow (also affects cases outside casts)
+   val input = "def f(): Int = 1 as Int & Int and Int"
+   val result = compile(input, DefaultOptions)
+   result match {
+     case Validation.Failure(errors) => errors.foreach(println)
+   }
+ }
 }

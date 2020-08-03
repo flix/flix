@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification.{InferMonad, Substitution}
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToErr, ToOk}
 import ca.uwaterloo.flix.util._
 
 
@@ -902,7 +902,24 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
+
+        // type casts must be of star kind
+        def checkTypeCastKind(tpe: Option[Type]): Result[Unit, TypeError] = tpe match {
+          case None => ().toOk
+          case Some(t) if t.kind <:: Kind.Star => ().toOk
+          case Some(t) => TypeError.UninhabitedTypeCast(t, loc).toErr
+        }
+
+        // effect casts must be of bool kind
+        def checkEffectCastKind(tpe: Option[Type]): Result[Unit, TypeError] = tpe match {
+          case None => ().toOk
+          case Some(t) if t.kind <:: Kind.Bool => ().toOk
+          case Some(t) => TypeError.NonBoolEffectCast(t, loc).toErr
+        }
+
         for {
+          _ <- liftRes(checkTypeCastKind(declaredTyp))
+          _ <- liftRes(checkEffectCastKind(declaredEff))
           (actualTyp, actualEff) <- visitExp(exp)
           resultTyp <- unifyTypeM(tvar, declaredTyp.getOrElse(actualTyp), loc)
           resultEff = declaredEff.getOrElse(actualEff)
