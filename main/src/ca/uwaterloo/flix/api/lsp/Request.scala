@@ -184,7 +184,7 @@ object Request {
   /**
     * Tries to parse the given `json` value as a [[CodeLens]] request.
     */
-  def parseCodeLens(json: json4s.JValue): Result[Request, String] = {
+  def parseCodelens(json: json4s.JValue): Result[Request, String] = {
     val uriRes: Result[String, String] = json \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")

@@ -156,7 +156,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("core/shutdown") => Ok(Request.Shutdown)
 
       case JString("lsp/check") => Request.parseCheck(json)
-      case JString("lsp/codelens") => Request.parseCodeLens(json)
+      case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/context") => Request.parseContext(json)
       case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
