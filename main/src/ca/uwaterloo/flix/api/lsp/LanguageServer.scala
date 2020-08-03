@@ -207,10 +207,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Uses(uri, pos) => processUses(uri, pos)
 
     case Request.Benchmark => runBenchmarks()
-    case Request.PackagerBuild(projectRoot) => runBuild(projectRoot)
-    case Request.PackagerBuildDoc(projectRoot) => runBuildDoc(projectRoot)
-    case Request.PackagerBuildJar(projectRoot) => runBuildJar(projectRoot)
-    case Request.PackagerBuildPkg(projectRoot) => runBuildPkg(projectRoot)
+    case Request.PkgBuild(projectRoot) => runBuild(projectRoot)
+    case Request.PkgBuildDoc(projectRoot) => runBuildDoc(projectRoot)
+    case Request.PkgBuildJar(projectRoot) => runBuildJar(projectRoot)
+    case Request.PkgBuildPkg(projectRoot) => runBuildPkg(projectRoot)
     case Request.Main => runMain()
     case Request.Test => runTests()
 

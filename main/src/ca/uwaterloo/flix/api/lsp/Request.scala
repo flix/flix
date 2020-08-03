@@ -97,22 +97,22 @@ object Request {
   /**
     * A request to build the project.
     */
-  case class PackagerBuild(projectRoot: Path) extends Request
+  case class PkgBuild(projectRoot: Path) extends Request
 
   /**
     * A request to build the project documentation.
     */
-  case class PackagerBuildDoc(projectRoot: Path) extends Request
+  case class PkgBuildDoc(projectRoot: Path) extends Request
 
   /**
     * A request to build the JAR from the project.
     */
-  case class PackagerBuildJar(projectRoot: Path) extends Request
+  case class PkgBuildJar(projectRoot: Path) extends Request
 
   /**
     * A request to build a Flix package from the project.
     */
-  case class PackagerBuildPkg(projectRoot: Path) extends Request
+  case class PkgBuildPkg(projectRoot: Path) extends Request
 
   /**
     * A request to run main.
@@ -251,7 +251,7 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[PackagerBuild]] request.
+    * Tries to parse the given `json` value as a [[PkgBuild]] request.
     */
   def parsePkgBuild(json: JValue): Result[Request, String] = {
     val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
@@ -260,11 +260,11 @@ object Request {
     }
     for {
       projectRoot <- projectRootUri
-    } yield Request.PackagerBuild(Paths.get(projectRoot))
+    } yield Request.PkgBuild(Paths.get(projectRoot))
   }
 
   /**
-    * Tries to parse the given `json` value as a [[PackagerBuildDoc]] request.
+    * Tries to parse the given `json` value as a [[PkgBuildDoc]] request.
     */
   def parsePkgBuildDoc(json: JValue): Result[Request, String] = {
     val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
@@ -273,11 +273,11 @@ object Request {
     }
     for {
       projectRoot <- projectRootUri
-    } yield Request.PackagerBuildDoc(Paths.get(projectRoot))
+    } yield Request.PkgBuildDoc(Paths.get(projectRoot))
   }
 
   /**
-    * Tries to parse the given `json` value as a [[PackagerBuildJar]] request.
+    * Tries to parse the given `json` value as a [[PkgBuildJar]] request.
     */
   def parsePkgBuildJar(json: JValue): Result[Request, String] = {
     val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
@@ -286,11 +286,11 @@ object Request {
     }
     for {
       projectRoot <- projectRootUri
-    } yield Request.PackagerBuildJar(Paths.get(projectRoot))
+    } yield Request.PkgBuildJar(Paths.get(projectRoot))
   }
 
   /**
-    * Tries to parse the given `json` value as a [[PackagerBuildPkg]] request.
+    * Tries to parse the given `json` value as a [[PkgBuildPkg]] request.
     */
   def parsePkgBuildPkg(json: JValue): Result[Request, String] = {
     val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
@@ -299,7 +299,7 @@ object Request {
     }
     for {
       projectRoot <- projectRootUri
-    } yield Request.PackagerBuildPkg(Paths.get(projectRoot))
+    } yield Request.PkgBuildPkg(Paths.get(projectRoot))
   }
 
 }
