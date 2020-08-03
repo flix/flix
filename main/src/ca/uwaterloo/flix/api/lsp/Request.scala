@@ -132,7 +132,7 @@ object Request {
   /**
     * A request to init a new project.
     */
-  case class Init(projectRoot: Path) extends Request
+  case class PackageInit(projectRoot: Path) extends Request
 
   /**
     * A request to run all tests in the project.
@@ -331,7 +331,7 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Init]] request.
+    * Tries to parse the given `json` value as a [[PackageInit]] request.
     */
   def parsePackageInit(json: JValue): Result[Request, String] = {
     val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
@@ -340,7 +340,7 @@ object Request {
     }
     for {
       projectRoot <- projectRootUri
-    } yield Request.Init(Paths.get(projectRoot))
+    } yield Request.PackageInit(Paths.get(projectRoot))
   }
 
   /**

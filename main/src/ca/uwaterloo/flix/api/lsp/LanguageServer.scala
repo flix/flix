@@ -231,6 +231,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.PackageBuildDoc(projectRoot) => runBuildDoc(projectRoot)
     case Request.PackageBuildJar(projectRoot) => runBuildJar(projectRoot)
     case Request.PackageBuildPkg(projectRoot) => runBuildPkg(projectRoot)
+    case Request.PackageInit(projectRoot) => runInit(projectRoot)
     case Request.PackageTest(projectRoot) => packageTest(projectRoot)
 
   }
@@ -468,7 +469,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to run all benchmarks in the project.
     */
   private def packageBenchmark(projectRoot: Path): JValue = {
-    // TODO: packageBenchmark
+    Packager.benchmark(projectRoot, DefaultOptions)
     ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
@@ -496,16 +497,24 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to build a jar from the project.
     */
   private def runBuildJar(projectRoot: Path): JValue = {
-    // TODO: runBuildJar
-    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+    Packager.buildJar(projectRoot, DefaultOptions)
+    ("status" -> "success")
   }
 
   /**
     * Processes a request to build a flix package from the project.
     */
   private def runBuildPkg(projectRoot: Path): JValue = {
+    Packager.buildPkg(projectRoot, DefaultOptions)
+    ("status" -> "success")
+  }
+
+  /**
+    * Processes a request to init a new flix package.
+    */
+  private def runInit(projectRoot: Path): JValue = {
     // TODO: runBuildPkg
-    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+    ("status" -> "success")
   }
 
   /**
