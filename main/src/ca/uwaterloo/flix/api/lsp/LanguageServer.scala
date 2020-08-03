@@ -150,8 +150,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Determine the type of request.
     json \\ "request" match {
-      case JString("addUri") => Request.parseAddUri(json)
-      case JString("remUri") => Request.parseRemUri(json)
+      case JString("core/addUri") => Request.parseAddUri(json)
+      case JString("core/remUri") => Request.parseRemUri(json)
+      case JString("core/version") => Ok(Request.Version)
+
       case JString("check") => Request.parseCheck(json)
       case JString("codeLens") => Request.parseCodeLens(json)
       case JString("complete") => Request.parseComplete(json)
@@ -164,7 +166,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("shutdown") => Ok(Request.Shutdown)
       case JString("symbols") => Request.parseSymbols(json)
       case JString("uses") => Request.parseUses(json)
-      case JString("version") => Ok(Request.Version)
+
       case JString("packager/build") => Ok(Request.PackagerBuild)
       case JString("packager/buildDoc") => Ok(Request.PackagerBuildDoc)
       case JString("packager/buildJar") => Ok(Request.PackagerBuildJar)

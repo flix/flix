@@ -38,6 +38,11 @@ object Request {
   case class RemUri(uri: String) extends Request
 
   /**
+    * A request to return the compiler version.
+    */
+  case object Version extends Request
+
+  /**
     * A request to compile and check all source files.
     */
   case class Check() extends Request
@@ -116,11 +121,6 @@ object Request {
     * A request to build a Flix package from the project.
     */
   case object PackagerBuildPkg extends Request
-
-  /**
-    * A request to return the compiler version.
-    */
-  case object Version extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
