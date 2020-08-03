@@ -479,9 +479,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def buildPackage(projectRoot: Path): JValue = {
     Packager.build(projectRoot, DefaultOptions) match {
       case None =>
-        ("status" -> "failure")
+        "status" -> "failure"
       case Some(_) =>
-        ("status" -> "success")
+        "status" -> "success"
     }
   }
 
@@ -498,7 +498,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def buildJar(projectRoot: Path): JValue = {
     Packager.buildJar(projectRoot, DefaultOptions)
-    ("status" -> "success")
+    "status" -> "success"
   }
 
   /**
@@ -506,7 +506,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def buildPkg(projectRoot: Path): JValue = {
     Packager.buildPkg(projectRoot, DefaultOptions)
-    ("status" -> "success")
+    "status" -> "success"
   }
 
   /**
@@ -514,7 +514,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def initPackage(projectRoot: Path): JValue = {
     Packager.init(projectRoot, DefaultOptions)
-    ("status" -> "success")
+    "status" -> "success"
   }
 
   /**
@@ -522,7 +522,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def testPackage(projectRoot: Path): JValue = {
     Packager.test(projectRoot, DefaultOptions)
-    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+    "status" -> "success"
   }
 
   /**
