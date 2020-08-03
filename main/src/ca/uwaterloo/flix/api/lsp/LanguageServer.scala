@@ -156,9 +156,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("api/version") => Ok(Request.Version)
       case JString("api/shutdown") => Ok(Request.Shutdown)
 
-      case JString("cmd/benchmark") => Ok(Request.Benchmark)
-      case JString("cmd/main") => Ok(Request.Benchmark)
-      case JString("cmd/test") => Ok(Request.Test)
+      case JString("cmd/runBenchmarks") => Ok(Request.RunBenchmarks)
+      case JString("cmd/runMain") => Ok(Request.RunMain)
+      case JString("cmd/runTests") => Ok(Request.RunTests)
 
       case JString("lsp/check") => Ok(Request.Check)
       case JString("lsp/codelens") => Request.parseCodelens(json)
@@ -201,9 +201,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.Version => processVersion()
 
-    case Request.Benchmark => runBenchmarks()
-    case Request.Main => runMain()
-    case Request.Test => runTests()
+    case Request.RunBenchmarks => runBenchmarks()
+    case Request.RunMain => runMain()
+    case Request.RunTests => runTests()
 
     case Request.Check => processCheck()
     case Request.Codelens(uri) => processCodelens(uri)
@@ -214,10 +214,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
 
+    case Request.PkgBenchmark(projectRoot) => ??? // TODO
     case Request.Build(projectRoot) => runBuild(projectRoot)
     case Request.BuildDoc(projectRoot) => runBuildDoc(projectRoot)
     case Request.BuildJar(projectRoot) => runBuildJar(projectRoot)
     case Request.BuildPkg(projectRoot) => runBuildPkg(projectRoot)
+      // TODO: Init
+    case Request.PkgTest(projectRoot) => ??? // TODO
 
   }
 

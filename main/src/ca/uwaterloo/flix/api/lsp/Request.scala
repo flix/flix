@@ -50,6 +50,21 @@ object Request {
   case object Shutdown extends Request
 
   /**
+    * A request to run all benchmarks using the added URIs.
+    */
+  case object RunBenchmarks extends Request
+
+  /**
+    * A request to run main using the added URIs.
+    */
+  case object RunMain extends Request
+
+  /**
+    * A request to run all tests using the added URIs.
+    */
+  case object RunTests extends Request
+
+  /**
     * A request to compile and check all source files.
     */
   case object Check extends Request
@@ -90,9 +105,9 @@ object Request {
   case class Uses(uri: String, pos: Position) extends Request
 
   /**
-    * A request to run all benchmarks.
+    * A request to run all benchmarks in the project.
     */
-  case object Benchmark extends Request
+  case class PkgBenchmark(projectRoot: Path) extends Request
 
   /**
     * A request to build the project.
@@ -115,14 +130,9 @@ object Request {
   case class BuildPkg(projectRoot: Path) extends Request
 
   /**
-    * A request to run main.
+    * A request to run all tests in the project.
     */
-  case object Main extends Request
-
-  /**
-    * A request to run all tests.
-    */
-  case object Test extends Request
+  case class PkgTest(projectRoot: Path) extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
@@ -251,6 +261,19 @@ object Request {
   }
 
   /**
+    * Tries to parse the given `json` value as a [[PkgBenchmark]] request.
+    */
+  def parsePkgBenchmark(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PkgBenchmark(Paths.get(projectRoot))
+  }
+
+  /**
     * Tries to parse the given `json` value as a [[Build]] request.
     */
   def parsePkgBuild(json: JValue): Result[Request, String] = {
@@ -300,6 +323,19 @@ object Request {
     for {
       projectRoot <- projectRootUri
     } yield Request.BuildPkg(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[PkgTest]] request.
+    */
+  def parsePkgTest(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.PkgTest(Paths.get(projectRoot))
   }
 
 }
