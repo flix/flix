@@ -52,13 +52,13 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"request": "addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
+  * > {"request": "api/addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
   * < {"status":"success"}
   *
-  * > {"request": "check"}
+  * > {"request": "lsp/check"}
   * < {"status":"success","time":1749621900}
   *
-  * > {"request": "context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
+  * > {"request": "lsp/context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
   * < {"status":"success","result":{"tpe":"Int32","eff":"true"}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
@@ -207,10 +207,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Uses(uri, pos) => processUses(uri, pos)
 
     case Request.Benchmark => runBenchmarks()
-    case Request.PkgBuild(projectRoot) => runBuild(projectRoot)
-    case Request.PkgBuildDoc(projectRoot) => runBuildDoc(projectRoot)
-    case Request.PkgBuildJar(projectRoot) => runBuildJar(projectRoot)
-    case Request.PkgBuildPkg(projectRoot) => runBuildPkg(projectRoot)
+    case Request.Build(projectRoot) => runBuild(projectRoot)
+    case Request.BuildDoc(projectRoot) => runBuildDoc(projectRoot)
+    case Request.BuildJar(projectRoot) => runBuildJar(projectRoot)
+    case Request.BuildPkg(projectRoot) => runBuildPkg(projectRoot)
     case Request.Main => runMain()
     case Request.Test => runTests()
 
