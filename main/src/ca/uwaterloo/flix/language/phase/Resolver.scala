@@ -113,7 +113,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
   }
 
-  // MATT docs
+  /**
+    * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
+    */
   def resolve(c0: NamedAst.Class, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(sym, tparam0, signatures) =>
       for {
@@ -122,7 +124,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       } yield ResolvedAst.Class(sym, tparams.head, sigs)
   }
 
-  // MATT docs
+  /**
+    * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
+    */
   def resolve(s0: NamedAst.Sig, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
     case NamedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, sc0, eff0, loc) =>
       for {
@@ -968,19 +972,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
-  // MATT rearrange?
-  def lookupSig(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Sig, ResolutionError] = {
-    val sigOpt = tryLookupSig(qname, ns0, prog0)
-
-    sigOpt match {
-      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case Some(s) => getSigIfAccessible(s, ns0, qname.loc)
-    }
-  }
-
   /**
-    * Tries to a def with the qualified name `qname` in the namespace `ns0`.
+    * Tries to find a def with the qualified name `qname` in the namespace `ns0`.
     */
   def tryLookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Def] = {
     // Check whether the name is fully-qualified.
@@ -1002,9 +995,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT s/def/sig
   /**
-    * Tries to a def with the qualified name `qname` in the namespace `ns0`.
+    * Finds the signature with the qualified name `qname` in the namespace `ns0`.
+    */
+  def lookupSig(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Sig, ResolutionError] = {
+    val sigOpt = tryLookupSig(qname, ns0, prog0)
+
+    sigOpt match {
+      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case Some(s) => getSigIfAccessible(s, ns0, qname.loc)
+    }
+  }
+
+  /**
+    * Tries to find a sig with the qualified name `qname` in the namespace `ns0`.
     */
   def tryLookupSig(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Sig] = {
     // Check whether the name is fully-qualified.
@@ -1026,7 +1030,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Finds the signature with the given `qname` from among the given `classes`.
+    */
   def findSig(classes: Map[String, NamedAst.Class], qname: Name.QName): Option[NamedAst.Sig] = {
     classes.flatMap {
       case (_, clazz) => clazz.signatures
@@ -1393,13 +1399,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
   }
 
-  // MATT s/def/sig
+  // MATT need to explore scopes
   /**
-    * Successfully returns the given definition `defn0` if it is accessible from the given namespace `ns0`.
+    * Successfully returns the given signature `sig0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
     *
-    * A definition `defn0` is accessible from a namespace `ns0` if:
+    * A signature `sig0` is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.

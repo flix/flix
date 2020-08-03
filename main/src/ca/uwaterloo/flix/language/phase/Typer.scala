@@ -50,7 +50,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Performs type inference and reassembly on all classes in the given AST root.
+    *
+    * Returns [[Err]] if a definition fails to type check.
+    */
   private def visitClasses(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
 
     def visitSig(sig: ResolvedAst.Sig): Validation[TypedAst.Sig, TypeError] = sig match {
@@ -70,7 +74,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (sym, TypedAst.Class(sym, tparams.head, sigs))
     }
 
-    // MATT more inline docs
+    // visit each class
     val result = root.classes.values.map(visitClass)
 
     Validation.sequence(result).map(_.toMap)
@@ -357,7 +361,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (Set.empty, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
-        val sig = root.classes.flatMap(_._2.signatures).find(_.sym == sym).get // MATT cleanup/comment
+        // find the declared signature corresponding to this symbol
+        val sig = root.classes.flatMap(_._2.signatures).find(_.sym == sym).get
         val clazz = sig.sym.clazz
         val sigType = Scheme.instantiate(sig.sc, InstantiateMode.Flexible)
         for {

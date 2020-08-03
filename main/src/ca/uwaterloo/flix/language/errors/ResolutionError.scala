@@ -211,11 +211,10 @@ object ResolutionError {
     }
   }
 
-  // MATT s/Def/Sig
   /**
-    * Inaccessible Def Error.
+    * Inaccessible Sig Error.
     *
-    * @param sym the def symbol.
+    * @param sym the sig symbol.
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */

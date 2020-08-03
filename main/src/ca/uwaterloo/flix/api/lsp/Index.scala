@@ -46,7 +46,9 @@ object Index {
     */
   def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
 
-  // MATT docs
+  /**
+    * Returns an index with the symbol 'sym' used at location 'loc'.
+    */
   def useOf(sym: Symbol.SigSym, loc: SourceLocation): Index = Index.empty.copy(sigUses = MultiMap.singleton(sym, loc))
 
   /**
