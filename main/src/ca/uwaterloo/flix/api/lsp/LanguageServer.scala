@@ -169,13 +169,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("lsp/symbols") => Request.parseSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
-      case JString("pkg/benchmark") => Request.parsePkgBenchmark(json)
-      case JString("pkg/build") => Request.parsePkgBuild(json)
-      case JString("pkg/buildDoc") => Request.parsePkgBuildDoc(json)
-      case JString("pkg/buildJar") => Request.parsePkgBuildJar(json)
-      case JString("pkg/buildPkg") => Request.parsePkgBuildPkg(json)
-      case JString("pkg/init") => Request.parsePkgInit(json)
-      case JString("pkg/test") => Request.parsePkgTest(json)
+      case JString("pkg/benchmark") => Request.parsePackageBenchmark(json)
+      case JString("pkg/build") => Request.parsePackageBuild(json)
+      case JString("pkg/buildDoc") => Request.parsePackageBuildDoc(json)
+      case JString("pkg/buildJar") => Request.parsePackageBuildJar(json)
+      case JString("pkg/buildPkg") => Request.parsePackageBuildPkg(json)
+      case JString("pkg/init") => Request.parsePackageInit(json)
+      case JString("pkg/test") => Request.parsePackageTest(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -214,12 +214,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
 
-    case Request.Benchmark(projectRoot) => ??? // TODO
-    case Request.Build(projectRoot) => runBuild(projectRoot)
-    case Request.BuildDoc(projectRoot) => runBuildDoc(projectRoot)
-    case Request.BuildJar(projectRoot) => runBuildJar(projectRoot)
-    case Request.BuildPkg(projectRoot) => runBuildPkg(projectRoot)
-    case Request.Test(projectRoot) => ??? // TODO
+    case Request.PackageBenchmark(projectRoot) => packageBenchmark(projectRoot)
+    case Request.PackageBuild(projectRoot) => runBuild(projectRoot)
+    case Request.PackageBuildDoc(projectRoot) => runBuildDoc(projectRoot)
+    case Request.PackageBuildJar(projectRoot) => runBuildJar(projectRoot)
+    case Request.PackageBuildPkg(projectRoot) => runBuildPkg(projectRoot)
+    case Request.PackageTest(projectRoot) => packageTest(projectRoot)
 
   }
 
@@ -452,6 +452,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   }
 
   /**
+    * Processes a request to run all benchmarks in the project.
+    */
+  private def packageBenchmark(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
+
+  /**
     * Processes a request to build the project.
     */
   private def runBuild(projectRoot: Path): JValue = {
@@ -476,6 +483,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to build a flix package from the project.
     */
   private def runBuildPkg(projectRoot: Path): JValue = {
+    ("status" -> "success") ~ ("result" -> "not yet implemented")
+  }
+
+  /**
+    * Processes a request to run all tests in the package.
+    */
+  private def packageTest(projectRoot: Path): JValue = {
     ("status" -> "success") ~ ("result" -> "not yet implemented")
   }
 
