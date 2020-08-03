@@ -455,6 +455,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to run all benchmarks in the project.
     */
   private def packageBenchmark(projectRoot: Path): JValue = {
+    // TODO: packageBenchmark
     ("status" -> "success") ~ ("result" -> "not yet implemented")
   }
 
@@ -462,6 +463,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to build the project.
     */
   private def runBuild(projectRoot: Path): JValue = {
+    // TODO: runBuild
     ("status" -> "success") ~ ("result" -> "not yet implemented")
   }
 
@@ -469,6 +471,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to build the documentation.
     */
   private def runBuildDoc(projectRoot: Path): JValue = {
+    // TODO: runBuildDoc
     ("status" -> "success") ~ ("result" -> "not yet implemented")
   }
 
@@ -476,6 +479,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to build a jar from the project.
     */
   private def runBuildJar(projectRoot: Path): JValue = {
+    // TODO: runBuildJar
     ("status" -> "success") ~ ("result" -> "not yet implemented")
   }
 
@@ -483,6 +487,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to build a flix package from the project.
     */
   private def runBuildPkg(projectRoot: Path): JValue = {
+    // TODO: runBuildPkg
     ("status" -> "success") ~ ("result" -> "not yet implemented")
   }
 
@@ -490,6 +495,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Processes a request to run all tests in the package.
     */
   private def packageTest(projectRoot: Path): JValue = {
+    // TODO: packageTest
     ("status" -> "success") ~ ("result" -> "not yet implemented")
   }
 
