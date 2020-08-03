@@ -98,6 +98,26 @@ object Request {
   case class Uses(uri: String, pos: Position) extends Request
 
   /**
+    * A request to build the project.
+    */
+  case object PackagerBuild extends Request
+
+  /**
+    * A request to build the project documentation.
+    */
+  case object PackagerBuildDoc extends Request
+
+  /**
+    * A request to build the JAR from the project.
+    */
+  case object PackagerBuildJar extends Request
+
+  /**
+    * A request to build a Flix package from the project.
+    */
+  case object PackagerBuildPkg extends Request
+
+  /**
     * A request to return the compiler version.
     */
   case object Version extends Request
