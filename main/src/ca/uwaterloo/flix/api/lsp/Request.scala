@@ -43,6 +43,11 @@ object Request {
   case object Version extends Request
 
   /**
+    * A request to shutdown the language server.
+    */
+  case object Shutdown extends Request
+
+  /**
     * A request to compile and check all source files.
     */
   case class Check() extends Request
@@ -73,26 +78,6 @@ object Request {
   case class FoldingRange(uri: String) extends Request
 
   /**
-    * A request to run all benchmarks.
-    */
-  case object RunBenchmarks extends Request
-
-  /**
-    * A request to run main.
-    */
-  case object RunMain extends Request
-
-  /**
-    * A request to run all tests.
-    */
-  case object RunTests extends Request
-
-  /**
-    * A request to shutdown the language server.
-    */
-  case object Shutdown extends Request
-
-  /**
     * A request for all symbols.
     */
   case class Symbols(uri: String) extends Request
@@ -101,6 +86,11 @@ object Request {
     * A request to find all uses of an entity.
     */
   case class Uses(uri: String, pos: Position) extends Request
+
+  /**
+    * A request to run all benchmarks.
+    */
+  case object Benchmarks extends Request
 
   /**
     * A request to build the project.
@@ -121,6 +111,16 @@ object Request {
     * A request to build a Flix package from the project.
     */
   case object PackagerBuildPkg extends Request
+
+  /**
+    * A request to run main.
+    */
+  case object Main extends Request
+
+  /**
+    * A request to run all tests.
+    */
+  case object Tests extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
