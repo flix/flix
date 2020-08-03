@@ -107,7 +107,7 @@ object Request {
   /**
     * A request to run all benchmarks in the project.
     */
-  case class PkgBenchmark(projectRoot: Path) extends Request
+  case class Benchmark(projectRoot: Path) extends Request
 
   /**
     * A request to build the project.
@@ -130,9 +130,14 @@ object Request {
   case class BuildPkg(projectRoot: Path) extends Request
 
   /**
+    * A request to init a new project.
+    */
+  case class Init(projectRoot: Path) extends Request
+
+  /**
     * A request to run all tests in the project.
     */
-  case class PkgTest(projectRoot: Path) extends Request
+  case class Test(projectRoot: Path) extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
@@ -261,7 +266,7 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[PkgBenchmark]] request.
+    * Tries to parse the given `json` value as a [[Benchmark]] request.
     */
   def parsePkgBenchmark(json: JValue): Result[Request, String] = {
     val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
@@ -270,7 +275,7 @@ object Request {
     }
     for {
       projectRoot <- projectRootUri
-    } yield Request.PkgBenchmark(Paths.get(projectRoot))
+    } yield Request.Benchmark(Paths.get(projectRoot))
   }
 
   /**
@@ -326,7 +331,20 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[PkgTest]] request.
+    * Tries to parse the given `json` value as a [[Init]] request.
+    */
+  def parsePkgInit(json: JValue): Result[Request, String] = {
+    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+    for {
+      projectRoot <- projectRootUri
+    } yield Request.Init(Paths.get(projectRoot))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Test]] request.
     */
   def parsePkgTest(json: JValue): Result[Request, String] = {
     val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
@@ -335,7 +353,7 @@ object Request {
     }
     for {
       projectRoot <- projectRootUri
-    } yield Request.PkgTest(Paths.get(projectRoot))
+    } yield Request.Test(Paths.get(projectRoot))
   }
 
 }

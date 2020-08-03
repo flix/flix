@@ -169,13 +169,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("lsp/symbols") => Request.parseSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
-      case JString("pkg/benchmark") => ??? // TODO
+      case JString("pkg/benchmark") => Request.parsePkgBenchmark(json)
       case JString("pkg/build") => Request.parsePkgBuild(json)
       case JString("pkg/buildDoc") => Request.parsePkgBuildDoc(json)
       case JString("pkg/buildJar") => Request.parsePkgBuildJar(json)
       case JString("pkg/buildPkg") => Request.parsePkgBuildPkg(json)
-      case JString("pkg/main") => ??? // TODO
-      case JString("pkg/test") => ??? // TODO
+      case JString("pkg/init") => Request.parsePkgInit(json)
+      case JString("pkg/test") => Request.parsePkgTest(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -214,13 +214,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.Symbols(uri) => processSymbols(uri)
     case Request.Uses(uri, pos) => processUses(uri, pos)
 
-    case Request.PkgBenchmark(projectRoot) => ??? // TODO
+    case Request.Benchmark(projectRoot) => ??? // TODO
     case Request.Build(projectRoot) => runBuild(projectRoot)
     case Request.BuildDoc(projectRoot) => runBuildDoc(projectRoot)
     case Request.BuildJar(projectRoot) => runBuildJar(projectRoot)
     case Request.BuildPkg(projectRoot) => runBuildPkg(projectRoot)
-      // TODO: Init
-    case Request.PkgTest(projectRoot) => ??? // TODO
+    case Request.Test(projectRoot) => ??? // TODO
 
   }
 
