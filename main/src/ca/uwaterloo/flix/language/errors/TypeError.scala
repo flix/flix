@@ -313,4 +313,10 @@ object TypeError {
       vt << Underline("Tip:") << " Regular casts can be written with the syntax 'x as t'."
     }
   }
+
+  case class KindError(loc: SourceLocation) extends TypeError { // MATT fill in
+    def summary: String = ""
+
+    def message: VirtualTerminal = new VirtualTerminal
+  }
 }

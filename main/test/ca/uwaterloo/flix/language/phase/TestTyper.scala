@@ -252,11 +252,9 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.NonBoolEffectCast](result)
   }
 
- ignore("IllegalEffect.01") { // MATT currently causes stack overflow (also affects cases outside casts)
+ test("IllegalEffect.01") {
    val input = "def f(): Int = 1 as Int & Int and Int"
    val result = compile(input, DefaultOptions)
-   result match {
-     case Validation.Failure(errors) => errors.foreach(println)
-   }
+   expectError[TypeError.KindError](result)
  }
 }
