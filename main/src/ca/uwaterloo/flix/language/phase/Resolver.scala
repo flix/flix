@@ -544,6 +544,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           } yield ResolvedAst.Expression.Ascribe(e, t, f, tvar, loc)
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, loc) =>
+
+
+          // type casts must be of star kind
+          def checkTypeCastKind(tpe: Option[Type]): Validation[Unit, ResolutionError] = tpe match {
+            case None => ().toSuccess
+            case Some(t) if t.kind <:: Kind.Star => ().toSuccess
+            case Some(t) => ResolutionError.IllegalUninhabitedType(t, loc).toFailure
+          }
+
+          // effect casts must be of bool kind
+          def checkEffectCastKind(tpe: Option[Type]): Validation[Unit, ResolutionError] = tpe match {
+            case None => ().toSuccess
+            case Some(t) if t.kind <:: Kind.Bool => ().toSuccess
+            case Some(t) => ResolutionError.IllegalEffect(t, loc).toFailure
+          }
+
           val declaredTypVal = declaredType match {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(lookupType(t, ns0, prog0))(x => Some(x))
@@ -557,6 +573,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- declaredTypVal
             f <- declaredEffVal
+            _ <- checkTypeCastKind(t)
+            _ <- checkEffectCastKind(f)
           } yield ResolvedAst.Expression.Cast(e, t, f, tvar, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1021,6 +1039,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
+      // MATT lift all the Type.mkWhatever; check kinds in mkApply
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
 
     case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess

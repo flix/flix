@@ -166,6 +166,12 @@ object ResolutionError {
     }
   }
 
+  // MATT fill in
+  case class IllegalEffect(tpe: Type, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = ""
+    override def message: VirtualTerminal = new VirtualTerminal
+  }
+
   /**
     * Inaccessible Def Error.
     *

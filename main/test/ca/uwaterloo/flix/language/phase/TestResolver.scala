@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
@@ -669,6 +670,38 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalUninhabitedType](result)
   }
+
+  test("TestUninhabitedTypeCast.08") {
+    val input = "def f(): Int = 1 as Pure"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("TestUninhabitedTypeCast.09") {
+    val input =
+      """
+        |enum E[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(): Int = 1 as E[Int]""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[errors.ResolutionError.IllegalUninhabitedType](result)
+  }
+
+
+  test("TestNonBoolEffectCast.01") {
+    val input = "def f(): Int = 1 as & Int"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalEffect](result)
+  }
+
+  test("TestNonBoolEffectCast.02") {
+    val input = "def f(): Int = 1 as Int & Int"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalEffect](result)
+  }
+
 
   test("IllegalTypeApplication.01") {
     val input =
