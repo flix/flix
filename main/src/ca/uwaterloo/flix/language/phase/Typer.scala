@@ -904,8 +904,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // A cast expression is unsound; the type system assumes the declared type is correct.
 
         for {
-          _ <- liftRes(kindCheckType(declaredTyp.getOrElse(Type.Unit))) // MATT temp hack bc option
-          _ <- liftRes(kindCheckType(declaredEff.getOrElse(Type.Unit))) // MATT temp hack bc option
           (actualTyp, actualEff) <- visitExp(exp)
           resultTyp <- unifyTypeM(tvar, declaredTyp.getOrElse(actualTyp), loc)
           resultEff = declaredEff.getOrElse(actualEff)
@@ -1843,29 +1841,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshVar(Kind.Schema)
 
-  // MATT docs
-  // MATT maybe move these to kind unification or something
-  private def kindCheckType(tpe: Type): Result[Kind, TypeError] = tpe match {
-    case Type.Var(id, kind, rigidity) => kind.toOk
-    case Type.Cst(tc) => tc.kind.toOk
-    case Type.Lambda(tvar, tpe) =>
-      for {
-        tvarKind <- kindCheckType(tvar)
-        tpeKind <- kindCheckType(tpe)
-      } yield tvarKind ->: tpeKind
-    case Type.Apply(tpe1, tpe2) =>
-      for {
-        kind1 <- kindCheckType(tpe1)
-        kind2 <- kindCheckType(tpe2)
-        resKind <- mkKindApply(kind1, kind2)
-      } yield resKind
-  }
-
-  // MATT docs
-  private def mkKindApply(kind1: Kind, kind2: Kind): Result[Kind, TypeError] = (kind1, kind2) match {
-    case (Kind.Arrow(k11, k12), k2) if k2 <:: k11 => k12.toOk
-    case _ => TypeError.KindError(SourceLocation.Unknown).toErr // MATT real error
-  }
   /**
     * Returns the Flix Type of a Java Class
     */

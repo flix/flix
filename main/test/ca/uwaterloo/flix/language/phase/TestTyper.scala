@@ -221,10 +221,4 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError](result) // TODO use more specific error once TypeError logic is more defined
   }
-
- test("IllegalEffect.01") {
-   val input = "def f(): Int = 1 as Int & Int and Int"
-   val result = compile(input, DefaultOptions)
-   expectError[TypeError.KindError](result)
- }
 }
