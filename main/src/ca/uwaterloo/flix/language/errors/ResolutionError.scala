@@ -162,11 +162,14 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "illegal type application.")
       vt << NewLine
+      vt << "Type constructor kind: '" << Red(FormatKind.formatKind(tpe1.kind)) << "'."
+      vt << "Argument kind: '" << Red(FormatKind.formatKind(tpe2.kind)) << "'."
+      vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Ensure the first type is a type constructor." << NewLine
       vt << "  (2)  Ensure the type has the correct number of parameters." << NewLine
-      vt << "  (3)  Ensure the type constructor accepts the given parameter kinds." << NewLine
+      vt << "  (3)  Ensure the type constructor accepts the given argument kinds." << NewLine
     }
   }
 

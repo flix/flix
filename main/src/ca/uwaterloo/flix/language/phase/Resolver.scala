@@ -1529,7 +1529,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Create a well-formed type applying `tpe` to `args`.
     */
   private def mkApply(tpe: Type, args: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    fold(args, tpe)(mkApply(_, _, loc))
+    Validation.fold(args, tpe)(mkApply(_, _, loc))
   }
 
   /**
