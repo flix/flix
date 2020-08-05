@@ -105,15 +105,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       throw InternalCompilerException(s"Unexpected declaration")
   }
 
+  /**
+    * Performs weeding on the given class declaration `c0`.
+    */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[WeededAst.Declaration.Class, WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, sp1, mods, classConstrant, decls, sp2) =>
+    case ParsedAst.Declaration.Class(doc0, mods, sp1, ident, tparams, sigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline))
-      traverse(decls.map(_.asInstanceOf[ParsedAst.Declaration.Sig]))(visitSig) map { // MATT termporarily casting to Sig
-        sigs => WeededAst.Declaration.Class(Name.Ident(sp1, "myClass", sp2), WeededAst.TypeParams.Elided, sigs, loc) // MATT need to parse an ident, class tparams; need to add docs, annotations to other asts
+      val tparamsVal = visitTypeParams(tparams)
+      traverse(sigs)(visitSig) map {
+        sigs => WeededAst.Declaration.Class(ident, tparamsVal, sigs, loc) // MATT need to parse need to add docs, modifiers to other asts
       }
-
   }
 
   /**

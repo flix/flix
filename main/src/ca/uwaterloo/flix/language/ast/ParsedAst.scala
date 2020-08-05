@@ -176,16 +176,17 @@ object ParsedAst {
     case class Constraint(sp1: SourcePosition, head: ParsedAst.Predicate.Head, body: Seq[ParsedAst.Predicate.Body], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Class Declaration.
+      * Typeclass Declaration.
       *
-      * @param doc   the optional comment associated with the declaration.
-      * @param sp1   the position of the first character in the declaration.
-      * @param mod   the associated modifiers.
-      * @param cc    the class constraint.
-      * @param decls the declarations of the class.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc        the optional comment associated with the declaration.
+      * @param mod        the associated modifiers.
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the definition.
+      * @param tparams    the type parameters.
+      * @param sigs       the signatures of the class.
+      * @param sp2        the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], cc: ParsedAst.ClassConstraint, decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Impl Declaration.

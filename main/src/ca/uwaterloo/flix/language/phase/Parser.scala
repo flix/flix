@@ -214,29 +214,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Class: Rule1[ParsedAst.Declaration] = {
-      def Head: Rule1[ParsedAst.SimpleClass] = SimpleClassAtom
-
-      def Body: Rule1[Seq[ParsedAst.SimpleClass]] = rule {
-        optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(SimpleClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
-          (o: Option[Seq[ParsedAst.SimpleClass]]) => o.getOrElse(Seq.empty))
-      }
-
-      def ClassConstraint: Rule1[ParsedAst.ClassConstraint] = rule {
-        Head ~ optWS ~ Body ~> ParsedAst.ClassConstraint
-      }
-
-      def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Declarations.Sig | Declarations.Law) ~ optWS ~ "}"
-      }
-
-      def ClassBodyOpt: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        optional(ClassBody) ~> ((o: Option[Seq[ParsedAst.Declaration]]) => o.getOrElse(Seq.empty))
-      }
-
-      rule {
-        Documentation ~ SP ~ Modifiers ~ keyword("class") ~ WS ~ ClassConstraint ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
-      }
+    def Class: Rule1[ParsedAst.Declaration] = rule {
+      Documentation ~ Modifiers ~ SP ~ atomic("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ oneOrMore(Sig).separatedBy(WS) ~ "}" ~ SP ~> ParsedAst.Declaration.Class
     }
 
     def Impl: Rule1[ParsedAst.Declaration] = {
