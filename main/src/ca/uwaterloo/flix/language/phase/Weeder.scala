@@ -97,10 +97,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Class => visitClass(d).map(List(_))
 
-    case d: ParsedAst.Declaration.Impl => Nil.toSuccess
-
-    case d: ParsedAst.Declaration.Disallow => Nil.toSuccess
-
     case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
       throw InternalCompilerException(s"Unexpected declaration")
   }

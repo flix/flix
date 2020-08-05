@@ -188,29 +188,6 @@ object ParsedAst {
       */
     case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
 
-    /**
-      * Impl Declaration.
-      *
-      * @param doc  the optional comment associated with the declaration.
-      * @param sp1  the position of the first character in the declaration.
-      * @param mod  the associated modifiers.
-      * @param ic   the impl constraint.
-      * @param defs the definitions of the instance.
-      * @param sp2  the position of the last character in the declaration.
-      */
-    case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ic: ParsedAst.ImplConstraint, defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
-      * Disallow Declaration.
-      *
-      * @param doc the optional comment associated with the declaration.
-      * @param sp1 the position of the first character in the declaration.
-      * @param ic  the integrity constraint.
-      * @param sp2 the position of the last character in the declaration.
-      */
-    case class Disallow(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.DisallowConstraint, sp2: SourcePosition) extends ParsedAst.Declaration
-
-
     case class LatticeComponents(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
@@ -1352,63 +1329,6 @@ object ParsedAst {
     * @param sp2   the position of the last character in the case declaration.
     */
   case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
-
-  /**
-    * Class Constraint.
-    *
-    * @param head the head atom of the constraint.
-    * @param body the sequence of body atoms of the constraint.
-    */
-  case class ClassConstraint(head: ParsedAst.SimpleClass, body: Seq[ParsedAst.SimpleClass])
-
-  /**
-    * Impl Constraint.
-    *
-    * @param head the head atom of the constraint.
-    * @param body the sequence of body atoms of the constraint.
-    */
-  case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass])
-
-  /**
-    * Disallow Constraint.
-    */
-  case class DisallowConstraint(body: Seq[ParsedAst.ComplexClass])
-
-  /**
-    * Simple Class Atom.
-    *
-    * @param sp1   the position of the first character in the atom.
-    * @param qname the (qualified) class name.
-    * @param args  the type variables.
-    * @param sp2   the position of the last character in the atom.
-    */
-  case class SimpleClass(sp1: SourcePosition, qname: Name.QName, args: Seq[Name.Ident], sp2: SourcePosition)
-
-  sealed trait ComplexClass
-
-  object ComplexClass {
-
-    /**
-      * Positive Complex Class Atom.
-      *
-      * @param sp1   the position of the first character in the atom.
-      * @param qname the (qualified) class name.
-      * @param args  the type arguments.
-      * @param sp2   the position of the last character in the atom.
-      */
-    case class Positive(sp1: SourcePosition, qname: Name.QName, args: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClass
-
-    /**
-      * Negative Complex Class Atom.
-      *
-      * @param sp1   the position of the first character in the atom.
-      * @param qname the (qualified) class name.
-      * @param args  the type arguments.
-      * @param sp2   the position of the last character in the atom.
-      */
-    case class Negative(sp1: SourcePosition, qname: Name.QName, args: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClass
-
-  }
 
   /**
     * A common super-type for a sequence of type parameters.
