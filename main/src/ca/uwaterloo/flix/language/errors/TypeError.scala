@@ -273,44 +273,4 @@ object TypeError {
       vt << Code(loc, "unexpected non-schema type.") << NewLine
     }
   }
-
-  /**
-    * Cast to an uninhabited type.
-    *
-    * @param tpe the uninhabited type.
-    * @param loc the location where the error occurred.
-    */
-  case class UninhabitedTypeCast(tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Uninhabited type cast."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Cast to uninhabited type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "cast to uninhabited type.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Effect casts can be written with the syntax 'f as & eff'."
-    }
-  }
-
-  /**
-    * Effect cast to non-bool type.
-    *
-    * @param tpe the non-bool type.
-    * @param loc the location where the error occurred.
-    */
-  case class NonBoolEffectCast(tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Non-bool effect cast."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Effect cast to non-bool type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "effect cast to non-bool type.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Regular casts can be written with the syntax 'x as t'."
-    }
-  }
 }

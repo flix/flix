@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification.{InferMonad, Substitution}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
 
 
@@ -902,7 +902,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
-
         for {
           (actualTyp, actualEff) <- visitExp(exp)
           resultTyp <- unifyTypeM(tvar, declaredTyp.getOrElse(actualTyp), loc)

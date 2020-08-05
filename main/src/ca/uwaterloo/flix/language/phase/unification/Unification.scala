@@ -226,11 +226,6 @@ object Unification {
   }
 
   /**
-    * Lifts the given result `res` into the inference monad.
-    */
-  def liftRes[A](res: Result[A, TypeError]): InferMonad[A] = InferMonad(s => res.map((s, _)))
-
-  /**
     * Lifts the given type `tpe` into the inference monad.
     */
   def liftM(tpe: Type): InferMonad[Type] = InferMonad(s => Ok((s, s(tpe))))

@@ -546,7 +546,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, loc) =>
 
-
           // type casts must be of star kind
           def checkTypeCastKind(tpe: Option[Type]): Validation[Unit, ResolutionError] = tpe match {
             case None => ().toSuccess
@@ -1177,7 +1176,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult) // MATT lift this once Type.Arrow effect is moved
+      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult) // TODO lift this once Type.Arrow effect is moved
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for {
@@ -1519,7 +1518,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Create a well-formed type applying `tpe1` to `tpe2`.
     */
-    // MATT update IllegalTypeApplication message
   private def mkApply(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
     (tpe1.kind, tpe2.kind)  match {
       case (Kind.Arrow(k1, _), k2) if k2 <:: k1 => Type.Apply(tpe1, tpe2).toSuccess
