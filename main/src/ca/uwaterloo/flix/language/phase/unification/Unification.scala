@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.collection.immutable.ListSet
+
 object Unification {
 
   /**
@@ -235,7 +237,7 @@ object Unification {
   /**
     * Lifts the given type `tpe` and effect `eff` into the inference monad.
     */
-  def liftM(constraints: Set[TypedAst.TypeConstraint], tpe: Type, eff: Type): InferMonad[(Set[TypedAst.TypeConstraint], Type, Type)] =
+  def liftM(constraints: ListSet[TypedAst.TypeConstraint], tpe: Type, eff: Type): InferMonad[(ListSet[TypedAst.TypeConstraint], Type, Type)] =
     InferMonad(s => Ok((s, (constraints.map(s.apply), s(tpe), s(eff)))))
 
   /**
