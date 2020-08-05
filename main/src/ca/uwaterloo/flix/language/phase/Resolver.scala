@@ -227,6 +227,34 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       */
     // TODO: Why is this tenv here?
     def resolve(exp0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
+
+      /**
+        * Creates `arity` fresh fparams for use in a curried def or sig application.
+        */
+      def mkFreshFparams(arity: Int, loc: SourceLocation): List[ResolvedAst.FormalParam] = {
+        // Introduce a fresh variable symbol for each argument of the function definition.
+        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
+
+        // Introduce a formal parameter for each variable symbol.
+        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+      }
+
+      /**
+        * Creates a lambda for use in a curried dif or sig application.
+        */
+      def mkCurriedLambda(fparams: List[ResolvedAst.FormalParam], baseExp: ResolvedAst.Expression, loc: SourceLocation): ResolvedAst.Expression = {
+        // The arguments passed to the definition (i.e. the fresh variable symbols).
+        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, loc))
+
+        // The apply expression inside the lambda.
+        val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+
+        // The curried lambda expressions.
+        fparams.foldRight(applyExp: ResolvedAst.Expression) {
+          case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshVar(Kind.Star), loc)
+        }
+      }
+
       /**
         * Local visitor.
         */
@@ -252,25 +280,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               // Find the arity of the function definition.
               val arity = defn.fparams.length
 
-              // Introduce a fresh variable symbol for each argument of the function definition.
-              val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
-
-              // Introduce a formal parameter for each variable symbol.
-              val fparams = varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+              // Create the fresh fparams
+              val fparams = mkFreshFparams(arity, loc)
 
               // The definition expression.
               val defExp = ResolvedAst.Expression.Def(defn.sym, tvar, loc)
 
-              // The arguments passed to the definition (i.e. the fresh variable symbols).
-              val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
-
-              // The apply expression inside the lambda.
-              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
-
-              // The curried lambda expressions.
-              fparams.foldRight(applyExp: ResolvedAst.Expression) {
-                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshVar(Kind.Star), loc)
-              }
+              // Create and apply the lambda expressions
+              mkCurriedLambda(fparams, defExp, loc)
           }
 
         case NamedAst.Expression.Sig(qname, tvar, loc) =>
@@ -285,25 +302,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               // Find the arity of the function definition.
               val arity = sig.fparams.length
 
-              // Introduce a fresh variable symbol for each argument of the function definition.
-              val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
-
-              // Introduce a formal parameter for each variable symbol.
-              val fparams = varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+              // Create the fresh fparams
+              val fparams = mkFreshFparams(arity, loc)
 
               // The definition expression.
               val defExp = ResolvedAst.Expression.Sig(sig.sym, tvar, loc)
 
-              // The arguments passed to the definition (i.e. the fresh variable symbols).
-              val argExps = varSyms.map(sym => ResolvedAst.Expression.Var(sym, sym.tvar, loc))
-
-              // The apply expression inside the lambda.
-              val applyExp = ResolvedAst.Expression.Apply(defExp, argExps, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
-
-              // The curried lambda expressions.
-              fparams.foldRight(applyExp: ResolvedAst.Expression) {
-                case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, Type.freshVar(Kind.Star), loc)
-              }
+              // Create and apply the lambda expressions
+              mkCurriedLambda(fparams, defExp, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
