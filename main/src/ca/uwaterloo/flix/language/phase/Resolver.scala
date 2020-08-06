@@ -1412,7 +1412,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
   }
 
-  // MATT need to explore scopes
   /**
     * Successfully returns the given signature `sig0` if it is accessible from the given namespace `ns0`.
     *
@@ -1427,7 +1426,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     //
     // Check if the definition is marked public.
     //
-    if (sig0.mod.isPublic)
+    if (sig0.mod.isPublic) // TODO use class visibility instead of sig
       return sig0.toSuccess
 
     //
