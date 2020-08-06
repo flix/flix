@@ -122,11 +122,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
     */
   def resolve(c0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root, sigs: SigLookup)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
-    case NamedAst.Class(sym, tparam0, signatures) =>
+    case NamedAst.Class(doc, mod, sym, tparam0, signatures, loc) =>
       for {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigs <- traverse(signatures)(resolve(_, ns0, root, sigs))
-      } yield ResolvedAst.Class(sym, tparams.head, sigs)
+      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, sigs, loc)
   }
 
   /**
@@ -1804,7 +1804,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       eff = Type.Pure,
       loc = SourceLocation.Generated)
 
-    ResolvedAst.Class(classSym, tparam, List(showSig))
+    ResolvedAst.Class(doc = synthDoc,
+      mod = Ast.Modifiers(List(Ast.Modifier.Public, Ast.Modifier.Synthetic)),
+      sym = classSym,
+      tparam = tparam,
+      signatures = List(showSig),
+      loc = SourceLocation.Generated)
   }
 
   /**
