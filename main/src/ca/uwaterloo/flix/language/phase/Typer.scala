@@ -227,7 +227,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Perform type resolution on the declared type.
         val declaredType = lattice.tpe
 
-        // MATT check tcons
         // Perform type inference on each of the lattice components.
         val m = for {
           // Type check each expression:
@@ -320,7 +319,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       //
       // Perform type inference on the arguments.
       //
-      // MATT check tcons
       val result = for {
         (constrs, tpes, effs) <- seqM(exps.map(inferExp(_, root))).map(_.unzip3)
         _ <- unifyTypeM(Type.Pure :: effs, loc)
@@ -1757,7 +1755,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Infers the type of the given head predicate.
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = head match {
-      // MATT check tconstrs
     case ResolvedAst.Predicate.Head.Atom(name, den, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
@@ -1800,7 +1797,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given body predicate.
     */
-    // MATT check constrs
   private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = body0 match {
     //
     //  t_1 : tpe_1, ..., t_n: tpe_n
