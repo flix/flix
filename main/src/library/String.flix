@@ -428,6 +428,7 @@ namespace String {
     ///
     /// Returns `Nil` if `sub` is the empty string.
     ///
+    @Time(length(sub) * length(s)) @Space(length(s))
     pub def indices(sub: String, s: String): List[Int32] =
         let sublen = length(sub);
         let step = ix ->
@@ -912,6 +913,7 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
+    @Time(length(s) + n) @Space(length(s) + n)
     pub def indent(n: Int32, s: String): String =
         if (n <= 0 || length(s) == 0)
             s
@@ -942,6 +944,7 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
+    @Time(length(s) + n) @Space(length(s) + n)
     pub def stripIndent(n: Int32, s: String): String =
         if (n <= 0 || length(s) == 0)
             s
@@ -981,6 +984,7 @@ namespace String {
     /// Newline is recognized as any Unicode linebreak sequence including
     /// Windows (carriage return, line feed) or Unix (line feed).
     ///
+    @Time(length(s)) @Space(length(s))
     pub def lines(s: String): List[String] =
         if (isEmpty(s))
             Nil
@@ -991,6 +995,7 @@ namespace String {
     /// Join the array of strings `a` separating each pair of strings and
     /// ending the result string with the system dependent line separator.
     ///
+    @Time(List.length(a)) @Space(List.length(a))
     pub def unlines(a: List[String]): String = unlinesHelper(a) as & Pure
 
     ///
@@ -1005,6 +1010,7 @@ namespace String {
     /// Split the string `s` into an list of words, dividing on one or more white space characters.
     /// Leading and trailing spaces are trimmed.
     ///
+    @Time(length(s)) @Space(length(s))
     pub def words(s: String): List[String] = match trim(s) {
         case s1 if isEmpty(s1) => Nil
         case s1 => Array.toList(split(s1, "\s+")) as & Pure
@@ -1014,6 +1020,7 @@ namespace String {
     /// Join the array of strings `a` separating each pair of strings with a
     /// single space character.
     ///
+    @Time(List.length(a)) @Space(List.length(a))
     pub def unwords(a: List[String]): String = unwordsHelper(a) as & Pure
 
     ///
@@ -1036,6 +1043,7 @@ namespace String {
     ///
     /// Alias for `indexOfLeft`.
     ///
+    @Time(length(sub) * length(s)) @Space(length(s))
     pub def indexOf(sub: String, s: String): Option[Int32] = indexOfLeft(sub, s)
 
     ///
@@ -1045,6 +1053,7 @@ namespace String {
     ///
     /// If `sub` is the empty string return None.
     ///
+    @Time(length(sub) * length(s)) @Space(length(s))
     pub def indexOfLeft(sub: String, s: String): Option[Int32] =
         import java.lang.String.indexOf(String);
         if (isEmpty(sub))
@@ -1061,6 +1070,7 @@ namespace String {
     ///
     /// If `sub` is the empty string return None.
     ///
+    @Time(length(sub) * length(s)) @Space(length(s))
     pub def indexOfRight(sub: String, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String);
         if (isEmpty(sub))
@@ -1073,6 +1083,7 @@ namespace String {
     ///
     /// Returns `true` if and only if `sub` is an infix of `s`.
     ///
+    @Time(length(sub) * length(s)) @Space(length(s))
     pub def contains(s: String, sub: String): Bool =
         if (isEmpty(sub))
             true
@@ -1086,6 +1097,7 @@ namespace String {
     ///
     /// Returns the empty string if `s1` and `s2` do not share a common prefix.
     ///
+    @Time(Int32.min(length(s1), length(s2))) @Space(Int32.min(length(s1), length(s2)))
     pub def commonPrefix(s1: String, s2: String): String =
         commonPrefixHelper(s1, s2, length(s1), length(s2), 0)
 
@@ -1109,6 +1121,7 @@ namespace String {
     ///
     /// Returns the empty string if `s1` and `s2` do not share a common suffix.
     ///
+    @Time(Int32.min(length(s1), length(s2))) @Space(Int32.min(length(s1), length(s2)))
     pub def commonSuffix(s1: String, s2: String): String =
         let start1 = length(s1) - 1;
         let start2 = length(s2) - 1;
@@ -1139,6 +1152,7 @@ namespace String {
     ///
     /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
     ///
+    @Time(length(s)) @Space(length(s))
     pub def abbreviateLeft(w: Int32, s: String): String =
         match length(s) {
             case len if len < w => s
@@ -1157,6 +1171,7 @@ namespace String {
     ///
     /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
     ///
+    @Time(length(s)) @Space(length(s))
     pub def abbreviateRight(w: Int32, s: String): String =
         match length(s) {
             case len if len < w => s
@@ -1170,6 +1185,7 @@ namespace String {
     /// The answer is the number deletions, insertions or substitutions needed to turn
     /// string `s` into string `t`.
     ///
+    @Time(length(s) * length(t)) @Space(length(s) * length(t))
     pub def levenshteinDistance(s: String, t: String) : Int32 = levenshteinDistanceHelper(s, t) as & Pure
 
     ///
@@ -1217,6 +1233,7 @@ namespace String {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
+    @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: String, b: String): Array[(Char, Char)] & Impure =
         let len = Int32.min(length(a), length(b));
         Array.init(i -> (charAt(i, a), charAt(i, b)), len)
@@ -1227,6 +1244,7 @@ namespace String {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
+    @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zipWith(f: (Char, Char) -> Char & e, a: String, b: String): String & e =
         let len = Int32.min(length(a), length(b));
         init(i -> f(charAt(i, a), charAt(i, b)), len)
@@ -1234,6 +1252,7 @@ namespace String {
     ///
     /// Split the string `s` on matches of `sub`.
     ///
+    @Time(length(s) + length(sub)) @Space(length(s) + length(sub))
     pub def splitOn(s: String, sub: String): List[String] =
         let maxlen = length(s);
         let sublen = length(sub);
@@ -1262,6 +1281,7 @@ namespace String {
     ///
     /// Returns `None` if `sub` is the empty string.
     ///
+    @Time(length(sub) * length(s)) @Space(length(s))
     pub def indexOfLeftWithOffset(sub: String, offset: Int32, s: String): Option[Int32] =
         import java.lang.String.indexOf(String, Int32);
         if (isEmpty(sub))
@@ -1276,6 +1296,7 @@ namespace String {
     ///
     /// Returns `None` if `sub` is the empty string.
     ///
+    @Time(length(sub) * length(s)) @Space(length(s))
     pub def indexOfRightWithOffset(sub: String, offset: Int32, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String, Int32);
         if (isEmpty(sub))
@@ -1290,6 +1311,7 @@ namespace String {
     ///
     /// `k` should be greater than 0.
     ///
+    @Time(length(s) - k) @Space(length(s) - k)
     pub def toChunks(k: Int32, s: String): List[String] =
         if (k <= 0)
             Nil
@@ -1314,6 +1336,7 @@ namespace String {
     /// Find the first instance of `sub` in string `s`, return a pair of the
     /// prefix of string `s` up to `sub` and the rest of string `s` including `sub`.
     ///
+    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
     pub def breakOnLeft(sub: String, s: String): (String, String) =
         match indexOfLeft(sub, s) {
             case None => (s, "")
@@ -1324,6 +1347,7 @@ namespace String {
     /// Find the last instance of `sub` in string `s`, return a pair of the
     /// initial string including `sub` and suffix from `sub`.
     ///
+    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
     pub def breakOnRight(sub: String, s: String): (String, String) =
         let sublen = length(sub);
         match indexOfRight(sub, s) {
@@ -1334,6 +1358,7 @@ namespace String {
     ///
     /// Count the occurences of `sub` in string `s`.
     ///
+    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
     pub def countSubstring(sub: String, s: String): Int32 =
         let sublen = length(sub);
         if (sublen <= 0)
