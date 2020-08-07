@@ -72,7 +72,7 @@ object WeededAst {
 
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
-    case class VarOrDef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+    case class VarDefSig(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 

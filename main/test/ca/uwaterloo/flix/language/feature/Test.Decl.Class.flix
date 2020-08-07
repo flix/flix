@@ -26,6 +26,15 @@ namespace Test02 {
 //    }
 
 }
+
+namespace Test03 {
+    trait X[a] {
+        def f(x: a): Bool
+    }
+
+    def g(x: Int): Bool = f(x)
+}
+
 //
 //namespace Test03 {
 //

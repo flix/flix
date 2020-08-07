@@ -345,7 +345,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Wild(loc) =>
       NamedAst.Expression.Wild(Type.freshVar(Kind.Star), loc).toSuccess
 
-    case WeededAst.Expression.VarOrDef(qname, loc) if qname.isUnqualified =>
+    case WeededAst.Expression.VarDefSig(qname, loc) if qname.isUnqualified =>
       // the ident name.
       val name = qname.ident.name
 
@@ -353,10 +353,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       (env0.get(name), uenv0.defs.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a top-level function.
-          NamedAst.Expression.Def(qname, Type.freshVar(Kind.Star), loc).toSuccess
+          NamedAst.Expression.DefSig(qname, Type.freshVar(Kind.Star), loc).toSuccess
         case (None, Some(actualQName)) =>
           // Case 2: the name is a use.
-          NamedAst.Expression.Def(actualQName, Type.freshVar(Kind.Star), loc).toSuccess
+          NamedAst.Expression.DefSig(actualQName, Type.freshVar(Kind.Star), loc).toSuccess
         case (Some(sym), None) =>
           // Case 3: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
@@ -365,8 +365,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NameError.AmbiguousVarOrUse(name, loc, sym.loc, qname.loc).toFailure
       }
 
-    case WeededAst.Expression.VarOrDef(name, loc) =>
-      NamedAst.Expression.Def(name, Type.freshVar(Kind.Star), loc).toSuccess
+    case WeededAst.Expression.VarDefSig(name, loc) =>
+      NamedAst.Expression.DefSig(name, Type.freshVar(Kind.Star), loc).toSuccess
 
     case WeededAst.Expression.Hole(name, loc) =>
       val tpe = Type.freshVar(Kind.Star)
@@ -1090,7 +1090,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
     case WeededAst.Expression.Wild(loc) => Nil
-    case WeededAst.Expression.VarOrDef(qname, loc) => List(qname.ident)
+    case WeededAst.Expression.VarDefSig(qname, loc) => List(qname.ident)
     case WeededAst.Expression.Hole(name, loc) => Nil
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Unit(loc) => Nil
