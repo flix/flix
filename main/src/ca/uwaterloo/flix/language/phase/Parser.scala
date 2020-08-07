@@ -218,7 +218,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def ClassWithSigs: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ atomic("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ zeroOrMore(Sig).separatedBy(WS) ~ "}" ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ Modifiers ~ SP ~ atomic("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Class
       }
 
       rule {
