@@ -260,6 +260,58 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
       }
 
+      def visitDef(defn: NamedAst.Def, tvar: Type.Var, loc: SourceLocation): ResolvedAst.Expression = {
+        //
+        // We must curry the definition. Otherwise we would not be here.
+        //
+        // We introduce /n/ lambda expressions around the definition expression.
+        //
+
+        // Find the arity of the function definition.
+        val arity = defn.fparams.length
+
+        // Create the fresh fparams
+        val fparams = mkFreshFparams(arity, loc)
+
+        // The definition expression.
+        val defExp = ResolvedAst.Expression.Def(defn.sym, tvar, loc)
+
+        // Create and apply the lambda expressions
+        mkCurriedLambda(fparams, defExp, loc)
+      }
+
+      def visitSig(sig: NamedAst.Sig, tvar: Type.Var, loc: SourceLocation): ResolvedAst.Expression = {
+        //
+        // We must curry the definition. Otherwise we would not be here.
+        //
+        // We introduce /n/ lambda expressions around the definition expression.
+        //
+
+        // Find the arity of the function definition.
+        val arity = sig.fparams.length
+
+        // Create the fresh fparams
+        val fparams = mkFreshFparams(arity, loc)
+
+        // The definition expression.
+        val defExp = ResolvedAst.Expression.Sig(sig.sym, tvar, loc)
+
+        // Create and apply the lambda expressions
+        mkCurriedLambda(fparams, defExp, loc)
+      }
+
+      def visitApply(exp: NamedAst.Expression, exps: List[NamedAst.Expression], loc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        for {
+          e <- visit(exp, tenv0)
+          es <- traverse(exps)(visit(_, tenv0))
+        } yield {
+          es.foldLeft(e) {
+            case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+          }
+        }
+      }
+
+
       /**
         * Local visitor.
         */
@@ -273,48 +325,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
         }
 
-        case NamedAst.Expression.Def(qname, tvar, loc) =>
-          lookupDef(qname, ns0, root) map {
-            case defn =>
-              //
-              // We must curry the definition. Otherwise we would not be here.
-              //
-              // We introduce /n/ lambda expressions around the definition expression.
-              //
-
-              // Find the arity of the function definition.
-              val arity = defn.fparams.length
-
-              // Create the fresh fparams
-              val fparams = mkFreshFparams(arity, loc)
-
-              // The definition expression.
-              val defExp = ResolvedAst.Expression.Def(defn.sym, tvar, loc)
-
-              // Create and apply the lambda expressions
-              mkCurriedLambda(fparams, defExp, loc)
-          }
-
-        case NamedAst.Expression.Sig(qname, tvar, loc) =>
-          lookupSig(qname, ns0, sigs) map {
-            case sig =>
-              //
-              // We must curry the definition. Otherwise we would not be here.
-              //
-              // We introduce /n/ lambda expressions around the definition expression.
-              //
-
-              // Find the arity of the function definition.
-              val arity = sig.fparams.length
-
-              // Create the fresh fparams
-              val fparams = mkFreshFparams(arity, loc)
-
-              // The definition expression.
-              val defExp = ResolvedAst.Expression.Sig(sig.sym, tvar, loc)
-
-              // Create and apply the lambda expressions
-              mkCurriedLambda(fparams, defExp, loc)
+        case NamedAst.Expression.DefSig(qname, tvar, loc) =>
+          (lookupDef(qname, ns0, root), lookupSig(qname, ns0, sigs)) match {
+            // Case 1: both def and sig found
+            case (Validation.Success(defn), Validation.Success(sig)) =>
+              ResolutionError.AmbiguousName(qname, ns0, List(defn.loc, sig.loc), loc).toFailure
+            // Case 2: only def found
+            case (Validation.Success(defn), Validation.Failure(_)) =>
+              visitDef(defn, tvar, loc).toSuccess
+            // Case 3: only sig found
+            case (Validation.Failure(_), Validation.Success(sig)) =>
+              visitSig(sig, tvar, loc).toSuccess
+            // Case 4: neither def nor sig found
+            case (Validation.Failure(defErrs), sigFail@Validation.Failure(sigErrs)) =>
+               Validation.Failure(defErrs ++ sigErrs)// MATT handle the different errors better; inaccessible beats notfound
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -365,14 +389,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star),loc).toSuccess
 
-        case NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(qname, _, innerLoc), exps, outerLoc) =>
-          //
-          // Special Case: We are applying a known function. Check if we have the right number of arguments.
-          //
-          // If so, we can perform a direct call. Otherwise we have to introduce lambdas.
-          //
-          flatMapN(lookupDef(qname, ns0, root)) {
-            case defn =>
+        case NamedAst.Expression.Apply(exp@NamedAst.Expression.DefSig(qname, _, innerLoc), exps, outerLoc) =>
+
+          (lookupDef(qname, ns0, root), lookupSig(qname, ns0, sigs)) match {
+            // Case 1: both def and sig found
+            case (Validation.Success(defn), Validation.Success(sig)) =>
+              ResolutionError.AmbiguousName(qname, ns0, List(defn.loc, sig.loc), loc).toFailure
+            // Case 2: only def found
+            case (Validation.Success(defn), Validation.Failure(_)) =>
               if (defn.fparams.length == exps.length) {
                 // Case 1: Hooray! We can call the function directly.
                 for {
@@ -383,26 +407,29 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 }
               } else {
                 // Case 2: We have to curry. (See below).
+                visitApply(exp, exps, outerLoc)
+              }
+            // Case 3: only sig found
+            case (Validation.Failure(_), Validation.Success(sig)) =>
+              if (sig.fparams.length == exps.length) {
+                // Case 1: Hooray! We can call the function directly.
                 for {
-                  e <- visit(exp, tenv0)
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
-                  es.foldLeft(e) {
-                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
-                  }
+                  val base = ResolvedAst.Expression.Sig(sig.sym, Type.freshVar(Kind.Star), innerLoc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
                 }
+              } else {
+                // Case 2: We have to curry. (See below).
+                visitApply(exp, exps, outerLoc)
               }
+            // Case 4: neither def nor sig found
+            case (Validation.Failure(defErrs), Validation.Failure(sigErrs)) =>
+              Validation.Failure(defErrs ++ sigErrs) // MATT handle the different errors better; inaccessible beats notfound
+              // MATT clean up this logic
           }
 
-        case NamedAst.Expression.Apply(exp, exps, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-            es <- traverse(exps)(visit(_, tenv0))
-          } yield {
-            es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
-            }
-          }
+        case NamedAst.Expression.Apply(exp, exps, loc) => visitApply(exp, exps, loc)
 
         case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {
