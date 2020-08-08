@@ -260,6 +260,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
       }
 
+      // MATT docs, see if more cleanup can be done
       def visitDef(defn: NamedAst.Def, tvar: Type.Var, loc: SourceLocation): ResolvedAst.Expression = {
         //
         // We must curry the definition. Otherwise we would not be here.
@@ -1098,7 +1099,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def buildSigLookup(classes: Map[Name.NName, Map[String, NamedAst.Class]]): SigLookup = {
     def flatMapToSigs(classes: Map[String, NamedAst.Class]): Map[String, NamedAst.Sig] = {
       classes.flatMap {
-        case (_, clazz) => clazz.signatures.map(sig => (sig.sym.name, sig))
+        case (_, clazz) => clazz.sigs.map(sig => (sig.sym.name, sig))
       }
     }
     classes.view.mapValues(flatMapToSigs).toMap

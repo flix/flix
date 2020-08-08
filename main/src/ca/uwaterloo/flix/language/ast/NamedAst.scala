@@ -18,12 +18,14 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.immutable.List
 
 object NamedAst {
 
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
+                  instances: Map[Name.NName, MultiMap[String, NamedAst.Instance]],
                   defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
@@ -32,7 +34,9 @@ object NamedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, signatures: List[NamedAst.Sig], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, sigs: List[NamedAst.Sig], loc: SourceLocation)
+
+  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: NamedAst.Type, defs: List[NamedAst.Def], loc: SourceLocation)
 
   case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
