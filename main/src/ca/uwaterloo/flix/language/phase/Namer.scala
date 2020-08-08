@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.WeededAst.{NullPattern, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
@@ -43,6 +44,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
       classes = Map.empty,
+      instances = Map.empty,
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
@@ -83,17 +85,27 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
     }
 
-    case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
-
+    case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
+      // Check if the class already exists.
       val classes = prog0.classes.getOrElse(ns0, Map.empty)
       classes.get(ident.name) match {
         case None =>
+          // Case 1: The class does not already exist. Update it.
           visitClass(decl, uenv0, Map.empty, ns0) map {
             clazz => prog0.copy(classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))))
           }
         case Some(clazz) =>
+          // Case 2: Duplicate class.
           NameError.DuplicateClass(ident.name, clazz.sym.loc, ident.loc).toFailure
       }
+
+    case decl@WeededAst.Declaration.Instance(doc, mod, ident, tpe0, defs, loc) =>
+      // duplication check must come after name resolution
+      val instances = prog0.instances.getOrElse(ns0, MultiMap.empty)
+      visitInstance(decl, uenv0, Map.empty, ns0) map {
+        instance => prog0.copy(instances = prog0.instances + (ns0 -> (instances + (ident.name, instance))))
+      }
+
     /*
      * Definition.
      */
@@ -271,6 +283,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     mapN(sequence(casesVal))(_.toMap)
   }
 
+  // MATT docs for this and below
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
     case WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
@@ -278,6 +291,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       for {
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, sym))
       } yield NamedAst.Class(doc, mod, sym, tparams, sigs, loc)
+  }
+
+  private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
+    case WeededAst.Declaration.Instance(doc, mod, ident, tpe, defs0, loc) =>
+      val sym = Symbol.mkInstanceSym(ns0, ident)
+      for {
+        tpe <- visitType(tpe, uenv0, tenv0)
+        defs <- traverse(defs0)(visitDef(_, uenv0, tenv0, ns0))
+      } yield NamedAst.Instance(doc, mod, sym, tpe, defs, loc)
   }
 
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, clazz: Symbol.ClassSym)(implicit flix: Flix) = sig match {

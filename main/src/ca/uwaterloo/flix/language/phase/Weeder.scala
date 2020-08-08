@@ -97,7 +97,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.LatticeComponents => visitLatticeOps(d)
 
-    case d: ParsedAst.Declaration.Class => visitClass(d).map(List(_))
+    case d: ParsedAst.Declaration.Class => visitClass(d)
+
+    case d: ParsedAst.Declaration.Instance => visitInstance(d)
 
     case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
       throw InternalCompilerException(s"Unexpected declaration")
@@ -106,21 +108,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given class declaration `c0`.
     */
-  private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[WeededAst.Declaration.Class, WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparams, sigs0, sp2) =>
+  private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
+    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparams0, sigs0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
-      val tparamsVal = visitTypeParams(tparams)
+      val tparams = visitTypeParams(tparams0)
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
         sigs <- traverse(sigs0)(visitSig)
-      } yield WeededAst.Declaration.Class(doc, mods, ident, tparamsVal, sigs, loc)
+      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparams, sigs.flatten, loc))
   }
 
   /**
-    * Performs weeding on the given def declaration `d0`.
+    * Performs weeding on the given sig declaration `s0`.
     */
-  private def visitSig(d0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[WeededAst.Declaration.Sig, WeederError] = d0 match {
+  private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
     case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
@@ -134,10 +136,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (as, mod, fparams, eff) =>
           val ts = fparams.map(_.tpe.get)
           val tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
-          WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, tpe, eff, loc)
+          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, tpe, eff, loc))
       }
   }
 
+  // MATT docs
+  private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
+    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, ident, tpe0, defs0, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val doc = visitDoc(doc0)
+      val tpe = visitType(tpe0)
+      for {
+        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public))
+        defs <- traverse(defs0)(visitDef)
+      } yield List(WeededAst.Declaration.Instance(doc, mods, ident, tpe, defs.flatten, loc))
+
+  }
   /**
     * Performs weeding on the given def declaration `d0`.
     */
