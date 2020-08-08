@@ -236,6 +236,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    def Instance: Rule1[ParsedAst.Declaration] = {
+      def MarkerInstance:  Rule1[ParsedAst.Declaration.Instance] = {
+        Documentation ~ Modifiers ~ SP ~ atomic("imp") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Instance
+      }
+
+      def InstanceWithDefs: Rule1[ParsedAst.Declaration.Instance] = {
+        Documentation ~ Modifiers ~ SP ~ atomic("imp") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Instance
+      }
+
+      rule {
+        InstanceWithDefs | MarkerInstance
+      }
+    }
+
     def TypeParams: Rule1[ParsedAst.TypeParams] = {
       def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
         SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[ParsedAst.Type], sp2: SourcePosition) => bound match {
