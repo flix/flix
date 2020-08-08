@@ -1,16 +1,16 @@
 namespace Test01 {
 
-    trait X[a]
+    class X[a]
 
-    trait Y[a, b]
+    class Y[a, b]
 
-    trait Z[a, b, c]
+    class Z[a, b, c]
 
 }
 
 namespace Test02 {
 
-    trait X[a] {
+    class X[a] {
         def f(x: a): Bool
     }
 
@@ -28,7 +28,7 @@ namespace Test02 {
 }
 
 namespace Test03 {
-    trait X[a] {
+    class X[a] {
         def f(x: a): Bool
     }
     // TODO instance
