@@ -31,8 +31,8 @@ namespace Test03 {
     trait X[a] {
         def f(x: a): Bool
     }
-
-    def g(x: Int): Bool = f(x)
+    // TODO instance
+    pub def g(x: Int): Bool = f(x)
 }
 
 //
