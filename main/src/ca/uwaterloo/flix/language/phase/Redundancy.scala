@@ -765,7 +765,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         this
       } else {
         Used(
-          // MATT alphabetize maybe
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
           this.sigSyms ++ that.sigSyms,
