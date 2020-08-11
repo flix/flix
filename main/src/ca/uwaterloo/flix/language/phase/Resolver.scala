@@ -260,14 +260,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
       }
 
-      // MATT docs, see if more cleanup can be done
+      /**
+        * Curry the def, wrapping it in lambda expressions.
+        */
       def visitDef(defn: NamedAst.Def, tvar: Type.Var, loc: SourceLocation): ResolvedAst.Expression = {
-        //
-        // We must curry the definition. Otherwise we would not be here.
-        //
-        // We introduce /n/ lambda expressions around the definition expression.
-        //
-
         // Find the arity of the function definition.
         val arity = defn.fparams.length
 
@@ -281,35 +277,36 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         mkCurriedLambda(fparams, defExp, loc)
       }
 
+      /**
+        * Curry the sig, wrapping it in lambda expressions.
+        */
       def visitSig(sig: NamedAst.Sig, tvar: Type.Var, loc: SourceLocation): ResolvedAst.Expression = {
-        //
-        // We must curry the definition. Otherwise we would not be here.
-        //
-        // We introduce /n/ lambda expressions around the definition expression.
-        //
-
         // Find the arity of the function definition.
         val arity = sig.fparams.length
 
         // Create the fresh fparams
         val fparams = mkFreshFparams(arity, loc)
 
-        // The definition expression.
-        val defExp = ResolvedAst.Expression.Sig(sig.sym, tvar, loc)
+        // The signature expression.
+        val sigExp = ResolvedAst.Expression.Sig(sig.sym, tvar, loc)
 
         // Create and apply the lambda expressions
-        mkCurriedLambda(fparams, defExp, loc)
+        mkCurriedLambda(fparams, sigExp, loc)
       }
 
-      def visitApply(exp: NamedAst.Expression, exps: List[NamedAst.Expression], loc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
-        for {
-          e <- visit(exp, tenv0)
-          es <- traverse(exps)(visit(_, tenv0))
-        } yield {
-          es.foldLeft(e) {
-            case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+      /**
+        * Resolve the application expression, performing currying over the subexpressions.
+        */
+      def visitApply(exp: NamedAst.Expression.Apply): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
+        case NamedAst.Expression.Apply(exp, exps, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+            es <- traverse(exps)(visit(_, tenv0))
+          } yield {
+            es.foldLeft(e) {
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+            }
           }
-        }
       }
 
 
@@ -380,7 +377,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star),loc).toSuccess
 
-        case NamedAst.Expression.Apply(exp@NamedAst.Expression.DefSig(qname, _, innerLoc), exps, outerLoc) =>
+        case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.DefSig(qname, _, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefSig(qname, ns0, root, sigs)) {
             case Left(defn) =>
               if (defn.fparams.length == exps.length) {
@@ -393,7 +390,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 }
               } else {
                 // Case 2: We have to curry. (See below).
-                visitApply(exp, exps, outerLoc)
+                visitApply(app)
               }
             case Right(sig) =>
               if (sig.fparams.length == exps.length) {
@@ -406,11 +403,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 }
               } else {
                 // Case 2: We have to curry. (See below).
-                visitApply(exp, exps, outerLoc)
+                visitApply(app)
               }
           }
 
-        case NamedAst.Expression.Apply(exp, exps, loc) => visitApply(exp, exps, loc)
+        case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app)
 
         case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {
@@ -1477,7 +1474,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     //
     // Check if the definition is marked public.
     //
-    if (sig0.mod.isPublic) // MATT check class visibility instead
+    if (sig0.mod.isPublic) // MATT check instance availability instead?
       return true
 
     //

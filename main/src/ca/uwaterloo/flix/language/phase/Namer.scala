@@ -283,7 +283,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     mapN(sequence(casesVal))(_.toMap)
   }
 
-  // MATT docs for this and below
+  /**
+    * Performs naming on the given class `clazz`.
+    */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
     case WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
@@ -293,6 +295,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       } yield NamedAst.Class(doc, mod, sym, tparams, sigs, loc)
   }
 
+  /**
+    * Performs naming on the given instance `instance`.
+    */
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
     case WeededAst.Declaration.Instance(doc, mod, ident, tpe, defs0, loc) =>
       val sym = Symbol.mkInstanceSym(ns0, ident)
