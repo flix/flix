@@ -555,7 +555,7 @@ object Synthesize extends Phase[Root, Root] {
 
           case TypeConstructor.Str => default
 
-          case TypeConstructor.Arrow(_, _) =>
+          case TypeConstructor.Arrow(_) =>
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
             Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
 
@@ -797,7 +797,7 @@ object Synthesize extends Phase[Root, Root] {
             val method = classOf[java.lang.String].getMethod("hashCode")
             Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
 
-          case TypeConstructor.Arrow(l, _) =>
+          case TypeConstructor.Arrow(l) =>
             val method = classOf[java.lang.Object].getMethod("hashCode")
             Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
 
@@ -1046,7 +1046,7 @@ object Synthesize extends Phase[Root, Root] {
 
           case TypeConstructor.Str => exp0
 
-          case TypeConstructor.Arrow(l, _) =>
+          case TypeConstructor.Arrow(l) =>
             Expression.Str("<<closure>>", sl)
 
           case TypeConstructor.Array =>
@@ -1232,7 +1232,7 @@ object Synthesize extends Phase[Root, Root] {
       */
     // TODO: Deprecated
     def isArrow(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_, _)) => true
+      case Some(TypeConstructor.Arrow(_)) => true
       case _ => false
     }
 
