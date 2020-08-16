@@ -54,6 +54,7 @@ sealed trait Kind {
     // kind vars
     case (Kind.Var(_), _) => true
     case (_, Kind.Var(_)) => true
+    case (Kind.Var(_), _) => true
 
     // subkinds
     case (Kind.Record, Kind.Star) => true

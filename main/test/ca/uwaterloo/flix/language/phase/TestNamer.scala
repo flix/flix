@@ -830,4 +830,16 @@ class TestNamer extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[NameError.MismatchedTypeParamKinds](result)
   }
+
+  test("TmpTest1") { // MATT more extensive testing
+    val input = "pub def f(a: {x: Int | _}, b: {y: Int | _}): {x: Int, y: Int} = {x = a.x, y = b.y}"
+    val result = compile(input, DefaultOptions)
+    result.get
+  }
+
+  test("TmpTest2") {
+    val input = "pub def getX[t](a: {x: t | _}): t = a.x"
+    val result = compile(input, DefaultOptions)
+    result.get
+  }
 }
