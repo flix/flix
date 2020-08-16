@@ -103,5 +103,6 @@ class FeatureSuite extends Suites(
   // Unused
   //
   new FlixTest("Test.UnusedVarSym", "main/test/ca/uwaterloo/flix/language/feature/Test.UnusedVarSym.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.UnusedTypeVar", "main/test/ca/uwaterloo/flix/language/feature/Test.UnusedTypeVar.flix")(Options.TestWithLibrary),
 
 )
