@@ -360,17 +360,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Literals {
 
     def Null: Rule1[ParsedAst.Literal] = rule {
-      SP ~ atomic("null") ~ SP ~> ParsedAst.Literal.Null
+      SP ~ keyword("null") ~ SP ~> ParsedAst.Literal.Null
     }
 
     def Bool: Rule1[ParsedAst.Literal] = {
 
       def True: Rule1[ParsedAst.Literal.True] = rule {
-        SP ~ atomic("true") ~ SP ~> ParsedAst.Literal.True
+        SP ~ keyword("true") ~ SP ~> ParsedAst.Literal.True
       }
 
       def False: Rule1[ParsedAst.Literal.False] = rule {
-        SP ~ atomic("false") ~ SP ~> ParsedAst.Literal.False
+        SP ~ keyword("false") ~ SP ~> ParsedAst.Literal.False
       }
 
       rule {
@@ -1246,19 +1246,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def True: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("true") ~ SP ~> ParsedAst.Type.True
+      SP ~ keyword("true") ~ SP ~> ParsedAst.Type.True
     }
 
     def False: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("false") ~ SP ~> ParsedAst.Type.False
+      SP ~ keyword("false") ~ SP ~> ParsedAst.Type.False
     }
 
     def Pure: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("Pure") ~ SP ~> ParsedAst.Type.True
+      SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.True
     }
 
     def Impure: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.False
+      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.False
     }
 
     def Not: Rule1[ParsedAst.Type] = rule {
@@ -1475,6 +1475,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Keyword                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Reads the keyword and looks ahead to ensure there no legal letters immediately following.
+    */
+  def keyword(word: String): Rule0 = rule {
+    atomic(word) ~ !Names.LegalLetter
   }
 
   /////////////////////////////////////////////////////////////////////////////

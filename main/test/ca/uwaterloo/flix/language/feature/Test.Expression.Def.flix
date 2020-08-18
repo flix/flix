@@ -85,3 +85,23 @@ def testDef09(): Bool = A06/B06/C06.d() == 42
 
 @test
 def testDef10(): Bool = e06() == -1
+
+def trueFunc(): Bool = true
+
+@test
+def testDef11(): Bool = trueFunc()
+
+def falseFunc(): Bool = true
+
+@test
+def testDef12(): Bool = falseFunc()
+
+def nullFunc(): Bool = true
+
+@test
+def testDef13(): Bool = nullFunc()
+
+def true123(): Bool = true
+
+@test
+def testDef14(): Bool = true123()
