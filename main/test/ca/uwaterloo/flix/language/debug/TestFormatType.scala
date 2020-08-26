@@ -360,7 +360,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Arrow.External.01") {
-    val tpe = Type.Cst(TypeConstructor.Arrow(2, Type.Pure))
+    val tpe = Type.Apply(Type.Cst(TypeConstructor.Arrow(2)), Type.Pure)
 
     val expected = "??? -> ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -369,7 +369,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Arrow.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3, Type.Impure)), List(Type.Str))
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3)), List(Type.Impure, Type.Str))
 
     val expected = "String -> ??? ~> ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -380,7 +380,7 @@ class TestFormatType extends FunSuite with TestUtils {
   ignore("FormatIllFormedType.Arrow.External.03") {
     val eff = Type.Var(0, Kind.Bool, Rigidity.Flexible)
     eff.setText("e")
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2, eff)), List(Type.Str, Type.Float32, Type.Int8))
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2)), List(eff, Type.Str, Type.Float32, Type.Int8))
 
     val expected = "(String -> Float32 & e)[Int8]"
     val actual = FormatType.formatType(tpe)(Audience.External)
