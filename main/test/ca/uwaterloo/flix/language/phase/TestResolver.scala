@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -670,6 +670,36 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalUninhabitedType](result)
   }
 
+  test("IllegalUninhabitedType.08") {
+    val input = "def f(): Int = 1 as Pure"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.09") {
+    val input =
+      """
+        |enum E[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(): Int = 1 as E[Int]""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalEffect.01") {
+    val input = "def f(): Int = 1 as & Int"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalEffect](result)
+  }
+
+  test("IllegalEffect.02") {
+    val input = "def f(): Int = 1 as Int & Int"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalEffect](result)
+  }
+
   test("IllegalTypeApplication.01") {
     val input =
       """
@@ -709,6 +739,36 @@ class TestResolver extends FunSuite with TestUtils {
 
   test("IllegalTypeApplication.04") {
     val input = "def f(p: Str[Int]): Int = 123"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.05") {
+    val input = "def f(): Int = 1 as Int & Int and true"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.06") {
+    val input = "def f(): Int = 1 as Int & true or Int"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.07") {
+    val input = "def f(): Int = 1 as Int & not Int"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.08") {
+    val input = "def f(a: String ? Int): Int = 1"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("IllegalTypeApplication.09") {
+    val input = "def f(a: (Int, true)): Int = 1"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalTypeApplication](result)
   }

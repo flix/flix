@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation
@@ -544,6 +545,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           } yield ResolvedAst.Expression.Ascribe(e, t, f, tvar, loc)
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, loc) =>
+
+          // type casts must be of star kind
+          def checkTypeCastKind(tpe: Option[Type]): Validation[Unit, ResolutionError] = tpe match {
+            case None => ().toSuccess
+            case Some(t) if t.kind <:: Kind.Star => ().toSuccess
+            case Some(t) => ResolutionError.IllegalUninhabitedType(t, loc).toFailure
+          }
+
+          // effect casts must be of bool kind
+          def checkEffectCastKind(tpe: Option[Type]): Validation[Unit, ResolutionError] = tpe match {
+            case None => ().toSuccess
+            case Some(t) if t.kind <:: Kind.Bool => ().toSuccess
+            case Some(t) => ResolutionError.IllegalEffect(t, loc).toFailure
+          }
+
           val declaredTypVal = declaredType match {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(lookupType(t, ns0, prog0))(x => Some(x))
@@ -557,6 +573,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- declaredTypVal
             f <- declaredEffVal
+            _ <- checkTypeCastKind(t)
+            _ <- checkEffectCastKind(f)
           } yield ResolvedAst.Expression.Cast(e, t, f, tvar, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1081,9 +1099,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       Type.mkEnum(sym, kind).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
-      for (
+      for {
         elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
-      ) yield Type.mkTuple(elms)
+        tup <- mkTuple(elms, loc)
+      } yield tup
 
     case NamedAst.Type.RecordEmpty(loc) =>
       Type.RecordEmpty.toSuccess
@@ -1092,7 +1111,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-      } yield Type.mkRecordExtend(label.name, v, r)
+        rec <- mkRecordExtend(label.name, v, r, loc)
+      } yield rec
 
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
@@ -1109,32 +1129,31 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
-          } yield {
-            val tpe = Type.simplify(Type.mkApply(t, ts))
-            Type.mkSchemaExtend(qname.ident.name, tpe, r)
-          }
+            app <- mkApply(t, ts, loc)
+            tpe <- Type.simplify(app).toSuccess[Type, ResolutionError]
+            schema <- mkSchemaExtend(qname.ident.name, tpe, r, loc)
+          } yield schema
       }
 
     case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
-      } yield den match {
-        case Ast.Denotation.Relational =>
-          Type.mkSchemaExtend(ident.name, Type.mkRelation(ts), r)
-        case Ast.Denotation.Latticenal =>
-          Type.mkSchemaExtend(ident.name, Type.mkLattice(ts), r)
-      }
+        pred <- mkPredicate(den, ts, loc)
+        schema <- mkSchemaExtend(ident.name, pred, r, loc)
+      } yield schema
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-      } yield Type.mkRelation(ts)
+        rel <- mkRelation(ts, loc)
+      } yield rel
 
     case NamedAst.Type.Lattice(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-      } yield Type.mkLattice(ts)
+        lat <- mkLattice(ts, loc)
+      } yield lat
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
@@ -1149,14 +1168,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         t <- lookupType(tpe, ns0, root)
         n <- lookupType(nullity, ns0, root)
-      } yield Type.mkNullable(t, n)
+        res <- mkNullable(t, n, loc)
+      } yield res
 
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
       for {
         tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult)
+      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult) // TODO lift this once Type.Arrow effect is moved
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for {
@@ -1172,18 +1192,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       Type.False.toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
-      mapN(lookupType(tpe, ns0, root)) {
-        case t => Type.mkNot(t)
+      flatMapN(lookupType(tpe, ns0, root)) {
+        case t => mkNot(t, loc)
       }
 
     case NamedAst.Type.And(tpe1, tpe2, loc) =>
-      mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => Type.mkAnd(t1, t2)
+      flatMapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
+        case (t1, t2) => mkAnd(t1, t2, loc)
       }
 
     case NamedAst.Type.Or(tpe1, tpe2, loc) =>
-      mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => Type.mkOr(t1, t2)
+      flatMapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
+        case (t1, t2) => mkOr(t1, t2, loc)
       }
 
   }
@@ -1496,13 +1516,99 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Tries to apply `tpe1` to `tpe2`. Creates a resolution error if `tpe1` is not a type constructor.
+    * Create a well-formed type applying `tpe1` to `tpe2`.
     */
   private def mkApply(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    tpe1.kind match {
-      case _: Kind.Arrow => Type.Apply(tpe1, tpe2).toSuccess
+    (tpe1.kind, tpe2.kind)  match {
+      case (Kind.Arrow(k1, _), k2) if k2 <:: k1 => Type.Apply(tpe1, tpe2).toSuccess
       case _ => ResolutionError.IllegalTypeApplication(tpe1, tpe2, loc).toFailure
     }
   }
 
+  /**
+    * Create a well-formed type applying `tpe` to `args`.
+    */
+  private def mkApply(tpe: Type, args: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
+    Validation.fold(args, tpe)(mkApply(_, _, loc))
+  }
+
+  /**
+    * Create a well-formed `And` type.
+    */
+  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.And, List(tpe1, tpe2), loc)
+  }
+
+  /**
+    * Create a well-formed `Or` type.
+    */
+  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Or, List(tpe1, tpe2), loc)
+  }
+
+  /**
+    * Create a well-formed `Not` type.
+    */
+  private def mkNot(tpe: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Not, tpe, loc)
+  }
+
+  /**
+    * Create a well-formed `Nullable` type.
+    */
+  private def mkNullable(tpe: Type, nullity: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.Nullable), List(tpe, nullity), loc)
+  }
+
+  /**
+    * Creates a well-formed `Tuple` type.
+    */
+  private def mkTuple(tpes: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.Tuple(tpes.length)), tpes, loc)
+  }
+
+  /**
+    * Creates a well-formed `RecordExtend` type.
+    */
+  private def mkRecordExtend(label: String, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(label)), List(tpe, rest), loc)
+  }
+
+  /**
+    * Creates a well-formed `SchemaExtend` type.
+    */
+  private def mkSchemaExtend(name: String, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest), loc)
+  }
+
+  /**
+    * Creates a well-formed `Lattice` or `Relation` type.
+    */
+  private def mkPredicate(den: Ast.Denotation, ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
+    val tycon = den match {
+      case Denotation.Relational => Type.Relation
+      case Denotation.Latticenal => Type.Lattice
+    }
+    val tsVal = ts0 match {
+      case Nil => Type.Unit.toSuccess
+      case x :: Nil => x.toSuccess
+      case xs => mkTuple(xs, loc)
+    }
+
+    flatMapN(tsVal)(mkApply(tycon, _, loc))
+  }
+
+  /**
+    * Creates a well-formed `Relation` type.
+    */
+  private def mkRelation(ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkPredicate(Ast.Denotation.Relational, ts0, loc)
+  }
+
+  /**
+    * Creates a well-formed `Lattice` type.
+    */
+  private def mkLattice(ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkPredicate(Ast.Denotation.Latticenal, ts0, loc)
+  }
 }

@@ -273,5 +273,4 @@ object TypeError {
       vt << Code(loc, "unexpected non-schema type.") << NewLine
     }
   }
-
 }

@@ -162,7 +162,32 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "illegal type application.")
       vt << NewLine
-      vt << Underline("Tip:") << " Ensure the type has the correct number of parameters."
+      vt << "Type constructor kind: '" << Red(FormatKind.formatKind(tpe1.kind)) << "'."
+      vt << "Argument kind: '" << Red(FormatKind.formatKind(tpe2.kind)) << "'."
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Ensure the first type is a type constructor." << NewLine
+      vt << "  (2)  Ensure the type has the correct number of parameters." << NewLine
+      vt << "  (3)  Ensure the type constructor accepts the given argument kinds." << NewLine
+    }
+  }
+
+  /**
+    * Illegal effect error.
+    * @param tpe the type used as an effect.
+    * @param loc the location where the error occured.
+    */
+  case class IllegalEffect(tpe: Type, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = "Illegal effect."
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal effect: '"  << FormatType.formatType(tpe) << "'."
+      vt << NewLine
+      vt << Code(loc, "illegal effect.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Effect types must be of boolean kind (Pure/Impure)."
     }
   }
 
