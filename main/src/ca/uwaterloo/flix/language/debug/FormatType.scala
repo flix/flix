@@ -222,14 +222,16 @@ object FormatType {
             case _ => formatApply("∨", args)
           }
 
-          case TypeConstructor.Arrow(arity, eff) =>
+          case TypeConstructor.Arrow(arity) =>
             if (arity < 2) {
               formatApply(s"Arrow$arity", args)
             } else {
 
               // Retrieve and result type.
-              val types = args.take(arity).map(visit)
-              val applyParams = args.drop(arity) // excess args
+              val eff = args.head
+              val typeArgs = args.slice(1, arity + 1)
+              val types = typeArgs.map(visit)
+              val applyParams = typeArgs.drop(arity + 1) // excess args
               val typeStrings = types.padTo(arity, "???")
 
               // Format the arguments.

@@ -39,7 +39,6 @@ sealed trait Type {
     */
   def typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
-    case Type.Cst(TypeConstructor.Arrow(_, eff)) => eff.typeVars
     case Type.Cst(tc) => SortedSet.empty
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -107,7 +106,6 @@ sealed trait Type {
     */
   def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
-    case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eff.map(f)))
     case Type.Cst(_) => this
     case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, tpe.map(f))
     case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
@@ -119,7 +117,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowArgTypes: List[Type] = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.take(n)
+    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(1).dropRight(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 
@@ -129,7 +127,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowResultType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.drop(n - 1).head
+    case Some(TypeConstructor.Arrow(n)) => typeArguments.last
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 
@@ -139,7 +137,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowEffectType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n, _)) => typeArguments.drop(n).head
+    case Some(TypeConstructor.Arrow(n)) => typeArguments.head
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 
@@ -148,7 +146,6 @@ sealed trait Type {
     */
   def size: Int = this match {
     case Type.Var(_, _, _) => 1
-    case Type.Cst(TypeConstructor.Arrow(_, eff)) => eff.size + 1
     case Type.Cst(tc) => 1
     case Type.Lambda(_, tpe) => tpe.size + 1
     case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
@@ -412,7 +409,7 @@ object Type {
   /**
     * Constructs the arrow type A -> B & e.
     */
-  def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = Apply(Apply(Type.Cst(TypeConstructor.Arrow(2, e)), a), b)
+  def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2)), List(e, a, b))
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
@@ -447,7 +444,7 @@ object Type {
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
-    val arrow = Type.Cst(TypeConstructor.Arrow(as.length + 1, e))
+    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1)),  e)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -628,8 +625,6 @@ object Type {
   def simplify(tpe0: Type): Type = {
     def eval(t: Type, subst: Map[Type.Var, Type]): Type = t match {
       case tvar: Type.Var => subst.getOrElse(tvar, tvar)
-
-      case Type.Cst(TypeConstructor.Arrow(l, eff)) => Type.Cst(TypeConstructor.Arrow(l, eval(eff, subst)))
 
       case Type.Cst(_) => t
 

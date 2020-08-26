@@ -89,8 +89,8 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of functions.
     */
-  case class Arrow(arity: Int, eff: Type) extends TypeConstructor { // TODO: Move effect.
-    def kind: Kind = Kind.mkArrow(arity)
+  case class Arrow(arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.Bool ->: Kind.mkArrow(arity)
   }
 
   /**
