@@ -196,14 +196,14 @@ namespace Nel {
     ///
     /// Alias for `foldLeft`.
     ///
-    pub def fold(f: (b, a) -> b, s: b, xs: Nel[a]): b = foldLeft(f, s, xs)
+    pub def fold(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = foldLeft(f, s, xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b, s: b, xs: Nel[a]): b = match xs {
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = match xs {
         case Nel(h, l) => List.foldLeft(f, f(s, h), l)
     }
 
@@ -212,21 +212,21 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b, s: b, xs: Nel[a]): b = match xs {
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Nel[a]): b & e = match xs {
         case Nel(h, l) => f(h, List.foldRight(f, s, l))
     }
 
     ///
     /// Alias for `reduceLeft`.
     ///
-    pub def reduce(f: (a, a) -> a, xs: Nel[a]): a = reduceLeft(f, xs)
+    pub def reduce(f: (a, a) -> a & e, xs: Nel[a]): a & e = reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.
     ///
     /// That is, the result is of the form: `f(...f(f(x1, x2), x3)..., xn)`
     ///
-    pub def reduceLeft(f: (a, a) -> a, xs: Nel[a]): a = match xs {
+    pub def reduceLeft(f: (a, a) -> a & e, xs: Nel[a]): a & e = match xs {
         case Nel(h, l) => List.foldLeft(f, h, l)
     }
 
@@ -235,7 +235,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
-    pub def reduceRight(f: (a, a) -> a, xs: Nel[a]): a = match xs {
+    pub def reduceRight(f: (a, a) -> a & e, xs: Nel[a]): a & e = match xs {
         case Nel(h, l) => match List.reduceRight(f, h :: l) {
             case None    => panic("unreachable")
             case Some(v) => v
