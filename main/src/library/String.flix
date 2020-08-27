@@ -1011,27 +1011,15 @@ namespace String {
         }
 
     ///
-    /// Returns `true` if and only if `sub` is a prefix of `s`.
-    ///
-    pub def isPrefixOf(sub: String, s: String): Bool =
-        startsWith(s, sub)
-
-    ///
     /// Returns `true` if and only if `sub` is an infix of `s`.
     ///
-    pub def isInfixOf(sub: String, s: String): Bool =
+    pub def contains(s: String, sub: String): Bool =
         if (isEmpty(sub))
             true
         else {
             let a = indexOfLeft(sub, s);
             !Option.isEmpty(a)
         }
-
-    ///
-    /// Returns `true` if and only if `sub` is a suffix of `s`.
-    ///
-    pub def isSuffixOf(sub: String, s: String): Bool =
-        endsWith(s, sub)
 
     ///
     /// Return the common prefix of strings `s` and `s2`.
@@ -1306,7 +1294,7 @@ namespace String {
     /// Returns `Some(suffix)` of string `s` if its prefix matches `sub`.
     ///
     pub def stripPrefix(sub: String, s: String): Option[String] =
-        if (!isPrefixOf(sub, s))
+        if (!startsWith(s, sub))
             None
         else
             Some(dropLeft(length(sub), s))
@@ -1315,7 +1303,7 @@ namespace String {
     /// Returns `Some(prefix)` of string `s` if its suffix matches `sub`.
     ///
     pub def stripSuffix(sub: String, s: String): Option[String] =
-        if (!isSuffixOf(sub, s))
+        if (!endsWith(s, sub))
             None
         else
             Some(dropRight(length(sub), s))
