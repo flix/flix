@@ -906,7 +906,7 @@ namespace List {
     ///
     /// Returns the list of characters `xs` as a string.
     ///
-    @Time(length(xs)) @Space(1)
+    @Time(length(xs)) @Space(length(xs))
     pub def toString(xs: List[Char]): Str =
         List.foldLeft((acc, c) -> String.concat(acc, Char.toString(c)), "", xs)
 

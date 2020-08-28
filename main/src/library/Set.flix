@@ -30,7 +30,7 @@ namespace Set {
     ///
     /// Returns the size of `xs`.
     ///
-    @Time(size(xs)) @Space(Int32.log2(size(xs)))
+    @Time(size(xs)) @Space(1)
     pub def size(xs: Set[a]): Int32 =
         let Set(es) = xs;
         RedBlackTree.size(es)
