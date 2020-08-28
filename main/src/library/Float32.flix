@@ -19,76 +19,91 @@ namespace Float32 {
     ///
     /// Returns the number of bits used to represent a `Float32`.
     ///
+    @Time(1) @Space(1)
     pub def size(): Int32 = 32
 
     ///
     /// Returns the maximum exponent that a `Float32` may have.
     ///
+    @Time(1) @Space(1)
     pub def maxExponent(): Int32 = 127
 
     ///
     /// Returns the minimum exponent that a `Float32` may have.
     ///
+    @Time(1) @Space(1)
     pub def minExponent(): Int32 = -126
 
     ///
     /// Returns the maximum number representable by a `Float32`.
     ///
+    @Time(1) @Space(1)
     pub def maxValue(): Float32 = (2.0f32 - 2.0f32 ** -23.0f32) * (2.0f32 ** 127.0f32)
 
     ///
     /// Returns the minimum number representable by a `Float32`.
     ///
+    @Time(1) @Space(1)
     pub def minValue(): Float32 = -maxValue()
 
     ///
     /// Returns the minimum positive number representable by a `Float32`.
     ///
+    @Time(1) @Space(1)
     pub def minPositiveValue(): Float32 = 2.0f32 ** -149.0f32
 
     ///
     /// Returns the NaN (not a number) value of type `Float32`.
     ///
+    @Time(1) @Space(1)
     pub def nan(): Float32 = 0.0f32 / 0.0f32
 
     ///
     /// Returns the positive infinity value of type `Float32`.
     ///
+    @Time(1) @Space(1)
     pub def positiveInfinity(): Float32 = 1.0f32 / 0.0f32
 
     ///
     /// Returns the negative infinity value of type `Float32`.
     ///
+    @Time(1) @Space(1)
     pub def negativeInfinity(): Float32 = -1.0f32 / 0.0f32
 
     ///
     /// Returns true if and only if `x` is a non-infinite and non-Nan `Float32` value.
     ///
+    @Time(1) @Space(1)
     pub def isFinite(x: Float32): Bool = x >= minValue() && x <= maxValue()
 
     ///
     /// Returns true if and only if `x` is an infinite and non-Nan `Float32` value.
     ///
+    @Time(1) @Space(1)
     pub def isInfinite(x: Float32): Bool = x == positiveInfinity() || x == negativeInfinity()
 
     ///
     /// Returns true if and only if `x` is the NaN value of type `Float32`.
     ///
+    @Time(1) @Space(1)
     pub def isNan(x: Float32): Bool = x != x
 
     ///
     /// Returns the smaller of `x` and `y`.
     ///
+    @Time(1) @Space(1)
     pub def min(x: Float32, y: Float32): Float32 = if (x <= y) x else y
 
     ///
     /// Returns the larger of `x` and `y`.
     ///
+    @Time(1) @Space(1)
     pub def max(x: Float32, y: Float32): Float32 = if (x >= y) x else y
 
     ///
     /// Return a string representation of `x`.
     ///
+    @Time(1) @Space(1)
     pub def toString(x: Float32): String =
         import java.lang.Float:toString(Float32);
         x.toString() as & Pure
@@ -104,6 +119,7 @@ namespace Float32 {
     /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
+    @Time(1) @Space(1)
     pub def fromString(s: String): Result[Float32, String] = try {
         import java.lang.String.strip();
         import java.lang.Float:parseFloat(String);
@@ -121,6 +137,7 @@ namespace Float32 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127), or it is NaN or infinity.
     ///
+    @Time(1) @Space(1)
     pub def tryToInt8(x: Float32): Option[Int8] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.byteValue();
@@ -138,6 +155,7 @@ namespace Float32 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767), or it is NaN or infinity.
     ///
+    @Time(1) @Space(1)
     pub def tryToInt16(x: Float32): Option[Int16] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.shortValue();
@@ -158,6 +176,7 @@ namespace Float32 {
     /// Note: while the range of an Int32 is precisely defined using Int32 values, converting this range to
     /// Float32 values is imprecise.
     ///
+    @Time(1) @Space(1)
     pub def tryToInt32(x: Float32): Option[Int32] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.intValue();
@@ -178,6 +197,7 @@ namespace Float32 {
     /// Note: while the range of an Int64 is precisely defined using Int64 values, converting
     /// this range to Float32 values is imprecise.
     ///
+    @Time(1) @Space(1)
     pub def tryToInt64(x: Float32): Option[Int64] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.longValue();
@@ -193,12 +213,14 @@ namespace Float32 {
     ///
     /// Returns `None` if the value of `x` is NaN or infinity.
     ///
+    @Time(1) @Space(1)
     pub def tryToBigInt(x: Float32): Option[BigInt] =
         Float64.tryToBigInt(toFloat64(x))
 
     ///
     /// Convert `x` to an Float64.
     ///
+    @Time(1) @Space(1)
     pub def toFloat64(x: Float32): Float64 =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.doubleValue();
@@ -224,6 +246,7 @@ namespace Float32 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int8 risks masking it.
     ///
+    @Time(1) @Space(1)
     pub def clampToInt8(x: Float32, minimum: Int8, maximum: Int8, nanValue: Int8): Int8 =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.byteValue();
@@ -242,6 +265,7 @@ namespace Float32 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int16 risks masking it.
     ///
+    @Time(1) @Space(1)
     pub def clampToInt16(x: Float32, minimum: Int16, maximum: Int16, nanValue: Int16): Int16 =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.shortValue();
@@ -260,6 +284,7 @@ namespace Float32 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int32 risks masking it.
     ///
+    @Time(1) @Space(1)
     pub def clampToInt32(x: Float32, minimum: Int32, maximum: Int32, nanValue: Int32): Int32 =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.intValue();
@@ -278,6 +303,7 @@ namespace Float32 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int64 risks masking it.
     ///
+    @Time(1) @Space(1)
     pub def clampToInt64(x: Float32, minimum: Int64, maximum: Int64, nanValue: Int64): Int64 =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.longValue();

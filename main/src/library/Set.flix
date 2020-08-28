@@ -30,6 +30,7 @@ namespace Set {
     ///
     /// Returns the size of `xs`.
     ///
+    @Time(size(xs)) @Space(1)
     pub def size(xs: Set[a]): Int32 =
         let Set(es) = xs;
         RedBlackTree.size(es)
@@ -44,6 +45,7 @@ namespace Set {
     ///
     /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
     ///
+    @Time(1) @Space(1)
     pub def empty(): Set[a] = Set(RedBlackTree.empty())
 
     ///
@@ -51,6 +53,7 @@ namespace Set {
     ///
     /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
     ///
+    @Time(1) @Space(1)
     pub def singleton(x: a): Set[a] = insert(x, empty())
 
     ///
@@ -58,12 +61,14 @@ namespace Set {
     ///
     /// Returns `empty()` if `b >= e`.
     ///
+    @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): Set[Int32] =
         if (b >= e) empty() else rangeHelper(b, e - 1, empty())
 
     ///
     /// Adds `x` to `xs`.
     ///
+    @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
     pub def insert(x: a, xs: Set[a]): Set[a] =
         let Set(es) = xs;
         Set(RedBlackTree.insert(x, (), es))
@@ -71,6 +76,7 @@ namespace Set {
     ///
     /// Removes `x` from `xs`.
     ///
+    @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
     pub def delete(x: a, xs: Set[a]): Set[a] =
         let Set(es) = xs;
         Set(RedBlackTree.delete(x, es))
@@ -82,6 +88,7 @@ namespace Set {
     ///
     /// Returns true if and only if `xs` is the empty set.
     ///
+    @Time(1) @Space(1)
     pub def isEmpty(xs: Set[a]): Bool =
         let Set(es) = xs;
         es == RedBlackTree.empty()
@@ -89,6 +96,7 @@ namespace Set {
     ///
     /// Returns true if and only if `x` is a member of `xs`.
     ///
+    @Time(Int32.log2(size(xs))) @Space(1)
     pub def memberOf(x: a, xs: Set[a]): Bool =
         let Set(es) = xs;
         RedBlackTree.memberOf(x, es)
@@ -96,11 +104,13 @@ namespace Set {
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
     ///
+    @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
     pub def isSubsetOf(xs: Set[a], ys: Set[a]): Bool = forall(x -> memberOf(x, ys), xs)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
+    @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
     pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool = size(xs) != size(ys) && isSubsetOf(xs, ys)
 
     ///
@@ -108,6 +118,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
     pub def find(f: a -> Bool, xs: Set[a]): Option[a] = findLeft(f, xs)
 
     ///
@@ -115,6 +126,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
     pub def findLeft(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(es) = xs;
         RedBlackTree.findLeft((x, _) -> f(x), es) |> Option.map(fst)
@@ -124,6 +136,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
     pub def findRight(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(es) = xs;
         RedBlackTree.findRight((x, _) -> f(x), es) |> Option.map(fst)
@@ -189,12 +202,14 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
     pub def count(f: a -> Bool, xs: Set[a]): Int32 =
         foldLeft((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
 
     ///
     /// Returns the union of the elements in `xs`.
     ///
+    @Time(size(xs) * Int32.log2(size(xs))) @Space(size(xs) * Int32.log2(size(xs)))
     pub def flatten(xs: Set[Set[a]]): Set[a] =
         foldLeft((acc, x) -> union(acc, x), empty(), xs)
 
@@ -205,6 +220,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
     pub def exists(f: a -> Bool, xs: Set[a]): Bool =
         let Set(es) = xs;
         RedBlackTree.exists((x, _) -> f(x), es)
@@ -216,6 +232,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
     pub def forall(f: a -> Bool, xs: Set[a]): Bool =
         let Set(es) = xs;
         RedBlackTree.forall((x, _) -> f(x), es)
@@ -228,24 +245,28 @@ namespace Set {
     ///
     /// Returns the union of `xs` and `ys`.
     ///
+    @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
     pub def union(xs: Set[a], ys: Set[a]): Set[a] =
         foldLeft((acc, x) -> insert(x, acc), xs, ys)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
+    @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
     pub def intersection(xs: Set[a], ys: Set[a]): Set[a] =
         foldLeft((acc, x) -> if (memberOf(x, xs)) insert(x, acc) else acc, empty(), ys)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
     ///
+    @Time(size(xs) * Int32.log2(size(ys))) @Space(size(xs) * Int32.log2(size(ys)))
     pub def difference(xs: Set[a], ys: Set[a]): Set[a] =
         foldLeft((acc, x) -> if (!memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
 
     ///
     /// Returns all subsets of `xs`.
     ///
+    @Time(size(xs) * (1 <<< size(xs))) @Space(size(xs) * (1 <<< size(xs)))
     pub def subsets(xs: Set[a]): Set[Set[a]] =
         foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), xs)
 
@@ -259,6 +280,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
     pub def filter(f: a -> Bool, xs: Set[a]): Set[a] =
         foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs)
 
@@ -267,12 +289,14 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
+    @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
     pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
+    @Time(time(f) * size(xs) * Int32.log2(size(xs))) @Space(space(f) * size(xs) * Int32.log2(size(xs)))
     pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e =
         foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
 
@@ -281,6 +305,7 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
+    @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
     pub def replace(x: a, y: a, xs: Set[a]): Set[a] =
         if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
 
@@ -292,6 +317,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(size(xs) * Int32.log2(size(xs))) @Space(size(xs) * Int32.log2(size(xs)))
     pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
         foldLeft((acc, x) ->
             let (a, b) = acc;
@@ -307,12 +333,14 @@ namespace Set {
     ///
     /// Returns `xs` as a mutable set.
     ///
+    @Time(1) @Space(1)
     pub def toMutable(xs: Set[a]): MutSet[a] & Impure =
         MutSet(ref xs)
 
     ///
     /// Returns the set `xs` as a list.
     ///
+    @Time(size(xs)) @Space(size(xs))
     pub def toList(xs: Set[a]): List[a] =
         foldLeft((acc, x) -> x :: acc, Nil, xs)
 
@@ -322,6 +350,7 @@ namespace Set {
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
+    @Time(size(xs)) @Space(size(xs))
     pub def toMap(xs: Set[(a, b)]): Map[a, b] =
         foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, xs)
 
@@ -330,6 +359,7 @@ namespace Set {
     ///
     /// The function `f` must be impure.
     ///
+    @Time(size(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
     pub def foreach(f: a ~> Unit, xs: Set[a]): Unit & Impure =
         let Set(es) = xs;
         RedBlackTree.foreach((x, _) -> f(x), es)
