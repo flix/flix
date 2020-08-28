@@ -93,32 +93,6 @@ def length01(): Bool = String.length("") == 0
 def length02(): Bool = String.length("0123456789") == 10
 
 /////////////////////////////////////////////////////////////////////////////
-// startsWith                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def startsWith01(): Bool = String.startsWith("Hello World!", "") == true
-
-@test
-def startsWith02(): Bool = String.startsWith("Hello World!", "Hello") == true
-
-@test
-def startsWith03(): Bool = String.startsWith("Hello World!", "HELLO") == false
-
-/////////////////////////////////////////////////////////////////////////////
-// endsWith                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def endsWith01(): Bool = String.endsWith("Hello World!", "") == true
-
-@test
-def endsWith02(): Bool = String.endsWith("Hello World!", "World!") == true
-
-@test
-def endsWith03(): Bool = String.endsWith("Hello World!", "WORLD!") == false
-
-/////////////////////////////////////////////////////////////////////////////
 // split                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2601,100 +2575,118 @@ def indexOfRight08(): Bool = String.indexOfRight("ab", "ab") == Some(0)
 def indexOfRight09(): Bool = String.indexOfRight("bc", "abc") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
-// isPrefixOf                                                              //
+// startsWith                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def isPrefixOf01(): Bool = String.isPrefixOf("", "") == true
+def startsWith01(): Bool = String.startsWith("", "") == true
 
 @test
-def isPrefixOf02(): Bool = String.isPrefixOf("", "a") == true
+def startsWith02(): Bool = String.startsWith("a", "") == true
 
 @test
-def isPrefixOf03(): Bool = String.isPrefixOf("", "abc") == true
+def startsWith03(): Bool = String.startsWith("abc", "") == true
 
 @test
-def isPrefixOf04(): Bool = String.isPrefixOf("a", "") == false
+def startsWith04(): Bool = String.startsWith("", "a") == false
 
 @test
-def isPrefixOf05(): Bool = String.isPrefixOf("a", "a") == true
+def startsWith05(): Bool = String.startsWith("a", "a") == true
 
 @test
-def isPrefixOf06(): Bool = String.isPrefixOf("a", "b") == false
+def startsWith06(): Bool = String.startsWith("b", "a") == false
 
 @test
-def isPrefixOf07(): Bool = String.isPrefixOf("a", "aa") == true
+def startsWith07(): Bool = String.startsWith("aa", "a") == true
 
 @test
-def isPrefixOf08(): Bool = String.isPrefixOf("ab", "ab") == true
+def startsWith08(): Bool = String.startsWith("ab", "ab") == true
 
 @test
-def isPrefixOf09(): Bool = String.isPrefixOf("bc", "abc") == false
+def startsWith09(): Bool = String.startsWith("abc", "bc") == false
+
+@test
+def startsWith10(): Bool = String.startsWith("Hello World!", "") == true
+
+@test
+def startsWith11(): Bool = String.startsWith("Hello World!", "Hello") == true
+
+@test
+def startsWith12(): Bool = String.startsWith("Hello World!", "HELLO") == false
 
 /////////////////////////////////////////////////////////////////////////////
-// isInfixOf                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def isInfixOf01(): Bool = String.isInfixOf("", "") == true
-
-@test
-def isInfixOf02(): Bool = String.isInfixOf("", "a") == true
-
-@test
-def isInfixOf03(): Bool = String.isInfixOf("", "abc") == true
-
-@test
-def isInfixOf04(): Bool = String.isInfixOf("a", "") == false
-
-@test
-def isInfixOf05(): Bool = String.isInfixOf("a", "a") == true
-
-@test
-def isInfixOf06(): Bool = String.isInfixOf("a", "b") == false
-
-@test
-def isInfixOf07(): Bool = String.isInfixOf("a", "aa") == true
-
-@test
-def isInfixOf08(): Bool = String.isInfixOf("ab", "ab") == true
-
-@test
-def isInfixOf09(): Bool = String.isInfixOf("bc", "abc") == true
-
-/////////////////////////////////////////////////////////////////////////////
-// isSuffixOf                                                              //
+// contains                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def isSuffixOf01(): Bool = String.isSuffixOf("", "") == true
+def contains01(): Bool = String.contains("", "") == true
 
 @test
-def isSuffixOf02(): Bool = String.isSuffixOf("", "a") == true
+def contains02(): Bool = String.contains("a", "") == true
 
 @test
-def isSuffixOf03(): Bool = String.isSuffixOf("", "abc") == true
+def contains03(): Bool = String.contains("abc", "") == true
 
 @test
-def isSuffixOf04(): Bool = String.isSuffixOf("a", "") == false
+def contains04(): Bool = String.contains("", "a") == false
 
 @test
-def isSuffixOf05(): Bool = String.isSuffixOf("a", "a") == true
+def contains05(): Bool = String.contains("a", "a") == true
 
 @test
-def isSuffixOf06(): Bool = String.isSuffixOf("a", "b") == false
+def contains06(): Bool = String.contains("b", "a") == false
 
 @test
-def isSuffixOf07(): Bool = String.isSuffixOf("a", "aa") == true
+def contains07(): Bool = String.contains("aa", "a") == true
 
 @test
-def isSuffixOf08(): Bool = String.isSuffixOf("ab", "ab") == true
+def contains08(): Bool = String.contains("ab", "ab") == true
 
 @test
-def isSuffixOf09(): Bool = String.isSuffixOf("bc", "abc") == true
+def contains09(): Bool = String.contains("abc", "bc") == true
+
+/////////////////////////////////////////////////////////////////////////////
+// endsWith                                                              //
+/////////////////////////////////////////////////////////////////////////////
 
 @test
-def isSuffixOf10(): Bool = String.isSuffixOf("ab", "abc") == false
+def endsWith01(): Bool = String.endsWith("", "") == true
+
+@test
+def endsWith02(): Bool = String.endsWith("a", "") == true
+
+@test
+def endsWith03(): Bool = String.endsWith("abc", "") == true
+
+@test
+def endsWith04(): Bool = String.endsWith("", "a") == false
+
+@test
+def endsWith05(): Bool = String.endsWith("a", "a") == true
+
+@test
+def endsWith06(): Bool = String.endsWith("b", "a") == false
+
+@test
+def endsWith07(): Bool = String.endsWith("aa", "a") == true
+
+@test
+def endsWith08(): Bool = String.endsWith("ab", "ab") == true
+
+@test
+def endsWith09(): Bool = String.endsWith("abc", "bc") == true
+
+@test
+def endsWith10(): Bool = String.endsWith("abc", "ab") == false
+
+@test
+def endsWith11(): Bool = String.endsWith("Hello World!", "") == true
+
+@test
+def endsWith12(): Bool = String.endsWith("Hello World!", "World!") == true
+
+@test
+def endsWith13(): Bool = String.endsWith("Hello World!", "WORLD!") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // commonPrefix                                                            //
