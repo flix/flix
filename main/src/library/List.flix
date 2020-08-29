@@ -1077,12 +1077,69 @@ namespace List {
     pub def unfoldWithOkIter(next: Unit ~> Result[Option[a], e]): Result[List[a], e] & Impure = unfoldWithOkIterHelper(next, xs -> xs)
 
     ///
-    /// Helper function for `unfoldWithOkIter`
+    /// Helper function for `unfoldWithOkIter`.
     ///
     def unfoldWithOkIterHelper(next: Unit ~> Result[Option[a], e], k: Result[List[a], e] -> Result[List[a], e]): Result[List[a], e] & Impure = match next() {
         case Ok(None) => k(Ok(Nil))
         case Err(e) => k(Err(e))
         case Ok(Some(a)) => unfoldWithOkIterHelper(next, Result.flatMap(xs -> k(Ok(a :: xs))))
+    }
+
+    ///
+    /// Returns the list `xs` with duplicates removed. The first occurence of
+    /// an element is kept and except for the removal of subsequent duplicates
+    /// the order of `xs` is preserved.
+    ///
+    /// `distinct` uses the Flix's builtin equality test. Use `distinctWith` if you
+    /// need a custom equality test.
+    ///
+    pub def distinct(xs: List[a]): List[a] =
+        distinctHelper(xs, Nil, ks -> ks)
+
+    ///
+    /// Helper function for `distinct`.
+    ///
+    def distinctHelper(xs: List[a], ys: List[a], k: List[a] -> List[a]): List[a] = match xs {
+        case Nil => k(Nil)
+        case x :: rs =>
+            if (memberOf(x, ys))
+                distinctHelper(rs, ys, k)
+            else
+                distinctHelper(rs, (x :: ys), ks -> k(x :: ks))
+    }
+
+    ///
+    /// Returns the list `xs` with duplicates removed using the supplied function
+    /// `f` for comparison. The first occurence of an element is kept and except
+    /// for the removal of subsequent duplicates the order of `xs` is preserved.
+    ///
+    pub def distinctWith(f: (a, a) -> Bool, xs: List[a]): List[a] =
+        distinctWithHelper(f, xs, Nil, ks -> ks)
+
+    ///
+    /// Helper function for `distinctWith`.
+    ///
+    def distinctWithHelper(f: (a, a) -> Bool, xs: List[a], ys: List[a], k: List[a] -> List[a]): List[a] = match xs {
+        case Nil => k(Nil)
+        case x :: rs =>
+            if (memberOfWith(f, x, ys))
+                distinctWithHelper(f, rs, ys, k)
+            else
+                distinctWithHelper(f, rs, (x :: ys), ks -> k(x :: ks))
+    }
+
+    ///
+    /// Helper function for `distinctWith`.
+    ///
+    /// This is a generalization of `memberOf` that uses the function `f` for comparison.
+    ///
+    def memberOfWith(f: (a, a) -> Bool, x: a, xs: List[a]): Bool = match xs {
+        case Nil => false
+        case y :: rs =>
+            if (f(x, y))
+                true
+            else
+                memberOfWith(f, x, rs)
     }
 
     ///
