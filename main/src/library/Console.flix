@@ -738,7 +738,7 @@ namespace Console {
             false
         else {
             let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
-            List.exists(s -> String.isInfixOf(s, p), keywords)
+            List.exists(s -> String.contains(p, s), keywords)
         }
 
     ///

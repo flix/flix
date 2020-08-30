@@ -21,6 +21,7 @@ namespace Array {
     ///
     /// Equivalent to the expression `[x; l]`.
     ///
+    @Time(l) @Space(l)
     pub def new(x: a, l: Int32): Array[a] & Impure = [x; l]
 
     ///
@@ -28,6 +29,7 @@ namespace Array {
     ///
     /// Equivalent to the expression `a[i]`.
     ///
+    @Time(1) @Space(1)
     pub def get(a: Array[a], i: Int32): a & Impure = a[i]
 
     ///
@@ -35,11 +37,13 @@ namespace Array {
     ///
     /// Equivalent to the expression `a[i] = x`.
     ///
+    @Time(1) @Space(1)
     pub def put(a: Array[a], i: Int32, x: a): Array[a] & Impure = a[i] = x; a
 
     ///
     /// Returns the length of the array `a`.
     ///
+    @Time(1) @Space(1)
     pub def length(a: Array[a]): Int32 = a.length
 
     ///
@@ -47,11 +51,13 @@ namespace Array {
     ///
     /// Equivalent to the expression `a[b..e]`.
     ///
+    @Time(e - b) @Space(e - b)
     pub def slice(a: Array[a], b: Int32, e: Int32): Array[a] & Impure = a[b..e]
 
     ///
     /// Returns the array `a` as a list.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, length(a), 0, Nil)
 
     ///
@@ -70,6 +76,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
+    @Time(1) @Space(1)
     pub def head(a: Array[a]): Option[a] & Impure =
         if (length(a) > 0) Some(a[0]) else None
 
@@ -78,6 +85,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
+    @Time(1) @Space(1)
     pub def last(a: Array[a]): Option[a] & Impure =
         let len = length(a);
         if (len > 0) Some(a[len-1]) else None
@@ -85,6 +93,7 @@ namespace Array {
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
+    @Time(length(a) + length(b)) @Space(length(a) + length(b))
     pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
         appendHelper(a, b)
 
@@ -106,18 +115,21 @@ namespace Array {
     ///
     /// Returns `true` if and only if `a` contains the element `x`.
     ///
+    @Time(length(a)) @Space(1)
     pub def memberOf(x: a, a: Array[a]): Bool & Impure =
         exists(y -> y == x, a)
 
     ///
     /// Alias for `IndexOfLeft`
     ///
+    @Time(length(a)) @Space(1)
     pub def indexOf(x: a, a: Array[a]): Option[Int32] & Impure = indexOfLeft(x,a)
 
     ///
     /// Optionally returns the position of the first occurence of `x` in `a`
     /// searching from left to right.
     ///
+    @Time(length(a)) @Space(1)
     pub def indexOfLeft(x: a, a: Array[a]): Option[Int32] & Impure =
         let i = indexOfLeftHelper(x, a, length(a), 0);
         if (i < 0) None else Some(i)
@@ -138,6 +150,7 @@ namespace Array {
     /// Optionally returns the position of the first occurence of `x` in `a`
     /// searching from right to left.
     ///
+    @Time(length(a)) @Space(1)
     pub def indexOfRight(x: a, a: Array[a]): Option[Int32] & Impure =
         let start = length(a) - 1;
         let i = indexOfRightHelper(x, a, start);
@@ -158,6 +171,7 @@ namespace Array {
     ///
     /// Return the positions of the all the occurences of `x` in `a`.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def indices(x: a, a: Array[a]): Array[Int32] & Impure =
         findIndices(y -> x == y, a)
 
@@ -166,6 +180,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(xs)) @Space(space(f))
     pub def find(f: a -> Bool, xs: Array[a]): Option[a] & Impure = findLeft(f, xs)
 
     ///
@@ -173,6 +188,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def findLeft(f: a -> Bool, a: Array[a]): Option[a] & Impure =
         match findIndexOfLeft(x -> f(x), a) {
             case None => None
@@ -184,6 +200,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def findRight(f: a -> Bool, a: Array[a]): Option[a] & Impure =
         match findIndexOfRight(x -> f(x), a) {
             case None => None
@@ -195,6 +212,7 @@ namespace Array {
     ///
     /// Returns `[]` if `b >= e`.
     ///
+    @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): Array[Int32] & Impure =
         if (b >= e)
             []
@@ -208,6 +226,7 @@ namespace Array {
     ///
     /// Returns `[]` if `n <= 0`.
     ///
+    @Time(n) @Space(n)
     pub def repeat(x: a, n: Int32): Array[a] & Impure =
         if (n <= 0)
             []
@@ -270,6 +289,7 @@ namespace Array {
     ///
     /// The result is a new array.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def map(f: a -> b & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
         init(i -> f(a[i]), len)
@@ -277,6 +297,7 @@ namespace Array {
     ///
     /// Apply `f` to every element in array `a`. Array `a` is mutated.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def transform!(f: a -> a, a: mut Array[a]): Unit & Impure =
         transformHelper!(f, length(a), a, 0)
 
@@ -296,6 +317,7 @@ namespace Array {
     ///
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def mapWithIndex(f: (a, Int32) -> b & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
         init(i -> f(a[i], i), len)
@@ -303,6 +325,7 @@ namespace Array {
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def transformWithIndex!(f: (a, Int32) -> a, a: mut Array[a]): Unit & Impure =
         transformWithIndexHelper!(f, length(a), a, 0)
 
@@ -320,6 +343,7 @@ namespace Array {
     ///
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def flatMap(f: a -> Array[b] & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
         init(i -> f(a[i]), len) |> flatten
@@ -327,6 +351,7 @@ namespace Array {
     ///
     /// Returns the reverse of `a`.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def reverse(a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let end = len - 1;
@@ -335,6 +360,7 @@ namespace Array {
     ///
     /// Reverse the array `a`, mutating it in place.
     ///
+    @Time(length(a)) @Space(1)
     pub def reverse!(a: mut Array[a]): Unit & Impure =
         let len = length(a);
         reverseHelper!(a, len / 2, 0, len - 1)
@@ -356,6 +382,7 @@ namespace Array {
     ///
     /// Rotate the contents of array `a` by `n` steps to the left.
     ///
+    @Time(n) @Space(length(a))
     pub def rotateLeft(n: Int32, a: Array[a]): Array[a] & Impure =
         if (length(a) < 1)
             []
@@ -378,6 +405,7 @@ namespace Array {
     ///
     /// Rotate the contents of array `a` by `n` steps to the right.
     ///
+    @Time(n) @Space(length(a))
     pub def rotateRight(n: Int32, a: Array[a]): Array[a] & Impure =
         if (length(a) < 1)
             []
@@ -404,6 +432,7 @@ namespace Array {
     ///
     /// Returns a shallow copy of `a` if `i < 0` or `i > length(xs)-1`.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def update(i: Int32, x: a, a: Array[a]): Array[a] & Impure =
         let f = ix -> if (ix == i) x else a[ix];
         init(f, length(a))
@@ -411,12 +440,14 @@ namespace Array {
     ///
     /// Returns a copy of `a` with every occurrence of `x` replaced by `y`.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def replace(x: a, y: a, a: Array[a]): Array[a] & Impure =
         map(e -> if (e == x) y else e, a)
 
     ///
     /// Replace every occurrence of `x` by `y` in the array `a`, mutating it in place.
     ///
+    @Time(length(a)) @Space(1)
     pub def replace!(x: a, y: a, a: mut Array[a]): Unit & Impure =
         transform!(e -> if (e == x) y else e, a)
 
@@ -427,6 +458,7 @@ namespace Array {
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
+    @Time(n) @Space(length(b))
     pub def patch(i: Int32, n: Int32, a: Array[a], b: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
@@ -440,6 +472,7 @@ namespace Array {
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
+    @Time(n) @Space(1)
     pub def patch!(i: Int32, n: Int32, a: Array[a], b: mut Array[a]): Unit & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
@@ -449,6 +482,7 @@ namespace Array {
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def intersperse(x: a, a: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
@@ -464,6 +498,7 @@ namespace Array {
     ///
     /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
     ///
+    @Time(length(arrs)) @Space(length(arrs))
     pub def intercalate(sep: Array[a], arrs: Array[Array[a]]): Array[a] & Impure =
         let count = length(arrs);
         let sepLength = length(sep);
@@ -531,6 +566,7 @@ namespace Array {
     ///
     /// Returns `a` if the dimensions of the elements of `a` are mismatched.
     ///
+    @Time(length(a) * length(a)) @Space(length(a) * length(a))
     pub def transpose(a: Array[Array[a]]): Array[Array[a]] & Impure =
         let ilen = length(a);
         if (ilen == 0)
@@ -552,6 +588,7 @@ namespace Array {
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
+    @Time(length(a1)) @Space(1)
     pub def isPrefixOf(a1: Array[a], a2: Array[a]): Bool & Impure =
         let len1 = length(a1);
         if (len1 > length(a2))
@@ -574,6 +611,7 @@ namespace Array {
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
+    @Time(length(a1)) @Space(1)
     pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool & Impure =
         let len1 = length(a1);
         let len2 = length(a2);
@@ -619,6 +657,7 @@ namespace Array {
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
+    @Time(length(a1)) @Space(1)
     pub def isSuffixOf(a1: Array[a], a2: Array[a]): Bool & Impure =
         let len1 = length(a1);
         let len2 = length(a2);
@@ -741,12 +780,14 @@ namespace Array {
     ///
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def count(f: a -> Bool, a: Array[a]): Int32 & Impure =
         foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a) as & Impure
 
     ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
+    @Time(length(arrs)) @Space(length(arrs))
     pub def flatten(arrs: Array[Array[a]]) : Array[a] & Impure =
         let len = sumLengths(arrs);
         match headArrays(arrs) {
@@ -765,6 +806,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def exists(f: a -> Bool, a: Array[a]): Bool & Impure =
         existsHelper(f, a, length(a), 0)
 
@@ -785,6 +827,7 @@ namespace Array {
     ///
     /// Returns `true` if `a` is empty.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def forall(f: a -> Bool, a: Array[a]): Bool & Impure =
         forallHelper(f, a, length(a), 0)
 
@@ -805,6 +848,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filter(f: a -> Bool, a: Array[a]): Array[a] & Impure =
         foldRight((x,xs) -> if (f(x)) x :: xs else xs, Nil, a) |> List.toArray
 
@@ -816,6 +860,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
         let step = { (x, ac) ->
             let (a1,a2) = ac;
@@ -832,6 +877,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space()
     pub def span(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
         match findIndexOfLeft(x -> !(f(x)), a) {
             case None => (takeLeft(length(a), a), [])
@@ -841,6 +887,7 @@ namespace Array {
     ///
     /// Alias for `dropLeft`.
     ///
+    @Time(length(a) - n) @Space(length(a) - n)
     pub def drop(n: Int32, a: Array[a]) : Array[a] & Impure = dropLeft(n, a)
 
     ///
@@ -848,6 +895,7 @@ namespace Array {
     ///
     /// Returns `[]` if `n > length(a)`.
     ///
+    @Time(length(a) - n) @Space(length(a) - n)
     pub def dropLeft(n: Int32, a: Array[a]) : Array[a] & Impure =
         let len = length(a);
         if (n > len)
@@ -862,6 +910,7 @@ namespace Array {
     ///
     /// Returns `[]` if `n > length(a)`.
     ///
+    @Time(length(a) - n) @Space(length(a) - n)
     pub def dropRight(n: Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
         if (n >= len)
@@ -877,6 +926,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def dropWhile(f: a -> Bool, a: Array[a]): Array[a] & Impure = dropWhileLeft(f, a)
 
     ///
@@ -884,6 +934,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def dropWhileLeft(f: a -> Bool, a: Array[a]): Array[a]  & Impure =
         match findIndexOfLeft(x -> !(f(x)), a) {
             case None => []
@@ -895,6 +946,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def dropWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
         match findIndexOfRight(x -> !(f(x)), a) {
             case None => []
@@ -904,6 +956,7 @@ namespace Array {
     ///
     /// Alias for `takeLeft`.
     ///
+    @Time(n) @Space(n)
     pub def take(n: Int32, a: Array[a]) : Array[a] & Impure = takeLeft(n, a)
 
     ///
@@ -911,6 +964,7 @@ namespace Array {
     ///
     /// Returns `a` if `n > length(xs)`.
     ///
+    @Time(n) @Space(n)
     pub def takeLeft(n: Int32, a: Array[a]) : Array[a] & Impure =
         if (n <= 0)
             []
@@ -925,6 +979,7 @@ namespace Array {
     ///
     /// Returns `a` if `n > length(xs)`.
     ///
+    @Time(n) @Space(n)
     pub def takeRight(n: Int32, a: Array[a]) : Array[a] & Impure =
         if (n <= 0)
             []
@@ -939,6 +994,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def takeWhile(f: a -> Bool, a: Array[a]): Array[a] & Impure = takeWhileLeft(f, a)
 
     ///
@@ -946,6 +1002,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def takeWhileLeft(f: a -> Bool, a: Array[a]): Array[a] & Impure =
         match findIndexOfLeft(x -> !(f(x)), a) {
             case None => a
@@ -957,6 +1014,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def takeWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
         match findIndexOfRight(x -> !(f(x)), a) {
             case None => slice(a, 0, length(a))
@@ -971,6 +1029,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
     pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
         let xs = toList(a);
         groupByHelper(f, xs, Nil) |> List.toArray
@@ -1019,6 +1078,7 @@ namespace Array {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
+    @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: Array[a], b: Array[b]): Array[(a,b)] & Impure =
         let len = Int32.min(length(a), length(b));
         init(i -> (a[i], b[i]), len)
@@ -1029,6 +1089,7 @@ namespace Array {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
+    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def zipWith(f: (a, b) -> c & e, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
         init(i -> f(a[i], b[i]), len)
@@ -1037,6 +1098,7 @@ namespace Array {
     /// Returns a pair of arrays, the first containing all first components in `a`
     /// and the second containing all second components in `a`.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def unzip(a: Array[(a,b)]): (Array[a], Array[b]) & Impure =
         init2(i -> a[i], length(a))
 
@@ -1045,6 +1107,7 @@ namespace Array {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
+    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def map2(f: (a, b) -> c & e, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
         init(i -> f(a[i], b[i]), len)
@@ -1052,6 +1115,7 @@ namespace Array {
     ///
     /// Concatenates the results of applying `f` pairwise to the elements of `a` and `b`.
     ///
+    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def flatMap2(f: (a, b) -> Array[c] & e, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
         init(i -> f(a[i], b[i]), len) |> flatten
@@ -1059,6 +1123,7 @@ namespace Array {
     ///
     /// Alias for `foldLeft2`.
     ///
+    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
     pub def fold2(f: (c, a, b) -> c & e, c: c, a: Array[a], b: Array[b]): c & Impure =
         foldLeft2(f, c, a, b)
 
@@ -1066,6 +1131,7 @@ namespace Array {
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from left to right.
     ///
+    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
     pub def foldLeft2(f: (c, a, b) ->  c & e, c: c, a: Array[a], b: Array[b]): c & Impure =
         let lena = length(a);
         let lenb = length(b);
@@ -1088,6 +1154,7 @@ namespace Array {
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from right to left.
     ///
+    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
     pub def foldRight2(f: (a, b, c) -> c & e, c: c, a: Array[a], b: Array[b]): c & Impure =
         let starta = length(a) - 1;
         let startb = length(b) - 1;
@@ -1109,6 +1176,7 @@ namespace Array {
     ///
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & e, a: Array[a]): Array[b] & Impure =
         foldRight((x,xs) -> match f(x) {
             case None => xs
@@ -1119,6 +1187,7 @@ namespace Array {
     ///
     /// Returns `None` if every element of `xs` is `None`.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def findMap(f: a -> Option[b] & e, a: Array[a]): Option[b] & Impure =
         findMapHelper(f, a, length(a), 0)
 
@@ -1139,6 +1208,7 @@ namespace Array {
     ///
     /// Returns the array `a` as a set.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def toSet(a: Array[a]): Set[a] & Impure = foldRight(Set.insert, Set.empty(), a)
 
     ///
@@ -1147,6 +1217,7 @@ namespace Array {
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def toMap(a: Array[(a, b)]): Map[a, b] & Impure =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
@@ -1155,6 +1226,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def findIndexOf(f: a -> Bool, a: Array[a]): Option[Int32] & Impure = findIndexOfLeft(f,a)
 
     ///
@@ -1162,6 +1234,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def findIndexOfLeft(f: a -> Bool, a: Array[a]): Option[Int32] & Impure =
         if (length(a) < 1)
             None
@@ -1188,6 +1261,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def findIndexOfRight(f: a -> Bool, a: Array[a]): Option[Int32] & Impure =
         let len = length(a);
         let i = findIndexOfRightHelper(f, a, len-1);
@@ -1210,6 +1284,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def findIndices(f: a -> Bool, a: Array[a]): Array[Int32] & Impure =
         findIndicesHelper(f, a, length(a), 0) |> List.toArray
 
@@ -1227,6 +1302,7 @@ namespace Array {
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
+    @Time(time(f) * len) @Space(space(f) * len)
     pub def init(f: Int32 -> a & e, len: Int32): Array[a] & Impure =
         if (len <= 0)
             []
@@ -1251,6 +1327,7 @@ namespace Array {
     ///
     /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
     ///
+    @Time(time(f) * len) @Space(space(f) * len)
     pub def init2(f: Int32 -> (a,b) & e, len: Int32): (Array[a], Array[b]) & Impure =
         if (len <= 0)
             ([], [])
@@ -1278,6 +1355,7 @@ namespace Array {
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
+    @Time(length(a)) @Space(1)
     pub def sameElements(a: Array[a], b: Array[a]): Bool & Impure =
         let alen = length(a);
         let blen = length(b);
@@ -1301,6 +1379,7 @@ namespace Array {
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def foreach(f: a ~> Unit, a: Array[a]): Unit & Impure =
         let len = length(a);
         if (len < 1)
@@ -1322,6 +1401,7 @@ namespace Array {
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def foreachWithIndex(f: (a, Int32) ~> Unit, a: Array[a]): Unit & Impure =
         let len = length(a);
         if (len < 1)
@@ -1344,6 +1424,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a` and the accumulator `s`.
     /// The function returns the final value of the accumulator `s`.
     ///
+    @Time(time(f) * length(a)) @Space(space(f))
     pub def foreachAccum(f: (a, st) ~> st, s: st, a: Array[a]): st & Impure =
         foreachAccumHelper(f, a, length(a), s, 0)
 
@@ -1361,6 +1442,7 @@ namespace Array {
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
         let end = i + length(sub);
         let f = ix -> if (ix >= i && ix < end) sub[ix - i] else a[ix];
@@ -1369,6 +1451,7 @@ namespace Array {
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
+    @Time(length(a)) @Space(1)
     pub def updateSequence!(i: Int32, sub: Array[a], a: mut Array[a]): Unit & Impure =
         let end = i + length(sub);
         let f = { (_,ix) ->
@@ -1383,6 +1466,7 @@ namespace Array {
     /// Render the array `a` as a String. Elements are rendered with the
     /// function `f` and seperated with the string `sep`.
     ///
+    @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def formatWith(f: a -> String, sep: String, a: Array[a]): String & Impure =
         let sb = StringBuilder.new();
         let step = (x,i) ->
@@ -1400,6 +1484,7 @@ namespace Array {
     ///
     /// The sort implementation is quicksort.
     ///
+    @Time(length(a)) @Space(length(a))
     pub def sortWith(cmp: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let b = slice(a, 0, len);
@@ -1411,6 +1496,7 @@ namespace Array {
     ///
     /// The sort implementation is quicksort.
     ///
+    @Time(length(a) * length(a)) @Space(length(a))
     pub def sortWith!(cmp: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
         let len = length(a);
         if (len == 0)

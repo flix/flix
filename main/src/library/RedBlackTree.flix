@@ -69,6 +69,7 @@ namespace RedBlackTree {
     ///
     /// Returns the number of nodes in `tree`.
     ///
+    @Time(size(tree)) @Space(Int32.log2(size(tree)))
     pub def size(tree: RedBlackTree[k, v]): Int32 = match tree {
         case Node(_, a, _, _, b) => 1 + size(a) + size(b)
         case _ => 0
@@ -77,6 +78,7 @@ namespace RedBlackTree {
     ///
     /// Returns the empty tree.
     ///
+    @Time(1) @Space(1)
     pub def empty(): RedBlackTree[k, v] = Leaf
 
     ///
@@ -84,6 +86,7 @@ namespace RedBlackTree {
     ///
     /// Otherwise, updates `tree` with `k -> v`.
     ///
+    @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
     pub def insert(k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] =
         insertWith((_, v1, _) -> v1, k, v, tree)
 
@@ -92,6 +95,7 @@ namespace RedBlackTree {
     ///
     /// Otherwise, updates `tree` with `k -> v`.
     ///
+    @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
     pub def insertWith(f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e =
         blacken(insertWithHelper(f, k, v, tree))
 
@@ -100,6 +104,7 @@ namespace RedBlackTree {
     ///
     /// Otherwise, returns `tree`.
     ///
+    @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
     pub def updateWith(f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e =
         blacken(updateWithHelper(f, k, tree))
 
@@ -108,6 +113,7 @@ namespace RedBlackTree {
     ///
     /// Otherwise, returns `tree`.
     ///
+    @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
     pub def delete(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = redden(deleteHelper(k, tree))
 
     ///
@@ -115,6 +121,7 @@ namespace RedBlackTree {
     ///
     /// Otherwise returns `None`.
     ///
+    @Time(Int32.log2(size(tree))) @Space(1)
     pub def get(k: k, tree: RedBlackTree[k, v]): Option[v] = match tree {
         case Node(_, a, k1, v, b) =>
             let cmp = k <=> k1;
@@ -130,6 +137,7 @@ namespace RedBlackTree {
     ///
     /// Returns `true` if and only if `tree` contains the key `k`.
     ///
+    @Time(Int32.log2(size(tree))) @Space(1)
     pub def memberOf(k: k, tree: RedBlackTree[k, v]): Bool = get(k, tree) != None
 
     ///
@@ -137,6 +145,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
     pub def findLeft(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
         case Node(_, a, k, v, b) => match findLeft(f, a) {
             case None => if (f(k, v)) Some((k, v)) else findLeft(f, b)
@@ -150,6 +159,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
     pub def findRight(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
         case Node(_, a, k, v, b) => match findRight(f, b) {
             case None => if (f(k, v)) Some(k, v) else findRight(f, a)
@@ -210,6 +220,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
     pub def exists(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool = match tree {
         case Node(_, a, k, v, b) => f(k, v) || exists(f, a) || exists(f, b)
         case _ => false
@@ -222,6 +233,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be pure.
     ///
+    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
     pub def forall(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool = match tree {
         case Node(_, a, k, v, b) => f(k, v) && forall(f, a) && forall(f, b)
         case _ => true
@@ -232,6 +244,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
+    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
     pub def foreach(f: (k, v) ~> Unit, tree: RedBlackTree[k, v]): Unit & Impure = match tree {
         case Node(_, a, k, v, b) => foreach(f, a); f(k, v); foreach(f, b)
         case _ => ()
