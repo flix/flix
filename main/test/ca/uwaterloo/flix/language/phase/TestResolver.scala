@@ -688,6 +688,24 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalUninhabitedType](result)
   }
 
+  test("IllegalUninhabitedType.10") {
+    val input = "def f(): Int = 1: Pure"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
+  test("IllegalUninhabitedType.11") {
+    val input =
+      """
+        |enum E[a, b] {
+        |  case C(a, b)
+        |}
+        |
+        |def f(): Int = 1: E[Int]""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalUninhabitedType](result)
+  }
+
   test("IllegalEffect.01") {
     val input = "def f(): Int = 1 as & Int"
     val result = compile(input, DefaultOptions)
@@ -696,6 +714,18 @@ class TestResolver extends FunSuite with TestUtils {
 
   test("IllegalEffect.02") {
     val input = "def f(): Int = 1 as Int & Int"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalEffect](result)
+  }
+
+  test("IllegalEffect.03") {
+    val input = "def f(): Int = 1: & Int"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalEffect](result)
+  }
+
+  test("IllegalEffect.04") {
+    val input = "def f(): Int = 1: Int & Int"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalEffect](result)
   }

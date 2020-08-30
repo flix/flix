@@ -542,23 +542,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- expectedTypVal
             f <- expectedEffVal
+            _ <- t.map(checkProperType(_, loc)).getOrElse(().toSuccess)
+            _ <- f.map(checkEffectType(_, loc)).getOrElse(().toSuccess)
           } yield ResolvedAst.Expression.Ascribe(e, t, f, tvar, loc)
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, loc) =>
-
-          // type casts must be of star kind
-          def checkTypeCastKind(tpe: Option[Type]): Validation[Unit, ResolutionError] = tpe match {
-            case None => ().toSuccess
-            case Some(t) if t.kind <:: Kind.Star => ().toSuccess
-            case Some(t) => ResolutionError.IllegalUninhabitedType(t, loc).toFailure
-          }
-
-          // effect casts must be of bool kind
-          def checkEffectCastKind(tpe: Option[Type]): Validation[Unit, ResolutionError] = tpe match {
-            case None => ().toSuccess
-            case Some(t) if t.kind <:: Kind.Bool => ().toSuccess
-            case Some(t) => ResolutionError.IllegalEffect(t, loc).toFailure
-          }
 
           val declaredTypVal = declaredType match {
             case None => (None: Option[Type]).toSuccess
@@ -573,8 +561,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- declaredTypVal
             f <- declaredEffVal
-            _ <- checkTypeCastKind(t)
-            _ <- checkEffectCastKind(f)
+            _ <- t.map(checkProperType(_, loc)).getOrElse(().toSuccess)
+            _ <- f.map(checkEffectType(_, loc)).getOrElse(().toSuccess)
           } yield ResolvedAst.Expression.Cast(e, t, f, tvar, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1252,6 +1240,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       ().toSuccess
     } else {
       ResolutionError.IllegalUninhabitedType(tpe, loc).toFailure
+    }
+  }
+
+  /**
+    * Asserts that the given type is an effect type: that its kind is a subkind of `Bool`.
+    */
+  private def checkEffectType(tpe: Type, loc: SourceLocation): Validation[Unit, ResolutionError] = {
+    if (tpe.kind <:: Kind.Bool) {
+      ().toSuccess
+    } else {
+      ResolutionError.IllegalEffect(tpe, loc).toFailure
     }
   }
 
