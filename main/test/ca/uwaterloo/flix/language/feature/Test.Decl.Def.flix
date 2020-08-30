@@ -22,6 +22,13 @@ def *>(x: Int, y: Int): Bool = x == y
 def <*(x: Int, y: Int): Bool = x == y
 def |+|(x: Int, y: Int): Bool = x == y
 
+def f1[trueVar](_a: trueVar): Bool = true
+def f2[falseVar](_a: falseVar): Bool = true
+type alias PureType = Int
+type alias ImpureType = Int
+def g1(_a: PureType): Bool = true
+def g2(_a: ImpureType): Bool = true
+
 @test
 def testDefAscii01(): Bool = f(123)
 
@@ -85,3 +92,15 @@ def testDefOperator06(): Bool = 1 <* 1
 
 @test
 def testDefOperator07(): Bool = 1 |+| 1
+
+@test
+def testDefTypeName01(): Bool = f1(123)
+
+@test
+def testDefTypeName02(): Bool = f2(123)
+
+@test
+def testDefTypeName03(): Bool = g1(123)
+
+@test
+def testDefTypeName04(): Bool = g2(123)
