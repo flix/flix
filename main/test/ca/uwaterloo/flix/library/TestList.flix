@@ -1941,7 +1941,6 @@ def unfoldWithIter06(): Bool & Impure =
         };
     List.unfoldWithIter(step) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
 
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldWithOkIter                                                        //
@@ -1981,3 +1980,85 @@ def unfoldWithOkIter03(): Bool & Impure =
             Ok(None)
         };
     List.unfoldWithOkIter(step) == Ok(1 :: 2 :: 3 :: 4 :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
+// distinct                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def distinct01(): Bool =
+    List.distinct(Nil) == Nil
+
+@test
+def distinct02(): Bool =
+    List.distinct(1 :: Nil) == 1 :: Nil
+
+@test
+def distinct03(): Bool =
+    List.distinct(1 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+@test
+def distinct04(): Bool =
+    List.distinct(1 :: 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+@test
+def distinct05(): Bool =
+    List.distinct(1 :: 2 :: 1 :: Nil) == 1 :: 2 :: Nil
+
+@test
+def distinct06(): Bool =
+    List.distinct(1 :: 2 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+@test
+def distinct07(): Bool =
+    List.distinct(1 :: 2 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
+
+@test
+def distinct08(): Bool =
+    List.distinct(1 :: 2 :: 2 :: 3 :: 1 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
+
+@test
+def distinct09(): Bool =
+    List.distinct(4 :: 4 :: 3  :: 4 :: 2 :: 1 :: 1 :: Nil) == 4 :: 3 :: 2 :: 1 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// distinctWith                                                            //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def distinctWith01(): Bool =
+    List.distinctWith((x,y) -> x == y, Nil) == Nil
+
+@test
+def distinctWith02(): Bool =
+    List.distinctWith((x,y) -> x == y, 1 :: Nil) == 1 :: Nil
+
+@test
+def distinctWith03(): Bool =
+    List.distinctWith((x,y) -> x == y, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+@test
+def distinctWith04(): Bool =
+    List.distinctWith((x,y) -> x == y, 1 :: 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+@test
+def distinctWith05(): Bool =
+    List.distinctWith((x,y) -> x == y, 1 :: 2 :: 1 :: Nil) == 1 :: 2 :: Nil
+
+@test
+def distinctWith06(): Bool =
+    List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+@test
+def distinctWith07(): Bool =
+    List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
+
+@test
+def distinctWith08(): Bool =
+    List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: 3 :: 1 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
+
+@test
+def distinctWith09(): Bool =
+    List.distinctWith((x,y) -> x == y, 4 :: 4 :: 3  :: 4 :: 2 :: 1 :: 1 :: Nil) == 4 :: 3 :: 2 :: 1 :: Nil
+
+}
