@@ -25,12 +25,17 @@ import scala.collection.immutable.List
 
 object ResolvedAst {
 
-  case class Root(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
+  case class Root(classes: Map[Symbol.ClassSym, ResolvedAst.Class],
+                  defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                   latticeOps: Map[Type, ResolvedAst.LatticeOps],
                   properties: List[ResolvedAst.Property],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
+
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, signatures: List[ResolvedAst.Sig], loc: SourceLocation)
+
+  case class Sig(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 
   case class Def(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Type, loc: SourceLocation)
 
@@ -51,6 +56,8 @@ object ResolvedAst {
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Sig(sym: Symbol.SigSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

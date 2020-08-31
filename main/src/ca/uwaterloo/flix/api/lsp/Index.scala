@@ -24,7 +24,7 @@ object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given expression `exp0`.
@@ -40,6 +40,16 @@ object Index {
     * Returns an index for the given expression `exp0`.
     */
   def of(enum0: Enum): Index = empty + enum0
+
+  /**
+    * Returns an index with the symbol 'sym' used at location 'loc'.
+    */
+  def useOf(sym: Symbol.ClassSym, loc: SourceLocation): Index = Index.empty.copy(classUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with the symbol 'sym' used at location 'loc'.
+    */
+  def useOf(sym: Symbol.SigSym, loc: SourceLocation): Index = Index.empty.copy(sigUses = MultiMap.singleton(sym, loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -61,6 +71,8 @@ object Index {
   * Represents a reserve index from documents to line numbers to expressions.
   */
 case class Index(m: Map[(String, Int), List[Entity]],
+                 classUses: MultiMap[Symbol.ClassSym, SourceLocation],
+                 sigUses: MultiMap[Symbol.SigSym, SourceLocation],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
@@ -89,6 +101,17 @@ case class Index(m: Map[(String, Int), List[Entity]],
         sorted.headOption
     }
   }
+
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.ClassSym): Set[SourceLocation] = classUses(sym)
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.SigSym): Set[SourceLocation] = sigUses(sym)
 
   /**
     * Returns all uses of the given symbol `sym`.
@@ -149,7 +172,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
         val result = exps1 ::: exps2
         macc + (line -> result)
     }
-    Index(m3, this.defUses ++ that.defUses, this.enumUses ++ that.enumUses, this.varUses ++ that.varUses)
+    Index(m3, this.classUses ++ that.classUses, this.sigUses ++ that.sigUses, this.defUses ++ that.defUses, this.enumUses ++ that.enumUses, this.varUses ++ that.varUses)
   }
 
   /**

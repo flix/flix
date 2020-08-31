@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.WeededAst.NullPattern
+import ca.uwaterloo.flix.language.ast.WeededAst.{NullPattern, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -42,6 +42,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
+      classes = Map.empty,
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
@@ -79,6 +80,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         visitDecl(decl, namespace, uenv0, pacc)
     }
 
+    case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
+
+      val classes = prog0.classes.getOrElse(ns0, Map.empty)
+      classes.get(ident.name) match {
+        case None =>
+          visitClass(decl, uenv0, Map.empty, ns0) map {
+            clazz => prog0.copy(classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))))
+          }
+        case Some(clazz) =>
+          NameError.DuplicateClass(ident.name, clazz.sym.loc, ident.loc).toFailure
+      }
     /*
      * Definition.
      */
@@ -196,6 +208,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           prog0.copy(latticesOps = prog0.latticesOps + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
 
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
+      throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
+
   }
 
   /**
@@ -253,6 +268,34 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     mapN(sequence(casesVal))(_.toMap)
   }
 
+  private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
+    case WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
+      val sym = Symbol.mkClassSym(ns0, ident)
+      val tparams = getProperTypeParams(tparam).head // only 1 tparam allowed for now
+      for {
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, sym))
+      } yield NamedAst.Class(doc, mod, sym, tparams, sigs, loc)
+  }
+
+  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, clazz: Symbol.ClassSym)(implicit flix: Flix) = sig match {
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
+      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
+        tparams =>
+          val tenv = tenv0 ++ getTypeEnv(tparams)
+          flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
+            case fparams =>
+              val env0 = getVarEnv(fparams)
+              val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
+              val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
+              val tpeVal = visitType(eff0, uenv0, tenv)
+              mapN(annVal, schemeVal, tpeVal) {
+                case (as, sc, eff) =>
+                  val sym = Symbol.mkSigSym(clazz, ident)
+                  NamedAst.Sig(doc, as, mod, sym, tparams, fparams, sc, eff, loc)
+              }
+          }
+      }
+  }
   /**
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
@@ -1312,6 +1355,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getFormalParams(fparams0: List[WeededAst.FormalParam], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
     traverse(fparams0)(visitFormalParam(_, uenv0, tenv0))
+  }
+
+  /**
+    * Gets the type params where their kind must be `*`.
+    */
+  private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
+    case TypeParams.Elided => Nil
+    case TypeParams.Explicit(tparams) => tparams.map {
+      ident => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), ident.loc)
+    }
   }
 
   /**

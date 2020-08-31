@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -79,6 +79,11 @@ case class Substitution(m: Map[Type.Var, Type]) {
     * Applies `this` substitution to the given types `ts`.
     */
   def apply(ts: List[Type]): List[Type] = if (isEmpty) ts else ts map apply
+
+  /**
+    * Applies `this` substitution to the given type constraint `tc`.
+    */
+  def apply(tc: TypedAst.TypeConstraint): TypedAst.TypeConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.

@@ -56,6 +56,29 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that the given class `name` is defined multiple times.
+    *
+    * @param name the name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
+    */
+  case class DuplicateClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    def summary: String = s"Duplicate class."
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Duplicate class'" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
+    }
+    def loc: SourceLocation = loc1 min loc2
+  }
+
+  /**
     * An error raised to indicate that the given def `name` is defined multiple times.
     *
     * @param name the name.

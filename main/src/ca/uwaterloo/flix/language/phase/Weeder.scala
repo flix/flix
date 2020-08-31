@@ -95,16 +95,46 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.LatticeComponents => visitLatticeOps(d)
 
-    case d: ParsedAst.Declaration.Class => Nil.toSuccess
-
-    case d: ParsedAst.Declaration.Impl => Nil.toSuccess
-
-    case d: ParsedAst.Declaration.Disallow => Nil.toSuccess
+    case d: ParsedAst.Declaration.Class => visitClass(d).map(List(_))
 
     case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
       throw InternalCompilerException(s"Unexpected declaration")
   }
 
+  /**
+    * Performs weeding on the given class declaration `c0`.
+    */
+  private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[WeededAst.Declaration.Class, WeederError] = c0 match {
+    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparams, sigs0, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val doc = visitDoc(doc0)
+      val tparamsVal = visitTypeParams(tparams)
+      for {
+        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
+        sigs <- traverse(sigs0)(visitSig)
+      } yield WeededAst.Declaration.Class(doc, mods, ident, tparamsVal, sigs, loc)
+  }
+
+  /**
+    * Performs weeding on the given def declaration `d0`.
+    */
+  private def visitSig(d0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[WeededAst.Declaration.Sig, WeederError] = d0 match {
+    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, sp2) =>
+      val loc = mkSL(ident.sp1, ident.sp2)
+      val doc = visitDoc(doc0)
+      val annVal = visitAnnotationOrProperty(ann)
+      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
+      val tparams = visitTypeParams(tparams0)
+      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
+      val effVal = visitEff(effOpt)
+
+      mapN(annVal, modVal, formalsVal, effVal) {
+        case (as, mod, fparams, eff) =>
+          val ts = fparams.map(_.tpe.get)
+          val tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+          WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, tpe, eff, loc)
+      }
+  }
   /**
     * Performs weeding on the given def declaration `d0`.
     */

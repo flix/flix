@@ -23,13 +23,18 @@ import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
 
 object TypedAst {
 
-  case class Root(defs: Map[Symbol.DefnSym, TypedAst.Def],
+  case class Root(classes: Map[Symbol.ClassSym, TypedAst.Class],
+                  defs: Map[Symbol.DefnSym, TypedAst.Def],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
                   latticeOps: Map[Type, TypedAst.LatticeOps],
                   properties: List[TypedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
+
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, signatures: List[TypedAst.Sig], loc: SourceLocation)
+
+  case class Sig(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 
   case class Def(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, declaredScheme: Scheme, inferredScheme: Scheme, eff: Type, loc: SourceLocation)
 
@@ -136,6 +141,10 @@ object TypedAst {
     }
 
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def eff: Type = Type.Pure
+    }
+
+    case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def eff: Type = Type.Pure
     }
 
@@ -408,5 +417,7 @@ object TypedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
+
+  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type)
 
 }

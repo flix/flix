@@ -21,6 +21,8 @@ object TypedAstOps {
 
       case Expression.Def(sym, tpe, loc) => Map.empty
 
+      case Expression.Sig(sym, tpe, loc) => Map.empty
+
       case Expression.Hole(sym, tpe, eff, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
       case Expression.Unit(loc) => Map.empty

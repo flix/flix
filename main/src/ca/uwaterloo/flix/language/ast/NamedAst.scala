@@ -23,13 +23,18 @@ import scala.collection.immutable.List
 
 object NamedAst {
 
-  case class Root(defs: Map[Name.NName, Map[String, NamedAst.Def]],
+  case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
+                  defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   latticesOps: Map[NamedAst.Type, NamedAst.LatticeOps],
                   properties: Map[Name.NName, List[NamedAst.Property]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
+
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, signatures: List[NamedAst.Sig], loc: SourceLocation)
+
+  case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
   case class Def(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
@@ -64,6 +69,8 @@ object NamedAst {
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
 
     case class Def(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Sig(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
