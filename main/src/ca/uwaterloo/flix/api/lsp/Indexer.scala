@@ -93,6 +93,9 @@ object Indexer {
     case Expression.Str(_, _) =>
       Index.of(exp0)
 
+    case Expression.Default(_, _) =>
+      Index.of(exp0)
+
     case Expression.Wild(_, _) =>
       Index.of(exp0)
 

@@ -24,6 +24,7 @@ object FormatExpression {
     case TypedAst.Expression.Int64(lit, _) => s"${lit}i64"
     case TypedAst.Expression.BigInt(lit, _) => s"${lit}i64"
     case TypedAst.Expression.Str(lit, _) => "\"" + lit + "\""
+    case TypedAst.Expression.Default(_, _) => s"default"
     case TypedAst.Expression.Wild(_, _) => "_"
     case TypedAst.Expression.Var(sym, _, _) => s"Sym($sym)"
     case TypedAst.Expression.Def(sym, _, _) => s"Def($sym)"

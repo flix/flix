@@ -51,6 +51,8 @@ object TypedAstOps {
 
       case Expression.Str(lit, loc) => Map.empty
 
+      case Expression.Default(tpe, loc) => Map.empty
+
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val env1 = Map(fparam.sym -> fparam.tpe)
         visitExp(exp, env0 ++ env1)

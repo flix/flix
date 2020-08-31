@@ -1296,6 +1296,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
     case ParsedAst.Literal.Str(sp1, lit, sp2) =>
       WeededAst.Pattern.Str(lit, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.Default(sp1, sp2) =>
+      throw InternalCompilerException(s"Illegal default pattern near: ${mkSL(sp1, sp2).format}")
   }
 
   /**
