@@ -214,11 +214,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def MarkerClass: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ atomic("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ Modifiers ~ SP ~ keyword("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Class
       }
 
       def ClassWithSigs: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ atomic("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ Modifiers ~ SP ~ keyword("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Class
       }
 
       rule {
