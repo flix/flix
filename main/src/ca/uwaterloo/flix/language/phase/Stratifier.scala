@@ -113,6 +113,8 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Str(_, _) => exp0.toSuccess
 
+    case Expression.Default(_, _) => exp0.toSuccess
+
     case Expression.Wild(_, _) => exp0.toSuccess
 
     case Expression.Var(_, _, _) => exp0.toSuccess
@@ -425,6 +427,8 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.BigInt(_, _) => DependencyGraph.empty
 
     case Expression.Str(_, _) => DependencyGraph.empty
+
+    case Expression.Default(_, _) => DependencyGraph.empty
 
     case Expression.Wild(_, _) => DependencyGraph.empty
 

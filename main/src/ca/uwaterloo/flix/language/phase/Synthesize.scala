@@ -100,6 +100,8 @@ object Synthesize extends Phase[Root, Root] {
 
       case Expression.Str(lit, loc) => exp0
 
+      case Expression.Default(tpe, loc) => exp0
+
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Lambda(fparams, e, tpe, loc)

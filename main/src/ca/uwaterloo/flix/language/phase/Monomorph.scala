@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.math.BigInteger
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
@@ -50,9 +52,9 @@ import scala.collection.mutable
   * 2. We populate the queue by specialization of non-parametric function definitions and other top-level expressions.
   * 3. We iteratively extract a function from the queue and specialize it:
   *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
-  *    b. We create new fresh local variable symbols (since the function is effectively being copied).
-  *    c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
-  * 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
+  *       b. We create new fresh local variable symbols (since the function is effectively being copied).
+  *       c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
+  *       4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   */
 object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -183,6 +185,28 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
 
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
+
+        case Expression.Default(tpe, loc) =>
+          //
+          // Replace a default literal by the actual default value based on its type.
+          //
+          subst0(tpe).typeConstructor match {
+            case None => throw InternalCompilerException(s"Unexpected type variable near: ${loc.format}")
+            case Some(tc) => tc match {
+              case TypeConstructor.Unit => Expression.Unit(loc)
+              case TypeConstructor.Bool => Expression.False(loc)
+              case TypeConstructor.Char => Expression.Char('0', loc)
+              case TypeConstructor.Float32 => Expression.Float32(0, loc)
+              case TypeConstructor.Float64 => Expression.Float64(0, loc)
+              case TypeConstructor.Int8 => Expression.Int8(0, loc)
+              case TypeConstructor.Int16 => Expression.Int16(0, loc)
+              case TypeConstructor.Int32 => Expression.Int32(0, loc)
+              case TypeConstructor.Int64 => Expression.Int64(0, loc)
+              case TypeConstructor.BigInt => Expression.BigInt(BigInteger.ZERO, loc)
+              case TypeConstructor.Str => Expression.Str("", loc)
+              case _ => Expression.Null(subst0(tpe), loc)
+            }
+          }
 
         case Expression.Lambda(fparam, exp, tpe, loc) =>
           val (p, env1) = specializeFormalParam(fparam, subst0)

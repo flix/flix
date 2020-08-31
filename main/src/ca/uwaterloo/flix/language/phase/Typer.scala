@@ -409,6 +409,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Str(lit, loc) =>
         liftM(List.empty, Type.Str, Type.Pure)
 
+      case ResolvedAst.Expression.Default(tvar, loc) =>
+        liftM(List.empty, tvar, Type.Pure)
+
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
         for {
@@ -1280,6 +1283,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
 
       case ResolvedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
+
+      case ResolvedAst.Expression.Default(tvar, loc) => TypedAst.Expression.Default(subst0(tvar), loc)
 
       case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)

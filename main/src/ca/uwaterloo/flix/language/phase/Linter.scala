@@ -714,6 +714,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Str(_, _) => exp0
 
+      case Expression.Default(_, _) => exp0
+
       case Expression.Wild(_, _) => exp0
 
       case Expression.Var(sym, _, _) => m.get(sym) match {

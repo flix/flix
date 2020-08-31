@@ -411,6 +411,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
+    case WeededAst.Expression.Default(loc) => NamedAst.Expression.Default(loc).toSuccess
+
     case WeededAst.Expression.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0), traverse(exps)(visitExp(_, env0, uenv0, tenv0))) {
         case (e, es) => NamedAst.Expression.Apply(e, es, loc)
@@ -1091,6 +1093,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Int64(lit, loc) => Nil
     case WeededAst.Expression.BigInt(lit, loc) => Nil
     case WeededAst.Expression.Str(lit, loc) => Nil
+    case WeededAst.Expression.Default(loc) => Nil
     case WeededAst.Expression.Apply(exp, exps, loc) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Nullify(exp, loc) => freeVars(exp)

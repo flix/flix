@@ -60,6 +60,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Concurrency.Spawn", "main/test/flix/Test.Exp.Concurrency.Spawn.flix")(Options.TestWithLibrary),
 
   //
+  // Default.
+  //
+  new FlixTest("Test.Exp.Default", "main/test/flix/Test.Exp.Default.flix"),
+
+  //
   // Fixpoint.
   //
   new FlixTest("Test.Exp.Fixpoint.Constraint", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
