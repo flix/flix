@@ -195,6 +195,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case Some(tc) => tc match {
               case TypeConstructor.Unit => Expression.Unit(loc)
               case TypeConstructor.Bool => Expression.False(loc)
+              case TypeConstructor.Char => Expression.Char('0', loc)
               case TypeConstructor.Float32 => Expression.Float32(0, loc)
               case TypeConstructor.Float64 => Expression.Float64(0, loc)
               case TypeConstructor.Int8 => Expression.Int8(0, loc)
@@ -202,7 +203,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               case TypeConstructor.Int32 => Expression.Int32(0, loc)
               case TypeConstructor.Int64 => Expression.Int64(0, loc)
               case TypeConstructor.BigInt => Expression.BigInt(BigInteger.ZERO, loc)
-              case _ => throw InternalCompilerException(s"Unexpected type constructor '$tc' near: ${loc.format}")
+              case TypeConstructor.Str => Expression.Str("", loc)
+              case _ => Expression.Null(subst0(tpe), loc)
             }
           }
 

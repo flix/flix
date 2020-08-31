@@ -7,6 +7,9 @@ namespace Test/Exp/Default {
     def testDefaultBool(): Bool = (default: Bool) == false
 
     @test
+    def testDefaultChar(): Bool = (default: Char) == '0'
+
+    @test
     def testDefaultFloat32(): Bool = (default: Float32) == 0.0f32
 
     @test
