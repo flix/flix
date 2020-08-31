@@ -15,5 +15,16 @@ namespace Test/Exp/Default {
     @test
     def testDefaultInt8(): Bool = (default: Int8) == 0i8
 
+    @test
+    def testDefaultInt16(): Bool = (default: Int16) == 0i16
+
+    @test
+    def testDefaultInt32(): Bool = (default: Int32) == 0i32
+
+    @test
+    def testDefaultInt64(): Bool = (default: Int64) == 0i64
+
+    @test
+    def testDefaultBigInt(): Bool = (default: BigInt) == 0ii
 
 }

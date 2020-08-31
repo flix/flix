@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.math.BigInteger
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
@@ -196,6 +198,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               case TypeConstructor.Float32 => Expression.Float32(0, loc)
               case TypeConstructor.Float64 => Expression.Float64(0, loc)
               case TypeConstructor.Int8 => Expression.Int8(0, loc)
+              case TypeConstructor.Int16 => Expression.Int16(0, loc)
+              case TypeConstructor.Int32 => Expression.Int32(0, loc)
+              case TypeConstructor.Int64 => Expression.Int64(0, loc)
+              case TypeConstructor.BigInt => Expression.BigInt(BigInteger.ZERO, loc)
               case _ => throw InternalCompilerException(s"Unexpected type constructor '$tc' near: ${loc.format}")
             }
           }
