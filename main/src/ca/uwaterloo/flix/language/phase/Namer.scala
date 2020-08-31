@@ -920,11 +920,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       //
       if (isSuspiciousTypeVarName(ident.name)) {
         NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
+      } else if (ident.isWild) {
+        // Wild idents will not be in the environment. Create a tvar instead.
+        NamedAst.Type.Var(Type.freshVar(Kind.freshVar()), loc).toSuccess
       } else {
-        tenv0.get(ident.name) match {
-          case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
-          case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
-        }
+          tenv0.get(ident.name) match {
+            case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
+            case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
+          }
       }
 
     case WeededAst.Type.Ambiguous(qname, loc) =>
@@ -1440,7 +1443,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val typeVarsWithKindOverallType = freeVarsWithKind(tpe)
 
     // Compute the set of type variables.
-    val typeVarsWithKind = typeVarsWithKindOverallType ::: typeVarsWithKindArgs
+    val typeVarsWithKind = (typeVarsWithKindOverallType ::: typeVarsWithKindArgs).distinct
 
     // Create a type param for each type variable
     freshTypeParamsWithKind(typeVarsWithKind, loc)
@@ -1452,7 +1455,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freshTypeParamsWithKind(typeVarsWithKind: List[(Name.Ident, Kind)], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     // create a map of name -> (ident, kind), ensuring all kinds for a given name match
-    val kindPerName = foldRight(typeVarsWithKind)(Map.empty[String, (Name.Ident, Kind)].toSuccess) {
+    val wildNameGenerator = Iterator.from(0).map("_" + _)
+    val kindPerName = foldRight(typeVarsWithKind)(Map[String, (Name.Ident, Kind)]().toSuccess) {
+      // Case 0: Wildcard
+      case ((ident0, kind0), acc) if ident0.isWild => (acc + (wildNameGenerator.next() -> (ident0, kind0))).toSuccess
       case ((ident0, kind0), acc) => acc.get(ident0.name) match {
         // Case 1: name not found; add to map
         case None => (acc + (ident0.name -> (ident0, kind0))).toSuccess

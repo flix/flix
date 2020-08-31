@@ -221,4 +221,34 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError](result) // TODO use more specific error once TypeError logic is more defined
   }
+
+  test("TestLeq.Wildcard.01") {
+    val input = "def f(a: _): _ = a"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Wildcard.02") {
+    val input = "def f(a: Int): _ = a"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Wildcard.03") {
+    val input = "def f(a: Int): Int & _ = a"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Wildcard.04") {
+    val input = "def f(a: Int): Int & _ = a"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Wildcard.05") {
+    val input = "def f(g: Int -> Int & _): Int & _ = g(1)"
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
 }
