@@ -563,6 +563,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                 SimplifiedAst.Expression.Var(var2, e2.tpe, loc),
                 SimplifiedAst.Expression.Var(var3, e3.tpe, loc), tpe, loc), tpe, loc), tpe, loc), tpe, loc)
 
+      case TypedAst.Expression.Default(tpe, loc) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
       case TypedAst.Expression.Wild(tpe, loc) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
     }
