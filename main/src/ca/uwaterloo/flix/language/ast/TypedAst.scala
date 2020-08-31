@@ -132,6 +132,10 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
+    case class Default(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def eff: Type = Type.Pure
+    }
+
     case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def eff: Type = Type.Pure
     }
