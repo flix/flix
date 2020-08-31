@@ -70,6 +70,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Str(lit, loc) => Nil
 
+    case Expression.Default(tpe, loc) => Nil
+
     case Expression.Wild(tpe, loc) => Nil
 
     case Expression.Var(sym, tpe, loc) => Nil

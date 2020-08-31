@@ -411,6 +411,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
+    case WeededAst.Expression.Default(loc) => NamedAst.Expression.Default(loc).toSuccess
+
     case WeededAst.Expression.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0), traverse(exps)(visitExp(_, env0, uenv0, tenv0))) {
         case (e, es) => NamedAst.Expression.Apply(e, es, loc)

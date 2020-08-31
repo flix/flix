@@ -363,6 +363,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
+        case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star),loc).toSuccess
+
         case NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(qname, _, _), exps, loc) =>
           //
           // Special Case: We are applying a known function. Check if we have the right number of arguments.

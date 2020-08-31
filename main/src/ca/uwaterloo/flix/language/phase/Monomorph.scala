@@ -50,9 +50,9 @@ import scala.collection.mutable
   * 2. We populate the queue by specialization of non-parametric function definitions and other top-level expressions.
   * 3. We iteratively extract a function from the queue and specialize it:
   *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
-  *    b. We create new fresh local variable symbols (since the function is effectively being copied).
-  *    c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
-  * 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
+  *       b. We create new fresh local variable symbols (since the function is effectively being copied).
+  *       c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
+  *       4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   */
 object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -183,6 +183,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
 
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
+
+        case Expression.Default(tpe, loc) =>
+          //
+          // Replace a default literal by the actual default value based on its type.
+          //
+          subst0(tpe).typeConstructor match {
+            case None => ???
+            case Some(TypeConstructor.Unit) => Expression.Unit(loc)
+            case Some(TypeConstructor.Bool) => Expression.False(loc)
+
+          }
 
         case Expression.Lambda(fparam, exp, tpe, loc) =>
           val (p, env1) = specializeFormalParam(fparam, subst0)

@@ -135,6 +135,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, tpe, eff, loc)
       }
   }
+
   /**
     * Performs weeding on the given def declaration `d0`.
     */
@@ -1251,6 +1252,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Literal.Str(sp1, lit, sp2) =>
       WeededAst.Expression.Str(lit, mkSL(sp1, sp2)).toSuccess
+
+    case ParsedAst.Literal.Default(sp1, sp2) =>
+      WeededAst.Expression.Default(mkSL(sp1, sp2)).toSuccess
   }
 
   /**
