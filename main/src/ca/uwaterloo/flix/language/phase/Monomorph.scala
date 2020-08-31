@@ -189,10 +189,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // Replace a default literal by the actual default value based on its type.
           //
           subst0(tpe).typeConstructor match {
-            case None => ???
-            case Some(TypeConstructor.Unit) => Expression.Unit(loc)
-            case Some(TypeConstructor.Bool) => Expression.False(loc)
-
+            case None => throw InternalCompilerException(s"Unexpected type variable near: ${loc.format}")
+            case Some(tc) => tc match {
+              case TypeConstructor.Unit => Expression.Unit(loc)
+              case TypeConstructor.Bool => Expression.False(loc)
+              case TypeConstructor.Float32 => Expression.Float32(0, loc)
+              case TypeConstructor.Float64 => Expression.Float64(0, loc)
+              case TypeConstructor.Int8 => Expression.Int8(0, loc)
+              case _ => throw InternalCompilerException(s"Unexpected type constructor '$tc' near: ${loc.format}")
+            }
           }
 
         case Expression.Lambda(fparam, exp, tpe, loc) =>
