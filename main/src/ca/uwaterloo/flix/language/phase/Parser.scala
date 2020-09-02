@@ -224,11 +224,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def MarkerClass: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Class
       }
 
       def ClassWithSigs: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Class
       }
 
       rule {
@@ -237,12 +237,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Instance: Rule1[ParsedAst.Declaration] = {
-      def MarkerInstance:  Rule1[ParsedAst.Declaration.Instance] = {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Instance
+      def MarkerInstance:  Rule1[ParsedAst.Declaration.Instance] = rule {
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Instance
       }
 
-      def InstanceWithDefs: Rule1[ParsedAst.Declaration.Instance] = {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Instance
+      def InstanceWithDefs: Rule1[ParsedAst.Declaration.Instance] = rule {
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Instance
       }
 
       rule {
