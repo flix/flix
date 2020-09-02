@@ -199,13 +199,19 @@ namespace Core/Io/File {
     ///
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
-    def readAll(r: ##java.io.BufferedReader): List[String] & Impure =
+    def readAll(r: ##java.io.BufferedReader): List[String] & Impure = List.reverse(readAllHelper(r, Nil))
+
+    ///
+    /// Helper function for readAll.
+    /// Reads all lines from the buffered reader `r` until it is empty, returning a backward list.
+    ///
+    def readAllHelper(r: ##java.io.BufferedReader, acc: List[String]): List[String] & Impure =
         import java.io.BufferedReader.readLine();
         let line = r.readLine();
         if (Object.isNull(line))
-            Nil
+            acc
         else
-            line :: readAll(r)
+            readAllHelper(r, line :: acc)
 
     ///
     /// Writes all lines in the list `l` to the file `f`.
