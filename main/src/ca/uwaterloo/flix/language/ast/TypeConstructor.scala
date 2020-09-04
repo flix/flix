@@ -148,6 +148,16 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of lazy expressions.
+    */
+  case object Lazy extends TypeConstructor {
+    /**
+      * The shape of lazy is Lazy[t].
+      */
+    def kind: Kind = Kind.Star ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of tags.
     */
   case class Tag(sym: Symbol.EnumSym, tag: String) extends TypeConstructor {

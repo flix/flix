@@ -142,6 +142,8 @@ object FormatType {
 
           case TypeConstructor.Relation => formatApply("Relation", args)
 
+          case TypeConstructor.Lazy => formatApply("Lazy", args)
+
           case TypeConstructor.Ref => formatApply("Ref", args)
 
           case TypeConstructor.RecordExtend(label) => args.length match {

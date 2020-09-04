@@ -1136,7 +1136,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkChannel(tpe)
+          resultTyp = Type.mkLazy(tpe)
           resultEff <- unifyTypeM(Type.Pure, eff, loc)
         } yield (constrs, resultTyp, resultEff)
 
@@ -1148,7 +1148,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(tpe, Type.mkLazy(tvar),loc)
+          lazyTyp <- unifyTypeM(tpe, Type.mkLazy(tvar),loc)
+          resultTyp = tvar
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
@@ -1574,6 +1575,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = Type.Unit
         val eff = e.eff
         TypedAst.Expression.Spawn(e, tpe, eff, loc)
+
+      case ResolvedAst.Expression.Lazy(exp, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = Type.mkLazy(e.tpe)
+        TypedAst.Expression.Lazy(e, tpe, loc)
+
+      case ResolvedAst.Expression.Force(exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val eff = e.eff
+        TypedAst.Expression.Force(e, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)

@@ -256,6 +256,12 @@ object TypedAst {
 
     case class Spawn(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Lazy(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def eff: Type = Type.Pure
+    }
+
+    case class Force(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def eff: Type = Type.Pure
     }
