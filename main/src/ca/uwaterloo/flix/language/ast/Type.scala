@@ -469,6 +469,11 @@ object Type {
   def mkChannel(tpe: Type): Type = Type.Apply(Channel, tpe)
 
   /**
+    * Returns the type `Lazy[tpe]`.
+    */
+  def mkLazy(tpe: Type): Type = Type.Apply(???, tpe)
+
+  /**
     * Returns the type `Ref[tpe]`.
     */
   def mkRef(tpe: Type): Type = Type.Apply(Ref, tpe)

@@ -1118,7 +1118,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Spawn(exp, loc) =>
         //
-        //  exp: t @ _
+        //  exp: t & _
         //  -------------------------
         //  spawn exp : Unit @ Impure
         //
@@ -1126,6 +1126,30 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (constrs, tpe, _) <- visitExp(exp)
           resultTyp = Type.Unit
           resultEff = Type.Impure
+        } yield (constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.Lazy(exp, loc) =>
+        //
+        //  exp: t & Pure
+        //  -------------------------
+        //  lazy exp : Lazy[t] @ Pure
+        //
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          resultTyp = Type.mkChannel(tpe)
+          resultEff <- unifyTypeM(Type.Pure, eff, loc)
+        } yield (constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.Force(exp, tvar, loc) =>
+        //
+        //  exp: Lazy[t] @ e
+        //  -------------------------
+        //  force exp : t @ e
+        //
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          resultTyp <- unifyTypeM(tpe, Type.mkLazy(tvar),loc)
+          resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
