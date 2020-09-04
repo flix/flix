@@ -2024,6 +2024,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.Lazy(sp1, _, _) => sp1
+    case ParsedAst.Expression.Force(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraint(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)

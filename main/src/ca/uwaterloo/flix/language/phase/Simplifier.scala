@@ -521,10 +521,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Spawn(lambdaExp, lambdaTyp, loc)
 
       case TypedAst.Expression.Lazy(exp, tpe, loc) =>
-        ??? // TODO
+        // Wrap the expression in a closure: () -> tpe & Pure
+        val e = visitExp(exp)
+        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe)
+        val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
+        SimplifiedAst.Expression.Spawn(lambdaExp, lambdaTyp, loc)
 
       case TypedAst.Expression.Force(exp, tpe, eff, loc) =>
-        ??? // TODO
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Force(e, tpe, loc)
 
       case TypedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
