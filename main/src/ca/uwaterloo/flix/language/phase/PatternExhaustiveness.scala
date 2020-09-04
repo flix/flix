@@ -329,6 +329,14 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp, root)
         } yield tast
 
+        case Expression.Lazy(exp, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
+        case Expression.Force(exp, _, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
         case Expression.FixpointConstraintSet(cs, tpe, loc) =>
           for {
             _ <- traverse(cs)(visitConstraint(_, root))
