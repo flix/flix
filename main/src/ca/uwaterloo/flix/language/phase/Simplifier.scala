@@ -521,6 +521,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
 
+      case TypedAst.Expression.Lazy(exp, tpe, loc) =>
+        ??? // TODO
+
+      case TypedAst.Expression.Force(exp, tpe, eff, loc) =>
+        ??? // TODO
+
       case TypedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
         SimplifiedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
