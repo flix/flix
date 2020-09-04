@@ -514,12 +514,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
+        // Wrap the expression in a closure: () -> tpe & eff
         val e = visitExp(exp)
-        // Make a function type, () -> e.tpe
-        val newTpe = Type.mkArrowWithEffect(Type.Unit, eff, e.tpe)
-        // Rewrite our Spawn expression to a Lambda
-        val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
-        SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
+        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, e.tpe)
+        val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
+        SimplifiedAst.Expression.Spawn(lambdaExp, lambdaTyp, loc)
 
       case TypedAst.Expression.Lazy(exp, tpe, loc) =>
         ??? // TODO
