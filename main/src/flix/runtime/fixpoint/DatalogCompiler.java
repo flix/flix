@@ -25,9 +25,9 @@ import java.util.*;
 public class DatalogCompiler {
 
     private static final Object[] nullArray = new Object[]{null};
-    private static int variableCounter = 0;
     private static final boolean addLabelStmts = false;
     private static final boolean printProgram = false;
+    private static int variableCounter = 0;
 
     public static Stmt compileProgram(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
@@ -345,7 +345,8 @@ public class DatalogCompiler {
                     }
                 }
             } else {
-                throw new UnsupportedOperationException("We only support AtomPredicates");
+                throw new UnsupportedOperationException(String.format("Only AtomPredicate are implemented in rules bodies, " +
+                        "you used: %s", bodyPred.getClass().getName()));
             }
         }
         // I can now generate the project statement since the values of each term is known
@@ -381,7 +382,8 @@ public class DatalogCompiler {
 
     /**
      * Translates terms to their RamTerm equivalents
-     * @param inputTerms The Terms to translate
+     *
+     * @param inputTerms       The Terms to translate
      * @param varSymToAttrTerm A mapping from VarSym to AttrTerm that is used to find intantiations of variables
      * @return The RamTerm array holding the translation
      */
@@ -395,6 +397,9 @@ public class DatalogCompiler {
                 result[i] = varSymToAttrTerm.get(sym).iterator().next();
             } else if (term instanceof LitTerm) {
                 result[i] = new RamLitTerm(((LitTerm) term).getFunction().apply(nullArray));
+            } else {
+                throw new UnsupportedOperationException(String.format("Terms in datalog programs can only be Literals " +
+                        "or Vars. %s is specifically not implemented", term.getClass().getName()));
             }
             //TODO: only handles LitTerm and VarTerm
         }
@@ -458,27 +463,31 @@ public class DatalogCompiler {
         Map<Integer, Map<RelSym, ArrayList<Constraint>>> result = new HashMap<>();
         for (Constraint c : cs.getRules()) {
             Predicate hPred = c.getHeadPredicate();
-            assert hPred instanceof AtomPredicate;
 
-            PredSym pred = ((AtomPredicate) hPred).getSym();
-            assert pred instanceof RelSym;
-            int stratum = stf.getStratum(pred);
-            if (result.containsKey(stratum) && result.get(stratum) != null) {
-                Map<RelSym, ArrayList<Constraint>> map = result.get(stratum);
-                if (map.containsKey(pred)) {
-                    map.get(pred).add(c);
+            if (hPred instanceof AtomPredicate) {
+                PredSym pred = ((AtomPredicate) hPred).getSym();
+                assert pred instanceof RelSym;
+                int stratum = stf.getStratum(pred);
+                if (result.containsKey(stratum) && result.get(stratum) != null) {
+                    Map<RelSym, ArrayList<Constraint>> map = result.get(stratum);
+                    if (map.containsKey(pred)) {
+                        map.get(pred).add(c);
+                    } else {
+                        ArrayList<Constraint> list = new ArrayList<>();
+                        list.add(c);
+                        map.put((RelSym) pred, list);
+                    }
+
                 } else {
-                    ArrayList<Constraint> list = new ArrayList<>();
-                    list.add(c);
-                    map.put((RelSym) pred, list);
+                    Map<RelSym, ArrayList<Constraint>> newMap = new HashMap<>();
+                    ArrayList<Constraint> constraints = new ArrayList<>();
+                    constraints.add(c);
+                    newMap.put((RelSym) pred, constraints);
+                    result.put(stratum, newMap);
                 }
-
             } else {
-                Map<RelSym, ArrayList<Constraint>> newMap = new HashMap<>();
-                ArrayList<Constraint> constraints = new ArrayList<>();
-                constraints.add(c);
-                newMap.put((RelSym) pred, constraints);
-                result.put(stratum, newMap);
+                throw new UnsupportedOperationException(String.format("Only AtomPredicates are supported in the head of " +
+                        "rules atm, you used: %s", hPred.getClass().getName()));
             }
         }
         return result;
@@ -496,26 +505,39 @@ public class DatalogCompiler {
             assert c.getBodyPredicates().length == 0;
 
             Predicate pred = c.getHeadPredicate();
-            assert pred instanceof AtomPredicate;
 
-            AtomPredicate atom = (AtomPredicate) pred;
-            PredSym predSym = atom.getSym();
-            assert predSym instanceof RelSym;
-            predHasFacts.add((RelSym) predSym);
+            if (pred instanceof AtomPredicate) {
+                AtomPredicate atom = (AtomPredicate) pred;
+                PredSym predSym = atom.getSym();
 
-            // Go through all terms of the AtomPredicate to generate ramTerms for the ProjectStmt
-            RamTerm[] ramTerms = new RamTerm[atom.getTerms().length];
-            for (int termI = 0; termI < atom.getTerms().length; termI++) {
-                Term term = atom.getTerms()[termI];
-                // TODO: CAn also be AppTerm
-                assert term instanceof LitTerm;
+                if (predSym instanceof RelSym) {
 
-                LitTerm litTerm = (LitTerm) term;
-                ProxyObject proxy = litTerm.getFunction().apply(nullArray);
-                ramTerms[termI] = new RamLitTerm(proxy);
+                    predHasFacts.add((RelSym) predSym);
+
+                    // Go through all terms of the AtomPredicate to generate ramTerms for the ProjectStmt
+                    RamTerm[] ramTerms = new RamTerm[atom.getTerms().length];
+                    for (int termI = 0; termI < atom.getTerms().length; termI++) {
+                        Term term = atom.getTerms()[termI];
+                        // TODO: CAn also be AppTerm
+                        if (term instanceof LitTerm) {
+                            LitTerm litTerm = (LitTerm) term;
+                            ProxyObject proxy = litTerm.getFunction().apply(nullArray);
+                            ramTerms[termI] = new RamLitTerm(proxy);
+                        } else {
+                            throw new UnsupportedOperationException(String.format("Only literal terms are supported in the " +
+                                    "head of Datalog rules, you used: %s", term.getClass().getName()));
+                        }
+                    }
+                    resultStmts.add(new ProjectStmt(ramTerms
+                            , new TableName(TableVersion.RESULT, atom.getSym())));
+                } else {
+                    throw new UnsupportedOperationException(String.format("Only relation symbols (RelSym) are supported" +
+                            " in atoms. Found %s", predSym.getClass().getName()));
+                }
+            } else {
+                throw new UnsupportedOperationException(String.format("Only AtomPredicates are supported in the head of" +
+                        " Datalog rules. Found: %s", pred.getClass().getName()));
             }
-            resultStmts.add(new ProjectStmt(ramTerms
-                    , new TableName(TableVersion.RESULT, atom.getSym())));
         }
         return resultStmts;
     }
