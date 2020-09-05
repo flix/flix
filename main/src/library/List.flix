@@ -79,9 +79,8 @@ namespace List {
     /// The infix operator `:::` is an alias for `append` (`xs ::: ys = append(xs, ys)`).
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def append(xs: List[a], ys: List[a]): List[a] = match xs {
-        case Nil => ys
-        case x :: rs => x :: append(rs, ys)
+    pub def append(xs: List[a], ys: List[a]): List[a] = {
+        foldRight((x, acc) -> x :: acc, ys, xs)
     }
 
     ///
@@ -1159,7 +1158,7 @@ namespace List {
     ///
     pub def __eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
         case (Nil, Nil) => true
-        case (x :: rs, y :: qs) => x == y && __eq(rs, qs)
+        case (x :: rs, y :: qs) => if (x == y) __eq(rs, qs) else false
         case _ => false
     }
 
