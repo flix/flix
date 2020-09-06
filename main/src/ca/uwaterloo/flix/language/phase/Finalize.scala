@@ -399,6 +399,14 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Spawn(e, t, loc)
 
+      case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
+        // TODO
+        visit(exp)
+
+      case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
+        // TODO
+        visit(exp)
+
       case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, m))
         val t = visitType(tpe)
