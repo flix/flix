@@ -1438,6 +1438,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Spawn(e, tpe, loc)
 
+      case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Lazy(e, tpe, loc)
+
+      case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Force(e, tpe, loc)
+
       case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
         SimplifiedAst.Expression.FixpointConstraintSet(cs, tpe, loc)

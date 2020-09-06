@@ -400,11 +400,11 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         FinalAst.Expression.Spawn(e, t, loc)
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
-        // TODO
+        // TODO: Until there is backend support for lazyness, we simply default to eager evaluation.
         visit(exp)
 
       case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
-        // TODO
+        // TODO: Until there is backend support for lazyness, we simply default to eager evaluation.
         visit(exp)
 
       case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
@@ -584,6 +584,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
           case TypeConstructor.Array => MonoType.Array(args.head)
 
           case TypeConstructor.Channel => MonoType.Channel(args.head)
+
+          case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
