@@ -62,17 +62,13 @@ class FeatureSuite extends Suites(
 
   new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix")(Options.TestWithLibrary),
 
-  new FlixTest("Test.Decl.Class", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Class.flix")(Options.TestWithLibrary),
-  // TODO disabled for now
-//  new FlixTest("Test.Decl.Disallow", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Disallow.flix")(Options.TestWithLibrary),
-//  new FlixTest("Test.Decl.Impl", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Impl.flix")(Options.TestWithLibrary),
-
   //
   // Declarations.
   //
   new FlixTest("Test.Decl.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Def.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Decl.OpaqueType", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.OpaqueType.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Decl.TypeAlias", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.TypeAlias.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Decl.Class", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Class.flix")(Options.TestWithLibrary),
 
   //
   // Pattern Match.
