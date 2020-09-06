@@ -1088,7 +1088,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Builds a nested map of namespace -> name -> signature from the given class namespace map..
+    * Builds a nested map of namespace -> name -> signature from the given class namespace map.
     */
   def buildSigLookup(classes: Map[Name.NName, Map[String, NamedAst.Class]]): Map[Name.NName, Map[String, NamedAst.Sig]] = {
     def flatMapToSigs(classes: Map[String, NamedAst.Class]): Map[String, NamedAst.Sig] = {
@@ -1096,7 +1096,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case (_, clazz) => clazz.sigs.map(sig => (sig.sym.name, sig))
       }
     }
-    classes.view.mapValues(flatMapToSigs).toMap
+    classes.foldLeft(Map.empty[Name.NName, Map[String, NamedAst.Sig]]) {
+      case (acc, (namespace, classes1)) => acc + (namespace -> flatMapToSigs(classes1))
+    }
   }
 
   /**
