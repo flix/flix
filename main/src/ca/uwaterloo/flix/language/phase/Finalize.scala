@@ -400,12 +400,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         FinalAst.Expression.Spawn(e, t, loc)
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
-        // TODO: Until there is backend support for lazyness, we simply default to eager evaluation.
-        visit(exp)
+        ??? // TODO: Add backend support for lazyness.
 
       case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
-        // TODO: Until there is backend support for lazyness, we simply default to eager evaluation.
-        visit(exp)
+        ??? // TODO: Add backend support for lazyness.
 
       case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, m))
