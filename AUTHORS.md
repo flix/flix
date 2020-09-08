@@ -30,3 +30,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Esben Bjerre](https://github.com/esbenbjerre)
 - [Erik Funder Carstensen](https://github.com/halvko)
 - [Rasmus Larsen](https://github.com/herbstein)
+- [Thomas Søe Plougsgaard](https://github.com/plougsgaard)

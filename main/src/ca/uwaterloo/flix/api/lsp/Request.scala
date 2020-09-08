@@ -145,7 +145,7 @@ object Request {
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -168,7 +168,7 @@ object Request {
     * Tries to parse the given `json` value as a [[RemUri]] request.
     */
   def parseRemUri(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -186,7 +186,7 @@ object Request {
     * Tries to parse the given `json` value as a [[Complete]] request.
     */
   def parseComplete(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -205,7 +205,7 @@ object Request {
     * Tries to parse the given `json` value as a [[Context]] request.
     */
   def parseContext(json: JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -224,7 +224,7 @@ object Request {
     * Tries to parse the given `json` value as a [[Check]] request.
     */
   def parseCheck(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -237,7 +237,7 @@ object Request {
     * Tries to parse the given `json` value as a [[Codelens]] request.
     */
   def parseCodelens(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -255,7 +255,7 @@ object Request {
     * Tries to parse the given `json` value as a [[FoldingRange]] request.
     */
   def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -273,7 +273,7 @@ object Request {
     * Tries to parse the given `json` value as a [[Goto]] request.
     */
   def parseGoto(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -292,7 +292,7 @@ object Request {
     * Tries to parse the given `json` value as a [[Symbols]] request.
     */
   def parseSymbols(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -310,7 +310,7 @@ object Request {
     * Tries to parse the given `json` value as a [[Uses]] request.
     */
   def parseUses(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -329,7 +329,7 @@ object Request {
     * Tries to parse the given `json` value as a [[RunBenchmarks]] request.
     */
   def parseRunBenchmarks(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -342,7 +342,7 @@ object Request {
     * Tries to parse the given `json` value as a [[RunMain]] request.
     */
   def parseRunMain(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -355,7 +355,7 @@ object Request {
     * Tries to parse the given `json` value as a [[RunTests]] request.
     */
   def parseRunTests(json: json4s.JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -368,7 +368,7 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBenchmark]] request.
     */
   def parsePackageBenchmark(json: JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -386,7 +386,7 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBuild]] request.
     */
   def parsePackageBuild(json: JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -404,7 +404,7 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBuildDoc]] request.
     */
   def parsePackageBuildDoc(json: JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -422,7 +422,7 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBuildJar]] request.
     */
   def parsePackageBuildJar(json: JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -440,7 +440,7 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBuildPkg]] request.
     */
   def parsePackageBuildPkg(json: JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -458,7 +458,7 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageInit]] request.
     */
   def parsePackageInit(json: JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -476,7 +476,7 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageTest]] request.
     */
   def parsePackageTest(json: JValue): Result[Request, String] = {
-    val idRes: Result[Int, String] = json \\ "uri" match {
+    val idRes: Result[Int, String] = json \\ "id" match {
       case JInt(i) => Ok(i.toInt)
       case s => Err(s"Unexpected id: '$s'.")
     }
