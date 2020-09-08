@@ -449,6 +449,14 @@ object PrettyPrinter {
           vt.text("spawn ")
           visitExp(exp)
 
+        case Expression.Lazy(exp, tpe, loc) =>
+          vt.text("lazy ")
+          visitExp(exp)
+
+        case Expression.Force(exp, tpe, loc) =>
+          vt.text("force ")
+          visitExp(exp)
+
         case Expression.FixpointConstraintSet(cs, tpe, loc) =>
           vt.text("#{")
           for (c <- cs) {

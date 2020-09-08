@@ -254,6 +254,12 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Spawn(exp, tpe, loc) =>
         visitExp(exp, i0)
 
+      case Expression.Lazy(exp, tpe, loc) =>
+        visitExp(exp, i0)
+
+      case Expression.Force(exp, tpe, loc) =>
+        visitExp(exp, i0)
+
       case Expression.FixpointConstraintSet(cs, tpe, loc) =>
         for (c <- cs) {
           visitConstraint(c)

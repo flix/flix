@@ -173,6 +173,10 @@ object ResolvedAst {
 
     case class Spawn(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Lazy(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Force(exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class FixpointConstraintSet(cs: List[ResolvedAst.Constraint], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointCompose(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression

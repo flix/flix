@@ -71,6 +71,8 @@ object FormatExpression {
     case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) => s"PutChannel($exp1, $exp2)"
     case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) => s"SelectChannel(${rules.mkString(", ")}, $default)"
     case TypedAst.Expression.Spawn(exp, tpe, eff, loc) => s"Spawn($exp)"
+    case TypedAst.Expression.Lazy(exp, tpe, loc) => s"Lazy($exp)"
+    case TypedAst.Expression.Force(exp, tpe, eff, loc) => s"Force($exp)"
     case TypedAst.Expression.FixpointConstraintSet(cs, tpe, loc) => s"FixpointConstraintSet($cs})"
     case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => s"FixpointCompose($exp1, $exp2)"
     case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) => s"FixpointSolve($exp, $stf)"

@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -492,6 +492,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
     case Expression.Spawn(exp, _, _, _) => visitExp(exp, env0)
+
+    case Expression.Lazy(exp, _, _) => visitExp(exp, env0)
+
+    case Expression.Force(exp, _, _, _) => visitExp(exp, env0)
 
     case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {

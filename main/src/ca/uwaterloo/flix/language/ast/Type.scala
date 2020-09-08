@@ -234,6 +234,13 @@ object Type {
   val Channel: Type = Type.Cst(TypeConstructor.Channel)
 
   /**
+    * Represents the Lazy type constructor.
+    *
+    * NB: This type has kind: * -> *.
+    */
+  val Lazy: Type = Type.Cst(TypeConstructor.Lazy)
+
+  /**
     * Represents the Reference type constructor.
     *
     * NB: This type has kind: * -> *.
@@ -467,6 +474,11 @@ object Type {
     * Returns the type `Channel[tpe]`.
     */
   def mkChannel(tpe: Type): Type = Type.Apply(Channel, tpe)
+
+  /**
+    * Returns the type `Lazy[tpe]`.
+    */
+  def mkLazy(tpe: Type): Type = Type.Apply(Lazy, tpe)
 
   /**
     * Returns the type `Ref[tpe]`.

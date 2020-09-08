@@ -329,6 +329,14 @@ object SimplifiedAstOps {
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
+      case Expression.Lazy(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      case Expression.Force(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
       case Expression.FixpointConstraintSet(_, tpe, _) =>
         checkType(tpe)
 

@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{ConstraintParam, _}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 
 import scala.annotation.tailrec
 
@@ -911,6 +911,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.Spawn(exp, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.Spawn(e, tpe, eff, loc)
+
+      case Expression.Lazy(exp, tpe, loc) =>
+        val e = apply(exp)
+        Expression.Lazy(e, tpe, loc)
+
+      case Expression.Force(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.Force(e, tpe, eff, loc)
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) =>
         Expression.FixpointConstraintSet(cs.map(apply), tpe, loc)

@@ -326,6 +326,14 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.Spawn(e, tpe, loc)
 
+    case Expression.Lazy(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Lazy(e, tpe, loc)
+
+    case Expression.Force(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Force(e, tpe, loc)
+
     case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       val cs = cs0.map(visitConstraint)
       Expression.FixpointConstraintSet(cs, tpe, loc)
@@ -527,6 +535,10 @@ object ClosureConv extends Phase[Root, Root] {
       rs ++ d
 
     case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.Lazy(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.Force(exp, tpe, loc) => freeVars(exp)
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       cs.foldLeft(mutable.LinkedHashSet.empty[(Symbol.VarSym, Type)]) {
@@ -865,6 +877,14 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Spawn(e, tpe, loc)
+
+      case Expression.Lazy(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Lazy(e, tpe, loc)
+
+      case Expression.Force(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Force(e, tpe, loc)
 
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)

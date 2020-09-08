@@ -809,6 +809,7 @@ object JvmOps {
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
     case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm))
+    case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe))
     case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm))
     case MonoType.Native(clazz) => Type.mkNative(clazz)
     case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm))
@@ -1125,6 +1126,7 @@ object JvmOps {
 
       case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Channel(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Lazy(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Enum(sym, args) =>

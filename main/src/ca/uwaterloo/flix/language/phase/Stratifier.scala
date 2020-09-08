@@ -352,6 +352,16 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Spawn(e, tpe, eff, loc)
       }
 
+    case Expression.Lazy(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Lazy(e, tpe, loc)
+      }
+
+    case Expression.Force(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Force(e, tpe, eff, loc)
+      }
+
     case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
@@ -592,6 +602,12 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.Spawn(exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.Lazy(exp, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.Force(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.FixpointConstraintSet(cs, _, _) =>

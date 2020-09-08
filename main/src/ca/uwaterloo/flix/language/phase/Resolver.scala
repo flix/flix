@@ -756,6 +756,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Spawn(e, loc)
 
+        case NamedAst.Expression.Lazy(exp, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Lazy(e, loc)
+
+        case NamedAst.Expression.Force(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Force(e, tvar, loc)
+
         case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
           for {
             cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, root, sigs))
@@ -1178,6 +1188,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "String" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Channel" => Type.Channel.toSuccess
+      case "Lazy" => Type.Lazy.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
       // Disambiguate type.

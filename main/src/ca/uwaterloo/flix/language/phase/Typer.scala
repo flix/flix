@@ -1118,7 +1118,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Spawn(exp, loc) =>
         //
-        //  exp: t @ _
+        //  exp: t & _
         //  -------------------------
         //  spawn exp : Unit @ Impure
         //
@@ -1126,6 +1126,31 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (constrs, tpe, _) <- visitExp(exp)
           resultTyp = Type.Unit
           resultEff = Type.Impure
+        } yield (constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.Lazy(exp, loc) =>
+        //
+        //  exp: t & Pure
+        //  -------------------------
+        //  lazy exp : Lazy[t] @ Pure
+        //
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          resultTyp = Type.mkLazy(tpe)
+          resultEff <- unifyTypeM(Type.Pure, eff, loc)
+        } yield (constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.Force(exp, tvar, loc) =>
+        //
+        //  exp: Lazy[t] @ e
+        //  -------------------------
+        //  force exp : t @ e
+        //
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          lazyTyp <- unifyTypeM(tpe, Type.mkLazy(tvar),loc)
+          resultTyp = tvar
+          resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
@@ -1550,6 +1575,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = Type.Unit
         val eff = e.eff
         TypedAst.Expression.Spawn(e, tpe, eff, loc)
+
+      case ResolvedAst.Expression.Lazy(exp, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = Type.mkLazy(e.tpe)
+        TypedAst.Expression.Lazy(e, tpe, loc)
+
+      case ResolvedAst.Expression.Force(exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val eff = e.eff
+        TypedAst.Expression.Force(e, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)

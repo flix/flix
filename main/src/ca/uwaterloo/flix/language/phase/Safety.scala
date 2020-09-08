@@ -206,6 +206,10 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
 
+    case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
+
+    case Expression.Force(exp, tpe, eff, loc) => visitExp(exp)
+
     case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.flatMap(checkConstraint)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)

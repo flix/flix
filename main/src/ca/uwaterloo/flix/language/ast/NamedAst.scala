@@ -188,6 +188,10 @@ object NamedAst {
 
     case class Spawn(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Lazy(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Force(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class FixpointConstraintSet(cs: List[NamedAst.Constraint], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointCompose(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression

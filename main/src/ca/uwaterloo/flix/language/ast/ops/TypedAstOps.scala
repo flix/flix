@@ -208,6 +208,10 @@ object TypedAstOps {
 
       case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
+      case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
+
+      case Expression.Force(exp, tpe, eff, loc) => visitExp(exp, env0)
+
       case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
         case (macc, c) => macc ++ visitConstraint(c, env0)
       }

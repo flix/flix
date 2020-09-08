@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, FormalParam, NullRule, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, FormalParam, MatchRule, NullRule, Pattern, Predicate, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
 
 object Indexer {
@@ -243,6 +243,12 @@ object Indexer {
       }
 
     case Expression.Spawn(exp, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.Lazy(exp, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.Force(exp, _, _, _) =>
       visitExp(exp) + exp0
 
     case Expression.FixpointConstraintSet(cs, _, _) =>

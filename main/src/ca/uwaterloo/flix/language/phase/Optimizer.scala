@@ -310,6 +310,14 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp, env0)
         Expression.Spawn(e, tpe, loc)
 
+      case Expression.Lazy(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Lazy(e, tpe, loc)
+
+      case Expression.Force(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Force(e, tpe, loc)
+
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, env0))
         Expression.FixpointConstraintSet(cs, tpe, loc)

@@ -728,6 +728,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.Spawn(e, loc)
       }
 
+    case WeededAst.Expression.Lazy(exp, loc) =>
+      visitExp(exp, env0, uenv0, tenv0) map {
+        case e => NamedAst.Expression.Lazy(e, loc)
+      }
+
+    case WeededAst.Expression.Force(exp, loc) =>
+      visitExp(exp, env0, uenv0, tenv0) map {
+        case e => NamedAst.Expression.Force(e, Type.freshVar(Kind.Star), loc)
+      }
+
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, env0, uenv0, tenv0))) {
         case cs =>
@@ -1149,6 +1159,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.Lazy(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.Force(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
