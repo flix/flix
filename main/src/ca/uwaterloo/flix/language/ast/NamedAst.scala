@@ -54,6 +54,8 @@ object NamedAst {
 
   object Use {
 
+    case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
+
     case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
 
     case class UseTyp(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use

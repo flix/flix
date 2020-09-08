@@ -402,6 +402,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map {
+        case WeededAst.Use.UseClass(qname, alias, loc) => NamedAst.Use.UseClass(qname, alias, loc)
         case WeededAst.Use.UseDef(qname, alias, loc) => NamedAst.Use.UseDef(qname, alias, loc)
         case WeededAst.Use.UseTyp(qname, alias, loc) => NamedAst.Use.UseTyp(qname, alias, loc)
         case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
@@ -1614,6 +1615,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] =
     Validation.fold(uses, uenv0) {
+      case (uenv1, WeededAst.Use.UseClass(qname, alias, _)) =>
+        val name = alias.name
+        uenv1.defs.get(name) match {
+          case None => uenv1.addClass(name, qname).toSuccess
+          case Some(otherQName) => NameError.DuplicateUseClass(name, otherQName.loc, qname.loc).toFailure
+        }
       case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
         val name = alias.name
         uenv1.defs.get(name) match {
@@ -1638,13 +1645,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Companion object for the [[UseEnv]] class.
     */
   private object UseEnv {
-    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty)
+    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty, Map.empty)
   }
 
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
+  private case class UseEnv(classes: Map[String, Name.QName], defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
+    /**
+      * Binds the class name `s` to the qualified name `n`.
+      */
+    def addClass(s: String, n: Name.QName): UseEnv = copy(classes = classes + (s -> n))
+
     /**
       * Binds the def name `s` to the qualified name `n`.
       */

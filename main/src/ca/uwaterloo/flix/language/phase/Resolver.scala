@@ -336,6 +336,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {
+            case NamedAst.Use.UseClass(qname, _, _) =>
+              flatMapN(lookupClass(qname, ns0, root))(_ => visit(exp, tenv0))
+
             case NamedAst.Use.UseDef(qname, _, _) =>
               flatMapN(lookupDef(qname, ns0, root))(_ => visit(exp, tenv0))
 
@@ -985,6 +988,41 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     } yield Scheme(sc0.quantifiers, base)
   }
 
+  def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
+    val classOpt = tryLookupClass(qname, ns0, root)
+    classOpt match {
+      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case Some(clazz) =>
+        if (isClassAccessible(clazz, ns0)) {
+          clazz.toSuccess
+        } else {
+          ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+        }
+    }
+  }
+
+  /**
+    * Tries to find a class with the qualified name `qname` in the namespace `ns0`.
+    */
+  def tryLookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Class] = {
+    // Check whether the name is fully-qualified.
+    if (qname.isUnqualified) {
+      // Case 1: Unqualified name. Lookup in the current namespace.
+      val classOpt = root.classes.getOrElse(ns0, Map.empty).get(qname.ident.name)
+
+      classOpt match {
+        case Some(clazz) =>
+          // Case 1.2: Found in the current namespace.
+          Some(clazz)
+        case None =>
+          // Case 1.1: Try the global namespace.
+          root.classes.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+      }
+    } else {
+      // Case 2: Qualified. Lookup in the given namespace.
+      root.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
   /**
     * Finds the def with the qualified name `qname` in the namespace `ns0`.
     */
@@ -1431,9 +1469,36 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Successfully returns the given definition `defn0` if it is accessible from the given namespace `ns0`.
+    * Determines if the class is accessible from the namespace.
     *
-    * Otherwise fails with a resolution error.
+    * A class `class0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the class is marked public, or
+    * (b) the class is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def isClassAccessible(class0: NamedAst.Class, ns0: Name.NName): Boolean = {
+    //
+    // Check if the class is marked public.
+    //
+    if (class0.mod.isPublic)
+      return true
+
+    //
+    // Check if the class is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = class0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return true
+
+    //
+    // The class is not accessible.
+    //
+    false
+  }
+
+  /**
+    * Determines if the definition is accessible from the namespace.
     *
     * A definition `defn0` is accessible from a namespace `ns0` if:
     *

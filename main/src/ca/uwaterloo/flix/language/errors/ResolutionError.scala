@@ -192,6 +192,26 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Class Error.
+    *
+    * @param sym the class symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Inaccessible."
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Class'" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inaccessible class.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Mark the class as public." << NewLine
+    }
+  }
+
+  /**
     * Inaccessible Def Error.
     *
     * @param sym the def symbol.
