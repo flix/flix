@@ -165,14 +165,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     json \\ "request" match {
       case JString("api/addUri") => Request.parseAddUri(json)
       case JString("api/remUri") => Request.parseRemUri(json)
-      case JString("api/version") => Ok(Request.Version)
       case JString("api/shutdown") => Ok(Request.Shutdown)
 
-      case JString("cmd/runBenchmarks") => Ok(Request.RunBenchmarks)
-      case JString("cmd/runMain") => Ok(Request.RunMain)
-      case JString("cmd/runTests") => Ok(Request.RunTests)
+      case JString("cmd/runBenchmarks") => Request.parseRunBenchmarks(json)
+      case JString("cmd/runMain") => Request.parseRunMain(json)
+      case JString("cmd/runTests") => Request.parseRunTests(json)
 
-      case JString("lsp/check") => Ok(Request.Check)
+      case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/context") => Request.parseContext(json)
@@ -199,47 +198,45 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Process the request.
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
-    case Request.AddUri(uri, src) =>
+    case Request.AddUri(id, uri, src) =>
       log("Added URI: " + uri)
       sources += (uri -> src)
-      "status" -> "success"
+      ("id" -> id) ~ ("status" -> "success")
 
-    case Request.RemUri(uri) =>
+    case Request.RemUri(id, uri) =>
       log("Removed URI: " + uri)
       sources -= uri
-      "status" -> "success"
+      ("id" -> id) ~ ("status" -> "success")
 
     case Request.Shutdown => processShutdown()
 
-    case Request.Version => processVersion()
+    case Request.RunBenchmarks(id) => runBenchmarks(id)
+    case Request.RunMain(id) => runMain(id)
+    case Request.RunTests(id) => runTests(id)
 
-    case Request.RunBenchmarks => runBenchmarks()
-    case Request.RunMain => runMain()
-    case Request.RunTests => runTests()
+    case Request.Check(id) => processCheck(id)
+    case Request.Codelens(id, uri) => processCodelens(id, uri)
+    case Request.Context(id, uri, pos) => processContext(id, uri, pos)
+    case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
+    case Request.FoldingRange(id, uri) => processFoldingRange(id, uri)
+    case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
+    case Request.Symbols(id, uri) => processSymbols(id, uri)
+    case Request.Uses(id, uri, pos) => processUses(id, uri, pos)
 
-    case Request.Check => processCheck()
-    case Request.Codelens(uri) => processCodelens(uri)
-    case Request.Context(uri, pos) => processContext(uri, pos)
-    case Request.Complete(uri, pos) => processComplete(uri, pos)
-    case Request.FoldingRange(uri) => processFoldingRange(uri)
-    case Request.Goto(uri, pos) => processGoto(uri, pos)
-    case Request.Symbols(uri) => processSymbols(uri)
-    case Request.Uses(uri, pos) => processUses(uri, pos)
-
-    case Request.PackageBenchmark(projectRoot) => benchmarkPackage(projectRoot)
-    case Request.PackageBuild(projectRoot) => buildPackage(projectRoot)
-    case Request.PackageBuildDoc(projectRoot) => buildDoc(projectRoot)
-    case Request.PackageBuildJar(projectRoot) => buildJar(projectRoot)
-    case Request.PackageBuildPkg(projectRoot) => buildPkg(projectRoot)
-    case Request.PackageInit(projectRoot) => initPackage(projectRoot)
-    case Request.PackageTest(projectRoot) => testPackage(projectRoot)
+    case Request.PackageBenchmark(id, projectRoot) => benchmarkPackage(id, projectRoot)
+    case Request.PackageBuild(id, projectRoot) => buildPackage(id, projectRoot)
+    case Request.PackageBuildDoc(id, projectRoot) => buildDoc(id, projectRoot)
+    case Request.PackageBuildJar(id, projectRoot) => buildJar(id, projectRoot)
+    case Request.PackageBuildPkg(id, projectRoot) => buildPkg(id, projectRoot)
+    case Request.PackageInit(id, projectRoot) => initPackage(id, projectRoot)
+    case Request.PackageTest(id, projectRoot) => testPackage(id, projectRoot)
 
   }
 
   /**
     * Processes a validate request.
     */
-  private def processCheck()(implicit ws: WebSocket): JValue = {
+  private def processCheck(requestId: Int)(implicit ws: WebSocket): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -260,19 +257,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         val e = System.nanoTime() - t
 
         // Send back a status message.
-        ("status" -> "success") ~ ("time" -> e)
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
 
       case Failure(errors) =>
         // Case 2: Compilation failed. Send back the error messages.
         val results = PublishDiagnosticsParams.from(errors)
-        ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
     }
   }
 
   /**
     * Processes a codelens request.
     */
-  private def processCodelens(uri: String)(implicit ws: WebSocket): JValue = {
+  private def processCodelens(requestId: Int, uri: String)(implicit ws: WebSocket): JValue = {
     /**
       * Returns a code lens for main (if present).
       */
@@ -315,20 +312,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     // Compute all code lenses.
     //
     val allCodeLenses = mkCodeLensForMain() ::: mkCodeLensesForUnitTests()
-
-    JArray(allCodeLenses.map(_.toJSON))
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
   }
 
   /**
     * Processes a complete request.
     */
-  private def processComplete(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processComplete(requestId: Int, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     def mkDefaultCompletions(): JValue = {
       val items = List(
         CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
         CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
       )
-      ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
     }
 
     index.query(uri, pos) match {
@@ -338,7 +334,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val items = holeCtx.env.map {
             case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
           }
-          ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
         case _ => mkDefaultCompletions
       }
       case _ => mkDefaultCompletions
@@ -348,75 +344,75 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a type and effect request.
     */
-  private def processContext(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processContext(requestId: Int, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
         implicit val _ = Audience.External
         val tpe = FormatType.formatType(exp.tpe)
         val eff = FormatType.formatType(exp.eff)
-        ("status" -> "success") ~ ("result" -> (("tpe" -> tpe) ~ ("eff" -> eff)))
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> (("tpe" -> tpe) ~ ("eff" -> eff)))
       case _ =>
-        mkNotFound(uri, pos)
+        mkNotFound(requestId, uri, pos)
     }
   }
 
   /**
     * Processes a folding range request.
     */
-  private def processFoldingRange(uri: String)(implicit ws: WebSocket): JValue = {
+  private def processFoldingRange(requestId: Int, uri: String)(implicit ws: WebSocket): JValue = {
     if (root == null) {
-      return ("status" -> "success") ~ ("result" -> JArray(Nil))
+      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
     }
 
     val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
       case ((sym, defn), acc) if matchesUri(uri, defn.loc) => FoldingRange(defn.loc.beginLine, Some(defn.loc.beginCol), defn.loc.endLine, Some(defn.loc.endCol), Some(FoldingRangeKind.Region)) :: acc
       case (_, acc) => acc
     }
-    ("status" -> "success") ~ ("result" -> JArray(defsFoldingRanges.map(_.toJSON)))
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(defsFoldingRanges.map(_.toJSON)))
   }
 
   /**
     * Processes a goto request.
     */
-  private def processGoto(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processGoto(requestId: Int, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, loc) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
 
         case Expression.Var(sym, _, loc) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
         case Expression.Tag(sym, tag, _, _, _, loc) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
 
-        case _ => mkNotFound(uri, pos)
+        case _ => mkNotFound(requestId, uri, pos)
       }
       case Some(Entity.Pat(pat)) => pat match {
         case Pattern.Var(sym, _, loc) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
         case Pattern.Tag(sym, tag, _, _, loc) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
 
-        case _ => mkNotFound(uri, pos)
+        case _ => mkNotFound(requestId, uri, pos)
       }
-      case _ => mkNotFound(uri, pos)
+      case _ => mkNotFound(requestId, uri, pos)
     }
   }
 
   /**
     * Processes a request to run all benchmarks. Re-compiles and runs the program.
     */
-  private def runBenchmarks(): JValue = {
+  private def runBenchmarks(requestId: Int): JValue = {
     // TODO: runBenchmarks
-    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "failure")
   }
 
   /**
     * Processes a request to run main. Re-compiles and runs the program.
     */
-  private def runMain(): JValue = {
+  private def runMain(requestId: Int): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -426,22 +422,22 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     flix.compile() match {
       case Success(t) => t.getMain match {
         case None =>
-          ("status" -> "success") ~ ("result" -> "Compilation successful. No main to run.")
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "Compilation successful. No main to run.")
         case Some(main) =>
           val result = main()
-          ("status" -> "success") ~ ("result" -> result.toString)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toString)
       }
       case Failure(errors) =>
         // Case 2: Compilation failed. Send back the error messages.
         val results = PublishDiagnosticsParams.from(errors)
-        ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
     }
   }
 
   /**
     * Processes a request to run all tests. Re-compiles and runs all unit tests.
     */
-  private def runTests(): JValue = {
+  private def runTests(requestId: Int): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -457,72 +453,72 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "failure") ~ ("message" -> m)
         }
 
-        ("status" -> "success") ~ ("result" -> JArray(results))
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(results))
       case Failure(errors) =>
         // Case 2: Compilation failed. Send back the error messages.
         val results = PublishDiagnosticsParams.from(errors)
-        ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
     }
   }
 
   /**
     * Processes a request to run all benchmarks in the project.
     */
-  private def benchmarkPackage(projectRoot: Path): JValue = {
+  private def benchmarkPackage(requestId: Int, projectRoot: Path): JValue = {
     Packager.benchmark(projectRoot, DefaultOptions)
-    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
 
   /**
     * Processes a request to build the project.
     */
-  private def buildPackage(projectRoot: Path): JValue = {
+  private def buildPackage(requestId: Int, projectRoot: Path): JValue = {
     Packager.build(projectRoot, DefaultOptions) match {
       case None =>
-        "status" -> "failure"
+        ("id" -> requestId) ~ ("status" -> "failure")
       case Some(_) =>
-        "status" -> "success"
+        ("id" -> requestId) ~ ("status" -> "success")
     }
   }
 
   /**
     * Processes a request to build the documentation.
     */
-  private def buildDoc(projectRoot: Path): JValue = {
+  private def buildDoc(requestId: Int, projectRoot: Path): JValue = {
     // TODO: runBuildDoc
-    ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+    ("id" -> requestId) ~ ("status" -> "failure")
   }
 
   /**
     * Processes a request to build a jar from the project.
     */
-  private def buildJar(projectRoot: Path): JValue = {
+  private def buildJar(requestId: Int, projectRoot: Path): JValue = {
     Packager.buildJar(projectRoot, DefaultOptions)
-    "status" -> "success"
+    ("id" -> requestId) ~ ("status" -> "success")
   }
 
   /**
     * Processes a request to build a flix package from the project.
     */
-  private def buildPkg(projectRoot: Path): JValue = {
+  private def buildPkg(requestId: Int, projectRoot: Path): JValue = {
     Packager.buildPkg(projectRoot, DefaultOptions)
-    "status" -> "success"
+    ("id" -> requestId) ~ ("status" -> "success")
   }
 
   /**
     * Processes a request to init a new flix package.
     */
-  private def initPackage(projectRoot: Path): JValue = {
+  private def initPackage(requestId: Int, projectRoot: Path): JValue = {
     Packager.init(projectRoot, DefaultOptions)
-    "status" -> "success"
+    ("id" -> requestId) ~ ("status" -> "success")
   }
 
   /**
     * Processes a request to run all tests in the package.
     */
-  private def testPackage(projectRoot: Path): JValue = {
+  private def testPackage(requestId: Int, projectRoot: Path): JValue = {
     Packager.test(projectRoot, DefaultOptions)
-    "status" -> "success"
+    ("id" -> requestId) ~ ("status" -> "success")
   }
 
   /**
@@ -536,9 +532,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a symbols request.
     */
-  private def processSymbols(uri: String): JValue = {
+  private def processSymbols(requestId: Int, uri: String): JValue = {
     if (root == null) {
-      return ("status" -> "success") ~ ("result" -> JArray(Nil))
+      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
     }
 
     // Find all definition symbols.
@@ -554,45 +550,46 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     // Compute all available symbols.
     val allSymbols = defSymbols ++ enumSymbols
 
-    ("status" -> "success") ~ ("result" -> allSymbols.map(_.toJSON))
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> allSymbols.map(_.toJSON))
   }
 
   /**
     * Processes a uses request.
     */
-  private def processUses(uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processUses(requestId: Int, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, _) =>
           val uses = index.usesOf(sym)
           val locs = uses.toList.map(Location.from)
-          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
         case Expression.Var(sym, _, _) =>
           val uses = index.usesOf(sym)
           val locs = uses.toList.map(Location.from)
-          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
         case Expression.Tag(sym, _, _, _, _, _) =>
           val uses = index.usesOf(sym)
           val locs = uses.toList.map(Location.from)
-          ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
-        case _ => mkNotFound(uri, pos)
+        case _ => mkNotFound(requestId, uri, pos)
       }
 
-      case _ => mkNotFound(uri, pos)
+      case _ => mkNotFound(requestId, uri, pos)
     }
   }
 
   /**
     * Processes the version request.
     */
-  private def processVersion()(implicit ws: WebSocket): JValue = {
+  private def processVersion(requestId: Int)(implicit ws: WebSocket): JValue = {
     val major = Version.CurrentVersion.major
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
-    ("status" -> "success") ~ ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+    val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("version" -> version)
   }
 
   /**
@@ -603,8 +600,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
-  private def mkNotFound(uri: String, pos: Position): JValue =
-    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+  private def mkNotFound(requestId: Int, uri: String, pos: Position): JValue =
+    ("id" -> requestId) ~ ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   /**
     * Logs the given message `msg` along with information about the connection `ws`.
