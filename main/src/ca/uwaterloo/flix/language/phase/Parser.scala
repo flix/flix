@@ -312,6 +312,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    def UseClass: Rule1[ParsedAst.Use] = rule { // MATT improve syntax
+      keyword("class") ~ WS ~ SP ~ Names.Namespace ~ "." ~ UseName ~ SP ~> ParsedAst.Use.UseClass
+    }
+
     def UseName: Rule1[Name.Ident] = rule {
       Names.LowerCaseName | Names.UpperCaseName | Names.GreekName | Names.MathName | Names.OperatorName
     }

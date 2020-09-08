@@ -336,6 +336,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given use `u0`.
     */
   private def visitUse(u0: ParsedAst.Use): Validation[List[WeededAst.Use], WeederError] = u0 match {
+    case ParsedAst.Use.UseClass(sp1, nname, ident, sp2) =>
+      List(WeededAst.Use.UseClass(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
     case ParsedAst.Use.UseOne(sp1, nname, ident, sp2) =>
       if (ident.isUpper)
         List(WeededAst.Use.UseTyp(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess

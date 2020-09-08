@@ -57,6 +57,7 @@ object WeededAst {
   sealed trait Use
 
   object Use {
+    case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
     case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
