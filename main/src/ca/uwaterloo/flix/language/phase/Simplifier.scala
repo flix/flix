@@ -525,7 +525,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe)
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
-        SimplifiedAst.Expression.Spawn(lambdaExp, lambdaTyp, loc)
+        SimplifiedAst.Expression.Lazy(lambdaExp, lambdaTyp, loc)
 
       case TypedAst.Expression.Force(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
