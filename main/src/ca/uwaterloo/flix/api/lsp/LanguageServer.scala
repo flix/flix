@@ -236,7 +236,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a validate request.
     */
-  private def processCheck(requestId: Int)(implicit ws: WebSocket): JValue = {
+  private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -269,7 +269,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a codelens request.
     */
-  private def processCodelens(requestId: Int, uri: String)(implicit ws: WebSocket): JValue = {
+  private def processCodelens(requestId: String, uri: String)(implicit ws: WebSocket): JValue = {
     /**
       * Returns a code lens for main (if present).
       */
@@ -318,7 +318,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a complete request.
     */
-  private def processComplete(requestId: Int, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     def mkDefaultCompletions(): JValue = {
       val items = List(
         CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
@@ -344,7 +344,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a type and effect request.
     */
-  private def processContext(requestId: Int, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processContext(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
         implicit val _ = Audience.External
@@ -359,7 +359,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a folding range request.
     */
-  private def processFoldingRange(requestId: Int, uri: String)(implicit ws: WebSocket): JValue = {
+  private def processFoldingRange(requestId: String, uri: String)(implicit ws: WebSocket): JValue = {
     if (root == null) {
       return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
     }
@@ -374,7 +374,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a goto request.
     */
-  private def processGoto(requestId: Int, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processGoto(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, loc) =>
@@ -404,7 +404,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run all benchmarks. Re-compiles and runs the program.
     */
-  private def runBenchmarks(requestId: Int): JValue = {
+  private def runBenchmarks(requestId: String): JValue = {
     // TODO: runBenchmarks
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "failure")
   }
@@ -412,7 +412,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run main. Re-compiles and runs the program.
     */
-  private def runMain(requestId: Int): JValue = {
+  private def runMain(requestId: String): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -437,7 +437,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run all tests. Re-compiles and runs all unit tests.
     */
-  private def runTests(requestId: Int): JValue = {
+  private def runTests(requestId: String): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
     for ((uri, source) <- sources) {
@@ -464,7 +464,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run all benchmarks in the project.
     */
-  private def benchmarkPackage(requestId: Int, projectRoot: Path): JValue = {
+  private def benchmarkPackage(requestId: String, projectRoot: Path): JValue = {
     Packager.benchmark(projectRoot, DefaultOptions)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "NotYetImplemented")
   }
@@ -472,7 +472,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to build the project.
     */
-  private def buildPackage(requestId: Int, projectRoot: Path): JValue = {
+  private def buildPackage(requestId: String, projectRoot: Path): JValue = {
     Packager.build(projectRoot, DefaultOptions) match {
       case None =>
         ("id" -> requestId) ~ ("status" -> "failure")
@@ -484,7 +484,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to build the documentation.
     */
-  private def buildDoc(requestId: Int, projectRoot: Path): JValue = {
+  private def buildDoc(requestId: String, projectRoot: Path): JValue = {
     // TODO: runBuildDoc
     ("id" -> requestId) ~ ("status" -> "failure")
   }
@@ -492,7 +492,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to build a jar from the project.
     */
-  private def buildJar(requestId: Int, projectRoot: Path): JValue = {
+  private def buildJar(requestId: String, projectRoot: Path): JValue = {
     Packager.buildJar(projectRoot, DefaultOptions)
     ("id" -> requestId) ~ ("status" -> "success")
   }
@@ -500,7 +500,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to build a flix package from the project.
     */
-  private def buildPkg(requestId: Int, projectRoot: Path): JValue = {
+  private def buildPkg(requestId: String, projectRoot: Path): JValue = {
     Packager.buildPkg(projectRoot, DefaultOptions)
     ("id" -> requestId) ~ ("status" -> "success")
   }
@@ -508,7 +508,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to init a new flix package.
     */
-  private def initPackage(requestId: Int, projectRoot: Path): JValue = {
+  private def initPackage(requestId: String, projectRoot: Path): JValue = {
     Packager.init(projectRoot, DefaultOptions)
     ("id" -> requestId) ~ ("status" -> "success")
   }
@@ -516,7 +516,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a request to run all tests in the package.
     */
-  private def testPackage(requestId: Int, projectRoot: Path): JValue = {
+  private def testPackage(requestId: String, projectRoot: Path): JValue = {
     Packager.test(projectRoot, DefaultOptions)
     ("id" -> requestId) ~ ("status" -> "success")
   }
@@ -532,7 +532,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a symbols request.
     */
-  private def processSymbols(requestId: Int, uri: String): JValue = {
+  private def processSymbols(requestId: String, uri: String): JValue = {
     if (root == null) {
       return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
     }
@@ -556,7 +556,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes a uses request.
     */
-  private def processUses(requestId: Int, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+  private def processUses(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, _) =>
@@ -584,7 +584,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Processes the version request.
     */
-  private def processVersion(requestId: Int)(implicit ws: WebSocket): JValue = {
+  private def processVersion(requestId: String)(implicit ws: WebSocket): JValue = {
     val major = Version.CurrentVersion.major
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
@@ -600,7 +600,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
-  private def mkNotFound(requestId: Int, uri: String, pos: Position): JValue =
+  private def mkNotFound(requestId: String, uri: String, pos: Position): JValue =
     ("id" -> requestId) ~ ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   /**
