@@ -316,13 +316,9 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBenchmark]] request.
     */
   def parsePackageBenchmark(json: JValue): Result[Request, String] = {
-    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
     for {
       id <- parseId(json)
-      projectRoot <- projectRootUri
+      projectRoot <- parseProjectRootUri(json)
     } yield Request.PackageBenchmark(id, Paths.get(projectRoot))
   }
 
@@ -330,13 +326,9 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBuild]] request.
     */
   def parsePackageBuild(json: JValue): Result[Request, String] = {
-    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
     for {
       id <- parseId(json)
-      projectRoot <- projectRootUri
+      projectRoot <- parseProjectRootUri(json)
     } yield Request.PackageBuild(id, Paths.get(projectRoot))
   }
 
@@ -344,13 +336,9 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBuildDoc]] request.
     */
   def parsePackageBuildDoc(json: JValue): Result[Request, String] = {
-    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
     for {
       id <- parseId(json)
-      projectRoot <- projectRootUri
+      projectRoot <- parseProjectRootUri(json)
     } yield Request.PackageBuildDoc(id, Paths.get(projectRoot))
   }
 
@@ -358,13 +346,9 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBuildJar]] request.
     */
   def parsePackageBuildJar(json: JValue): Result[Request, String] = {
-    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
     for {
       id <- parseId(json)
-      projectRoot <- projectRootUri
+      projectRoot <- parseProjectRootUri(json)
     } yield Request.PackageBuildJar(id, Paths.get(projectRoot))
   }
 
@@ -372,13 +356,9 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageBuildPkg]] request.
     */
   def parsePackageBuildPkg(json: JValue): Result[Request, String] = {
-    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
     for {
       id <- parseId(json)
-      projectRoot <- projectRootUri
+      projectRoot <- parseProjectRootUri(json)
     } yield Request.PackageBuildPkg(id, Paths.get(projectRoot))
   }
 
@@ -386,13 +366,9 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageInit]] request.
     */
   def parsePackageInit(json: JValue): Result[Request, String] = {
-    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
     for {
       id <- parseId(json)
-      projectRoot <- projectRootUri
+      projectRoot <- parseProjectRootUri(json)
     } yield Request.PackageInit(id, Paths.get(projectRoot))
   }
 
@@ -400,13 +376,9 @@ object Request {
     * Tries to parse the given `json` value as a [[PackageTest]] request.
     */
   def parsePackageTest(json: JValue): Result[Request, String] = {
-    val projectRootUri: Result[String, String] = json \\ "projectRoot" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
     for {
       id <- parseId(json)
-      projectRoot <- projectRootUri
+      projectRoot <- parseProjectRootUri(json)
     } yield Request.PackageTest(id, Paths.get(projectRoot))
   }
 
@@ -417,6 +389,16 @@ object Request {
     v \\ "id" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected id: '$s'.")
+    }
+  }
+
+  /**
+    * Attempts to parse the `projectRootUri` from the given JSON value `v`.
+    */
+  private def parseProjectRootUri(v: JValue): Result[String, String] = {
+    v \\ "projectRootUri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected projectRootUri: '$s'.")
     }
   }
 
