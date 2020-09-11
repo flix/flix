@@ -793,7 +793,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       for (defn <- defns) {
         val sym = defn.sym
         if (name == sym.name) {
-          val declaredType = Scheme.instantiate(defn.inferredScheme, InstantiateMode.Flexible)
+          val (_, declaredType) = Scheme.instantiate(defn.inferredScheme, InstantiateMode.Flexible) // MATT tconstrs?
           if (Unification.unifyTypes(declaredType, tpe).isInstanceOf[Result.Ok[_, _]]) {
             matches += sym
           }
@@ -875,7 +875,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, inferredScheme = Scheme(Nil, subst(defn.inferredScheme.base)), tparams = Nil)
+        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, inferredScheme = Scheme(Nil, List.empty, subst(defn.inferredScheme.base)), tparams = Nil)
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)

@@ -174,7 +174,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val caseType = t
           val enumType = Type.mkEnum(e0.sym, freeVars)
           val base = Type.mkTag(e0.sym, tag.name, caseType, enumType)
-          val sc = Scheme(freeVars, base)
+          val sc = Scheme(freeVars, List.empty, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
         }
     }
@@ -183,7 +183,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       cases <- casesVal
       tpe <- lookupType(e0.tpe, ns0, root)
     } yield {
-      val sc = Scheme(tparams.map(_.tpe), tpe)
+      val sc = Scheme(tparams.map(_.tpe), List.empty, tpe)
       ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
     }
   }
@@ -985,7 +985,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, root: NamedAst.Root): Validation[Scheme, ResolutionError] = {
     for {
       base <- lookupType(sc0.base, ns0, root)
-    } yield Scheme(sc0.quantifiers, base)
+    } yield Scheme(sc0.quantifiers, sc0.tconstrs, base)
   }
 
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
@@ -1911,7 +1911,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       sym = Symbol.mkSigSym(classSym, mkSynthIdent("show")),
       tparams = List(tparam),
       fparams = List(ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, tparamType, SourceLocation.Generated)),
-      sc = Scheme.generalize(Type.mkPureArrow(tparamType, Type.Str)),
+      sc = Scheme.generalize(List(TypedAst.TypeConstraint(classSym, tparamType)), Type.mkPureArrow(tparamType, Type.Str)),
       eff = Type.Pure,
       loc = SourceLocation.Generated)
 

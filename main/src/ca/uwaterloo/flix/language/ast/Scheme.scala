@@ -52,7 +52,7 @@ object Scheme {
     *
     * The `mode` control the rigidity of quantified and free variables.
     */
-  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): Type = {
+  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): (List[TypedAst.TypeConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -73,7 +73,7 @@ object Scheme {
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
-    baseType.map {
+    val newBase = baseType.map {
       case Type.Var(x, k, rigidity) =>
         freshVars.get(x) match {
           case None =>
@@ -87,14 +87,32 @@ object Scheme {
           case Some(tvar) => tvar
         }
     }
+
+    val newConstrs = sc.constraints.map {
+      case tconstr@TypedAst.TypeConstraint(_, Type.Var(x, k, rigidity)) =>
+        freshVars.get(x) match {
+          case None =>
+            // Determine the rigidity of the free type variable.
+            val newRigidity = mode match {
+              case InstantiateMode.Flexible => rigidity
+              case InstantiateMode.Rigid => Rigidity.Rigid
+              case InstantiateMode.Mixed => Rigidity.Rigid
+            }
+            tconstr.copy(arg = Type.Var(x, k, newRigidity))
+          case Some(tvar) => tconstr.copy(arg = tvar)
+        }
+      case tconstr@TypedAst.TypeConstraint(_, _) => tconstr
+    }
+
+    (newConstrs, newBase)
   }
 
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tpe0: Type): Scheme = {
+  def generalize(tconstrs: List[TypedAst.TypeConstraint], tpe0: Type): Scheme = {
     val quantifiers = tpe0.typeVars
-    Scheme(quantifiers.toList, tpe0)
+    Scheme(quantifiers.toList, tconstrs, tpe0)
   }
 
   /**
@@ -113,14 +131,19 @@ object Scheme {
     //
 
     // Instantiate every variable in `sc1` as flexible and make every free variable rigid.
-    val tpe1 = instantiate(sc1, InstantiateMode.Mixed)
+    val (tconstrs1, tpe1) = instantiate(sc1, InstantiateMode.Mixed)
 
     // Instantiate every variable in `sc2` as rigid and make every free variable rigid.
-    val tpe2 = instantiate(sc2, InstantiateMode.Rigid)
+    val (tconstrs2, tpe2) = instantiate(sc2, InstantiateMode.Rigid)
 
     // Attempt to unify the two instantiated types.
     Unification.unifyTypes(tpe1, tpe2) match {
-      case Result.Ok(_) => true
+      case Result.Ok(subst) =>
+        val newTconstrs1 = tconstrs1.map(subst.apply)
+        val newTconstrs2 = tconstrs2.map(subst.apply)
+        // type constraints on tvars in `sc1` must be a subset of those in `sc2`
+        // we ignore type constraints on non-vars for the purposes of the leq check
+        newTconstrs1.filter(_.arg.isInstanceOf[Type.Var]).forall(newTconstrs2.contains)
       case Result.Err(_) => false
     }
   }
@@ -130,7 +153,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Type.Var], base: Type) {
+case class Scheme(quantifiers: List[Type.Var], constraints: List[TypedAst.TypeConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.
