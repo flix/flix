@@ -248,6 +248,7 @@ class Flix {
         Stratifier |>
         PatternExhaustiveness |>
         Redundancy |>
+        TailrecCheck |>
         Linter |>
         Safety
 

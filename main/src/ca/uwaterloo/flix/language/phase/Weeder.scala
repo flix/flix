@@ -1522,6 +1522,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case "deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
           case "law" => WeededAst.Annotation(Ast.Annotation.Law(loc), args, loc).toSuccess
           case "lint" => WeededAst.Annotation(Ast.Annotation.Lint(loc), args, loc).toSuccess
+          case "tailrec" => WeededAst.Annotation(Ast.Annotation.Tailrec(loc), args, loc).toSuccess
           case "test" => WeededAst.Annotation(Ast.Annotation.Test(loc), args, loc).toSuccess
           case "unchecked" => WeededAst.Annotation(Ast.Annotation.Unchecked(loc), args, loc).toSuccess
           case "Time" => WeededAst.Annotation(Ast.Annotation.Time(loc), args, loc).toSuccess

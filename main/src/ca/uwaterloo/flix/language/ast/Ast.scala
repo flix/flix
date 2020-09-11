@@ -113,6 +113,15 @@ object Ast {
     }
 
     /**
+      * An AST node that represents a `@tailrec` annotatino.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Tailrec(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@tailrec"
+    }
+
+    /**
       * An AST node that represents a `@test` annotation.
       *
       * A function marked with `test` is evaluated as part of the test framework.
@@ -198,6 +207,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@unchecked` annotation.
       */
     def isUnchecked: Boolean = annotations exists (_.isInstanceOf[Annotation.Unchecked])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@tailrec` annotation.
+      */
+    def isTailrec: Boolean = annotations exists (_.isInstanceOf[Annotation.Tailrec])
   }
 
   /**
