@@ -27,6 +27,6 @@ object FormatScheme {
     if (sc.quantifiers.isEmpty)
       FormatType.formatType(sc.base)
     else
-      s"∀(${sc.quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${FormatType.formatType(sc.base)}"
+      s"∀(${sc.quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${FormatType.formatType(sc.base)}" + s" with ${sc.constraints}" // MATT better formatting
   }
 }

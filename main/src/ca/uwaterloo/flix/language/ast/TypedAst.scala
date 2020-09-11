@@ -428,6 +428,7 @@ object TypedAst {
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
 
+  // MATT move out of TypedAst?
   case class TypeConstraint(sym: Symbol.ClassSym, arg: Type)
 
 }

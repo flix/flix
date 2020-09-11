@@ -116,7 +116,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       ///
       val result = for {
         (inferredConstrs, inferredTyp, inferredEff) <- inferExp(exp0, root)
-      } yield Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp)
+      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp))
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -133,21 +133,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           val initialSubst = getSubstFromParams(fparams0)
 
           run(initialSubst) match {
-            case Ok((subst, partialType)) =>
+            case Ok((subst, (partialTconstrs, partialType))) =>
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
               ///
-              val inferredType = subst(partialType)
+              val (inferredConstrs, inferredType) = (partialTconstrs.map(subst.apply), subst(partialType))
 
               ///
               /// Check that the inferred type is at least as general as the declared type.
               ///
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
-              val sc = Scheme.generalize(inferredType)
+              val sc = Scheme.generalize(inferredConstrs, inferredType)
               if (!Scheme.lessThanEqual(sc, declaredScheme)) {
                 return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
               }
+
+              // MATT type constraints on real types should be validated (exists instance s.t. ...)
 
               ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
@@ -163,7 +165,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val inferredScheme = Scheme(inferredType.typeVars.toList, inferredType)
+              val inferredScheme = Scheme(inferredType.typeVars.toList, inferredConstrs, inferredType)
 
               ///
               /// Infer types for annotations.
@@ -353,7 +355,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val defType = Scheme.instantiate(defn.sc, InstantiateMode.Flexible)
+        val (_, defType) = Scheme.instantiate(defn.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
         } yield (List.empty, resultTyp, Type.Pure)
@@ -361,11 +363,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes.flatMap(_._2.signatures).find(_.sym == sym).get
-        val clazz = sig.sym.clazz
-        val sigType = Scheme.instantiate(sig.sc, InstantiateMode.Flexible)
+        val (tconstrs, sigType) = Scheme.instantiate(sig.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
-        } yield (List(TypedAst.TypeConstraint(clazz, resultTyp)), resultTyp, Type.Pure)
+        } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
         liftM(List.empty, tvar, evar)
@@ -719,7 +720,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val caze = decl.cases(tag)
 
         // Instantiate the type scheme of the case.
-        val tagType = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible) // MATT need tconstrs here?
 
         //
         // The tag type can be thought of as a function from the type of variant to the type of the enum.
@@ -1700,7 +1701,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val caze = decl.cases(tag)
 
         // Instantiate the type scheme of the case.
-        val tagType = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible) // MATT need tconstrs here?
 
         //
         // The tag type can be thought of as a function from the type of variant to the type of the enum.

@@ -291,7 +291,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparams = getProperTypeParams(tparam).head // only 1 tparam allowed for now
       for {
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, sym))
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, sym, tparams))
       } yield NamedAst.Class(doc, mod, sym, tparams, sigs, loc)
   }
 
@@ -307,7 +307,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       } yield NamedAst.Instance(doc, mod, sym, tpe, defs, loc)
   }
 
-  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, clazz: Symbol.ClassSym)(implicit flix: Flix) = sig match {
+  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, clazz: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix) = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
         tparams =>
@@ -316,7 +316,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case fparams =>
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-              val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
+              val schemeVal = getSigScheme(tparams, tpe, uenv0, tenv, clazz, classTparam)
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, schemeVal, tpeVal) {
                 case (as, sc, eff) =>
@@ -339,7 +339,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
               val expVal = visitExp(exp, env0, uenv0, tenv)
-              val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
+              val schemeVal = getDefScheme(tparams, tpe, uenv0, tenv)
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, expVal, schemeVal, tpeVal) {
                 case (as, e, sc, eff) =>
@@ -1570,10 +1570,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
     */
-  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+  private def getDefScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
     mapN(visitType(tpe, uenv0, tenv0)) {
-      case t => NamedAst.Scheme(tparams0.map(_.tpe), t)
+      case t => NamedAst.Scheme(tparams0.map(_.tpe), List.empty, t)
     }
+  }
+
+  /**
+    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
+    */
+  private def getSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var], classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+    for {
+      t <- visitType(tpe, uenv0, tenv0)
+      tparams = tparams0.map(_.tpe)
+      tconstrs = tparams0.find(_.name.name == classTparam.name.name).map(tparam => TypedAst.TypeConstraint(classSym, tparam.tpe)).toList
+    } yield NamedAst.Scheme(tparams, tconstrs, t)
   }
 
   /**
