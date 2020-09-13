@@ -29,7 +29,8 @@ object Range {
     * Returns a range from the given source location `loc`.
     */
   def from(loc: SourceLocation): Range = {
-    Range(Position(loc.beginLine, loc.beginCol), Position(loc.endLine, loc.endCol))
+    // NB: Language Server Protocol line numbers are zero-indexed.
+    Range(Position(loc.beginLine - 1, loc.beginCol), Position(loc.endLine - 1, loc.endCol))
   }
 
 }
