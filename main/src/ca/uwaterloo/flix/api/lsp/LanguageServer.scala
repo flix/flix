@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -65,7 +65,7 @@ import scala.collection.mutable
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
   */
-class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
+class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(InetAddress.getLocalHost, port)) {
 
   /**
     * The custom date format to use for logging.
