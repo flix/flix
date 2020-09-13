@@ -65,7 +65,7 @@ import scala.collection.mutable
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
   */
-class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(InetAddress.getLocalHost, port)) {
+class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
 
   /**
     * The custom date format to use for logging.
@@ -106,7 +106,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(In
     * Invoked when the server is started.
     */
   override def onStart(): Unit = {
-    Console.println(s"LSP listening on: ws://localhost:$port")
+    Console.println(s"LSP listening on: '$getAddress'.")
   }
 
   /**
