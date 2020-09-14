@@ -110,6 +110,11 @@ object Request {
   case class Uses(requestId: String, uri: String, pos: Position) extends Request
 
   /**
+    * A request to get hover information.
+    */
+  case class Hover(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
     * A request to run all benchmarks in the project.
     */
   case class PackageBenchmark(requestId: String, projectRoot: Path) extends Request
@@ -268,6 +273,17 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Uses(id, uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Hover]] request.
+    */
+  def parseHover(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Hover(id, uri, pos)
   }
 
   /**
