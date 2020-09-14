@@ -45,13 +45,6 @@ object Request {
   case class RemUri(requestId: String, uri: String) extends Request
 
   /**
-    * A request to shutdown the language server.
-    */
-  case object Shutdown extends Request {
-    def requestId: String = ""
-  }
-
-  /**
     * A request for the compiler version.
     */
   case class Version(requestId: String) extends Request
