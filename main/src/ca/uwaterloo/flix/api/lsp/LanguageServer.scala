@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.net.{InetAddress, InetSocketAddress}
+import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -54,13 +54,13 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"request": "api/addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
+  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
   * < {"status":"success"}
   *
-  * > {"request": "lsp/check"}
+  * > {"id": "2", "request": "lsp/check"}
   * < {"status":"success","time":1749621900}
   *
-  * > {"request": "lsp/context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
+  * > {"id": "3", "request": "lsp/context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
   * < {"status":"success","result":{"tpe":"Int32","eff":"true"}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
@@ -126,7 +126,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   /**
     * Invoked when a client sends a message.
     */
-  override def onMessage(ws: WebSocket, data: String): Unit = {
+  override def onMessage(ws: WebSocket, data: String): Unit = try {
     // Parse and process request.
     parseRequest(data)(ws) match {
       case Ok(request) =>
@@ -135,23 +135,26 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
         log("Sending reply: " + jsonCompact)(ws)
         ws.send(jsonPretty)
-      case Err(msg) =>
-        log(msg)(ws)
-        ws.closeConnection(5000, msg)
+      case Err(msg) => log(msg)(ws)
     }
+  } catch {
+    case t: InternalCompilerException =>
+      t.printStackTrace()
+      System.exit(1)
+    case t: InternalRuntimeException =>
+      t.printStackTrace()
+      System.exit(2)
+    case t: Throwable =>
+      t.printStackTrace()
+      System.exit(3)
   }
 
   /**
     * Invoked when an error occurs.
     */
-  override def onError(ws: WebSocket, e: Exception): Unit = e match {
-    case ex: InternalCompilerException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
-      e.printStackTrace()
-    case ex: InternalRuntimeException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
-      e.printStackTrace()
-    case ex => throw ex
+  override def onError(ws: WebSocket, e: Exception): Unit = {
+    e.printStackTrace()
+    System.exit(4)
   }
 
   /**
@@ -526,7 +529,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
-    throw null
+    throw null // unreachable
   }
 
   /**
