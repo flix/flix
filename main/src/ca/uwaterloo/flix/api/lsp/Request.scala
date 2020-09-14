@@ -52,6 +52,16 @@ object Request {
   }
 
   /**
+    * A request for the compiler version.
+    */
+  case class Version(requestId: String) extends Request
+
+  /**
+    * A request to shutdown the language server.
+    */
+  case class Shutdown(requestId: String) extends Request
+
+  /**
     * A request to run all benchmarks using the added URIs.
     */
   case class RunBenchmarks(requestId: String) extends Request
@@ -154,6 +164,24 @@ object Request {
       uri <- parseUri(json)
       src <- srcRes
     } yield Request.AddUri(id, uri, src)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Version]] request.
+    */
+  def parseVersion(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.Version(id)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Shutdown]] request.
+    */
+  def parseShutdown(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.Shutdown(id)
   }
 
   /**
