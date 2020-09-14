@@ -382,11 +382,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             val markup =
               s"""[Definition]
                  |
-                 |```flix
                  |${decl.doc.lines.mkString("\n\r")}
+                 |
+                 |```flix
+                 |${decl.loc.lineAt(decl.sym.loc.beginLine)}
                  |```
                  |
-                 |Signature: ${FormatScheme.formatScheme(decl.declaredScheme)}
+                 |
                  |""".stripMargin
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
