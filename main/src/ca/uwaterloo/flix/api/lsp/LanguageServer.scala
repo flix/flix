@@ -168,7 +168,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     json \\ "request" match {
       case JString("api/addUri") => Request.parseAddUri(json)
       case JString("api/remUri") => Request.parseRemUri(json)
-      case JString("api/shutdown") => Ok(Request.Shutdown)
+      case JString("api/version") => Request.parseVersion(json)
+      case JString("api/shutdown") => Request.parseShutdown(json)
 
       case JString("cmd/runBenchmarks") => Request.parseRunBenchmarks(json)
       case JString("cmd/runMain") => Request.parseRunMain(json)
@@ -211,7 +212,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
-    case Request.Shutdown => processShutdown()
+    case Request.Version(id) => processVersion(id)
+
+    case Request.Shutdown(id) => processShutdown()
 
     case Request.RunBenchmarks(id) => runBenchmarks(id)
     case Request.RunMain(id) => runMain(id)
@@ -592,7 +595,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
     val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("version" -> version)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> version)
   }
 
   /**
