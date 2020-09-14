@@ -508,7 +508,7 @@ namespace Map {
     /// Returns `m` as a mutable set.
     ///
     @Time(1) @Space(1)
-    pub def toMutable(m: Map[k, v]): MutMap[k, v] & Impure =
+    pub def toMut(m: Map[k, v]): MutMap[k, v] & Impure =
         MutMap(ref m)
 
     ///
