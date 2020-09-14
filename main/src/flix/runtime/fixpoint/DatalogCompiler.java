@@ -280,7 +280,7 @@ public class DatalogCompiler {
         Term[] headTerms = ((AtomPredicate) head).getTerms();
 
         // Map from AtomPredicate to the RowVariable used to get values to that recursion
-        Map<AtomPredicate, RowVariable> atomToLocal = new HashMap<>();
+        Map<AtomPredicate, RowVariable> atomToRow = new HashMap<>();
         // Map from a variable to the set of AttrTerms they will be instantiated as
         Map<VarSym, Set<AttrTerm>> varSymToAttrTerm = new HashMap<>();
         // Define the set for all boolExps describing when a value must be constant
@@ -292,7 +292,7 @@ public class DatalogCompiler {
                 AtomPredicate currentPred = (AtomPredicate) bodyPred;
                 /*
                     If the AtomPredicate is a "not" predicate we need to generate an if-statement later that makes
-                    sure that it holds. This must be done before we add the predicate to atomToLocal, since the values
+                    sure that it holds. This must be done before we add the predicate to atomToRow, since the values
                     cannot be determined by this predicate
                     TODO: Make sure that we do not traverse a negated predicate, since this is never necessary
                     //TODO: Never add names from a negated predicate to varSymToAttrTerm
@@ -318,7 +318,7 @@ public class DatalogCompiler {
                 } else {
                     // Since it is not negated we might have to traverse the values of this table
                     RowVariable localVar = genNewRowVariable(currentPred.getSym().getName());
-                    atomToLocal.put(currentPred, localVar);
+                    atomToRow.put(currentPred, localVar);
                     Term[] terms = currentPred.getTerms();
                     for (int i = 0; i < terms.length; i++) {
                         Term currentTerm = terms[i];
@@ -374,7 +374,7 @@ public class DatalogCompiler {
             resultStmt = new IfStmt(exp, resultStmt);
         }
         // I can now generate all the for each statements for all AtomPredicates.
-        resultStmt = generateForEach(resultStmt, c.getBodyAtoms(), newSym, atomToLocal);
+        resultStmt = generateForEach(resultStmt, c.getBodyAtoms(), newSym, atomToRow);
 
 
         return resultStmt;
@@ -410,13 +410,13 @@ public class DatalogCompiler {
      * Generates a ForEach statement for each positive Atom. Each ForEach containing another, and the innermost containing 'body'
      * The first ForEach will match the last Atom in atoms.
      *
-     * @param body        The body of the innermost ForEach generated
-     * @param atoms       The Atoms for which the ForEach statements are made
-     * @param newSym      The symbol that is in focus in the incremental part of the algorithm. If null ot does nothing
-     * @param atomToLocal A map from the AtomPredicate to the RowVariable it will be represented with in the body
+     * @param body      The body of the innermost ForEach generated
+     * @param atoms     The Atoms for which the ForEach statements are made
+     * @param newSym    The symbol that is in focus in the incremental part of the algorithm. If null ot does nothing
+     * @param atomToRow A map from the AtomPredicate to the RowVariable it will be represented with in the body
      * @return The resulting ForEachStmt
      */
-    private static Stmt generateForEach(Stmt body, AtomPredicate[] atoms, PredSym newSym, Map<AtomPredicate, RowVariable> atomToLocal) {
+    private static Stmt generateForEach(Stmt body, AtomPredicate[] atoms, PredSym newSym, Map<AtomPredicate, RowVariable> atomToRow) {
         Stmt resultStmt = body;
         // Reversed for nicer printing. They now come in the same order as in the  rule
         for (int i = atoms.length - 1; i >= 0; i--) {
@@ -433,7 +433,7 @@ public class DatalogCompiler {
                 name = new TableName(TableVersion.RESULT, predSym);
             }
             resultStmt = new ForEachStmt(name,
-                    atomToLocal.get(pred),
+                    atomToRow.get(pred),
                     resultStmt);
         }
         return resultStmt;
