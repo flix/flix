@@ -144,14 +144,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given instance declaration `i0`.
     */
   private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
-    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, ident, tpe0, defs0, sp2) =>
+    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, defs0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public))
         defs <- traverse(defs0)(visitDef)
-      } yield List(WeededAst.Declaration.Instance(doc, mods, ident, tpe, defs.flatten, loc))
+      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, defs.flatten, loc))
 
   }
 

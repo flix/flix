@@ -195,12 +195,12 @@ object ParsedAst {
       * @param doc        the optional comment associated with the declaration.
       * @param mod        the associated modifiers.
       * @param sp1        the position of the first character in the declaration.
-      * @param ident      the name of the class.
+      * @param clazz      the name of the class.
       * @param tpe        the type of the instance.
       * @param defs       the definitions of the instance.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     case class LatticeComponents(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
