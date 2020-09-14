@@ -134,13 +134,6 @@ object Symbol {
   }
 
   /**
-    * Returns the instance symbol for the given name `ident` in the given namespace `ns`.
-    */
-  def mkInstanceSym(ns: NName, ident: Ident): InstanceSym = {
-    new InstanceSym(ns.parts, ident.name, ident.loc)
-  }
-
-  /**
     * Returns the hole symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkHoleSym(ns: NName, ident: Ident): HoleSym = {
@@ -291,29 +284,6 @@ object Symbol {
       */
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: ClassSym => this.namespace == that.namespace && this.name == that.name
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = 7 * namespace.hashCode + 11 * name.hashCode
-
-    /**
-      * Human readable representation.
-      */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
-  }
-
-  /**
-    * Instance Symbol.
-    */
-  final class InstanceSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: InstanceSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 

@@ -99,11 +99,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NameError.DuplicateClass(ident.name, clazz.sym.loc, ident.loc).toFailure
       }
 
-    case decl@WeededAst.Declaration.Instance(doc, mod, ident, tpe0, defs, loc) =>
+    case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, defs, loc) =>
       // duplication check must come after name resolution
       val instances = prog0.instances.getOrElse(ns0, MultiMap.empty)
       visitInstance(decl, uenv0, Map.empty, ns0) map {
-        instance => prog0.copy(instances = prog0.instances + (ns0 -> (instances + (ident.name, instance))))
+        instance => prog0.copy(instances = prog0.instances + (ns0 -> (instances + (clazz.ident.name, instance)))) // MATT fix to be global map
       }
 
     /*
@@ -299,12 +299,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, mod, ident, tpe, defs0, loc) =>
-      val sym = Symbol.mkInstanceSym(ns0, ident)
+    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe, defs0, loc) =>
       for {
         tpe <- visitType(tpe, uenv0, tenv0)
         defs <- traverse(defs0)(visitDef(_, uenv0, tenv0, ns0))
-      } yield NamedAst.Instance(doc, mod, sym, tpe, defs, loc)
+      } yield NamedAst.Instance(doc, mod, clazz, tpe, defs, loc)
   }
 
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, clazz: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix) = sig match {

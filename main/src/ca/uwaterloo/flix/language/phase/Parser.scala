@@ -238,11 +238,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Instance: Rule1[ParsedAst.Declaration] = {
       def MarkerInstance:  Rule1[ParsedAst.Declaration.Instance] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Instance
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Instance
       }
 
       def InstanceWithDefs: Rule1[ParsedAst.Declaration.Instance] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Instance
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Instance
       }
 
       rule {
