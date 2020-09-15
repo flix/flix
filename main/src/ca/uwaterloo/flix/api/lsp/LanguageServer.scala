@@ -180,6 +180,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/context") => Request.parseContext(json)
       case JString("lsp/hover") => Request.parseHover(json)
+      case JString("lsp/selectionRange") => Request.parseSelectionRange(json)
       case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
       case JString("lsp/goto") => Request.parseGoto(json)
       case JString("lsp/symbols") => Request.parseSymbols(json)
@@ -225,6 +226,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Codelens(id, uri) => processCodelens(id, uri)
     case Request.Context(id, uri, pos) => processContext(id, uri, pos)
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
+    case Request.SelectionRange(id, uri, positions) => processSelectionRange(id, uri, positions)
     case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
     case Request.FoldingRange(id, uri) => processFoldingRange(id, uri)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
@@ -427,6 +429,26 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case _ =>
         mkNotFound(requestId, uri, pos)
     }
+  }
+
+  /**
+    * Processes a selection range request.
+    */
+  private def processSelectionRange(requestId: String, uri: String, positions: List[Position])(implicit ws: WebSocket): JValue = {
+    if (root == null) {
+      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
+    }
+
+    val ranges = positions.map {
+      case p => index.query(uri, p) match {
+        case None => JNull
+        case Some(Entity.Enum(d)) => JNull
+        case Some(Entity.Exp(d)) => SelectionRange(Range.from(d.loc), None).toJSON
+        case Some(Entity.Pat(d)) => JNull
+      }
+    }
+
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(ranges))
   }
 
   /**

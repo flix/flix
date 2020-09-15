@@ -20,7 +20,7 @@ import java.nio.file.{Path, Paths}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.JsonAST.{JString, JValue}
+import org.json4s.JsonAST.{JArray, JString, JValue}
 
 /**
   * A common super-type for language server requests.
@@ -113,6 +113,11 @@ object Request {
     * A request to get hover information.
     */
   case class Hover(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+    * A request to selection range information.
+    */
+  case class SelectionRange(requestId: String, uri: String, positions: List[Position]) extends Request
 
   /**
     * A request to run all benchmarks in the project.
@@ -284,6 +289,22 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Hover(id, uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[SelectionRange]] request.
+    */
+  def parseSelectionRange(json: json4s.JValue): Result[Request, String] = {
+    val positionsVal = json \\ "positions" match {
+      case JArray(elms) => Result.sequence(elms.map(Position.parse))
+      case s => Err(s"Unexpected positions: '$s'.")
+    }
+
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      positions <- positionsVal
+    } yield Request.SelectionRange(id, uri, positions)
   }
 
   /**
