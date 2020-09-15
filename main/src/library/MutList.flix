@@ -407,7 +407,7 @@ namespace MutList {
             let last = (deref a)[len - 1];
             l := len - 1;
             Array.put(deref a, len - 1, default);
-            compress(v);
+            compress!(v);
             Some(last)
         else
             None
@@ -469,7 +469,7 @@ namespace MutList {
         if (i < len) {
             removeHelper!(i, len, deref a);
             l := len - 1;
-            compress(v)
+            compress!(v)
         }
         else
             ()
@@ -546,18 +546,24 @@ namespace MutList {
     ///
     /// Truncates the mutable list as needed.
     ///
-    def shrinkBy!(n: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def shrinkTo!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        let len = deref l;
-        if (len > 0)
-            a := Array.updateSequence(0, deref a, Array.new(default, n))
+        if (n == 0) {
+            a := [];
+            l := 0
+        }
+        else if (n < capacity(v)) {
+            let f = i -> if (i < n) (deref a)[i] else default;
+            a := Array.init(f, n);
+            l := n
+        }
         else
             ()
 
     ///
     /// Shrinks the given mutable list `v` to its actual size.
     ///
-    pub def shrink!(v: mut MutList[a]): Unit & Impure = shrinkBy!(length(v), v)
+    pub def shrink!(v: mut MutList[a]): Unit & Impure = shrinkTo!(length(v), v)
 
     ///
     /// Truncates the given mutable list `v` to the given length `l`.
@@ -572,7 +578,7 @@ namespace MutList {
         else if (l < length(v)) {
             let MutList(a, l0) = v;
             l0 := l;
-            a := Array.updateSequence(0, deref a, Array.new(default, l))
+            Array.updateSequence!(0, deref a, Array.new(default, l))
         }
         else
             ()
@@ -682,11 +688,16 @@ namespace MutList {
     ///
     /// The mutable will be shrunk to 1/2 of its size if the load factor is less than 1/4.
     ///
-    def compress(v: mut MutList[a]): Unit & Impure =
+    pub def compress!(v: mut MutList[a]): Unit & Impure =
         let c = capacity(v);
-        let loadFactor = Int32.toFloat32(c) / Int32.toFloat32(length(v));
-        if (loadFactor < 1.0f32/4.0f32)
-            shrinkBy!(c / 2, v)
+        let len = length(v);
+        let loadFactor = Int32.toFloat32(len) / Int32.toFloat32(c);
+        if (loadFactor < 1.0f32/4.0f32 && len > 0) {
+            if (len == 1)
+                shrinkTo!(1, v)
+            else
+                shrinkTo!(c / 2, v)
+        }
         else
             ()
 
