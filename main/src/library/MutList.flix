@@ -415,7 +415,21 @@ namespace MutList {
     ///
     /// Inserts the given element `x` at the end of the given mutable list `v`.
     ///
-    pub def push!(x: a, v: mut MutList[a]): Unit & Impure = insert(x, length(v), v)
+    pub def push!(x: a, v: mut MutList[a]): Unit & Impure =
+        let MutList(a, l) = v;
+        let len = deref l;
+        if (len == 0) {
+            a := Array.new(x, 1);
+            l := 1
+        }
+        else {
+            if (capacity(v) - len == 0)
+                reserve!(len, v)
+            else
+                ();
+            (deref a)[len] = x;
+            l := len + 1
+        }
 
     ///
     /// Inserts the given element `x` at the given position `i` in the given mutable list `v`.
@@ -424,18 +438,21 @@ namespace MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, the element is inserted at the last position.
     ///
-    pub def insert(x: a, i: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def insert!(x: a, i: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len == 0) {
             a := Array.new(x, 1);
             l := 1
         }
-        else if (i < len)
-            a := Array.update(i, x, deref a)
         else {
-            reserve!(len, v);
-            a := Array.update(len, x, deref a);
+            if (capacity(v) - len == 0)
+                reserve!(len, v)
+            else
+                ();
+            let sub = Array.slice(deref a, i, len);
+            Array.updateSequence!(i + 1, sub, deref a);
+            (deref a)[i] = x;
             l := len + 1
         }
 
@@ -572,8 +589,14 @@ namespace MutList {
         let len = deref l;
         if (len == 0)
             a := Array.new(default, n)
-        else
-            a := Array.updateSequence(0, deref a, Array.new(default, len + n))
+        else {
+            let f = i ->
+                if (i < len)
+                    (deref a)[i]
+                else
+                    default;
+            a := Array.init(f, len + n)
+        }
 
     ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.

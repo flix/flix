@@ -582,64 +582,74 @@ namespace TestMutList {
         MutList.length(v) == 4 && MutList.get(0, v) == 0 && MutList.get(1, v) == 0 && MutList.get(2, v) == 0 && MutList.get(3, v) == 0
 
     /////////////////////////////////////////////////////////////////////////////
-    // insert                                                                  //
+    // insert!                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def insert01(): Bool & Impure =
+    def insert!01(): Bool & Impure =
         let v = MutList.new();
-        MutList.insert(42, 0, v);
+        MutList.insert!(42, 0, v);
         MutList.length(v) == 1 && MutList.head(v) == Some(42)
 
     @test
-    def insert02(): Bool & Impure =
+    def insert!02(): Bool & Impure =
         let v = MutList.new();
-        MutList.insert(107, 0, v);
-        MutList.insert(7, 0, v);
-        MutList.length(v) == 1 && MutList.head(v) == Some(7)
+        MutList.insert!(107, 0, v);
+        MutList.insert!(7, 0, v);
+        MutList.length(v) == 2 && MutList.head(v) == Some(7)
 
     @test
-    def insert03(): Bool & Impure =
+    def insert!03(): Bool & Impure =
         let v = MutList.new();
-        List.foreach(x -> MutList.insert(x, 0, v), List.range(0, 107));
-        MutList.length(v) == 1 && MutList.head(v) == Some(106)
+        List.foreach(x -> MutList.insert!(x, 0, v), List.range(0, 107));
+        MutList.length(v) == 107 && MutList.head(v) == Some(106)
 
     @test
-    def insert04(): Bool & Impure =
+    def insert!04(): Bool & Impure =
         let v = MutList.new();
-        MutList.insert(42, 0, v);
-        MutList.insert(3, 1, v);
-        MutList.insert(5, 2, v);
-        MutList.insert(6, 0, v);
-        MutList.length(v) == 3 && MutList.head(v) == Some(6) && MutList.last(v) == Some(5)
+        MutList.insert!(42, 0, v);
+        MutList.insert!(3, 1, v);
+        MutList.insert!(5, 2, v);
+        MutList.insert!(6, 0, v);
+        MutList.length(v) == 4 && MutList.head(v) == Some(6) && MutList.last(v) == Some(5)
 
     @test
-    def insert05(): Bool & Impure =
+    def insert!05(): Bool & Impure =
         let v = MutList.new();
         List.foreach(x -> MutList.push!(x, v), List.range(97, 147));
-        MutList.insert(42, 0, v);
-        MutList.insert(0, 49, v);
-        MutList.length(v) == 50 && MutList.head(v) == Some(42) && MutList.last(v) == Some(0)
+        MutList.insert!(42, 0, v);
+        MutList.insert!(49, 0, v);
+        MutList.length(v) == 52 && MutList.head(v) == Some(49) && MutList.last(v) == Some(146)
 
     @test
-    def insert06(): Bool & Impure =
+    def insert!06(): Bool & Impure =
         let v = MutList.new();
-        MutList.insert(42, 0, v);
-        MutList.insert(42, 0, v);
-        MutList.insert(42, 0, v);
-        MutList.insert(42, 1, v);
-        MutList.insert(97, 0, v);
-        MutList.insert(98, 2, v);
-        MutList.length(v) == 3 && MutList.head(v) == Some(97) && MutList.last(v) == Some(98)
+        MutList.insert!(42, 0, v);
+        MutList.insert!(42, 0, v);
+        MutList.insert!(42, 0, v);
+        MutList.insert!(42, 1, v);
+        MutList.insert!(97, 0, v);
+        MutList.insert!(98, 2, v);
+        MutList.length(v) == 6 && MutList.head(v) == Some(97) && MutList.last(v) == Some(42)
 
     @test
-    def insert07(): Bool & Impure =
+    def insert!07(): Bool & Impure =
         let v = MutList.new();
-        MutList.insert(97, 0, v);
-        MutList.insert(98, 1, v);
-        MutList.insert(99, 2, v);
-        MutList.insert(107, 1, v);
-        MutList.length(v) == 3 && MutList.get(1, v) == 107
+        MutList.insert!(97, 0, v);
+        MutList.insert!(98, 1, v);
+        MutList.insert!(99, 2, v);
+        MutList.insert!(107, 1, v);
+        MutList.length(v) == 4 && MutList.get(1, v) == 107
+
+    @test
+    def insert!08(): Bool & Impure =
+        let v = MutList.range(0, 4);
+        MutList.insert!(42, 3, v);
+        MutList.insert!(41, 2, v);
+        MutList.insert!(40, 1, v);
+        MutList.insert!(55, 0, v);
+        MutList.insert!(33, 1, v);
+        MutList.sameElements(v, List.toMut(55 :: 33 :: 0 :: 40 :: 1 :: 41 :: 2 :: 42 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // remove!                                                                 //
