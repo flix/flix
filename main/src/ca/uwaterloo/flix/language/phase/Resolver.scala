@@ -320,7 +320,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
         }
 
-        case NamedAst.Expression.DefSig(qname, tvar, loc) =>
+        case NamedAst.Expression.DefOrSig(qname, tvar, loc) =>
           mapN(lookupDefSig(qname, ns0, root, sigs)) {
             case Left(defn) => visitDef(defn, tvar, loc)
             case Right(sig) => visitSig(sig, tvar, loc)
@@ -377,7 +377,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star),loc).toSuccess
 
-        case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.DefSig(qname, _, innerLoc), exps, outerLoc) =>
+        case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.DefOrSig(qname, _, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefSig(qname, ns0, root, sigs)) {
             case Left(defn) =>
               if (defn.fparams.length == exps.length) {

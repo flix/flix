@@ -372,10 +372,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitExp(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
     case ParsedAst.Expression.SName(sp1, ident, sp2) =>
       val qname = Name.mkQName(ident)
-      WeededAst.Expression.VarDefSig(qname, mkSL(sp1, sp2)).toSuccess
+      WeededAst.Expression.VarOrDefOrSig(qname, mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Expression.QName(sp1, qname, sp2) =>
-      WeededAst.Expression.VarDefSig(qname, mkSL(sp1, sp2)).toSuccess
+      WeededAst.Expression.VarOrDefOrSig(qname, mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -410,7 +410,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
           val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-          val lambda = WeededAst.Expression.VarDefSig(name, loc)
+          val lambda = WeededAst.Expression.VarOrDefOrSig(name, loc)
           WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
       }
 
@@ -423,7 +423,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val sp1 = leftMostSourcePosition(exp)
           val loc = mkSL(sp1, sp2)
           val qname = Name.mkQName(ident)
-          val lambda = WeededAst.Expression.VarDefSig(qname, loc)
+          val lambda = WeededAst.Expression.VarOrDefOrSig(qname, loc)
           WeededAst.Expression.Apply(lambda, e :: es, loc)
       }
 
@@ -448,7 +448,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val ident = Name.Ident(sp1, "pat$0", sp2)
           val qname = Name.mkQName(ident)
           // Construct the body of the lambda expression.
-          val varOrRef = WeededAst.Expression.VarDefSig(qname, loc)
+          val varOrRef = WeededAst.Expression.VarOrDefOrSig(qname, loc)
           val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
 
           val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
@@ -540,7 +540,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       // let* x = exp1; exp2     ==>   flatMap(x -> exp2)(exp1)
       //
       val qname = Name.mkQName(Name.Ident(SourcePosition.Unknown, "flatMap", SourcePosition.Unknown))
-      val flatMap = WeededAst.Expression.VarDefSig(qname, loc)
+      val flatMap = WeededAst.Expression.VarOrDefOrSig(qname, loc)
 
       mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, loc), value, body) =>
@@ -552,7 +552,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (pat, value, body) =>
           // Full-blown pattern match.
           val lambdaIdent = Name.Ident(SourcePosition.Unknown, "pat$0", SourcePosition.Unknown)
-          val lambdaVar = WeededAst.Expression.VarDefSig(Name.mkQName(lambdaIdent), loc)
+          val lambdaVar = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(lambdaIdent), loc)
 
           val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
           val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), mkSL(sp1, sp2))
@@ -603,7 +603,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val as = ts.zipWithIndex.map {
                 case (tpe, index) =>
                   val ident = Name.Ident(sp1, "a" + index, sp2)
-                  WeededAst.Expression.VarDefSig(Name.mkQName(ident), loc)
+                  WeededAst.Expression.VarOrDefOrSig(Name.mkQName(ident), loc)
               }
 
               // Assemble the lambda expression.
@@ -629,7 +629,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Introduce a formal parameter for the object argument.
               val objId = Name.Ident(sp1, "obj$", sp2)
               val objParam = WeededAst.FormalParam(objId, Ast.Modifiers.Empty, Some(receiverType), loc)
-              val objExp = WeededAst.Expression.VarDefSig(Name.mkQName(objId), loc)
+              val objExp = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(objId), loc)
 
               // Introduce a formal parameter (of appropriate type) for each declared argument.
               val fs = objParam :: ts.zipWithIndex.map {
@@ -642,7 +642,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val as = objExp :: ts.zipWithIndex.map {
                 case (tpe, index) =>
                   val ident = Name.Ident(sp1, "a" + index + "$", sp2)
-                  WeededAst.Expression.VarDefSig(Name.mkQName(ident), loc)
+                  WeededAst.Expression.VarOrDefOrSig(Name.mkQName(ident), loc)
               }
 
               // Assemble the lambda expression.
@@ -685,7 +685,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val as = ts.zipWithIndex.map {
                 case (tpe, index) =>
                   val ident = Name.Ident(sp1, "a" + index + "$", sp2)
-                  WeededAst.Expression.VarDefSig(Name.mkQName(ident), loc)
+                  WeededAst.Expression.VarOrDefOrSig(Name.mkQName(ident), loc)
               }
 
               // Assemble the lambda expression.
@@ -701,7 +701,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
               val objectId = Name.Ident(sp1, "o$", sp2)
-              val objectExp = WeededAst.Expression.VarDefSig(Name.mkQName(objectId), loc)
+              val objectExp = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(objectId), loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
               val e1 = WeededAst.Expression.Lambda(objectParam, lambdaBody, loc)
@@ -716,8 +716,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ((className, fieldName), e2) =>
               val objectId = Name.Ident(sp1, "o$", sp2)
               val valueId = Name.Ident(sp1, "v$", sp2)
-              val objectExp = WeededAst.Expression.VarDefSig(Name.mkQName(objectId), loc)
-              val valueExp = WeededAst.Expression.VarDefSig(Name.mkQName(valueId), loc)
+              val objectExp = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(objectId), loc)
+              val valueExp = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(valueId), loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.PutField(className, fieldName, objectExp, valueExp, loc)
@@ -745,7 +745,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
               val valueId = Name.Ident(sp1, "v$", sp2)
-              val valueExp = WeededAst.Expression.VarDefSig(Name.mkQName(valueId), loc)
+              val valueExp = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(valueId), loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
               val e1 = WeededAst.Expression.Lambda(valueParam, lambdaBody, loc)
@@ -860,7 +860,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val ident = Name.Ident(sp1, "_rec", sp2)
       val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
       val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
-      val varExp = WeededAst.Expression.VarDefSig(qname, loc)
+      val varExp = WeededAst.Expression.VarOrDefOrSig(qname, loc)
       val lambdaBody = WeededAst.Expression.RecordSelect(varExp, label, loc)
       WeededAst.Expression.Lambda(fparam, lambdaBody, loc).toSuccess
 
@@ -1502,7 +1502,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ts =>
           // Check if the argument list is empty. If so, invoke the function with the Unit value.
           val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
-          val b = WeededAst.Expression.VarDefSig(qname, loc)
+          val b = WeededAst.Expression.VarOrDefOrSig(qname, loc)
           val e = WeededAst.Expression.Apply(b, as, loc)
           WeededAst.Predicate.Body.Guard(e, loc)
       }
@@ -1647,8 +1647,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
             argsVal map {
               case as =>
-                val lam = WeededAst.Expression.VarDefSig(law, loc)
-                val fun = WeededAst.Expression.VarDefSig(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
+                val lam = WeededAst.Expression.VarOrDefOrSig(law, loc)
+                val fun = WeededAst.Expression.VarOrDefOrSig(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
                 val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
                 WeededAst.Declaration.Property(law, defn, exp, loc)
             }
@@ -1879,7 +1879,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
   private def mkApplyFqn(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.VarDefSig(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
+    val lambda = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 
