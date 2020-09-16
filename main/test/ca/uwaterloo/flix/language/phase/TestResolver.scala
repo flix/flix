@@ -161,6 +161,40 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("InaccessibleClass.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  class Show[A] {
+         |    def show(x: A): String
+         |  }
+         |}
+         |
+         |namespace B {
+         |  def g[a: A.Show](x: a): Int = ???
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
+  test("InaccessibleClass.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f[a: A/B/C.Show](x: a): Int = ???
+         |
+         |  namespace B/C {
+         |    class Show[A] {
+         |      def show(x: A): String
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
   test("RecursionLimit.01") {
     val input =
       s"""

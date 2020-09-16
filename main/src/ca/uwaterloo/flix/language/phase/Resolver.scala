@@ -1428,6 +1428,24 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
+  // MATT garbage?
+  /*
+  def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Class] = {
+    if (qname.isUnqualified) {
+      // Case 1: The name is unqualified. Lookup in the current namespace.
+      val classesInNamespace = root.classes.getOrElse(ns0, Map.empty)
+      classesInNamespace.get(qname.ident.name) orElse {
+        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
+        val classesInRootNS = root.classes.getOrElse(Name.RootNS, Map.empty)
+        classesInRootNS.get(qname.ident.name)
+      }
+    } else {
+      // Case 2: The name is qualified. Look it up in its namespace.
+      root.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
+  */
+
   /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
@@ -1619,6 +1637,28 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     mapN(lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)) {
       case base => mkTypeLambda(alia0.tparams, base)
     }
+  }
+
+  private def getClassIfAccessible(clazz0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[NamedAst.Class, ResolutionError] = {
+    // MATT replace below with clazz0 and class stuff
+    // Check if the definition is marked public.
+    //
+    if (clazz0.mod.isPublic)
+      return clazz0.toSuccess
+
+    //
+    // Check if the enum is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = clazz0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return clazz0.toSuccess
+
+    //
+    // The enum is not accessible.
+    //
+    ResolutionError.InaccessibleClass(clazz0.sym, ns0, loc).toFailure
+
   }
 
   /**

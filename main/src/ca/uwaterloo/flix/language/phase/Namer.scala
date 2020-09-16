@@ -1627,7 +1627,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     Validation.fold(uses, uenv0) {
       case (uenv1, WeededAst.Use.UseClass(qname, alias, _)) =>
         val name = alias.name
-        uenv1.defs.get(name) match {
+        uenv1.classes.get(name) match {
           case None => uenv1.addClass(name, qname).toSuccess
           case Some(otherQName) => NameError.DuplicateUseClass(name, otherQName.loc, qname.loc).toFailure
         }
