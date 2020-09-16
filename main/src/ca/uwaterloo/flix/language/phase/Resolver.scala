@@ -365,7 +365,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star),loc).toSuccess
 
-        case NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(qname, _, _), exps, loc) =>
+        case NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(qname, _, innerLoc), exps, outerLoc) =>
           //
           // Special Case: We are applying a known function. Check if we have the right number of arguments.
           //
@@ -378,8 +378,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 for {
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
-                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshVar(Kind.Star), loc)
-                  ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshVar(Kind.Star), innerLoc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
                 }
               } else {
                 // Case 2: We have to curry. (See below).
@@ -388,7 +388,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   es <- traverse(exps)(visit(_, tenv0))
                 } yield {
                   es.foldLeft(e) {
-                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+                    case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
                   }
                 }
               }

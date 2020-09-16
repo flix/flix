@@ -15,24 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import org.json4s.JsonDSL._
+import org.json4s._
 
-sealed trait Entity {
-  def loc: SourceLocation
-}
-
-object Entity {
-
-  case class Exp(e: TypedAst.Expression) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
-  case class Pat(e: TypedAst.Pattern) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
-  case class Enum(e: TypedAst.Enum) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
+/**
+  * Represents a `MarkupContent` in LSP.
+  *
+  * @param kind  The type of the Markup.
+  * @param value The content itself.
+  */
+case class MarkupContent(kind: MarkupKind, value: String) {
+  def toJSON: JValue = ("kind" -> kind.toJSON) ~ ("value" -> value)
 }

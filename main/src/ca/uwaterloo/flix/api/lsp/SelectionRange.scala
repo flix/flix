@@ -15,24 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import org.json4s.JsonDSL._
+import org.json4s._
 
-sealed trait Entity {
-  def loc: SourceLocation
-}
-
-object Entity {
-
-  case class Exp(e: TypedAst.Expression) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
-  case class Pat(e: TypedAst.Pattern) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
-  case class Enum(e: TypedAst.Enum) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
+/**
+  * Represents a `SelectionRange` in LSP.
+  *
+  * @param range  The range of this selection range.
+  * @param parent The parent selection range containing this range. Therefore `parent.range` must contain `this.range`.
+  */
+case class SelectionRange(range: Range, parent: Option[SelectionRange]) {
+  def toJSON: JValue = ("range" -> range.toJSON) ~ ("parent" -> parent.map(_.toJSON))
 }

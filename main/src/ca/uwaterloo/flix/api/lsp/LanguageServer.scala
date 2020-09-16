@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.net.{InetAddress, InetSocketAddress}
+import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
 import ca.uwaterloo.flix.util.Options
@@ -54,13 +54,13 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"request": "api/addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
+  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
   * < {"status":"success"}
   *
-  * > {"request": "lsp/check"}
+  * > {"id": "2", "request": "lsp/check"}
   * < {"status":"success","time":1749621900}
   *
-  * > {"request": "lsp/context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
+  * > {"id": "3", "request": "lsp/context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
   * < {"status":"success","result":{"tpe":"Int32","eff":"true"}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
@@ -126,7 +126,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   /**
     * Invoked when a client sends a message.
     */
-  override def onMessage(ws: WebSocket, data: String): Unit = {
+  override def onMessage(ws: WebSocket, data: String): Unit = try {
     // Parse and process request.
     parseRequest(data)(ws) match {
       case Ok(request) =>
@@ -135,23 +135,26 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
         log("Sending reply: " + jsonCompact)(ws)
         ws.send(jsonPretty)
-      case Err(msg) =>
-        log(msg)(ws)
-        ws.closeConnection(5000, msg)
+      case Err(msg) => log(msg)(ws)
     }
+  } catch {
+    case t: InternalCompilerException =>
+      t.printStackTrace()
+      System.exit(1)
+    case t: InternalRuntimeException =>
+      t.printStackTrace()
+      System.exit(2)
+    case t: Throwable =>
+      t.printStackTrace()
+      System.exit(3)
   }
 
   /**
     * Invoked when an error occurs.
     */
-  override def onError(ws: WebSocket, e: Exception): Unit = e match {
-    case ex: InternalCompilerException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
-      e.printStackTrace()
-    case ex: InternalRuntimeException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
-      e.printStackTrace()
-    case ex => throw ex
+  override def onError(ws: WebSocket, e: Exception): Unit = {
+    e.printStackTrace()
+    System.exit(4)
   }
 
   /**
@@ -165,7 +168,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     json \\ "request" match {
       case JString("api/addUri") => Request.parseAddUri(json)
       case JString("api/remUri") => Request.parseRemUri(json)
-      case JString("api/shutdown") => Ok(Request.Shutdown)
+      case JString("api/version") => Request.parseVersion(json)
+      case JString("api/shutdown") => Request.parseShutdown(json)
 
       case JString("cmd/runBenchmarks") => Request.parseRunBenchmarks(json)
       case JString("cmd/runMain") => Request.parseRunMain(json)
@@ -175,6 +179,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/context") => Request.parseContext(json)
+      case JString("lsp/hover") => Request.parseHover(json)
+      case JString("lsp/selectionRange") => Request.parseSelectionRange(json)
       case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
       case JString("lsp/goto") => Request.parseGoto(json)
       case JString("lsp/symbols") => Request.parseSymbols(json)
@@ -208,7 +214,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
-    case Request.Shutdown => processShutdown()
+    case Request.Version(id) => processVersion(id)
+
+    case Request.Shutdown(id) => processShutdown()
 
     case Request.RunBenchmarks(id) => runBenchmarks(id)
     case Request.RunMain(id) => runMain(id)
@@ -217,6 +225,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Check(id) => processCheck(id)
     case Request.Codelens(id, uri) => processCodelens(id, uri)
     case Request.Context(id, uri, pos) => processContext(id, uri, pos)
+    case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
+    case Request.SelectionRange(id, uri, positions) => processSelectionRange(id, uri, positions)
     case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
     case Request.FoldingRange(id, uri) => processFoldingRange(id, uri)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
@@ -344,6 +354,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   /**
     * Processes a type and effect request.
     */
+  // TODO: Deprecated
   private def processContext(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
@@ -354,6 +365,90 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case _ =>
         mkNotFound(requestId, uri, pos)
     }
+  }
+
+  /**
+    * Processes a hover request.
+    */
+  private def processHover(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    implicit val _ = Audience.External
+
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) =>
+        exp match {
+          case Expression.Def(sym, _, _) =>
+            //
+            // Def Symbol expression.
+            //
+            val decl = root.defs(sym)
+            val markup =
+              s"""[Definition]
+                 |
+                 |${decl.doc.lines.mkString("\n\r")}
+                 |
+                 |```flix
+                 |${decl.loc.lineAt(decl.sym.loc.beginLine)}
+                 |```
+                 |
+                 |
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
+          case Expression.Tag(sym, _, _, _, _, _) =>
+            val decl = root.enums(sym)
+            val markup =
+              s"""[Enum]
+                 |
+                 |```flix
+                 |${decl.doc.lines.mkString("\n\r")}
+                 |```
+                 |
+                 |Cases: ${decl.cases.keys.mkString(", ")}
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
+          case _ =>
+            //
+            // Other Expression.
+            //
+            val tpe = FormatType.formatType(exp.tpe)
+            val eff = FormatType.formatType(exp.eff)
+            val markup = s"[Expression]: **$tpe** & **$eff**"
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+        }
+
+      case _ =>
+        mkNotFound(requestId, uri, pos)
+    }
+  }
+
+  /**
+    * Processes a selection range request.
+    */
+  private def processSelectionRange(requestId: String, uri: String, positions: List[Position])(implicit ws: WebSocket): JValue = {
+    if (root == null) {
+      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
+    }
+
+    val ranges = positions.map {
+      case p => index.query(uri, p) match {
+        case None => JNull
+        case Some(Entity.Enum(d)) => JNull
+        case Some(Entity.Exp(d)) => SelectionRange(Range.from(d.loc), None).toJSON
+        case Some(Entity.Pat(d)) => JNull
+      }
+    }
+
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(ranges))
   }
 
   /**
@@ -526,7 +621,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
-    throw null
+    throw null // unreachable
   }
 
   /**
@@ -589,7 +684,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
     val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("version" -> version)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> version)
   }
 
   /**

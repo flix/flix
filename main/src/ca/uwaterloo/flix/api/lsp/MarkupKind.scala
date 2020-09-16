@@ -15,24 +15,24 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import org.json4s.JString
+import org.json4s.JsonAST.JValue
 
-sealed trait Entity {
-  def loc: SourceLocation
+/**
+  * Represents a `MarkupKind` in LSP.
+  */
+sealed trait MarkupKind {
+  def toJSON: JValue = this match {
+    case MarkupKind.PlainText => JString("plaintext")
+    case MarkupKind.Markdown => JString("markdown")
+  }
+
 }
 
-object Entity {
+object MarkupKind {
 
-  case class Exp(e: TypedAst.Expression) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
+  case object PlainText extends MarkupKind
 
-  case class Pat(e: TypedAst.Pattern) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
-  case class Enum(e: TypedAst.Enum) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
+  case object Markdown extends MarkupKind
 
 }
