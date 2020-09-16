@@ -909,6 +909,11 @@ namespace List {
     pub def toString(xs: List[Char]): Str =
         List.foldLeft((acc, c) -> String.concat(acc, Char.toString(c)), "", xs)
 
+    ///
+    /// Returns `xs` as a mutable list.
+    ///
+    pub def toMut(xs: List[a]): MutList[a] & Impure =
+        MutList(ref toArray(xs), ref length(xs))
 
     ///
     /// Returns the list `xs` as a set.

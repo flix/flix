@@ -1222,6 +1222,12 @@ namespace Array {
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
+    /// Returns the array `a` as a MutList.
+    ///
+    pub def toMutList(a: Array[a]): MutList[a] & Impure =
+        MutList(ref a, ref length(a))
+
+    ///
     /// Alias for `findIndexOfLeft`.
     ///
     /// The function `f` must be pure.
