@@ -23,7 +23,7 @@ import java.util.Date
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatCase, FormatDoc, FormatSignature, FormatType}
 import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
@@ -386,8 +386,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             // Other Expression.
             //
             val tpe = FormatType.formatType(exp.tpe)
-            val eff = FormatType.formatType(exp.eff)
-            val markup = s"[Expression]: **$tpe** & **$eff**"
+            val markup = exp.eff match {
+              case Type.Cst(TypeConstructor.True) => tpe
+              case Type.Cst(TypeConstructor.False) => s"$tpe & Impure"
+              case eff => s"$tpe & ${FormatType.formatType(eff)}"
+            }
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
