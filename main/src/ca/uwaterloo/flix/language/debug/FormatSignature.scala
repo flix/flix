@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
 
 object FormatSignature {
 
@@ -24,11 +24,37 @@ object FormatSignature {
     */
   def asMarkDown(defn: TypedAst.Def)(implicit audience: Audience): String = {
     val name = defn.sym.name
-    val tpe0 = defn.declaredScheme.base
-    val resultType = tpe0.typeArguments.last
 
-    s"""def ${name}(): ${FormatType.formatType(resultType)}
+    s"""def ${name}(): ${resultTypAndEff(defn.declaredScheme)}
        |""".stripMargin
+  }
+
+  /**
+    * Returns a formatted string of the result type and effect.
+    */
+  private def resultTypAndEff(sc: Scheme)(implicit audience: Audience): String = {
+    val baseType = sc.base
+    val resultTyp = getResultType(baseType)
+    val resultEff = getEffectType(baseType)
+
+    resultEff match {
+      case Type.Cst(TypeConstructor.True) => FormatType.formatType(resultTyp)
+      case Type.Cst(TypeConstructor.False) => s"${FormatType.formatType(resultTyp)} & Impure"
+      case eff => s"${FormatType.formatType(resultTyp)} & ${FormatType.formatType(eff)}"
+    }
+  }
+
+  /**
+    * Returns the return type of the given function type `tpe0`.
+    */
+  private def getResultType(tpe0: Type): Type = tpe0.typeArguments.last
+
+  /**
+    * Returns the effect of the given function type `tpe0`.
+    */
+  private def getEffectType(tpe0: Type): Type = tpe0.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => tpe0.typeArguments.head
+    case _ => tpe0
   }
 
 }
