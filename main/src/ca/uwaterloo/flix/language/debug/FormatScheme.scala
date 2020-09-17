@@ -16,17 +16,29 @@
 
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.Scheme
+import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
 
 object FormatScheme {
 
   /**
-    * Construct a string representation of the type scheme.
+    * Construct a string representation of the type scheme,  e.g.
+    * `∀(a, b).a -> Int -> b with Show[a], Eq[b]`
     */
   def formatScheme(sc: Scheme)(implicit audience: Audience): String = {
-    if (sc.quantifiers.isEmpty)
-      FormatType.formatType(sc.base)
-    else
-      s"∀(${sc.quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${FormatType.formatType(sc.base)}" + s" with ${sc.constraints}" // MATT better formatting
+    val quantifiersPart =
+      if (sc.quantifiers.isEmpty)
+        ""
+      else
+        "∀(" + sc.quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ") + ")."
+
+    val typePart = FormatType.formatType(sc.base)
+
+    val tconstrPart =
+      if (sc.constraints.isEmpty)
+        ""
+      else
+        "with " + sc.constraints.map(tconstr => s"${tconstr.sym.name}[${FormatType.formatType(tconstr.arg)}]").mkString(", ")
+
+    quantifiersPart + typePart + tconstrPart
   }
 }

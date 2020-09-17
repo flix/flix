@@ -793,7 +793,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       for (defn <- defns) {
         val sym = defn.sym
         if (name == sym.name) {
-          val (_, declaredType) = Scheme.instantiate(defn.inferredScheme, InstantiateMode.Flexible) // MATT tconstrs?
+          val (_, declaredType) = Scheme.instantiate(defn.inferredScheme, InstantiateMode.Flexible)
           if (Unification.unifyTypes(declaredType, tpe).isInstanceOf[Result.Ok[_, _]]) {
             matches += sym
           }
