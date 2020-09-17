@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 
 object FormatSignature {
 
@@ -23,17 +23,26 @@ object FormatSignature {
     * Returns a markdown string for the signature of the given definition.
     */
   def asMarkDown(defn: TypedAst.Def)(implicit audience: Audience): String = {
-    val name = defn.sym.name
-
-    s"""def ${name}(): ${resultTypAndEff(defn.declaredScheme)}
+    s"""def *${defn.sym.name}*(${formatFormalParams(defn)}): ${formatResultTypeAndEff(defn)}
        |""".stripMargin
+  }
+
+  /**
+    * Returns a formatted string of the formal parameters.
+    */
+  private def formatFormalParams(defn: TypedAst.Def)(implicit audience: Audience): String = {
+    val formattedArgs = defn.fparams.map {
+      case TypedAst.FormalParam(sym, _, tpe, _) => s"${sym.text}: ${FormatType.formatType(tpe)}"
+    }
+
+    formattedArgs.mkString(", ")
   }
 
   /**
     * Returns a formatted string of the result type and effect.
     */
-  private def resultTypAndEff(sc: Scheme)(implicit audience: Audience): String = {
-    val baseType = sc.base
+  private def formatResultTypeAndEff(defn: TypedAst.Def)(implicit audience: Audience): String = {
+    val baseType = defn.declaredScheme.base
     val resultTyp = getResultType(baseType)
     val resultEff = getEffectType(baseType)
 
