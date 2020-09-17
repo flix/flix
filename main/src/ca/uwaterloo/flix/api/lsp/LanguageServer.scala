@@ -23,8 +23,8 @@ import java.util.Date
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatCase, FormatDoc, FormatSignature, FormatType}
 import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
 import ca.uwaterloo.flix.util.Options
@@ -54,14 +54,9 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
-  * < {"status":"success"}
-  *
+  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): List[Int] = List.range(1, 10)"}
   * > {"id": "2", "request": "lsp/check"}
-  * < {"status":"success","time":1749621900}
-  *
-  * > {"id": "3", "request": "lsp/context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
-  * < {"status":"success","result":{"tpe":"Int32","eff":"true"}}
+  * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
   */
@@ -178,7 +173,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/complete") => Request.parseComplete(json)
-      case JString("lsp/context") => Request.parseContext(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/selectionRange") => Request.parseSelectionRange(json)
       case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
@@ -224,7 +218,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Check(id) => processCheck(id)
     case Request.Codelens(id, uri) => processCodelens(id, uri)
-    case Request.Context(id, uri, pos) => processContext(id, uri, pos)
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
     case Request.SelectionRange(id, uri, positions) => processSelectionRange(id, uri, positions)
     case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
@@ -352,22 +345,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   }
 
   /**
-    * Processes a type and effect request.
-    */
-  // TODO: Deprecated
-  private def processContext(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) =>
-        implicit val _ = Audience.External
-        val tpe = FormatType.formatType(exp.tpe)
-        val eff = FormatType.formatType(exp.eff)
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> (("tpe" -> tpe) ~ ("eff" -> eff)))
-      case _ =>
-        mkNotFound(requestId, uri, pos)
-    }
-  }
-
-  /**
     * Processes a hover request.
     */
   private def processHover(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
@@ -382,31 +359,22 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             //
             val decl = root.defs(sym)
             val markup =
-              s"""[Definition]
+              s"""${FormatSignature.asMarkDown(decl)}
                  |
-                 |${decl.doc.lines.mkString("\n\r")}
-                 |
-                 |```flix
-                 |${decl.loc.lineAt(decl.sym.loc.beginLine)}
-                 |```
-                 |
-                 |
+                 |${FormatDoc.asMarkDown(decl.doc)}
                  |""".stripMargin
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
 
-          case Expression.Tag(sym, _, _, _, _, _) =>
+          case Expression.Tag(sym, tag, _, _, _, _) =>
             val decl = root.enums(sym)
+            val caze = decl.cases(tag)
             val markup =
-              s"""[Enum]
+              s"""${FormatCase.asMarkDown(caze)}
                  |
-                 |```flix
-                 |${decl.doc.lines.mkString("\n\r")}
-                 |```
-                 |
-                 |Cases: ${decl.cases.keys.mkString(", ")}
+                 |${FormatDoc.asMarkDown(decl.doc)}
                  |""".stripMargin
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
@@ -418,8 +386,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             // Other Expression.
             //
             val tpe = FormatType.formatType(exp.tpe)
-            val eff = FormatType.formatType(exp.eff)
-            val markup = s"[Expression]: **$tpe** & **$eff**"
+            val markup = exp.eff match {
+              case Type.Cst(TypeConstructor.True) => tpe
+              case Type.Cst(TypeConstructor.False) => s"$tpe & Impure"
+              case eff => s"$tpe & ${FormatType.formatType(eff)}"
+            }
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
