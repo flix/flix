@@ -54,14 +54,9 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Int = 123"}
-  * < {"status":"success"}
-  *
+  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): List[Int] = List.range(1, 10)"}
   * > {"id": "2", "request": "lsp/check"}
-  * < {"status":"success","time":1749621900}
-  *
-  * > {"id": "3", "request": "lsp/context", "uri": "foo.flix", "position": {"line": 1, "character": 20}}
-  * < {"status":"success","result":{"tpe":"Int32","eff":"true"}}
+  * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
   */

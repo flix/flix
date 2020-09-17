@@ -22,6 +22,13 @@ object FormatSignature {
   /**
     * Returns a markdown string for the signature of the given definition.
     */
-  def asMarkDown(defn: TypedAst.Def): String = ??? // TODO
+  def asMarkDown(defn: TypedAst.Def)(implicit audience: Audience): String = {
+    val name = defn.sym.name
+    val tpe0 = defn.declaredScheme.base
+    val resultType = tpe0.typeArguments.last
+
+    s"""def ${name}(): ${FormatType.formatType(resultType)}
+       |""".stripMargin
+  }
 
 }
