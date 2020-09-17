@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatDoc, FormatSignature, FormatType}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatCase, FormatDoc, FormatSignature, FormatType}
 import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
 import ca.uwaterloo.flix.util.Options
@@ -368,16 +368,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
 
-          case Expression.Tag(sym, _, _, _, _, _) =>
+          case Expression.Tag(sym, tag, _, _, _, _) =>
             val decl = root.enums(sym)
+            val caze = decl.cases(tag)
             val markup =
-              s"""[Enum]
+              s"""${FormatCase.asMarkDown(caze)}
                  |
-                 |```flix
-                 |${decl.doc.lines.mkString("\n\r")}
-                 |```
-                 |
-                 |Cases: ${decl.cases.keys.mkString(", ")}
+                 |${FormatDoc.asMarkDown(decl.doc)}
                  |""".stripMargin
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
