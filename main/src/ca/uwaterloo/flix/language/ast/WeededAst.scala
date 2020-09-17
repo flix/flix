@@ -352,7 +352,7 @@ object WeededAst {
 
     case object Elided extends TypeParams
 
-    case class Explicit(tparams: List[Name.Ident]) extends TypeParams
+    case class Explicit(tparams: List[ConstrainedType]) extends TypeParams
 
   }
 
@@ -365,6 +365,8 @@ object WeededAst {
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
+
+  case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 

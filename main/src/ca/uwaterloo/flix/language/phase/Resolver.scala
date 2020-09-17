@@ -961,7 +961,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = {
-      ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, tparam0.loc).toSuccess
+      for {
+        classes <- sequence(tparam0.classes.map(lookupClass(_, ns0, root)))
+        classSyms = classes.map(_.sym)
+      } yield ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, classSyms, tparam0.loc)
     }
 
   }
@@ -1944,7 +1947,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val classSym = Symbol.mkClassSym(Name.RootNS, mkSynthIdent("Show"))
 
     val tparamType = Type.freshVar(Kind.Star)
-    val tparam = ResolvedAst.TypeParam(mkSynthIdent("a"), tparamType, SourceLocation.Generated)
+    val tparam = ResolvedAst.TypeParam(mkSynthIdent("a"), tparamType, Nil, SourceLocation.Generated)
     val showSig = Sig(doc = synthDoc,
       ann = Nil,
       mod = Ast.Modifiers(List(Ast.Modifier.Synthetic)),

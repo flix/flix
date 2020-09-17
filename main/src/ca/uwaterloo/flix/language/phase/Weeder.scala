@@ -1872,7 +1872,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitTypeParams(tparams0: ParsedAst.TypeParams): WeededAst.TypeParams = tparams0 match {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided
-    case ParsedAst.TypeParams.Explicit(bounds) => WeededAst.TypeParams.Explicit(bounds.map(_.ident))
+    case ParsedAst.TypeParams.Explicit(tparams) =>
+      val tparams1 = tparams.map {
+        case ParsedAst.ConstrainedType(sp1, ident, classes, sp2) => WeededAst.ConstrainedType(ident, classes.toList)
+      }
+      WeededAst.TypeParams.Explicit(tparams1)
   }
 
   /**

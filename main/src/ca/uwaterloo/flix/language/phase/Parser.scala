@@ -251,15 +251,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def TypeParams: Rule1[ParsedAst.TypeParams] = {
-      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-        SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[ParsedAst.Type], sp2: SourcePosition) => bound match {
-          case None => ParsedAst.ContextBound(sp1, ident, Seq.empty, sp2)
-          case Some(tpe) => ParsedAst.ContextBound(sp1, ident, Seq(tpe), sp2)
+      def ConstrainedType: Rule1[ParsedAst.ConstrainedType] = rule {
+        SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[Name.QName], sp2: SourcePosition) => bound match {
+          case None => ParsedAst.ConstrainedType(sp1, ident, Seq.empty, sp2)
+          case Some(clazz) => ParsedAst.ConstrainedType(sp1, ident, Seq(clazz), sp2)
         })
       }
 
       rule {
-        optional("[" ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
+        optional("[" ~ optWS ~ oneOrMore(ConstrainedType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ConstrainedType]]) => o match {
           case None => ParsedAst.TypeParams.Elided
           case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
         })

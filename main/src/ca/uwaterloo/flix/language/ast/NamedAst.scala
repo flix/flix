@@ -350,6 +350,8 @@ object NamedAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: NamedAst.Type)
 
+  case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])
+
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
 
   sealed trait ConstraintParam
@@ -372,6 +374,6 @@ object NamedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, classes: List[Name.QName], loc: SourceLocation)
 
 }

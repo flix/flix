@@ -1395,7 +1395,7 @@ object ParsedAst {
     /**
       * Represents an explicit sequence of type parameters.
       */
-    case class Explicit(tparams: List[ParsedAst.ContextBound]) extends TypeParams
+    case class Explicit(tparams: List[ParsedAst.ConstrainedType]) extends TypeParams
 
   }
 
@@ -1412,11 +1412,11 @@ object ParsedAst {
     * Context Bound.
     *
     * @param sp1     the position of the first character in the context bound.
-    * @param ident   the name of the type class.
-    * @param tparams the type params of the class.
+    * @param ident   the type variable being bound
+    * @param classes the bounding classes.
     * @param sp2     the position of the last character in the context bound.
     */
-  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.Type], sp2: SourcePosition)
+  case class ConstrainedType(sp1: SourcePosition, ident: Name.Ident, classes: Seq[Name.QName], sp2: SourcePosition)
 
   /**
     * Formal Parameter.
