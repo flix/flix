@@ -23,7 +23,7 @@ object FormatSignature {
     * Returns a markdown string for the signature of the given definition.
     */
   def asMarkDown(defn: TypedAst.Def)(implicit audience: Audience): String = {
-    s"""def *${defn.sym.name}*(${formatFormalParams(defn)}): ${formatResultTypeAndEff(defn)}
+    s"""def **${defn.sym.name}**(${formatFormalParams(defn)}): ${formatResultTypeAndEff(defn)}
        |""".stripMargin
   }
 
