@@ -1408,7 +1408,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
     case TypeParams.Elided => Nil
     case TypeParams.Explicit(tparams) => tparams.map {
-      ident => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), ident.loc)
+      case WeededAst.ConstrainedType(ident, classes) => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), classes, ident.loc)
     }
   }
 
@@ -1418,9 +1418,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getTypeParamsFromCases(tparams0: WeededAst.TypeParams, cases: List[WeededAst.Case], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => Nil.toSuccess // TODO allow implicit tparams?
-      case WeededAst.TypeParams.Explicit(tparams0) =>
+      case WeededAst.TypeParams.Explicit(tparams) =>
         mapN(getImplicitTypeParamsFromCases(cases, loc)) {
-          implicitTparams => getExplicitTypeParams(tparams0, implicitTparams)
+          implicitTparams => getExplicitTypeParams(tparams, implicitTparams)
         }
     }
   }
@@ -1445,17 +1445,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the explicit type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitTypeParams(tparams0: List[Name.Ident], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getExplicitTypeParams(tparams0: List[WeededAst.ConstrainedType], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {
-      ident =>
+      case WeededAst.ConstrainedType(ident, classes) =>
         // Get the kind for each type variable from the implicit type params.
         // Use a kind variable if not found; this will be caught later by redundancy checks.
         val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
         val tvar = Type.freshVar(kind)
         // Remember the original textual name.
         tvar.setText(ident.name)
-        NamedAst.TypeParam(ident, tvar, ident.loc)
+        NamedAst.TypeParam(ident, tvar, classes, ident.loc)
     }
   }
 
@@ -1521,7 +1521,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case (id, kind) =>
             val tvar = Type.freshVar(kind) // use the kind we validated from the parameter context
             tvar.setText(id.name)
-            NamedAst.TypeParam(id, tvar, loc) // use the id of the first occurrence of a tparam with this name
+            NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
+            // MATT may need to be not Nil for type constraints in enums
         }
     }
   }
@@ -1545,7 +1546,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         // We use a kind variable since we do not know the kind of the type variable.
         val tvar = Type.freshVar(Kind.freshVar())
         tvar.setText(name)
-        NamedAst.TypeParam(ident, tvar, loc)
+        NamedAst.TypeParam(ident, tvar, Nil, loc)
     }
   }
 

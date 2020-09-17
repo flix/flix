@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -165,8 +165,8 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  class Show[A] {
-         |    def show(x: A): String
+         |  class Show[a] {
+         |    def show(x: a): String
          |  }
          |}
          |
@@ -175,6 +175,9 @@ class TestResolver extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
+    result match {
+      case Validation.Failure(errors) => errors.foreach(println)
+    }
     expectError[ResolutionError.InaccessibleClass](result)
   }
 
@@ -185,8 +188,8 @@ class TestResolver extends FunSuite with TestUtils {
          |  def f[a: A/B/C.Show](x: a): Int = ???
          |
          |  namespace B/C {
-         |    class Show[A] {
-         |      def show(x: A): String
+         |    class Show[a] {
+         |      def show(x: a): String
          |    }
          |  }
          |}
