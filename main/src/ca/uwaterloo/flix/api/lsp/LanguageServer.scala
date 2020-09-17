@@ -178,7 +178,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/complete") => Request.parseComplete(json)
-      case JString("lsp/context") => Request.parseContext(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/selectionRange") => Request.parseSelectionRange(json)
       case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
@@ -224,7 +223,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Check(id) => processCheck(id)
     case Request.Codelens(id, uri) => processCodelens(id, uri)
-    case Request.Context(id, uri, pos) => processContext(id, uri, pos)
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
     case Request.SelectionRange(id, uri, positions) => processSelectionRange(id, uri, positions)
     case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
@@ -348,22 +346,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case _ => mkDefaultCompletions
       }
       case _ => mkDefaultCompletions
-    }
-  }
-
-  /**
-    * Processes a type and effect request.
-    */
-  // TODO: Deprecated
-  private def processContext(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) =>
-        implicit val _ = Audience.External
-        val tpe = FormatType.formatType(exp.tpe)
-        val eff = FormatType.formatType(exp.eff)
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> (("tpe" -> tpe) ~ ("eff" -> eff)))
-      case _ =>
-        mkNotFound(requestId, uri, pos)
     }
   }
 

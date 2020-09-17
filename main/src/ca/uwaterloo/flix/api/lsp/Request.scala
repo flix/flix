@@ -75,11 +75,6 @@ object Request {
   case class Check(requestId: String) extends Request
 
   /**
-    * A request to get the type and effect of an expression.
-    */
-  case class Context(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
     * A code lens request.
     */
   case class Codelens(requestId: String, uri: String) extends Request
@@ -206,17 +201,6 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Complete(id, uri, pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[Context]] request.
-    */
-  def parseContext(json: JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
-    } yield Request.Context(id, uri, pos)
   }
 
   /**
