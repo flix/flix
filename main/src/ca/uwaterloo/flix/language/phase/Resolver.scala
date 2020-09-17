@@ -988,7 +988,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, root: NamedAst.Root): Validation[Scheme, ResolutionError] = {
     for {
       base <- lookupType(sc0.base, ns0, root)
-    } yield Scheme(sc0.quantifiers, sc0.tconstrs, base)
+      tconstrs <- sequence(sc0.tconstrs.map(resolveTypeConstraint(_, ns0, root)))
+    } yield Scheme(sc0.quantifiers, tconstrs, base)
+  }
+
+  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[TypedAst.TypeConstraint, ResolutionError] = {
+    for {
+      clazz <- lookupClass(tconstr0.clazz, ns0, root)
+    } yield TypedAst.TypeConstraint(clazz.sym, tconstr0.arg)
   }
 
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
