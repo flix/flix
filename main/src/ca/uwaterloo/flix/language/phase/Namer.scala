@@ -289,9 +289,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
     case WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
+      val className = Name.mkQName(ident)
       val tparams = getProperTypeParams(tparam).head // only 1 tparam allowed for now
       for {
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, sym, tparams))
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, className, sym, tparams))
       } yield NamedAst.Class(doc, mod, sym, tparams, sigs, loc)
   }
 
@@ -306,7 +307,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       } yield NamedAst.Instance(doc, mod, clazz, tpe, defs, loc)
   }
 
-  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, clazz: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix) = sig match {
+  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix) = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
         tparams =>
@@ -315,11 +316,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case fparams =>
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-              val schemeVal = getSigScheme(tparams, tpe, uenv0, tenv, clazz, classTparam)
+              val schemeVal = getSigScheme(tparams, tpe, uenv0, tenv, className, classTparam)
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, schemeVal, tpeVal) {
                 case (as, sc, eff) =>
-                  val sym = Symbol.mkSigSym(clazz, ident)
+                  val sym = Symbol.mkSigSym(classSym, ident)
                   NamedAst.Sig(doc, as, mod, sym, tparams, fparams, sc, eff, loc)
               }
           }
@@ -1571,20 +1572,25 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
     */
   private def getDefScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
-    mapN(visitType(tpe, uenv0, tenv0)) {
-      case t => NamedAst.Scheme(tparams0.map(_.tpe), List.empty, t)
-    }
+    for {
+      t <- visitType(tpe, uenv0, tenv0)
+      tparams = tparams0.map(_.tpe)
+      tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, tparam.tpe)))
+    } yield NamedAst.Scheme(tparams, tconstrs, t)
   }
 
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
     */
-  private def getSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var], classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+  private def getSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var], clazz: Name.QName, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
     for {
       t <- visitType(tpe, uenv0, tenv0)
       tparams = tparams0.map(_.tpe)
-      tconstrs = tparams0.find(_.name.name == classTparam.name.name).map(tparam => TypedAst.TypeConstraint(classSym, tparam.tpe)).toList
-    } yield NamedAst.Scheme(tparams, tconstrs, t)
+      // constrained as part of definition
+      tconstrs1 = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, tparam.tpe)))
+      // constrained as class type parameters
+      tconstrs2 = tparams0.find(_.name.name == classTparam.name.name).map(tparam => NamedAst.TypeConstraint(clazz, tparam.tpe)).toList
+    } yield NamedAst.Scheme(tparams, tconstrs1 ++ tconstrs2, t)
   }
 
   /**

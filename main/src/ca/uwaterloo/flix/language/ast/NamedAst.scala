@@ -342,7 +342,7 @@ object NamedAst {
 
   }
 
-  case class Scheme(quantifiers: List[ast.Type.Var], tconstrs: List[TypedAst.TypeConstraint], base: NamedAst.Type)
+  case class Scheme(quantifiers: List[ast.Type.Var], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
 
   case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
 
@@ -375,5 +375,7 @@ object NamedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, classes: List[Name.QName], loc: SourceLocation)
+
+  case class TypeConstraint(clazz: Name.QName, arg: ast.Type)
 
 }
