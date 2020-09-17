@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatDoc, FormatSignature, FormatType}
 import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
 import ca.uwaterloo.flix.util.Options
@@ -364,15 +364,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             //
             val decl = root.defs(sym)
             val markup =
-              s"""[Definition]
+              s"""${FormatSignature.asMarkDown(decl)}
                  |
-                 |${decl.doc.lines.mkString("\n\r")}
-                 |
-                 |```flix
-                 |${decl.loc.lineAt(decl.sym.loc.beginLine)}
-                 |```
-                 |
-                 |
+                 |${FormatDoc.asMarkDown(decl.doc)}
                  |""".stripMargin
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
