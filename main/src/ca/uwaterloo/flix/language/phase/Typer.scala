@@ -533,7 +533,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             valueType <- unifyTypeM(tpe1, tpe2, loc)
             resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
             resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+                } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case BinaryOperator.Spaceship =>
           for {
@@ -1148,7 +1148,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          lazyTyp <- unifyTypeM(tpe, Type.mkLazy(tvar),loc)
+          lazyTyp <- unifyTypeM(tpe, Type.mkLazy(tvar), loc)
           resultTyp = tvar
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
@@ -1589,14 +1589,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)
-        TypedAst.Expression.FixpointConstraintSet(cs, null, subst0(tvar), loc)
+        TypedAst.Expression.FixpointConstraintSet(cs, Stratification.Empty, subst0(tvar), loc)
 
       case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e1.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.FixpointCompose(e1, e2, null, tpe, eff, loc)
+        TypedAst.Expression.FixpointCompose(e1, e2, Stratification.Empty, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointSolve(exp, loc) =>
         val e = visitExp(exp, subst0)
