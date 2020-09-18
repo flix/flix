@@ -362,11 +362,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     def formatStratification(stf: Ast.Stratification): String = {
       val sb = new StringBuilder()
       val max = stf.m.values.max
-      for (i <- 0 until max) {
-        sb.append("Stratum ").append(i).append("\n")
+      for (i <- 0 to max) {
+        sb.append("Stratum ").append(i).append(":").append("\r\n")
         for ((sym, stratum) <- stf.m) {
           if (i == stratum) {
-            sb.append("  ").append(sym).append("\n")
+            sb.append("  ").append(sym).append("\r\n")
           }
         }
       }
@@ -382,6 +382,23 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
               s"""${FormatSignature.asMarkDown(decl)}
                  |
                  |${FormatDoc.asMarkDown(decl.doc)}
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
+          case Expression.Hole(sym, _, _, _) =>
+            val holes = TypedAstOps.holesOf(root)
+            val holeContext = holes(sym)
+            val env = holeContext.env.map {
+              case (localSym, localTpe) => s"${localSym.text}: ${FormatType.formatType(localTpe)}"
+            }
+            val markup =
+              s"""Hole: ${sym.name}
+                 |
+                 |Context:
+                 |  ${holeContext.env.mkString("\r\n  ")}
                  |""".stripMargin
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
