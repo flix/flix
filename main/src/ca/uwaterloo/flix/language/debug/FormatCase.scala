@@ -23,7 +23,7 @@ object FormatCase {
     * Returns a markdown string for the given `caze`.
     */
   def asMarkDown(caze: TypedAst.Case)(implicit audience: Audience): String = {
-    s"case **${caze.tag.name}: ${MarkDown.escape(FormatType.formatType(caze.sc.base))}"
+    s"case **${caze.tag.name}**: ${FormatScheme.formatScheme(caze.sc)}"
   }
 
 }
