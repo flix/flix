@@ -355,7 +355,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         exp match {
           case Expression.Def(sym, _, _) =>
             //
-            // Def Symbol expression.
+            // Def expression.
             //
             val decl = root.defs(sym)
             val markup =
@@ -369,6 +369,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
 
           case Expression.Tag(sym, tag, _, _, _, _) =>
+            //
+            // Tag expression.
+            //
             val decl = root.enums(sym)
             val caze = decl.cases(tag)
             val markup =
@@ -396,6 +399,34 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
         }
+
+      case Some(Entity.Pat(pat)) => pat match {
+        case Pattern.Tag(sym, tag, _, _, _) =>
+          //
+          // Tag pattern.
+          //
+          val decl = root.enums(sym)
+          val caze = decl.cases(tag)
+          val markup =
+            s"""${FormatCase.asMarkDown(caze)}
+               |
+               |${FormatDoc.asMarkDown(decl.doc)}
+               |""".stripMargin
+          val contents = MarkupContent(MarkupKind.Markdown, markup)
+          val range = Range.from(pat.loc)
+          val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+        case _ =>
+          //
+          // Other pattern.
+          //
+          val markup = FormatType.formatType(pat.tpe)
+          val contents = MarkupContent(MarkupKind.Markdown, markup)
+          val range = Range.from(pat.loc)
+          val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+      }
+
 
       case _ =>
         mkNotFound(requestId, uri, pos)
