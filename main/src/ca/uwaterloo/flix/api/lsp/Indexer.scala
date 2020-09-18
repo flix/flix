@@ -251,12 +251,12 @@ object Indexer {
     case Expression.Force(exp, _, _, _) =>
       visitExp(exp) + exp0
 
-    case Expression.FixpointConstraintSet(cs, _, _) =>
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(Index.empty) {
         case (index, c) => index ++ visitConstraint(c)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
+    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>

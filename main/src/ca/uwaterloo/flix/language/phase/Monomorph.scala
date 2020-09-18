@@ -511,14 +511,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.Force(e, subst0(tpe), eff, loc)
 
-        case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+        case Expression.FixpointConstraintSet(cs0, stf, tpe, loc) =>
           val cs = cs0.map(visitConstraint(_, env0))
-          Expression.FixpointConstraintSet(cs, subst0(tpe), loc)
+          Expression.FixpointConstraintSet(cs, stf, subst0(tpe), loc)
 
-        case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
+        case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.FixpointCompose(e1, e2, subst0(tpe), eff, loc)
+          Expression.FixpointCompose(e1, e2, stf, subst0(tpe), eff, loc)
 
         case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

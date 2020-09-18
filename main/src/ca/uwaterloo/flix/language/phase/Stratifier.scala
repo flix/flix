@@ -362,22 +362,22 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Force(e, tpe, eff, loc)
       }
 
-    case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+    case Expression.FixpointConstraintSet(cs0, _, tpe, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(stf) {
-        case _ =>
+        case s =>
           val cs = cs0.map(reorder)
-          Expression.FixpointConstraintSet(cs, tpe, loc)
+          Expression.FixpointConstraintSet(cs, s, tpe, loc)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
+    case Expression.FixpointCompose(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
-        case (e1, e2, _) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
+        case (e1, e2, s) => Expression.FixpointCompose(e1, e2, s, tpe, eff, loc)
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
@@ -610,12 +610,12 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Force(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.FixpointConstraintSet(cs, _, _) =>
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(DependencyGraph.empty) {
         case (dg, c) => dg + dependencyGraphOfConstraint(c)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
+    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>

@@ -363,10 +363,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       val sb = new StringBuilder()
       val max = stf.m.values.max
       for (i <- 0 until max) {
-        sb.append("Stratum ").append(i)
+        sb.append("Stratum ").append(i).append("\n")
         for ((sym, stratum) <- stf.m) {
           if (i == stratum) {
-            sb.append("  ").append(sym)
+            sb.append("  ").append(sym).append("\n")
           }
         }
       }
@@ -377,9 +377,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case Some(Entity.Exp(exp)) =>
         exp match {
           case Expression.Def(sym, _, _) =>
-            //
-            // Def expression.
-            //
             val decl = root.defs(sym)
             val markup =
               s"""${FormatSignature.asMarkDown(decl)}
@@ -392,9 +389,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
 
           case Expression.Tag(sym, tag, _, _, _, _) =>
-            //
-            // Tag expression.
-            //
             val decl = root.enums(sym)
             val caze = decl.cases(tag)
             val markup =
@@ -407,10 +401,29 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
 
+          case Expression.FixpointConstraintSet(_, stf, _, _) =>
+            val markup =
+              s"""${formatTypAndEff(exp.tpe, exp.eff)}
+                 |
+                 |${formatStratification(stf)}
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
+          case Expression.FixpointCompose(_, _, stf, _, _, _) =>
+            val markup =
+              s"""${formatTypAndEff(exp.tpe, exp.eff)}
+                 |
+                 |${formatStratification(stf)}
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
           case Expression.FixpointSolve(_, stf, _, _, _) =>
-            //
-            // Fixpoint Solve expression.
-            //
             val markup =
               s"""${formatTypAndEff(exp.tpe, exp.eff)}
                  |
@@ -434,9 +447,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       case Some(Entity.Pat(pat)) => pat match {
         case Pattern.Tag(sym, tag, _, _, _) =>
-          //
-          // Tag pattern.
-          //
           val decl = root.enums(sym)
           val caze = decl.cases(tag)
           val markup =

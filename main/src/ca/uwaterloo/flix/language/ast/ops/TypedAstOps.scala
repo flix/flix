@@ -212,11 +212,12 @@ object TypedAstOps {
 
       case Expression.Force(exp, tpe, eff, loc) => visitExp(exp, env0)
 
-      case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-        case (macc, c) => macc ++ visitConstraint(c, env0)
-      }
+      case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
+        cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+          case (macc, c) => macc ++ visitConstraint(c, env0)
+        }
 
-      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>

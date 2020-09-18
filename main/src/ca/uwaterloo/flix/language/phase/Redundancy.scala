@@ -497,12 +497,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Force(exp, _, _, _) => visitExp(exp, env0)
 
-    case Expression.FixpointConstraintSet(cs, _, _) =>
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(Used.empty) {
         case (used, con) => used and visitConstraint(con, env0)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
+    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       us1 and us2
