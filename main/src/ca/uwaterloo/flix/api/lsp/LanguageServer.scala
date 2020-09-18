@@ -350,6 +350,29 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processHover(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     implicit val _ = Audience.External
 
+    def formatTypAndEff(tpe0: Type, eff0: Type): String = {
+      val t = FormatType.formatType(tpe0)
+      eff0 match {
+        case Type.Cst(TypeConstructor.True) => t
+        case Type.Cst(TypeConstructor.False) => s"$t & Impure"
+        case eff => s"$t & ${FormatType.formatType(eff)}"
+      }
+    }
+
+    def formatStratification(stf: Ast.Stratification): String = {
+      val sb = new StringBuilder()
+      val max = stf.m.values.max
+      for (i <- 0 until max) {
+        sb.append("Stratum ").append(i)
+        for ((sym, stratum) <- stf.m) {
+          if (i == stratum) {
+            sb.append("  ").append(sym)
+          }
+        }
+      }
+      sb.toString()
+    }
+
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
         exp match {
@@ -384,16 +407,25 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
 
+          case Expression.FixpointSolve(_, stf, _, _, _) =>
+            //
+            // Fixpoint Solve expression.
+            //
+            val markup =
+              s"""${formatTypAndEff(exp.tpe, exp.eff)}
+                 |
+                 |${formatStratification(stf)}
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
           case _ =>
             //
             // Other Expression.
             //
-            val tpe = FormatType.formatType(exp.tpe)
-            val markup = exp.eff match {
-              case Type.Cst(TypeConstructor.True) => tpe
-              case Type.Cst(TypeConstructor.False) => s"$tpe & Impure"
-              case eff => s"$tpe & ${FormatType.formatType(eff)}"
-            }
+            val markup = formatTypAndEff(exp.tpe, exp.eff)
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
@@ -416,6 +448,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           val range = Range.from(pat.loc)
           val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
         case _ =>
           //
           // Other pattern.
