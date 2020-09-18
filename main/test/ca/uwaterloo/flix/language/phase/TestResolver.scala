@@ -175,9 +175,6 @@ class TestResolver extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    result match {
-      case Validation.Failure(errors) => errors.foreach(println)
-    }
     expectError[ResolutionError.InaccessibleClass](result)
   }
 
