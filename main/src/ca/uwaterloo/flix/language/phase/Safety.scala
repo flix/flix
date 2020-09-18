@@ -210,9 +210,9 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Force(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.flatMap(checkConstraint)
+    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => cs.flatMap(checkConstraint)
 
-    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
 

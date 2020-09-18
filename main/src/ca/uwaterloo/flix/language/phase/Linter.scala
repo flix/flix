@@ -216,9 +216,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Spawn(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint(_, lint0))
+      case Expression.FixpointConstraintSet(cs, _, _, _) => cs.flatMap(visitConstraint(_, lint0))
 
-      case Expression.FixpointCompose(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
+      case Expression.FixpointCompose(exp1, exp2, _, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.FixpointSolve(exp, _, _, _, _) => visitExp(exp, lint0)
 
@@ -518,11 +518,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Spawn(exp1, _, _, _), Expression.Spawn(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
-    case (Expression.FixpointConstraintSet(_, _, _), Expression.FixpointConstraintSet(_, _, _)) =>
+    case (Expression.FixpointConstraintSet(_, _, _, _), Expression.FixpointConstraintSet(_, _, _, _)) =>
       // NB: We currently do not perform unification inside constraint sets.
       None
 
-    case (Expression.FixpointCompose(exp11, exp12, _, _, _), Expression.FixpointCompose(exp21, exp22, _, _, _)) =>
+    case (Expression.FixpointCompose(exp11, exp12, _, _, _, _), Expression.FixpointCompose(exp21, exp22, _, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
@@ -920,13 +920,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.Force(e, tpe, eff, loc)
 
-      case Expression.FixpointConstraintSet(cs, tpe, loc) =>
-        Expression.FixpointConstraintSet(cs.map(apply), tpe, loc)
+      case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
+        Expression.FixpointConstraintSet(cs.map(apply), stf, tpe, loc)
 
-      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
-        Expression.FixpointCompose(e1, e2, tpe, eff, loc)
+        Expression.FixpointCompose(e1, e2, stf, tpe, eff, loc)
 
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         val e = apply(exp)

@@ -350,13 +350,33 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processHover(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     implicit val _ = Audience.External
 
+    def formatTypAndEff(tpe0: Type, eff0: Type): String = {
+      val t = FormatType.formatType(tpe0)
+      eff0 match {
+        case Type.Cst(TypeConstructor.True) => t
+        case Type.Cst(TypeConstructor.False) => s"$t & Impure"
+        case eff => s"$t & ${FormatType.formatType(eff)}"
+      }
+    }
+
+    def formatStratification(stf: Ast.Stratification): String = {
+      val sb = new StringBuilder()
+      val max = stf.m.values.max
+      for (i <- 0 until max) {
+        sb.append("Stratum ").append(i).append("\n")
+        for ((sym, stratum) <- stf.m) {
+          if (i == stratum) {
+            sb.append("  ").append(sym).append("\n")
+          }
+        }
+      }
+      sb.toString()
+    }
+
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
         exp match {
           case Expression.Def(sym, _, _) =>
-            //
-            // Def Symbol expression.
-            //
             val decl = root.defs(sym)
             val markup =
               s"""${FormatSignature.asMarkDown(decl)}
@@ -381,21 +401,75 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
 
+          case Expression.FixpointConstraintSet(_, stf, _, _) =>
+            val markup =
+              s"""${formatTypAndEff(exp.tpe, exp.eff)}
+                 |
+                 |${formatStratification(stf)}
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
+          case Expression.FixpointCompose(_, _, stf, _, _, _) =>
+            val markup =
+              s"""${formatTypAndEff(exp.tpe, exp.eff)}
+                 |
+                 |${formatStratification(stf)}
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
+          case Expression.FixpointSolve(_, stf, _, _, _) =>
+            val markup =
+              s"""${formatTypAndEff(exp.tpe, exp.eff)}
+                 |
+                 |${formatStratification(stf)}
+                 |""".stripMargin
+            val contents = MarkupContent(MarkupKind.Markdown, markup)
+            val range = Range.from(exp.loc)
+            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
           case _ =>
             //
             // Other Expression.
             //
-            val tpe = FormatType.formatType(exp.tpe)
-            val markup = exp.eff match {
-              case Type.Cst(TypeConstructor.True) => tpe
-              case Type.Cst(TypeConstructor.False) => s"$tpe & Impure"
-              case eff => s"$tpe & ${FormatType.formatType(eff)}"
-            }
+            val markup = formatTypAndEff(exp.tpe, exp.eff)
             val contents = MarkupContent(MarkupKind.Markdown, markup)
             val range = Range.from(exp.loc)
             val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
         }
+
+      case Some(Entity.Pat(pat)) => pat match {
+        case Pattern.Tag(sym, tag, _, _, _) =>
+          val decl = root.enums(sym)
+          val caze = decl.cases(tag)
+          val markup =
+            s"""${FormatCase.asMarkDown(caze)}
+               |
+               |${FormatDoc.asMarkDown(decl.doc)}
+               |""".stripMargin
+          val contents = MarkupContent(MarkupKind.Markdown, markup)
+          val range = Range.from(pat.loc)
+          val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
+        case _ =>
+          //
+          // Other pattern.
+          //
+          val markup = FormatType.formatType(pat.tpe)
+          val contents = MarkupContent(MarkupKind.Markdown, markup)
+          val range = Range.from(pat.loc)
+          val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+      }
+
 
       case _ =>
         mkNotFound(requestId, uri, pos)

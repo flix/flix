@@ -15,15 +15,14 @@
  */
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.TypedAst
-
-object FormatCase {
+object MarkDown {
 
   /**
-    * Returns a markdown string for the given `caze`.
+    * Escapes certain markdown characters.
     */
-  def asMarkDown(caze: TypedAst.Case)(implicit audience: Audience): String = {
-    s"case **${caze.tag.name}: ${MarkDown.escape(FormatType.formatType(caze.sc.base))}"
-  }
+  def escape(s: String): String =
+    s
+      .replaceAllLiterally("[", "\\[")
+      .replaceAllLiterally("]", "\\]")
 
 }
