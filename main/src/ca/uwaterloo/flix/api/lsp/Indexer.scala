@@ -38,11 +38,12 @@ object Indexer {
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = {
+    val idx0 = Index.of(def0)
     val idx1 = visitExp(def0.exp)
     val idx2 = def0.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    idx1 ++ idx2
+    idx0 ++ idx1 ++ idx2
   }
 
   /**

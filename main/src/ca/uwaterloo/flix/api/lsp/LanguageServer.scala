@@ -504,6 +504,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     val ranges = positions.map {
       case p => index.query(uri, p) match {
         case None => JNull
+        case Some(Entity.Def(d)) => JNull
         case Some(Entity.Enum(d)) => JNull
         case Some(Entity.Exp(d)) => SelectionRange(Range.from(d.loc), None).toJSON
         case Some(Entity.Pat(d)) => JNull
@@ -715,6 +716,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processUses(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
+
+      case Some(Entity.Def(defn)) =>
+        val uses = index.usesOf(defn.sym)
+        val locs = uses.toList.map(Location.from)
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, _) =>
           val uses = index.usesOf(sym)
