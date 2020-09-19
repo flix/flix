@@ -30,12 +30,13 @@ object Position {
     * Tries to parse the given `json` value as a [[Position]].
     */
   def parse(json: JValue): Result[Position, String] = {
+    //// NB: LSP line and column numbers are zero-indexed, but Flix uses 1-indexed internally.
     val lineResult: Result[Int, String] = json \\ "line" match {
-      case JInt(i) => Ok(i.toInt)
+      case JInt(i) => Ok(i.toInt + 1) // Flix uses 1-indexed line numbers.
       case v => Err(s"Unexpected non-integer line number: '$v'.")
     }
     val characterResult: Result[Int, String] = json \\ "character" match {
-      case JInt(i) => Ok(i.toInt)
+      case JInt(i) => Ok(i.toInt + 1) // Flix uses 1-indexed columns.
       case v => Err(s"Unexpected non-integer character: '$v'.")
     }
     for {
