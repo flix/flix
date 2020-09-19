@@ -504,6 +504,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     val ranges = positions.map {
       case p => index.query(uri, p) match {
         case None => JNull
+        case Some(Entity.Def(d)) => JNull
         case Some(Entity.Enum(d)) => JNull
         case Some(Entity.Exp(d)) => SelectionRange(Range.from(d.loc), None).toJSON
         case Some(Entity.Pat(d)) => JNull
