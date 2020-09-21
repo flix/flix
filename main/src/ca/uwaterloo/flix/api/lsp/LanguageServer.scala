@@ -174,7 +174,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
-      case JString("lsp/symbols") => Request.parseSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
       case JString("pkg/benchmark") => Request.parsePackageBenchmark(json)
@@ -217,7 +216,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Codelens(id, uri) => processCodelens(id, uri)
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
-    case Request.Symbols(id, uri) => processSymbols(id, uri)
     case Request.Uses(id, uri, pos) => processUses(id, uri, pos)
 
     case Request.PackageBenchmark(id, projectRoot) => benchmarkPackage(id, projectRoot)
@@ -617,30 +615,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
     throw null // unreachable
-  }
-
-  /**
-    * Processes a symbols request.
-    */
-  private def processSymbols(requestId: String, uri: String): JValue = {
-    if (root == null) {
-      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
-    }
-
-    // Find all definition symbols.
-    val defSymbols = root.defs.values.collect {
-      case decl0 if matchesUri(uri, decl0.loc) => DocumentSymbol.from(decl0)
-    }
-
-    // FInd all enum symbols.
-    val enumSymbols = root.enums.values.collect {
-      case decl0 if matchesUri(uri, decl0.loc) => DocumentSymbol.from(decl0)
-    }
-
-    // Compute all available symbols.
-    val allSymbols = defSymbols ++ enumSymbols
-
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> allSymbols.map(_.toJSON))
   }
 
   /**

@@ -20,7 +20,7 @@ import java.nio.file.{Path, Paths}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonAST.{JString, JValue}
 
 /**
   * A common super-type for language server requests.
@@ -83,11 +83,6 @@ object Request {
     * A request to go to a declaration.
     */
   case class Goto(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request for all symbols.
-    */
-  case class Symbols(requestId: String, uri: String) extends Request
 
   /**
     * A request to find all uses of an entity.
@@ -205,16 +200,6 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Goto(id, uri, pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[Symbols]] request.
-    */
-  def parseSymbols(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.Symbols(id, uri)
   }
 
   /**
