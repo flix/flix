@@ -628,6 +628,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         val locs = uses.toList.map(Location.from)
         ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
+      case Some(Entity.FormalParam(param)) =>
+        val uses = index.usesOf(param.sym)
+        val locs = uses.toList.map(Location.from)
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Def(sym, _, _) =>
           val uses = index.usesOf(sym)
