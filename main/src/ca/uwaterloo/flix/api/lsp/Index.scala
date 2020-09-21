@@ -34,17 +34,22 @@ object Index {
   /**
     * Returns an index for the given expression `exp0`.
     */
+  def of(enum0: Enum): Index = empty + enum0
+
+  /**
+    * Returns an index for the given expression `exp0`.
+    */
   def of(exp0: Expression): Index = empty + exp0
+
+  /**
+    * Returns an index for the formal parameter `fparam0`.
+    */
+  def of(fparam0: FormalParam): Index = empty + fparam0
 
   /**
     * Returns an index for the given pattern `pat00`.
     */
   def of(pat0: Pattern): Index = empty + pat0
-
-  /**
-    * Returns an index for the given expression `exp0`.
-    */
-  def of(enum0: Enum): Index = empty + enum0
 
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
@@ -139,19 +144,24 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def +(def0: Def): Index = this + Entity.Def(def0)
 
   /**
+    * Adds the given enum `enum0` to `this` index.
+    */
+  def +(enum0: Enum): Index = this + Entity.Enum(enum0)
+
+  /**
     * Adds the given expression `exp0` to `this` index.
     */
   def +(exp0: Expression): Index = this + Entity.Exp(exp0)
 
   /**
+    * Adds the given formal parameter `fparam0` to `this` index.
+    */
+  def +(fparam0: FormalParam): Index = this + Entity.FormalParam(fparam0)
+
+  /**
     * Adds the given pattern `pat0` to `this` index.
     */
   def +(pat0: Pattern): Index = this + Entity.Pat(pat0)
-
-  /**
-    * Adds the given enum `enum0` to `this` index.
-    */
-  def +(enum0: Enum): Index = this + Entity.Enum(enum0)
 
   /**
     * Adds the given entity `exp0` to `this` index.

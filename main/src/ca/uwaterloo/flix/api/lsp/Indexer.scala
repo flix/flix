@@ -351,6 +351,8 @@ object Indexer {
   /**
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
-  private def visitFormalParam(fparam0: FormalParam): Index = visitType(fparam0.tpe, fparam0.loc)
+  private def visitFormalParam(fparam0: FormalParam): Index = {
+    Index.of(fparam0) ++ visitType(fparam0.tpe, fparam0.loc)
+  }
 
 }
