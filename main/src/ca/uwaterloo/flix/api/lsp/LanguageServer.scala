@@ -172,7 +172,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
-      case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
       case JString("lsp/symbols") => Request.parseSymbols(json)
@@ -217,7 +216,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Check(id) => processCheck(id)
     case Request.Codelens(id, uri) => processCodelens(id, uri)
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
-    case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
     case Request.Symbols(id, uri) => processSymbols(id, uri)
     case Request.Uses(id, uri, pos) => processUses(id, uri, pos)
@@ -312,32 +310,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     //
     val allCodeLenses = mkCodeLensForMain() ::: mkCodeLensesForUnitTests()
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
-  }
-
-  /**
-    * Processes a complete request.
-    */
-  private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    def mkDefaultCompletions(): JValue = {
-      val items = List(
-        CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
-        CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
-      )
-      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
-    }
-
-    index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Hole(sym, _, _, _) =>
-          val holeCtx = TypedAstOps.holesOf(root)(sym)
-          val items = holeCtx.env.map {
-            case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
-          }
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
-        case _ => mkDefaultCompletions
-      }
-      case _ => mkDefaultCompletions
-    }
   }
 
   /**
