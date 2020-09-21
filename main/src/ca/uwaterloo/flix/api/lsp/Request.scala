@@ -105,11 +105,6 @@ object Request {
   case class Hover(requestId: String, uri: String, pos: Position) extends Request
 
   /**
-    * A request to selection range information.
-    */
-  case class SelectionRange(requestId: String, uri: String, positions: List[Position]) extends Request
-
-  /**
     * A request to run all benchmarks in the project.
     */
   case class PackageBenchmark(requestId: String, projectRoot: Path) extends Request
@@ -258,22 +253,6 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Hover(id, uri, pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[SelectionRange]] request.
-    */
-  def parseSelectionRange(json: json4s.JValue): Result[Request, String] = {
-    val positionsVal = json \\ "positions" match {
-      case JArray(elms) => Result.sequence(elms.map(Position.parse))
-      case s => Err(s"Unexpected positions: '$s'.")
-    }
-
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-      positions <- positionsVal
-    } yield Request.SelectionRange(id, uri, positions)
   }
 
   /**
