@@ -144,8 +144,8 @@ object Indexer {
         case (acc, NullRule(_, exp)) => acc ++ visitExp(exp)
       }
 
-    case Expression.Tag(sym, _, exp, _, _, loc) =>
-      visitExp(exp) + exp0 ++ Index.useOf(sym, loc)
+    case Expression.Tag(sym, tag, exp, _, _, loc) =>
+      visitExp(exp) + exp0 ++ Index.useOf(sym, tag, loc)
 
     case Expression.Tuple(exps, tpe, eff, loc) =>
       visitExps(exps) + exp0
@@ -299,7 +299,7 @@ object Indexer {
     case Pattern.Int64(_, _) => Index.of(pat0)
     case Pattern.BigInt(_, _) => Index.of(pat0)
     case Pattern.Str(_, _) => Index.of(pat0)
-    case Pattern.Tag(sym, tag, pat, _, loc) => Index.useOf(sym, loc) ++ visitPat(pat)
+    case Pattern.Tag(sym, tag, pat, _, loc) => Index.useOf(sym, tag, loc) ++ visitPat(pat)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Array(elms, _, _) => visitPats(elms)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)

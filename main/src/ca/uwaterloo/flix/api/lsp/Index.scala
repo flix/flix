@@ -24,7 +24,7 @@ object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given definition `def0`.
@@ -69,7 +69,14 @@ object Index {
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.EnumSym, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.EnumSym, loc: SourceLocation): Index =
+    Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with the symbol `sym` and `tag` used at location `loc.`
+    */
+  def useOf(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): Index =
+    Index.empty.copy(enumUses = MultiMap.singleton(sym, loc), tagUses = MultiMap.singleton((sym, tag), loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -85,6 +92,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  sigUses: MultiMap[Symbol.SigSym, SourceLocation],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
+                 tagUses: MultiMap[(Symbol.EnumSym, String), SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
   /**
@@ -192,7 +200,15 @@ case class Index(m: Map[(String, Int), List[Entity]],
         val result = exps1 ::: exps2
         macc + (line -> result)
     }
-    Index(m3, this.classUses ++ that.classUses, this.sigUses ++ that.sigUses, this.defUses ++ that.defUses, this.enumUses ++ that.enumUses, this.varUses ++ that.varUses)
+    Index(
+      m3,
+      this.classUses ++ that.classUses,
+      this.sigUses ++ that.sigUses,
+      this.defUses ++ that.defUses,
+      this.enumUses ++ that.enumUses,
+      this.tagUses ++ that.tagUses,
+      this.varUses ++ that.varUses
+    )
   }
 
   /**
