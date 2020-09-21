@@ -172,12 +172,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
-      case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/hover") => Request.parseHover(json)
-      case JString("lsp/selectionRange") => Request.parseSelectionRange(json)
-      case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
       case JString("lsp/goto") => Request.parseGoto(json)
-      case JString("lsp/symbols") => Request.parseSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
       case JString("pkg/benchmark") => Request.parsePackageBenchmark(json)
@@ -219,11 +215,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Check(id) => processCheck(id)
     case Request.Codelens(id, uri) => processCodelens(id, uri)
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
-    case Request.SelectionRange(id, uri, positions) => processSelectionRange(id, uri, positions)
-    case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
-    case Request.FoldingRange(id, uri) => processFoldingRange(id, uri)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
-    case Request.Symbols(id, uri) => processSymbols(id, uri)
     case Request.Uses(id, uri, pos) => processUses(id, uri, pos)
 
     case Request.PackageBenchmark(id, projectRoot) => benchmarkPackage(id, projectRoot)
@@ -316,32 +308,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     //
     val allCodeLenses = mkCodeLensForMain() ::: mkCodeLensesForUnitTests()
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
-  }
-
-  /**
-    * Processes a complete request.
-    */
-  private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    def mkDefaultCompletions(): JValue = {
-      val items = List(
-        CompletionItem("Hello!", None, None, None, Some(TextEdit(Range(pos, pos), "Hi there!"))),
-        CompletionItem("Goodbye!", None, None, None, Some(TextEdit(Range(pos, pos), "Farewell!")))
-      )
-      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
-    }
-
-    index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Hole(sym, _, _, _) =>
-          val holeCtx = TypedAstOps.holesOf(root)(sym)
-          val items = holeCtx.env.map {
-            case (sym, tpe) => CompletionItem(sym.text, Some(CompletionItemKind.Variable), Some(FormatType.formatType(tpe)), None, Some(TextEdit(Range(pos, pos), sym.text)))
-          }
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> items.map(_.toJSON))
-        case _ => mkDefaultCompletions
-      }
-      case _ => mkDefaultCompletions
-    }
   }
 
   /**
@@ -491,42 +457,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case _ =>
         mkNotFound(requestId, uri, pos)
     }
-  }
-
-  /**
-    * Processes a selection range request.
-    */
-  private def processSelectionRange(requestId: String, uri: String, positions: List[Position])(implicit ws: WebSocket): JValue = {
-    if (root == null) {
-      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
-    }
-
-    val ranges = positions.map {
-      case p => index.query(uri, p) match {
-        case None => JNull
-        case Some(Entity.Def(d)) => JNull
-        case Some(Entity.Enum(d)) => JNull
-        case Some(Entity.Exp(d)) => SelectionRange(Range.from(d.loc), None).toJSON
-        case Some(Entity.Pat(d)) => JNull
-      }
-    }
-
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(ranges))
-  }
-
-  /**
-    * Processes a folding range request.
-    */
-  private def processFoldingRange(requestId: String, uri: String)(implicit ws: WebSocket): JValue = {
-    if (root == null) {
-      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
-    }
-
-    val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
-      case ((sym, defn), acc) if matchesUri(uri, defn.loc) => FoldingRange(defn.loc.beginLine, Some(defn.loc.beginCol), defn.loc.endLine, Some(defn.loc.endCol), Some(FoldingRangeKind.Region)) :: acc
-      case (_, acc) => acc
-    }
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(defsFoldingRanges.map(_.toJSON)))
   }
 
   /**
@@ -685,30 +615,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
     throw null // unreachable
-  }
-
-  /**
-    * Processes a symbols request.
-    */
-  private def processSymbols(requestId: String, uri: String): JValue = {
-    if (root == null) {
-      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
-    }
-
-    // Find all definition symbols.
-    val defSymbols = root.defs.values.collect {
-      case decl0 if matchesUri(uri, decl0.loc) => DocumentSymbol.from(decl0)
-    }
-
-    // FInd all enum symbols.
-    val enumSymbols = root.enums.values.collect {
-      case decl0 if matchesUri(uri, decl0.loc) => DocumentSymbol.from(decl0)
-    }
-
-    // Compute all available symbols.
-    val allSymbols = defSymbols ++ enumSymbols
-
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> allSymbols.map(_.toJSON))
   }
 
   /**

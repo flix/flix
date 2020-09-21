@@ -20,7 +20,7 @@ import java.nio.file.{Path, Paths}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonAST.{JString, JValue}
 
 /**
   * A common super-type for language server requests.
@@ -80,24 +80,9 @@ object Request {
   case class Codelens(requestId: String, uri: String) extends Request
 
   /**
-    * A request for code completion.
-    */
-  case class Complete(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
     * A request to go to a declaration.
     */
   case class Goto(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A folding range request.
-    */
-  case class FoldingRange(requestId: String, uri: String) extends Request
-
-  /**
-    * A request for all symbols.
-    */
-  case class Symbols(requestId: String, uri: String) extends Request
 
   /**
     * A request to find all uses of an entity.
@@ -108,11 +93,6 @@ object Request {
     * A request to get hover information.
     */
   case class Hover(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to selection range information.
-    */
-  case class SelectionRange(requestId: String, uri: String, positions: List[Position]) extends Request
 
   /**
     * A request to run all benchmarks in the project.
@@ -193,17 +173,6 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Complete]] request.
-    */
-  def parseComplete(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
-    } yield Request.Complete(id, uri, pos)
-  }
-
-  /**
     * Tries to parse the given `json` value as a [[Check]] request.
     */
   def parseCheck(json: json4s.JValue): Result[Request, String] = {
@@ -223,16 +192,6 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[FoldingRange]] request.
-    */
-  def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.FoldingRange(id, uri)
-  }
-
-  /**
     * Tries to parse the given `json` value as a [[Goto]] request.
     */
   def parseGoto(json: json4s.JValue): Result[Request, String] = {
@@ -241,16 +200,6 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Goto(id, uri, pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[Symbols]] request.
-    */
-  def parseSymbols(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.Symbols(id, uri)
   }
 
   /**
@@ -273,22 +222,6 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Hover(id, uri, pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[SelectionRange]] request.
-    */
-  def parseSelectionRange(json: json4s.JValue): Result[Request, String] = {
-    val positionsVal = json \\ "positions" match {
-      case JArray(elms) => Result.sequence(elms.map(Position.parse))
-      case s => Err(s"Unexpected positions: '$s'.")
-    }
-
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-      positions <- positionsVal
-    } yield Request.SelectionRange(id, uri, positions)
   }
 
   /**
