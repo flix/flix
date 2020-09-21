@@ -175,7 +175,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/selectionRange") => Request.parseSelectionRange(json)
-      case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
       case JString("lsp/goto") => Request.parseGoto(json)
       case JString("lsp/symbols") => Request.parseSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
@@ -221,7 +220,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
     case Request.SelectionRange(id, uri, positions) => processSelectionRange(id, uri, positions)
     case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
-    case Request.FoldingRange(id, uri) => processFoldingRange(id, uri)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
     case Request.Symbols(id, uri) => processSymbols(id, uri)
     case Request.Uses(id, uri, pos) => processUses(id, uri, pos)
@@ -512,21 +510,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     }
 
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(ranges))
-  }
-
-  /**
-    * Processes a folding range request.
-    */
-  private def processFoldingRange(requestId: String, uri: String)(implicit ws: WebSocket): JValue = {
-    if (root == null) {
-      return ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(Nil))
-    }
-
-    val defsFoldingRanges = root.defs.foldRight(List.empty[FoldingRange]) {
-      case ((sym, defn), acc) if matchesUri(uri, defn.loc) => FoldingRange(defn.loc.beginLine, Some(defn.loc.beginCol), defn.loc.endLine, Some(defn.loc.endCol), Some(FoldingRangeKind.Region)) :: acc
-      case (_, acc) => acc
-    }
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(defsFoldingRanges.map(_.toJSON)))
   }
 
   /**
