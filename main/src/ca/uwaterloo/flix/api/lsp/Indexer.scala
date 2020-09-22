@@ -247,7 +247,7 @@ object Indexer {
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = rules.foldLeft(Index.empty) {
         case (index, SelectChannelRule(sym, chan, body)) =>
-          Index.of(sym) ++ index ++ visitExp(chan) ++ visitExp(chan)
+          index ++ Index.of(sym) ++ visitExp(chan) ++ visitExp(chan)
       }
       i0 ++ i1 + exp0
 
