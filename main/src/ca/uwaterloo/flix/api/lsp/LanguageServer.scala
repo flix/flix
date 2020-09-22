@@ -233,7 +233,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
     // Configure the Flix compiler.
-    val flix = new Flix().setOptions(Options.TestWithoutLibrary)
+    val flix = new Flix()
     for ((uri, source) <- sources) {
       flix.addInput(uri, source)
     }
