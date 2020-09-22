@@ -23,6 +23,10 @@ sealed trait Entity {
 
 object Entity {
 
+  case class Case(e: TypedAst.Case) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
   case class Def(e: TypedAst.Def) extends Entity {
     def loc: SourceLocation = e.loc
   }
