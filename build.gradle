@@ -24,7 +24,7 @@ dependencies {
     implementation files('lib/org.json4s-core-3.5.5.jar')
     implementation files('lib/org.json4s-native-3.5.5.jar')
     implementation files('lib/org.objectweb.asm-all-5.2.jar')
-    implementation files('lib/org.parboiled-2.2.0.jar')
+    implementation files('lib/org.parboiled-2.2.1.jar')
     implementation files('lib/org.scalactic-3.0.8.jar')
     implementation files('lib/org.scalatest-3.0.8.jar')
     implementation files('lib/scala.collection.parallel-0.2.0.jar')
