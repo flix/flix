@@ -306,4 +306,16 @@ class TestParser extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
+
+  test("ParseError.Regression.01") {
+    val input =
+      s"""
+         |def foo(): String = "abc"
+         |def bar(): String = foo()
+         |d
+         """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ParseError](result)
+  }
+
 }
