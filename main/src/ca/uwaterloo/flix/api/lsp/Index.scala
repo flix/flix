@@ -52,9 +52,14 @@ object Index {
   def of(fparam0: FormalParam): Index = empty + fparam0
 
   /**
-    * Returns an index for the given pattern `pat00`.
+    * Returns an index for the given pattern `pat0`.
     */
   def of(pat0: Pattern): Index = empty + pat0
+
+  /**
+    * Returns an index for the given local variable definition `sym0`.
+    */
+  def of(sym0: Symbol.VarSym): Index = empty + sym0
 
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
@@ -184,7 +189,12 @@ case class Index(m: Map[(String, Int), List[Entity]],
   /**
     * Adds the given pattern `pat0` to `this` index.
     */
-  def +(pat0: Pattern): Index = this + Entity.Pat(pat0)
+  def +(pat0: Pattern): Index = this + Entity.Pattern(pat0)
+
+  /**
+    * Adds the given local variable symbol `sym0` to `this` index.
+    */
+  def +(sym0: Symbol.VarSym): Index = this + Entity.LocalVar(sym0)
 
   /**
     * Adds the given entity `exp0` to `this` index.
