@@ -476,15 +476,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
         case _ => mkNotFound(requestId, uri, pos)
       }
-      case Some(Entity.Pat(pat)) => pat match {
-        case Pattern.Var(sym, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
+      case Some(Entity.Pat(pat)) => pat match {
         case Pattern.Tag(sym, tag, _, _, loc) =>
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
 
         case _ => mkNotFound(requestId, uri, pos)
       }
+
       case _ => mkNotFound(requestId, uri, pos)
     }
   }
@@ -651,6 +650,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
         case _ => mkNotFound(requestId, uri, pos)
       }
+
+      case Some(Entity.Pat(pat)) => pat match {
+        case Pattern.Var(sym, _, _) =>
+          val uses = index.usesOf(sym)
+          val locs = uses.toList.map(Location.from)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+
+        case Pattern.Tag(sym, tag, _, _, _) =>
+          val uses = index.usesOf(sym, tag)
+          val locs = uses.toList.map(Location.from)
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+
+        case _ => mkNotFound(requestId, uri, pos)
+      }
+
 
       case _ => mkNotFound(requestId, uri, pos)
     }

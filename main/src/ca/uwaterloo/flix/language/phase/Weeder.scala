@@ -1347,7 +1347,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         o match {
           case None =>
             val loc = mkSL(sp1, sp2)
-            val lit = WeededAst.Pattern.Unit(loc)
+            val lit = WeededAst.Pattern.Unit(SourceLocation.Generated)
             WeededAst.Pattern.Tag(enum, tag, lit, loc).toSuccess
           case Some(pat) => visit(pat) map {
             case p => WeededAst.Pattern.Tag(enum, tag, p, mkSL(sp1, sp2))
@@ -1407,7 +1407,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          * Rewrites a `FNil` pattern into a tag pattern.
          */
         val tag = Name.Ident(sp1, "Nil", sp2)
-        val pat = WeededAst.Pattern.Unit(mkSL(sp1, sp2))
+        val pat = WeededAst.Pattern.Unit(SourceLocation.Generated)
         WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Pattern.FCons(pat1, sp1, sp2, pat2) =>
