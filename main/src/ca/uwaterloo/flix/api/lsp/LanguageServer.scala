@@ -453,6 +453,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
       }
 
+      case Some(Entity.LocalVar(sym, tpe)) =>
+        val markup = formatTypAndEff(tpe, Type.Pure)
+        val contents = MarkupContent(MarkupKind.Markdown, markup)
+        val range = Range.from(sym.loc)
+        val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
+
       case _ =>
         mkNotFound(requestId, uri, pos)
     }
@@ -492,7 +499,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def runBenchmarks(requestId: String): JValue = {
     // TODO: runBenchmarks
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "failure")
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
   }
 
   /**
@@ -551,19 +558,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a request to run all benchmarks in the project.
     */
   private def benchmarkPackage(requestId: String, projectRoot: Path): JValue = {
+    // TODO: benchmarkPackage
     Packager.benchmark(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "NotYetImplemented")
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
   }
 
   /**
     * Processes a request to build the project.
     */
   private def buildPackage(requestId: String, projectRoot: Path): JValue = {
+    // TODO: buildPackage
     Packager.build(projectRoot, DefaultOptions) match {
       case None =>
-        ("id" -> requestId) ~ ("status" -> "failure")
+        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> "TEXT WILL GO HERE")
       case Some(_) =>
-        ("id" -> requestId) ~ ("status" -> "success")
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "Package built.")
     }
   }
 
@@ -571,40 +580,44 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a request to build the documentation.
     */
   private def buildDoc(requestId: String, projectRoot: Path): JValue = {
-    // TODO: runBuildDoc
-    ("id" -> requestId) ~ ("status" -> "failure")
+    // TODO: buildDoc
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
   }
 
   /**
     * Processes a request to build a jar from the project.
     */
   private def buildJar(requestId: String, projectRoot: Path): JValue = {
+    // TODO: buildJar
     Packager.buildJar(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success")
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
   }
 
   /**
     * Processes a request to build a flix package from the project.
     */
   private def buildPkg(requestId: String, projectRoot: Path): JValue = {
+    // TODO: buildPkg
     Packager.buildPkg(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success")
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
   }
 
   /**
     * Processes a request to init a new flix package.
     */
   private def initPackage(requestId: String, projectRoot: Path): JValue = {
+    // TODO: initPackage
     Packager.init(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success")
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
   }
 
   /**
     * Processes a request to run all tests in the package.
     */
   private def testPackage(requestId: String, projectRoot: Path): JValue = {
+    // TODO: initPackage
     Packager.test(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success")
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
   }
 
   /**
@@ -669,7 +682,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case _ => mkNotFound(requestId, uri, pos)
       }
 
-      case Some(Entity.LocalVar(sym)) =>
+      case Some(Entity.LocalVar(sym, _)) =>
         val uses = index.usesOf(sym)
         val locs = uses.toList.map(Location.from)
         ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))

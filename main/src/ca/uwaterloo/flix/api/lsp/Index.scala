@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object Index {
@@ -59,7 +58,7 @@ object Index {
   /**
     * Returns an index for the given local variable definition `sym0`.
     */
-  def of(sym0: Symbol.VarSym): Index = empty + sym0
+  def of(sym0: Symbol.VarSym, tpe0: Type): Index = empty + (sym0, tpe0)
 
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
@@ -196,7 +195,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
   /**
     * Adds the given local variable symbol `sym0` to `this` index.
     */
-  def +(sym0: Symbol.VarSym): Index = this + Entity.LocalVar(sym0)
+  def +(sym0: Symbol.VarSym, tpe0: Type): Index = this + Entity.LocalVar(sym0, tpe0)
 
   /**
     * Adds the given entity `exp0` to `this` index.
