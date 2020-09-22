@@ -299,11 +299,11 @@ object Indexer {
     case Pattern.Int64(_, _) => Index.of(pat0)
     case Pattern.BigInt(_, _) => Index.of(pat0)
     case Pattern.Str(_, _) => Index.of(pat0)
-    case Pattern.Tag(sym, tag, pat, _, loc) => visitPat(pat) ++ Index.useOf(sym, tag, loc)
-    case Pattern.Tuple(elms, _, _) => visitPats(elms)
-    case Pattern.Array(elms, _, _) => visitPats(elms)
-    case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms)
+    case Pattern.Tag(sym, tag, pat, _, loc) => Index.of(pat0) ++ visitPat(pat) ++ Index.useOf(sym, tag, loc)
+    case Pattern.Tuple(elms, _, _) => Index.of(pat0) ++ visitPats(elms)
+    case Pattern.Array(elms, _, _) => Index.of(pat0) ++ visitPats(elms)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => Index.of(pat0) ++ visitPats(elms)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => Index.of(pat0) ++ visitPats(elms)
   }
 
   /**
