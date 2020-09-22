@@ -130,8 +130,8 @@ object Indexer {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
-    case Expression.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+    case Expression.Let(sym, exp1, exp2, _, _, _) =>
+      Index.of(sym) ++ visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
@@ -244,10 +244,12 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
-      val i0 = default.map(visitExp).getOrElse(Index.empty) + exp0
-      rules.foldLeft(i0) {
-        case (index, SelectChannelRule(_, _, exp)) => index ++ visitExp(exp)
+      val i0 = default.map(visitExp).getOrElse(Index.empty)
+      val i1 = rules.foldLeft(Index.empty) {
+        case (index, SelectChannelRule(sym, chan, body)) =>
+          index ++ Index.of(sym) ++ visitExp(chan) ++ visitExp(chan)
       }
+      i0 ++ i1 + exp0
 
     case Expression.Spawn(exp, _, _, _) =>
       visitExp(exp) + exp0

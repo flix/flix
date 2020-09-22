@@ -428,7 +428,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
         }
 
-      case Some(Entity.Pat(pat)) => pat match {
+      case Some(Entity.Pattern(pat)) => pat match {
         case Pattern.Tag(sym, tag, _, _, _) =>
           val decl = root.enums(sym)
           val caze = decl.cases(tag)
@@ -453,7 +453,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
       }
 
-
       case _ =>
         mkNotFound(requestId, uri, pos)
     }
@@ -477,7 +476,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case _ => mkNotFound(requestId, uri, pos)
       }
 
-      case Some(Entity.Pat(pat)) => pat match {
+      case Some(Entity.Pattern(pat)) => pat match {
         case Pattern.Tag(sym, tag, _, _, loc) =>
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
 
@@ -656,7 +655,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case _ => mkNotFound(requestId, uri, pos)
       }
 
-      case Some(Entity.Pat(pat)) => pat match {
+      case Some(Entity.Pattern(pat)) => pat match {
         case Pattern.Var(sym, _, _) =>
           val uses = index.usesOf(sym)
           val locs = uses.toList.map(Location.from)
@@ -670,6 +669,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case _ => mkNotFound(requestId, uri, pos)
       }
 
+      case Some(Entity.LocalVar(sym)) =>
+        val uses = index.usesOf(sym)
+        val locs = uses.toList.map(Location.from)
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
       case _ => mkNotFound(requestId, uri, pos)
     }
