@@ -131,7 +131,7 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
-      Index.of(sym) + visitExp(exp1) ++ visitExp(exp2) + exp0
+      Index.of(sym) ++ visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
