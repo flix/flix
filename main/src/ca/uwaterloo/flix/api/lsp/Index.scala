@@ -27,6 +27,11 @@ object Index {
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
+    * Returns an index for the given case `case0`.
+    */
+  def of(case0: Case): Index = empty + case0
+
+  /**
     * Returns an index for the given definition `def0`.
     */
   def of(def0: Def): Index = empty + def0
@@ -150,6 +155,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
+
+  /**
+    * Adds the given case `case0` to `this` index.
+    */
+  def +(case0: Case): Index = this + Entity.Case(case0)
 
   /**
     * Adds the given definition `def0` to `this` index.

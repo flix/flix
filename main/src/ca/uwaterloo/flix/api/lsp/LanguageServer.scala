@@ -622,6 +622,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processUses(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
 
+      case Some(Entity.Case(caze)) =>
+        val uses = index.usesOf(caze.sym, caze.tag.name)
+        val locs = uses.toList.map(Location.from)
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+
       case Some(Entity.Def(defn)) =>
         val uses = index.usesOf(defn.sym)
         val locs = uses.toList.map(Location.from)

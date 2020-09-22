@@ -49,7 +49,13 @@ object Indexer {
   /**
     * Returns a reverse index for the given enum `enum0`.
     */
-  private def visitEnum(enum0: Enum): Index = Index.of(enum0)
+  private def visitEnum(enum0: Enum): Index = {
+    val idx0 = Index.of(enum0)
+    val idx1 = enum0.cases.foldLeft(Index.empty) {
+      case (idx, (tag, caze)) => idx ++ Index.of(caze)
+    }
+    idx0 ++ idx1
+  }
 
   /**
     * Returns a reverse index for the given expression `exp0`.
