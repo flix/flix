@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 
 sealed trait Entity {
   def loc: SourceLocation
@@ -47,7 +47,8 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
-  case class LocalVar(sym: Symbol.VarSym) extends Entity {
+  // TODO: Split this into LetBound and SelectBound?
+  case class LocalVar(sym: Symbol.VarSym, tpe: Type) extends Entity {
     def loc: SourceLocation = sym.loc
   }
 

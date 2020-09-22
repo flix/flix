@@ -131,7 +131,7 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
-      Index.of(sym) ++ visitExp(exp1) ++ visitExp(exp2) + exp0
+      Index.of(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
@@ -247,7 +247,7 @@ object Indexer {
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = rules.foldLeft(Index.empty) {
         case (index, SelectChannelRule(sym, chan, body)) =>
-          index ++ Index.of(sym) ++ visitExp(chan) ++ visitExp(chan)
+          index ++ Index.of(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(chan)
       }
       i0 ++ i1 + exp0
 
