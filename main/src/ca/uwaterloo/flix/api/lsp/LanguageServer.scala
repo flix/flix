@@ -476,6 +476,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
         case _ => mkNotFound(requestId, uri, pos)
       }
+
       case Some(Entity.Pat(pat)) => pat match {
         case Pattern.Var(sym, _, loc) =>
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
@@ -485,6 +486,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
         case _ => mkNotFound(requestId, uri, pos)
       }
+
       case _ => mkNotFound(requestId, uri, pos)
     }
   }

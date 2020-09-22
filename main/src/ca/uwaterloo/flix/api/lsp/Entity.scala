@@ -27,6 +27,10 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
+  case class Enum(e: TypedAst.Enum) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
   case class Exp(e: TypedAst.Expression) extends Entity {
     def loc: SourceLocation = e.loc
   }
@@ -36,10 +40,6 @@ object Entity {
   }
 
   case class Pat(e: TypedAst.Pattern) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
-  case class Enum(e: TypedAst.Enum) extends Entity {
     def loc: SourceLocation = e.loc
   }
 
