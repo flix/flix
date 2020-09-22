@@ -161,6 +161,8 @@ case class Index(m: Map[(String, Int), List[Entity]],
     */
   def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
 
+  // TODO: Remove all of these + functions.
+
   /**
     * Adds the given case `case0` to `this` index.
     */
