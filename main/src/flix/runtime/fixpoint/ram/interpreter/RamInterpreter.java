@@ -7,10 +7,7 @@ import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.RowVariable;
 import flix.runtime.fixpoint.ram.exp.bool.*;
-import flix.runtime.fixpoint.ram.exp.relation.EmptyRelationExp;
-import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
-import flix.runtime.fixpoint.ram.exp.relation.TableName;
-import flix.runtime.fixpoint.ram.exp.relation.UnionRelationExp;
+import flix.runtime.fixpoint.ram.exp.relation.*;
 import flix.runtime.fixpoint.ram.stmt.*;
 import flix.runtime.fixpoint.ram.term.AttrTerm;
 import flix.runtime.fixpoint.ram.term.RamLitTerm;
@@ -37,6 +34,9 @@ public class RamInterpreter {
             if (!interpretation.containsKey(table)) {
                 printStream.println("Something wrong");
             }
+            // Only return result tables
+            if (table.getVersion() != TableVersion.RESULT) continue;
+            
             Set<Fact> tableFacts = interpretation.get(table);
             if (tableFacts == null) {
                 printStream.print("No fact set for table ");
