@@ -232,7 +232,11 @@ public class DatalogCompiler {
                 PredSym currSym = bodyAtom.getSym();
                 if (currSym instanceof RelSym) {
                     RelSym toEvaluate = (RelSym) bodyAtom.getSym();
-                    // Only make extra rules for RelSyms in the same
+                    /*
+                    Only make extra rules for RelSyms in the same stratum.
+                    This also makes sure that useless copies are not made for negated atoms,
+                    since the RelSym of a negated atom must be in a lower stratum
+                     */
                     if (symsInStratum.contains(toEvaluate)) {
                         result.add(compileRule(constraint, toEvaluate));
                     }
