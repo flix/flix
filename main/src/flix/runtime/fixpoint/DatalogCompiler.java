@@ -95,7 +95,7 @@ public class DatalogCompiler {
 
         // Then all relations are evaluated incrementally
         for (RelSym rel : ruleMap.keySet()) {
-            whileBody.addAll(compileRulesIncr(ruleMap.get(rel)));
+            whileBody.addAll(compileRulesIncr(ruleMap.get(rel), ruleMap.keySet()));
         }
         // And then the DELTA tables are saved into the RESULT tables
         whileBody.addAll(generateMergeStatements(ruleMap.keySet()));
@@ -193,13 +193,14 @@ public class DatalogCompiler {
     /**
      * This method creates the statements for incremental evaluation of the rules
      *
-     * @param constraints The constraints defining the rules for the relation
+     * @param constraints   The constraints defining the rules for the relation
+     * @param symsInStratum The Relsyms belonging to the same stratum
      * @return An array of statements evaluating the rules. Should be 1 ForEachStmt for each rule
      */
-    private static ArrayList<Stmt> compileRulesIncr(ArrayList<Constraint> constraints) {
+    private static ArrayList<Stmt> compileRulesIncr(ArrayList<Constraint> constraints, Set<RelSym> symsInStratum) {
         ArrayList<Stmt> result = new ArrayList<>();
         for (Constraint constraint : constraints) {
-            result.addAll(compileRuleIncr(constraint));
+            result.addAll(compileRuleIncr(constraint, symsInStratum));
         }
         return result;
     }
@@ -208,10 +209,11 @@ public class DatalogCompiler {
      * This method generates one ForEachStmt for each RelSym used in the constraint, such that we look at the
      * knowledge earned from last iteration one by one
      *
-     * @param constraint The specific constraint we want to generate Stmts for
+     * @param constraint    The specific constraint we want to generate Stmts for
+     * @param symsInStratum The Relsyms belonging to the same stratum
      * @return The Stmts
      */
-    private static ArrayList<Stmt> compileRuleIncr(Constraint constraint) {
+    private static ArrayList<Stmt> compileRuleIncr(Constraint constraint, Set<RelSym> symsInStratum) {
         // Let's start by just dividing on AtomPredicate, TODO: we might need the rest of the bodyPredicate too
         Predicate headPredicate = constraint.getHeadPredicate();
         ArrayList<Stmt> result = new ArrayList<>();
@@ -227,7 +229,17 @@ public class DatalogCompiler {
                     }
                     result.add(new LabelStmt(label + " with " + bodyAtom + " being used from previous iteration"));
                 }
-                result.add(compileRule(constraint, bodyAtom.getSym()));
+                PredSym currSym = bodyAtom.getSym();
+                if (currSym instanceof RelSym) {
+                    RelSym toEvaluate = (RelSym) bodyAtom.getSym();
+                    // Only make extra rules for RelSyms in the same
+                    if (symsInStratum.contains(toEvaluate)) {
+                        result.add(compileRule(constraint, toEvaluate));
+                    }
+                } else {
+                    throw new UnsupportedOperationException(String.format("Only RelSym supported in the body, found: %s", currSym.getClass().getName()));
+                }
+
             }
         } else {
             throw new IllegalArgumentException("The head of a constraint should be an AtomPredicate, right?");
