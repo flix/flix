@@ -277,7 +277,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       root.defs.get(main) match {
         case Some(defn) if matchesUri(uri, defn.loc) =>
           val loc = defn.sym.loc
-          val cmd = Command("Run Main", "runMain", Nil)
+          val cmd = Command("Run Main", "flix.cmdRunMain", Nil)
           CodeLens(Range.from(loc), Some(cmd)) :: Nil
         case _ => Nil
       }
@@ -296,7 +296,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       for ((sym, defn) <- root.defs) {
         if (matchesUri(uri, defn.loc) && defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
           val loc = defn.sym.loc
-          val cmd = Command("Run All Tests", "runAllTests", Nil)
+          val cmd = Command("Run All Tests", "flix.cmdRunAllTests", Nil)
           result.addOne(CodeLens(Range.from(loc), Some(cmd)))
         }
       }
