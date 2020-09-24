@@ -48,6 +48,14 @@ namespace C {
         (fa() + fb() + fc()) == 6
 }
 
+namespace D {
+    use C.f;
+
+    @test
+    def testNamespace08(): Bool = f() == 3
+
+}
+
 pub def g(): Int = 4
 namespace X {
     pub def g(): Int = 5
@@ -60,22 +68,22 @@ namespace X {
 }
 
 @test
-def testNamespace08(): Bool =
+def testNamespace09(): Bool =
     use X.g;
     g() == 5
 
 @test
-def testNamespace09(): Bool =
+def testNamespace10(): Bool =
     use X/Y.g;
     g() == 6
 
 @test
-def testNamespace10(): Bool =
+def testNamespace11(): Bool =
     use X/Y/Z.g;
     g() == 7
 
 @test
-def testNamespace11(): Bool =
+def testNamespace12(): Bool =
     use X.{g => gx};
     use X/Y.{g => gxy};
     use X/Y/Z.{g => gxyz};

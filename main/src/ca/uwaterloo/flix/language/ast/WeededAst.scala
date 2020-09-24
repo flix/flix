@@ -32,7 +32,7 @@ object WeededAst {
 
   object Declaration {
 
-    case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Namespace(name: Name.NName, uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Class(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParams, signatures: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
 
