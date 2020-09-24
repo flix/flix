@@ -51,7 +51,7 @@ object ParsedAst {
       *
       * @param sp1   the position of the first character in the declaration.
       * @param name  the name of the namespace.
-      * @param uses  the uses in the abstract syntax tree.
+      * @param uses  the uses available in the namespace.
       * @param decls the nested declarations.
       * @param sp2   the position of the last character in the declaration.
       */

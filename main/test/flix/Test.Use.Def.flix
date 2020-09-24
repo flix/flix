@@ -49,11 +49,22 @@ namespace C {
 }
 
 namespace D {
-    use C.f;
+    use A.f;
+    use B.{f => fb};
+    use X/Y.g;
+    use X/Y/Z.{g => gz};
 
     @test
-    def testNamespace08(): Bool = f() == 3
+    def testNamespace08(): Bool = f() == 1
 
+    @test
+    def testNamespace09(): Bool = fb() == 2
+
+    @test
+    def testNamespace10(): Bool = g() == 6
+
+    @test
+    def testNamespace11(): Bool = gz() == 7
 }
 
 pub def g(): Int = 4
@@ -68,22 +79,22 @@ namespace X {
 }
 
 @test
-def testNamespace09(): Bool =
+def testNamespace12(): Bool =
     use X.g;
     g() == 5
 
 @test
-def testNamespace10(): Bool =
+def testNamespace13(): Bool =
     use X/Y.g;
     g() == 6
 
 @test
-def testNamespace11(): Bool =
+def testNamespace14(): Bool =
     use X/Y/Z.g;
     g() == 7
 
 @test
-def testNamespace12(): Bool =
+def testNamespace15(): Bool =
     use X.{g => gx};
     use X/Y.{g => gxy};
     use X/Y/Z.{g => gxyz};

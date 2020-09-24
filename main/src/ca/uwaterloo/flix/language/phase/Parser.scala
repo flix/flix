@@ -132,6 +132,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
         zeroOrMore(Declaration)
       }
+
       rule {
         optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ optWS ~ Uses ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
       }
