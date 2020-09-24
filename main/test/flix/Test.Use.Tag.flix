@@ -159,4 +159,15 @@ namespace Test/Use/Tag {
             }
         }
     }
+    namespace C {
+        use Test/Use/Tag/A/B.Currency;
+
+        @test
+        def testUseEnum19(): Bool =
+            match Currency.USD {
+                case Currency.CAD => false
+                case Currency.USD => true
+            }
+
+    }
 }

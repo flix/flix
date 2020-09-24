@@ -74,10 +74,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * Namespace.
      */
-    case WeededAst.Declaration.Namespace(ns, decls, loc) => Validation.fold(decls, prog0) {
-      case (pacc, decl) =>
-        val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
-        visitDecl(decl, namespace, uenv0, pacc)
+    case WeededAst.Declaration.Namespace(ns, uses, decls, loc) =>
+      mergeUseEnvs(uses, uenv0) flatMap {
+        newEnv => Validation.fold(decls, prog0) {
+          case (pacc, decl) =>
+            val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
+            visitDecl(decl, namespace, newEnv, pacc)
+        }
     }
 
     case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>

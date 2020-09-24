@@ -72,9 +72,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Compiles the given parsed declaration `past` to a list of weeded declarations.
     */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
-    case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
-      traverse(decls)(visitDecl) map {
-        case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
+    case ParsedAst.Declaration.Namespace(sp1, name, uses, decls, sp2) =>
+      val usesVal = traverse(uses)(visitUse)
+      val declarationsVal = traverse(decls)(visitDecl)
+      mapN(usesVal, declarationsVal) {
+        case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
       }
 
     case d: ParsedAst.Declaration.Def => visitDef(d)
@@ -1587,7 +1589,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       * Local declaration visitor.
       */
     def visitDecl(d0: ParsedAst.Declaration): Validation[List[WeededAst.Constraint], WeederError] = d0 match {
-      case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) => traverse(decls)(visitDecl).map(_.flatten)
+      case ParsedAst.Declaration.Namespace(sp1, name, uses, decls, sp2) => traverse(decls)(visitDecl).map(_.flatten)
       case d: ParsedAst.Declaration.Constraint => visitConstraint(d).map(x => x :: Nil)
       case _ => Nil.toSuccess
     }
@@ -1605,9 +1607,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       */
     def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
       // Recurse through the namespace.
-      case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
-        traverse(decls)(visit) map {
-          case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
+      case ParsedAst.Declaration.Namespace(sp1, name, uses, decls, sp2) =>
+        val usesVal = traverse(uses)(visitUse)
+        val declarationsVal = traverse(decls)(visit)
+        mapN(usesVal, declarationsVal) {
+          case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Def(_, meta, _, _, defn, _, _, _, _, _, _) =>

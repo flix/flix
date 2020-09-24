@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -208,6 +207,91 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseDef](result)
   }
 
+
+  test("DuplicateUseDef.05") {
+    val input =
+      s"""
+         |namespace T {
+         |    def main(): Bool =
+         |        use A.f;
+         |        use B.f;
+         |        f() == f()
+         |}
+         |
+         |namespace A {
+         |    pub def f(): Int = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int = 1
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDef](result)
+  }
+
+  test("DuplicateUseDef.06") {
+    val input =
+      s"""
+         |use A.f;
+         |
+         |namespace T {
+         |    use B.f;
+         |    def main(): Bool =
+         |        f() == f()
+         |}
+         |
+         |namespace A {
+         |    pub def f(): Int = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int = 1
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDef](result)
+  }
+
+  test("DuplicateUseDef.07") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.{f => g, f => g};
+         |    def main(): Bool =
+         |        g() == g()
+         |}
+         |
+         |namespace A {
+         |    pub def f(): Int = 1
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDef](result)
+  }
+
+  test("DuplicateUseDef.08") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.f;
+         |    def main(): Bool =
+         |        use B.f;
+         |        f() == f()
+         |}
+         |
+         |namespace A {
+         |    pub def f(): Int = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int = 1
+         |}
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDef](result)
+  }
+
   test("DuplicateUseTyp.01") {
     val input =
       s"""
@@ -257,6 +341,31 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTyp](result)
   }
 
+  test("DuplicateUseTyp.03") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.Color;
+         |    use B.Color;
+         |    def main(): Bool =
+         |        true
+         |}
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseTyp](result)
+  }
 
   test("DuplicateUseTag.01") {
     val input =
@@ -339,6 +448,83 @@ class TestNamer extends FunSuite with TestUtils {
          |    use B.Color.{Blu => R};
          |    R == R
          |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
+  test("DuplicateUseTag.05") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.Color.Red;
+         |    use B.Color.Red;
+         |    def main(): Bool =
+         |        Red == Red
+         |}
+         |
+         |def main(): Bool =
+         |    use A.Color.Red;
+         |    use B.Color.Red;
+         |    Red == Red
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
+  test("DuplicateUseTag.06") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.Color.Red;
+         |    def main(): Bool =
+         |        use B.Color.Red;
+         |        Red == Red
+         |}
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
+  test("DuplicateUseTag.07") {
+    val input =
+      s"""
+         |namespace T {
+         |    use B.Color.{Red => R};
+         |    use B.Color.{Blu => R};
+         |    def main(): Bool =
+         |        R == R
+         |}
          |namespace A {
          |    enum Color {
          |        case Red, Blu

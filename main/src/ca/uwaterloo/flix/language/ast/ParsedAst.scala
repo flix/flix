@@ -51,10 +51,11 @@ object ParsedAst {
       *
       * @param sp1   the position of the first character in the declaration.
       * @param name  the name of the namespace.
+      * @param uses  the uses available in the namespace.
       * @param decls the nested declarations.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Namespace(sp1: SourcePosition, name: Name.NName, decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Namespace(sp1: SourcePosition, name: Name.NName, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Definition Declaration.

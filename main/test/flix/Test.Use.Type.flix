@@ -19,6 +19,14 @@ namespace X {
     pub def o(): MyMeter = 123
 }
 
+namespace Y {
+    use B.Kilogram;
+    use B.Acre;
+
+    pub def f(): Kilogram = Kilogram.Kilogram(123)
+    pub def g(): Acre = 123
+}
+
 namespace A {
     pub enum Color {
         case Red,
@@ -32,4 +40,9 @@ namespace A {
         pub opaque type Kelvin = Int
         type alias Meter = Int
     }
+}
+
+namespace B {
+    pub opaque type Kilogram = Int
+    type alias Acre = Int
 }
