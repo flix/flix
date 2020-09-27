@@ -720,7 +720,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val caze = decl.cases(tag)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible) // MATT need tconstrs here?
+        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
 
         //
         // The tag type can be thought of as a function from the type of variant to the type of the enum.
@@ -1701,7 +1701,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val caze = decl.cases(tag)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible) // MATT need tconstrs here?
+        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
 
         //
         // The tag type can be thought of as a function from the type of variant to the type of the enum.
