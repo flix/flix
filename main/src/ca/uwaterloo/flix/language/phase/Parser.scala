@@ -223,30 +223,38 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
-      def MarkerClass: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Class
+      def Head = rule {
+        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams
       }
 
-      def ClassWithSigs: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Class
+      def EmptyBody = rule {
+        push(Nil) ~ SP
+      }
+
+      def NonEmptyBody = rule {
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP
       }
 
       rule {
-        ClassWithSigs | MarkerClass
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Class
       }
     }
 
     def Instance: Rule1[ParsedAst.Declaration] = {
-      def MarkerInstance:  Rule1[ParsedAst.Declaration.Instance] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Instance
+      def Head = rule {
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]"
       }
 
-      def InstanceWithDefs: Rule1[ParsedAst.Declaration.Instance] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Instance
+      def EmptyBody = rule {
+        push(Nil) ~ SP
+      }
+
+      def NonEmptyBody = rule {
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP
       }
 
       rule {
-        InstanceWithDefs | MarkerInstance
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Instance
       }
     }
 
