@@ -322,8 +322,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.DefOrSig(qname, tvar, loc) =>
           mapN(lookupDefSig(qname, ns0, root, sigs)) {
-            case Left(defn) => visitDef(defn, tvar, loc)
-            case Right(sig) => visitSig(sig, tvar, loc)
+            case NameLookupResult.Def(defn) => visitDef(defn, tvar, loc)
+            case NameLookupResult.Sig(sig) => visitSig(sig, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -379,7 +379,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.DefOrSig(qname, _, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefSig(qname, ns0, root, sigs)) {
-            case Left(defn) =>
+            case NameLookupResult.Def(defn) =>
               if (defn.fparams.length == exps.length) {
                 // Case 1: Hooray! We can call the function directly.
                 for {
@@ -392,7 +392,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 // Case 2: We have to curry. (See below).
                 visitApply(app)
               }
-            case Right(sig) =>
+            case NameLookupResult.Sig(sig) =>
               if (sig.fparams.length == exps.length) {
                 // Case 1: Hooray! We can call the function directly.
                 for {
@@ -1053,7 +1053,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Finds the def or sig with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDefSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root, sigs: Map[Name.NName, Map[String, NamedAst.Sig]]): Validation[Either[NamedAst.Def, NamedAst.Sig], ResolutionError] = {
+  def lookupDefSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root, sigs: Map[Name.NName, Map[String, NamedAst.Sig]]): Validation[NameLookupResult, ResolutionError] = {
     val defOpt = tryLookupDef(qname, ns0, root)
     val sigOpt = tryLookupSig(qname, ns0, sigs)
 
@@ -1063,14 +1063,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       // Case 2: Can find only a def with the name
       case (Some(defn), None) =>
         if (isDefAccessible(defn, ns0)) {
-          Left(defn).toSuccess
+          NameLookupResult.Def(defn).toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
       // Case 3: Can find only a sig with the name
       case (None, Some(sig)) =>
         if (isSigAccessible(sig, ns0)) {
-          Right(sig).toSuccess
+          NameLookupResult.Sig(sig).toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
@@ -1080,9 +1080,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           // Case 4.1: Neither is accessible
           case (false, false) => ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure // MATT need something for if both are inaccessible?
           // Case 4.2: Only the def is accessible
-          case (true, false) => Left(defn).toSuccess
+          case (true, false) => NameLookupResult.Def(defn).toSuccess
           // Case 4.3: Only the sig is accessible
-          case (false, true) => Right(sig).toSuccess
+          case (false, true) => NameLookupResult.Sig(sig).toSuccess
           // Case 4.4: Both are accessible
           case (true, true) => ResolutionError.AmbiguousName(qname, ns0, List(defn.loc, sig.loc), qname.loc).toFailure
         }
@@ -1942,4 +1942,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
    * Synthetic documentation.
    */
   private val synthDoc: Ast.Doc = Ast.Doc(List(), SourceLocation.Generated)
+
+  sealed trait NameLookupResult
+  object NameLookupResult {
+    case class Sig(sig: NamedAst.Sig) extends NameLookupResult
+    case class Def(defn: NamedAst.Def) extends NameLookupResult
+  }
 }
