@@ -1139,7 +1139,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Finds the enum that maches the given qualified name `qname` and `tag` in the namespace `ns0`.
+    * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
   def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
     // Determine whether the name is qualified.
