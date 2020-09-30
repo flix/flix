@@ -44,6 +44,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
       classes = Map.empty,
+      sigs = Map.empty,
       instances = Map.empty,
       defs = Map.empty,
       enums = Map.empty,
@@ -88,11 +89,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
       // Check if the class already exists.
       val classes = prog0.classes.getOrElse(ns0, Map.empty)
+      val sigs = prog0.sigs.getOrElse(ns0, Map.empty)
       classes.get(ident.name) match {
         case None =>
           // Case 1: The class does not already exist. Update it.
           visitClass(decl, uenv0, Map.empty, ns0) map {
-            clazz => prog0.copy(classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))))
+            case clazz@NamedAst.Class(_, _, _, _, sigs0, _) =>
+              prog0.copy(
+                classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))),
+                sigs = prog0.sigs + (ns0 -> (sigs ++ sigs0.map(sig => (sig.sym.name, sig)).toMap))
+              )
           }
         case Some(clazz) =>
           // Case 2: Duplicate class.
@@ -307,7 +313,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       } yield NamedAst.Instance(doc, mod, clazz, tpe, defs, loc)
   }
 
-  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix) = sig match {
+  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
         tparams =>
@@ -1624,6 +1630,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           // Case 2.2: The tag is fully-qualified. Do not touch it.
           (Some(qname), tag0)
         }
+    }
+  }
+
+  /**
+    * Builds a nested map of namespace -> name -> signature from the given class namespace map.
+    */
+  private def buildSigLookup(classes: Map[Name.NName, Map[String, NamedAst.Class]]): Map[Name.NName, Map[String, NamedAst.Sig]] = {
+    def flatMapToSigs(classes: Map[String, NamedAst.Class]): Map[String, NamedAst.Sig] = {
+      classes.flatMap {
+        case (_, clazz) => clazz.sigs.map(sig => (sig.sym.name, sig))
+      }
+    }
+    classes.foldLeft(Map.empty[Name.NName, Map[String, NamedAst.Sig]]) {
+      case (acc, (namespace, classes1)) => acc + (namespace -> flatMapToSigs(classes1))
     }
   }
 
