@@ -163,7 +163,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
-          tparams <- tparamsVal
+          _ <- tparamsVal
           t <- lookupType(tpe, ns0, root)
           _ <- checkProperType(t, tag.loc)
         } yield {
