@@ -1379,9 +1379,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val rs = rules.map {
           case ResolvedAst.NullRule(pat0, exp) =>
             val pat = pat0.map {
-              case ResolvedAst.NullPattern.Wild(loc) => TypedAst.NullPattern.Wild(loc)
-              case ResolvedAst.NullPattern.Var(sym, loc) => TypedAst.NullPattern.Var(sym, loc)
-              case ResolvedAst.NullPattern.Null(loc) => TypedAst.NullPattern.Null(loc)
+              case ResolvedAst.NullPattern.Wild(loc) => TypedAst.ChoicePattern.Wild(loc)
+              case ResolvedAst.NullPattern.Var(sym, loc) => TypedAst.ChoicePattern.Var(sym, loc)
+              case ResolvedAst.NullPattern.Null(loc) => TypedAst.ChoicePattern.Null(loc)
             }
             TypedAst.NullRule(pat, visitExp(exp, subst0))
         }

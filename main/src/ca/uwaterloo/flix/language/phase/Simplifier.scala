@@ -1185,23 +1185,23 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case (TypedAst.NullRule(pat, body), acc) =>
           val init = SimplifiedAst.Expression.True: SimplifiedAst.Expression
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
-            case (((freshMatchVar, TypedAst.NullPattern.Wild(_)), matchExp), acc) => acc
-            case (((freshMatchVar, TypedAst.NullPattern.Var(matchVar, _)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
+            case (((freshMatchVar, TypedAst.ChoicePattern.Var(matchVar, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val isNotNull = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.NeqNull, null, varExp, Type.Bool, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNotNull, acc, Type.Bool, loc)
-            case (((freshMatchVar, TypedAst.NullPattern.Null(_)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Null(_)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val isNull = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.EqNull, null, varExp, Type.Bool, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNull, acc, Type.Bool, loc)
           }
           val bodyExp = visitExp(body)
           val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
-            case (((freshMatchVar, TypedAst.NullPattern.Wild(_)), matchExp), acc) => acc
-            case (((freshMatchVar, TypedAst.NullPattern.Var(matchVar, _)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
+            case (((freshMatchVar, TypedAst.ChoicePattern.Var(matchVar, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               SimplifiedAst.Expression.Let(matchVar, varExp, acc, acc.tpe, loc)
-            case (((freshMatchVar, TypedAst.NullPattern.Null(_)), matchExp), acc) => acc
+            case (((freshMatchVar, TypedAst.ChoicePattern.Null(_)), matchExp), acc) => acc
           }
           val elseExp = acc
           SimplifiedAst.Expression.IfThenElse(condExp, thenExp, elseExp, tpe, loc)

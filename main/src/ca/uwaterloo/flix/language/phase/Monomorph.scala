@@ -333,11 +333,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val rs = rules.map {
             case NullRule(pat, exp) =>
               val patAndEnv = pat.map {
-                case NullPattern.Wild(loc) => (NullPattern.Wild(loc), Map.empty)
-                case NullPattern.Var(sym, loc) =>
+                case ChoicePattern.Wild(loc) => (ChoicePattern.Wild(loc), Map.empty)
+                case ChoicePattern.Var(sym, loc) =>
                   val freshVar = Symbol.freshVarSym(sym)
-                  (NullPattern.Var(freshVar, loc), Map(sym -> freshVar))
-                case NullPattern.Null(loc) => (NullPattern.Null(loc), Map.empty)
+                  (ChoicePattern.Var(freshVar, loc), Map(sym -> freshVar))
+                case ChoicePattern.Null(loc) => (ChoicePattern.Null(loc), Map.empty)
               }
               val p = patAndEnv.map(_._1)
               val env1 = patAndEnv.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {

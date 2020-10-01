@@ -352,15 +352,15 @@ object TypedAst {
 
   }
 
-  sealed trait NullPattern
+  sealed trait ChoicePattern
 
-  object NullPattern {
+  object ChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends NullPattern
+    case class Wild(loc: SourceLocation) extends ChoicePattern
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NullPattern
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
 
-    case class Null(loc: SourceLocation) extends NullPattern
+    case class Null(loc: SourceLocation) extends ChoicePattern
 
   }
 
@@ -422,7 +422,7 @@ object TypedAst {
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
 
-  case class NullRule(pat: List[TypedAst.NullPattern], exp: TypedAst.Expression)
+  case class NullRule(pat: List[TypedAst.ChoicePattern], exp: TypedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 
