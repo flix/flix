@@ -28,7 +28,7 @@ We don't actually have a standardized process, but usually the following steps h
 
 7. You push the local changes to your GitHub repository and create a new pull request (PR).
 
-8. Travis CI automatically compiles and tests the PR. Be sure to check the results!
+8. GitHub automatically compiles and tests the PR. Be sure to check the results!
 
 9. We perform a code review and iterate on the implementation.
 
