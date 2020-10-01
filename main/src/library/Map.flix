@@ -15,6 +15,7 @@
  */
 
 use RedBlackTree.RedBlackTree;
+use Core/Cmp.Ordering;
 
 ///
 /// The Map type.
@@ -569,6 +570,15 @@ namespace Map {
         case None => ac
         case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
     }
+
+    ///
+    /// Extracts a range of key-value pairs from the map `m`.
+    ///
+    /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
+    ///
+    pub def query(p: k -> Ordering & e, m: Map[k, v]): List[(k, v)] & e =
+        let Map(xs) = m;
+        RedBlackTree.queryWith(p, (k, v) -> (k, v), xs)
 
     ///
     /// Helper function for `cmp`.
