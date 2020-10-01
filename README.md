@@ -8,7 +8,6 @@
 
 We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for more information about Flix. 
 
-[![Build Status](https://travis-ci.org/flix/flix.svg?branch=master)](https://travis-ci.org/flix/flix)
 [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/flix/Lobby)
 
 ## Example

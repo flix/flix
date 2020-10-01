@@ -16,4 +16,4 @@ Flix can be built from within the IntelliJ IDEA IDE.
 
 Flix can also be built with Gradle, but the main developers prefer to build with Intellij IDEA.
 
-The Gradle build is used for continuous integration on Travis.
+The Gradle build is used for continuous integration on GitHub.
