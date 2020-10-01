@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Core/Cmp.Ordering;
+
 namespace RedBlackTree {
 
     ///
@@ -394,6 +396,24 @@ namespace RedBlackTree {
             else
                 rotate(Node(c, a, k1, v1, deleteHelper(k, b)))
         case _ => tree
+    }
+
+    ///
+    /// Extracts a range of key-value pairs from `tree`.
+    ///
+    /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
+    ///
+    pub def queryWith(p: k -> Ordering & e, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & e = {
+        use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
+        match tree {
+            case Node(_, a, k, v, b) =>
+                match p(k) {
+                    case LessThan => queryWith(p, f, b)
+                    case Equal => queryWith(p, f, a) ::: f(k, v) :: queryWith(p, f, b)
+                    case GreaterThan => queryWith(p, f, a)
+                }
+            case _ => Nil
+        }
     }
 
 }

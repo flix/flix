@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
+
 namespace TestMap {
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1675,5 +1677,51 @@ def unfoldWithIter06(): Bool & Impure =
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
+
+/////////////////////////////////////////////////////////////////////////////
+// query                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def query01(): Bool =
+    Map.query(_ -> Equal, Map#{}) == Nil
+
+@test
+def query02(): Bool =
+    Map.query(_ -> Equal, Map#{1 -> 101, 2 -> 42}) == (1, 101) :: (2, 42) :: Nil
+
+@test
+def query03(): Bool =
+    Map.query(x -> if (x < 2) LessThan else if (x > 2) GreaterThan else Equal, Map#{1 -> 1, 2 -> 2, 3 -> 3}) == (2, 2) :: Nil
+
+@test
+def query04(): Bool =
+    Map.query(x -> if (x < 'b') LessThan else if (x > 'c') GreaterThan else Equal, Map#{'a' -> 0, 'b' -> 1, 'c' -> 2, 'd' -> 3, 'e' -> 4}) == ('b', 1) :: ('c', 2) :: Nil
+
+@test
+def query05(): Bool =
+    let m = Map.unfold(s -> if (s > 10) None else Some(s, s, s + 1), 5);
+    Map.query(x -> if (x < 5) LessThan else if (x >= 10) GreaterThan else Equal, m) == List.map(x -> (x, x), List.range(5, 10))
+
+@test
+def query06(): Bool =
+    let m = Map.unfold(s -> if (s > 75) None else Some(s, Char.fromInt32(s + 48), s + 1), 25);
+    Map.query(x -> if (x < 25) LessThan else if (x >= 75) GreaterThan else Equal, m) == List.map(x -> (x, Char.fromInt32(x + 48)), List.range(25, 75))
+
+@test
+def query07(): Bool =
+    Map.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else Equal, Map#{42 -> true}) == (42, true) :: Nil
+
+@test
+def query08(): Bool =
+    Map.query(x -> if (x < 1) LessThan else if (x > 1) GreaterThan else Equal, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (1, 2) :: Nil
+
+@test
+def query09(): Bool =
+    Map.query(x -> if (x < 2) LessThan else if (x > 3) GreaterThan else Equal, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (2, 3) :: (3, 4) :: Nil
+
+@test
+def query10(): Bool =
+    Map.query(x -> if (x < 4) LessThan else if (x > 4) GreaterThan else Equal, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (4, 5) :: Nil
 
 }

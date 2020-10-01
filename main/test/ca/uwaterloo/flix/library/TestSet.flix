@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
+
 namespace TestSet {
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1134,4 +1136,37 @@ def unfoldWithIter06(): Bool & Impure =
             Some(c)
         };
     Set.unfoldWithIter(step) == Set#{'0', '2', '4', '6', '8'}
+
+/////////////////////////////////////////////////////////////////////////////
+// query                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def query01(): Bool =
+    Set.query(x -> if (x < 3) LessThan else if (x > 7) GreaterThan else Equal, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == 3 :: 4 :: 5 :: 6 :: 7 :: Nil
+
+@test
+def query02(): Bool =
+    Set.query(x -> if (x < 3) LessThan else if (x > 7) GreaterThan else Equal, Set#{}) == Nil
+
+@test
+def query03(): Bool =
+    Set.query(_ -> Equal, Set#{}) == Nil
+
+@test
+def query04(): Bool =
+    Set.query(_ -> Equal, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil
+
+@test
+def query05(): Bool =
+    Set.query(x -> if (x < 2) LessThan else if (x > 2) GreaterThan else Equal, Set#{0, 1, 3, 4}) == Nil
+
+@test
+def query06(): Bool =
+    Set.query(_ -> Equal, Set#{42}) == 42 :: Nil
+
+@test
+def query07(): Bool =
+    Set.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else Equal, Set#{42}) == 42 :: Nil
+
 }
