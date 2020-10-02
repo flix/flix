@@ -20,7 +20,7 @@ namespace Test/Exp/Null/Match {
             };
             toUpperCase(s)
         };
-        f(null, Present("world")) == "WORLD"
+        f(Absent, Present("world")) == "WORLD"
 
     @test
     def testUseCase03(): Bool =
@@ -31,7 +31,7 @@ namespace Test/Exp/Null/Match {
             };
             toUpperCase(s)
         };
-        f(Present("hello"), null) == "HELLO"
+        f(Present("hello"), Absent) == "HELLO"
 
     @test
     def testUseCase04(): Bool =
@@ -51,7 +51,7 @@ namespace Test/Exp/Null/Match {
                 case (_, Present(name)) => isMaleName(name)
             }
         };
-        f({ssn = null, name = Present("Lucky Luke")})
+        f({ssn = Absent, name = Present("Lucky Luke")})
 
     @test
     def testUseCase06(): Bool =
@@ -61,7 +61,7 @@ namespace Test/Exp/Null/Match {
                 case (_, Present(name)) => isMaleName(name)
             }
         };
-        f({ssn = Present("123"), name = null})
+        f({ssn = Present("123"), name = Absent})
 
     @test
     def testUseCase07(): Bool =
@@ -83,7 +83,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(ssn), Present(name))  => isMaleSSN(ssn)
             }
         };
-        f({ssn = null, name = Present("Lucky Luke")})
+        f({ssn = Absent, name = Present("Lucky Luke")})
 
     @test
     def testUseCase09(): Bool =
@@ -94,7 +94,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(ssn), Present(name))  => isMaleSSN(ssn)
             }
         };
-        f({ssn = Present("123"), name = null})
+        f({ssn = Present("123"), name = Absent})
 
     @test
     def testUseCase10(): Bool =
@@ -116,7 +116,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(x), Absent)       => 3
             }
         };
-        f({x = null, y = Present("b")}) == 2
+        f({x = Absent, y = Present("b")}) == 2
 
     @test
     def testUseCase12(): Bool =
@@ -127,101 +127,101 @@ namespace Test/Exp/Null/Match {
                 case (Present(x), Absent)       => 3
             }
         };
-        f({x = Present("a"), y = null}) == 3
+        f({x = Present("a"), y = Absent}) == 3
 
     @test
-    def testMatchNullableUnit01(): Bool =
+    def testChooseUnit01(): Bool =
         choose Present() {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableUnit02(): Bool =
+    def testChooseUnit02(): Bool =
         choose Absent {
             case Present(x) => false
             case _          => true
         }
 
     @test
-    def testMatchNullableUnit03(): Bool =
+    def testChooseUnit03(): Bool =
         choose Present() {
             case Absent     => false
             case Present(x) => true
         }
 
     @test
-    def testMatchNullableUnit04(): Bool =
-        choose null {
+    def testChooseUnit04(): Bool =
+        choose Absent {
             case Absent     => true
             case Present(x) => false
         }
 
     @test
-    def testMatchNullableString01(): Bool =
+    def testChooseString01(): Bool =
         choose Present("Hello World") {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableString02(): Bool =
+    def testChooseString02(): Bool =
         choose Absent {
             case Present(x) => false
             case _          => true
         }
 
     @test
-    def testMatchNullableString03(): Bool =
+    def testChooseString03(): Bool =
         choose Present("Hello World") {
             case Absent     => false
             case Present(x) => true
         }
 
     @test
-    def testMatchNullableString04(): Bool =
+    def testChooseString04(): Bool =
         choose Absent {
             case Absent     => true
             case Present(x) => false
         }
 
     @test
-    def testMatchNullableRecord01(): Bool =
+    def testChooseRecord01(): Bool =
         choose Present({}) {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableRecord02(): Bool =
+    def testChooseRecord02(): Bool =
         choose Present({name = "Lucky Luke"}) {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableRecord03(): Bool =
+    def testChooseRecord03(): Bool =
         choose Present({fstName = "Lucky", lstName = "Luke"}) {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableTuple01(): Bool =
+    def testChooseTuple01(): Bool =
         choose Present(123, 456) {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableOption01(): Bool =
+    def testChooseOption01(): Bool =
         choose Present(None) {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableOption02(): Bool =
+    def testChooseOption02(): Bool =
         choose Present(Some(123)) {
             case Present(x) => true
             case _          => false
@@ -229,28 +229,28 @@ namespace Test/Exp/Null/Match {
 
 
     @test
-    def testMatchNullableList01(): Bool =
+    def testChooseList01(): Bool =
         choose Present(Nil) {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableList02(): Bool =
+    def testChooseList02(): Bool =
         choose Present(1 :: Nil) {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableResult01(): Bool =
+    def testChooseResult01(): Bool =
         choose Present(Ok(123)) {
             case Present(x) => true
             case _          => false
         }
 
     @test
-    def testMatchNullableResult02(): Bool =
+    def testChooseResult02(): Bool =
         choose Present(Err(123)) {
             case Present(x) => true
             case _          => false
