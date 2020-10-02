@@ -9,7 +9,7 @@ namespace Test/Exp/Null/Match {
             };
             toUpperCase(s)
         };
-        f("hello"?, "world"?) == "HELLO"
+        f(Present("hello"), Present("world")) == "HELLO"
 
     @test
     def testUseCase02(): Bool =
@@ -20,7 +20,7 @@ namespace Test/Exp/Null/Match {
             };
             toUpperCase(s)
         };
-        f(null, "world"?) == "WORLD"
+        f(null, Present("world")) == "WORLD"
 
     @test
     def testUseCase03(): Bool =
@@ -31,7 +31,7 @@ namespace Test/Exp/Null/Match {
             };
             toUpperCase(s)
         };
-        f("hello"?, null) == "HELLO"
+        f(Present("hello"), null) == "HELLO"
 
     @test
     def testUseCase04(): Bool =
@@ -41,7 +41,7 @@ namespace Test/Exp/Null/Match {
                 case (_, Present(name)) => isMaleName(name)
             }
         };
-        f({ssn = "123"?, name = "Lucky Luke"?})
+        f({ssn = Present("123"), name = Present("Lucky Luke")})
 
     @test
     def testUseCase05(): Bool =
@@ -51,7 +51,7 @@ namespace Test/Exp/Null/Match {
                 case (_, Present(name)) => isMaleName(name)
             }
         };
-        f({ssn = null, name = "Lucky Luke"?})
+        f({ssn = null, name = Present("Lucky Luke")})
 
     @test
     def testUseCase06(): Bool =
@@ -61,7 +61,7 @@ namespace Test/Exp/Null/Match {
                 case (_, Present(name)) => isMaleName(name)
             }
         };
-        f({ssn = "123"?, name = null})
+        f({ssn = Present("123"), name = null})
 
     @test
     def testUseCase07(): Bool =
@@ -72,7 +72,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(ssn), Present(name))  => isMaleSSN(ssn)
             }
         };
-        f({ssn = "123"?, name = "Lucky Luke"?})
+        f({ssn = Present("123"), name = Present("Lucky Luke")})
 
     @test
     def testUseCase08(): Bool =
@@ -83,7 +83,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(ssn), Present(name))  => isMaleSSN(ssn)
             }
         };
-        f({ssn = null, name = "Lucky Luke"?})
+        f({ssn = null, name = Present("Lucky Luke")})
 
     @test
     def testUseCase09(): Bool =
@@ -94,7 +94,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(ssn), Present(name))  => isMaleSSN(ssn)
             }
         };
-        f({ssn = "123"?, name = null})
+        f({ssn = Present("123"), name = null})
 
     @test
     def testUseCase10(): Bool =
@@ -105,7 +105,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(x), Absent)       => 3
             }
         };
-        f({x = "a"?, y = "b"?}) == 1
+        f({x = Present("a"), y = Present("b")}) == 1
 
     @test
     def testUseCase11(): Bool =
@@ -116,7 +116,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(x), Absent)       => 3
             }
         };
-        f({x = null, y = "b"?}) == 2
+        f({x = null, y = Present("b")}) == 2
 
     @test
     def testUseCase12(): Bool =
@@ -127,7 +127,7 @@ namespace Test/Exp/Null/Match {
                 case (Present(x), Absent)       => 3
             }
         };
-        f({x = "a"?, y = null}) == 3
+        f({x = Present("a"), y = null}) == 3
 
     @test
     def testMatchNullableUnit01(): Bool =
