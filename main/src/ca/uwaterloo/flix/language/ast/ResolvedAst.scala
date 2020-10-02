@@ -87,6 +87,10 @@ object ResolvedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Absent(loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Present(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Default(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Apply(exp: ResolvedAst.Expression, exps: List[ResolvedAst.Expression], tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
