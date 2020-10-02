@@ -374,7 +374,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Unit(loc) =>
         liftM(List.empty, Type.Unit, Type.Pure)
 
-      case ResolvedAst.Expression.Null(tpe, loc) =>
+      case ResolvedAst.Expression.Null(loc) =>
         liftM(List.empty, Type.Null, Type.Pure)
 
       case ResolvedAst.Expression.True(loc) =>
@@ -1289,7 +1289,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
 
-      case ResolvedAst.Expression.Null(tpe, loc) => TypedAst.Expression.Null(subst0(tpe), loc)
+      case ResolvedAst.Expression.Null(loc) => TypedAst.Expression.Null(Type.Unit, loc)
 
       case ResolvedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
 
@@ -1491,7 +1491,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Cast(ResolvedAst.Expression.Null(_, _), _, _, tvar, loc) =>
+      case ResolvedAst.Expression.Cast(ResolvedAst.Expression.Null(_), _, _, tvar, loc) =>
         val t = subst0(tvar)
         TypedAst.Expression.Null(t, loc)
 

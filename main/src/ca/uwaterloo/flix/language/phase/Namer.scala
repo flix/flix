@@ -424,7 +424,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
 
-    case WeededAst.Expression.Null(loc) => NamedAst.Expression.Null(Type.freshVar(Kind.Star), loc).toSuccess
+    case WeededAst.Expression.Null(loc) => NamedAst.Expression.Null(loc).toSuccess
 
     case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
 

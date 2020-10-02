@@ -63,7 +63,7 @@ object ResolvedAst {
 
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Null(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Null(loc: SourceLocation) extends ResolvedAst.Expression
 
     case class True(loc: SourceLocation) extends ResolvedAst.Expression
 

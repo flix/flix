@@ -348,7 +348,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
 
-        case NamedAst.Expression.Null(tvar, loc) => ResolvedAst.Expression.Null(tvar, loc).toSuccess
+        case NamedAst.Expression.Null(loc) => ResolvedAst.Expression.Null(loc).toSuccess
 
         case NamedAst.Expression.True(loc) => ResolvedAst.Expression.True(loc).toSuccess
 
