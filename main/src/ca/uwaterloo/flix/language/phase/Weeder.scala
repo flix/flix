@@ -147,14 +147,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given instance declaration `i0`.
     */
   private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
-    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, defs0, sp2) =>
+    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, constrs0, defs0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public))
         defs <- traverse(defs0)(visitDef)
-      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, defs.flatten, loc))
+        constrs <- visitTypeConstraints(constrs0.getOrElse(ParsedAst.TypeParams.Elided)) // MATT kinda ugly to default this way
+      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, loc))
 
   }
 
@@ -1897,6 +1898,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.ConstrainedType(ident, k, classes.toList)
       }
       WeededAst.TypeParams.Explicit(tparams1)
+  }
+
+  // MATT docs
+  private def visitTypeConstraints(constraints0: ParsedAst.TypeParams): Validation[List[WeededAst.ConstrainedType], WeederError] = constraints0 match {
+    case ParsedAst.TypeParams.Elided => ??? // MATT WeederError or make it not accept elided
+    case ParsedAst.TypeParams.Explicit(constraints) =>
+      constraints.map {
+        case ParsedAst.ConstrainedType(sp1, ident, classes, sp2) => WeededAst.ConstrainedType(ident, classes.toList)
+      }.toSuccess
   }
 
   /**
