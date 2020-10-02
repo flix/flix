@@ -755,7 +755,7 @@ class TestNamer extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.Explicit.12") {
-    val input = "def f[n](a: String ? n, b: n): Int = 123"
+    val input = "def f[n](a: Choice[String, n], b: n): Int = 123"
     val result = compile(input, DefaultOptions)
     expectError[NameError.MismatchedTypeParamKinds](result)
   }
@@ -833,7 +833,7 @@ class TestNamer extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.Implicit.12") {
-    val input = "def f(a: String ? n, b: n): Int = 123"
+    val input = "def f(a: Choice[String, n], b: n): Int = 123"
     val result = compile(input, DefaultOptions)
     expectError[NameError.MismatchedTypeParamKinds](result)
   }
