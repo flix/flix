@@ -779,7 +779,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def ChoicePattern: Rule1[ParsedAst.ChoicePattern] = rule {
         (SP ~ atomic("_") ~ SP ~> ParsedAst.ChoicePattern.Wild) |
           (SP ~ keyword("Absent") ~ SP ~> ParsedAst.ChoicePattern.Absent) |
-          (SP ~ Names.Variable ~ SP ~> ParsedAst.ChoicePattern.Present)
+          (SP ~ keyword("Present") ~ optWS ~ "(" ~ Names.Variable ~ ")" ~ SP ~> ParsedAst.ChoicePattern.Present)
       }
 
       def CaseOne: Rule1[ParsedAst.ChoiceRule] = rule {

@@ -129,8 +129,8 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |pub def testNullableThreeVar11(x: String ? false, y: String ? true, z: String ? false): Bool =
         |    choice (x, y, z) {
-        |        case (a, b, _) => a == "Hello" && b == "World"
-        |        case (_, b, c) => b == "World" && c == "!"
+        |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
+        |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -142,8 +142,8 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |pub def testNullableThreeVar11(x: String ? true, y: String ? false, z: String ? true): Bool =
         |    choice (x, y, z) {
-        |        case (a, b, _) => a == "Hello" && b == "World"
-        |        case (_, b, c) => b == "World" && c == "!"
+        |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
+        |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -155,7 +155,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def f(x: String ? n, y: String ? n): Bool =
         |    choice (x, y) {
-        |        case (a, _) => a == "Hello"
+        |        case (Present(a), _) => a == "Hello"
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)

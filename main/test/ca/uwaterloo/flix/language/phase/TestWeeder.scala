@@ -222,7 +222,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """def f(): Bool =
         |    choice 123 {
-        |        case (x, y) => x == y
+        |        case (Present(x), Present(y)) => x == y
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -233,7 +233,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """def f(): Bool =
         |    choice (123, 456) {
-        |        case x => x == x
+        |        case Present(x) => x == x
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
