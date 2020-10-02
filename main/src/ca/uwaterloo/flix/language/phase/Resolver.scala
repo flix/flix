@@ -1264,6 +1264,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "String" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Channel" => Type.Channel.toSuccess
+      case "Choice" => Type.Choice.toSuccess
       case "Lazy" => Type.Lazy.toSuccess
       case "Ref" => Type.Ref.toSuccess
 

@@ -239,6 +239,13 @@ object Type {
   val Channel: Type = Type.Cst(TypeConstructor.Channel)
 
   /**
+    * Represents the Channel type constructor.
+    *
+    * NB: This type has kind: * -> Bool -> *.
+    */
+  val Choice: Type = Type.Cst(TypeConstructor.Choice)
+
+  /**
     * Represents the Lazy type constructor.
     *
     * NB: This type has kind: * -> *.
@@ -456,7 +463,7 @@ object Type {
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
-    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1)),  e)
+    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1)), e)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
