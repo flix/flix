@@ -1154,11 +1154,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def And: Rule1[ParsedAst.Type] = rule {
-      Nullable ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~> ParsedAst.Type.And)
-    }
-
-    def Nullable: Rule1[ParsedAst.Type] = rule {
-      Apply ~ optional(optWS ~ atomic("?") ~ optional(optWS ~ Or) ~ SP ~> ParsedAst.Type.Nullable)
+      Apply ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~> ParsedAst.Type.And)
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1250,7 +1246,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Not: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
-      keyword("not") ~ WS ~ Nullable ~> ParsedAst.Type.Not
+      keyword("not") ~ WS ~ Apply ~> ParsedAst.Type.Not
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {

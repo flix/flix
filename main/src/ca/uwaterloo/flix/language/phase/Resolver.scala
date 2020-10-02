@@ -1368,13 +1368,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
       }
 
-    case NamedAst.Type.Nullable(tpe, nullity, loc) =>
-      for {
-        t <- lookupType(tpe, ns0, root)
-        n <- lookupType(nullity, ns0, root)
-        res <- mkChoice(t, n, loc)
-      } yield res
-
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
       for {
         tparams <- traverse(tparams0)(lookupType(_, ns0, root))

@@ -330,8 +330,6 @@ object WeededAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type
 
-    case class Nullable(tpe: WeededAst.Type, nullity: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
-
     case class Arrow(tparams: List[WeededAst.Type], eff: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Apply(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
