@@ -257,15 +257,15 @@ object WeededAst {
 
   }
 
-  sealed trait NullPattern
+  sealed trait ChoicePattern
 
-  object NullPattern {
+  object ChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends NullPattern
+    case class Wild(loc: SourceLocation) extends ChoicePattern
 
-    case class Var(ident: Name.Ident, loc: SourceLocation) extends NullPattern
+    case class Absent(loc: SourceLocation) extends ChoicePattern
 
-    case class Null(loc: SourceLocation) extends NullPattern
+    case class Present(ident: Name.Ident, loc: SourceLocation) extends ChoicePattern
 
   }
 
@@ -372,7 +372,7 @@ object WeededAst {
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
 
-  case class NullMatchRule(pat: List[WeededAst.NullPattern], exp: WeededAst.Expression)
+  case class NullMatchRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
 
   case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
 

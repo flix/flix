@@ -785,9 +785,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val rulesVal = traverse(rules) {
         case ParsedAst.NullRule(_, pat, exp, _) =>
           val p = pat.map {
-            case ParsedAst.NullPattern.Wild(sp1, sp2) => WeededAst.NullPattern.Wild(mkSL(sp1, sp2))
-            case ParsedAst.NullPattern.Var(sp1, ident, sp2) => WeededAst.NullPattern.Var(ident, mkSL(sp1, sp2))
-            case ParsedAst.NullPattern.Null(sp1, sp2) => WeededAst.NullPattern.Null(mkSL(sp1, sp2))
+            case ParsedAst.NullPattern.Wild(sp1, sp2) => WeededAst.ChoicePattern.Wild(mkSL(sp1, sp2))
+            case ParsedAst.NullPattern.Null(sp1, sp2) => WeededAst.ChoicePattern.Absent(mkSL(sp1, sp2))
+            case ParsedAst.NullPattern.Var(sp1, ident, sp2) => WeededAst.ChoicePattern.Present(ident, mkSL(sp1, sp2))
           }
           mapN(visitExp(exp)) {
             case e => WeededAst.NullMatchRule(p.toList, e)

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.WeededAst.{NullPattern, TypeParams}
+import ca.uwaterloo.flix.language.ast.WeededAst.{ChoicePattern, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -521,14 +521,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val rulesVal = traverse(rules) {
         case WeededAst.NullMatchRule(pat0, exp0) =>
           val env1 = pat0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-            case (acc, WeededAst.NullPattern.Wild(loc)) => acc
-            case (acc, WeededAst.NullPattern.Var(ident, loc)) => acc + (ident.name -> Symbol.freshVarSym(ident))
-            case (acc, WeededAst.NullPattern.Null(loc)) => acc
+            case (acc, WeededAst.ChoicePattern.Wild(loc)) => acc
+            case (acc, WeededAst.ChoicePattern.Absent(loc)) => acc
+            case (acc, WeededAst.ChoicePattern.Present(ident, loc)) => acc + (ident.name -> Symbol.freshVarSym(ident))
           }
           val p = pat0.map {
-            case WeededAst.NullPattern.Wild(loc) => NamedAst.ChoicePattern.Wild(loc)
-            case WeededAst.NullPattern.Null(loc) => NamedAst.ChoicePattern.Absent(loc)
-            case WeededAst.NullPattern.Var(ident, loc) => NamedAst.ChoicePattern.Present(env1(ident.name), loc)
+            case WeededAst.ChoicePattern.Wild(loc) => NamedAst.ChoicePattern.Wild(loc)
+            case WeededAst.ChoicePattern.Absent(loc) => NamedAst.ChoicePattern.Absent(loc)
+            case WeededAst.ChoicePattern.Present(ident, loc) => NamedAst.ChoicePattern.Present(env1(ident.name), loc)
           }
           mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
             case e => NamedAst.NullRule(p, e)
@@ -1244,10 +1244,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns all free variables in the given null pattern `pat0`.
     */
-  private def freeVars(pat0: WeededAst.NullPattern): List[Name.Ident] = pat0 match {
-    case NullPattern.Wild(_) => Nil
-    case NullPattern.Var(ident, _) => ident :: Nil
-    case NullPattern.Null(_) => Nil
+  private def freeVars(pat0: WeededAst.ChoicePattern): List[Name.Ident] = pat0 match {
+    case ChoicePattern.Wild(_) => Nil
+    case ChoicePattern.Present(ident, _) => ident :: Nil
+    case ChoicePattern.Absent(_) => Nil
   }
 
   /**
