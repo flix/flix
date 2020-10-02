@@ -367,7 +367,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
-      case TypedAst.Expression.Choice(exps, rules, tpe, eff, loc) =>
+      case TypedAst.Expression.Choose(exps, rules, tpe, eff, loc) =>
         patternMatchNull(exps, rules, tpe, loc)
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>

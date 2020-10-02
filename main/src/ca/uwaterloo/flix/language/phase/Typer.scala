@@ -614,7 +614,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Choice(exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -1374,7 +1374,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Choice(exps, rules, loc) =>
+      case ResolvedAst.Expression.Choose(exps, rules, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
           case ResolvedAst.ChoiceRule(pat0, exp) =>
@@ -1387,7 +1387,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         val tpe = rs.head.exp.tpe
         val eff = Type.mkAnd(rs.map(_.exp.eff))
-        TypedAst.Expression.Choice(es, rs, tpe, eff, loc)
+        TypedAst.Expression.Choose(es, rs, tpe, eff, loc)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

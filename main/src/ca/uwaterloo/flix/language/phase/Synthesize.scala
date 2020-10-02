@@ -155,12 +155,12 @@ object Synthesize extends Phase[Root, Root] {
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
-      case Expression.Choice(exps, rules, tpe, eff, loc) =>
+      case Expression.Choose(exps, rules, tpe, eff, loc) =>
         val es = exps.map(visitExp)
         val rs = rules.map {
           case ChoiceRule(pat, exp) => ChoiceRule(pat, visitExp(exp))
         }
-        Expression.Choice(es, rs, tpe, eff, loc)
+        Expression.Choose(es, rs, tpe, eff, loc)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = visitExp(exp)

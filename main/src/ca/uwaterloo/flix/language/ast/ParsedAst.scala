@@ -618,14 +618,14 @@ object ParsedAst {
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Choice Expression.
+      * Choose Expression.
       *
       * @param sp1   the position of the first character in the expression.
       * @param exps  the match expressions.
       * @param rules the rules of the pattern match.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Choice(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], rules: Seq[ChoiceRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Choose(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], rules: Seq[ChoiceRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.

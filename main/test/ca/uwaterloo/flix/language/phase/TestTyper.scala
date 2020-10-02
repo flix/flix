@@ -128,7 +128,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |pub def testNullableThreeVar11(x: String ? false, y: String ? true, z: String ? false): Bool =
-        |    choice (x, y, z) {
+        |    choose (x, y, z) {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
         |    }
@@ -141,7 +141,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |pub def testNullableThreeVar11(x: String ? true, y: String ? false, z: String ? true): Bool =
-        |    choice (x, y, z) {
+        |    choose (x, y, z) {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
         |    }
@@ -154,7 +154,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |def f(x: String ? n, y: String ? n): Bool =
-        |    choice (x, y) {
+        |    choose (x, y) {
         |        case (Present(a), _) => a == "Hello"
         |    }
       """.stripMargin

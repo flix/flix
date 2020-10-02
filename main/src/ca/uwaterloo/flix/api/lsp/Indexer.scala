@@ -145,7 +145,7 @@ object Indexer {
         case (index, MatchRule(pat, guard, exp)) => index ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
-    case Expression.Choice(exps, rules, _, _, _) =>
+    case Expression.Choose(exps, rules, _, _, _) =>
       visitExps(exps) ++ rules.foldLeft(Index.empty) {
         case (acc, ChoiceRule(_, exp)) => acc ++ visitExp(exp)
       }

@@ -314,7 +314,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
       usedMatch and usedRules.reduceLeft(_ or _)
 
-    case Expression.Choice(exps, rules, _, _, _) =>
+    case Expression.Choose(exps, rules, _, _, _) =>
       // TODO: Null: Check unused and shadowed variables.
       val usedMatch = visitExps(exps, env0)
       val usedRules = rules.map {
