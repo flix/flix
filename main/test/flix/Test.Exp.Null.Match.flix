@@ -131,21 +131,21 @@ namespace Test/Exp/Null/Match {
 
     @test
     def testMatchNullableUnit01(): Bool =
-        choose ()? {
+        choose Present() {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableUnit02(): Bool =
-        choose null {
+        choose Absent {
             case Present(x) => false
             case _          => true
         }
 
     @test
     def testMatchNullableUnit03(): Bool =
-        choose ()? {
+        choose Present() {
             case Absent     => false
             case Present(x) => true
         }
@@ -159,71 +159,70 @@ namespace Test/Exp/Null/Match {
 
     @test
     def testMatchNullableString01(): Bool =
-        choose "Hello World"? {
+        choose Present("Hello World") {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableString02(): Bool =
-        choose null {
+        choose Absent {
             case Present(x) => false
             case _          => true
         }
 
     @test
     def testMatchNullableString03(): Bool =
-        choose "Hello World"? {
+        choose Present("Hello World") {
             case Absent     => false
             case Present(x) => true
         }
 
     @test
     def testMatchNullableString04(): Bool =
-        choose null {
+        choose Absent {
             case Absent     => true
             case Present(x) => false
         }
 
     @test
     def testMatchNullableRecord01(): Bool =
-        choose {}? {
+        choose Present({}) {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableRecord02(): Bool =
-        choose {name = "Lucky Luke"}? {
+        choose Present({name = "Lucky Luke"}) {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableRecord03(): Bool =
-        choose {fstName = "Lucky", lstName = "Luke"}? {
+        choose Present({fstName = "Lucky", lstName = "Luke"}) {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableTuple01(): Bool =
-        let v = (123, 456);
-        choose v? {
+        choose Present(123, 456) {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableOption01(): Bool =
-        choose None? {
+        choose Present(None) {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableOption02(): Bool =
-        choose Some(123)? {
+        choose Present(Some(123)) {
             case Present(x) => true
             case _          => false
         }
@@ -231,29 +230,28 @@ namespace Test/Exp/Null/Match {
 
     @test
     def testMatchNullableList01(): Bool =
-        choose Nil? {
+        choose Present(Nil) {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableList02(): Bool =
-        let v = (1 :: Nil);
-        choose v? {
+        choose Present(1 :: Nil) {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableResult01(): Bool =
-        choose Ok(123)? {
+        choose Present(Ok(123)) {
             case Present(x) => true
             case _          => false
         }
 
     @test
     def testMatchNullableResult02(): Bool =
-        choose Err(123)? {
+        choose Present(Err(123)) {
             case Present(x) => true
             case _          => false
         }

@@ -456,12 +456,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Lambda(fparam, body, loc)
       }
 
-    case ParsedAst.Expression.Nullify(exp, sp2) =>
-      val sp1 = leftMostSourcePosition(exp)
-      mapN(visitExp(exp)) {
-        case e => WeededAst.Expression.Nullify(e, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
       visitExp(exp) map {
@@ -2022,7 +2016,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Nullify(exp, _) => leftMostSourcePosition(exp)
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
