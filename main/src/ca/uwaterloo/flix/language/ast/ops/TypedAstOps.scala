@@ -90,7 +90,7 @@ object TypedAstOps {
           case (acc, exp) => acc ++ visitExp(exp, env0)
         }
         val m2 = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (acc, NullRule(pat, exp)) =>
+          case (acc, ChoiceRule(pat, exp)) =>
             val env1 = (pat.zip(exps)).foldLeft(Map.empty[Symbol.VarSym, Type]) {
               case (acc, (ChoicePattern.Wild(_), exp)) => acc
               case (acc, (ChoicePattern.Absent(_), exp)) => acc

@@ -143,7 +143,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.NullMatch(exps, rules, _, _, _) =>
         exps.flatMap(visitExp(_, lint0)) ++ rules.flatMap {
-          case NullRule(_, exp) => visitExp(exp, lint0)
+          case ChoiceRule(_, exp) => visitExp(exp, lint0)
         }
 
       case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, lint0)
@@ -775,7 +775,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
         val es = exps.map(apply)
         val rs = rules.map {
-          case NullRule(pat, exp) => NullRule(pat, apply(exp))
+          case ChoiceRule(pat, exp) => ChoiceRule(pat, apply(exp))
         }
         Expression.NullMatch(es, rs, tpe, eff, loc)
 

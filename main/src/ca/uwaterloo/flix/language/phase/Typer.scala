@@ -1383,7 +1383,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               case ResolvedAst.ChoicePattern.Absent(loc) => TypedAst.ChoicePattern.Absent(loc)
               case ResolvedAst.ChoicePattern.Present(sym, loc) => TypedAst.ChoicePattern.Present(sym, loc)
             }
-            TypedAst.NullRule(pat, visitExp(exp, subst0))
+            TypedAst.ChoiceRule(pat, visitExp(exp, subst0))
         }
         val tpe = rs.head.exp.tpe
         val eff = Type.mkAnd(rs.map(_.exp.eff))

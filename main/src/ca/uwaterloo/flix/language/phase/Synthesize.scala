@@ -158,7 +158,7 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
         val es = exps.map(visitExp)
         val rs = rules.map {
-          case NullRule(pat, exp) => NullRule(pat, visitExp(exp))
+          case ChoiceRule(pat, exp) => ChoiceRule(pat, visitExp(exp))
         }
         Expression.NullMatch(es, rs, tpe, eff, loc)
 

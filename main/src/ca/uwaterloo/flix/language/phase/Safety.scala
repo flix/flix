@@ -107,7 +107,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
       exps.flatMap(visitExp) ++ rules.flatMap {
-        case NullRule(_, exp) => visitExp(exp)
+        case ChoiceRule(_, exp) => visitExp(exp)
       }
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visitExp(exp)

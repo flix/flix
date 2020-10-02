@@ -318,7 +318,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       // TODO: Null: Check unused and shadowed variables.
       val usedMatch = visitExps(exps, env0)
       val usedRules = rules.map {
-        case NullRule(pat, exp) =>
+        case ChoiceRule(pat, exp) =>
           val fvs = pat.collect {
             case ChoicePattern.Present(sym, _) => sym
           }

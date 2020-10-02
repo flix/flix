@@ -1136,7 +1136,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Eliminates pattern matching on null by translations to if-then-else expressions.
       */
-    def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.NullRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
+    def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.ChoiceRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
       //
       // Given the code:
       //
@@ -1182,7 +1182,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       // All the if-then-else branches.
       //
       val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
-        case (TypedAst.NullRule(pat, body), acc) =>
+        case (TypedAst.ChoiceRule(pat, body), acc) =>
           val init = SimplifiedAst.Expression.True: SimplifiedAst.Expression
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
