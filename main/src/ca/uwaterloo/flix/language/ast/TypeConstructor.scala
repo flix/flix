@@ -148,6 +148,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor for choice types.
+    */
+  case object Choice extends TypeConstructor {
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of lazy expressions.
     */
   case object Lazy extends TypeConstructor {
@@ -197,13 +204,6 @@ object TypeConstructor {
       * The shape of a tuple is (t1, ..., tn).
       */
     def kind: Kind = Kind.mkArrow(l)
-  }
-
-  /**
-    * A type constructor for nullable types.
-    */
-  case object Nullable extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
 
   /**

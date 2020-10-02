@@ -1371,7 +1371,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         t <- lookupType(tpe, ns0, root)
         n <- lookupType(nullity, ns0, root)
-        res <- mkNullable(t, n, loc)
+        res <- mkChoice(t, n, loc)
       } yield res
 
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
@@ -1824,10 +1824,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Create a well-formed `Nullable` type.
+    * Create a well-formed `Choice` type.
     */
-  private def mkNullable(tpe: Type, nullity: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.Nullable), List(tpe, nullity), loc)
+  private def mkChoice(tpe: Type, nullity: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.Choice), List(tpe, nullity), loc)
   }
 
   /**

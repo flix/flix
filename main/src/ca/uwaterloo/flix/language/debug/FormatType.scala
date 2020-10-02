@@ -136,6 +136,29 @@ object FormatType {
 
           case TypeConstructor.Channel => formatApply("Channel", args)
 
+          case TypeConstructor.Choice =>
+            val arity = args.length
+            if (arity == 0)
+              "Choice[???, ???]"
+            else if (arity == 1)
+              s"Choice[${visit(args(0))}, ???}"
+            else if (arity == 2) {
+              args(1) match {
+                case Type.True =>
+                  val tpe1 = visit(args(0))
+                  s"$tpe1 ? true"
+                case Type.False =>
+                  val tpe1 = visit(args(0))
+                  s"$tpe1 ? false"
+                case _ =>
+                  val tpe1 = visit(args(0))
+                  val tpe2 = visit(args(1))
+                  s"$tpe1 ? $tpe2"
+              }
+            }
+            else
+              s"Choice[${args.map(visit).mkString(", ")}]"
+
           case TypeConstructor.Enum(sym, _) => formatApply(sym.toString, args)
 
           case TypeConstructor.Lattice => formatApply("Lattice", args)
@@ -165,29 +188,6 @@ object FormatType {
             val applyParams = args.drop(length) // excess elements
             val tuple = elements.padTo(length, "???").mkString("(", ", ", ")")
             formatApply(tuple, applyParams)
-
-          case TypeConstructor.Nullable =>
-            val arity = args.length
-            if (arity == 0)
-              "Nullable[???, ???]"
-            else if (arity == 1)
-              s"Nullable[${visit(args(0))}, ???}"
-            else if (arity == 2) {
-              args(1) match {
-                case Type.True =>
-                  val tpe1 = visit(args(0))
-                  s"$tpe1 ? true"
-                case Type.False =>
-                  val tpe1 = visit(args(0))
-                  s"$tpe1 ? false"
-                case _ =>
-                  val tpe1 = visit(args(0))
-                  val tpe2 = visit(args(1))
-                  s"$tpe1 ? $tpe2"
-              }
-            }
-            else
-              s"Nullable[${args.map(visit).mkString(", ")}]"
 
           case TypeConstructor.Tag(sym, tag) => // TODO better unhappy case handling
             if (args.lengthIs == 2)

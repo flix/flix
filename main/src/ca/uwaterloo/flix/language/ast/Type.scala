@@ -476,6 +476,11 @@ object Type {
   def mkChannel(tpe: Type): Type = Type.Apply(Channel, tpe)
 
   /**
+    * Returns the type `Choice[tpe, ...]`.
+    */
+  def mkChoice(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Choice), tpe0), nullity)
+
+  /**
     * Returns the type `Lazy[tpe]`.
     */
   def mkLazy(tpe: Type): Type = Type.Apply(Lazy, tpe)
@@ -546,11 +551,6 @@ object Type {
   def mkSchemaExtend(name: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
   }
-
-  /**
-    * Returns the type `tpe0 ? nullity`.
-    */
-  def mkNullable(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Nullable), tpe0), nullity)
 
   /**
     * Construct a relation type with the given list of type arguments `ts0`.

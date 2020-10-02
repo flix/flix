@@ -583,6 +583,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Channel => MonoType.Channel(args.head)
 
+          case TypeConstructor.Choice => args(0)
+
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
@@ -600,8 +602,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
           case TypeConstructor.RecordExtend(label) => MonoType.RecordExtend(label, args.head, args(1))
 
           case TypeConstructor.SchemaExtend(label) => MonoType.SchemaExtend(label, args.head, args(1))
-
-          case TypeConstructor.Nullable => args(0)
 
           case TypeConstructor.True => MonoType.Unit
 
