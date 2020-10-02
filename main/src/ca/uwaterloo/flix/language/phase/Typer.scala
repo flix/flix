@@ -656,13 +656,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           */
         def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.NullRule): Type =
           xs.zip(r.pat).foldLeft(Type.True) {
-            case (acc, (x, ResolvedAst.NullPattern.Wild(_))) =>
+            case (acc, (x, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: We have a wildcard. No constraint is generated.
               acc
-            case (acc, (x, ResolvedAst.NullPattern.Var(y, _))) =>
+            case (acc, (x, ResolvedAst.ChoicePattern.Present(y, _))) =>
               // Case 2: We have a variable. We must force `x` to be non-null.
               Type.mkAnd(acc, Type.mkEquiv(x, Type.False))
-            case (acc, (x, ResolvedAst.NullPattern.Null(_))) =>
+            case (acc, (x, ResolvedAst.ChoicePattern.Absent(_))) =>
               // Case 3: We have a null constant. No constraint is generated.
               acc
           }
@@ -680,15 +680,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[ResolvedAst.NullRule]): InferMonad[List[List[Type]]] = {
           def unifyWithRule(r: ResolvedAst.NullRule): InferMonad[List[Type]] = {
             seqM(matchTypes.zip(r.pat).map {
-              case (matchType, ResolvedAst.NullPattern.Wild(_)) =>
-                // Case 1: The null pattern is wildcard. No variable is bound and no type information to constrain.
+              case (matchType, ResolvedAst.ChoicePattern.Wild(_)) =>
+                // Case 1: The pattern is wildcard. No variable is bound and no type information to constrain.
                 liftM(matchType)
-              case (matchType, ResolvedAst.NullPattern.Var(sym, loc)) =>
-                // Case 2: The null pattern is a variable. Must constraint the type of the local variable with the type of the match expression.
+              case (matchType, ResolvedAst.ChoicePattern.Absent(_)) =>
+                // Case 2: TODO: Must constraint the type
+                liftM(matchType)
+              case (matchType, ResolvedAst.ChoicePattern.Present(sym, loc)) =>
+                // Case 3: Must constraint the type of the local variable with the type of the match expression.
                 unifyTypeM(matchType, sym.tvar, loc)
-              case (matchType, ResolvedAst.NullPattern.Null(_)) =>
-                // Case 3: The null pattern is a null constant. No variable is bound and no type information to constrain.
-                liftM(matchType)
             })
           }
 
@@ -1379,9 +1379,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val rs = rules.map {
           case ResolvedAst.NullRule(pat0, exp) =>
             val pat = pat0.map {
-              case ResolvedAst.NullPattern.Wild(loc) => TypedAst.ChoicePattern.Wild(loc)
-              case ResolvedAst.NullPattern.Null(loc) => TypedAst.ChoicePattern.Absent(loc)
-              case ResolvedAst.NullPattern.Var(sym, loc) => TypedAst.ChoicePattern.Present(sym, loc)
+              case ResolvedAst.ChoicePattern.Wild(loc) => TypedAst.ChoicePattern.Wild(loc)
+              case ResolvedAst.ChoicePattern.Absent(loc) => TypedAst.ChoicePattern.Absent(loc)
+              case ResolvedAst.ChoicePattern.Present(sym, loc) => TypedAst.ChoicePattern.Present(sym, loc)
             }
             TypedAst.NullRule(pat, visitExp(exp, subst0))
         }

@@ -237,15 +237,15 @@ object ResolvedAst {
 
   }
 
-  sealed trait NullPattern
+  sealed trait ChoicePattern
 
-  object NullPattern {
+  object ChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends NullPattern
+    case class Wild(loc: SourceLocation) extends ChoicePattern
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NullPattern
+    case class Absent(loc: SourceLocation) extends ChoicePattern
 
-    case class Null(loc: SourceLocation) extends NullPattern
+    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
 
   }
 
@@ -299,7 +299,7 @@ object ResolvedAst {
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
-  case class NullRule(pat: List[ResolvedAst.NullPattern], exp: ResolvedAst.Expression)
+  case class NullRule(pat: List[ResolvedAst.ChoicePattern], exp: ResolvedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
