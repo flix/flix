@@ -170,6 +170,11 @@ object Type {
   val Unit: Type = Type.Cst(TypeConstructor.Unit)
 
   /**
+    * Represents the Null type.
+    */
+  val Null: Type = Type.Cst(TypeConstructor.Null)
+
+  /**
     * Represents the Bool type.
     */
   val Bool: Type = Type.Cst(TypeConstructor.Bool)

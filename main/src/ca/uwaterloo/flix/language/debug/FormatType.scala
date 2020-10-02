@@ -104,6 +104,8 @@ object FormatType {
         case Some(tc) => tc match {
           case TypeConstructor.Unit => formatApply("Unit", args)
 
+          case TypeConstructor.Null => formatApply("Null", args)
+
           case TypeConstructor.Bool => formatApply("Bool", args)
 
           case TypeConstructor.Char => formatApply("Char", args)
