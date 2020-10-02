@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.mutable
 
@@ -47,6 +48,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case (ns0, classes) => classes.map {
         case (_, clazz) => resolve(clazz, ns0, root) map {
           case s => s.sym -> s
+        }
+      }
+    }
+
+    val instancesVal = root.instances.flatMap {
+      case (ns0, instances0) => instances0.m.map {
+        case (_, instances) => traverse(instances)(resolve(_, ns0, root)) map {
+          case is => is.head.sym -> is.toSet
         }
       }
     }
@@ -81,12 +90,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     for {
       classes <- sequence(classesVal).map(_ ++ mkSynthClasses())
+      instances <- sequence(instancesVal) // MATT add synth instances instead of synth classes
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      classes.toMap, definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
+      classes.toMap, MultiMap(instances.toMap), definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
     )
   }
 
@@ -121,6 +131,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigs <- traverse(signatures)(resolve(_, ns0, root))
       } yield ResolvedAst.Class(doc, mod, sym, tparams.head, sigs, loc)
+  }
+
+  /**
+    * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
+    */
+  def resolve(i0: NamedAst.Instance, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
+    case NamedAst.Instance(doc, mod, clazz0, tpe0, defs0, loc) =>
+      for {
+        clazz <- lookupClass(clazz0, ns0, root)
+        tpe <- lookupType(tpe0, ns0, root)
+        defs <- traverse(defs0)(resolve(_, ns0, root))
+      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, defs, loc)
   }
 
   /**

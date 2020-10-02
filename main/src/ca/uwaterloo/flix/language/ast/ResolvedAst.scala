@@ -20,12 +20,14 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.immutable.List
 
 object ResolvedAst {
 
   case class Root(classes: Map[Symbol.ClassSym, ResolvedAst.Class],
+                  instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance],
                   defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                   latticeOps: Map[Type, ResolvedAst.LatticeOps],
@@ -36,6 +38,8 @@ object ResolvedAst {
   case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, signatures: List[ResolvedAst.Sig], loc: SourceLocation)
 
   case class Sig(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
+
+  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: Type, defs: List[ResolvedAst.Def], loc: SourceLocation)
 
   case class Def(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Type, loc: SourceLocation)
 
