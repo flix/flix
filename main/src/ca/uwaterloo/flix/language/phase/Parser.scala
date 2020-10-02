@@ -776,19 +776,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def NullPattern: Rule1[ParsedAst.ChoicePattern] = rule {
+      def ChoicePattern: Rule1[ParsedAst.ChoicePattern] = rule {
         (SP ~ atomic("_") ~ SP ~> ParsedAst.ChoicePattern.Wild) |
           (SP ~ keyword("null") ~ SP ~> ParsedAst.ChoicePattern.Absent) |
           (SP ~ Names.Variable ~ SP ~> ParsedAst.ChoicePattern.Present)
       }
 
-      def CaseOne: Rule1[ParsedAst.NullRule] = rule {
-        SP ~ keyword("case") ~ WS ~ NullPattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~>
-          ((sp1: SourcePosition, x: ParsedAst.ChoicePattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.NullRule(sp1, Seq(x), e, sp2))
+      def CaseOne: Rule1[ParsedAst.ChoiceRule] = rule {
+        SP ~ keyword("case") ~ WS ~ ChoicePattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~>
+          ((sp1: SourcePosition, x: ParsedAst.ChoicePattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.ChoiceRule(sp1, Seq(x), e, sp2))
       }
 
-      def CaseMany: Rule1[ParsedAst.NullRule] = rule {
-        SP ~ keyword("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(NullPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.NullRule
+      def CaseMany: Rule1[ParsedAst.ChoiceRule] = rule {
+        SP ~ keyword("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(ChoicePattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.ChoiceRule
       }
 
       rule {

@@ -625,7 +625,7 @@ object ParsedAst {
       * @param rules the rules of the pattern match.
       * @param sp2   the position of the last character in the expression.
       */
-    case class NullMatch(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], rules: Seq[NullRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class NullMatch(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], rules: Seq[ChoiceRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -1439,6 +1439,16 @@ object ParsedAst {
   case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression)
 
   /**
+    * A choice pattern match rule.
+    *
+    * @param sp1 the position of the first character in the rule.
+    * @param pat the pattern of the rule.
+    * @param exp the body expression of the rule.
+    * @param sp2 the position of the first character in the rule.
+    */
+  case class ChoiceRule(sp1: SourcePosition, pat: Seq[ParsedAst.ChoicePattern], exp: ParsedAst.Expression, sp2: SourcePosition)
+
+  /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
     *
     * @param pat   the pattern of the rule.
@@ -1446,16 +1456,6 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression)
-
-  /**
-    * A null pattern match rule.
-    *
-    * @param sp1 the position of the first character in the rule.
-    * @param pat the pattern of the rule.
-    * @param exp the body expression of the rule.
-    * @param sp2 the position of the first character in the rule.
-    */
-  case class NullRule(sp1: SourcePosition, pat: Seq[ParsedAst.ChoicePattern], exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * A select channel rule consists of an identifier, a channel expression, and a body expression.

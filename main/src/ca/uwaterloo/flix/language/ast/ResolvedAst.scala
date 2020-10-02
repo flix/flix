@@ -107,7 +107,7 @@ object ResolvedAst {
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NullMatch(exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.NullRule], loc: SourceLocation) extends ResolvedAst.Expression
+    case class NullMatch(exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -297,9 +297,9 @@ object ResolvedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
-  case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
+  case class ChoiceRule(pat: List[ResolvedAst.ChoicePattern], exp: ResolvedAst.Expression)
 
-  case class NullRule(pat: List[ResolvedAst.ChoicePattern], exp: ResolvedAst.Expression)
+  case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 

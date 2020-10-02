@@ -640,9 +640,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of list of the types and effects of the rule expressions.
           */
-        def visitRuleBodies(rs: List[ResolvedAst.NullRule]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
-          def visitRuleBody(r: ResolvedAst.NullRule): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = r match {
-            case ResolvedAst.NullRule(_, exp0) => visitExp(exp0)
+        def visitRuleBodies(rs: List[ResolvedAst.ChoiceRule]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
+          def visitRuleBody(r: ResolvedAst.ChoiceRule): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = r match {
+            case ResolvedAst.ChoiceRule(_, exp0) => visitExp(exp0)
           }
 
           seqM(rs.map(visitRuleBody)).map(_.unzip3)
@@ -654,7 +654,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           * Specifically, forces the boolean variables in `xs` to be
           * pairwise equal to `False` if a non-null variable is present.
           */
-        def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.NullRule): Type =
+        def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
           xs.zip(r.pat).foldLeft(Type.True) {
             case (acc, (x, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: We have a wildcard. No constraint is generated.
@@ -670,15 +670,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         /**
           * Constructs the outer disjunction of nullity constraints.
           */
-        def mkOuterDisj(rs: List[ResolvedAst.NullRule], vars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
+        def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], vars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
           case (acc, rule) => Type.mkOr(acc, mkInnerConj(vars, rule))
         }
 
         /**
           * Performs type inference and unification with the `matchTypes` against the given null rules `rs`.
           */
-        def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[ResolvedAst.NullRule]): InferMonad[List[List[Type]]] = {
-          def unifyWithRule(r: ResolvedAst.NullRule): InferMonad[List[Type]] = {
+        def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[ResolvedAst.ChoiceRule]): InferMonad[List[List[Type]]] = {
+          def unifyWithRule(r: ResolvedAst.ChoiceRule): InferMonad[List[Type]] = {
             seqM(matchTypes.zip(r.pat).map {
               case (matchType, ResolvedAst.ChoicePattern.Wild(_)) =>
                 // Case 1: The pattern is wildcard. No variable is bound and no type information to constrain.
@@ -1377,7 +1377,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.NullMatch(exps, rules, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
-          case ResolvedAst.NullRule(pat0, exp) =>
+          case ResolvedAst.ChoiceRule(pat0, exp) =>
             val pat = pat0.map {
               case ResolvedAst.ChoicePattern.Wild(loc) => TypedAst.ChoicePattern.Wild(loc)
               case ResolvedAst.ChoicePattern.Absent(loc) => TypedAst.ChoicePattern.Absent(loc)

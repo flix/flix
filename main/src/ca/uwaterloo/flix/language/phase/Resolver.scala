@@ -466,14 +466,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.NullMatch(exps, rules, loc) =>
           val expsVal = traverse(exps)(visit(_, tenv0))
           val rulesVal = traverse(rules) {
-            case NamedAst.NullRule(pat0, exp0) =>
+            case NamedAst.ChoiceRule(pat0, exp0) =>
               val p = pat0.map {
                 case NamedAst.ChoicePattern.Wild(loc) => ResolvedAst.ChoicePattern.Wild(loc)
                 case NamedAst.ChoicePattern.Absent(loc) => ResolvedAst.ChoicePattern.Absent(loc)
                 case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
               }
               mapN(visit(exp0, tenv0)) {
-                case e => ResolvedAst.NullRule(p, e)
+                case e => ResolvedAst.ChoiceRule(p, e)
               }
           }
           mapN(expsVal, rulesVal) {

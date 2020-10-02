@@ -519,7 +519,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.NullMatch(exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, env0, uenv0, tenv0))
       val rulesVal = traverse(rules) {
-        case WeededAst.NullMatchRule(pat0, exp0) =>
+        case WeededAst.ChoiceRule(pat0, exp0) =>
           val env1 = pat0.foldLeft(Map.empty[String, Symbol.VarSym]) {
             case (acc, WeededAst.ChoicePattern.Wild(loc)) => acc
             case (acc, WeededAst.ChoicePattern.Absent(loc)) => acc
@@ -531,7 +531,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case WeededAst.ChoicePattern.Present(ident, loc) => NamedAst.ChoicePattern.Present(env1(ident.name), loc)
           }
           mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
-            case e => NamedAst.NullRule(p, e)
+            case e => NamedAst.ChoiceRule(p, e)
           }
       }
       mapN(expsVal, rulesVal) {
@@ -1153,7 +1153,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
     case WeededAst.Expression.NullMatch(exps, rules, loc) => exps.flatMap(freeVars) ++ rules.flatMap {
-      case WeededAst.NullMatchRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
+      case WeededAst.ChoiceRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
     }
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)

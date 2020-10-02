@@ -127,7 +127,7 @@ object WeededAst {
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class NullMatch(exps: List[WeededAst.Expression], rules: List[WeededAst.NullMatchRule], loc: SourceLocation) extends WeededAst.Expression
+    case class NullMatch(exps: List[WeededAst.Expression], rules: List[WeededAst.ChoiceRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -366,13 +366,13 @@ object WeededAst {
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 
+  case class ChoiceRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
+
   case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
-
-  case class NullMatchRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
 
   case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
 

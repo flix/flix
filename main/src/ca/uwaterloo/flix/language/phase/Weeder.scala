@@ -774,7 +774,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       // Check for mismatched arity of `exps` and `rules`.
       //
       val expectedArity = exps.length
-      for (ParsedAst.NullRule(sp1, pat, _, sp2) <- rules) {
+      for (ParsedAst.ChoiceRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
           return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
@@ -783,14 +783,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ParsedAst.NullRule(_, pat, exp, _) =>
+        case ParsedAst.ChoiceRule(_, pat, exp, _) =>
           val p = pat.map {
             case ParsedAst.ChoicePattern.Wild(sp1, sp2) => WeededAst.ChoicePattern.Wild(mkSL(sp1, sp2))
             case ParsedAst.ChoicePattern.Absent(sp1, sp2) => WeededAst.ChoicePattern.Absent(mkSL(sp1, sp2))
             case ParsedAst.ChoicePattern.Present(sp1, ident, sp2) => WeededAst.ChoicePattern.Present(ident, mkSL(sp1, sp2))
           }
           mapN(visitExp(exp)) {
-            case e => WeededAst.NullMatchRule(p.toList, e)
+            case e => WeededAst.ChoiceRule(p.toList, e)
           }
       }
       mapN(expsVal, rulesVal) {
