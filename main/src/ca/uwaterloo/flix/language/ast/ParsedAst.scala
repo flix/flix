@@ -1089,11 +1089,11 @@ object ParsedAst {
   }
 
   /**
-    * Null Patterns.
+    * Choice Patterns.
     */
-  sealed trait NullPattern
+  sealed trait ChoicePattern
 
-  object NullPattern {
+  object ChoicePattern {
 
     /**
       * A wildcard pattern.
@@ -1101,21 +1101,21 @@ object ParsedAst {
       * @param sp1 the position of the first character in the pattern.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.NullPattern
+    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.ChoicePattern
 
     /**
-      * A variable pattern.
+      * An absent pattern.
+      */
+    case class Absent(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.ChoicePattern
+
+    /**
+      * A present pattern.
       *
       * @param sp1   the position of the first character in the pattern.
       * @param ident the name of the variable.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.NullPattern
-
-    /**
-      * The `null` constant pattern.
-      */
-    case class Null(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.NullPattern
+    case class Present(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.ChoicePattern
 
   }
 
@@ -1455,7 +1455,7 @@ object ParsedAst {
     * @param exp the body expression of the rule.
     * @param sp2 the position of the first character in the rule.
     */
-  case class NullRule(sp1: SourcePosition, pat: Seq[ParsedAst.NullPattern], exp: ParsedAst.Expression, sp2: SourcePosition)
+  case class NullRule(sp1: SourcePosition, pat: Seq[ParsedAst.ChoicePattern], exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * A select channel rule consists of an identifier, a channel expression, and a body expression.
