@@ -410,6 +410,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Str(lit, loc) =>
         liftM(List.empty, Type.Str, Type.Pure)
 
+      case ResolvedAst.Expression.Absent(tvar, loc) =>
+        liftM(List.empty, Type.mkNullable(tvar, Type.True), Type.Pure)
+
+      case ResolvedAst.Expression.Present(exp, loc) =>
+        val nullity = Type.freshVar(Kind.Bool)
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          resultTyp = Type.mkNullable(tpe, nullity)
+          resultEff = eff
+        } yield (constrs, resultTyp, resultEff)
+
       case ResolvedAst.Expression.Default(tvar, loc) =>
         liftM(List.empty, tvar, Type.Pure)
 
@@ -1309,6 +1320,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
 
       case ResolvedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
+
+      case ResolvedAst.Expression.Absent(tvar, loc) =>
+        TypedAst.Expression.Null(subst0(tvar), loc)
+
+      case ResolvedAst.Expression.Present(exp, loc) =>
+        visitExp(exp, subst0)
 
       case ResolvedAst.Expression.Default(tvar, loc) => TypedAst.Expression.Default(subst0(tvar), loc)
 
