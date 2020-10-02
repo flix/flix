@@ -448,6 +448,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
+    case WeededAst.Expression.Absent(loc) => NamedAst.Expression.Absent(loc).toSuccess
+
+    case WeededAst.Expression.Present(expOpt, loc) =>
+      // TODO: Should not really introduce unit here...
+      expOpt match {
+        case None => NamedAst.Expression.Present(NamedAst.Expression.Unit(loc), loc).toSuccess
+        case Some(exp) => mapN(visitExp(exp, env0, uenv0, tenv0)) {
+          case e => NamedAst.Expression.Present(e, loc)
+        }
+      }
+
     case WeededAst.Expression.Default(loc) => NamedAst.Expression.Default(loc).toSuccess
 
     case WeededAst.Expression.Apply(exp, exps, loc) =>
@@ -1140,6 +1151,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Int64(lit, loc) => Nil
     case WeededAst.Expression.BigInt(lit, loc) => Nil
     case WeededAst.Expression.Str(lit, loc) => Nil
+    case WeededAst.Expression.Absent(loc) => Nil
+    case WeededAst.Expression.Present(expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Default(loc) => Nil
     case WeededAst.Expression.Apply(exp, exps, loc) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))

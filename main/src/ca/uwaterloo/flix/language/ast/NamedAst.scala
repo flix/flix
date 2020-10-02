@@ -107,6 +107,10 @@ object NamedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Absent(loc: SourceLocation) extends NamedAst.Expression
+
+    case class Present(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Default(loc: SourceLocation) extends NamedAst.Expression
 
     case class Apply(exp: NamedAst.Expression, exps: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
