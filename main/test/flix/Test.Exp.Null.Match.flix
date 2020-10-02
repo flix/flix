@@ -3,7 +3,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase01(): Bool =
         let f = (x, y) -> {
-            let s = match? (x, y) {
+            let s = choice (x, y) {
                 case (a, _) => a
                 case (_, b) => b
             };
@@ -14,7 +14,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase02(): Bool =
         let f = (x, y) -> {
-            let s = match? (x, y) {
+            let s = choice (x, y) {
                 case (a, _) => a
                 case (_, b) => b
             };
@@ -25,7 +25,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase03(): Bool =
         let f = (x, y) -> {
-            let s = match? (x, y) {
+            let s = choice (x, y) {
                 case (a, _) => a
                 case (_, b) => b
             };
@@ -36,7 +36,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase04(): Bool =
         let f = p -> {
-            match? (p.ssn, p.name) {
+            choice (p.ssn, p.name) {
                 case (ssn, _)  => isMaleSSN(ssn)
                 case (_, name) => isMaleName(name)
             }
@@ -46,7 +46,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase05(): Bool =
         let f = p -> {
-            match? (p.ssn, p.name) {
+            choice (p.ssn, p.name) {
                 case (ssn, _)  => isMaleSSN(ssn)
                 case (_, name) => isMaleName(name)
             }
@@ -56,7 +56,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase06(): Bool =
         let f = p -> {
-            match? (p.ssn, p.name) {
+            choice (p.ssn, p.name) {
                 case (ssn, _)  => isMaleSSN(ssn)
                 case (_, name) => isMaleName(name)
             }
@@ -66,7 +66,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase07(): Bool =
         let f = p -> {
-            match? (p.ssn, p.name) {
+            choice (p.ssn, p.name) {
                 case (ssn, null)  => isMaleSSN(ssn)
                 case (null, name) => isMaleName(name)
                 case (ssn, name)  => isMaleSSN(ssn)
@@ -77,7 +77,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase08(): Bool =
         let f = p -> {
-            match? (p.ssn, p.name) {
+            choice (p.ssn, p.name) {
                 case (ssn, null)  => isMaleSSN(ssn)
                 case (null, name) => isMaleName(name)
                 case (ssn, name)  => isMaleSSN(ssn)
@@ -88,7 +88,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase09(): Bool =
         let f = p -> {
-            match? (p.ssn, p.name) {
+            choice (p.ssn, p.name) {
                 case (ssn, null)  => isMaleSSN(ssn)
                 case (null, name) => isMaleName(name)
                 case (ssn, name)  => isMaleSSN(ssn)
@@ -99,7 +99,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase10(): Bool =
         let f = p -> {
-            match? (p.x, p.y) {
+            choice (p.x, p.y) {
                 case (x, y)    => 1
                 case (null, y) => 2
                 case (x, null) => 3
@@ -110,7 +110,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase11(): Bool =
         let f = p -> {
-            match? (p.x, p.y) {
+            choice (p.x, p.y) {
                 case (x, y)    => 1
                 case (null, y) => 2
                 case (x, null) => 3
@@ -121,7 +121,7 @@ namespace Test/Exp/Null/Match {
     @test
     def testUseCase12(): Bool =
         let f = p -> {
-            match? (p.x, p.y) {
+            choice (p.x, p.y) {
                 case (x, y)    => 1
                 case (null, y) => 2
                 case (x, null) => 3
@@ -131,77 +131,77 @@ namespace Test/Exp/Null/Match {
 
     @test
     def testMatchNullableUnit01(): Bool =
-        match? ()? {
+        choice ()? {
             case x => true
             case _ => false
         }
 
     @test
     def testMatchNullableUnit02(): Bool =
-        match? null {
+        choice null {
             case x => false
             case _ => true
         }
 
     @test
     def testMatchNullableUnit03(): Bool =
-        match? ()? {
+        choice ()? {
             case null => false
             case x    => true
         }
 
     @test
     def testMatchNullableUnit04(): Bool =
-        match? null {
+        choice null {
             case null => true
             case x    => false
         }
 
     @test
     def testMatchNullableString01(): Bool =
-        match? "Hello World"? {
+        choice "Hello World"? {
             case x => true
             case _ => false
         }
 
     @test
     def testMatchNullableString02(): Bool =
-        match? null {
+        choice null {
             case x => false
             case _ => true
         }
 
     @test
     def testMatchNullableString03(): Bool =
-        match? "Hello World"? {
+        choice "Hello World"? {
             case null => false
             case x    => true
         }
 
     @test
     def testMatchNullableString04(): Bool =
-        match? null {
+        choice null {
             case null => true
             case x    => false
         }
 
     @test
     def testMatchNullableRecord01(): Bool =
-        match? {}? {
+        choice {}? {
             case x => true
             case _ => false
         }
 
     @test
     def testMatchNullableRecord02(): Bool =
-        match? {name = "Lucky Luke"}? {
+        choice {name = "Lucky Luke"}? {
             case x => true
             case _ => false
         }
 
     @test
     def testMatchNullableRecord03(): Bool =
-        match? {fstName = "Lucky", lstName = "Luke"}? {
+        choice {fstName = "Lucky", lstName = "Luke"}? {
             case x => true
             case _ => false
         }
@@ -209,21 +209,21 @@ namespace Test/Exp/Null/Match {
     @test
     def testMatchNullableTuple01(): Bool =
         let v = (123, 456);
-        match? v? {
+        choice v? {
             case x => true
             case _ => false
         }
 
     @test
     def testMatchNullableOption01(): Bool =
-        match? None? {
+        choice None? {
             case x => true
             case _ => false
         }
 
     @test
     def testMatchNullableOption02(): Bool =
-        match? Some(123)? {
+        choice Some(123)? {
             case x => true
             case _ => false
         }
@@ -231,7 +231,7 @@ namespace Test/Exp/Null/Match {
 
     @test
     def testMatchNullableList01(): Bool =
-        match? Nil? {
+        choice Nil? {
             case x => true
             case _ => false
         }
@@ -239,21 +239,21 @@ namespace Test/Exp/Null/Match {
     @test
     def testMatchNullableList02(): Bool =
         let v = (1 :: Nil);
-        match? v? {
+        choice v? {
             case x => true
             case _ => false
         }
 
     @test
     def testMatchNullableResult01(): Bool =
-        match? Ok(123)? {
+        choice Ok(123)? {
             case x => true
             case _ => false
         }
 
     @test
     def testMatchNullableResult02(): Bool =
-        match? Err(123)? {
+        choice Err(123)? {
             case x => true
             case _ => false
         }

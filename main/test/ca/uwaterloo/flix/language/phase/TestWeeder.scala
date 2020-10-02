@@ -221,7 +221,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("MismatchedArity.01") {
     val input =
       """def f(): Bool =
-        |    match? 123 {
+        |    choice 123 {
         |        case (x, y) => x == y
         |    }
       """.stripMargin
@@ -232,7 +232,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("MismatchedArity.02") {
     val input =
       """def f(): Bool =
-        |    match? (123, 456) {
+        |    choice (123, 456) {
         |        case x => x == x
         |    }
       """.stripMargin
