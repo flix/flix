@@ -67,8 +67,8 @@ namespace Test/Exp/Null/Match {
     def testUseCase07(): Bool =
         let f = p -> {
             choice (p.ssn, p.name) {
-                case (ssn, null)  => isMaleSSN(ssn)
-                case (null, name) => isMaleName(name)
+                case (ssn, Absent)  => isMaleSSN(ssn)
+                case (Absent, name) => isMaleName(name)
                 case (ssn, name)  => isMaleSSN(ssn)
             }
         };
@@ -78,8 +78,8 @@ namespace Test/Exp/Null/Match {
     def testUseCase08(): Bool =
         let f = p -> {
             choice (p.ssn, p.name) {
-                case (ssn, null)  => isMaleSSN(ssn)
-                case (null, name) => isMaleName(name)
+                case (ssn, Absent)  => isMaleSSN(ssn)
+                case (Absent, name) => isMaleName(name)
                 case (ssn, name)  => isMaleSSN(ssn)
             }
         };
@@ -89,8 +89,8 @@ namespace Test/Exp/Null/Match {
     def testUseCase09(): Bool =
         let f = p -> {
             choice (p.ssn, p.name) {
-                case (ssn, null)  => isMaleSSN(ssn)
-                case (null, name) => isMaleName(name)
+                case (ssn, Absent)  => isMaleSSN(ssn)
+                case (Absent, name) => isMaleName(name)
                 case (ssn, name)  => isMaleSSN(ssn)
             }
         };
@@ -101,8 +101,8 @@ namespace Test/Exp/Null/Match {
         let f = p -> {
             choice (p.x, p.y) {
                 case (x, y)    => 1
-                case (null, y) => 2
-                case (x, null) => 3
+                case (Absent, y) => 2
+                case (x, Absent) => 3
             }
         };
         f({x = "a"?, y = "b"?}) == 1
@@ -112,8 +112,8 @@ namespace Test/Exp/Null/Match {
         let f = p -> {
             choice (p.x, p.y) {
                 case (x, y)    => 1
-                case (null, y) => 2
-                case (x, null) => 3
+                case (Absent, y) => 2
+                case (x, Absent) => 3
             }
         };
         f({x = null, y = "b"?}) == 2
@@ -123,8 +123,8 @@ namespace Test/Exp/Null/Match {
         let f = p -> {
             choice (p.x, p.y) {
                 case (x, y)    => 1
-                case (null, y) => 2
-                case (x, null) => 3
+                case (Absent, y) => 2
+                case (x, Absent) => 3
             }
         };
         f({x = "a"?, y = null}) == 3
@@ -146,14 +146,14 @@ namespace Test/Exp/Null/Match {
     @test
     def testMatchNullableUnit03(): Bool =
         choice ()? {
-            case null => false
+            case Absent => false
             case x    => true
         }
 
     @test
     def testMatchNullableUnit04(): Bool =
         choice null {
-            case null => true
+            case Absent => true
             case x    => false
         }
 
@@ -174,14 +174,14 @@ namespace Test/Exp/Null/Match {
     @test
     def testMatchNullableString03(): Bool =
         choice "Hello World"? {
-            case null => false
+            case Absent => false
             case x    => true
         }
 
     @test
     def testMatchNullableString04(): Bool =
         choice null {
-            case null => true
+            case Absent => true
             case x    => false
         }
 
