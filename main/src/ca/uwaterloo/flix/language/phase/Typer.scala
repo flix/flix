@@ -442,14 +442,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff <- unifyBoolM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Nullify(exp, loc) =>
-        val nullity = Type.freshVar(Kind.Bool)
-        for {
-          (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkNullable(tpe, nullity)
-          resultEff = eff
-        } yield (constrs, resultTyp, resultEff)
-
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) => op match {
         case UnaryOperator.LogicalNot =>
           for {
@@ -1339,9 +1331,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         val t = subst0(tvar)
         TypedAst.Expression.Lambda(p, e, t, loc)
-
-      case ResolvedAst.Expression.Nullify(exp, loc) =>
-        visitExp(exp, subst0)
 
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

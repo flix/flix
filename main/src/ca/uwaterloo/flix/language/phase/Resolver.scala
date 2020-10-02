@@ -420,11 +420,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             p <- Params.resolve(fparam, ns0, root)
           } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
 
-        case NamedAst.Expression.Nullify(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Nullify(e, loc)
-
         case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
