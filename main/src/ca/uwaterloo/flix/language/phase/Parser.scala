@@ -243,8 +243,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Instance: Rule1[ParsedAst.Declaration] = {
 
-      // MATT maybe don't use type params
-      // MATT find better syntax
+      // MATT definitely don't use type params bc this has to include things like Show[List[a]]
       def Head = rule {
         Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optional(optWS ~ keyword("with") ~ optWS ~ TypeParams)
       }

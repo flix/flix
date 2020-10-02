@@ -113,7 +113,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           ))
       }
 
-    case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, defs, loc) =>
+    case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs, loc) =>
       // duplication check must come after name resolution
       val instances = prog0.instances.getOrElse(Name.RootNS, MultiMap.empty)
       visitInstance(decl, uenv0, Map.empty, ns0) map {
@@ -335,9 +335,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe, tconstrs, defs0, loc) =>
       for {
-        tpe <- visitType(tpe, uenv0, tenv0)
+        tpe <- visitType(tpe, uenv0, tenv0) // MATT how to handle tconstrs?
         defs <- traverse(defs0)(visitDef(_, uenv0, tenv0, ns0))
       } yield NamedAst.Instance(doc, mod, clazz, tpe, defs, loc)
   }
