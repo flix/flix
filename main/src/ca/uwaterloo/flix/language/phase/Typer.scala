@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, InferMonad, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 
 object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
@@ -39,15 +40,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
     val classesVal = visitClasses(root)
+    val instancesVal = visitInstances(root)
     val defsVal = visitDefs(root)
     val enumsVal = visitEnums(root)
     val latticeOpsVal = visitLatticeOps(root)
     val propertiesVal = visitProperties(root)
 
-    Validation.mapN(classesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
-      case (classes, defs, enums, latticeOps, properties) =>
+    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
+      case (classes, instances, defs, enums, latticeOps, properties) =>
         val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-        TypedAst.Root(classes, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
+        TypedAst.Root(classes, instances, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
     }
   }
 
@@ -82,21 +84,47 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * Performs type inference and reassembly on all instances in the given AST root.
+    *
+    * Returns [[Err]] if a definition fails to type check.
+    */
+  private def visitInstances(root: ResolvedAst.Root)(implicit flix: Flix): Validation[MultiMap[Symbol.ClassSym, TypedAst.Instance], TypeError] = {
+    def visitInstance(inst: ResolvedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
+      case ResolvedAst.Instance(doc, mod, sym, tpe, defs0, loc) =>
+        for {
+          defs <- Validation.traverse(defs0)(visitDefn(_, root))
+        } yield TypedAst.Instance(doc, mod, sym, tpe, defs, loc)
+    }
+
+    def visitInstances(insts0: Set[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, Set[TypedAst.Instance]), TypeError] = {
+      for {
+        insts <- Validation.traverse(insts0)(visitInstance)
+      } yield insts.head.sym -> insts.toSet
+    }
+
+    // visit each instance
+    val result = root.instances.m.values.map(visitInstances)
+
+    Validation.sequence(result).map(_.toMap).map(MultiMap(_)) // MATT why can't I do this with only one .map(...) ?
+
+  }
+
+  /**
+    * Performs type inference and reassembly on the given definition `defn`.
+    */
+  private def visitDefn(defn: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
+    typeCheckDef(defn, root) map {
+      case (defn, _) => defn
+    }
+
+  /**
     * Performs type inference and reassembly on all definitions in the given AST root.
     *
     * Returns [[Err]] if a definition fails to type check.
     */
   private def visitDefs(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
-    /**
-      * Performs type inference and reassembly on the given definition `defn`.
-      */
-    def visitDefn(defn: ResolvedAst.Def): Validation[TypedAst.Def, TypeError] =
-      typeCheckDef(defn, root) map {
-        case (defn, subst) => defn
-      }
-
     // Compute the results in parallel.
-    val results = ParOps.parMap(root.defs.values, visitDefn)
+    val results = ParOps.parMap(root.defs.values, visitDefn(_, root))
 
     // Sequence the results.
     Validation.sequence(results) map {
