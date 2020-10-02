@@ -85,7 +85,7 @@ object TypedAstOps {
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
-      case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
+      case Expression.Choice(exps, rules, tpe, eff, loc) =>
         val m1 = exps.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (acc, exp) => acc ++ visitExp(exp, env0)
         }

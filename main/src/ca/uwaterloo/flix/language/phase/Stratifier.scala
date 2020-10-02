@@ -171,13 +171,13 @@ object Stratifier extends Phase[Root, Root] {
         case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
       }
 
-    case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
+    case Expression.Choice(exps, rules, tpe, eff, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
         case ChoiceRule(pat, exp) => mapN(visitExp(exp))(ChoiceRule(pat, _))
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => Expression.NullMatch(es, rs, tpe, eff, loc)
+        case (es, rs) => Expression.Choice(es, rs, tpe, eff, loc)
       }
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
@@ -480,7 +480,7 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, MatchRule(_, g, b)) => acc + dependencyGraphOfExp(g) + dependencyGraphOfExp(b)
       }
 
-    case Expression.NullMatch(exps, rules, _, _, _) =>
+    case Expression.Choice(exps, rules, _, _, _) =>
       val dg1 = exps.foldLeft(DependencyGraph.empty) {
         case (acc, exp) => acc + dependencyGraphOfExp(exp)
       }

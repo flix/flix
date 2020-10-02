@@ -328,7 +328,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
 
-        case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
+        case Expression.Choice(exps, rules, tpe, eff, loc) =>
           val es = exps.map(visitExp(_, env0))
           val rs = rules.map {
             case ChoiceRule(pat, exp) =>
@@ -346,7 +346,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val e = visitExp(exp, env0 ++ env1)
               ChoiceRule(p, e)
           }
-          Expression.NullMatch(es, rs, tpe, eff, loc)
+          Expression.Choice(es, rs, tpe, eff, loc)
 
         case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

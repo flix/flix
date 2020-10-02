@@ -197,7 +197,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- sequence(rules map { x => checkPats(x.exp, root) })
           _ <- checkRules(exp, rules, root)
         } yield tast
-        case Expression.NullMatch(exps, rules, _, _, _) =>
+        case Expression.Choice(exps, rules, _, _, _) =>
           for {
             _ <- sequence(exps.map(checkPats(_, root)))
             _ <- sequence(rules.map(r => checkPats(r.exp, root)))

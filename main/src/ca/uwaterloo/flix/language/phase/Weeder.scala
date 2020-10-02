@@ -769,7 +769,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.NullMatch(sp1, exps, rules, sp2) =>
+    case ParsedAst.Expression.Choice(sp1, exps, rules, sp2) =>
       //
       // Check for mismatched arity of `exps` and `rules`.
       //
@@ -794,7 +794,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => WeededAst.Expression.NullMatch(es, rs, mkSL(sp1, sp2))
+        case (es, rs) => WeededAst.Expression.Choice(es, rs, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
@@ -2020,7 +2020,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NullMatch(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Choice(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1

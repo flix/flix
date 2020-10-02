@@ -650,7 +650,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | NullMatch | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choice | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -767,7 +767,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def NullMatch: Rule1[ParsedAst.Expression.NullMatch] = {
+    def Choice: Rule1[ParsedAst.Expression.Choice] = {
       def MatchOne: Rule1[Seq[ParsedAst.Expression]] = rule {
         Expression ~> ((e: ParsedAst.Expression) => Seq(e))
       }
@@ -792,7 +792,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("match?") ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NullMatch
+        SP ~ keyword("match?") ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Choice
       }
     }
 

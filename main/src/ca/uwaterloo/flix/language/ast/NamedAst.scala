@@ -127,7 +127,7 @@ object NamedAst {
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
-    case class NullMatch(exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
+    case class Choice(exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

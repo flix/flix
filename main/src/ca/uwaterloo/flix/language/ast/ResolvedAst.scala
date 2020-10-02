@@ -107,7 +107,7 @@ object ResolvedAst {
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NullMatch(exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
+    case class Choice(exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

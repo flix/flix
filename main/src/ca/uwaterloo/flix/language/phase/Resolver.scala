@@ -463,7 +463,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, loc)
 
-        case NamedAst.Expression.NullMatch(exps, rules, loc) =>
+        case NamedAst.Expression.Choice(exps, rules, loc) =>
           val expsVal = traverse(exps)(visit(_, tenv0))
           val rulesVal = traverse(rules) {
             case NamedAst.ChoiceRule(pat0, exp0) =>
@@ -477,7 +477,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               }
           }
           mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expression.NullMatch(es, rs, loc)
+            case (es, rs) => ResolvedAst.Expression.Choice(es, rs, loc)
           }
 
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
