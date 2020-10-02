@@ -551,7 +551,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         tc match {
           case TypeConstructor.Unit => MonoType.Unit
 
-          case TypeConstructor.Null => throw InternalCompilerException(s"Unexpected type: 'null'.")
+          case TypeConstructor.Null => MonoType.Unit
 
           case TypeConstructor.Bool => MonoType.Bool
 
