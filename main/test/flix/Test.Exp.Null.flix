@@ -45,74 +45,26 @@ namespace Test/Exp/Null/Null {
     @test
     def testNullOption01(): Option[String] = null as Option[String]
 
-//    @test
-//    def testNullOption02(): Option[String?] = Some(null)
-//
-//    @test
-//    def testNullOption03(): Option[String?]? = null
-//
-//    @test
-//    def testNullList01(): List[String]? = null
-//
-//    @test
-//    def testNullList02(): List[String?] = Nil
-//
-//    @test
-//    def testNullList03(): List[String?]? = null
-//
-//    @test
-//    def testNullList04(): List[String?] = null :: Nil
-//
-//    @test
-//    def testNullList05(): List[String?] = null :: null :: Nil
-//
-//    @test
-//    def testNullResult01(): Result[String, String]? = null
-//
-//    @test
-//    def testNullResult02(): Result[String, String?]? = null
-//
-//    @test
-//    def testNullResult03(): Result[String?, String]? = null
-//
-//    @test
-//    def testNullResult04(): Result[String?, String?]? = null
-//
-//    @test
-//    def testNullResult05(): Result[String?, String] = Ok(null)
-//
-//    @test
-//    def testNullResult06(): Result[String, String?] = Err(null)
-//
-//    @test
-//    def testNullArrow01(): (String -> String)? = null
-//
-//    @test
-//    def testNullArrow02(): (String -> String?)? = null
-//
-//    @test
-//    def testNullArrow03(): (String? -> String)? = null
-//
-//    @test
-//    def testNullArrow04(): (String? -> String?)? = null
-//
-//    @test
-//    def testNullArrow05(): ((String, String) -> String?)? = null
-//
-//    @test
-//    def testNullArrow06(): ((String?, String) -> String?)? = null
-//
-//    @test
-//    def testNullArrow07(): ((String, String?) -> String?)? = null
-//
-//    @test
-//    def testNullArrow08(): ((String?, String?) -> String?)? = null
-//
-//    @test
-//    def testNullArrow09(): (String -> String?) = _x -> null
-//
-//    @test
-//    def testNullArrow10(): (String? -> String) = _x -> "abc"
+    @test
+    def testNullOption02(): Option[String] = Some(null as String)
+
+    @test
+    def testNullList01(): List[String] = null as List[String]
+
+    @test
+    def testNullList02(): List[String] = (null as String) :: Nil
+
+    @test
+    def testNullResult01(): Result[String, String] = null as Result[String, String]
+
+    @test
+    def testNullResult03(): Result[String, String] = Ok(null as String)
+
+    @test
+    def testNullResult04(): Result[String, String] = Err(null as String)
+
+    @test
+    def testNullArrow01(): (String -> String) = (_: String) -> null as String
 
     pub enum Option[t] {
         case None,
