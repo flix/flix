@@ -257,15 +257,15 @@ object NamedAst {
 
   }
 
-  sealed trait NullPattern
+  sealed trait ChoicePattern
 
-  object NullPattern {
+  object ChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends NullPattern
+    case class Wild(loc: SourceLocation) extends ChoicePattern
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NullPattern
+    case class Absent(loc: SourceLocation) extends ChoicePattern
 
-    case class Null(loc: SourceLocation) extends NullPattern
+    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
 
   }
 
@@ -371,7 +371,7 @@ object NamedAst {
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class NullRule(pat: List[NamedAst.NullPattern], exp: NamedAst.Expression)
+  case class NullRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 

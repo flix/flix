@@ -526,9 +526,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case (acc, WeededAst.NullPattern.Null(loc)) => acc
           }
           val p = pat0.map {
-            case WeededAst.NullPattern.Wild(loc) => NamedAst.NullPattern.Wild(loc)
-            case WeededAst.NullPattern.Var(ident, loc) => NamedAst.NullPattern.Var(env1(ident.name), loc)
-            case WeededAst.NullPattern.Null(loc) => NamedAst.NullPattern.Null(loc)
+            case WeededAst.NullPattern.Wild(loc) => NamedAst.ChoicePattern.Wild(loc)
+            case WeededAst.NullPattern.Null(loc) => NamedAst.ChoicePattern.Absent(loc)
+            case WeededAst.NullPattern.Var(ident, loc) => NamedAst.ChoicePattern.Present(env1(ident.name), loc)
           }
           mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
             case e => NamedAst.NullRule(p, e)

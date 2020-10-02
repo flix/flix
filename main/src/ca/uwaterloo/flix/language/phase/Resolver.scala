@@ -468,9 +468,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val rulesVal = traverse(rules) {
             case NamedAst.NullRule(pat0, exp0) =>
               val p = pat0.map {
-                case NamedAst.NullPattern.Wild(loc) => ResolvedAst.ChoicePattern.Wild(loc)
-                case NamedAst.NullPattern.Null(loc) => ResolvedAst.ChoicePattern.Absent(loc)
-                case NamedAst.NullPattern.Var(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
+                case NamedAst.ChoicePattern.Wild(loc) => ResolvedAst.ChoicePattern.Wild(loc)
+                case NamedAst.ChoicePattern.Absent(loc) => ResolvedAst.ChoicePattern.Absent(loc)
+                case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
               }
               mapN(visit(exp0, tenv0)) {
                 case e => ResolvedAst.NullRule(p, e)
