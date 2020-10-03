@@ -242,10 +242,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Instance: Rule1[ParsedAst.Declaration] = {
+      // MATT test syntax
+      def TypeConstraint: Rule1[ParsedAst.ConstrainedType] = rule {
+        SP ~ Type ~ oneOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedType
+      }
 
-      // MATT definitely don't use type params bc this has to include things like Show[List[a]]
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optional(optWS ~ keyword("with") ~ optWS ~ TypeParams)
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optional(optWS ~ keyword("with") ~ optWS ~ "[" ~ oneOrMore(TypeConstraint).separatedBy(",") ~ "]")
       }
 
       def EmptyBody = rule {
@@ -267,7 +270,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional("[" ~ optWS ~ oneOrMore(ConstrainedType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ConstrainedType]]) => o match {
+        optional("[" ~ optWS ~ oneOrMore(ConstrainedType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ConstrainedTypeParam]]) => o match {
           case None => ParsedAst.TypeParams.Elided
           case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
         })

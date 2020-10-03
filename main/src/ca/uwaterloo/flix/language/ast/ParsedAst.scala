@@ -200,7 +200,7 @@ object ParsedAst {
       * @param defs  the definitions of the instance.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Option[Seq[ParsedAst.ConstrainedType]], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     case class LatticeComponents(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
@@ -1407,7 +1407,7 @@ object ParsedAst {
     /**
       * Represents an explicit sequence of type parameters.
       */
-    case class Explicit(tparams: List[ParsedAst.ConstrainedType]) extends TypeParams
+    case class Explicit(tparams: List[ParsedAst.ConstrainedTypeParam]) extends TypeParams
 
   }
 
@@ -1421,7 +1421,7 @@ object ParsedAst {
   case class Doc(sp1: SourcePosition, lines: Seq[String], sp2: SourcePosition)
 
   /**
-    * Context Bound.
+    * Context Bound on a type variable.
     *
     * @param sp1     the position of the first character in the context bound.
     * @param ident   the type variable being bound
@@ -1429,7 +1429,22 @@ object ParsedAst {
     * @param classes the bounding classes.
     * @param sp2     the position of the last character in the context bound.
     */
+<<<<<<< HEAD
   case class ConstrainedType(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
+=======
+  case class ConstrainedTypeParam(sp1: SourcePosition, ident: Name.Ident, classes: Seq[Name.QName], sp2: SourcePosition)
+
+
+  /**
+    * Context Bound on a type.
+    *
+    * @param sp1     the position of the first character in the context bound.
+    * @param tpe     the type being bound
+    * @param classes the bounding classes.
+    * @param sp2     the position of the last character in the context bound.
+    */
+  case class ConstrainedType(sp1: SourcePosition, tpe: ParsedAst.Type, classes: Seq[Name.QName], sp2: SourcePosition)
+>>>>>>> take type constraints on instances through to typer
 
   /**
     * Formal Parameter.

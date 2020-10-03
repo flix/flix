@@ -90,7 +90,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitInstances(root: ResolvedAst.Root)(implicit flix: Flix): Validation[MultiMap[Symbol.ClassSym, TypedAst.Instance], TypeError] = {
     def visitInstance(inst: ResolvedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
-      case ResolvedAst.Instance(doc, mod, sym, tpe, defs0, loc) =>
+      case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, loc) =>
+        // MATT handle tconstrs
         for {
           defs <- Validation.traverse(defs0)(visitDefn(_, root))
         } yield TypedAst.Instance(doc, mod, sym, tpe, defs, loc)

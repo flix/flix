@@ -137,12 +137,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolve(i0: NamedAst.Instance, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
-    case NamedAst.Instance(doc, mod, clazz0, tpe0, defs0, loc) =>
+    case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
       for {
         clazz <- lookupClass(clazz0, ns0, root)
         tpe <- lookupType(tpe0, ns0, root)
+        tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, ns0, root))
         defs <- traverse(defs0)(resolve(_, ns0, root))
-      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, defs, loc)
+      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, loc)
   }
 
   /**
@@ -1012,7 +1013,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[TypedAst.TypeConstraint, ResolutionError] = {
     for {
       clazz <- lookupClass(tconstr0.clazz, ns0, root)
-    } yield TypedAst.TypeConstraint(clazz.sym, tconstr0.arg)
+      tpe <- lookupType(tconstr0.arg, ns0, root)
+    } yield TypedAst.TypeConstraint(clazz.sym, tpe)
   }
 
   /**

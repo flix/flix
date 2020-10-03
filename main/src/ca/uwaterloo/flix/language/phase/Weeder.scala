@@ -28,8 +28,9 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.Seq
+import scala.collection.immutable.{AbstractSeq, LinearSeq, Seq}
 import scala.collection.mutable
+import scala.xml.NodeSeq
 
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
@@ -154,7 +155,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public))
         defs <- traverse(defs0)(visitDef)
-        constrs <- visitTypeConstraints(constrs0.getOrElse(ParsedAst.TypeParams.Elided)) // MATT kinda ugly to default this way
+        constrs = visitTypeConstraints(constrs0.getOrElse(Seq.empty))
       } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, loc))
 
   }
@@ -1901,12 +1902,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   // MATT docs
-  private def visitTypeConstraints(constraints0: ParsedAst.TypeParams): Validation[List[WeededAst.ConstrainedType], WeederError] = constraints0 match {
-    case ParsedAst.TypeParams.Elided => ??? // MATT WeederError or make it not accept elided
-    case ParsedAst.TypeParams.Explicit(constraints) =>
-      constraints.map {
-        case ParsedAst.ConstrainedType(sp1, ident, classes, sp2) => WeededAst.ConstrainedType(ident, classes.toList)
-      }.toSuccess
+  private def visitTypeConstraints(constraints0: Seq[ParsedAst.ConstrainedType]): List[WeededAst.ConstrainedType] = {
+    constraints0.map {
+      case ParsedAst.ConstrainedType(sp1, tpe, classes, sp2) => WeededAst.ConstrainedType(visitType(tpe), classes.toList)
+    }.toList
   }
 
   /**

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.WeededAst.{ChoicePattern, TypeParams}
+import ca.uwaterloo.flix.language.ast.WeededAst.{ChoicePattern, ConstrainedType, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -326,7 +326,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.mkClassSym(ns0, ident)
       val className = Name.mkQName(ident)
       val tparams = getProperTypeParams(tparam).head // only 1 tparam allowed for now
-      for {
+      for { // MATT add tparam to tenv for sigs
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, className, sym, tparams))
       } yield NamedAst.Class(doc, mod, sym, tparams, sigs, loc)
   }
@@ -337,9 +337,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
     case WeededAst.Declaration.Instance(doc, mod, clazz, tpe, tconstrs, defs0, loc) =>
       for {
-        tpe <- visitType(tpe, uenv0, tenv0) // MATT how to handle tconstrs?
+        tpe <- visitType(tpe, uenv0, tenv0) // MATT add tparam to tenv for defs and tconstrs
         defs <- traverse(defs0)(visitDef(_, uenv0, tenv0, ns0))
-      } yield NamedAst.Instance(doc, mod, clazz, tpe, defs, loc)
+        tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv0, ns0))
+      } yield NamedAst.Instance(doc, mod, clazz, tpe, tconstrs.flatten, defs, loc)
+  }
+
+  // MATT docs
+  private def visitTypeConstraint(tconstr: WeededAst.ConstrainedType, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[List[NamedAst.TypeConstraint], NameError] = tconstr match {
+    case WeededAst.ConstrainedType(tpe, classes) =>
+      for {
+        tpe <- visitType(tpe, uenv0, tenv0)
+      } yield classes.map(NamedAst.TypeConstraint(_, tpe))
   }
 
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
@@ -1432,7 +1441,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
     case TypeParams.Elided => Nil
     case TypeParams.Explicit(tparams) => tparams.map {
-      case WeededAst.ConstrainedType(ident, _, classes) =>
+      case WeededAst.ConstrainedTypeParam(ident, _, classes) =>
         NamedAst.TypeParam(ident, Type.freshVar(Kind.Star, text = Some(ident.name)), classes, ident.loc)
     }
   }
@@ -1470,17 +1479,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the explicit type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitTypeParams(tparams0: List[WeededAst.ConstrainedType], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getExplicitTypeParams(tparams0: List[WeededAst.ConstrainedTypeParam], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {
-      case WeededAst.ConstrainedType(ident, None, classes) =>
-        // Case 1: Get the kind for each type variable from the implicit type params.
+      case WeededAst.ConstrainedTypeParam(ident, None, classes) =>
+      // Case 1: Get the kind for each type variable from the implicit type params.
         // Use a kind variable if not found; this will be caught later by redundancy checks.
         val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
         val tvar = Type.freshVar(kind, text = Some(ident.name))
         NamedAst.TypeParam(ident, tvar, classes, ident.loc)
 
-      case WeededAst.ConstrainedType(ident, Some(kind), classes) =>
+      case WeededAst.ConstrainedTypeParam(ident, Some(kind), classes) =>
         // Case 2: The kind is explicitly available.
         val tvar = Type.freshVar(kind, text = Some(ident.name))
         NamedAst.TypeParam(ident, tvar, classes, ident.loc)
@@ -1600,7 +1609,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     for {
       t <- visitType(tpe, uenv0, tenv0)
       tparams = tparams0.map(_.tpe)
-      tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, tparam.tpe)))
+      tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, NamedAst.Type.Var(tparam.tpe, tparam.loc))))
     } yield NamedAst.Scheme(tparams, tconstrs, t)
   }
 
@@ -1612,9 +1621,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       t <- visitType(tpe, uenv0, tenv0)
       tparams = tparams0.map(_.tpe)
       // constrained as part of definition
-      tconstrs1 = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, tparam.tpe)))
+      tconstrs1 = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, NamedAst.Type.Var(tparam.tpe, tparam.loc))))
       // constrained as class type parameters
-      tconstrs2 = tparams0.find(_.name.name == classTparam.name.name).map(tparam => NamedAst.TypeConstraint(clazz, tparam.tpe)).toList
+      // MATT do we need this if we're resolving variables correctly?
+      tconstrs2 = tparams0.find(_.name.name == classTparam.name.name).map(tparam => NamedAst.TypeConstraint(clazz, NamedAst.Type.Var(tparam.tpe, tparam.loc))).toList
     } yield NamedAst.Scheme(tparams, tconstrs1 ++ tconstrs2, t)
   }
 
