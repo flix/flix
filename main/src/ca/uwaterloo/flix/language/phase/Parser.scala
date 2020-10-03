@@ -223,29 +223,51 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
-      def MarkerClass: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ push(Nil) ~ SP ~> ParsedAst.Declaration.Class
+      def Head = rule {
+        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams
       }
 
-      def ClassWithSigs: Rule1[ParsedAst.Declaration.Class] = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("trait") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Class
+      def EmptyBody = rule {
+        push(Nil) ~ SP
+      }
+
+      def NonEmptyBody = rule {
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP
       }
 
       rule {
-        ClassWithSigs | MarkerClass
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Class
+      }
+    }
+
+    def Instance: Rule1[ParsedAst.Declaration] = {
+      def Head = rule {
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]"
+      }
+
+      def EmptyBody = rule {
+        push(Nil) ~ SP
+      }
+
+      def NonEmptyBody = rule {
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP
+      }
+
+      rule {
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Instance
       }
     }
 
     def TypeParams: Rule1[ParsedAst.TypeParams] = {
-      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-        SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[ParsedAst.Type], sp2: SourcePosition) => bound match {
-          case None => ParsedAst.ContextBound(sp1, ident, Seq.empty, sp2)
-          case Some(tpe) => ParsedAst.ContextBound(sp1, ident, Seq(tpe), sp2)
+      def ConstrainedType: Rule1[ParsedAst.ConstrainedType] = rule {
+        SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[Name.QName], sp2: SourcePosition) => bound match {
+          case None => ParsedAst.ConstrainedType(sp1, ident, Seq.empty, sp2)
+          case Some(clazz) => ParsedAst.ConstrainedType(sp1, ident, Seq(clazz), sp2)
         })
       }
 
       rule {
-        optional("[" ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
+        optional("[" ~ optWS ~ oneOrMore(ConstrainedType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ConstrainedType]]) => o match {
           case None => ParsedAst.TypeParams.Elided
           case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
         })
@@ -266,7 +288,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
+    keyword("use") ~ WS ~ (Uses.UseClass | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
   }
 
   object Uses {
@@ -296,6 +318,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
+    }
+
+    def UseClass: Rule1[ParsedAst.Use] = rule { // MATT improve syntax
+      keyword("class") ~ WS ~ SP ~ Names.Namespace ~ "." ~ UseName ~ SP ~> ParsedAst.Use.UseClass
     }
 
     def UseName: Rule1[Name.Ident] = rule {

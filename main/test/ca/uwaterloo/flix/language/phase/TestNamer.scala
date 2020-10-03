@@ -536,6 +536,55 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
+  test("DuplicateUseClass.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use class A.Show;
+         |    use class B.Show;
+         |    true
+         |
+         |namespace A {
+         |    class Show[a] {
+         |        def show(x: a): String
+         |    }
+         |}
+         |
+         |namespace B {
+         |    class Show[a] {
+         |        def show(x: a): String
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseClass](result)
+  }
+
+  test("DuplicateUseClass.02") {
+    val input =
+      s"""
+         |use class A.Show;
+         |use class B.Show;
+         |
+         |def main(): Bool = true
+         |
+         |namespace A {
+         |    class Show[a] {
+         |        def show(x: a): String
+         |    }
+         |}
+         |
+         |namespace B {
+         |    class Show[a] {
+         |        def show(x: a): String
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseClass](result)
+  }
+
   test("DuplicateTypeAlias.01") {
     val input =
       s"""

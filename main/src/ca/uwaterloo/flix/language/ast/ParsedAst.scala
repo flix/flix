@@ -189,6 +189,19 @@ object ParsedAst {
       */
     case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
 
+    /**
+      * Typeclass instance.
+      *
+      * @param doc        the optional comment associated with the declaration.
+      * @param mod        the associated modifiers.
+      * @param sp1        the position of the first character in the declaration.
+      * @param clazz      the name of the class.
+      * @param tpe        the type of the instance.
+      * @param defs       the definitions of the instance.
+      * @param sp2        the position of the last character in the declaration.
+      */
+    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+
     case class LatticeComponents(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
@@ -199,6 +212,16 @@ object ParsedAst {
   sealed trait Use
 
   object Use {
+
+    /**
+      * A use of a single class from a namespace.
+      *
+      * @param sp1   the position of the first character.
+      * @param nname the namespace.
+      * @param ident the name.
+      * @param sp2   the position of the last character.
+      */
+    case class UseClass(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends Use
 
     /**
       * A use of a single name from a namespace.
@@ -1372,7 +1395,7 @@ object ParsedAst {
     /**
       * Represents an explicit sequence of type parameters.
       */
-    case class Explicit(tparams: List[ParsedAst.ContextBound]) extends TypeParams
+    case class Explicit(tparams: List[ParsedAst.ConstrainedType]) extends TypeParams
 
   }
 
@@ -1389,11 +1412,11 @@ object ParsedAst {
     * Context Bound.
     *
     * @param sp1     the position of the first character in the context bound.
-    * @param ident   the name of the type class.
-    * @param tparams the type params of the class.
+    * @param ident   the type variable being bound
+    * @param classes the bounding classes.
     * @param sp2     the position of the last character in the context bound.
     */
-  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.Type], sp2: SourcePosition)
+  case class ConstrainedType(sp1: SourcePosition, ident: Name.Ident, classes: Seq[Name.QName], sp2: SourcePosition)
 
   /**
     * Formal Parameter.

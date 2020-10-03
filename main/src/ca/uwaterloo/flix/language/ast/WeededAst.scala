@@ -34,7 +34,9 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Class(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParams, signatures: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParams, sigs: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: WeededAst.Type, defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Sig(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -55,6 +57,7 @@ object WeededAst {
   sealed trait Use
 
   object Use {
+    case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
     case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
@@ -72,7 +75,7 @@ object WeededAst {
 
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
-    case class VarOrDef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+    case class VarOrDefOrSig(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
@@ -349,7 +352,7 @@ object WeededAst {
 
     case object Elided extends TypeParams
 
-    case class Explicit(tparams: List[Name.Ident]) extends TypeParams
+    case class Explicit(tparams: List[ConstrainedType]) extends TypeParams
 
   }
 
@@ -362,6 +365,8 @@ object WeededAst {
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
+
+  case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 

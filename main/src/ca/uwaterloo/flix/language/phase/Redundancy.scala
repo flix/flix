@@ -211,6 +211,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Def(sym, _, _) => Used.of(sym)
 
+    case Expression.Sig(sym, _, _) => Used.of(sym)
+
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -689,7 +691,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -700,6 +702,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns an object where the given defn symbol `sym` is marked as used.
       */
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
+
+    /**
+      * Returns an object where the given sig symbol `sym` is marked as used.
+      */
+    def of(sym: Symbol.SigSym): Used = empty.copy(sigSyms = Set(sym))
 
     /**
       * Returns an object where the given hole symbol `sym` is marked as used.
@@ -718,6 +725,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
                           defSyms: Set[Symbol.DefnSym],
+                          sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           unconditionallyRecurses: Boolean,
@@ -737,6 +745,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
+          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses && that.unconditionallyRecurses,
@@ -758,6 +767,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
+          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses || that.unconditionallyRecurses,

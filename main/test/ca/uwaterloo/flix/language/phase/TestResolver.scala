@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -159,6 +159,40 @@ class TestResolver extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleClass.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  class Show[a] {
+         |    def show(x: a): String
+         |  }
+         |}
+         |
+         |namespace B {
+         |  def g[a: A.Show](x: a): Int = ???
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
+  test("InaccessibleClass.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f[a: A/B/C.Show](x: a): Int = ???
+         |
+         |  namespace B/C {
+         |    class Show[a] {
+         |      def show(x: a): String
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
   }
 
   test("RecursionLimit.01") {

@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.WeededAst.{NullPattern, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
@@ -43,6 +44,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
       classes = Map.empty,
+      sigs = Map.empty,
+      instances = Map.empty,
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
@@ -83,17 +86,32 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
     }
 
-    case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
-
+    case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
+      // Check if the class already exists.
       val classes = prog0.classes.getOrElse(ns0, Map.empty)
+      val sigs = prog0.sigs.getOrElse(ns0, Map.empty)
       classes.get(ident.name) match {
         case None =>
+          // Case 1: The class does not already exist. Update it.
           visitClass(decl, uenv0, Map.empty, ns0) map {
-            clazz => prog0.copy(classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))))
+            case clazz@NamedAst.Class(_, _, _, _, sigs0, _) =>
+              prog0.copy(
+                classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))),
+                sigs = prog0.sigs + (ns0 -> (sigs ++ sigs0.map(sig => (sig.sym.name, sig)).toMap))
+              )
           }
         case Some(clazz) =>
+          // Case 2: Duplicate class.
           NameError.DuplicateClass(ident.name, clazz.sym.loc, ident.loc).toFailure
       }
+
+    case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, defs, loc) =>
+      // duplication check must come after name resolution
+      val instances = prog0.instances.getOrElse(ns0, MultiMap.empty)
+      visitInstance(decl, uenv0, Map.empty, ns0) map {
+        instance => prog0.copy(instances = prog0.instances + (ns0 -> (instances + (clazz.ident.name, instance)))) // MATT fix to be global map
+      }
+
     /*
      * Definition.
      */
@@ -271,16 +289,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     mapN(sequence(casesVal))(_.toMap)
   }
 
+  /**
+    * Performs naming on the given class `clazz`.
+    */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
     case WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
+      val className = Name.mkQName(ident)
       val tparams = getProperTypeParams(tparam).head // only 1 tparam allowed for now
       for {
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, sym))
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, className, sym, tparams))
       } yield NamedAst.Class(doc, mod, sym, tparams, sigs, loc)
   }
 
-  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, clazz: Symbol.ClassSym)(implicit flix: Flix) = sig match {
+  /**
+    * Performs naming on the given instance `instance`.
+    */
+  private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
+    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe, defs0, loc) =>
+      for {
+        tpe <- visitType(tpe, uenv0, tenv0)
+        defs <- traverse(defs0)(visitDef(_, uenv0, tenv0, ns0))
+      } yield NamedAst.Instance(doc, mod, clazz, tpe, defs, loc)
+  }
+
+  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
         tparams =>
@@ -289,11 +322,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case fparams =>
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-              val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
+              val schemeVal = getSigScheme(tparams, tpe, uenv0, tenv, className, classTparam)
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, schemeVal, tpeVal) {
                 case (as, sc, eff) =>
-                  val sym = Symbol.mkSigSym(clazz, ident)
+                  val sym = Symbol.mkSigSym(classSym, ident)
                   NamedAst.Sig(doc, as, mod, sym, tparams, fparams, sc, eff, loc)
               }
           }
@@ -312,7 +345,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
               val expVal = visitExp(exp, env0, uenv0, tenv)
-              val schemeVal = getScheme(tparams, tpe, uenv0, tenv)
+              val schemeVal = getDefScheme(tparams, tpe, uenv0, tenv)
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, expVal, schemeVal, tpeVal) {
                 case (as, e, sc, eff) =>
@@ -345,7 +378,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Wild(loc) =>
       NamedAst.Expression.Wild(Type.freshVar(Kind.Star), loc).toSuccess
 
-    case WeededAst.Expression.VarOrDef(qname, loc) if qname.isUnqualified =>
+    case WeededAst.Expression.VarOrDefOrSig(qname, loc) if qname.isUnqualified =>
       // the ident name.
       val name = qname.ident.name
 
@@ -353,10 +386,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       (env0.get(name), uenv0.defs.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a top-level function.
-          NamedAst.Expression.Def(qname, Type.freshVar(Kind.Star), loc).toSuccess
+          NamedAst.Expression.DefOrSig(qname, Type.freshVar(Kind.Star), loc).toSuccess
         case (None, Some(actualQName)) =>
           // Case 2: the name is a use.
-          NamedAst.Expression.Def(actualQName, Type.freshVar(Kind.Star), loc).toSuccess
+          NamedAst.Expression.DefOrSig(actualQName, Type.freshVar(Kind.Star), loc).toSuccess
         case (Some(sym), None) =>
           // Case 3: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
@@ -365,8 +398,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NameError.AmbiguousVarOrUse(name, loc, sym.loc, qname.loc).toFailure
       }
 
-    case WeededAst.Expression.VarOrDef(name, loc) =>
-      NamedAst.Expression.Def(name, Type.freshVar(Kind.Star), loc).toSuccess
+    case WeededAst.Expression.VarOrDefOrSig(name, loc) =>
+      NamedAst.Expression.DefOrSig(name, Type.freshVar(Kind.Star), loc).toSuccess
 
     case WeededAst.Expression.Hole(name, loc) =>
       val tpe = Type.freshVar(Kind.Star)
@@ -375,6 +408,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map {
+        case WeededAst.Use.UseClass(qname, alias, loc) => NamedAst.Use.UseClass(qname, alias, loc)
         case WeededAst.Use.UseDef(qname, alias, loc) => NamedAst.Use.UseDef(qname, alias, loc)
         case WeededAst.Use.UseTyp(qname, alias, loc) => NamedAst.Use.UseTyp(qname, alias, loc)
         case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
@@ -1090,7 +1124,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
     case WeededAst.Expression.Wild(loc) => Nil
-    case WeededAst.Expression.VarOrDef(qname, loc) => List(qname.ident)
+    case WeededAst.Expression.VarOrDefOrSig(qname, loc) => List(qname.ident)
     case WeededAst.Expression.Hole(name, loc) => Nil
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Unit(loc) => Nil
@@ -1381,7 +1415,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
     case TypeParams.Elided => Nil
     case TypeParams.Explicit(tparams) => tparams.map {
-      ident => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), ident.loc)
+      case WeededAst.ConstrainedType(ident, classes) => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), classes, ident.loc)
     }
   }
 
@@ -1391,9 +1425,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getTypeParamsFromCases(tparams0: WeededAst.TypeParams, cases: List[WeededAst.Case], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => Nil.toSuccess // TODO allow implicit tparams?
-      case WeededAst.TypeParams.Explicit(tparams0) =>
+      case WeededAst.TypeParams.Explicit(tparams) =>
         mapN(getImplicitTypeParamsFromCases(cases, loc)) {
-          implicitTparams => getExplicitTypeParams(tparams0, implicitTparams)
+          implicitTparams => getExplicitTypeParams(tparams, implicitTparams)
         }
     }
   }
@@ -1418,17 +1452,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the explicit type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitTypeParams(tparams0: List[Name.Ident], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getExplicitTypeParams(tparams0: List[WeededAst.ConstrainedType], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {
-      ident =>
+      case WeededAst.ConstrainedType(ident, classes) =>
         // Get the kind for each type variable from the implicit type params.
         // Use a kind variable if not found; this will be caught later by redundancy checks.
         val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
         val tvar = Type.freshVar(kind)
         // Remember the original textual name.
         tvar.setText(ident.name)
-        NamedAst.TypeParam(ident, tvar, ident.loc)
+        NamedAst.TypeParam(ident, tvar, classes, ident.loc)
     }
   }
 
@@ -1494,7 +1528,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case (id, kind) =>
             val tvar = Type.freshVar(kind) // use the kind we validated from the parameter context
             tvar.setText(id.name)
-            NamedAst.TypeParam(id, tvar, loc) // use the id of the first occurrence of a tparam with this name
+            NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
+            // MATT may need to be not Nil for type constraints in enums
         }
     }
   }
@@ -1518,7 +1553,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         // We use a kind variable since we do not know the kind of the type variable.
         val tvar = Type.freshVar(Kind.freshVar())
         tvar.setText(name)
-        NamedAst.TypeParam(ident, tvar, loc)
+        NamedAst.TypeParam(ident, tvar, Nil, loc)
     }
   }
 
@@ -1542,10 +1577,26 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
     */
-  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
-    mapN(visitType(tpe, uenv0, tenv0)) {
-      case t => NamedAst.Scheme(tparams0.map(_.tpe), t)
-    }
+  private def getDefScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+    for {
+      t <- visitType(tpe, uenv0, tenv0)
+      tparams = tparams0.map(_.tpe)
+      tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, tparam.tpe)))
+    } yield NamedAst.Scheme(tparams, tconstrs, t)
+  }
+
+  /**
+    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
+    */
+  private def getSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var], clazz: Name.QName, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+    for {
+      t <- visitType(tpe, uenv0, tenv0)
+      tparams = tparams0.map(_.tpe)
+      // constrained as part of definition
+      tconstrs1 = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, tparam.tpe)))
+      // constrained as class type parameters
+      tconstrs2 = tparams0.find(_.name.name == classTparam.name.name).map(tparam => NamedAst.TypeConstraint(clazz, tparam.tpe)).toList
+    } yield NamedAst.Scheme(tparams, tconstrs1 ++ tconstrs2, t)
   }
 
   /**
@@ -1583,10 +1634,30 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
+    * Builds a nested map of namespace -> name -> signature from the given class namespace map.
+    */
+  private def buildSigLookup(classes: Map[Name.NName, Map[String, NamedAst.Class]]): Map[Name.NName, Map[String, NamedAst.Sig]] = {
+    def flatMapToSigs(classes: Map[String, NamedAst.Class]): Map[String, NamedAst.Sig] = {
+      classes.flatMap {
+        case (_, clazz) => clazz.sigs.map(sig => (sig.sym.name, sig))
+      }
+    }
+    classes.foldLeft(Map.empty[Name.NName, Map[String, NamedAst.Sig]]) {
+      case (acc, (namespace, classes1)) => acc + (namespace -> flatMapToSigs(classes1))
+    }
+  }
+
+  /**
     * Merges the given `uses` into the given use environment `uenv0`.
     */
   private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] =
     Validation.fold(uses, uenv0) {
+      case (uenv1, WeededAst.Use.UseClass(qname, alias, _)) =>
+        val name = alias.name
+        uenv1.classes.get(name) match {
+          case None => uenv1.addClass(name, qname).toSuccess
+          case Some(otherQName) => NameError.DuplicateUseClass(name, otherQName.loc, qname.loc).toFailure
+        }
       case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
         val name = alias.name
         uenv1.defs.get(name) match {
@@ -1611,13 +1682,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Companion object for the [[UseEnv]] class.
     */
   private object UseEnv {
-    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty)
+    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty, Map.empty)
   }
 
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
+  private case class UseEnv(classes: Map[String, Name.QName], defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
+    /**
+      * Binds the class name `s` to the qualified name `n`.
+      */
+    def addClass(s: String, n: Name.QName): UseEnv = copy(classes = classes + (s -> n))
+
     /**
       * Binds the def name `s` to the qualified name `n`.
       */

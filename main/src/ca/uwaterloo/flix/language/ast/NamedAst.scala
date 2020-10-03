@@ -18,12 +18,15 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.immutable.List
 
 object NamedAst {
 
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
+                  sigs: Map[Name.NName, Map[String, NamedAst.Sig]],
+                  instances: Map[Name.NName, MultiMap[String, NamedAst.Instance]],
                   defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
@@ -32,7 +35,9 @@ object NamedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, signatures: List[NamedAst.Sig], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, sigs: List[NamedAst.Sig], loc: SourceLocation)
+
+  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, defs: List[NamedAst.Def], loc: SourceLocation)
 
   case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
@@ -49,6 +54,8 @@ object NamedAst {
   sealed trait Use
 
   object Use {
+
+    case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
 
     case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
 
@@ -68,9 +75,7 @@ object NamedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Def(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Sig(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class DefOrSig(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -338,13 +343,15 @@ object NamedAst {
 
   }
 
-  case class Scheme(quantifiers: List[ast.Type.Var], base: NamedAst.Type)
+  case class Scheme(quantifiers: List[ast.Type.Var], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
 
   case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: NamedAst.Type)
+
+  case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
 
@@ -368,6 +375,8 @@ object NamedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, classes: List[Name.QName], loc: SourceLocation)
+
+  case class TypeConstraint(clazz: Name.QName, arg: ast.Type)
 
 }
