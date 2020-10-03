@@ -239,7 +239,7 @@ object Type {
   val Channel: Type = Type.Cst(TypeConstructor.Channel)
 
   /**
-    * Represents the Channel type constructor.
+    * Represents the Choice type constructor.
     *
     * NB: This type has kind: * -> Bool -> *.
     */
