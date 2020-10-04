@@ -624,7 +624,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of lists of the types and effects of the match expressions.
           */
-        def visitMatchExps(exps: List[ResolvedAst.Expression], vars: List[Type.Var]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
+        def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
           def visitMatchExp(exp: ResolvedAst.Expression, nullityVar: Type.Var): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
@@ -633,7 +633,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             } yield (constrs, freshElmVar, eff)
           }
 
-          seqM(exps.zip(vars).map {
+          seqM(exps.zip(isAbsentVars).map {
             case (matchExp, nullityVar) => visitMatchExp(matchExp, nullityVar)
           }).map(_.unzip3)
         }
@@ -657,8 +657,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           * Specifically, forces the boolean variables in `xs` to be
           * pairwise equal to `False` if a non-null variable is present.
           */
-        def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
-          xs.zip(r.pat).foldLeft(Type.True) {
+        def mkInnerConj(isAbsentVars: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
+          isAbsentVars.zip(r.pat).foldLeft(Type.True) {
             case (acc, (x, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: We have a wildcard. No constraint is generated.
               acc
@@ -673,8 +673,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         /**
           * Constructs the outer disjunction of nullity constraints.
           */
-        def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], vars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
-          case (acc, rule) => Type.mkOr(acc, mkInnerConj(vars, rule))
+        def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], isAbsentVars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
+          case (acc, rule) => Type.mkOr(acc, mkInnerConj(isAbsentVars, rule))
         }
 
         /**
@@ -699,16 +699,18 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
 
         //
-        // Introduce a nullity variable for each match expression `exps`.
+        // Introduce an isAbsent variable for each match expression in `exps`.
+        // Introduce an isPresent variable for each math expression in `exps`.
         //
-        val nullityVars = exps0.map(_ => Type.freshVar(Kind.Bool))
+        val isAbsentVars = exps0.map(_ => Type.freshVar(Kind.Bool))
+        val isPresentVars = exps0.map(_ => Type.freshVar(Kind.Bool))
 
         //
         // Put everything together.
         //
         for {
-          _ <- unifyBoolM(mkOuterDisj(rules0, nullityVars), Type.True, loc)
-          (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, nullityVars)
+          _ <- unifyBoolM(mkOuterDisj(rules0, isAbsentVars), Type.True, loc)
+          (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
           resultTyp <- unifyTypeM(ruleBodyTyp, loc)
