@@ -22,9 +22,7 @@ namespace Test/Exp/Choose {
     def testChooseOne03(): Bool =
         let f = x -> {
             choose x {
-                case Absent     => "a"
-                case Present(_) => "b"
-
+                case _ => "a"
             }
         };
         f(Absent) == "a"
@@ -33,12 +31,76 @@ namespace Test/Exp/Choose {
     def testChooseOne04(): Bool =
         let f = x -> {
             choose x {
+                case _ => "a"
+            }
+        };
+        f(Present("a")) == "a"
+
+    @test
+    def testChooseOne05(): Bool =
+        let f = x -> {
+            choose x {
+                case Absent     => "a"
+                case Present(_) => "b"
+
+            }
+        };
+        f(Absent) == "a"
+
+    @test
+    def testChooseOne06(): Bool =
+        let f = x -> {
+            choose x {
                 case Absent     => "a"
                 case Present(x) => x
 
             }
         };
         f(Present("b")) == "b"
+
+    @test
+    def testChooseOne07(): Bool =
+        let f = x -> {
+            choose x {
+                case Absent     => "a"
+                case _          => "b"
+
+            }
+        };
+        f(Absent) == "a"
+
+    @test
+    def testChooseOne08(): Bool =
+        let f = x -> {
+            choose x {
+                case Absent     => "a"
+                case _          => "b"
+
+            }
+        };
+        f(Present("x")) == "b"
+
+    @test
+    def testChooseOne09(): Bool =
+        let f = x -> {
+            choose x {
+                case Present(x) => x
+                case _          => "b"
+
+            }
+        };
+        f(Absent) == "b"
+
+    @test
+    def testChooseOne10(): Bool =
+        let f = x -> {
+            choose x {
+                case Present(x) => x
+                case _          => "b"
+
+            }
+        };
+        f(Present("a")) == "a"
 
     @test
     def testChooseTwo01(): Bool =
