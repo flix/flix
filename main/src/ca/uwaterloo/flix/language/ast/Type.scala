@@ -490,8 +490,8 @@ object Type {
   /**
     * Returns the type `Choice[tpe, isAbsent, isPresent]`.
     */
-    // TODO: Add extra argument
-  def mkChoice(tpe0: Type, isAbsent: Type): Type = Apply(Apply(Apply(Cst(TypeConstructor.Choice), tpe0), isAbsent), /* TODO */ Type.True)
+  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type): Type =
+    Apply(Apply(Apply(Cst(TypeConstructor.Choice), tpe0), isAbsent), isPresent)
 
   /**
     * Returns the type `Lazy[tpe]`.

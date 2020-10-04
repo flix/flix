@@ -411,13 +411,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         liftM(List.empty, Type.Str, Type.Pure)
 
       case ResolvedAst.Expression.Absent(tvar, loc) =>
-        liftM(List.empty, Type.mkChoice(tvar, Type.True), Type.Pure)
+        liftM(List.empty, Type.mkChoice(tvar, Type.True, /* TODO */ Type.True), Type.Pure)
 
       case ResolvedAst.Expression.Present(exp, loc) =>
         val nullity = Type.freshVar(Kind.Bool)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkChoice(tpe, nullity)
+          resultTyp = Type.mkChoice(tpe, nullity, /* TODO */ Type.True)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
@@ -629,7 +629,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
               (constrs, tpe, eff) <- visitExp(exp)
-              _ <- unifyTypeM(tpe, Type.mkChoice(freshElmVar, nullityVar), loc)
+              _ <- unifyTypeM(tpe, Type.mkChoice(freshElmVar, nullityVar, /* TODO */ Type.True), loc)
             } yield (constrs, freshElmVar, eff)
           }
 
