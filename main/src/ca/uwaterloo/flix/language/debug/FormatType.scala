@@ -138,28 +138,7 @@ object FormatType {
 
           case TypeConstructor.Channel => formatApply("Channel", args)
 
-          case TypeConstructor.Choice =>
-            val arity = args.length
-            if (arity == 0)
-              "Choice[???, ???]"
-            else if (arity == 1)
-              s"Choice[${visit(args(0))}, ???}"
-            else if (arity == 2) {
-              args(1) match {
-                case Type.True =>
-                  val tpe1 = visit(args(0))
-                  s"$tpe1 ? true"
-                case Type.False =>
-                  val tpe1 = visit(args(0))
-                  s"$tpe1 ? false"
-                case _ =>
-                  val tpe1 = visit(args(0))
-                  val tpe2 = visit(args(1))
-                  s"$tpe1 ? $tpe2"
-              }
-            }
-            else
-              s"Choice[${args.map(visit).mkString(", ")}]"
+          case TypeConstructor.Choice => formatApply("Choice", args)
 
           case TypeConstructor.Enum(sym, _) => formatApply(sym.toString, args)
 
