@@ -411,13 +411,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         liftM(List.empty, Type.Str, Type.Pure)
 
       case ResolvedAst.Expression.Absent(tvar, loc) =>
-        liftM(List.empty, Type.mkChoice(tvar, Type.True, /* TODO */ Type.True), Type.Pure)
+        val isAbsent = Type.True
+        val isPresent = Type.freshVar(Kind.Bool)
+        liftM(List.empty, Type.mkChoice(tvar, isAbsent, isPresent), Type.Pure)
 
       case ResolvedAst.Expression.Present(exp, loc) =>
-        val nullity = Type.freshVar(Kind.Bool)
+        val isAbsent = Type.freshVar(Kind.Bool)
+        val isPresent = Type.True
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkChoice(tpe, nullity, /* TODO */ Type.True)
+          resultTyp = Type.mkChoice(tpe, isAbsent, isPresent)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
