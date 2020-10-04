@@ -40,4 +40,40 @@ namespace Test/Exp/Choose {
         };
         f(Present("b")) == "b"
 
+    @test
+    def testChooseTwo01(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Absent) => "a"
+            }
+        };
+        f(Absent, Absent) == "a"
+
+    @test
+    def testChooseTwo02(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Present(x)) => x
+            }
+        };
+        f(Absent, Present("a")) == "a"
+
+    @test
+    def testChooseTwo03(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Present(x), Absent) => x
+            }
+        };
+        f(Present("a"), Absent) == "a"
+
+    @test
+    def testChooseTwo04(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Present(x), Present(y)) => x + y
+            }
+        };
+        f(Present("a"), Present("b")) == "ab"
+
 }
