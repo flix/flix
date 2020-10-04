@@ -700,9 +700,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         //
         // Introduce an isAbsent variable for each match expression in `exps`.
-        // Introduce an isPresent variable for each math expression in `exps`.
         //
         val isAbsentVars = exps0.map(_ => Type.freshVar(Kind.Bool))
+
+        //
+        // Introduce an isPresent variable for each math expression in `exps`.
+        //
         val isPresentVars = exps0.map(_ => Type.freshVar(Kind.Bool))
 
         //
