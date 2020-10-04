@@ -120,7 +120,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.LatticeComponents |
       Declarations.Relation |
       Declarations.Lattice |
-      Declarations.Class
+      Declarations.Class |
+      Declarations.Instance
   }
 
   object Declarations {
@@ -248,7 +249,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optional(optWS ~ keyword("with") ~ optWS ~ "[" ~ oneOrMore(TypeConstraint).separatedBy(",") ~ "]")
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optional(optWS ~ keyword("with") ~ optWS ~ "[" ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS) ~ "]")
       }
 
       def EmptyBody = rule {

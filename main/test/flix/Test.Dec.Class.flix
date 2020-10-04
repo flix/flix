@@ -36,5 +36,11 @@ namespace Test04 {
     pub def h[a : C : D](x: a): Bool = f(x) && g(x)
 }
 
+namespace Test05 {
+    class C[a]
+
+    instance C[List[a]] with [a : C, Option[a] : C]
+}
+
 @test
 def empty(): Bool = true
