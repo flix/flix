@@ -490,6 +490,7 @@ object Type {
   /**
     * Returns the type `Choice[tpe, ...]`.
     */
+    // TODO: Require two arguments.
   def mkChoice(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Choice), tpe0), nullity)
 
   /**
