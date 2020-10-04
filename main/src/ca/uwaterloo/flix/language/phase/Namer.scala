@@ -325,21 +325,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val className = Name.mkQName(ident)
-      val tparams = getProperTypeParams(tparam).head // only 1 tparam allowed for now
-      for { // MATT add tparam to tenv for sigs
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv0, ns0, className, sym, tparams))
-      } yield NamedAst.Class(doc, mod, sym, tparams, sigs, loc)
+      val tparams = getProperTypeParams(tparam) // only 1 tparam allowed for now
+      val tenv = tenv0 ++ getTypeEnv(tparams)
+      for {
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, className, sym, tparams.head)) // MATT check for shadowing?
+      } yield NamedAst.Class(doc, mod, sym, tparams.head, sigs, loc)
   }
 
   /**
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe, tconstrs, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs0, loc) =>
       for {
-        tpe <- visitType(tpe, uenv0, tenv0) // MATT add tparam to tenv for tpe, defs and tconstrs; will need something like getImplicitTypeParams but for instance type
-        defs <- traverse(defs0)(visitDef(_, uenv0, tenv0, ns0))
-        tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv0, ns0))
+        tparams <- getImplicitTypeParamsFromTypes(tpe0 :: tconstrs.map(_.tpe), loc) // MATT use better loc; add loc to WeededAst.Type trait?
+        tenv = tenv0 ++ getTypeEnv(tparams)
+        tpe <- visitType(tpe0, uenv0, tenv)
+        defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0))
+        tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))
       } yield NamedAst.Instance(doc, mod, clazz, tpe, tconstrs.flatten, defs, loc)
   }
 
@@ -351,6 +354,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       } yield classes.map(NamedAst.TypeConstraint(_, tpe))
   }
 
+  // MATT docs
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
@@ -1213,7 +1217,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(className, fieldName, loc) => Nil
     case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) => freeVars(exp)
-    case WeededAst.Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
+    case WeededAst.Expression.NewChannel(tpe, exp, loc) => freeVars(exp) // TODO exp is a Type. is this a bug?
     case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
@@ -1496,15 +1500,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
   }
 
+  // MATT docs
+  private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+    val typeVarsWithKind = types.flatMap(freeVarsWithKind)
+    freshTypeParamsWithKind(typeVarsWithKind, loc)
+  }
+
   /**
     * Returns the implicit type parameters constructed from the given enum cases.
     */
   private def getImplicitTypeParamsFromCases(cases: List[WeededAst.Case], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     // Infer the kind for each type variable in the cases.
-    val typeVarsWithKind = cases.flatMap {
-      c => freeVarsWithKind(c.tpe)
-    }
-    freshTypeParamsWithKind(typeVarsWithKind, loc)
+    getImplicitTypeParamsFromTypes(cases.map(_.tpe), loc)
   }
 
   /**
