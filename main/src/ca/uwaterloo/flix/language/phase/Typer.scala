@@ -624,6 +624,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of lists of the types and effects of the match expressions.
           */
+        // TODO: Need isPresentVars
         def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
           def visitMatchExp(exp: ResolvedAst.Expression, nullityVar: Type.Var): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star)
@@ -674,30 +675,29 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           }
 
         /**
-          * Constructs the outer disjunction of nullity constraints.
+          * Constructs a disjunction of the constraints of each choice rule.
           */
         def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
           case (acc, rule) => Type.mkOr(acc, mkInnerConj(isAbsentVars, isPresentVars, rule))
         }
 
         /**
-          * Performs type inference and unification with the `matchTypes` against the given null rules `rs`.
+          * Performs type inference and unification with the `matchTypes` against the given choice rules `rs`.
           */
         def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[ResolvedAst.ChoiceRule]): InferMonad[List[List[Type]]] = {
           def unifyWithRule(r: ResolvedAst.ChoiceRule): InferMonad[List[Type]] = {
             seqM(matchTypes.zip(r.pat).map {
               case (matchType, ResolvedAst.ChoicePattern.Wild(_)) =>
-                // Case 1: The pattern is wildcard. No variable is bound and no type information to constrain.
+                // Case 1: The pattern is wildcard. No variable is bound and there is type to constrain.
                 liftM(matchType)
               case (matchType, ResolvedAst.ChoicePattern.Absent(_)) =>
-                // Case 2: TODO: Must constraint the type
+                // Case 2: The pattern is a `Absent`. No variable is bound and there is type to constrain.
                 liftM(matchType)
               case (matchType, ResolvedAst.ChoicePattern.Present(sym, loc)) =>
-                // Case 3: Must constraint the type of the local variable with the type of the match expression.
+                // Case 3: The pattern is `Present`. Must constraint the type of the local variable with the type of the match expression.
                 unifyTypeM(matchType, sym.tvar, loc)
             })
           }
-
           seqM(rs.map(unifyWithRule))
         }
 
