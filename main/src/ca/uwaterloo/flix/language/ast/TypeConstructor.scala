@@ -158,7 +158,7 @@ object TypeConstructor {
     * A type constructor for choice types.
     */
   case object Choice extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
   }
 
   /**

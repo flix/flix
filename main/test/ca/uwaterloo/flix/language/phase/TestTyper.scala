@@ -127,7 +127,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Null.01") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: Choice[String, false], y: Choice[String, true], z: Choice[String, false]): Bool =
+        |pub def testNullableThreeVar11(x: Choice[String, false, _], y: Choice[String, true, _], z: Choice[String, false, _]): Bool =
         |    choose (x, y, z) {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
@@ -140,7 +140,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Null.02") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: Choice[String, true], y: Choice[String, false], z: Choice[String, true]): Bool =
+        |pub def testNullableThreeVar11(x: Choice[String, true, _], y: Choice[String, false, _], z: Choice[String, true, _]): Bool =
         |    choose (x, y, z) {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
@@ -153,7 +153,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Null.03") {
     val input =
       """
-        |def f(x: Choice[String, not not n], y: Choice[String, not not n]): Bool =
+        |def f(x: Choice[String, not not n, _], y: Choice[String, not not n, _]): Bool =
         |    choose (x, y) {
         |        case (Present(a), _) => a == "Hello"
         |    }
