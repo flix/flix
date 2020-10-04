@@ -4,9 +4,18 @@ namespace Test/Exp/Choose {
     def testChoose01(): Bool =
         let f = x -> {
             choose x {
-                case Absent => 1
+                case Absent => "a"
             }
         };
-        f(Absent) == 1
+        f(Absent) == "a"
+
+    @test
+    def testChoose02(): Bool =
+        let f = x -> {
+            choose x {
+                case Present(x) => x
+            }
+        };
+        f(Present("a")) == "a"
 
 }
