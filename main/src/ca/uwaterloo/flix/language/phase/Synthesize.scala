@@ -155,12 +155,12 @@ object Synthesize extends Phase[Root, Root] {
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
-      case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
+      case Expression.Choose(exps, rules, tpe, eff, loc) =>
         val es = exps.map(visitExp)
         val rs = rules.map {
-          case NullRule(pat, exp) => NullRule(pat, visitExp(exp))
+          case ChoiceRule(pat, exp) => ChoiceRule(pat, visitExp(exp))
         }
-        Expression.NullMatch(es, rs, tpe, eff, loc)
+        Expression.Choose(es, rs, tpe, eff, loc)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -1007,7 +1007,7 @@ object Synthesize extends Phase[Root, Root] {
 
       // Compute the type constructor. Unwrap if nullable type.
       val typeConstructor = tpe.typeConstructor.flatMap {
-        case TypeConstructor.Nullable => tpe.typeArguments(0).typeConstructor
+        case TypeConstructor.Choice => tpe.typeArguments(0).typeConstructor
         case tc => Some(tc)
       }
 

@@ -367,7 +367,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
-      case TypedAst.Expression.NullMatch(exps, rules, tpe, eff, loc) =>
+      case TypedAst.Expression.Choose(exps, rules, tpe, eff, loc) =>
         patternMatchNull(exps, rules, tpe, loc)
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>
@@ -1136,7 +1136,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Eliminates pattern matching on null by translations to if-then-else expressions.
       */
-    def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.NullRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
+    def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.ChoiceRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
       //
       // Given the code:
       //
@@ -1182,26 +1182,26 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       // All the if-then-else branches.
       //
       val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
-        case (TypedAst.NullRule(pat, body), acc) =>
+        case (TypedAst.ChoiceRule(pat, body), acc) =>
           val init = SimplifiedAst.Expression.True: SimplifiedAst.Expression
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
-            case (((freshMatchVar, TypedAst.NullPattern.Wild(_)), matchExp), acc) => acc
-            case (((freshMatchVar, TypedAst.NullPattern.Var(matchVar, _)), matchExp), acc) =>
-              val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val isNotNull = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.NeqNull, null, varExp, Type.Bool, loc)
-              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNotNull, acc, Type.Bool, loc)
-            case (((freshMatchVar, TypedAst.NullPattern.Null(_)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
+            case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val isNull = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.EqNull, null, varExp, Type.Bool, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNull, acc, Type.Bool, loc)
+            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _)), matchExp), acc) =>
+              val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
+              val isNotNull = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.NeqNull, null, varExp, Type.Bool, loc)
+              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNotNull, acc, Type.Bool, loc)
           }
           val bodyExp = visitExp(body)
           val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
-            case (((freshMatchVar, TypedAst.NullPattern.Wild(_)), matchExp), acc) => acc
-            case (((freshMatchVar, TypedAst.NullPattern.Var(matchVar, _)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
+            case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) => acc
+            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               SimplifiedAst.Expression.Let(matchVar, varExp, acc, acc.tpe, loc)
-            case (((freshMatchVar, TypedAst.NullPattern.Null(_)), matchExp), acc) => acc
           }
           val elseExp = acc
           SimplifiedAst.Expression.IfThenElse(condExp, thenExp, elseExp, tpe, loc)

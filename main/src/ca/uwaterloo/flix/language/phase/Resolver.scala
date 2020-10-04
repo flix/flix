@@ -348,7 +348,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
 
-        case NamedAst.Expression.Null(tvar, loc) => ResolvedAst.Expression.Null(tvar, loc).toSuccess
+        case NamedAst.Expression.Null(loc) => ResolvedAst.Expression.Null(loc).toSuccess
 
         case NamedAst.Expression.True(loc) => ResolvedAst.Expression.True(loc).toSuccess
 
@@ -372,7 +372,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star),loc).toSuccess
+        case NamedAst.Expression.Absent(loc) => ResolvedAst.Expression.Absent(Type.freshVar(Kind.Star), loc).toSuccess
+
+        case NamedAst.Expression.Present(exp, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Present(e, loc)
+
+        case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star), loc).toSuccess
 
         case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.DefOrSig(qname, _, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefSig(qname, ns0, root)) {
@@ -412,11 +419,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0 + (fparam.sym -> paramType))
             p <- Params.resolve(fparam, ns0, root)
           } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
-
-        case NamedAst.Expression.Nullify(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Nullify(e, loc)
 
         case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
           for {
@@ -463,21 +465,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, loc)
 
-        case NamedAst.Expression.NullMatch(exps, rules, loc) =>
+        case NamedAst.Expression.Choose(exps, rules, loc) =>
           val expsVal = traverse(exps)(visit(_, tenv0))
           val rulesVal = traverse(rules) {
-            case NamedAst.NullRule(pat0, exp0) =>
+            case NamedAst.ChoiceRule(pat0, exp0) =>
               val p = pat0.map {
-                case NamedAst.NullPattern.Wild(loc) => ResolvedAst.NullPattern.Wild(loc)
-                case NamedAst.NullPattern.Var(sym, loc) => ResolvedAst.NullPattern.Var(sym, loc)
-                case NamedAst.NullPattern.Null(loc) => ResolvedAst.NullPattern.Null(loc)
+                case NamedAst.ChoicePattern.Wild(loc) => ResolvedAst.ChoicePattern.Wild(loc)
+                case NamedAst.ChoicePattern.Absent(loc) => ResolvedAst.ChoicePattern.Absent(loc)
+                case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
               }
               mapN(visit(exp0, tenv0)) {
-                case e => ResolvedAst.NullRule(p, e)
+                case e => ResolvedAst.ChoiceRule(p, e)
               }
           }
           mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expression.NullMatch(es, rs, loc)
+            case (es, rs) => ResolvedAst.Expression.Choose(es, rs, loc)
           }
 
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
@@ -1246,6 +1248,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
       case "Unit" => Type.Unit.toSuccess
+      case "Null" => Type.Null.toSuccess
       case "Bool" => Type.Bool.toSuccess
       case "Char" => Type.Char.toSuccess
       case "Float" => Type.Float64.toSuccess
@@ -1261,6 +1264,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "String" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Channel" => Type.Channel.toSuccess
+      case "Choice" => Type.Choice.toSuccess
       case "Lazy" => Type.Lazy.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
@@ -1364,13 +1368,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case clazz => Type.mkNative(clazz)
         }
       }
-
-    case NamedAst.Type.Nullable(tpe, nullity, loc) =>
-      for {
-        t <- lookupType(tpe, ns0, root)
-        n <- lookupType(nullity, ns0, root)
-        res <- mkNullable(t, n, loc)
-      } yield res
 
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
       for {
@@ -1822,10 +1819,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Create a well-formed `Nullable` type.
+    * Create a well-formed `Choice` type.
     */
-  private def mkNullable(tpe: Type, nullity: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.Nullable), List(tpe, nullity), loc)
+  private def mkChoice(tpe: Type, nullity: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.Choice), List(tpe, nullity), loc)
   }
 
   /**

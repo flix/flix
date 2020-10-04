@@ -63,7 +63,7 @@ object ResolvedAst {
 
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Null(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Null(loc: SourceLocation) extends ResolvedAst.Expression
 
     case class True(loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -87,13 +87,15 @@ object ResolvedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Absent(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Present(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Default(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Apply(exp: ResolvedAst.Expression, exps: List[ResolvedAst.Expression], tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Lambda(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Nullify(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unary(op: UnaryOperator, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -107,7 +109,7 @@ object ResolvedAst {
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NullMatch(exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.NullRule], loc: SourceLocation) extends ResolvedAst.Expression
+    case class Choose(exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -237,15 +239,15 @@ object ResolvedAst {
 
   }
 
-  sealed trait NullPattern
+  sealed trait ChoicePattern
 
-  object NullPattern {
+  object ChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends NullPattern
+    case class Wild(loc: SourceLocation) extends ChoicePattern
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NullPattern
+    case class Absent(loc: SourceLocation) extends ChoicePattern
 
-    case class Null(loc: SourceLocation) extends NullPattern
+    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
 
   }
 
@@ -297,9 +299,9 @@ object ResolvedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
-  case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
+  case class ChoiceRule(pat: List[ResolvedAst.ChoicePattern], exp: ResolvedAst.Expression)
 
-  case class NullRule(pat: List[ResolvedAst.NullPattern], exp: ResolvedAst.Expression)
+  case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 

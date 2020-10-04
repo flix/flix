@@ -456,12 +456,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Lambda(fparam, body, loc)
       }
 
-    case ParsedAst.Expression.Nullify(exp, sp2) =>
-      val sp1 = leftMostSourcePosition(exp)
-      mapN(visitExp(exp)) {
-        case e => WeededAst.Expression.Nullify(e, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
       visitExp(exp) map {
@@ -769,12 +763,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.NullMatch(sp1, exps, rules, sp2) =>
+    case ParsedAst.Expression.Choose(sp1, exps, rules, sp2) =>
       //
       // Check for mismatched arity of `exps` and `rules`.
       //
       val expectedArity = exps.length
-      for (ParsedAst.NullRule(sp1, pat, _, sp2) <- rules) {
+      for (ParsedAst.ChoiceRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
           return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
@@ -783,31 +777,42 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ParsedAst.NullRule(_, pat, exp, _) =>
+        case ParsedAst.ChoiceRule(_, pat, exp, _) =>
           val p = pat.map {
-            case ParsedAst.NullPattern.Wild(sp1, sp2) => WeededAst.NullPattern.Wild(mkSL(sp1, sp2))
-            case ParsedAst.NullPattern.Var(sp1, ident, sp2) => WeededAst.NullPattern.Var(ident, mkSL(sp1, sp2))
-            case ParsedAst.NullPattern.Null(sp1, sp2) => WeededAst.NullPattern.Null(mkSL(sp1, sp2))
+            case ParsedAst.ChoicePattern.Wild(sp1, sp2) => WeededAst.ChoicePattern.Wild(mkSL(sp1, sp2))
+            case ParsedAst.ChoicePattern.Absent(sp1, sp2) => WeededAst.ChoicePattern.Absent(mkSL(sp1, sp2))
+            case ParsedAst.ChoicePattern.Present(sp1, ident, sp2) => WeededAst.ChoicePattern.Present(ident, mkSL(sp1, sp2))
           }
           mapN(visitExp(exp)) {
-            case e => WeededAst.NullMatchRule(p.toList, e)
+            case e => WeededAst.ChoiceRule(p.toList, e)
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => WeededAst.Expression.NullMatch(es, rs, mkSL(sp1, sp2))
+        case (es, rs) => WeededAst.Expression.Choose(es, rs, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
       val (enum, tag) = asTag(qname)
 
-      expOpt match {
+      val expVal = expOpt match {
         case None =>
           // Case 1: The tag does not have an expression. Nothing more to be done.
-          WeededAst.Expression.Tag(enum, tag, None, mkSL(sp1, sp2)).toSuccess
+          None.toSuccess
         case Some(exp) =>
           // Case 2: The tag has an expression. Perform weeding on it.
-          visitExp(exp) map {
-            case e => WeededAst.Expression.Tag(enum, tag, Some(e), mkSL(sp1, sp2))
+          mapN(visitExp(exp))(e => Some(e))
+      }
+
+      mapN(expVal) {
+        case e =>
+          // TODO: We should probably express choice as an enum in Flix itself.
+          if (tag.name == "Absent") {
+            // TODO: Silently discarding e.
+            WeededAst.Expression.Absent(mkSL(sp1, sp2))
+          } else if (tag.name == "Present") {
+            WeededAst.Expression.Present(e, mkSL(sp1, sp2))
+          } else {
+            WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
           }
       }
 
@@ -1755,16 +1760,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Native(sp1, fqn, sp2) =>
       WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Nullable(tpe, optNullity, sp2) =>
-      val sp1 = leftMostSourcePosition(tpe)
-      val loc = mkSL(sp1, sp2)
-      val t = visitType(tpe)
-      val n = optNullity match {
-        case None => WeededAst.Type.True(loc)
-        case Some(nullity) => visitType(nullity)
-      }
-      WeededAst.Type.Nullable(t, n, loc)
-
     case ParsedAst.Type.Apply(t1, args, sp2) =>
       // Curry the type arguments.
       val sp1 = leftMostSourcePosition(t1)
@@ -2011,7 +2006,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Nullify(exp, _) => leftMostSourcePosition(exp)
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
@@ -2020,7 +2014,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NullMatch(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Choose(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
@@ -2078,7 +2072,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.ImpureArrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.PolymorphicArrow(sp1, _, _, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
-    case ParsedAst.Type.Nullable(tpe, _, _) => leftMostSourcePosition(tpe)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.True(sp1, _) => sp1
     case ParsedAst.Type.False(sp1, _) => sp1

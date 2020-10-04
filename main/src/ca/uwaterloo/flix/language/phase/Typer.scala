@@ -374,8 +374,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Unit(loc) =>
         liftM(List.empty, Type.Unit, Type.Pure)
 
-      case ResolvedAst.Expression.Null(tpe, loc) =>
-        liftM(List.empty, Type.mkNullable(tpe, Type.True), Type.Pure)
+      case ResolvedAst.Expression.Null(loc) =>
+        liftM(List.empty, Type.Null, Type.Pure)
 
       case ResolvedAst.Expression.True(loc) =>
         liftM(List.empty, Type.Bool, Type.Pure)
@@ -410,6 +410,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Str(lit, loc) =>
         liftM(List.empty, Type.Str, Type.Pure)
 
+      case ResolvedAst.Expression.Absent(tvar, loc) =>
+        liftM(List.empty, Type.mkChoice(tvar, Type.True), Type.Pure)
+
+      case ResolvedAst.Expression.Present(exp, loc) =>
+        val nullity = Type.freshVar(Kind.Bool)
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          resultTyp = Type.mkChoice(tpe, nullity)
+          resultEff = eff
+        } yield (constrs, resultTyp, resultEff)
+
       case ResolvedAst.Expression.Default(tvar, loc) =>
         liftM(List.empty, tvar, Type.Pure)
 
@@ -430,14 +441,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultEff <- unifyBoolM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.Nullify(exp, loc) =>
-        val nullity = Type.freshVar(Kind.Bool)
-        for {
-          (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkNullable(tpe, nullity)
-          resultEff = eff
-        } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) => op match {
         case UnaryOperator.LogicalNot =>
@@ -614,7 +617,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.NullMatch(exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -626,7 +629,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
               (constrs, tpe, eff) <- visitExp(exp)
-              _ <- unifyTypeM(tpe, Type.mkNullable(freshElmVar, nullityVar), loc)
+              _ <- unifyTypeM(tpe, Type.mkChoice(freshElmVar, nullityVar), loc)
             } yield (constrs, freshElmVar, eff)
           }
 
@@ -640,9 +643,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of list of the types and effects of the rule expressions.
           */
-        def visitRuleBodies(rs: List[ResolvedAst.NullRule]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
-          def visitRuleBody(r: ResolvedAst.NullRule): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = r match {
-            case ResolvedAst.NullRule(_, exp0) => visitExp(exp0)
+        def visitRuleBodies(rs: List[ResolvedAst.ChoiceRule]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
+          def visitRuleBody(r: ResolvedAst.ChoiceRule): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = r match {
+            case ResolvedAst.ChoiceRule(_, exp0) => visitExp(exp0)
           }
 
           seqM(rs.map(visitRuleBody)).map(_.unzip3)
@@ -654,15 +657,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           * Specifically, forces the boolean variables in `xs` to be
           * pairwise equal to `False` if a non-null variable is present.
           */
-        def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.NullRule): Type =
+        def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
           xs.zip(r.pat).foldLeft(Type.True) {
-            case (acc, (x, ResolvedAst.NullPattern.Wild(_))) =>
+            case (acc, (x, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: We have a wildcard. No constraint is generated.
               acc
-            case (acc, (x, ResolvedAst.NullPattern.Var(y, _))) =>
+            case (acc, (x, ResolvedAst.ChoicePattern.Present(y, _))) =>
               // Case 2: We have a variable. We must force `x` to be non-null.
               Type.mkAnd(acc, Type.mkEquiv(x, Type.False))
-            case (acc, (x, ResolvedAst.NullPattern.Null(_))) =>
+            case (acc, (x, ResolvedAst.ChoicePattern.Absent(_))) =>
               // Case 3: We have a null constant. No constraint is generated.
               acc
           }
@@ -670,25 +673,25 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         /**
           * Constructs the outer disjunction of nullity constraints.
           */
-        def mkOuterDisj(rs: List[ResolvedAst.NullRule], vars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
+        def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], vars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
           case (acc, rule) => Type.mkOr(acc, mkInnerConj(vars, rule))
         }
 
         /**
           * Performs type inference and unification with the `matchTypes` against the given null rules `rs`.
           */
-        def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[ResolvedAst.NullRule]): InferMonad[List[List[Type]]] = {
-          def unifyWithRule(r: ResolvedAst.NullRule): InferMonad[List[Type]] = {
+        def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[ResolvedAst.ChoiceRule]): InferMonad[List[List[Type]]] = {
+          def unifyWithRule(r: ResolvedAst.ChoiceRule): InferMonad[List[Type]] = {
             seqM(matchTypes.zip(r.pat).map {
-              case (matchType, ResolvedAst.NullPattern.Wild(_)) =>
-                // Case 1: The null pattern is wildcard. No variable is bound and no type information to constrain.
+              case (matchType, ResolvedAst.ChoicePattern.Wild(_)) =>
+                // Case 1: The pattern is wildcard. No variable is bound and no type information to constrain.
                 liftM(matchType)
-              case (matchType, ResolvedAst.NullPattern.Var(sym, loc)) =>
-                // Case 2: The null pattern is a variable. Must constraint the type of the local variable with the type of the match expression.
+              case (matchType, ResolvedAst.ChoicePattern.Absent(_)) =>
+                // Case 2: TODO: Must constraint the type
+                liftM(matchType)
+              case (matchType, ResolvedAst.ChoicePattern.Present(sym, loc)) =>
+                // Case 3: Must constraint the type of the local variable with the type of the match expression.
                 unifyTypeM(matchType, sym.tvar, loc)
-              case (matchType, ResolvedAst.NullPattern.Null(_)) =>
-                // Case 3: The null pattern is a null constant. No variable is bound and no type information to constrain.
-                liftM(matchType)
             })
           }
 
@@ -1286,7 +1289,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
 
-      case ResolvedAst.Expression.Null(tpe, loc) => TypedAst.Expression.Null(subst0(tpe), loc)
+      case ResolvedAst.Expression.Null(loc) => TypedAst.Expression.Null(Type.Unit, loc)
 
       case ResolvedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
 
@@ -1310,6 +1313,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
 
+      case ResolvedAst.Expression.Absent(tvar, loc) =>
+        TypedAst.Expression.Null(subst0(tvar), loc)
+
+      case ResolvedAst.Expression.Present(exp, loc) =>
+        visitExp(exp, subst0)
+
       case ResolvedAst.Expression.Default(tvar, loc) => TypedAst.Expression.Default(subst0(tvar), loc)
 
       case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
@@ -1322,9 +1331,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         val t = subst0(tvar)
         TypedAst.Expression.Lambda(p, e, t, loc)
-
-      case ResolvedAst.Expression.Nullify(exp, loc) =>
-        visitExp(exp, subst0)
 
       case ResolvedAst.Expression.Unary(op, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1374,20 +1380,20 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.NullMatch(exps, rules, loc) =>
+      case ResolvedAst.Expression.Choose(exps, rules, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
-          case ResolvedAst.NullRule(pat0, exp) =>
+          case ResolvedAst.ChoiceRule(pat0, exp) =>
             val pat = pat0.map {
-              case ResolvedAst.NullPattern.Wild(loc) => TypedAst.NullPattern.Wild(loc)
-              case ResolvedAst.NullPattern.Var(sym, loc) => TypedAst.NullPattern.Var(sym, loc)
-              case ResolvedAst.NullPattern.Null(loc) => TypedAst.NullPattern.Null(loc)
+              case ResolvedAst.ChoicePattern.Wild(loc) => TypedAst.ChoicePattern.Wild(loc)
+              case ResolvedAst.ChoicePattern.Absent(loc) => TypedAst.ChoicePattern.Absent(loc)
+              case ResolvedAst.ChoicePattern.Present(sym, loc) => TypedAst.ChoicePattern.Present(sym, loc)
             }
-            TypedAst.NullRule(pat, visitExp(exp, subst0))
+            TypedAst.ChoiceRule(pat, visitExp(exp, subst0))
         }
         val tpe = rs.head.exp.tpe
         val eff = Type.mkAnd(rs.map(_.exp.eff))
-        TypedAst.Expression.NullMatch(es, rs, tpe, eff, loc)
+        TypedAst.Expression.Choose(es, rs, tpe, eff, loc)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1484,6 +1490,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), eff, loc)
+
+      case ResolvedAst.Expression.Cast(ResolvedAst.Expression.Null(_), _, _, tvar, loc) =>
+        val t = subst0(tvar)
+        TypedAst.Expression.Null(t, loc)
 
       case ResolvedAst.Expression.Cast(exp, _, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.WeededAst.{NullPattern, TypeParams}
+import ca.uwaterloo.flix.language.ast.WeededAst.{ChoicePattern, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -424,7 +424,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
 
-    case WeededAst.Expression.Null(loc) => NamedAst.Expression.Null(Type.freshVar(Kind.Star), loc).toSuccess
+    case WeededAst.Expression.Null(loc) => NamedAst.Expression.Null(loc).toSuccess
 
     case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
 
@@ -448,6 +448,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
+    case WeededAst.Expression.Absent(loc) => NamedAst.Expression.Absent(loc).toSuccess
+
+    case WeededAst.Expression.Present(expOpt, loc) =>
+      // TODO: Should not really introduce unit here...
+      expOpt match {
+        case None => NamedAst.Expression.Present(NamedAst.Expression.Unit(loc), loc).toSuccess
+        case Some(exp) => mapN(visitExp(exp, env0, uenv0, tenv0)) {
+          case e => NamedAst.Expression.Present(e, loc)
+        }
+      }
+
     case WeededAst.Expression.Default(loc) => NamedAst.Expression.Default(loc).toSuccess
 
     case WeededAst.Expression.Apply(exp, exps, loc) =>
@@ -462,11 +473,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           mapN(visitExp(exp, env1, uenv0, tenv0)) {
             case e => NamedAst.Expression.Lambda(p, e, Type.freshVar(Kind.Star), loc)
           }
-      }
-
-    case WeededAst.Expression.Nullify(exp, loc) =>
-      mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.Nullify(e, loc)
       }
 
     case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, uenv0, tenv0) map {
@@ -516,26 +522,26 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
       }
 
-    case WeededAst.Expression.NullMatch(exps, rules, loc) =>
+    case WeededAst.Expression.Choose(exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, env0, uenv0, tenv0))
       val rulesVal = traverse(rules) {
-        case WeededAst.NullMatchRule(pat0, exp0) =>
+        case WeededAst.ChoiceRule(pat0, exp0) =>
           val env1 = pat0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-            case (acc, WeededAst.NullPattern.Wild(loc)) => acc
-            case (acc, WeededAst.NullPattern.Var(ident, loc)) => acc + (ident.name -> Symbol.freshVarSym(ident))
-            case (acc, WeededAst.NullPattern.Null(loc)) => acc
+            case (acc, WeededAst.ChoicePattern.Wild(loc)) => acc
+            case (acc, WeededAst.ChoicePattern.Absent(loc)) => acc
+            case (acc, WeededAst.ChoicePattern.Present(ident, loc)) => acc + (ident.name -> Symbol.freshVarSym(ident))
           }
           val p = pat0.map {
-            case WeededAst.NullPattern.Wild(loc) => NamedAst.NullPattern.Wild(loc)
-            case WeededAst.NullPattern.Var(ident, loc) => NamedAst.NullPattern.Var(env1(ident.name), loc)
-            case WeededAst.NullPattern.Null(loc) => NamedAst.NullPattern.Null(loc)
+            case WeededAst.ChoicePattern.Wild(loc) => NamedAst.ChoicePattern.Wild(loc)
+            case WeededAst.ChoicePattern.Absent(loc) => NamedAst.ChoicePattern.Absent(loc)
+            case WeededAst.ChoicePattern.Present(ident, loc) => NamedAst.ChoicePattern.Present(env1(ident.name), loc)
           }
           mapN(visitExp(exp0, env0 ++ env1, uenv0, tenv0)) {
-            case e => NamedAst.NullRule(p, e)
+            case e => NamedAst.ChoiceRule(p, e)
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expression.NullMatch(es, rs, loc)
+        case (es, rs) => NamedAst.Expression.Choose(es, rs, loc)
       }
 
     case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>
@@ -1056,11 +1062,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
-    case WeededAst.Type.Nullable(tpe, nullity, loc) =>
-      mapN(visitType(tpe, uenv0, tenv0), visitType(nullity, uenv0, tenv0)) {
-        case (t, n) => NamedAst.Type.Nullable(t, n, loc)
-      }
-
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
       mapN(traverse(tparams)(visitType(_, uenv0, tenv0)), visitType(eff, uenv0, tenv0), visitType(tresult, uenv0, tenv0)) {
         case (ts, f, t) => NamedAst.Type.Arrow(ts, f, t, loc)
@@ -1140,10 +1141,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Int64(lit, loc) => Nil
     case WeededAst.Expression.BigInt(lit, loc) => Nil
     case WeededAst.Expression.Str(lit, loc) => Nil
+    case WeededAst.Expression.Absent(loc) => Nil
+    case WeededAst.Expression.Present(expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Default(loc) => Nil
     case WeededAst.Expression.Apply(exp, exps, loc) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
-    case WeededAst.Expression.Nullify(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
@@ -1152,8 +1154,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
-    case WeededAst.Expression.NullMatch(exps, rules, loc) => exps.flatMap(freeVars) ++ rules.flatMap {
-      case WeededAst.NullMatchRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
+    case WeededAst.Expression.Choose(exps, rules, loc) => exps.flatMap(freeVars) ++ rules.flatMap {
+      case WeededAst.ChoiceRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
     }
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
@@ -1244,10 +1246,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns all free variables in the given null pattern `pat0`.
     */
-  private def freeVars(pat0: WeededAst.NullPattern): List[Name.Ident] = pat0 match {
-    case NullPattern.Wild(_) => Nil
-    case NullPattern.Var(ident, _) => ident :: Nil
-    case NullPattern.Null(_) => Nil
+  private def freeVars(pat0: WeededAst.ChoicePattern): List[Name.Ident] = pat0 match {
+    case ChoicePattern.Wild(_) => Nil
+    case ChoicePattern.Present(ident, _) => ident :: Nil
+    case ChoicePattern.Absent(_) => Nil
   }
 
   /**
@@ -1268,7 +1270,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Nullable(tpe, nullity, loc) => freeVars(tpe) ::: freeVars(nullity)
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
@@ -1304,7 +1305,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Type.Not(tpe, loc) => visit(tpe, Kind.Bool)
       case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
       case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
-      case WeededAst.Type.Nullable(tpe, nullity, loc) => visit(tpe, Kind.Star) ++ visit(nullity, Kind.Bool)
     }
 
     visit(tpe0, Kind.Star)

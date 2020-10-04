@@ -172,7 +172,7 @@ object TypedAst {
 
     case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class NullMatch(exps: List[TypedAst.Expression], rules: List[TypedAst.NullRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Choose(exps: List[TypedAst.Expression], rules: List[TypedAst.ChoiceRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -352,15 +352,15 @@ object TypedAst {
 
   }
 
-  sealed trait NullPattern
+  sealed trait ChoicePattern
 
-  object NullPattern {
+  object ChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends NullPattern
+    case class Wild(loc: SourceLocation) extends ChoicePattern
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NullPattern
+    case class Absent(loc: SourceLocation) extends ChoicePattern
 
-    case class Null(loc: SourceLocation) extends NullPattern
+    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
 
   }
 
@@ -420,9 +420,9 @@ object TypedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
 
-  case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
+  case class ChoiceRule(pat: List[TypedAst.ChoicePattern], exp: TypedAst.Expression)
 
-  case class NullRule(pat: List[TypedAst.NullPattern], exp: TypedAst.Expression)
+  case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 

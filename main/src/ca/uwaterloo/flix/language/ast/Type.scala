@@ -170,6 +170,11 @@ object Type {
   val Unit: Type = Type.Cst(TypeConstructor.Unit)
 
   /**
+    * Represents the Null type.
+    */
+  val Null: Type = Type.Cst(TypeConstructor.Null)
+
+  /**
     * Represents the Bool type.
     */
   val Bool: Type = Type.Cst(TypeConstructor.Bool)
@@ -232,6 +237,13 @@ object Type {
     * NB: This type has kind: * -> *.
     */
   val Channel: Type = Type.Cst(TypeConstructor.Channel)
+
+  /**
+    * Represents the Choice type constructor.
+    *
+    * NB: This type has kind: * -> Bool -> *.
+    */
+  val Choice: Type = Type.Cst(TypeConstructor.Choice)
 
   /**
     * Represents the Lazy type constructor.
@@ -451,7 +463,7 @@ object Type {
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
-    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1)),  e)
+    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1)), e)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -474,6 +486,11 @@ object Type {
     * Returns the type `Channel[tpe]`.
     */
   def mkChannel(tpe: Type): Type = Type.Apply(Channel, tpe)
+
+  /**
+    * Returns the type `Choice[tpe, ...]`.
+    */
+  def mkChoice(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Choice), tpe0), nullity)
 
   /**
     * Returns the type `Lazy[tpe]`.
@@ -546,11 +563,6 @@ object Type {
   def mkSchemaExtend(name: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
   }
-
-  /**
-    * Returns the type `tpe0 ? nullity`.
-    */
-  def mkNullable(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Nullable), tpe0), nullity)
 
   /**
     * Construct a relation type with the given list of type arguments `ts0`.

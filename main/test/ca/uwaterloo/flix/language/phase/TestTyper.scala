@@ -127,10 +127,10 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Null.01") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: String ? false, y: String ? true, z: String ? false): Bool =
-        |    match? (x, y, z) {
-        |        case (a, b, _) => a == "Hello" && b == "World"
-        |        case (_, b, c) => b == "World" && c == "!"
+        |pub def testNullableThreeVar11(x: Choice[String, false], y: Choice[String, true], z: Choice[String, false]): Bool =
+        |    choose (x, y, z) {
+        |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
+        |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -140,10 +140,10 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Null.02") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: String ? true, y: String ? false, z: String ? true): Bool =
-        |    match? (x, y, z) {
-        |        case (a, b, _) => a == "Hello" && b == "World"
-        |        case (_, b, c) => b == "World" && c == "!"
+        |pub def testNullableThreeVar11(x: Choice[String, true], y: Choice[String, false], z: Choice[String, true]): Bool =
+        |    choose (x, y, z) {
+        |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
+        |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -153,9 +153,9 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Null.03") {
     val input =
       """
-        |def f(x: String ? n, y: String ? n): Bool =
-        |    match? (x, y) {
-        |        case (a, _) => a == "Hello"
+        |def f(x: Choice[String, not not n], y: Choice[String, not not n]): Bool =
+        |    choose (x, y) {
+        |        case (Present(a), _) => a == "Hello"
         |    }
       """.stripMargin
     val result = compile(input, DefaultOptions)

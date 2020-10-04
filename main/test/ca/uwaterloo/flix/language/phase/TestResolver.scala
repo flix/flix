@@ -826,7 +826,7 @@ class TestResolver extends FunSuite with TestUtils {
   }
 
   test("IllegalTypeApplication.08") {
-    val input = "def f(a: String ? Int): Int = 1"
+    val input = "def f(a: Choice[String, Int]): Int = 1"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalTypeApplication](result)
   }

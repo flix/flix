@@ -85,15 +85,16 @@ object TypedAstOps {
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
-      case Expression.NullMatch(exps, rules, tpe, eff, loc) =>
+      case Expression.Choose(exps, rules, tpe, eff, loc) =>
         val m1 = exps.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (acc, exp) => acc ++ visitExp(exp, env0)
         }
         val m2 = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (acc, NullRule(pat, exp)) =>
+          case (acc, ChoiceRule(pat, exp)) =>
             val env1 = (pat.zip(exps)).foldLeft(Map.empty[Symbol.VarSym, Type]) {
-              case (acc, (NullPattern.Wild(_), exp)) => acc
-              case (acc, (NullPattern.Var(sym, _), exp)) => acc + (sym -> exp.tpe)
+              case (acc, (ChoicePattern.Wild(_), exp)) => acc
+              case (acc, (ChoicePattern.Absent(_), exp)) => acc
+              case (acc, (ChoicePattern.Present(sym, _), exp)) => acc + (sym -> exp.tpe)
             }
             acc ++ visitExp(exp, env0 ++ env1)
         }
