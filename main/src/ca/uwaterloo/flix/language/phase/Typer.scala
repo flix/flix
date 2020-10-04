@@ -652,22 +652,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
 
         /**
-          * Constructs the inner disjunction for a specific null rule.
+          * Constructs a Boolean constraint for the given choice rule `r`.
           *
-          * Specifically, forces the boolean variables in `xs` to be
-          * pairwise equal to `False` if a non-null variable is present.
+          * If a pattern is a wildcard it is trivially satisfied (could be `Absent`` or `Present`).
+          * If a pattern is `Present` its corresponding `isAbsentVar` must be `false` (i.e. to prevent the value from being `Absent`).
+          *
           */
         def mkInnerConj(isAbsentVars: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
           isAbsentVars.zip(r.pat).foldLeft(Type.True) {
-            case (acc, (x, ResolvedAst.ChoicePattern.Wild(_))) =>
-              // Case 1: We have a wildcard. No constraint is generated.
+            case (acc, (isAbsentVar, ResolvedAst.ChoicePattern.Wild(_))) =>
+              // Case 1: No constraint is generated for a wildcard.
               acc
-            case (acc, (x, ResolvedAst.ChoicePattern.Present(y, _))) =>
-              // Case 2: We have a variable. We must force `x` to be non-null.
-              Type.mkAnd(acc, Type.mkEquiv(x, Type.False))
             case (acc, (x, ResolvedAst.ChoicePattern.Absent(_))) =>
-              // Case 3: We have a null constant. No constraint is generated.
+              // Case 2: TODO
               acc
+            case (acc, (x, ResolvedAst.ChoicePattern.Present(_, _))) =>
+              // Case 3: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
+              Type.mkAnd(acc, Type.mkEquiv(x, Type.False))
           }
 
         /**
