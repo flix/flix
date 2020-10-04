@@ -654,17 +654,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         /**
           * Constructs a Boolean constraint for the given choice rule `r`.
           *
-          * If a pattern is a wildcard it is trivially satisfied (could be `Absent`` or `Present`).
-          * If a pattern is `Present` its corresponding `isAbsentVar` must be `false` (i.e. to prevent the value from being `Absent`).
+          * If a pattern is a wildcard it is trivially satisfied (could be `Absent` or `Present`).
+          * If a pattern is `Absent`  its corresponding `isPresentVar` must be `false` (i.e. to prevent the value from being `Present`).
+          * If a pattern is `Present` its corresponding `isAbsentVar`  must be `false` (i.e. to prevent the value from being `Absent`).
           *
           */
-        def mkInnerConj(isAbsentVars: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
+        def mkInnerConj(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
           isAbsentVars.zip(r.pat).foldLeft(Type.True) {
             case (acc, (isAbsentVar, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
             case (acc, (x, ResolvedAst.ChoicePattern.Absent(_))) =>
-              // Case 2: TODO
+              // Case 2: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
+              // TODO
               acc
             case (acc, (x, ResolvedAst.ChoicePattern.Present(_, _))) =>
               // Case 3: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
@@ -674,8 +676,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         /**
           * Constructs the outer disjunction of nullity constraints.
           */
-        def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], isAbsentVars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
-          case (acc, rule) => Type.mkOr(acc, mkInnerConj(isAbsentVars, rule))
+        def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
+          case (acc, rule) => Type.mkOr(acc, mkInnerConj(isAbsentVars, isPresentVars, rule))
         }
 
         /**
@@ -713,7 +715,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Put everything together.
         //
         for {
-          _ <- unifyBoolM(mkOuterDisj(rules0, isAbsentVars), Type.True, loc)
+          _ <- unifyBoolM(mkOuterDisj(rules0, isAbsentVars, isPresentVars), Type.True, loc)
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
