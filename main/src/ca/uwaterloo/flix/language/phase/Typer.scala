@@ -411,13 +411,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         liftM(List.empty, Type.Str, Type.Pure)
 
       case ResolvedAst.Expression.Absent(tvar, loc) =>
-        liftM(List.empty, Type.mkChoice(tvar, Type.True), Type.Pure)
+        val isAbsent = Type.True
+        val isPresent = Type.freshVar(Kind.Bool)
+        liftM(List.empty, Type.mkChoice(tvar, isAbsent, isPresent), Type.Pure)
 
       case ResolvedAst.Expression.Present(exp, loc) =>
-        val nullity = Type.freshVar(Kind.Bool)
+        val isAbsent = Type.freshVar(Kind.Bool)
+        val isPresent = Type.True
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkChoice(tpe, nullity)
+          resultTyp = Type.mkChoice(tpe, isAbsent, isPresent)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
@@ -624,17 +627,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of lists of the types and effects of the match expressions.
           */
-        def visitMatchExps(exps: List[ResolvedAst.Expression], vars: List[Type.Var]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
-          def visitMatchExp(exp: ResolvedAst.Expression, nullityVar: Type.Var): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = {
+        def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
+          def visitMatchExp(exp: ResolvedAst.Expression, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
               (constrs, tpe, eff) <- visitExp(exp)
-              _ <- unifyTypeM(tpe, Type.mkChoice(freshElmVar, nullityVar), loc)
+              _ <- unifyTypeM(tpe, Type.mkChoice(freshElmVar, isAbsentVar, isPresentVar), loc)
             } yield (constrs, freshElmVar, eff)
           }
 
-          seqM(exps.zip(vars).map {
-            case (matchExp, nullityVar) => visitMatchExp(matchExp, nullityVar)
+          seqM(exps.zip(isAbsentVars.zip(isPresentVars)).map {
+            case (matchExp, (isAbsentVar, isPresentVar)) => visitMatchExp(matchExp, isAbsentVar, isPresentVar)
           }).map(_.unzip3)
         }
 
@@ -652,45 +655,47 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
 
         /**
-          * Constructs the inner disjunction for a specific null rule.
+          * Constructs a Boolean constraint for the given choice rule `r`.
           *
-          * Specifically, forces the boolean variables in `xs` to be
-          * pairwise equal to `False` if a non-null variable is present.
+          * If a pattern is a wildcard it is trivially satisfied (could be `Absent` or `Present`).
+          * If a pattern is `Absent`  its corresponding `isPresentVar` must be `false` (i.e. to prevent the value from being `Present`).
+          * If a pattern is `Present` its corresponding `isAbsentVar`  must be `false` (i.e. to prevent the value from being `Absent`).
+          *
           */
-        def mkInnerConj(xs: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
-          xs.zip(r.pat).foldLeft(Type.True) {
-            case (acc, (x, ResolvedAst.ChoicePattern.Wild(_))) =>
-              // Case 1: We have a wildcard. No constraint is generated.
+        def mkInnerConj(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
+          isAbsentVars.zip(isPresentVars).zip(r.pat).foldLeft(Type.True) {
+            case (acc, (isAbsentVar, ResolvedAst.ChoicePattern.Wild(_))) =>
+              // Case 1: No constraint is generated for a wildcard.
               acc
-            case (acc, (x, ResolvedAst.ChoicePattern.Present(y, _))) =>
-              // Case 2: We have a variable. We must force `x` to be non-null.
-              Type.mkAnd(acc, Type.mkEquiv(x, Type.False))
-            case (acc, (x, ResolvedAst.ChoicePattern.Absent(_))) =>
-              // Case 3: We have a null constant. No constraint is generated.
-              acc
+            case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
+              // Case 2: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
+              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
+            case (acc, ((isAbsentVar, _), ResolvedAst.ChoicePattern.Present(_, _))) =>
+              // Case 3: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
+              Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False))
           }
 
         /**
-          * Constructs the outer disjunction of nullity constraints.
+          * Constructs a disjunction of the constraints of each choice rule.
           */
-        def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], vars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
-          case (acc, rule) => Type.mkOr(acc, mkInnerConj(vars, rule))
+        def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
+          case (acc, rule) => Type.mkOr(acc, mkInnerConj(isAbsentVars, isPresentVars, rule))
         }
 
         /**
-          * Performs type inference and unification with the `matchTypes` against the given null rules `rs`.
+          * Performs type inference and unification with the `matchTypes` against the given choice rules `rs`.
           */
         def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[ResolvedAst.ChoiceRule]): InferMonad[List[List[Type]]] = {
           def unifyWithRule(r: ResolvedAst.ChoiceRule): InferMonad[List[Type]] = {
             seqM(matchTypes.zip(r.pat).map {
               case (matchType, ResolvedAst.ChoicePattern.Wild(_)) =>
-                // Case 1: The pattern is wildcard. No variable is bound and no type information to constrain.
+                // Case 1: The pattern is wildcard. No variable is bound and there is type to constrain.
                 liftM(matchType)
               case (matchType, ResolvedAst.ChoicePattern.Absent(_)) =>
-                // Case 2: TODO: Must constraint the type
+                // Case 2: The pattern is a `Absent`. No variable is bound and there is type to constrain.
                 liftM(matchType)
               case (matchType, ResolvedAst.ChoicePattern.Present(sym, loc)) =>
-                // Case 3: Must constraint the type of the local variable with the type of the match expression.
+                // Case 3: The pattern is `Present`. Must constraint the type of the local variable with the type of the match expression.
                 unifyTypeM(matchType, sym.tvar, loc)
             })
           }
@@ -699,16 +704,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
 
         //
-        // Introduce a nullity variable for each match expression `exps`.
+        // Introduce an isAbsent variable for each match expression in `exps`.
         //
-        val nullityVars = exps0.map(_ => Type.freshVar(Kind.Bool))
+        val isAbsentVars = exps0.map(_ => Type.freshVar(Kind.Bool))
+
+        //
+        // Introduce an isPresent variable for each math expression in `exps`.
+        //
+        val isPresentVars = exps0.map(_ => Type.freshVar(Kind.Bool))
 
         //
         // Put everything together.
         //
         for {
-          _ <- unifyBoolM(mkOuterDisj(rules0, nullityVars), Type.True, loc)
-          (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, nullityVars)
+          _ <- unifyBoolM(mkOuterDisj(rules0, isAbsentVars, isPresentVars), Type.True, loc)
+          (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
           resultTyp <- unifyTypeM(ruleBodyTyp, loc)

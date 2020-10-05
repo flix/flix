@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
@@ -124,10 +124,10 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.OccursCheckError](result)
   }
 
-  test("TestLeq.Null.01") {
+  test("TestLeq.Choice.01") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: Choice[String, false], y: Choice[String, true], z: Choice[String, false]): Bool =
+        |pub def f(x: Choice[String, false, _], y: Choice[String, true, _], z: Choice[String, false, _]): Bool =
         |    choose (x, y, z) {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
@@ -137,10 +137,10 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("TestLeq.Null.02") {
+  test("TestLeq.Choice.02") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: Choice[String, true], y: Choice[String, false], z: Choice[String, true]): Bool =
+        |pub def f(x: Choice[String, true, _], y: Choice[String, false, _], z: Choice[String, true, _]): Bool =
         |    choose (x, y, z) {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
@@ -150,10 +150,10 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("TestLeq.Null.03") {
+  test("TestLeq.Choice.03") {
     val input =
       """
-        |def f(x: Choice[String, not not n], y: Choice[String, not not n]): Bool =
+        |def f(x: Choice[String, not not n, _], y: Choice[String, not not n, _]): Bool =
         |    choose (x, y) {
         |        case (Present(a), _) => a == "Hello"
         |    }
@@ -263,4 +263,40 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
   }
+
+  test("TestChoose.01") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (Absent, Absent)     => "a"
+        |            case (Absent, Present(y)) => y
+        |            case (Present(x), Absent) => x
+        |        }
+        |    };
+        |    f(Present("b"), Present("c")) == "x"
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.02") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    let f = x -> {
+        |        choose x {
+        |            case Absent => "a"
+        |        };
+        |        choose x {
+        |            case Present(v) => v
+        |        }
+        |    };
+        |    f(Absent) == "x"
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
 }

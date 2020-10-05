@@ -241,7 +241,7 @@ object Type {
   /**
     * Represents the Choice type constructor.
     *
-    * NB: This type has kind: * -> Bool -> *.
+    * NB: This type has kind: * -> Bool -> Bool -> *.
     */
   val Choice: Type = Type.Cst(TypeConstructor.Choice)
 
@@ -488,9 +488,10 @@ object Type {
   def mkChannel(tpe: Type): Type = Type.Apply(Channel, tpe)
 
   /**
-    * Returns the type `Choice[tpe, ...]`.
+    * Returns the type `Choice[tpe, isAbsent, isPresent]`.
     */
-  def mkChoice(tpe0: Type, nullity: Type): Type = Apply(Apply(Cst(TypeConstructor.Choice), tpe0), nullity)
+  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type): Type =
+    Apply(Apply(Apply(Cst(TypeConstructor.Choice), tpe0), isAbsent), isPresent)
 
   /**
     * Returns the type `Lazy[tpe]`.
