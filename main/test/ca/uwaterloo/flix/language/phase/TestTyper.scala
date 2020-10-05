@@ -124,10 +124,10 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.OccursCheckError](result)
   }
 
-  test("TestLeq.Null.01") {
+  test("TestLeq.Choice.01") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: Choice[String, false, _], y: Choice[String, true, _], z: Choice[String, false, _]): Bool =
+        |pub def f(x: Choice[String, false, _], y: Choice[String, true, _], z: Choice[String, false, _]): Bool =
         |    choose (x, y, z) {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
@@ -137,10 +137,10 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("TestLeq.Null.02") {
+  test("TestLeq.Choice.02") {
     val input =
       """
-        |pub def testNullableThreeVar11(x: Choice[String, true, _], y: Choice[String, false, _], z: Choice[String, true, _]): Bool =
+        |pub def f(x: Choice[String, true, _], y: Choice[String, false, _], z: Choice[String, true, _]): Bool =
         |    choose (x, y, z) {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
@@ -150,7 +150,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("TestLeq.Null.03") {
+  test("TestLeq.Choice.03") {
     val input =
       """
         |def f(x: Choice[String, not not n, _], y: Choice[String, not not n, _]): Bool =
