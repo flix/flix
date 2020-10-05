@@ -40,7 +40,7 @@ object TypedAst {
 
   case class Sig(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: Type, defs: List[TypedAst.Def], loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: Type, tconstrs: List[TypeConstraint], defs: List[TypedAst.Def], loc: SourceLocation)
 
   case class Def(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, declaredScheme: Scheme, inferredScheme: Scheme, eff: Type, loc: SourceLocation)
 
