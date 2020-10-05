@@ -124,6 +124,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.OccursCheckError](result)
   }
 
+  // TODO: Better tests
   test("TestLeq.Choice.01") {
     val input =
       """
