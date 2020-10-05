@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
@@ -263,4 +263,40 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
   }
+
+  test("TestChoose.01") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (Absent, Absent)     => "a"
+        |            case (Absent, Present(y)) => y
+        |            case (Present(x), Absent) => x
+        |        }
+        |    };
+        |    f(Present("b"), Present("c")) == "x"
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.02") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    let f = x -> {
+        |        choose x {
+        |            case Absent => "a"
+        |        };
+        |        choose x {
+        |            case Present(v) => v
+        |        }
+        |    };
+        |    f(Absent) == "x"
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
 }
