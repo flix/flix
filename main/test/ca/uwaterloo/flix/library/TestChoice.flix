@@ -15,7 +15,8 @@
  */
 namespace TestChoice {
 
-    // TODO
+    @test
+    def testUnbox01(): Bool = Choice.unbox(Present("a")) == "a"
 
 }
 
