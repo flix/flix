@@ -1901,7 +1901,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       WeededAst.TypeParams.Explicit(tparams1)
   }
 
-  // MATT docs
+  /**
+    * Weeds the given type constraints `constraints0`.
+    */
   private def visitTypeConstraints(constraints0: Seq[ParsedAst.ConstrainedType]): List[WeededAst.ConstrainedType] = {
     constraints0.map {
       case ParsedAst.ConstrainedType(sp1, tpe, classes, sp2) => WeededAst.ConstrainedType(visitType(tpe), classes.toList)

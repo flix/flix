@@ -342,19 +342,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         tenv = tenv0 ++ getTypeEnv(tparams)
         tpe <- visitType(tpe0, uenv0, tenv)
         defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0))
-        tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))
+        tconstrs <- traverse(tconstrs)(visitConstrainedType(_, uenv0, tenv, ns0))
       } yield NamedAst.Instance(doc, mod, clazz, tpe, tconstrs.flatten, defs, loc)
   }
 
-  // MATT docs
-  private def visitTypeConstraint(tconstr: WeededAst.ConstrainedType, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[List[NamedAst.TypeConstraint], NameError] = tconstr match {
+  /**
+    * Performs naming on the given constrained type `tconstr`.
+    */
+  private def visitConstrainedType(tconstr: WeededAst.ConstrainedType, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[List[NamedAst.TypeConstraint], NameError] = tconstr match {
     case WeededAst.ConstrainedType(tpe, classes) =>
       for {
         tpe <- visitType(tpe, uenv0, tenv0)
       } yield classes.map(NamedAst.TypeConstraint(_, tpe))
   }
 
-  // MATT docs
+  /**
+    * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
+    */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
@@ -1500,7 +1504,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Returns the implicit type parameters constructed from the given types.
+    */
   private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     val typeVarsWithKind = types.flatMap(freeVarsWithKind)
     freshTypeParamsWithKind(typeVarsWithKind, loc)
