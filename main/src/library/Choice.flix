@@ -15,6 +15,14 @@
  */
 namespace Choice {
 
+    ///
+    /// Returns the value in `c` which must be `Present`.
+    ///
+    def unbox(c: Choice[a, false, _]): a = choose c {
+        case Present(v) => v
+    }
+
+
     // TODO:
     // - def unbox(c: Choice[a, F, _]): a
     // - def toChoice(o: Option[a]): Choice[a, T, T]
