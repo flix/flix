@@ -22,14 +22,22 @@ namespace Choice {
         case Present(v) => v
     }
 
+    ///
+    /// Returns the given choice `c` as an `Option`.
+    ///
+//    pub def toOption(c: Choice[a, isAbsent, isPresent]): a = choose c { // TODO: Issue with kinds.
+//        case Absent     => None
+//        case Present(v) => Some(v)
+//    }
 
     // TODO:
-    // - def toChoice(o: Option[a]): Choice[a, T, T]
+
     // - def toOption(c: Choice[a, _, _]): Option[a]
     // - def pick2(c1: Choice[a, b1, b2], c2: Choice[a, b3, b4]): a
     // - def chooseLeft2(c1: Choice[a, ?, ?], c2: Choice[a, ?, ?]): a
     // - def zip(c1: ..., c2: ...): Option[(a, b)]
     // - def map(f: a -> b, c: Choice[a, b1, b2]): Choice[b, b1, b2])
+    // - def Option.toChoice(o: Option[a]): Choice[a, T, T]
 
     // TODO: Add tests for all of these.
 
