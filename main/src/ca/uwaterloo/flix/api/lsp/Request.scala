@@ -85,6 +85,11 @@ object Request {
   case class Goto(requestId: String, uri: String, pos: Position) extends Request
 
   /**
+    * A request to rename a definition, local variable, or other named entity.
+    */
+  case class Rename(requestId: String, newName: String, uri: String, pos: Position) extends Request
+
+  /**
     * A request to find all uses of an entity.
     */
   case class Uses(requestId: String, uri: String, pos: Position) extends Request
@@ -200,6 +205,18 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Goto(id, uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Rename]] request.
+    */
+  def parseRename(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      newName <- parseString("newName", json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Rename(id, newName, uri, pos)
   }
 
   /**
@@ -338,6 +355,16 @@ object Request {
     v \\ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
+    }
+  }
+
+  /**
+    * Attempts to parse the given `key` as a String from the given JSON value `v`.
+    */
+  private def parseString(k: String, v: JValue): Result[String, String] = {
+    v \\ k match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected $k: '$s'.")
     }
   }
 

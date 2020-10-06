@@ -174,6 +174,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/codelens") => Request.parseCodelens(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
+      case JString("lsp/rename") => Request.parseRename(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
       case JString("pkg/benchmark") => Request.parsePackageBenchmark(json)
@@ -195,12 +196,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(id, uri, src) =>
-      log("Added URI: " + uri)
       sources += (uri -> src)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemUri(id, uri) =>
-      log("Removed URI: " + uri)
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
@@ -216,6 +215,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Codelens(id, uri) => processCodelens(id, uri)
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
+    case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
     case Request.Uses(id, uri, pos) => processUses(id, uri, pos)
 
     case Request.PackageBenchmark(id, projectRoot) => benchmarkPackage(id, projectRoot)
@@ -490,6 +490,47 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case _ => mkNotFound(requestId, uri, pos)
       }
 
+      case _ => mkNotFound(requestId, uri, pos)
+    }
+  }
+
+  /**
+    * Processes a rename request.
+    */
+  private def processRename(requestId: String, newName: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    def rename(occurrences: List[SourceLocation]): JValue = {
+      // Group by URI.
+      val groupedByUri = occurrences.groupBy(_.source.name)
+
+      // Construct text edits.
+      val textEdits = groupedByUri map {
+        case (uri, locs) => uri -> locs.map(loc => TextEdit(Range.from(loc), newName))
+      }
+
+      // Assemble the workspace edit.
+      val workspaceEdit = WorkspaceEdit(textEdits)
+
+      // Construct the JSON result.
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> workspaceEdit.toJSON)
+    }
+
+    def renameDef(sym: Symbol.DefnSym): JValue = rename(sym.loc :: index.usesOf(sym).toList)
+
+    def renameVar(sym: Symbol.VarSym): JValue = rename(sym.loc :: index.usesOf(sym).toList)
+
+    index.query(uri, pos) match {
+      case Some(Entity.Def(defn)) => renameDef(defn.sym)
+      case Some(Entity.Exp(exp)) => exp match {
+        case Expression.Var(sym, _, _) => renameVar(sym)
+        case Expression.Def(sym, _, _) => renameDef(sym)
+        case _ => mkNotFound(requestId, uri, pos)
+      }
+      case Some(Entity.Pattern(pat)) => pat match {
+        case Pattern.Var(sym, _, _) => renameVar(sym)
+        case _ => mkNotFound(requestId, uri, pos)
+      }
+      case Some(Entity.FormalParam(fparam)) => renameVar(fparam.sym)
+      case Some(Entity.LocalVar(sym, _)) => renameVar(sym)
       case _ => mkNotFound(requestId, uri, pos)
     }
   }
