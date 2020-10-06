@@ -20,7 +20,11 @@ namespace Test03 {
     class X[a] {
         def f(x: a): Bool
     }
-    // TODO instance
+
+    instance X[Int] {
+        def f(x: Int): Bool = x == 0
+    }
+
     pub def g(x: Int): Bool = f(x)
 }
 

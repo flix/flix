@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
-import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.language.phase.unification.{ContextReduction, Unification}
+import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.Result
 
 object Scheme {
 
@@ -118,7 +119,7 @@ object Scheme {
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
@@ -137,14 +138,19 @@ object Scheme {
     val (tconstrs2, tpe2) = instantiate(sc2, InstantiateMode.Rigid)
 
     // Attempt to unify the two instantiated types.
-    Unification.unifyTypes(tpe1, tpe2) match {
-      case Result.Ok(subst) =>
-        val newTconstrs1 = tconstrs1.map(subst.apply)
-        val newTconstrs2 = tconstrs2.map(subst.apply)
-        // type constraints on tvars in `sc1` must be a subset of those in `sc2`
-        // we ignore type constraints on non-vars for the purposes of the leq check
-        newTconstrs1.filter(_.arg.isInstanceOf[Type.Var]).forall(newTconstrs2.contains)
-      case Result.Err(_) => false
+    val result = for {
+      subst <- Unification.unifyTypes(tpe1, tpe2)
+      newTconstrs1 = tconstrs1.map(subst.apply)
+      newTconstrs2 = tconstrs2.map(subst.apply)
+      splitTconstrs <- ContextReduction.split(instances, tpe1.typeVars.toList, Nil, newTconstrs1)
+      (_, relevantTconstrs) = splitTconstrs
+    } yield relevantTconstrs.forall(ContextReduction.entail(instances, newTconstrs2, _))
+
+    // MATT this could probably be cleaner
+    // MATT add docs
+    result match {
+      case Result.Ok(true) => true
+      case _ => false
     }
   }
 

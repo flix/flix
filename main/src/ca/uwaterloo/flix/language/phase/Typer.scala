@@ -174,11 +174,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
               val sc = Scheme.generalize(inferredConstrs, inferredType)
-              if (!Scheme.lessThanEqual(sc, declaredScheme)) {
+              if (!Scheme.lessThanEqual(sc, declaredScheme, root.instances)) {
                 return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
               }
-
-              // MATT type constraints on real types should be validated (exists instance s.t. ...)
 
               ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
