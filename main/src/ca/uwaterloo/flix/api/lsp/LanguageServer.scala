@@ -505,6 +505,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Rename local variable.
           //
 
+          
+
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
         case _ => mkNotFound(requestId, uri, pos)
