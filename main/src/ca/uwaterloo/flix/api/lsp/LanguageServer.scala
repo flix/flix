@@ -172,6 +172,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
+      case JString("lsp/highlight") => Request.parseHighlight(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
       case JString("lsp/rename") => Request.parseRename(json)
@@ -213,6 +214,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Check(id) => processCheck(id)
     case Request.Codelens(id, uri) => processCodelens(id, uri)
+    case Request.Highlight(id, uri, pos) => processHighlight(id, uri, pos)
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
     case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
@@ -308,6 +310,38 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     //
     val allCodeLenses = mkCodeLensForMain() ::: mkCodeLensesForUnitTests()
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
+  }
+
+  /**
+    * Processes a highlight request.
+    */
+  private def processHighlight(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    def highlightVar(sym: Symbol.VarSym): JValue = {
+      // Find all occurrences of the symbol.
+      val occurrences = (sym.loc, DocumentHighlightKind.Write) :: index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+
+      // Construct the highlights.
+      val highlights = occurrences map {
+        case (loc, kind) => DocumentHighlight(Range.from(loc), kind)
+      }
+
+      // Construct the JSON result.
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    }
+
+    index.query(uri, pos) match {
+      case Some(Entity.Exp(exp)) => exp match {
+        case Expression.Var(sym, _, _) => highlightVar(sym)
+        case _ => mkNotFound(requestId, uri, pos)
+      }
+      case Some(Entity.Pattern(pat)) => pat match {
+        case Pattern.Var(sym, _, _) => highlightVar(sym)
+        case _ => mkNotFound(requestId, uri, pos)
+      }
+      case Some(Entity.FormalParam(fparam)) => highlightVar(fparam.sym)
+      case Some(Entity.LocalVar(sym, _)) => highlightVar(sym)
+      case _ => mkNotFound(requestId, uri, pos)
+    }
   }
 
   /**

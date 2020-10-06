@@ -85,6 +85,16 @@ object Request {
   case class Goto(requestId: String, uri: String, pos: Position) extends Request
 
   /**
+    * A request to get highlight information.
+    */
+  case class Highlight(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+    * A request to get hover information.
+    */
+  case class Hover(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
     * A request to rename a definition, local variable, or other named entity.
     */
   case class Rename(requestId: String, newName: String, uri: String, pos: Position) extends Request
@@ -93,11 +103,6 @@ object Request {
     * A request to find all uses of an entity.
     */
   case class Uses(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to get hover information.
-    */
-  case class Hover(requestId: String, uri: String, pos: Position) extends Request
 
   /**
     * A request to run all benchmarks in the project.
@@ -208,6 +213,28 @@ object Request {
   }
 
   /**
+    * Tries to parse the given `json` value as a [[Highlight]] request.
+    */
+  def parseHighlight(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Highlight(id, uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Hover]] request.
+    */
+  def parseHover(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Hover(id, uri, pos)
+  }
+
+  /**
     * Tries to parse the given `json` value as a [[Rename]] request.
     */
   def parseRename(json: json4s.JValue): Result[Request, String] = {
@@ -228,17 +255,6 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Uses(id, uri, pos)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[Hover]] request.
-    */
-  def parseHover(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
-    } yield Request.Hover(id, uri, pos)
   }
 
   /**
