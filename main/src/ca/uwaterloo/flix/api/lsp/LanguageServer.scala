@@ -326,7 +326,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       }
 
       // Construct the JSON result.
-      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> highlights)
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(highlights.map(_.toJSON)))
     }
 
     index.query(uri, pos) match {
