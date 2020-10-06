@@ -510,6 +510,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       // Assemble the workspace edit.
       val workspaceEdit = WorkspaceEdit(textEdits)
 
+      // Construct the JSON result.
       ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> workspaceEdit.toJSON)
     }
 
@@ -524,6 +525,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case Expression.Def(sym, _, _) => renameDef(sym)
         case _ => mkNotFound(requestId, uri, pos)
       }
+      case Some(Entity.FormalParam(fparam)) => renameVar(fparam.sym)
       case Some(Entity.LocalVar(sym, _)) => renameVar(sym)
       case _ => mkNotFound(requestId, uri, pos)
     }
