@@ -498,10 +498,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a rename request.
     */
   private def processRename(requestId: String, newName: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    def renameVar(sym: Symbol.VarSym): JValue = {
-      // Find all occurrences.
-      val occurrences = sym.loc :: index.usesOf(sym).toList
-
+    def rename(occurrences: List[SourceLocation]): JValue = {
       // Group by URI.
       val groupedByUri = occurrences.groupBy(_.source.name)
 
@@ -516,9 +513,15 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> workspaceEdit.toJSON)
     }
 
+    def renameDef(sym: Symbol.DefnSym): JValue = rename(sym.loc :: index.usesOf(sym).toList)
+
+    def renameVar(sym: Symbol.VarSym): JValue = rename(sym.loc :: index.usesOf(sym).toList)
+
     index.query(uri, pos) match {
+      case Some(Entity.Def(defn)) => renameDef(defn.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => renameVar(sym)
+        case Expression.Def(sym, _, _) => renameDef(sym)
         case _ => mkNotFound(requestId, uri, pos)
       }
       case Some(Entity.LocalVar(sym, _)) => renameVar(sym)
