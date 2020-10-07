@@ -664,15 +664,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           */
         def mkInnerConj(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
           isAbsentVars.zip(isPresentVars).zip(r.pat).foldLeft(Type.True) {
-            case (acc, (isAbsentVar, ResolvedAst.ChoicePattern.Wild(_))) =>
+            case (acc, (_, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
-            case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
-              // Case 2: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
             case (acc, ((isAbsentVar, _), ResolvedAst.ChoicePattern.Present(_, _))) =>
-              // Case 3: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
+              // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
               Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False))
+            case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
+              // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
+              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
           }
 
         /**
