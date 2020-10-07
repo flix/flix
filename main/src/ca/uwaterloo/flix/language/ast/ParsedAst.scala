@@ -1360,6 +1360,11 @@ object ParsedAst {
       */
     case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
+    /**
+      * The Record kind.
+      */
+    case class Record(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
   }
 
   /**
