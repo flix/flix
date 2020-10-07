@@ -150,7 +150,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             tparams =>
 
               // Compute the kind of the enum.
-              val kind = Kind.mkArrow(tparams.length)
+              val kind = Kind.mkArrow(tparams.map(_.tpe.kind))
 
               val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
               val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))

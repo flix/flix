@@ -13,6 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * The Choice data type.
+ */
+// TODO
+pub enum MyChoice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+    case Absent
+    case Present(a)
+}
+
 namespace Choice {
 
     ///

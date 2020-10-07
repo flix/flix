@@ -111,6 +111,14 @@ object Kind {
   }
 
   /**
+    * Returns the kind: k1 -> (k2 ... -> kn) for the given list of kinds `ks`.
+    */
+  def mkArrow(ks: List[Kind]): Kind = ks match {
+    case Nil => Star
+    case x :: xs => Arrow(x, mkArrow(xs))
+  }
+
+  /**
     * Returns a fresh kind variable.
     */
   def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
