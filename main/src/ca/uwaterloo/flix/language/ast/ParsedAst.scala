@@ -1351,6 +1351,11 @@ object ParsedAst {
   object Kind {
 
     /**
+      * The Star kind.
+      */
+    case class Star(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
       * The Bool kind.
       */
     case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind

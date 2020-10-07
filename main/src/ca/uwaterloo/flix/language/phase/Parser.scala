@@ -1266,10 +1266,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Kinds                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Kind: Rule1[ParsedAst.Kind] = rule {
-    Kinds.Bool
+    Kinds.Star | Kinds.Bool
   }
 
   object Kinds {
+
+    def Star: Rule1[ParsedAst.Kind.Star] = rule {
+      SP ~ keyword("Type") ~ SP ~> ParsedAst.Kind.Star
+    }
 
     def Bool: Rule1[ParsedAst.Kind.Bool] = rule {
       SP ~ keyword("Bool") ~ SP ~> ParsedAst.Kind.Bool
