@@ -46,5 +46,25 @@ namespace Test05 {
     instance C[List[a]] with [a : C, Option[a] : C]
 }
 
+namespace Test06 {
+    class C[a] {
+        def f(x: a): Bool
+    }
+
+    instance C[Int] {
+        def f(x: Int): Bool = x == 0
+    }
+    instance C[List[a]] with [a: C] {
+        def f(x: List[a]): Bool = {
+            match x {
+                case Nil => true
+                case _ => false
+            }
+        }
+    }
+
+    pub def g(x: List[Int]): Bool = f(x)
+}
+
 @test
 def empty(): Bool = true

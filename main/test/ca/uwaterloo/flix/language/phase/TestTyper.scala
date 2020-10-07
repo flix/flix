@@ -226,6 +226,18 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
+  test("TestLeq.Class.02") {
+    val input =
+      """
+        |class Show[a] {
+        |  def show(x: a): String
+        |}
+        |def foo(x: Int): String = show(x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
   test("TestChoose.Arity1.01") {
     val input =
       """
