@@ -18,14 +18,14 @@ namespace Choice {
     ///
     /// Returns the value in `c` which must be `Present`.
     ///
-    pub def unbox(c: Choice[a, false, _]): a = choose c {
+    pub def unbox[t, isAbsent :# Bool](c: Choice[t, false, isAbsent]): t = choose c {
         case Present(v) => v
     }
 
     ///
     /// Returns the given choice `c` as an `Option`.
     ///
-//    pub def toOption(c: Choice[a, isAbsent, isPresent]): a = choose c { // TODO: Issue with kinds.
+//    pub def toOption[a, isAbsent :# Bool, isPresent :# Bool](c: Choice[a, isAbsent, isPresent]): a = choose c {
 //        case Absent     => None
 //        case Present(v) => Some(v)
 //    }

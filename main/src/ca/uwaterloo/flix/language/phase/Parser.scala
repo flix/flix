@@ -260,7 +260,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def TypeParams: Rule1[ParsedAst.TypeParams] = {
       def ConstrainedType: Rule1[ParsedAst.ConstrainedType] = rule {
-        SP ~ Names.Variable ~ optional(optWS ~ "#:" ~ optWS ~ Kind) ~ optional(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], bound: Option[Name.QName], sp2: SourcePosition) => bound match {
+        SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ optional(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], bound: Option[Name.QName], sp2: SourcePosition) => bound match {
           case None => ParsedAst.ConstrainedType(sp1, ident, kind, Seq.empty, sp2)
           case Some(clazz) => ParsedAst.ConstrainedType(sp1, ident, kind, Seq(clazz), sp2)
         })
