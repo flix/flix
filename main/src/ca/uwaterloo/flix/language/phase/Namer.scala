@@ -34,7 +34,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
-    **/
+    * */
   def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
     // compute all the source locations
     val locations = program.roots.foldLeft(Map.empty[Source, SourceLocation]) {
@@ -79,12 +79,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      */
     case WeededAst.Declaration.Namespace(ns, uses, decls, loc) =>
       mergeUseEnvs(uses, uenv0) flatMap {
-        newEnv => Validation.fold(decls, prog0) {
-          case (pacc, decl) =>
-            val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
-            visitDecl(decl, namespace, newEnv, pacc)
-        }
-    }
+        newEnv =>
+          Validation.fold(decls, prog0) {
+            case (pacc, decl) =>
+              val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
+              visitDecl(decl, namespace, newEnv, pacc)
+          }
+      }
 
     case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
       // Check if the class already exists.
@@ -332,6 +333,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
   }
+
   /**
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
@@ -979,10 +981,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         // Wild idents will not be in the environment. Create a tvar instead.
         NamedAst.Type.Var(Type.freshVar(Kind.freshVar()), loc).toSuccess
       } else {
-          tenv0.get(ident.name) match {
-            case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
-            case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
-          }
+        tenv0.get(ident.name) match {
+          case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
+          case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
+        }
       }
 
     case WeededAst.Type.Ambiguous(qname, loc) =>
@@ -1415,7 +1417,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
     case TypeParams.Elided => Nil
     case TypeParams.Explicit(tparams) => tparams.map {
-      case WeededAst.ConstrainedType(ident, classes) => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), classes, ident.loc)
+      case WeededAst.ConstrainedType(ident, _, classes) => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), classes, ident.loc)
     }
   }
 
@@ -1435,7 +1437,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, allowElision: Boolean)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] ={
+  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, allowElision: Boolean)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided =>
         if (allowElision)
@@ -1455,10 +1457,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getExplicitTypeParams(tparams0: List[WeededAst.ConstrainedType], implicitTparams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {
-      case WeededAst.ConstrainedType(ident, classes) =>
-        // Get the kind for each type variable from the implicit type params.
+      case WeededAst.ConstrainedType(ident, None, classes) =>
+        // Case 1: Get the kind for each type variable from the implicit type params.
         // Use a kind variable if not found; this will be caught later by redundancy checks.
         val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
+        val tvar = Type.freshVar(kind)
+        // Remember the original textual name.
+        tvar.setText(ident.name)
+        NamedAst.TypeParam(ident, tvar, classes, ident.loc)
+
+      case WeededAst.ConstrainedType(ident, Some(kind), classes) =>
+        // Case 2: The kind is explicitly available.
         val tvar = Type.freshVar(kind)
         // Remember the original textual name.
         tvar.setText(ident.name)
@@ -1529,7 +1538,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             val tvar = Type.freshVar(kind) // use the kind we validated from the parameter context
             tvar.setText(id.name)
             NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
-            // MATT may need to be not Nil for type constraints in enums
+          // MATT may need to be not Nil for type constraints in enums
         }
     }
   }
@@ -1642,6 +1651,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (_, clazz) => clazz.sigs.map(sig => (sig.sym.name, sig))
       }
     }
+
     classes.foldLeft(Map.empty[Name.NName, Map[String, NamedAst.Sig]]) {
       case (acc, (namespace, classes1)) => acc + (namespace -> flatMapToSigs(classes1))
     }
