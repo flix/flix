@@ -515,8 +515,6 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    case Box
          |}
          |
-         |def main(): Box[Int] = Box
-         |
        """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UnusedTypeParam](result)
@@ -528,8 +526,6 @@ class TestRedundancy extends FunSuite with TestUtils {
          |enum Box[a, b] {
          |    case Box(a)
          |}
-         |
-         |def main(): Box[Int, Int] = Box(123)
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -543,8 +539,6 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    case Box(b)
          |}
          |
-         |def main(): Box[Int, Int] = Box(123)
-         |
        """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UnusedTypeParam](result)
@@ -556,8 +550,6 @@ class TestRedundancy extends FunSuite with TestUtils {
          |enum Box[a, b, c] {
          |    case Box(a, c)
          |}
-         |
-         |def main(): Box[Int, Int, Int] = Box(123, 456)
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -571,8 +563,6 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    case A(a),
          |    case B(c)
          |}
-         |
-         |def main(): (Box[Int, Int, Int], Box[Int, Int, Int]) = (A(123), B(456))
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
