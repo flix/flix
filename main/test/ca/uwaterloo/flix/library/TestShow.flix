@@ -1,6 +1,6 @@
 // MATT copyright
 namespace TestShow {
-    use Show.show;
+    use Show.show; // MATT seems like UseDef correctly imports sig from class but not from instances
 
     @test
     def testShowString(): Bool = show("abcd") == "abcd"

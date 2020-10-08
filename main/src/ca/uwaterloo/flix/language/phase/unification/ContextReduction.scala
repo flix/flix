@@ -72,8 +72,14 @@ object ContextReduction {
       } yield inst.tconstrs.map(subst(_))
     }
 
-    Result.sequence(matchingInstances.map(tryInst)) flatMap {
-      case tconstrs :: Nil => tconstrs.toOk
+    // MATT move to result or something
+    def isOk(result: Result[_, _]): Boolean = result match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
+    }
+
+    matchingInstances.map(tryInst).filter(isOk) match {
+      case Result.Ok(tconstrs) :: Nil => tconstrs.toOk
       case Nil => UnificationError.MismatchedTypes(Type.Unit, Type.Unit).toErr // MATT UnificationError.NoMatchingInstance
       case _ => throw InternalCompilerException("Multiple matching instances.")
     }

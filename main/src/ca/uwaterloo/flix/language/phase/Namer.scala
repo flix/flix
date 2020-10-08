@@ -115,7 +115,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs, loc) =>
       // duplication check must come after name resolution
-      val instances = prog0.instances.getOrElse(Name.RootNS, MultiMap.empty)
+      val instances = prog0.instances.getOrElse(ns0, MultiMap.empty)
       visitInstance(decl, uenv0, Map.empty, ns0) map {
         instance => prog0.copy(instances = prog0.instances + (ns0 -> (instances + (clazz.ident.name, instance))))
       }

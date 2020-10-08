@@ -360,7 +360,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               flatMapN(lookupClass(qname, ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseDef(qname, _, _) =>
-              flatMapN(lookupDef(qname, ns0, root))(_ => visit(exp, tenv0))
+              flatMapN(lookupDefSig(qname, ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseTyp(qname, _, _) =>
               flatMapN(lookupType(NamedAst.Type.Ambiguous(qname, loc), ns0, root))(_ => visit(exp, tenv0))
