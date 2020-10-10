@@ -2,6 +2,14 @@
 
 HEAD:
 
+Version 0.14.0:
+- Added support for Visual Studio Code via LSP.
+- Allow `use` directly in namespaces.
+- Added `default` expression.
+- Added `MutList` to standard library.
+- Improved type inference w.r.t. kinds.
+- Various bug fixes.
+
 Version 0.13.0:
 - Significantly improved compilation time.
 - Significantly improved the execution time of some Flix programs.
