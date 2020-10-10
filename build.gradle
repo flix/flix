@@ -3,6 +3,10 @@ plugins {
     id 'scala'
 }
 
+compileJava {
+    targetCompatibility = 1.11
+}
+
 application {
     mainClassName = 'ca.uwaterloo.flix.Main'
 }
