@@ -3,10 +3,6 @@ plugins {
     id 'scala'
 }
 
-compileJava {
-    targetCompatibility = 1.11
-}
-
 application {
     mainClassName = 'ca.uwaterloo.flix.Main'
 }
@@ -40,6 +36,8 @@ tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = [
             "-language:postfixOps", "-Xfatal-warnings"
     ]
+    compileScala.sourceCompatibility = 11
+    compileScala.targetCompatibility = 11
 }
 
 sourceSets {
