@@ -59,6 +59,8 @@ import scala.collection.mutable
   * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
   *
   * The NPM package "wscat" is useful for experimenting with these commands from the shell.
+  *
+  * NB: All errors must be printed to std err.
   */
 class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
 
@@ -108,39 +110,37 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Invoked when a client connects.
     */
   override def onOpen(ws: WebSocket, ch: ClientHandshake): Unit = {
-    log("Client Connected.")(ws)
+    /* nop */
   }
 
   /**
     * Invoked when a client disconnects.
     */
   override def onClose(ws: WebSocket, i: Int, s: String, b: Boolean): Unit = {
-    log("Client Disconnected.")(ws)
+    /* nop */
   }
 
   /**
     * Invoked when a client sends a message.
     */
   override def onMessage(ws: WebSocket, data: String): Unit = try {
-    // Parse and process request.
     parseRequest(data)(ws) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
         val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
         val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
-        log("Sending reply: " + jsonCompact)(ws)
         ws.send(jsonPretty)
       case Err(msg) => log(msg)(ws)
     }
   } catch {
     case t: InternalCompilerException =>
-      t.printStackTrace()
+      t.printStackTrace(System.err)
       System.exit(1)
     case t: InternalRuntimeException =>
-      t.printStackTrace()
+      t.printStackTrace(System.err)
       System.exit(2)
     case t: Throwable =>
-      t.printStackTrace()
+      t.printStackTrace(System.err)
       System.exit(3)
   }
 
@@ -148,7 +148,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Invoked when an error occurs.
     */
   override def onError(ws: WebSocket, e: Exception): Unit = {
-    e.printStackTrace()
+    e.printStackTrace(System.err)
     System.exit(4)
   }
 
@@ -795,7 +795,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     val dateFormat = new SimpleDateFormat(DateFormat)
     val datePart = dateFormat.format(new Date())
     val clientPart = if (ws == null) "n/a" else ws.getRemoteSocketAddress
-    Console.println(s"[$datePart] [$clientPart]: $msg")
+    Console.err.println(s"[$datePart] [$clientPart]: $msg")
   }
 
 }
