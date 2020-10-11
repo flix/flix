@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -27,26 +28,29 @@ object Diagnostic {
     val range = Range.from(compilationError.loc)
     val code = compilationError.kind
     val message = compilationError.summary
-    Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message, Nil)
+    val fullMessage = compilationError.message.fmt(TerminalContext.NoTerminal)
+    Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message, fullMessage, Nil)
   }
 }
 
 /**
   * Represents a `Diagnostic` in LSP.
   *
-  * @param range    The range at which the message applies.
-  * @param severity The diagnostic's severity. Can be omitted. If omitted it is up to the client to interpret diagnostics as error, warning, info or hint.
-  * @param code     The diagnostic's code, which might appear in the user interface.
-  * @param source   A human-readable string describing the source of this diagnostic, e.g. 'typescript' or 'super lint'.
-  * @param message  The diagnostic's message.
-  * @param tags     Additional metadata about the diagnostic.
+  * @param range       The range at which the message applies.
+  * @param severity    The diagnostic's severity. Can be omitted. If omitted it is up to the client to interpret diagnostics as error, warning, info or hint.
+  * @param code        The diagnostic's code, which might appear in the user interface.
+  * @param source      A human-readable string describing the source of this diagnostic, e.g. 'typescript' or 'super lint'.
+  * @param message     The diagnostic's message.
+  * @param fullMessage The full error message (non-standard).
+  * @param tags        Additional metadata about the diagnostic.
   */
-case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, tags: List[DiagnosticTag]) {
+case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, fullMessage: String, tags: List[DiagnosticTag]) {
   def toJSON: JValue =
     ("range" -> range.toJSON) ~
       ("severity" -> severity.map(_.toInt)) ~
       ("code" -> code) ~
       ("source" -> source) ~
       ("message" -> message) ~
+      ("fullMessage" -> fullMessage) ~
       ("tags" -> tags.map(_.toInt))
 }
