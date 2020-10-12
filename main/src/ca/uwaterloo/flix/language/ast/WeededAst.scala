@@ -107,10 +107,6 @@ object WeededAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Absent(loc: SourceLocation) extends WeededAst.Expression
-
-    case class Present(exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
-
     case class Default(loc: SourceLocation) extends WeededAst.Expression
 
     case class Apply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
