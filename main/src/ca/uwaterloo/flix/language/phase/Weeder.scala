@@ -1874,6 +1874,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
             case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
             case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
+            case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
           }
           WeededAst.ConstrainedType(ident, k, classes.toList)
       }
