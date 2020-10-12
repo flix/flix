@@ -124,7 +124,6 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.OccursCheckError](result)
   }
 
-  // TODO: Better tests
   test("TestLeq.Choice.01") {
     val input =
       """
@@ -133,6 +132,12 @@ class TestTyper extends FunSuite with TestUtils {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
         |    }
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedBools](result)
@@ -146,6 +151,12 @@ class TestTyper extends FunSuite with TestUtils {
         |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
         |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
         |    }
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedBools](result)
@@ -158,6 +169,12 @@ class TestTyper extends FunSuite with TestUtils {
         |    choose (x, y) {
         |        case (Present(a), _) => a == "Hello"
         |    }
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
