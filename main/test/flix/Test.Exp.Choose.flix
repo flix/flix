@@ -386,6 +386,9 @@ namespace Test/Exp/Choose {
         };
         f(Present("a"), Absent) == "a"
 
+}
 
-
+pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+    case Absent
+    case Present(a)
 }

@@ -320,7 +320,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val usedRules = rules.map {
         case ChoiceRule(pat, exp) =>
           val fvs = pat.collect {
-            case ChoicePattern.Present(sym, _) => sym
+            case ChoicePattern.Present(sym, _, _) => sym
           }
           val extendedEnv = env0 ++ fvs
           val usedBody = visitExp(exp, extendedEnv)

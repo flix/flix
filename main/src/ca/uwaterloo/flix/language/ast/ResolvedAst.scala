@@ -89,7 +89,7 @@ object ResolvedAst {
 
     case class Absent(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Present(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Present(exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Default(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -247,7 +247,7 @@ object ResolvedAst {
 
     case class Absent(loc: SourceLocation) extends ChoicePattern
 
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
+    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends ChoicePattern
 
   }
 

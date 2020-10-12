@@ -368,7 +368,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
       case TypedAst.Expression.Choose(exps, rules, tpe, eff, loc) =>
-        patternMatchNull(exps, rules, tpe, loc)
+        simplifyChoose(exps, rules, tpe, loc)
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tag(sym, tag, visitExp(e), tpe, loc)
@@ -1134,13 +1134,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       }
 
     /**
-      * Eliminates pattern matching on null by translations to if-then-else expressions.
+      * Eliminates the choose construct by translations to if-then-else expressions.
       */
-    def patternMatchNull(exps0: List[TypedAst.Expression], rules0: List[TypedAst.ChoiceRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
+    def simplifyChoose(exps0: List[TypedAst.Expression], rules0: List[TypedAst.ChoiceRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
       //
       // Given the code:
       //
-      // match? (x, y, ...) {
+      // choose (x, y, ...) {
       //   case PATTERN_1 => BODY_1
       //   case PATTERN_2 => BODY_2
       //   ...
@@ -1153,15 +1153,26 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       // let matchVar2 = y;
       // ...
       //
-      // if (matchVar_i != null && ... matchVar_i != null)
+      // if (matchVar_i is Present(x_i) && ... matchVar_i is Present(x_j))
+      //   let x_i = untag matchVar_i;
+      //   ...
+      //   let x_j = untag matchVar_j;
       //   BODY_1
       // else
-      //   if (matchVar_i != null && ... matchVar_j != null) =>
+      //   if (matchVar_i is Present(x_i) && ... matchVar_j is Present(x_j)) =>
+      //   let x_i = untag matchVar_i;
+      //   ...
+      //   let x_j = untag matchVar_j;
       //     BODY_2
       // ...
       //   else
       //     MatchError
       //
+
+      //
+      // The symbol of the Choice data type.
+      //
+      val sym = Symbol.mkEnumSym("Choice")
 
       //
       // Translate the match expressions.
@@ -1188,20 +1199,21 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val isNull = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.EqNull, null, varExp, Type.Bool, loc)
-              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNull, acc, Type.Bool, loc)
-            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _)), matchExp), acc) =>
+              val isAbsent = SimplifiedAst.Expression.Is(sym, "Absent", varExp, loc)
+              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isAbsent, acc, Type.Bool, loc)
+            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val isNotNull = SimplifiedAst.Expression.Unary(SemanticOperator.ObjectOp.NeqNull, null, varExp, Type.Bool, loc)
-              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isNotNull, acc, Type.Bool, loc)
+              val isPresent = SimplifiedAst.Expression.Is(sym, "Present", varExp, loc)
+              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isPresent, acc, Type.Bool, loc)
           }
           val bodyExp = visitExp(body)
           val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) => acc
-            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, tpe, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              SimplifiedAst.Expression.Let(matchVar, varExp, acc, acc.tpe, loc)
+              val untagExp = SimplifiedAst.Expression.Untag(sym, "Present", varExp, tpe, loc)
+              SimplifiedAst.Expression.Let(matchVar, untagExp, acc, acc.tpe, loc)
           }
           val elseExp = acc
           SimplifiedAst.Expression.IfThenElse(condExp, thenExp, elseExp, tpe, loc)

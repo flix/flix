@@ -94,7 +94,7 @@ object TypedAstOps {
             val env1 = (pat.zip(exps)).foldLeft(Map.empty[Symbol.VarSym, Type]) {
               case (acc, (ChoicePattern.Wild(_), exp)) => acc
               case (acc, (ChoicePattern.Absent(_), exp)) => acc
-              case (acc, (ChoicePattern.Present(sym, _), exp)) => acc + (sym -> exp.tpe)
+              case (acc, (ChoicePattern.Present(sym, _, _), exp)) => acc + (sym -> exp.tpe)
             }
             acc ++ visitExp(exp, env0 ++ env1)
         }

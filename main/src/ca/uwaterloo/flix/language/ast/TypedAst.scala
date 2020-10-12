@@ -360,7 +360,7 @@ object TypedAst {
 
     case class Absent(loc: SourceLocation) extends ChoicePattern
 
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
+    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ChoicePattern
 
   }
 

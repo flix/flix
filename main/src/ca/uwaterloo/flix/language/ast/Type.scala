@@ -239,13 +239,6 @@ object Type {
   val Channel: Type = Type.Cst(TypeConstructor.Channel)
 
   /**
-    * Represents the Choice type constructor.
-    *
-    * NB: This type has kind: * -> Bool -> Bool -> *.
-    */
-  val Choice: Type = Type.Cst(TypeConstructor.Choice)
-
-  /**
     * Represents the Lazy type constructor.
     *
     * NB: This type has kind: * -> *.
@@ -490,8 +483,12 @@ object Type {
   /**
     * Returns the type `Choice[tpe, isAbsent, isPresent]`.
     */
-  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type): Type =
-    Apply(Apply(Apply(Cst(TypeConstructor.Choice), tpe0), isAbsent), isPresent)
+  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type): Type = {
+    val sym = Symbol.mkEnumSym("Choice")
+    val kind = Kind.mkArrow(Kind.Star :: Kind.Bool :: Kind.Bool :: Nil)
+    val tc = TypeConstructor.Enum(sym, kind)
+    Apply(Apply(Apply(Cst(tc), tpe0), isAbsent), isPresent)
+  }
 
   /**
     * Returns the type `Lazy[tpe]`.
