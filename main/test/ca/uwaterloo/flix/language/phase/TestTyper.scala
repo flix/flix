@@ -294,6 +294,12 @@ class TestTyper extends FunSuite with TestUtils {
         |        }
         |    };
         |    f(Present("b"), Present("c")) == "x"
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedBools](result)
@@ -312,6 +318,12 @@ class TestTyper extends FunSuite with TestUtils {
         |        }
         |    };
         |    f(Absent) == "x"
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedBools](result)
