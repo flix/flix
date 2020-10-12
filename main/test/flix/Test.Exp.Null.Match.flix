@@ -284,3 +284,8 @@ namespace Test/Exp/Null/Match {
     pub def isMaleLicense(_: String): Bool = true
 
 }
+
+pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+    case Absent
+    case Present(a)
+}

@@ -411,16 +411,20 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         liftM(List.empty, Type.Str, Type.Pure)
 
       case ResolvedAst.Expression.Absent(tvar, loc) =>
+        val elmVar = Type.freshVar(Kind.Star)
         val isAbsent = Type.True
         val isPresent = Type.freshVar(Kind.Bool)
-        liftM(List.empty, Type.mkChoice(tvar, isAbsent, isPresent), Type.Pure)
+        for {
+          resultTyp <- unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent), loc)
+          resultEff = Type.Pure
+        } yield (List.empty, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Present(exp, loc) =>
+      case ResolvedAst.Expression.Present(exp, tvar, loc) =>
         val isAbsent = Type.freshVar(Kind.Bool)
         val isPresent = Type.True
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp = Type.mkChoice(tpe, isAbsent, isPresent)
+          resultTyp <- unifyTypeM(tvar, Type.mkChoice(tpe, isAbsent, isPresent), loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
@@ -664,15 +668,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           */
         def mkInnerConj(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: ResolvedAst.ChoiceRule): Type =
           isAbsentVars.zip(isPresentVars).zip(r.pat).foldLeft(Type.True) {
-            case (acc, (isAbsentVar, ResolvedAst.ChoicePattern.Wild(_))) =>
+            case (acc, (_, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
-            case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
-              // Case 2: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
-            case (acc, ((isAbsentVar, _), ResolvedAst.ChoicePattern.Present(_, _))) =>
-              // Case 3: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
+            case (acc, ((isAbsentVar, _), ResolvedAst.ChoicePattern.Present(_, _, _))) =>
+              // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
               Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False))
+            case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
+              // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
+              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
           }
 
         /**
@@ -694,9 +698,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               case (matchType, ResolvedAst.ChoicePattern.Absent(_)) =>
                 // Case 2: The pattern is a `Absent`. No variable is bound and there is type to constrain.
                 liftM(matchType)
-              case (matchType, ResolvedAst.ChoicePattern.Present(sym, loc)) =>
+              case (matchType, ResolvedAst.ChoicePattern.Present(sym, tvar, loc)) =>
                 // Case 3: The pattern is `Present`. Must constraint the type of the local variable with the type of the match expression.
-                unifyTypeM(matchType, sym.tvar, loc)
+                unifyTypeM(matchType, sym.tvar, tvar, loc)
             })
           }
 
@@ -1324,10 +1328,18 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
 
       case ResolvedAst.Expression.Absent(tvar, loc) =>
-        TypedAst.Expression.Null(subst0(tvar), loc)
+        val e = TypedAst.Expression.Unit(loc)
+        val sym = Symbol.mkEnumSym("Choice")
+        val tpe = subst0(tvar)
+        val eff = Type.Pure
+        TypedAst.Expression.Tag(sym, "Absent", e, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Present(exp, loc) =>
-        visitExp(exp, subst0)
+      case ResolvedAst.Expression.Present(exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val sym = Symbol.mkEnumSym("Choice")
+        val tpe = subst0(tvar)
+        val eff = e.eff
+        TypedAst.Expression.Tag(sym, "Present", e, tpe, eff, loc)
 
       case ResolvedAst.Expression.Default(tvar, loc) => TypedAst.Expression.Default(subst0(tvar), loc)
 
@@ -1397,7 +1409,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             val pat = pat0.map {
               case ResolvedAst.ChoicePattern.Wild(loc) => TypedAst.ChoicePattern.Wild(loc)
               case ResolvedAst.ChoicePattern.Absent(loc) => TypedAst.ChoicePattern.Absent(loc)
-              case ResolvedAst.ChoicePattern.Present(sym, loc) => TypedAst.ChoicePattern.Present(sym, loc)
+              case ResolvedAst.ChoicePattern.Present(sym, tvar, loc) => TypedAst.ChoicePattern.Present(sym, subst0(tvar), loc)
             }
             TypedAst.ChoiceRule(pat, visitExp(exp, subst0))
         }

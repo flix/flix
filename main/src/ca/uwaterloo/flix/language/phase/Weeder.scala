@@ -1869,7 +1869,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided
     case ParsedAst.TypeParams.Explicit(tparams) =>
       val tparams1 = tparams.map {
-        case ParsedAst.ConstrainedType(sp1, ident, classes, sp2) => WeededAst.ConstrainedType(ident, classes.toList)
+        case ParsedAst.ConstrainedType(sp1, ident, kind, classes, sp2) =>
+          val k = kind.map {
+            case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
+            case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
+            case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
+            case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
+          }
+          WeededAst.ConstrainedType(ident, k, classes.toList)
       }
       WeededAst.TypeParams.Explicit(tparams1)
   }

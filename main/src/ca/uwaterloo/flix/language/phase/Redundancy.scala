@@ -164,7 +164,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.Var]) {
           case (sacc, (_, Case(_, _, tpe, _, _))) => sacc ++ tpe.typeVars
         }
-        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
+        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe) && !tparam.name.name.startsWith("_"))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
   }
@@ -320,7 +320,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val usedRules = rules.map {
         case ChoiceRule(pat, exp) =>
           val fvs = pat.collect {
-            case ChoicePattern.Present(sym, _) => sym
+            case ChoicePattern.Present(sym, _, _) => sym
           }
           val extendedEnv = env0 ++ fvs
           val usedBody = visitExp(exp, extendedEnv)

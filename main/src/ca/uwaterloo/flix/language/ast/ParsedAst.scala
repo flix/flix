@@ -192,13 +192,13 @@ object ParsedAst {
     /**
       * Typeclass instance.
       *
-      * @param doc        the optional comment associated with the declaration.
-      * @param mod        the associated modifiers.
-      * @param sp1        the position of the first character in the declaration.
-      * @param clazz      the name of the class.
-      * @param tpe        the type of the instance.
-      * @param defs       the definitions of the instance.
-      * @param sp2        the position of the last character in the declaration.
+      * @param doc   the optional comment associated with the declaration.
+      * @param mod   the associated modifiers.
+      * @param sp1   the position of the first character in the declaration.
+      * @param clazz the name of the class.
+      * @param tpe   the type of the instance.
+      * @param defs  the definitions of the instance.
+      * @param sp2   the position of the last character in the declaration.
       */
     case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
@@ -1344,6 +1344,35 @@ object ParsedAst {
   }
 
   /**
+    * Kinds.
+    */
+  sealed trait Kind
+
+  object Kind {
+
+    /**
+      * The Star kind.
+      */
+    case class Star(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
+      * The Bool kind.
+      */
+    case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
+      * The Record kind.
+      */
+    case class Record(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
+      * The Schema kind.
+      */
+    case class Schema(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+  }
+
+  /**
     * Attribute.
     *
     * @param sp1   the position of the first character in the attribute.
@@ -1396,10 +1425,11 @@ object ParsedAst {
     *
     * @param sp1     the position of the first character in the context bound.
     * @param ident   the type variable being bound
+    * @param kind    the optional kind of the type variable.
     * @param classes the bounding classes.
     * @param sp2     the position of the last character in the context bound.
     */
-  case class ConstrainedType(sp1: SourcePosition, ident: Name.Ident, classes: Seq[Name.QName], sp2: SourcePosition)
+  case class ConstrainedType(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
 
   /**
     * Formal Parameter.

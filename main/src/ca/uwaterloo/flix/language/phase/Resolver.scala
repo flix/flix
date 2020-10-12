@@ -377,7 +377,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Present(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Present(e, loc)
+          } yield ResolvedAst.Expression.Present(e, Type.freshVar(Kind.Star), loc)
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star), loc).toSuccess
 
@@ -472,7 +472,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               val p = pat0.map {
                 case NamedAst.ChoicePattern.Wild(loc) => ResolvedAst.ChoicePattern.Wild(loc)
                 case NamedAst.ChoicePattern.Absent(loc) => ResolvedAst.ChoicePattern.Absent(loc)
-                case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
+                case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, Type.freshVar(Kind.Star), loc)
               }
               mapN(visit(exp0, tenv0)) {
                 case e => ResolvedAst.ChoiceRule(p, e)
@@ -1264,7 +1264,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "String" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Channel" => Type.Channel.toSuccess
-      case "Choice" => Type.Choice.toSuccess
       case "Lazy" => Type.Lazy.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
@@ -1816,13 +1815,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   private def mkNot(tpe: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
     mkApply(Type.Not, tpe, loc)
-  }
-
-  /**
-    * Create a well-formed `Choice` type.
-    */
-  private def mkChoice(tpe: Type, nullity: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.Choice), List(tpe, nullity), loc)
   }
 
   /**

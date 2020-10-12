@@ -585,8 +585,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Channel => MonoType.Channel(args.head)
 
-          case TypeConstructor.Choice => args(0)
-
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)

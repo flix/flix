@@ -138,8 +138,6 @@ object FormatType {
 
           case TypeConstructor.Channel => formatApply("Channel", args)
 
-          case TypeConstructor.Choice => formatApply("Choice", args)
-
           case TypeConstructor.Enum(sym, _) => formatApply(sym.toString, args)
 
           case TypeConstructor.Lattice => formatApply("Lattice", args)

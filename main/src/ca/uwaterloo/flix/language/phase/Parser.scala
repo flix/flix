@@ -260,9 +260,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def TypeParams: Rule1[ParsedAst.TypeParams] = {
       def ConstrainedType: Rule1[ParsedAst.ConstrainedType] = rule {
-        SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[Name.QName], sp2: SourcePosition) => bound match {
-          case None => ParsedAst.ConstrainedType(sp1, ident, Seq.empty, sp2)
-          case Some(clazz) => ParsedAst.ConstrainedType(sp1, ident, Seq(clazz), sp2)
+        SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ optional(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], bound: Option[Name.QName], sp2: SourcePosition) => bound match {
+          case None => ParsedAst.ConstrainedType(sp1, ident, kind, Seq.empty, sp2)
+          case Some(clazz) => ParsedAst.ConstrainedType(sp1, ident, kind, Seq(clazz), sp2)
         })
       }
 
@@ -1260,6 +1260,33 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
       "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Kinds                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  def Kind: Rule1[ParsedAst.Kind] = rule {
+    Kinds.Star | Kinds.Bool | Kinds.Record | Kinds.Schema
+  }
+
+  object Kinds {
+
+    def Star: Rule1[ParsedAst.Kind.Star] = rule {
+      SP ~ keyword("Type") ~ SP ~> ParsedAst.Kind.Star
+    }
+
+    def Bool: Rule1[ParsedAst.Kind.Bool] = rule {
+      SP ~ keyword("Bool") ~ SP ~> ParsedAst.Kind.Bool
+    }
+
+    def Record: Rule1[ParsedAst.Kind.Record] = rule {
+      SP ~ keyword("Record") ~ SP ~> ParsedAst.Kind.Record
+    }
+
+    def Schema: Rule1[ParsedAst.Kind.Record] = rule {
+      SP ~ keyword("Schema") ~ SP ~> ParsedAst.Kind.Record
+    }
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
