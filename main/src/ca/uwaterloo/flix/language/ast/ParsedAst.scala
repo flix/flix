@@ -1365,6 +1365,11 @@ object ParsedAst {
       */
     case class Record(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
+    /**
+      * The Schema kind.
+      */
+    case class Schema(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
   }
 
   /**
