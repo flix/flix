@@ -485,7 +485,7 @@ object Type {
     */
   def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type): Type = {
     val sym = Symbol.mkEnumSym("Choice")
-    val kind = Kind.mkArrow(Kind.Star :: Kind.Bool :: Kind.Bool :: Nil)
+    val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
     val tc = TypeConstructor.Enum(sym, kind)
     Apply(Apply(Apply(Cst(tc), tpe0), isAbsent), isPresent)
   }
