@@ -1429,10 +1429,7 @@ object ParsedAst {
     * @param classes the bounding classes.
     * @param sp2     the position of the last character in the context bound.
     */
-<<<<<<< HEAD
-  case class ConstrainedType(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
-=======
-  case class ConstrainedTypeParam(sp1: SourcePosition, ident: Name.Ident, classes: Seq[Name.QName], sp2: SourcePosition)
+  case class ConstrainedTypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
 
 
   /**
@@ -1444,7 +1441,6 @@ object ParsedAst {
     * @param sp2     the position of the last character in the context bound.
     */
   case class ConstrainedType(sp1: SourcePosition, tpe: ParsedAst.Type, classes: Seq[Name.QName], sp2: SourcePosition)
->>>>>>> take type constraints on instances through to typer
 
   /**
     * Formal Parameter.

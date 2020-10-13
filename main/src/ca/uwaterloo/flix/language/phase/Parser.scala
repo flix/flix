@@ -266,12 +266,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def TypeParams: Rule1[ParsedAst.TypeParams] = {
-      def ConstrainedType: Rule1[ParsedAst.ConstrainedType] = rule {
-        SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ zeroOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedType
+      def ConstrainedTypeParam: Rule1[ParsedAst.ConstrainedTypeParam] = rule {
+        SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ zeroOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedTypeParam
       }
 
       rule {
-        optional("[" ~ optWS ~ oneOrMore(ConstrainedType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ConstrainedTypeParam]]) => o match {
+        optional("[" ~ optWS ~ oneOrMore(ConstrainedTypeParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ConstrainedTypeParam]]) => o match {
           case None => ParsedAst.TypeParams.Elided
           case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
         })

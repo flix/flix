@@ -1491,7 +1491,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {
       case WeededAst.ConstrainedTypeParam(ident, None, classes) =>
-      // Case 1: Get the kind for each type variable from the implicit type params.
+        // Case 1: Get the kind for each type variable from the implicit type params.
         // Use a kind variable if not found; this will be caught later by redundancy checks.
         val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
         val tvar = Type.freshVar(kind, text = Some(ident.name))
