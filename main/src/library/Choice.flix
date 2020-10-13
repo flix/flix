@@ -27,9 +27,9 @@ namespace Choice {
     ///
     /// Returns the value in `c` which must be `Present`.
     ///
-    pub def unbox[a, isAbsent :# Bool](c: Choice[a, false, isAbsent]): a = choose c {
-        case Present(v) => v
-    }
+//    pub def unbox[a, isAbsent :# Bool](c: Choice[a, false, isAbsent]): a = choose c {
+//        case Present(v) => v
+//    }
 
     ///
     /// Returns the given choice `c` as an `Option`.
@@ -59,10 +59,10 @@ namespace Choice {
 //            case Present(v) => Present(f(v))
 //        }
 
-   pub def mapPresent[a, b](f: a -> b, c: Choice[a, false, true]): Choice[b, false, true] =
-       choose c {
-           case Present(v) => Present(f(v))
-       }
+//   pub def mapPresent[a, b](f: a -> b, c: Choice[a, false, true]): Choice[b, false, true] =
+//       choose c {
+//           case Present(v) => Present(f(v))
+//       }
 
 
     // - def Option.toChoice(o: Option[a]): Choice[a, T, T]

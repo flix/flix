@@ -609,77 +609,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
 
-        sealed trait Tree
-
-        object Tree {
-
-          // TODO: Wild
-          case class MustbeAbsent(tailsAbsent: List[List[ResolvedAst.ChoicePattern]]) extends Tree
-
-          case class MustbePresent(tailsPresent: List[List[ResolvedAst.ChoicePattern]]) extends Tree
-
-          case class MaybeBoth(tailsAbsent: List[List[ResolvedAst.ChoicePattern]], tailsPresent: List[List[ResolvedAst.ChoicePattern]]) extends Tree
-
-        }
-
-
-        def categorize(xs: List[List[ResolvedAst.ChoicePattern]]): Tree = {
-          val absentTails = xs.foldRight(Nil: List[List[ResolvedAst.ChoicePattern]]) {
-            case (pat, acc) => pat match {
-              case ResolvedAst.ChoicePattern.Wild(_) :: xs => xs :: acc
-              case ResolvedAst.ChoicePattern.Absent(_) :: xs => xs :: acc
-              case _ => acc
-            }
-          }
-
-          val presentTails = xs.foldRight(Nil: List[List[ResolvedAst.ChoicePattern]]) {
-            case (pat, acc) => pat match {
-              case ResolvedAst.ChoicePattern.Wild(_) :: xs => xs :: acc
-              case ResolvedAst.ChoicePattern.Present(_, _, _) :: xs => xs :: acc
-              case _ => acc
-            }
-          }
-
-          if (absentTails.nonEmpty && presentTails.nonEmpty) {
-            Tree.MaybeBoth(absentTails, presentTails)
-          } else if (absentTails.isEmpty) {
-            Tree.MustbePresent(presentTails)
-          } else {
-            Tree.MustbeAbsent(absentTails)
-          }
-        }
-
-        def buildFormula(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[List[ResolvedAst.ChoicePattern]]): Type = {
-          if (isAbsentVars.isEmpty) {
-            Type.True
-          } else {
-            categorize(rs) match {
-              case Tree.MustbeAbsent(tails) =>
-                // Case 1: Must be absent, i.e. matchVar.isPresent == false
-                val isPresentVar = isPresentVars.head
-                val f = Type.mkEquiv(isPresentVar, Type.False)
-                Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
-
-              case Tree.MustbePresent(tails) =>
-                // Case 2: Must be present, i.e. matchVar.isAbsent == false
-                val isAbsentVar = isAbsentVars.head
-                val f = Type.mkEquiv(isAbsentVar, Type.False)
-                Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
-
-              case Tree.MaybeBoth(tailsAbsent, tailsPresent) =>
-                val isAbsentVar = isAbsentVars.head
-                val isPresentVar = isPresentVars.head
-                // Case 3: We cover both absent and present. We must case split.
-                // TODO: This is simply not correct ...
-                val x = Type.mkAnd(Type.mkEquiv(isAbsentVar, Type.True), buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsAbsent))
-                val y = Type.mkAnd(Type.mkEquiv(isPresentVar, Type.True), buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsPresent))
-                Type.mkOr(x, y)
-            }
-          }
-        }
-
-        def mkImplies(t1: Type, t2: Type): Type = Type.mkOr(Type.mkNot(t1), t2)
-
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
           *
@@ -725,13 +654,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             case (acc, (_, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
-            case (acc, ((isAbsentVar, _), ResolvedAst.ChoicePattern.Present(_, _, _))) =>
+            case (acc, ((isAbsentVar, isPresentVar), ResolvedAst.ChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False))
-            case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
+              mkImplies(Type.mkOr(isAbsentVar, isPresentVar), Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False)))
+            case (acc, ((isAbsentVar, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
+              mkImplies(Type.mkOr(isAbsentVar, isPresentVar), Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False)))
           }
+
+        def mkImplies(t1: Type, t2: Type): Type = Type.mkOr(Type.mkNot(t1), t2)
 
         /**
           * Constructs a disjunction of the constraints of each choice rule.
@@ -774,7 +705,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         // Build the entire Boolean formula.
         //
-        val formula = buildFormula(isAbsentVars, isPresentVars, rules0.map(_.pat))
+        val formula = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
         println(FormatType.formatType(formula)(Audience.Internal))
 
         //
