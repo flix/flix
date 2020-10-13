@@ -651,27 +651,30 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       visitExp(exp0, env0)
     }
 
+    // MATT docs
     def specializeSigSym(sym: Symbol.SigSym, tpe: Type): Symbol.DefnSym = {
       val sig = root.sigs(sym)
 
       // lookup the instance corresponding to this type
       val instances = root.instances(sig.sym.clazz)
 
-      // MATT this is wrong; tpe is type of def, not instance
       val defn = instances.flatMap {
         inst => inst.defs.find {
-          defn => defn.sym.name == sig.sym.name && Scheme.lessThanEqual(defn.declaredScheme, sig.sc, MultiMap.empty)
+          defn => defn.sym.name == sig.sym.name && Unification.unifyTypes(defn.declaredScheme.base, tpe).isOk
+          // MATT probably need to do leq check instead
         }
       }.head // MATT do something monadic or throw internalcompilerexception if this is impossible
 
       specializeDef(defn, tpe)
     }
 
+    // MATT docs
     def specializeDef(defn: TypedAst.Def, tpe: Type): Symbol.DefnSym = {
-      // Check if the function is non-polymorphic.
-//      if (defn.tparams.isEmpty) { // MATT tmp
+//       Check if the function is non-polymorphic.
+//      if (defn.tparams.isEmpty) {
 //        return defn.sym
 //      }
+      // MATT apply this optimization only to non-instance defs
 
       // Unify the declared and actual type to obtain the substitution map.
       val subst = StrictSubstitution(Unification.unifyTypes(defn.inferredScheme.base, tpe).get)
