@@ -27,6 +27,7 @@ import scala.collection.immutable.List
 object TypedAst {
 
   case class Root(classes: Map[Symbol.ClassSym, TypedAst.Class],
+                  sigs: Map[Symbol.SigSym, TypedAst.Sig], // MATT check for ordering
                   instances: MultiMap[Symbol.ClassSym, TypedAst.Instance],
                   defs: Map[Symbol.DefnSym, TypedAst.Def],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],

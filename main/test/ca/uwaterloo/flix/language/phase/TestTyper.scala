@@ -882,4 +882,36 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("MattTest") { // MATT tmp
+    val input =
+      """
+        |namespace Test06 {
+        |    class C[a] {
+        |        def f(x: a): Bool
+        |    }
+        |
+        |    instance C[Int] {
+        |        def f(x: Int): Bool = x == 0
+        |    }
+        |
+        |    instance C[List[a]] with [a: C] {
+        |        def f(x: List[a]): Bool = {
+        |            match x {
+        |                case Nil => true
+        |                case _ => false
+        |            }
+        |        }
+        |    }
+        |
+        |    pub def g(x: List[Int]): Bool = f(x)
+        |
+        |    pub enum List[a] {
+        |        case Cons(a, List[a])
+        |        case Nil
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    result.get
+  }
 }

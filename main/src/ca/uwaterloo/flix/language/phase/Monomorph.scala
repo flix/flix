@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.collection.mutable
@@ -156,7 +157,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val newSym = specializeDefSym(sym, subst0(tpe))
           Expression.Def(newSym, subst0(tpe), loc)
 
-        case Expression.Sig(sym, tpe, loc) => Expression.Hole(new Symbol.HoleSym(sym.clazz.namespace, sym.name, loc), tpe, Type.Pure, loc) // TODO replace with implementation
+        case Expression.Sig(sym, tpe, loc) =>
+          val newSym = specializeSigSym(sym, subst0(tpe))
+          Expression.Def(newSym, subst0(tpe), loc)
 
         case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
@@ -648,30 +651,40 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       visitExp(exp0, env0)
     }
 
-    /**
-      * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-      */
-    def specializeDefSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
-      // Lookup the definition and its declared type.
-      val defn = root.defs(sym)
+    def specializeSigSym(sym: Symbol.SigSym, tpe: Type): Symbol.DefnSym = {
+      val sig = root.sigs(sym)
 
+      // lookup the instance corresponding to this type
+      val instances = root.instances(sig.sym.clazz)
+
+      // MATT this is wrong; tpe is type of def, not instance
+      val defn = instances.flatMap {
+        inst => inst.defs.find {
+          defn => defn.sym.name == sig.sym.name && Scheme.lessThanEqual(defn.declaredScheme, sig.sc, MultiMap.empty)
+        }
+      }.head // MATT do something monadic or throw internalcompilerexception if this is impossible
+
+      specializeDef(defn, tpe)
+    }
+
+    def specializeDef(defn: TypedAst.Def, tpe: Type): Symbol.DefnSym = {
       // Check if the function is non-polymorphic.
-      if (defn.tparams.isEmpty) {
-        return sym
-      }
+//      if (defn.tparams.isEmpty) { // MATT tmp
+//        return defn.sym
+//      }
 
       // Unify the declared and actual type to obtain the substitution map.
       val subst = StrictSubstitution(Unification.unifyTypes(defn.inferredScheme.base, tpe).get)
 
       // Check whether the function definition has already been specialized.
-      def2def.get((sym, tpe)) match {
+      def2def.get((defn.sym, tpe)) match {
         case None =>
           // Case 1: The function has not been specialized.
           // Generate a fresh specialized definition symbol.
-          val freshSym = Symbol.freshDefnSym(sym)
+          val freshSym = Symbol.freshDefnSym(defn.sym)
 
           // Register the fresh symbol (and actual type) in the symbol2symbol map.
-          def2def.put((sym, tpe), freshSym)
+          def2def.put((defn.sym, tpe), freshSym)
 
           // Enqueue the fresh symbol with the definition and substitution.
           defQueue.enqueue((freshSym, defn, subst))
@@ -683,6 +696,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // Simply refer to the already existing specialized symbol.
           specializedSym
       }
+
+    }
+
+    /**
+      * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
+      */
+    def specializeDefSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
+      // Lookup the definition and its declared type.
+      val defn = root.defs(sym)
+
+      specializeDef(defn, tpe)
     }
 
     /**

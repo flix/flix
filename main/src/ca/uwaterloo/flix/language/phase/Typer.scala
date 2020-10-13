@@ -48,8 +48,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
       case (classes, instances, defs, enums, latticeOps, properties) =>
+        val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-        TypedAst.Root(classes, instances, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
+        TypedAst.Root(classes, sigs, instances, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
     }
   }
 
