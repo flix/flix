@@ -654,14 +654,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             categorize(rs) match {
               case Tree.MustbeAbsent(tails) =>
                 // Case 1: Must be absent, i.e. matchVar.isPresent == false
-                val matchVar = isPresentVars.head
-                val f = Type.mkEquiv(matchVar, Type.False)
+                val isPresentVar = isPresentVars.head
+                val f = Type.mkEquiv(isPresentVar, Type.False)
                 Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
 
               case Tree.MustbePresent(tails) =>
                 // Case 2: Must be present, i.e. matchVar.isAbsent == false
-                val matchVar = isAbsentVars.head
-                val f = Type.mkEquiv(matchVar, Type.False)
+                val isAbsentVar = isAbsentVars.head
+                val f = Type.mkEquiv(isAbsentVar, Type.False)
                 Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
               case Tree.MaybeBoth(tailsAbsent, tailsPresent) =>
                 val isAbsentVar = isAbsentVars.head
