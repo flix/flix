@@ -608,6 +608,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
 
+
+
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
           *
@@ -700,10 +702,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val isPresentVars = exps0.map(_ => Type.freshVar(Kind.Bool))
 
         //
+        // Build the entire Boolean formula.
+        //
+        val formula = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
+
+        //
         // Put everything together.
         //
         for {
-          _ <- unifyBoolM(mkOuterDisj(rules0, isAbsentVars, isPresentVars), Type.True, loc)
+          _ <- unifyBoolM(formula, Type.True, loc)
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
