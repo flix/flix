@@ -612,28 +612,38 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         sealed trait Tree
 
         object Tree {
+
           // TODO: Wild
-          case object MustbeAbsent extends Tree
-          case object MustbePresent extends Tree
-          case object MaybeBoth extends Tree
+          case class MustbeAbsent(tailsAbsent: List[List[ResolvedAst.ChoicePattern]]) extends Tree
+
+          case class MustbePresent(tailsPresent: List[List[ResolvedAst.ChoicePattern]]) extends Tree
+
+          case class MaybeBoth(tailsAbsent: List[List[ResolvedAst.ChoicePattern]], tailsPresent: List[List[ResolvedAst.ChoicePattern]]) extends Tree
+
         }
 
 
-        def categorize(xs: List[ResolvedAst.ChoicePattern]): Tree = {
-          val absent = xs.collect {
-            case x: ResolvedAst.ChoicePattern.Absent => x
+        def categorize(xs: List[List[ResolvedAst.ChoicePattern]]): Tree = {
+          val absentTails = xs.foldRight(Nil: List[List[ResolvedAst.ChoicePattern]]) {
+            case (pat, acc) => pat match {
+              case ResolvedAst.ChoicePattern.Absent(_) :: xs => xs :: acc
+              case _ => acc
+            }
           }
 
-          val present = xs.collect {
-            case x: ResolvedAst.ChoicePattern.Present => x
+          val presentTails = xs.foldRight(Nil: List[List[ResolvedAst.ChoicePattern]]) {
+            case (pat, acc) => pat match {
+              case ResolvedAst.ChoicePattern.Present(_, _, _) :: xs => xs :: acc
+              case _ => acc
+            }
           }
 
-          if (absent.nonEmpty && present.nonEmpty) {
-            Tree.MaybeBoth
-          } else if (absent.isEmpty) {
-            Tree.MustbePresent
+          if (absentTails.nonEmpty && presentTails.nonEmpty) {
+            Tree.MaybeBoth(absentTails, presentTails)
+          } else if (absentTails.isEmpty) {
+            Tree.MustbePresent(presentTails)
           } else {
-            Tree.MustbeAbsent
+            Tree.MustbeAbsent(absentTails)
           }
         }
 
@@ -641,25 +651,26 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           if (isAbsentVars.isEmpty) {
             Type.True
           } else {
-            val heads = rs.map(_.head)
-            val tails = rs.map(_.tail)
-            categorize(heads) match {
-              case Tree.MustbeAbsent =>
+            categorize(rs) match {
+              case Tree.MustbeAbsent(tails) =>
                 // Case 1: Must be absent, i.e. matchVar.isPresent == false
                 val matchVar = isPresentVars.head
                 val f = Type.mkEquiv(matchVar, Type.False)
                 Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
 
-              case Tree.MustbePresent =>
+              case Tree.MustbePresent(tails) =>
                 // Case 2: Must be present, i.e. matchVar.isAbsent == false
                 val matchVar = isAbsentVars.head
                 val f = Type.mkEquiv(matchVar, Type.False)
                 Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
-              case Tree.MaybeBoth =>
+              case Tree.MaybeBoth(tailsAbsent, tailsPresent) =>
+                val isAbsentVar = isAbsentVars.head
+                val isPresentVar = isPresentVars.head
                 // Case 3: We cover both absent and present. We must case split.
-
-
-                buildFormula(isAbsentVars.tail, isPresentVars.tail, tails)
+                // TODO: Build formula
+                val x = Type.mkAnd(Type.mkEquiv(isPresentVar, Type.False), buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsAbsent))
+                val y = Type.mkAnd(Type.mkEquiv(isAbsentVar, Type.False), buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsPresent))
+                Type.mkOr(x, y)
             }
           }
         }
