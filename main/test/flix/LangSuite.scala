@@ -53,7 +53,7 @@ class LangSuite extends Suites(
   //
   // Choose.
   //
-//  new FlixTest("Test.Exp.Choose", "main/test/flix/Test.Exp.Choose.flix"),
+  new FlixTest("Test.Exp.Choose", "main/test/flix/Test.Exp.Choose.flix"),
 
   //
   // Concurrency.
@@ -103,9 +103,8 @@ class LangSuite extends Suites(
   //
   // Null.
   //
-  // TODO: Null
-  // new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
-  // new FlixTest("Test.Exp.Null.Match", "main/test/flix/Test.Exp.Null.Match.flix"),
+  new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
+  new FlixTest("Test.Exp.Null.Match", "main/test/flix/Test.Exp.Null.Match.flix"),
 
   //
   // Record.
@@ -161,8 +160,7 @@ class LangSuite extends Suites(
   //
   // Typ.
   //
-  // TODO
-  //new FlixTest("Test.Typ.Gen.Bool.Null", "main/test/flix/Test.Typ.Gen.Bool.Null.flix"),
+  new FlixTest("Test.Typ.Gen.Bool.Null", "main/test/flix/Test.Typ.Gen.Bool.Null.flix"),
 
   //
   // Type Alias.
