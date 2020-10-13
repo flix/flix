@@ -453,7 +453,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("TestChoose.AbsentAbsent.IfThenElse.01") {
+  test("TestChoose.AbsentAbsent.IfThenElse.02") {
     val input =
       """
         |def main(): Int =
