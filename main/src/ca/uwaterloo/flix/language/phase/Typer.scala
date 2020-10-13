@@ -694,7 +694,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         def mkOuterPrecondition(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = (isAbsentVars, isPresentVars) match {
           case (Nil, Nil) => Type.True
           case (isAbsentVar :: xs, isPresentVar :: ys) =>
-            val cond = Type.mkOr(Type.mkNot(isAbsentVar), Type.mkNot(isPresentVar))
+            val cond = Type.mkOr(isAbsentVar, isPresentVar)
             Type.mkAnd(cond, mkOuterPrecondition(xs, ys))
           case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
         }
