@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
@@ -608,7 +609,60 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
 
+        sealed trait Tree
 
+        object Tree {
+          // TODO: Wild
+          case object MustbeAbsent extends Tree
+          case object MustbePresent extends Tree
+          case object MaybeBoth extends Tree
+        }
+
+
+        def categorize(xs: List[ResolvedAst.ChoicePattern]): Tree = {
+          val absent = xs.collect {
+            case x: ResolvedAst.ChoicePattern.Absent => x
+          }
+
+          val present = xs.collect {
+            case x: ResolvedAst.ChoicePattern.Present => x
+          }
+
+          if (absent.nonEmpty && present.nonEmpty) {
+            Tree.MaybeBoth
+          } else if (absent.isEmpty) {
+            Tree.MustbePresent
+          } else {
+            Tree.MustbeAbsent
+          }
+        }
+
+        def buildFormula(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[List[ResolvedAst.ChoicePattern]]): Type = {
+          if (isAbsentVars.isEmpty) {
+            Type.True
+          } else {
+            val heads = rs.map(_.head)
+            val tails = rs.map(_.tail)
+            categorize(heads) match {
+              case Tree.MustbeAbsent =>
+                // Case 1: Must be absent, i.e. matchVar.isPresent == false
+                val matchVar = isPresentVars.head
+                val f = Type.mkEquiv(matchVar, Type.False)
+                Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
+
+              case Tree.MustbePresent =>
+                // Case 2: Must be present, i.e. matchVar.isAbsent == false
+                val matchVar = isAbsentVars.head
+                val f = Type.mkEquiv(matchVar, Type.False)
+                Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
+              case Tree.MaybeBoth =>
+                // Case 3: We cover both absent and present. We must case split.
+
+
+                buildFormula(isAbsentVars.tail, isPresentVars.tail, tails)
+            }
+          }
+        }
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -704,7 +758,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         // Build the entire Boolean formula.
         //
-        val formula = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
+        val formula = buildFormula(isAbsentVars, isPresentVars, rules0.map(_.pat))
+        println(FormatType.formatType(formula)(Audience.Internal))
 
         //
         // Put everything together.
