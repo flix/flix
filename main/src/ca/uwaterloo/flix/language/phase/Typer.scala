@@ -669,12 +669,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                 val isPresentVar = isPresentVars.head
                 // Case 3: We cover both absent and present. We must case split.
                 // TODO: Build formula
-                val x = buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsAbsent)
-                val y = buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsPresent)
+                val x = Type.mkAnd(Type.mkEquiv(isPresentVar, Type.False), buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsAbsent))
+                val y = Type.mkAnd(Type.mkEquiv(isAbsentVar, Type.False), buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsPresent))
                 Type.mkOr(x, y)
             }
           }
         }
+
+        def mkImplies(t1: Type, t2: Type): Type = Type.mkOr(Type.mkNot(t1), t2)
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
