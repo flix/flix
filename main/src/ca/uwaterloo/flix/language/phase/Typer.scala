@@ -655,15 +655,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               // Case 1: No constraint is generated for a wildcard.
               acc
             case (acc, ((isAbsentVar, isPresentVar), ResolvedAst.ChoicePattern.Present(_, _, _))) =>
-              // TODO: Move the condition to the outer most
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              mkImplies(Type.mkOr(Type.mkNot(isAbsentVar), Type.mkNot(isPresentVar)), Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False)))
+              Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False))
             case (acc, ((isAbsentVar, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              mkImplies(Type.mkOr(Type.mkNot(isAbsentVar), Type.mkNot(isPresentVar)), Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False)))
+              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
           }
-
-        def mkImplies(t1: Type, t2: Type): Type = Type.mkOr(Type.mkNot(t1), t2)
 
         /**
           * Constructs a disjunction of the constraints of each choice rule.
@@ -693,6 +690,18 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           seqM(rs.map(unifyWithRule))
         }
 
+        // TODO: DOC
+        def mkOuterPrecondition(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = (isAbsentVars, isPresentVars) match {
+          case (Nil, Nil) => Type.True
+          case (isAbsentVar :: xs, isPresentVar :: ys) =>
+            val cond = Type.mkOr(Type.mkNot(isAbsentVar), Type.mkNot(isPresentVar))
+            Type.mkAnd(cond, mkOuterPrecondition(xs, ys))
+          case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
+        }
+
+        // TODO: Move
+        def mkImplies(t1: Type, t2: Type): Type = Type.mkOr(Type.mkNot(t1), t2)
+
         //
         // Introduce an isAbsent variable for each match expression in `exps`.
         //
@@ -706,7 +715,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         // Build the entire Boolean formula.
         //
-        val formula = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
+        val cond = mkOuterPrecondition(isAbsentVars, isPresentVars)
+        val body = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
+        val formula = mkImplies(cond, body)
         println(FormatType.formatType(formula)(Audience.Internal))
 
         //
