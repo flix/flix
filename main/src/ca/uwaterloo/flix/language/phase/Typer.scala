@@ -626,6 +626,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         def categorize(xs: List[List[ResolvedAst.ChoicePattern]]): Tree = {
           val absentTails = xs.foldRight(Nil: List[List[ResolvedAst.ChoicePattern]]) {
             case (pat, acc) => pat match {
+              case ResolvedAst.ChoicePattern.Wild(_) :: xs => xs :: acc
               case ResolvedAst.ChoicePattern.Absent(_) :: xs => xs :: acc
               case _ => acc
             }
@@ -633,6 +634,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
           val presentTails = xs.foldRight(Nil: List[List[ResolvedAst.ChoicePattern]]) {
             case (pat, acc) => pat match {
+              case ResolvedAst.ChoicePattern.Wild(_) :: xs => xs :: acc
               case ResolvedAst.ChoicePattern.Present(_, _, _) :: xs => xs :: acc
               case _ => acc
             }
@@ -668,7 +670,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                 val isAbsentVar = isAbsentVars.head
                 val isPresentVar = isPresentVars.head
                 // Case 3: We cover both absent and present. We must case split.
-                // TODO: Build formula
+                // TODO: This is simply not correct ...
                 val x = Type.mkAnd(Type.mkEquiv(isAbsentVar, Type.True), buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsAbsent))
                 val y = Type.mkAnd(Type.mkEquiv(isPresentVar, Type.True), buildFormula(isAbsentVars.tail, isPresentVars.tail, tailsPresent))
                 Type.mkOr(x, y)
