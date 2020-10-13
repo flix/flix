@@ -663,6 +663,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                 val isAbsentVar = isAbsentVars.head
                 val f = Type.mkEquiv(isAbsentVar, Type.False)
                 Type.mkAnd(f, buildFormula(isAbsentVars.tail, isPresentVars.tail, tails))
+
               case Tree.MaybeBoth(tailsAbsent, tailsPresent) =>
                 val isAbsentVar = isAbsentVars.head
                 val isPresentVar = isPresentVars.head
