@@ -285,18 +285,16 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
-  ignore("TestChoose.01") {
+  test("TestChoose.01") {
     val input =
       """
-        |pub def f(): Bool =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent)     => "a"
-        |            case (Absent, Present(y)) => y
-        |            case (Present(x), Absent) => x
+        |def main(): Int =
+        |    let f = x -> {
+        |        choose x {
+        |            case Absent => 1
         |        }
         |    };
-        |    f(Present("b"), Present("c")) == "x"
+        |    f(Present(123))
         |
         |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
         |    case Absent
@@ -308,19 +306,59 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  ignore("TestChoose.02") {
+  test("TestChoose.02") {
     val input =
       """
-        |pub def f(): Bool =
+        |def main(): Int =
         |    let f = x -> {
         |        choose x {
-        |            case Absent => "a"
-        |        };
-        |        choose x {
-        |            case Present(v) => v
+        |            case Present(_) => 1
         |        }
         |    };
-        |    f(Absent) == "x"
+        |    f(Absent)
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.03") {
+    val input =
+      """
+        |def main(): Int =
+        |    let f = x -> {
+        |        choose x {
+        |            case Absent => 1
+        |        }
+        |    };
+        |    f(if (true) Absent else Present(123))
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+
+  test("TestChoose.04") {
+    val input =
+      """
+        |def main(): Int =
+        |    let f = x -> {
+        |        choose x {
+        |            case Present(_) => 1
+        |        }
+        |    };
+        |    f(if (true) Absent else Present(123))
         |
         |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
         |    case Absent
