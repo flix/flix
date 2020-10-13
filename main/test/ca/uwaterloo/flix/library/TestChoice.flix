@@ -15,8 +15,8 @@
  */
 namespace TestChoice {
 
-    @test
-    def testUnbox01(): Bool = Choice.unbox(Present("a")) == "a"
+    //@test
+    //def testUnbox01(): Bool = Choice.unbox(Present("a")) == "a"
 
 }
 
