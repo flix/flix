@@ -656,10 +656,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               acc
             case (acc, ((isAbsentVar, isPresentVar), ResolvedAst.ChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              mkImplies(Type.mkOr(isAbsentVar, isPresentVar), Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False)))
+              mkImplies(Type.mkOr(Type.mkNot(isAbsentVar), Type.mkNot(isPresentVar)), Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False)))
             case (acc, ((isAbsentVar, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              mkImplies(Type.mkOr(isAbsentVar, isPresentVar), Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False)))
+              mkImplies(Type.mkOr(Type.mkNot(isAbsentVar), Type.mkNot(isPresentVar)), Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False)))
           }
 
         def mkImplies(t1: Type, t2: Type): Type = Type.mkOr(Type.mkNot(t1), t2)
