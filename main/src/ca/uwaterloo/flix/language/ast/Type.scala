@@ -633,6 +633,11 @@ object Type {
   }
 
   /**
+    * Returns the type `tpe1 => tpe2`.
+    */
+  def mkImplies(tpe1: Type, tpe2: Type): Type = Type.mkOr(Type.mkNot(tpe1), tpe2)
+
+  /**
     * Returns a Boolean type that represents the equivalence of `x` and `y`.
     *
     * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`

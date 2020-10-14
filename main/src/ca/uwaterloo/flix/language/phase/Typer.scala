@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
@@ -410,24 +411,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Str(lit, loc) =>
         liftM(List.empty, Type.Str, Type.Pure)
 
-      case ResolvedAst.Expression.Absent(tvar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star)
-        val isAbsent = Type.True
-        val isPresent = Type.freshVar(Kind.Bool)
-        for {
-          resultTyp <- unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent), loc)
-          resultEff = Type.Pure
-        } yield (List.empty, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.Present(exp, tvar, loc) =>
-        val isAbsent = Type.freshVar(Kind.Bool)
-        val isPresent = Type.True
-        for {
-          (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(tvar, Type.mkChoice(tpe, isAbsent, isPresent), loc)
-          resultEff = eff
-        } yield (constrs, resultTyp, resultEff)
-
       case ResolvedAst.Expression.Default(tvar, loc) =>
         liftM(List.empty, tvar, Type.Pure)
 
@@ -707,6 +690,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           seqM(rs.map(unifyWithRule))
         }
 
+        /**
+          * Returns the outer implication which guarantees that every match variable is either present or absent.
+          *
+          * That is, a match variable *cannot* have the type `Choice[a, false, false]`.
+          */
+        def mkOuterPrecondition(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = (isAbsentVars, isPresentVars) match {
+          case (Nil, Nil) => Type.True
+          case (isAbsentVar :: xs, isPresentVar :: ys) =>
+            val cond = Type.mkOr(isAbsentVar, isPresentVar)
+            Type.mkAnd(cond, mkOuterPrecondition(xs, ys))
+          case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
+        }
+
         //
         // Introduce an isAbsent variable for each match expression in `exps`.
         //
@@ -718,10 +714,18 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val isPresentVars = exps0.map(_ => Type.freshVar(Kind.Bool))
 
         //
+        // Build the entire Boolean formula.
+        //
+        val cond = mkOuterPrecondition(isAbsentVars, isPresentVars)
+        val body = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
+        val formula = Type.mkImplies(cond, body)
+        println(FormatType.formatType(formula)(Audience.Internal))
+
+        //
         // Put everything together.
         //
         for {
-          _ <- unifyBoolM(mkOuterDisj(rules0, isAbsentVars, isPresentVars), Type.True, loc)
+          _ <- unifyBoolM(formula, Type.True, loc)
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
@@ -730,25 +734,58 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
-        // Lookup the enum declaration.
-        val decl = root.enums(sym)
+        if (sym == Symbol.mkEnumSym("Choice")) {
+          //
+          // Special Case 1: Absent or Present Tag
+          //
+          if (tag == "Absent") {
+            // Case 1.1: Absent Tag.
+            val elmVar = Type.freshVar(Kind.Star)
+            val isAbsent = Type.True
+            val isPresent = Type.freshVar(Kind.Bool)
+            for {
+              resultTyp <- unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent), loc)
+              resultEff = Type.Pure
+            } yield (List.empty, resultTyp, resultEff)
+          }
+          else if (tag == "Present") {
+            // Case 1.2: Present Tag.
+            val isAbsent = Type.freshVar(Kind.Bool)
+            val isPresent = Type.True
+            for {
+              (constrs, tpe, eff) <- visitExp(exp)
+              resultTyp <- unifyTypeM(tvar, Type.mkChoice(tpe, isAbsent, isPresent), loc)
+              resultEff = eff
+            } yield (constrs, resultTyp, resultEff)
+          } else {
+            // Case 1.3: Unknown tag.
+            throw InternalCompilerException(s"Unexpected choice tag: '$tag' near ${loc.format}.")
+          }
+        } else {
+          //
+          // General Case:
+          //
 
-        // Lookup the case declaration.
-        val caze = decl.cases(tag)
+          // Lookup the enum declaration.
+          val decl = root.enums(sym)
 
-        // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+          // Lookup the case declaration.
+          val caze = decl.cases(tag)
 
-        //
-        // The tag type can be thought of as a function from the type of variant to the type of the enum.
-        // See Type.mkTag for details.
-        //
-        for {
-          (constrs, tpe, eff) <- visitExp(exp)
-          _ <- unifyTypeM(tagType, Type.mkTag(sym, tag, tpe, tvar), loc)
-          resultTyp = tvar
-          resultEff = eff
-        } yield (constrs, resultTyp, resultEff)
+          // Instantiate the type scheme of the case.
+          val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+
+          //
+          // The tag type can be thought of as a function from the type of variant to the type of the enum.
+          // See Type.mkTag for details.
+          //
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            _ <- unifyTypeM(tagType, Type.mkTag(sym, tag, tpe, tvar), loc)
+            resultTyp = tvar
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+        }
 
       case ResolvedAst.Expression.Tuple(elms, loc) =>
         for {
@@ -1326,20 +1363,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
 
       case ResolvedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
-
-      case ResolvedAst.Expression.Absent(tvar, loc) =>
-        val e = TypedAst.Expression.Unit(loc)
-        val sym = Symbol.mkEnumSym("Choice")
-        val tpe = subst0(tvar)
-        val eff = Type.Pure
-        TypedAst.Expression.Tag(sym, "Absent", e, tpe, eff, loc)
-
-      case ResolvedAst.Expression.Present(exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        val sym = Symbol.mkEnumSym("Choice")
-        val tpe = subst0(tvar)
-        val eff = e.eff
-        TypedAst.Expression.Tag(sym, "Present", e, tpe, eff, loc)
 
       case ResolvedAst.Expression.Default(tvar, loc) => TypedAst.Expression.Default(subst0(tvar), loc)
 

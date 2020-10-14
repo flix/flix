@@ -1005,7 +1005,7 @@ object Synthesize extends Phase[Root, Root] {
       // An expression that evaluates to the value of varX.
       val exp0 = Expression.Var(varX, tpe, sl)
 
-      // Compute the type constructor. Unwrap if nullable type.
+      // Compute the type constructor.
       val typeConstructor = tpe.typeConstructor
 
       // Determine the string representation based on the type `tpe`.

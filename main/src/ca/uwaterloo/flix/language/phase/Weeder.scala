@@ -794,25 +794,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
       val (enum, tag) = asTag(qname)
 
-      val expVal = expOpt match {
+     expOpt match {
         case None =>
           // Case 1: The tag does not have an expression. Nothing more to be done.
-          None.toSuccess
+          WeededAst.Expression.Tag(enum, tag, None, mkSL(sp1, sp2)).toSuccess
         case Some(exp) =>
           // Case 2: The tag has an expression. Perform weeding on it.
-          mapN(visitExp(exp))(e => Some(e))
-      }
-
-      mapN(expVal) {
-        case e =>
-          // TODO: We should probably express choice as an enum in Flix itself.
-          if (tag.name == "Absent") {
-            // TODO: Silently discarding e.
-            WeededAst.Expression.Absent(mkSL(sp1, sp2))
-          } else if (tag.name == "Present") {
-            WeededAst.Expression.Present(e, mkSL(sp1, sp2))
-          } else {
-            WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
+        mapN(visitExp(exp)) {
+            case e => WeededAst.Expression.Tag(enum, tag, Some(e), mkSL(sp1, sp2))
           }
       }
 
