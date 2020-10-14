@@ -623,4 +623,50 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("TestChoose.TwoCases.03") {
+    val input =
+      """
+        |def main(): Int =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (Absent, Present(_)) => 1
+        |            case (Present(_), Absent) => 2
+        |        }
+        |    };
+        |    f(Absent, Absent)
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.TwoCases.04") {
+    val input =
+      """
+        |def main(): Int =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (Absent, Present(_)) => 1
+        |            case (Present(_), Absent) => 2
+        |        }
+        |    };
+        |    f(Present(123), Present(456))
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+
+
 }
