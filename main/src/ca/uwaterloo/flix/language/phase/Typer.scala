@@ -716,6 +716,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         // Build the entire Boolean formula.
         //
+        // TODO: Boolean simplification.
         val cond = mkOuterPrecondition(isAbsentVars, isPresentVars)
         val body = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
         val formula = Type.mkImplies(cond, body)
