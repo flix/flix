@@ -146,13 +146,9 @@ object Scheme {
       (_, relevantTconstrs) = splitTconstrs
     } yield relevantTconstrs.forall(ContextReduction.entail(instances, newTconstrs2, _))
 
-    // MATT this could probably be cleaner
     // MATT add docs
     // MATT this checks for instances as well. does it belong here? If so, need better errors sent back to caller
-    result match {
-      case Result.Ok(true) => true
-      case _ => false
-    }
+    result.isOk
   }
 
 }

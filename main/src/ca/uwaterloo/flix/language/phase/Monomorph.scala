@@ -651,7 +651,19 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       visitExp(exp0, env0)
     }
 
-    // MATT docs
+    /**
+      * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
+      */
+    def specializeDefSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
+      // Lookup the definition and its declared type.
+      val defn = root.defs(sym)
+
+      specializeDef(defn, tpe)
+    }
+
+    /**
+      * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
+      */
     def specializeSigSym(sym: Symbol.SigSym, tpe: Type): Symbol.DefnSym = {
       val sig = root.sigs(sym)
 
@@ -668,7 +680,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       specializeDef(defn, tpe)
     }
 
-    // MATT docs
+    /**
+      * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
+      */
     def specializeDef(defn: TypedAst.Def, tpe: Type): Symbol.DefnSym = {
 //       Check if the function is non-polymorphic.
 //      if (defn.tparams.isEmpty) {
@@ -700,16 +714,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           specializedSym
       }
 
-    }
-
-    /**
-      * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-      */
-    def specializeDefSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
-      // Lookup the definition and its declared type.
-      val defn = root.defs(sym)
-
-      specializeDef(defn, tpe)
     }
 
     /**

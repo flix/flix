@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 Matthew Lutze
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
@@ -8,7 +24,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 
-// MATT license
 // MATT maybe change name to ClassUnification or something like that
 object ContextReduction {
 
@@ -72,13 +87,7 @@ object ContextReduction {
       } yield inst.tconstrs.map(subst(_))
     }
 
-    // MATT move to result or something
-    def isOk(result: Result[_, _]): Boolean = result match {
-      case Result.Ok(_) => true
-      case Result.Err(_) => false
-    }
-
-    matchingInstances.map(tryInst).filter(isOk) match {
+    matchingInstances.map(tryInst).filter(_.isOk) match {
       case Result.Ok(tconstrs) :: Nil => tconstrs.toOk
       case Nil => UnificationError.MismatchedTypes(Type.Unit, Type.Unit).toErr // MATT UnificationError.NoMatchingInstance
       case _ => throw InternalCompilerException("Multiple matching instances.")
@@ -92,7 +101,10 @@ object ContextReduction {
     tpe.typeConstructor.isEmpty
   }
 
-  // MATT docs
+  /**
+    * Splits a list of type constraints among those which must be dealt with under the scope of free variables (`retained`)
+    * and those which are dealt with in the surrounding scope (`deferred`).
+    */
   def split(instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance], fixedVars: List[Type.Var], quantifiedVars: List[Type.Var], tconstrs: List[TypedAst.TypeConstraint])(implicit flix: Flix): Result[(List[TypedAst.TypeConstraint], List[TypedAst.TypeConstraint]), UnificationError] = {
     for {
       tconstrs1 <- reduce(instances, tconstrs)
