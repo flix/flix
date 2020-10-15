@@ -729,9 +729,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               val maybeBoth = !mustbeAbsent && !mustbePresent
 
               if (mustbeAbsent) {
-                Type.mkAnd(isAllSame(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats.map(_.tail)))
+                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats.map(_.tail)))
               } else if (mustbePresent) {
-                Type.mkAnd(isAllSame(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats.map(_.tail)))
+                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats.map(_.tail)))
               } else {
                 // TODO: True, so can recurse.
                 val x = isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats.map(_.tail)) // TODO: use pat match
@@ -741,26 +741,27 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             case _ => throw InternalCompilerException(s"Mismatch") // TODO: text
           }
 
-        // TODO: DOC
-
         /**
-          * Returns a Boolean constraint that is `true` iff the first
-          * pattern is either always `Absent` or `Present` and the corresponding `isAbsentVar` or `isPresentVar`
-          * are set correspondingly.
+          * Returns a Boolean constraint that is `true` under the condition that the first pattern in `ps` is the same
+          * and that the `isAbsentVar` / `isPresentVar` is set appropriately.
           */
-        def isAllSame(isAbsentVar: Type.Var, isPresentVar: Type.Var, pats: List[List[ResolvedAst.ChoicePattern]]): Type = {
-          val isAllAbsent = pats.forall {
+        def isSamePat(isAbsentVar: Type.Var, isPresentVar: Type.Var, ps: List[List[ResolvedAst.ChoicePattern]]): Type = {
+          // Computes if the first pattern in `ps` are all `Absent`.
+          val isAllAbsent = ps.forall {
+            case ResolvedAst.ChoicePattern.Wild(_) :: _ => true
             case ResolvedAst.ChoicePattern.Absent(_) :: _ => true
-            case _ => false
-            // TODO: Wild
+            case ResolvedAst.ChoicePattern.Present(_, _, _) :: _ => false
           }
 
-          val isAllPresent = pats.forall {
+          // Computes if the first pattern in `ps` are all `Present`.
+          val isAllPresent = ps.forall {
+            case ResolvedAst.ChoicePattern.Wild(_) :: _ => true
+            case ResolvedAst.ChoicePattern.Absent(_) :: _ => false
             case ResolvedAst.ChoicePattern.Present(_, _, _) :: _ => true
-            case _ => false
-            // TODO: Wild
           }
 
+          // We force isAbsentVar/isPresentVar to false if all patterns are present/absent, respectively.
+          // Otherwise there is no possible solution and we return false.
           if (isAllAbsent)
             Type.mkEquiv(isPresentVar, Type.False)
           else if (isAllPresent)
