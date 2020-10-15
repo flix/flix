@@ -746,6 +746,15 @@ object SymbolicEvaluator {
         }
 
       /**
+        * IndexMut (into tuple), mutate tuple.
+        */
+      case Expression.IndexMut(base, offset, toInsert, _, _) =>
+        eval(pc0, base, env0, lenv0, qua0) flatMap {
+          case (pc, qua, SymVal.Tuple(elms)) => ???
+          case v => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
+        }
+
+      /**
         * ArrayLit.
         */
       case Expression.ArrayLit(elms, tpe, loc) => ???
