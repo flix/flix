@@ -142,9 +142,12 @@ object Scheme {
       subst <- Unification.unifyTypes(tpe1, tpe2)
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
-      splitTconstrs <- ContextReduction.split(instances, tpe1.typeVars.toList, Nil, newTconstrs1)
-      (_, relevantTconstrs) = splitTconstrs
-    } yield relevantTconstrs.forall(ContextReduction.entail(instances, newTconstrs2, _))
+      splitTconstrs <- ContextReduction.split(instances, subst(tpe1).typeVars.toList, Nil, newTconstrs1)
+      (deferedTconstrs, retainedTconstrs) = splitTconstrs
+    } yield retainedTconstrs.forall(ContextReduction.entail(instances, newTconstrs2, _))
+
+    // MATT check deferedTconstrs against tconstrs in surrounding scope
+    // MATT probably need to split up the leq logic, return a monad
 
     // MATT add docs
     // MATT this checks for instances as well. does it belong here? If so, need better errors sent back to caller

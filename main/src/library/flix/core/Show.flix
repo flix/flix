@@ -52,7 +52,7 @@ namespace Show {
     }
 
     instance Show[List[a]] with [a : Show] {
-        def show[a : Show](x: List[a]): String = // MATT infer this type constraint from declaration
+        def show(x: List[a]): String =
             let inside = List.map(show, x) |> String.intercalate(", ");
             String.flatten("[" :: inside :: "]" :: Nil)
     }

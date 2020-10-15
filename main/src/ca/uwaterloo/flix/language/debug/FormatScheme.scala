@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
+import ca.uwaterloo.flix.language.ast.Scheme
 
 object FormatScheme {
 
