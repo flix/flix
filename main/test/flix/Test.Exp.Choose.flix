@@ -342,16 +342,16 @@ namespace Test/Exp/Choose {
         };
         f(Absent, Present("b")) == "b"
 
-//    @test
-//    def testChooseTwoWithThreeCases03(): Bool =
-//        let f = (x, y) -> {
-//            choose (x, y) {
-//                case (Absent, Absent)     => "a"
-//                case (Absent, Present(y)) => y
-//                case (Present(x), Absent) => x
-//            }
-//        };
-//        f(Present("b"), Absent) == "b"
+    @test
+    def testChooseTwoWithThreeCases03(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Absent)     => "a"
+                case (Absent, Present(y)) => y
+                case (Present(x), Absent) => x
+            }
+        };
+        f(Present("b"), Absent) == "b"
 
     @test
     def testChooseTwoWithThreeCases04(): Bool =
@@ -463,7 +463,6 @@ namespace Test/Exp/Choose {
             }
         };
         f(Present(123), if (true) Absent else Present(456)) == 2
-
 
     @test
     def testChooseIf08(): Bool =
