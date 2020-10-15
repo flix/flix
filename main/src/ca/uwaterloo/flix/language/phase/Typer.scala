@@ -695,6 +695,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * That is, a match variable *cannot* have the type `Choice[a, false, false]`.
           */
+          // TODO: Remove?
         def mkOuterPrecondition(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = (isAbsentVars, isPresentVars) match {
           case (Nil, Nil) => Type.True
           case (isAbsentVar :: xs, isPresentVar :: ys) =>
@@ -717,9 +718,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Build the entire Boolean formula.
         //
         // TODO: Boolean simplification.
-        val cond = mkOuterPrecondition(isAbsentVars, isPresentVars)
-        val body = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
-        val formula = Type.mkImplies(cond, body)
+        val formula =  mkOuterDisj(rules0, isAbsentVars, isPresentVars)
         println(FormatType.formatType(formula)(Audience.Internal))
 
         //
