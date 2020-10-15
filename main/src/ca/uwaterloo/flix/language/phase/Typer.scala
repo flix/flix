@@ -729,9 +729,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               val maybeBoth = !mustbeAbsent && !mustbePresent
 
               if (mustbeAbsent) {
-                Type.mkAnd(isAllSame(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats))
+                Type.mkAnd(isAllSame(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats.map(_.tail)))
               } else if (mustbePresent) {
-                Type.mkAnd(isAllSame(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats))
+                Type.mkAnd(isAllSame(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats.map(_.tail)))
               } else {
                 // TODO: True, so can recurse.
                 val x = isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats.map(_.tail)) // TODO: use pat match
