@@ -476,6 +476,26 @@ namespace Test/Exp/Choose {
         };
         f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
 
+    @test
+    def testChooseIf09(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Absent)           => 1
+                case (Present(_), Absent)       => 2
+            }
+        };
+        f(if (true) Absent else Present(123), Absent) == 1
+
+    @test
+    def testChooseIf10(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Present(_))       => 1
+                case (Present(_), Present(_))   => 2
+            }
+        };
+        f(if (true) Absent else Present(123), Present(456)) == 1
+
 }
 
 pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
