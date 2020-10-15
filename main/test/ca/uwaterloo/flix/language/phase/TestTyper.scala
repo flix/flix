@@ -124,65 +124,6 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.OccursCheckError](result)
   }
 
-  // TODO
-  ignore("TestLeq.Choice.01") {
-    val input =
-      """
-        |pub def f(x: Choice[String, false, _], y: Choice[String, true, _], z: Choice[String, false, _]): Bool =
-        |    choose (x, y, z) {
-        |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
-        |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
-        |    }
-        |
-        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  // TODO
-  ignore("TestLeq.Choice.02") {
-    val input =
-      """
-        |pub def f(x: Choice[String, true, _], y: Choice[String, false, _], z: Choice[String, true, _]): Bool =
-        |    choose (x, y, z) {
-        |        case (Present(a), Present(b), _) => a == "Hello" && b == "World"
-        |        case (_, Present(b), Present(c)) => b == "World" && c == "!"
-        |    }
-        |
-        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  // TODO
-  ignore("TestLeq.Choice.03") {
-    val input =
-      """
-        |def f(x: Choice[String, not not n, _], y: Choice[String, not not n, _]): Bool =
-        |    choose (x, y) {
-        |        case (Present(a), _) => a == "Hello"
-        |    }
-        |
-        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[TypeError.GeneralizationError](result)
-  }
-
   test("TestMismatchedKinds.01") {
     val input = "def f(): {| x} = {a = 2} <+> {a = 2}"
     val result = compile(input, DefaultOptions)
