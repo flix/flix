@@ -690,8 +690,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           seqM(rs.map(unifyWithRule))
         }
 
-
-        // TODO: DOC
+        /**
+          * Returns a Boolean formula that is `true` when the given choice rules `rs` are exhaustive.
+          */
         def mkExhaustiveCond(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[ResolvedAst.ChoiceRule]): Type = {
           val xs = rs.map(_.pat)
           isExhaustive(isAbsentVars, isPresentVars, xs, xs)
@@ -721,11 +722,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               } else if (mustbePresent) {
                 Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats.map(_.tail)))
               } else {
-                // TODO: True, so can recurse.
                 val x = isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats.map(_.tail)) // TODO: use pat match
                 val y = isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats.map(_.tail))
                 Type.mkAnd(x, y)
               }
+
             case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
           }
 
