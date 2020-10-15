@@ -690,26 +690,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           seqM(rs.map(unifyWithRule))
         }
 
-        /**
-          * Returns the outer implication which guarantees that every match variable is either present or absent.
-          *
-          * That is, a match variable *cannot* have the type `Choice[a, false, false]`.
-          */
-        // TODO: Remove?
-        def mkOuterPrecondition(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = (isAbsentVars, isPresentVars) match {
-          case (Nil, Nil) => Type.True
-          case (isAbsentVar :: xs, isPresentVar :: ys) =>
-            val cond = Type.mkOr(isAbsentVar, isPresentVar)
-            Type.mkAnd(cond, mkOuterPrecondition(xs, ys))
-          case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
-        }
 
-
+        // TODO: DOC
         def mkExhaustiveCond(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[ResolvedAst.ChoiceRule]): Type = {
           val xs = rs.map(_.pat)
           isExhaustive(isAbsentVars, isPresentVars, xs, xs)
         }
 
+        // TODO: DOC
         def isExhaustive(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var],
                          rs: List[List[ResolvedAst.ChoicePattern]], allPats: List[List[ResolvedAst.ChoicePattern]]): Type =
           (isAbsentVars, isPresentVars) match {
@@ -738,7 +726,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                 val y = isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats.map(_.tail))
                 Type.mkAnd(x, y)
               }
-            case _ => throw InternalCompilerException(s"Mismatch") // TODO: text
+            case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
           }
 
         /**
@@ -751,6 +739,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             case ResolvedAst.ChoicePattern.Wild(_) :: _ => true
             case ResolvedAst.ChoicePattern.Absent(_) :: _ => true
             case ResolvedAst.ChoicePattern.Present(_, _, _) :: _ => false
+            case Nil => throw InternalCompilerException("Unexpected empty list.")
           }
 
           // Computes if the first pattern in `ps` are all `Present`.
@@ -758,6 +747,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             case ResolvedAst.ChoicePattern.Wild(_) :: _ => true
             case ResolvedAst.ChoicePattern.Absent(_) :: _ => false
             case ResolvedAst.ChoicePattern.Present(_, _, _) :: _ => true
+            case Nil => throw InternalCompilerException("Unexpected empty list.")
           }
 
           // We force isAbsentVar/isPresentVar to false if all patterns are present/absent, respectively.
