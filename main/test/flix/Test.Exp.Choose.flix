@@ -416,6 +416,67 @@ namespace Test/Exp/Choose {
         };
         f(if (true) Absent else Present(123)) == 1
 
+    @test
+    def testChooseIf04(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Absent)           => 1
+                case (Present(_), Absent)       => 2
+                case (Absent, Present(_))       => 3
+                case (Present(_), Present(_))   => 4
+            }
+        };
+        f(if (true) Absent else Present(123), Absent) == 1
+
+    @test
+    def testChooseIf05(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Absent)           => 1
+                case (Present(_), Absent)       => 2
+                case (Absent, Present(_))       => 3
+                case (Present(_), Present(_))   => 4
+            }
+        };
+        f(if (true) Absent else Present(123), Present(456)) == 3
+
+    @test
+    def testChooseIf06(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Absent)           => 1
+                case (Present(_), Absent)       => 2
+                case (Absent, Present(_))       => 3
+                case (Present(_), Present(_))   => 4
+            }
+        };
+        f(Absent, if (true) Absent else Present(123)) == 1
+
+    @test
+    def testChooseIf07(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Absent)           => 1
+                case (Present(_), Absent)       => 2
+                case (Absent, Present(_))       => 3
+                case (Present(_), Present(_))   => 4
+            }
+        };
+        f(Present(123), if (true) Absent else Present(456)) == 2
+
+
+    @test
+    def testChooseIf08(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (Absent, Absent)           => 1
+                case (Present(_), Absent)       => 2
+                case (Absent, Present(_))       => 3
+                case (Present(_), Present(_))   => 4
+            }
+        };
+        f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
+
 }
 
 pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
