@@ -473,6 +473,14 @@ object GenExpression {
       // Cast the object to it's type if it's not a primitive
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
+    case Expression.IndexMut(base, offset, toInsert, tpe, _) =>
+      // We get the JvmType of the class of the tuple
+      val classType = JvmOps.getTupleInterfaceType(base.tpe.asInstanceOf[MonoType.Tuple])
+      // evaluate the `toInsert`
+      ???
+
+
+
     case Expression.Tuple(elms, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)

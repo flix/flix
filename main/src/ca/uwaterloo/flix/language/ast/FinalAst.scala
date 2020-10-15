@@ -137,6 +137,8 @@ object FinalAst {
 
     case class Index(base: FinalAst.Expression, offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
+    case class IndexMut(base: FinalAst.Expression, offset: scala.Int, toInsert: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+
     case class Tuple(elms: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class RecordEmpty(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression

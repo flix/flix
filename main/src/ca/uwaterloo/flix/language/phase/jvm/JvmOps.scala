@@ -611,6 +611,8 @@ object JvmOps {
 
       case Expression.Index(base, offset, tpe, loc) => visitExp(base)
 
+      case Expression.IndexMut(base, _, toInsert, _, _) => visitExp(base) ++ visitExp(toInsert)
+
       case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
@@ -964,6 +966,8 @@ object JvmOps {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.Index(base, offset, tpe, loc) => visitExp(base) + tpe
+
+      case Expression.IndexMut(base, _, toInsert, tpe, _) => visitExp(base) ++ visitExp(toInsert) + tpe
 
       case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
