@@ -100,6 +100,7 @@ class Flix {
     "Core/Cmp/Ordering.flix" -> LocalResource.get("/src/library/Core/Cmp/Ordering.flix"),
 
     "flix/core/Show.flix" -> LocalResource.get("/src/library/flix/core/Show.flix"),
+    "flix/core/Read.flix" -> LocalResource.get("/src/library/flix/core/Read.flix"),
 
     "Pkger/SemVer.flix" -> LocalResource.get("/src/library/Pkger/SemVer.flix"),
 
