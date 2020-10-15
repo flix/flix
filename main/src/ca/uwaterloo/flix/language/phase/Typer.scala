@@ -743,7 +743,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         // TODO: DOC
 
-        def isAllSame(isPresentVar: Type.Var, isAbsentVar: Type.Var, pats: List[List[ResolvedAst.ChoicePattern]]): Type = {
+        /**
+          * Returns a Boolean constraint that is `true` iff the first
+          * pattern is either always `Absent` or `Present` and the corresponding `isAbsentVar` or `isPresentVar`
+          * are set correspondingly.
+          */
+        def isAllSame(isAbsentVar: Type.Var, isPresentVar: Type.Var, pats: List[List[ResolvedAst.ChoicePattern]]): Type = {
           val isAllAbsent = pats.forall {
             case ResolvedAst.ChoicePattern.Absent(_) :: _ => true
             case _ => false
@@ -778,9 +783,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Build the entire Boolean formula.
         //
         // TODO: Boolean simplification.
-        val f = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
-        val exhaust = mkExhaustiveCond(isAbsentVars, isPresentVars, rules0)
-        val formula = Type.mkOr(f, exhaust)
+        val outerDisj = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
+        val exhaustiveCond = mkExhaustiveCond(isAbsentVars, isPresentVars, rules0)
+        val formula = Type.mkOr(outerDisj, exhaustiveCond)
         println(FormatType.formatType(formula)(Audience.Internal))
 
         //
