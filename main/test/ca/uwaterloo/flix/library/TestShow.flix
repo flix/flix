@@ -37,4 +37,7 @@ namespace TestShow {
 
     @test
     def testShowFloat64(): Bool = show(123.0f64) == "123.0"
+
+    @test
+    def testShowInt32List(): Bool = show(1 :: 2 :: 3 :: Nil) == "[1, 2, 3]"
 }
