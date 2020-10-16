@@ -33,8 +33,8 @@ object ContextReduction {
     */
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
   def entail(instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance], tconstrs0: List[TypedAst.TypeConstraint], tconstr: TypedAst.TypeConstraint)(implicit flix: Flix): Boolean = {
-    // MATT more docs
-    // MATT clean up
+    // tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
+    // or if there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
     tconstrs0.exists(bySuper(instances, _).contains(tconstr)) || {
       byInst(instances, tconstr) match {
         case Result.Ok(tconstrs) => tconstrs.forall(entail(instances, tconstrs0, _))
@@ -93,7 +93,7 @@ object ContextReduction {
     matchingInstances.map(tryInst).filter(_.isOk) match {
       case Result.Ok(tconstrs) :: Nil => tconstrs.toOk
       case Nil => UnificationError.MismatchedTypes(Type.Unit, Type.Unit).toErr // MATT UnificationError.NoMatchingInstance
-      case _ => throw InternalCompilerException("Multiple matching instances.")
+      case _ => throw InternalCompilerException("Multiple matching instances.") // MATT make this illegal when declaring instances
     }
   }
 

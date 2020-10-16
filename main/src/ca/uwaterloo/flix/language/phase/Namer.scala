@@ -403,10 +403,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
   }
 
-  // MATT doc update
   // MATT dedupe?
   /**
-    * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Performs naming on the given instance definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitInstanceDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, tconstrs: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
@@ -1658,9 +1657,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     } yield NamedAst.Scheme(tparams, tconstrs, t)
   }
 
-  // MATT doc update
   /**
-    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
+    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`, with the added type constraints `tconstrs0`.
     */
   private def getInstanceDefScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var], tconstrs0: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
     for {
