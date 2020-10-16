@@ -698,7 +698,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           isExhaustive(isAbsentVars, isPresentVars, xs, xs)
         }
 
-        // TODO: DOC
+        /**
+          * Returns a Boolean formula that is `true` when the given choice rules `rs` are exhaustive.
+          */
         def isExhaustive(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var],
                          rs: List[List[ResolvedAst.ChoicePattern]], allPats: List[List[ResolvedAst.ChoicePattern]]): Type =
           (isAbsentVars, isPresentVars) match {
@@ -713,17 +715,22 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                 case ResolvedAst.ChoicePattern.Present(_, _, _) :: xs => xs
               }
 
+              val allPatsTail = allPats.map(_.tail)
+
               val mustbeAbsent = absentTails.nonEmpty && presentTails.isEmpty
               val mustbePresent = absentTails.isEmpty && presentTails.nonEmpty
               val maybeBoth = !mustbeAbsent && !mustbePresent
 
               if (mustbeAbsent) {
-                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats.map(_.tail)))
+                // Case 1: The pattern must be absent. It cannot be exhaustive unless all patterns in this column are absent.
+                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPatsTail))
               } else if (mustbePresent) {
-                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats.map(_.tail)))
+                // Case 1: The pattern must be present. It cannot be exhaustive unless all patterns in this column are present.
+                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPatsTail))
               } else {
-                val x = isExhaustive(restAbsentVars, restPresentVars, absentTails, allPats.map(_.tail)) // TODO: use pat match
-                val y = isExhaustive(restAbsentVars, restPresentVars, presentTails, allPats.map(_.tail))
+                // Case 1: The pattern is exhaustive. We must require the rest of the columns to be exhaustive, regardless of which pattern is chosen.
+                val x = isExhaustive(restAbsentVars, restPresentVars, absentTails, allPatsTail)
+                val y = isExhaustive(restAbsentVars, restPresentVars, presentTails, allPatsTail)
                 Type.mkAnd(x, y)
               }
 
@@ -774,7 +781,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         // Build the entire Boolean formula.
         //
-        // TODO: Boolean simplification.
         val outerDisj = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
         val exhaustiveCond = mkExhaustiveCond(isAbsentVars, isPresentVars, rules0)
         val formula = Type.mkOr(outerDisj, exhaustiveCond)
