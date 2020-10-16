@@ -214,7 +214,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
-  ignore("TestLeq.Class.01") { // MATT fix
+  test("TestLeq.Class.01") {
     val input =
       """
         |class Show[a] {
@@ -899,6 +899,36 @@ class TestTyper extends FunSuite with TestUtils {
         |            case Just(y) => show(y)
         |        }
         |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    result.get
+  }
+
+  test("MattTest2") {
+    val input =
+      """
+        |namespace Test06 {
+        |    pub enum Box[a] {
+        |        case Just(a)
+        |    }
+        |
+        |    class Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int] {
+        |        def show(x: Int): String = "123"
+        |    }
+        |
+        |
+        |    instance Show[Box[a]] with [a : Show] {
+        |        def show(x: Box[a]): String = match x {
+        |            case Just(y) => show(y)
+        |        }
+        |    }
+        |
+        |    pub def doShow(x: Box[Int]): String = show(x)
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

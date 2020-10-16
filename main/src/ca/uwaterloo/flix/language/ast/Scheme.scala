@@ -142,11 +142,12 @@ object Scheme {
       subst <- Unification.unifyTypes(tpe1, tpe2)
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
-      splitTconstrs <- ContextReduction.split(instances, subst(tpe1).typeVars.toList, Nil, newTconstrs1)
-      (deferedTconstrs, retainedTconstrs) = splitTconstrs
-    } yield retainedTconstrs.forall(ContextReduction.entail(instances, newTconstrs2, _))
+      splitTconstrs <- ContextReduction.split(instances, Nil, Nil, newTconstrs1) // MATT not using this split; can remove?
+      (deferredTconstrs, retainedTconstrs) = splitTconstrs
+    } yield retainedTconstrs.forall(ContextReduction.entail(instances, newTconstrs2, _)) && deferredTconstrs.isEmpty
+    // deferredTconstrs contains the constraints that need to be validated by the surrounding scope
+    // This must be empty because we injected the constraints from the surrounding scope into the instance defs
 
-    // MATT check deferedTconstrs against tconstrs in surrounding scope
     // MATT probably need to split up the leq logic, return a monad
 
     // MATT add docs

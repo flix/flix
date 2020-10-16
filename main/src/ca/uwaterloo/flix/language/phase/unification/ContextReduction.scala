@@ -33,10 +33,13 @@ object ContextReduction {
     */
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
   def entail(instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance], tconstrs0: List[TypedAst.TypeConstraint], tconstr: TypedAst.TypeConstraint)(implicit flix: Flix): Boolean = {
-    // tconstrs0 is unused for now; it will be used when superclasses are implemented
-    byInst(instances, tconstr) match {
-      case Result.Ok(tconstrs) => tconstrs.forall(entail(instances, tconstrs0, _))
-      case Result.Err(_) => false
+    // MATT more docs
+    // MATT clean up
+    tconstrs0.exists(bySuper(instances, _).contains(tconstr)) || {
+      byInst(instances, tconstr) match {
+        case Result.Ok(tconstrs) => tconstrs.forall(entail(instances, tconstrs0, _))
+        case Result.Err(_) => false
+      }
     }
   }
 
@@ -52,7 +55,7 @@ object ContextReduction {
       case head :: tail => loop(head :: acc, tail)
     }
 
-    loop(tconstrs0, Nil)
+    loop(Nil, tconstrs0)
   }
 
   /**
@@ -76,7 +79,7 @@ object ContextReduction {
   }
 
   /**
-    * Returns the list of constraints that hold if the given constraint `tconstr` hold.
+    * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
     */
   private def byInst(instances0: MultiMap[Symbol.ClassSym, ResolvedAst.Instance], tconstr: TypedAst.TypeConstraint)(implicit flix: Flix): Result[List[TypedAst.TypeConstraint], UnificationError] = {
     val matchingInstances = instances0(tconstr.sym).toList
@@ -92,6 +95,14 @@ object ContextReduction {
       case Nil => UnificationError.MismatchedTypes(Type.Unit, Type.Unit).toErr // MATT UnificationError.NoMatchingInstance
       case _ => throw InternalCompilerException("Multiple matching instances.")
     }
+  }
+
+  /**
+    * Returns the list of constraints that hold if the given constraint `tconstr` hold, using the superclasses of the constraint.
+    * (Currently only returns the given constraint since superclasses are not yet implemented.)
+    */
+  private def bySuper(_instances0: MultiMap[Symbol.ClassSym, ResolvedAst.Instance], tconstr: TypedAst.TypeConstraint)(implicit flix: Flix): List[TypedAst.TypeConstraint] = {
+    List(tconstr)
   }
 
   /**
