@@ -784,7 +784,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val outerDisj = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
         val exhaustiveCond = mkExhaustiveCond(isAbsentVars, isPresentVars, rules0)
         val formula = Type.mkOr(outerDisj, exhaustiveCond)
-        println(FormatType.formatType(formula)(Audience.Internal))
 
         //
         // Put everything together.
