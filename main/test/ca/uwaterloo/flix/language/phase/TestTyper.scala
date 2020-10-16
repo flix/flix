@@ -659,7 +659,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |pub def f(x: Choice[String, true, _]): Int32 =
         |    choose x {
-        |        case Absent     => 1
+        |        case Absent => 1
         |    }
         |
         |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
@@ -669,7 +669,25 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Choice.02") {
+    val input =
+      """
+        |pub def f(x: Choice[String, _, true]): Int32 =
+        |    choose x {
+        |        case Present(_) => 1
+        |    }
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
   }
 
 }
