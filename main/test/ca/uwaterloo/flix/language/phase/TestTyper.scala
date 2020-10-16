@@ -654,4 +654,22 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("TestLeq.Choice.01") {
+    val input =
+      """
+        |pub def f(x: Choice[String, true, _]): Int32 =
+        |    choose x {
+        |        case Absent     => 1
+        |    }
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
 }
