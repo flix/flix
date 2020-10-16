@@ -691,16 +691,81 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
 
         /**
-          * Returns the outer implication which guarantees that every match variable is either present or absent.
-          *
-          * That is, a match variable *cannot* have the type `Choice[a, false, false]`.
+          * Returns a Boolean formula that is `true` when the given choice rules `rs` are exhaustive.
           */
-        def mkOuterPrecondition(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = (isAbsentVars, isPresentVars) match {
-          case (Nil, Nil) => Type.True
-          case (isAbsentVar :: xs, isPresentVar :: ys) =>
-            val cond = Type.mkOr(isAbsentVar, isPresentVar)
-            Type.mkAnd(cond, mkOuterPrecondition(xs, ys))
-          case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
+        def mkExhaustiveCond(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[ResolvedAst.ChoiceRule]): Type = {
+          val xs = rs.map(_.pat)
+          isExhaustive(isAbsentVars, isPresentVars, xs, xs)
+        }
+
+        /**
+          * Returns a Boolean formula that is `true` when the given choice rules `rs` are exhaustive.
+          */
+        def isExhaustive(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var],
+                         rs: List[List[ResolvedAst.ChoicePattern]], allPats: List[List[ResolvedAst.ChoicePattern]]): Type =
+          (isAbsentVars, isPresentVars) match {
+            case (Nil, Nil) => Type.True
+
+            case (isAbsentVar :: restAbsentVars, isPresentVar :: restPresentVars) =>
+              val absentTails = rs.collect {
+                case ResolvedAst.ChoicePattern.Absent(_) :: xs => xs
+              }
+
+              val presentTails = rs.collect {
+                case ResolvedAst.ChoicePattern.Present(_, _, _) :: xs => xs
+              }
+
+              val allPatsTail = allPats.map(_.tail)
+
+              val mustbeAbsent = absentTails.nonEmpty && presentTails.isEmpty
+              val mustbePresent = absentTails.isEmpty && presentTails.nonEmpty
+              val maybeBoth = !mustbeAbsent && !mustbePresent
+
+              if (mustbeAbsent) {
+                // Case 1: The pattern must be absent. It cannot be exhaustive unless all patterns in this column are absent.
+                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPatsTail))
+              } else if (mustbePresent) {
+                // Case 1: The pattern must be present. It cannot be exhaustive unless all patterns in this column are present.
+                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPatsTail))
+              } else {
+                // Case 1: The pattern is exhaustive. We must require the rest of the columns to be exhaustive, regardless of which pattern is chosen.
+                val x = isExhaustive(restAbsentVars, restPresentVars, absentTails, allPatsTail)
+                val y = isExhaustive(restAbsentVars, restPresentVars, presentTails, allPatsTail)
+                Type.mkAnd(x, y)
+              }
+
+            case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
+          }
+
+        /**
+          * Returns a Boolean constraint that is `true` under the condition that the first pattern in `ps` is the same
+          * and that the `isAbsentVar` / `isPresentVar` is set appropriately.
+          */
+        def isSamePat(isAbsentVar: Type.Var, isPresentVar: Type.Var, ps: List[List[ResolvedAst.ChoicePattern]]): Type = {
+          // Computes if the first pattern in `ps` are all `Absent`.
+          val isAllAbsent = ps.forall {
+            case ResolvedAst.ChoicePattern.Wild(_) :: _ => true
+            case ResolvedAst.ChoicePattern.Absent(_) :: _ => true
+            case ResolvedAst.ChoicePattern.Present(_, _, _) :: _ => false
+            case Nil => throw InternalCompilerException("Unexpected empty list.")
+          }
+
+          // Computes if the first pattern in `ps` are all `Present`.
+          val isAllPresent = ps.forall {
+            case ResolvedAst.ChoicePattern.Wild(_) :: _ => true
+            case ResolvedAst.ChoicePattern.Absent(_) :: _ => false
+            case ResolvedAst.ChoicePattern.Present(_, _, _) :: _ => true
+            case Nil => throw InternalCompilerException("Unexpected empty list.")
+          }
+
+          // We force isAbsentVar/isPresentVar to false if all patterns are present/absent, respectively.
+          // Otherwise there is no possible solution and we return false.
+          if (isAllAbsent)
+            Type.mkEquiv(isPresentVar, Type.False)
+          else if (isAllPresent)
+            Type.mkEquiv(isAbsentVar, Type.False)
+          else
+            Type.False
         }
 
         //
@@ -716,10 +781,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         // Build the entire Boolean formula.
         //
-        val cond = mkOuterPrecondition(isAbsentVars, isPresentVars)
-        val body = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
-        val formula = Type.mkImplies(cond, body)
-        println(FormatType.formatType(formula)(Audience.Internal))
+        val outerDisj = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
+        val exhaustiveCond = mkExhaustiveCond(isAbsentVars, isPresentVars, rules0)
+        val formula = Type.mkOr(outerDisj, exhaustiveCond)
 
         //
         // Put everything together.
