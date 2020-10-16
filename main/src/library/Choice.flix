@@ -34,9 +34,9 @@ namespace Choice {
     ///
     /// Returns the given choice `c` as an `Option`.
     ///
-//    pub def toOption[a, isAbsent :# Bool, isPresent :# Bool](c: Choice[a, isAbsent, isPresent]): Option[a] = choose c {
-//        case Absent     => None
-//        case Present(v) => Some(v)
-//    }
+    pub def toOption[a, isAbsent :# Bool, isPresent :# Bool](c: Choice[a, isAbsent, isPresent]): Option[a] = choose c {
+        case Absent     => None
+        case Present(v) => Some(v)
+    }
 
 }
