@@ -516,6 +516,8 @@ namespace Test/Exp/Choose {
         };
         f(Present(123), if (true) Absent else Present(456)) == 1
 
+    // TODO: Add more tests
+
 }
 
 pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
