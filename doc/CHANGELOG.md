@@ -2,6 +2,9 @@
 
 HEAD:
 
+Version 0.14.1:
+- Minor fixes to LSP.
+
 Version 0.14.0:
 - Added support for Visual Studio Code via LSP.
 - Allow `use` directly in namespaces.
