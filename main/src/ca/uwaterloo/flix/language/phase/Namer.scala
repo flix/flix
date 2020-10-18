@@ -204,7 +204,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       typealiases0.get(ident.name) match {
         case None =>
           // Case 1: The type alias does not exist in the namespace. Add it.
-          flatMapN(getTypeParamsFromFormalParams(tparams0, List.empty, tpe0, loc, allowElision = false)) {
+          flatMapN(getTypeParamsFromFormalParams(tparams0, List.empty, tpe0, loc, allowElision = false, Map.empty)) {
             tparams =>
               val tenv = getTypeEnv(tparams)
               mapN(visitType(tpe0, uenv0, tenv)) {
@@ -361,7 +361,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
-      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
+      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, Map.empty)) {
         tparams =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
           flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
@@ -384,7 +384,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true)) {
+      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, Map.empty)) {
         tparams =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
           flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
@@ -691,14 +691,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       for {
-        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true)
+        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true, tenv0)
         p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
         e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
       } yield NamedAst.Expression.Existential(p, e, loc) // TODO: Preserve type parameters in NamedAst?
 
     case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
       for {
-        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true)
+        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true, tenv0)
         p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
         e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
       } yield NamedAst.Expression.Universal(p, e, loc) // TODO: Preserve type parameters in NamedAst?
@@ -1338,11 +1338,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
   }
 
-  // MATT remove option param
   /**
     * Returns the free vars and their inferred kinds in the given type `tpe0`, with `varKind` assigned if `tpe0` is a type var.
     */
-  private def freeVarsWithKind(tpe0: WeededAst.Type, tenv: Map[String, Type.Var] = Map.empty): List[(Name.Ident, Kind)] = {
+  private def freeVarsWithKind(tpe0: WeededAst.Type, tenv: Map[String, Type.Var]): List[(Name.Ident, Kind)] = {
     def visit(tpe0: WeededAst.Type, varKind: Kind): List[(Name.Ident, Kind)] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) =>
         if (tenv.contains(ident.name))
@@ -1497,11 +1496,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
   }
 
-  // MATT remove opt param: move to separate method or refactor
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, allowElision: Boolean, tenv: Map[String, Type.Var] = Map.empty)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, allowElision: Boolean, tenv: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided =>
         if (allowElision)
@@ -1539,7 +1537,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the implicit type parameters constructed from the given types.
     */
   private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
-    val typeVarsWithKind = types.flatMap(freeVarsWithKind(_))
+    val typeVarsWithKind = types.flatMap(freeVarsWithKind(_, Map.empty))
     freshTypeParamsWithKind(typeVarsWithKind, loc)
   }
 
@@ -1554,7 +1552,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, tenv: Map[String, Type.Var] = Map.empty)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
+  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, tenv: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     // Infer the kind for each free type variable in the signature.
 
     // Compute the type variables that occur in the formal parameters.
