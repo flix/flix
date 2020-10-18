@@ -106,7 +106,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     // visit each instance
     val result = root.instances.m.values.map(visitInstances)
 
-    Validation.sequence(result).map(_.toMap).map(MultiMap(_)) // MATT why can't I do this with only one .map(...) ?
+    Validation.sequence(result).map(insts => MultiMap(insts.toMap))
 
   }
 
