@@ -587,8 +587,3 @@ namespace Test/Exp/Choose {
         f(if (true) Absent else Present(123),  if (true) Absent else Present(456)) == 1
 
 }
-
-pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
-    case Absent
-    case Present(a)
-}
