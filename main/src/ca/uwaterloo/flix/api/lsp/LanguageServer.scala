@@ -614,7 +614,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     flix.compile() match {
       case Success(t) =>
-        val results: List[JValue] = Tester.test(t).results.map {
+        val testResults = Tester.test(t).results.sortBy(tr => tr.sym.loc)
+        val results: List[JValue] = testResults.map {
           case TestResult.Success(sym, _) =>
             ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "success")
           case TestResult.Failure(sym, m) =>
