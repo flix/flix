@@ -516,7 +516,55 @@ namespace Test/Exp/Choose {
         };
         f(Present(123), if (true) Absent else Present(456)) == 1
 
-    // TODO: Add more tests
+    @test
+    def testChooseIf13(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (_, Absent)        => 1
+                case (_, Present(_))    => 2
+            }
+        };
+        f(Absent, if (true) Absent else Present(123)) == 1
+
+    @test
+    def testChooseIf14(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (_, Absent)        => 1
+                case (_, Present(_))    => 2
+            }
+        };
+        f(Present(123), if (true) Absent else Present(456)) == 1
+
+    @test
+    def testChooseIf15(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (_, Absent)        => 1
+                case (_, Present(_))    => 2
+            }
+        };
+        f(if (true) Absent else Present(123), Absent) == 1
+
+    @test
+    def testChooseIf16(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (_, Absent)        => 1
+                case (_, Present(_))    => 2
+            }
+        };
+        f(if (true) Absent else Present(123), Present(123)) == 2
+
+    @test
+    def testChooseIf17(): Bool =
+        let f = (x, y) -> {
+            choose (x, y) {
+                case (_, Absent)        => 1
+                case (_, Present(_))    => 2
+            }
+        };
+        f(if (true) Absent else Present(123),  if (true) Absent else Present(456)) == 1
 
 }
 
