@@ -387,6 +387,26 @@ namespace Test/Exp/Choose {
         f(Present("a"), Absent) == "a"
 
     @test
+    def testChooseThreeWithTwoCases01(): Bool =
+        let f = (x, y, z) -> {
+            choose (x, y, z) {
+                case (Absent, Absent, Absent)         => 1
+                case (Present(_), Absent, Present(_)) => 2
+            }
+        };
+        f(Absent, Absent, Absent) == 1
+
+    @test
+    def testChooseThreeWithTwoCases02(): Bool =
+        let f = (x, y, z) -> {
+            choose (x, y, z) {
+                case (Absent, Absent, Absent)         => 1
+                case (Present(_), Absent, Present(_)) => 2
+            }
+        };
+        f(Present(123), Absent, Present(456)) == 2
+
+    @test
     def testChooseIf01(): Bool =
         let f = x -> {
             choose x {
