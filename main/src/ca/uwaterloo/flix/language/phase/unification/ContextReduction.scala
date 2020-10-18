@@ -92,7 +92,7 @@ object ContextReduction {
 
     matchingInstances.map(tryInst).filter(_.isOk) match {
       case Result.Ok(tconstrs) :: Nil => tconstrs.toOk
-      case Nil => UnificationError.MismatchedTypes(Type.Unit, Type.Unit).toErr // MATT UnificationError.NoMatchingInstance
+      case Nil => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
       case _ => throw InternalCompilerException("Multiple matching instances.") // MATT make this illegal when declaring instances
     }
   }

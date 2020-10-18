@@ -104,4 +104,10 @@ object UnificationError {
     */
   case class MismatchedKinds(kind1: Kind, kind2: Kind) extends UnificationError
 
+  /**
+    * A unification error resulting from a type constraint with no matching instance.
+    * @param clazz the class of the type constraint
+    * @param tpe the type of the type constraint
+    */
+  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type) extends UnificationError
 }
