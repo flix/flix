@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification.{InferMonad, Substitution}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, InferMonad, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
 
@@ -656,17 +656,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               acc
             case (acc, ((isAbsentVar, _), ResolvedAst.ChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False))
+              BoolUnification.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False))
             case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
+              BoolUnification.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
           }
 
         /**
           * Constructs a disjunction of the constraints of each choice rule.
           */
         def mkOuterDisj(rs: List[ResolvedAst.ChoiceRule], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type = rs.foldLeft(Type.False) {
-          case (acc, rule) => Type.mkOr(acc, mkInnerConj(isAbsentVars, isPresentVars, rule))
+          case (acc, rule) => BoolUnification.mkOr(acc, mkInnerConj(isAbsentVars, isPresentVars, rule))
         }
 
         /**
@@ -723,15 +723,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
               if (mustbeAbsent) {
                 // Case 1: The pattern must be absent. It cannot be exhaustive unless all patterns in this column are absent.
-                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPatsTail))
+                BoolUnification.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, absentTails, allPatsTail))
               } else if (mustbePresent) {
                 // Case 1: The pattern must be present. It cannot be exhaustive unless all patterns in this column are present.
-                Type.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPatsTail))
+                BoolUnification.mkAnd(isSamePat(isAbsentVar, isPresentVar, allPats), isExhaustive(restAbsentVars, restPresentVars, presentTails, allPatsTail))
               } else {
                 // Case 1: The pattern is exhaustive. We must require the rest of the columns to be exhaustive, regardless of which pattern is chosen.
                 val x = isExhaustive(restAbsentVars, restPresentVars, absentTails, allPatsTail)
                 val y = isExhaustive(restAbsentVars, restPresentVars, presentTails, allPatsTail)
-                Type.mkAnd(x, y)
+                BoolUnification.mkAnd(x, y)
               }
 
             case (xs, ys) => throw InternalCompilerException(s"Mismatched isAbsentVars: '$xs' and isPresentVars: '$ys'.")
@@ -783,7 +783,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         val outerDisj = mkOuterDisj(rules0, isAbsentVars, isPresentVars)
         val exhaustiveCond = mkExhaustiveCond(isAbsentVars, isPresentVars, rules0)
-        val formula = Type.mkOr(outerDisj, exhaustiveCond)
+        val formula = BoolUnification.mkOr(outerDisj, exhaustiveCond)
 
         //
         // Put everything together.
