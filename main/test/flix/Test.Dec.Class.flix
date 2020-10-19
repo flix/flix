@@ -47,13 +47,14 @@ namespace Test05 {
 }
 
 namespace Test06 {
-    class C[a] {
+    pub class C[a] {
         def f(x: a): Bool
     }
 
     instance C[Int] {
         def f(x: Int): Bool = x == 0
     }
+
     instance C[List[a]] with [a: C] {
         def f(x: List[a]): Bool = {
             match x {
@@ -64,6 +65,12 @@ namespace Test06 {
     }
 
     pub def g(x: List[Int]): Bool = f(x)
+}
+
+namespace Test07 {
+    use class Test06.C;
+
+    pub def g[a: C](x: a): a = x
 }
 
 @test

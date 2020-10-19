@@ -934,4 +934,38 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     result.get
   }
+
+  test("MattTest3") {
+    val input =
+      """
+        |namespace Test06 {
+        |    pub class C[a]
+        |}
+        |
+        |namespace Test07 {
+        |    use class Test06.C;
+        |
+        |    pub def g[a: C](x: a): a = x
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    result.get
+  }
+
+  test("MattTest4") {
+    val input =
+      """
+        |namespace Test06 {
+        |    pub def f(): Int = 1
+        |}
+        |
+        |namespace Test07 {
+        |    use Test06.f;
+        |
+        |    pub def g(): Int = f()
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    result.get
+  }
 }
