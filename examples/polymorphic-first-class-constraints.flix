@@ -1,7 +1,7 @@
 /// Declare two polymorphic predicate symbols.
 /// Here an edge and a path are labelled with some type `l`.
-rel LabelEdge[l](x: Str, l: l, y: Str)
-rel LabelPath[l](x: Str, l: l, y: Str)
+rel LabelEdge[l](x: String, l: l, y: String)
+rel LabelPath[l](x: String, l: l, y: String)
 
 /// Returns a set of edge facts labelled with numbers.
 /// Note that the return type is `closed` which means that the
@@ -17,7 +17,7 @@ def getEdgesWithNumbers(): #{ LabelEdge[Int], LabelPath[Int] } = #{
 /// Note that the return type is `open` (polymorphic) which
 /// means that the facts can be used within any constraint
 /// as long as the edges are labelled with strings.
-def getEdgesWithColor[r](): #{ LabelEdge[Str] | r } = #{
+def getEdgesWithColor[r](): #{ LabelEdge[String] | r } = #{
     LabelEdge("a", "red", "b").
     LabelEdge("b", "red", "c").
     LabelEdge("c", "blu", "d").

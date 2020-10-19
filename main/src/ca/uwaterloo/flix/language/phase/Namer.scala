@@ -1102,7 +1102,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case "int32" => true
     case "int64" => true
     case "bigint" => true
-    case "str" => true
     case "string" => true
     case "array" => true
     case "ref" => true

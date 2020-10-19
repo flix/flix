@@ -23,7 +23,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p6 = withAge(p3, 84);
         ()
 
-    def withAge(rec: { fstName: Str, lstName: Str }, age: Int): { fstName: Str, lstName: Str, age: Int } =
+    def withAge(rec: { fstName: String, lstName: String }, age: Int): { fstName: String, lstName: String, age: Int } =
         { +age = age | rec }
 
     @test
@@ -38,7 +38,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p8 = withColor(p4, "Black");
         ()
 
-    def withColor[r](rec: {| r}, col: Str): { color: Str | r } =
+    def withColor[r](rec: {| r}, col: String): { color: String | r } =
         { +color = col | rec }
 
     @test
@@ -53,7 +53,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p8 = withAgeAndSex(42, "f", p4);
         ()
 
-    def withAgeAndSex[r](age: Int, sex: Str, rec: {| r}): { age: Int, sex: Str | r } =
+    def withAgeAndSex[r](age: Int, sex: String, rec: {| r}): { age: Int, sex: String | r } =
         { +age = age, +sex = sex | rec }
 
     @test

@@ -16,7 +16,7 @@
 
 namespace Foo01/Bar01 {
     pub def x(): Bool = false
-    pub def f(): Str = "foo"
+    pub def f(): String = "foo"
 }
 
 @test
@@ -40,10 +40,10 @@ namespace Foo03 {
 def testDef03(): Bool = Foo03.f() == false
 
 namespace Foo04 {
-    pub def x(): Str = "hello"
+    pub def x(): String = "hello"
 }
 namespace Bar04 {
-    pub def x(): Str = Foo04.x()
+    pub def x(): String = Foo04.x()
 }
 
 @test

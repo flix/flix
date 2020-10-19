@@ -90,24 +90,24 @@ namespace IDE {
     let Transformer<> = (Transformer.BotTrans, ???: Transformer, transequ, transleq, translub, transglb)
 
     // Inputs
-    lat EshIntra(node: Str, infact: Str, outfact: Str, transformer: Transformer)
-    lat EshCallStart(node: Str, infact: Str, proc: Str, outfact: Str, transformer: Transformer)
-    lat EshEndReturn(proc: Str, infact: Str, node: Str, outfact: Str, transformer: Transformer)
+    lat EshIntra(node: String, infact: String, outfact: String, transformer: Transformer)
+    lat EshCallStart(node: String, infact: String, proc: String, outfact: String, transformer: Transformer)
+    lat EshEndReturn(proc: String, infact: String, node: String, outfact: String, transformer: Transformer)
 
     // Call-to-Return edges should be included above in EshIntra
-    rel CFG(src: Str, dst: Str)
-    rel CallGraph(callsite: Str, proc: Str)
-    rel StartNode(proc: Str, node: Str)
-    rel EndNode(proc: Str, node: Str)
+    rel CFG(src: String, dst: String)
+    rel CallGraph(callsite: String, proc: String)
+    rel StartNode(proc: String, node: String)
+    rel EndNode(proc: String, node: String)
 
     // Internal lattices
-    lat JumpFn(infact: Str, node: Str, outfact: Str, transformer: Transformer)
-    lat SummaryFn(node: Str, infact: Str, outfact: Str, transformer: Transformer)
-    lat ResultProc(proc: Str, fact: Str, value: Value)
-    rel InProc(proc: Str, node: Str)
+    lat JumpFn(infact: String, node: String, outfact: String, transformer: Transformer)
+    lat SummaryFn(node: String, infact: String, outfact: String, transformer: Transformer)
+    lat ResultProc(proc: String, fact: String, value: Value)
+    rel InProc(proc: String, node: String)
 
     // Output
-    lat Results(node: Str, fact: Str, value: Value)
+    lat Results(node: String, fact: String, value: Value)
 
     // Rules for Example (constant propagation) from IDE paper
     def id(): Transformer = Transformer.NonBotTrans(1,0,Value.Bot)

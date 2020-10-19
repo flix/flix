@@ -242,20 +242,20 @@ namespace Test/Exp/Fixpoint/Fold {
       let p = #{Ff64(0.0f64, 1.0f64). Ff64(1.0f64, 1.0f64).};
       ((fold Ff64 0.0f64 addf64 (solve p)) - 3.0f64) < 0.001f64
 
-    /////////
-    // Str //
-    /////////
-    def adds(entry: (Str, Str), _acc: Str): Str =
+    ////////////
+    // String //
+    ////////////
+    def adds(entry: (String, String), _acc: String): String =
       let (x, _) = entry;
       x
 
     @test
-    def testFixpointFold35(): Str =
+    def testFixpointFold35(): String =
       let p = #{Fs("foo", "bar"). Fs("baz", "qux").};
       fold Fs "" adds (solve p)
 
     @test
-    def testFixpointFold36(): Str =
+    def testFixpointFold36(): String =
       let p = #{Fs("foo", "bar"). Fs("baz", "qux").};
       fold Fs "" ((_entry, acc) -> acc) (solve p)
 
@@ -293,7 +293,7 @@ namespace Test/Exp/Fixpoint/Fold {
     ////////////
     // Result //
     ////////////
-    def addr(entry: (Result[Int, Str], Result[Int, Str]), acc: Result[Int, Str]): Result[Int, Str] =
+    def addr(entry: (Result[Int, String], Result[Int, String]), acc: Result[Int, String]): Result[Int, String] =
       let (x, y) = entry;
       Result.withDefault(x, Result.withDefault(y, acc))
 

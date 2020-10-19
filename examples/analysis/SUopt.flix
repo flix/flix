@@ -1,26 +1,26 @@
 
 // Inputs
 // =========
-  rel AddrOf(variable: Str, object: Str)
-  rel Copy(to: Str, from: Str)
-  rel Store(label: Str, to: Str, from: Str)
-  rel Load(label: Str, to: Str, from: Str)
-  rel CFG(label: Str, to: Str)
-  rel Multi(object: Str)
-  rel Phi(label: Str)
-  rel Clear(label: Str)
-  rel FIStore(to: Str, from: Str, unknown: Str)
-  rel FILoad(to: Str, from: Str, unknown: Str)
+  rel AddrOf(variable: String, object: String)
+  rel Copy(to: String, from: String)
+  rel Store(label: String, to: String, from: String)
+  rel Load(label: String, to: String, from: String)
+  rel CFG(label: String, to: String)
+  rel Multi(object: String)
+  rel Phi(label: String)
+  rel Clear(label: String)
+  rel FIStore(to: String, from: String, unknown: String)
+  rel FILoad(to: String, from: String, unknown: String)
 
 // Outputs
 // =========
-  rel Pt(variable: Str, target: Str)
+  rel Pt(variable: String, target: String)
 
 // Other types
 // =========
   enum SULattice {
     case Top, // kill nothing
-    case Single(Str),
+    case Single(String),
     case Bottom // kill everything
   }
 
@@ -46,10 +46,10 @@
   }
   let SULattice<> = (SULattice.Bottom, SULattice.Top, equ, leq, lub, glb)
 
-  lat SU(location: Str, object: Str, target: SULattice)
+  lat SU(location: String, object: String, target: SULattice)
 
-  rel PtH(object: Str, target: Str)
-  lat Kill(location: Str, kill: SULattice)
+  rel PtH(object: String, target: String)
+  lat Kill(location: String, kill: SULattice)
 
 // Rules
 // =========
@@ -64,7 +64,7 @@ Pt(p,a) :- Copy(p,q), Pt(q,a).
 //
 // Store
 // ---------
-def f(x: Str): SULattice = SULattice.Single(x)
+def f(x: String): SULattice = SULattice.Single(x)
 SU(l,a;f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
 //
 PtH(a,b) :- Store(l,p,q), Pt(p,a), Pt(q,b).
@@ -82,7 +82,7 @@ Pt(p,b) :- FILoad(p,q,_), Pt(q,a), PtH(a,b).
 // Preserve
 // ---------
 //su-after(l,a,t) :- su-before(l,a,t), NOT kill(l,a).
-def killNot(a: Str, e: SULattice): Bool = match e {
+def killNot(a: String, e: SULattice): Bool = match e {
   case SULattice.Bottom => false
   case SULattice.Single(s) => a != s
   case SULattice.Top => true
@@ -93,7 +93,7 @@ SU(l2,a;t) :- CFG(l1, l2), SU(l1,a;t), killNot(a, k), Kill(l2;k).
 //
 // PtSu
 // ---------
-def filter(e: SULattice, p: Str): Bool = match e {
+def filter(e: SULattice, p: String): Bool = match e {
   case SULattice.Bottom => false
   case SULattice.Single(s) => p == s
   case SULattice.Top => true

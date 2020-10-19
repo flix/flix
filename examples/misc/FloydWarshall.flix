@@ -2,10 +2,10 @@
 // for finding shortest paths between all pairs of nodes in a graph.
 
 // Inputs: Directed distances d between nodes a and b
-rel Edge(a: Str, b: Str, d: Int)
+rel Edge(a: String, b: String, d: Int)
 
 // Outputs: Shortest distance d from a to b
-lat ShortestDist(a: Str, b: Str, d: Dist)
+lat ShortestDist(a: String, b: String, d: Dist)
 
 // Elements of the distance lattice
 enum Dist {

@@ -17,29 +17,29 @@ def main(): Unit =
 
 /// The connection "builder" function returns a record with *all*
 /// *optional* fields initialized to None.
-def connection(): {pass: Option[Str]} = {pass = None}
+def connection(): {pass: Option[String]} = {pass = None}
 
 /// The host function extends the options record with a hostname.
-def host[r](o: {| r}, h: Str): {host: Str | r} = {+host = h | o}
+def host[r](o: {| r}, h: String): {host: String | r} = {+host = h | o}
 
 /// The port function extends the options record with a port number.
 def port[r](o: {| r}, p: Int): {port: Int | r} = {+port = p | o}
 
 /// The user function extends the options record with a username.
-def user[r](o: {| r}, u: Str): {user: Str | r} = {+user = u | o}
+def user[r](o: {| r}, u: String): {user: String | r} = {+user = u | o}
 
 /// The pass function *updates* the options record with a new value
 /// of its pass field. Notice that the options record must already
 /// have a pass field for this to type check, hence the connection
 /// "builder" function ensures that such a field exists.
-def pass[r](o: {pass: Option[Str] | r}, p: Str):
-           {pass: Option[Str] | r} = {pass = Some(p) | o}
+def pass[r](o: {pass: Option[String] | r}, p: String):
+           {pass: Option[String] | r} = {pass = Some(p) | o}
 
 /// Finally, the connect function has a very natural signature that
 /// requires an options record with mandatory host, port, user,
 /// and pass fields. The pass field, however, is of type Option,
 /// and so may have the value None, if never set.
-def connect(o: {host: Str, port: Int, user: Str, pass: Option[Str]}):
+def connect(o: {host: String, port: Int, user: String, pass: Option[String]}):
     Unit = ()
 
 /// NB: Code reformatted in non-idiomatic style to fit.

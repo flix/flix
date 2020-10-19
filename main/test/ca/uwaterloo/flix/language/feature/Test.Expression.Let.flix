@@ -17,7 +17,7 @@ def f03(): Int16 = let x = 1i16; x + 2i16
 @test
 def testLet03(): Bool = f03() == 3i16
 
-def f04(): Str = let x = false; if (x) "abz" else "xyz"
+def f04(): String = let x = false; if (x) "abz" else "xyz"
 
 @test
 def testLet04(): Bool = f04() == "xyz"
@@ -123,7 +123,7 @@ def f17(): () = let x = (); x
 @test
 def testLet17(): Bool = f17() == ()
 
-def f18(): Str = let x = "helloworld"; x
+def f18(): String = let x = "helloworld"; x
 
 @test
 def testLet18(): Bool = f18() == "helloworld"

@@ -34,7 +34,7 @@ namespace Test/Exp/Cast {
     def testCast11(): BigInt = 0ii as BigInt
 
     @test
-    def testCast12(): Str = "hello world" as Str
+    def testCast12(): String = "hello world" as String
 
     @test
     def testCast13(): (Int, Int, Int) = (1, 2, 3) as (Int, Int, Int)
@@ -76,7 +76,7 @@ namespace Test/Exp/Cast {
     def testCastWithEff11(): BigInt & Impure = 0ii as BigInt & Impure
 
     @test
-    def testCastWithEff12(): Str & Impure = "hello world" as Str & Impure
+    def testCastWithEff12(): String & Impure = "hello world" as String & Impure
 
     @test
     def testCastWithEff13(): (Int, Int, Int) & Impure = (1, 2, 3) as (Int, Int, Int) & Impure
@@ -118,7 +118,7 @@ namespace Test/Exp/Cast {
     def testCastWithWildAndEff11(): BigInt & Impure = 0ii as & Impure
 
     @test
-    def testCastWithWildAndEff12(): Str & Impure = "hello world" as & Impure
+    def testCastWithWildAndEff12(): String & Impure = "hello world" as & Impure
 
     @test
     def testCastWithWildAndEff13(): (Int, Int, Int) & Impure = (1, 2, 3) as & Impure

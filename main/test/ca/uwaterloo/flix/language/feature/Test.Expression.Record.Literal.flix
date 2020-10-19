@@ -15,19 +15,19 @@ def testEmptyRecord04(): { a: { b: { c: {} } } } =
     { a = { b = { c = {} } } }
 
 @test
-def testRecordLiteral01(): { name: Str } =
+def testRecordLiteral01(): { name: String } =
     { name = "Lucky Luke" }
 
 @test
-def testRecordLiteral02(): { fstName: Str, lstName: Str } =
+def testRecordLiteral02(): { fstName: String, lstName: String } =
     { fstName = "Lucky", lstName = "Luke" }
 
 @test
-def testRecordLiteral03(): { fstName: Str, lstName: Str, age: Int } =
+def testRecordLiteral03(): { fstName: String, lstName: String, age: Int } =
     { fstName = "Lucky", lstName = "Luke", age = 42 }
 
 @test
-def testRecordLiteral04(): { fstName: Str, lstName: Str, age: Int, cowboy: Bool } =
+def testRecordLiteral04(): { fstName: String, lstName: String, age: Int, cowboy: Bool } =
     { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
