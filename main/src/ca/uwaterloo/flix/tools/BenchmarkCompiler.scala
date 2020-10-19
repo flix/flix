@@ -112,6 +112,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Ascribe.flix", LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"))
     flix.addInput("Test.Exp.Binary.Spaceship.flix", LocalResource.get("/test/flix/Test.Exp.Binary.Spaceship.flix"))
     flix.addInput("Test.Exp.Cast.flix", LocalResource.get("/test/flix/Test.Exp.Cast.flix"))
+    flix.addInput("Test.Exp.Choose.flix", LocalResource.get("/test/flix/Test.Exp.Choose.flix"))
     flix.addInput("Test.Exp.Concurrency.Buffered.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.Buffered.flix"))
     flix.addInput("Test.Exp.Concurrency.NewChannel.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.NewChannel.flix"))
     flix.addInput("Test.Exp.Concurrency.Unbuffered.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.Unbuffered.flix"))
