@@ -19,8 +19,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.{Optimization, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.vt.TerminalContext
 
 /**
   * The Tailrec phase identifies function calls that are in tail recursive position.
@@ -34,6 +36,7 @@ object Tailrec extends Phase[Root, Root] {
     * Identifies tail recursive calls in the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Tailrec") {
+    println(PrettyPrinter.Lifted.fmtRoot(root).fmt(TerminalContext.AnsiTerminal))
     //
     // Check if tail call elimination is enabled.
     //
@@ -46,7 +49,11 @@ object Tailrec extends Phase[Root, Root] {
     val defns = root.defs.map {
       case (sym, defn) => sym -> tailrec(defn)
     }
-    root.copy(defs = defns).toSuccess
+    //root.copy(defs = defns).toSuccess
+    val newRoot = root.copy(defs = defns)
+    println("__________________-----____________________________________")
+    println(PrettyPrinter.Lifted.fmtRoot(newRoot).fmt(TerminalContext.AnsiTerminal))
+    newRoot.toSuccess
   }
 
   /**
