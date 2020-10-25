@@ -687,6 +687,10 @@ object JvmOps {
 
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
 
+      case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.Force(exp, tpe, loc) => visitExp(exp)
+
       case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, constraint) => sacc ++ visitConstraint(constraint)
       }
@@ -1035,6 +1039,10 @@ object JvmOps {
         rs ++ d
 
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Lazy(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Force(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set(tpe))((ts, c) => ts ++ visitConstraint(c))
 

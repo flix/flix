@@ -400,10 +400,14 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         FinalAst.Expression.Spawn(e, t, loc)
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
-        ??? // TODO: Add backend support for lazyness.
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.Lazy(e, t, loc)
 
       case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
-        ??? // TODO: Add backend support for lazyness.
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.Force(e, t, loc)
 
       case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, m))

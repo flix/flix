@@ -1086,6 +1086,10 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
+    case Expression.Lazy(exp, tpe, loc) => ??? // TODO: Implement lazy
+
+    case Expression.Force(exp, tpe, loc) => ??? // TODO: Implement force
+
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
