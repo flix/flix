@@ -65,6 +65,12 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Concurrency.Spawn", "main/test/flix/Test.Exp.Concurrency.Spawn.flix")(Options.TestWithLibrary),
 
   //
+  // Lazy/Force.
+  //
+  new FlixTest("Test.Exp.Lazy", "main/test/flix/Test.Exp.Lazy.flix"),
+  new FlixTest("Test.Exp.Force", "main/test/flix/Test.Exp.Force.flix"),
+
+  //
   // Default.
   //
   new FlixTest("Test.Exp.Default", "main/test/flix/Test.Exp.Default.flix"),
