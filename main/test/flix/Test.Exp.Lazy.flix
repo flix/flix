@@ -1,5 +1,7 @@
 namespace Test/Exp/Lazy {
 
+    // TODO: make better names a la Test.Exp.Force.flix
+
     @test
     def testLazyCreation01(): Bool & Pure =
         let _ = lazy ();
