@@ -470,7 +470,7 @@ namespace String {
     /// Alias for `dropLeft`.
     ///
     @Time(length(s) - n) @Space(length(s) - n)
-    pub def drop(n: Int32, s: String): Str = dropLeft(n, s)
+    pub def drop(n: Int32, s: String): String = dropLeft(n, s)
 
     ///
     /// Drop the first `n` characters of string `s` from the left.

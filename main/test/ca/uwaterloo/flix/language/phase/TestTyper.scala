@@ -143,13 +143,13 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("TestMismatchedKinds.04") {
-    val input = "def f(): Str = 1 |= 2"
+    val input = "def f(): String = 1 |= 2"
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedKinds](result)
   }
 
   test("TestMismatchedKinds.05") {
-    val input = "def f(): Str = solve \"hello\""
+    val input = "def f(): String = solve \"hello\""
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedKinds](result)
   }

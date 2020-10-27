@@ -34,7 +34,7 @@ namespace Test/Exp/Ascribe {
     def testAscribe11(): BigInt = 0ii : BigInt
 
     @test
-    def testAscribe12(): Str = "hello world" : Str
+    def testAscribe12(): String = "hello world" : String
 
     @test
     def testAscribe13(): (Int, Int, Int) = (1, 2, 3) : (Int, Int, Int)

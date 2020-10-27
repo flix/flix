@@ -41,7 +41,7 @@ type alias D[a, b] = Result[a, b]
 /**
  * A partially polymorphic type alias for a Result.
  */
-type alias E[a] = Result[a, Str]
+type alias E[a] = Result[a, String]
 
 @test
 def typeAlias01(): Celsius = 123

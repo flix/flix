@@ -88,13 +88,13 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad29(): Float64 & Impure = let x = [1.0f64, 2.0f64, 3.0f64, 4.0f64]; x[3]
 
     @test
-    def testArrayLoad30(): Str & Impure = let x = ["Hello"]; x[0]
+    def testArrayLoad30(): String & Impure = let x = ["Hello"]; x[0]
 
     @test
-    def testArrayLoad31(): Str & Impure = let x = ["Hello", "World"]; x[1]
+    def testArrayLoad31(): String & Impure = let x = ["Hello", "World"]; x[1]
 
     @test
-    def testArrayLoad32(): Str & Impure = let x = ["World", "Hello", "World"]; x[2]
+    def testArrayLoad32(): String & Impure = let x = ["World", "Hello", "World"]; x[2]
 
     @test
     def testArrayLoad33(): Int & Impure = let x = [[1, 2, 3]]; x[0][1]
@@ -211,19 +211,19 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad70(): Float64 & Impure = let x = [[1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64]]; x[2][2]
 
     @test
-    def testArrayLoad71(): Str & Impure = let x = [["Hello", "Hello", "Hello"]]; x[0][0]
+    def testArrayLoad71(): String & Impure = let x = [["Hello", "Hello", "Hello"]]; x[0][0]
 
     @test
-    def testArrayLoad72(): Str & Impure = let x = [["Hello", "Hello"], ["World", "World"]]; x[1][1]
+    def testArrayLoad72(): String & Impure = let x = [["Hello", "Hello"], ["World", "World"]]; x[1][1]
 
     @test
-    def testArrayLoad73(): Str & Impure = let x = [["Hello"], ["World", "World", "World", "World"]]; x[1][3]
+    def testArrayLoad73(): String & Impure = let x = [["Hello"], ["World", "World", "World", "World"]]; x[1][3]
 
     @test
-    def testArrayLoad74(): Str & Impure = let x = [["World", "World", "World", "World"], ["Hello"]]; x[0][3]
+    def testArrayLoad74(): String & Impure = let x = [["World", "World", "World", "World"], ["Hello"]]; x[0][3]
 
     @test
-    def testArrayLoad75(): Str & Impure = let x = [["World", "World", "World"], ["World", "World", "World"], ["World", "World", "World"]]; x[1][2]
+    def testArrayLoad75(): String & Impure = let x = [["World", "World", "World"], ["World", "World", "World"], ["World", "World", "World"]]; x[1][2]
 
     @test
     def testArrayLoad77(): Option[Int] & Impure = let x = [Some(5), Some(6), Some(7)]; x[1]

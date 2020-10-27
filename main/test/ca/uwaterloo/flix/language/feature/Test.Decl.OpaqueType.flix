@@ -26,7 +26,7 @@ opaque type A = Option[Int]
 /**
  * An opaque type for a Result.
  */
-opaque type B = Result[Int, Str]
+opaque type B = Result[Int, String]
 
 /**
  * An opaque type for a polymorphic pair.
@@ -132,13 +132,13 @@ def opaqueType22(): Bool = match C(Ok(true)) {
 }
 
 @test
-def opaqueType23(): D[Bool, Int, Str] = D(Map#{})
+def opaqueType23(): D[Bool, Int, String] = D(Map#{})
 
 @test
-def opaqueType24(): D[Bool, Int, Str] = D(Map#{true -> Ok(123)})
+def opaqueType24(): D[Bool, Int, String] = D(Map#{true -> Ok(123)})
 
 @test
-def opaqueType25(): D[Bool, Int, Str] = D(Map#{true -> Err("Hello World")})
+def opaqueType25(): D[Bool, Int, String] = D(Map#{true -> Err("Hello World")})
 
 /**
  * A type alias for Bool.

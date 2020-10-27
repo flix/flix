@@ -1,5 +1,5 @@
 @test
-def testRecordRestrict01(): { lstName: Str, age: Int, cowboy: Bool } =
+def testRecordRestrict01(): { lstName: String, age: Int, cowboy: Bool } =
     let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
     let r1 = { -fstName | r0 };
     r1
@@ -42,7 +42,7 @@ def testRecordRestrict06(): Bool =
     r2.a == 789
 
 @test
-def testRecordRestrictMultiple01(): { fstName: Str, lstName: Str } =
+def testRecordRestrictMultiple01(): { fstName: String, lstName: String } =
     let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
     { -age, -cowboy | r0 }
 

@@ -56,7 +56,7 @@ def testMatchLiteral04(): Bool = f09(true) == 30
 @test
 def testMatchLiteral05(): Bool = f09(false) == 81
 
-def f10(x: Int): Str = match x {
+def f10(x: Int): String = match x {
   case -1 => "minus one"
   case 0 => "zero"
   case 1 => "one"
@@ -78,7 +78,7 @@ def testMatchLiteral09(): Bool = f10(2) == "unknown"
 @test
 def testMatchLiteral10(): Bool = f10(3) == "unknown"
 
-def f11(x: Int8): Str = match x {
+def f11(x: Int8): String = match x {
   case -128i8 => "min"
   case -2i8 => "a"
   case 6i8 => "b"
@@ -101,7 +101,7 @@ def testMatchLiteral14(): Bool = f11(127i8) == "max"
 @test
 def testMatchLiteral15(): Bool = f11(0i8) == "unknown"
 
-def f12(x: Int16): Str = match x {
+def f12(x: Int16): String = match x {
   case -32768i16 => "min"
   case -211i16 => "a"
   case 623i16 => "b"
@@ -124,7 +124,7 @@ def testMatchLiteral19(): Bool = f12(32767i16) == "max"
 @test
 def testMatchLiteral20(): Bool = f12(0i16) == "unknown"
 
-def f13(x: Int32): Str = match x {
+def f13(x: Int32): String = match x {
   case -2147483648i32 => "min"
   case -2136541i32 => "a"
   case 6254523i32 => "b"
@@ -147,7 +147,7 @@ def testMatchLiteral24(): Bool = f13(2147483647i32) == "max"
 @test
 def testMatchLiteral25(): Bool = f13(0i32) == "unknown"
 
-def f14(x: Int64): Str = match x {
+def f14(x: Int64): String = match x {
   case -9223372036854775808i64 => "min"
   case -213645454545541i64 => "a"
   case 6287816254523i64 => "b"
@@ -170,7 +170,7 @@ def testMatchLiteral29(): Bool = f14(9223372036854775807i64) == "max"
 @test
 def testMatchLiteral30(): Bool = f14(0i64) == "unknown"
 
-def f15(x: Str): Str = match x {
+def f15(x: String): String = match x {
   case "one" => "un"
   case "two" => "deux"
   case "three" => "trois"
@@ -189,7 +189,7 @@ def testMatchLiteral33(): Bool = f15("three") == "trois"
 @test
 def testMatchLiteral34(): Bool = f15("four") == "???"
 
-enum Foo16 { case Bar16, case Baz16, case Abc16(Int,Str), case Xyz16 }
+enum Foo16 { case Bar16, case Baz16, case Abc16(Int,String), case Xyz16 }
 
 def f16(x: Foo16): Int = match x {
   case Foo16.Bar16 => 1
@@ -219,7 +219,7 @@ def testMatchLiteral40(): Bool = f16(Foo16.Abc16(40, "a")) == 0
 @test
 def testMatchLiteral41(): Bool = f16(Foo16.Xyz16) == 0
 
-def f17(x: Str, y: Bool): Int = match (x, y) {
+def f17(x: String, y: Bool): Int = match (x, y) {
   case ("hi", false) => 1
   case _ => 2
 }
@@ -275,7 +275,7 @@ def testMatchLiteral52(): Bool = f19(0, 2) == 2
 @test
 def testMatchLiteral53(): Bool = f19(3, 4) == 0
 
-def f20(x: BigInt): Str = match x {
+def f20(x: BigInt): String = match x {
   case -9223372036854775809ii => "-"
   case 9223372036854775809ii => "+"
   case _ => "unknown"
@@ -290,7 +290,7 @@ def testMatchLiteral55(): Bool = f20(9223372036854775809ii) == "+"
 @test
 def testMatchLiteral56(): Bool = f20(6287816254523ii) == "unknown"
 
-enum NameAndAge21 { case T21(Str,Int) }
+enum NameAndAge21 { case T21(String,Int) }
 
 def f21(x: NameAndAge21): Int =
   let NameAndAge21.T21(_, age) = x;
@@ -308,7 +308,7 @@ def testMatchTag03(): Bool = f21(NameAndAge21.T21("James", 5)) == 5
 @test
 def testMatchTag04(): Bool = f21(NameAndAge21.T21("Mary", 33)) == 33
 
-enum NameAndAge22 { case T22(Str,Int) }
+enum NameAndAge22 { case T22(String,Int) }
 
 def f22(x: NameAndAge22): Int = match x {
   case NameAndAge22.T22("James", age) => age
@@ -367,7 +367,7 @@ def testMatchTag15(): Bool = f24(BoolTag24.B24(false)) == -1
 @test
 def testMatchTag16(): Bool = f24(BoolTag24.Bot24) == 0
 
-enum Val25 { case Nip25, case Val25((Str, Int)) }
+enum Val25 { case Nip25, case Val25((String, Int)) }
 
 def f25(x: Val25): Int = match x {
   case Val25.Nip25 => 0
@@ -389,7 +389,7 @@ def testMatchTag19(): Bool = f25(Val25.Val25(("b", 2))) == 2
 @test
 def testMatchTag20(): Bool = f25(Val25.Val25(("x", 3))) == -1
 
-enum Val26 { case Nip26, case Val26((Str, Int)) }
+enum Val26 { case Nip26, case Val26((String, Int)) }
 
 def f26(x: Val26): Int = match x {
   case Val26.Nip26 => 0
@@ -419,7 +419,7 @@ enum A27 { case AA27(Int), case AB27(Int) }
 
 enum B27 { case Top27, case BB27(A27), case Bot27 }
 
-def f27(x: B27): Str = match x {
+def f27(x: B27): String = match x {
   case B27.Top27 => "top"
   case B27.BB27(y) => match y {
     case A27.AA27(a) => match a {
@@ -549,7 +549,7 @@ def testMatchTuple02(): Bool = f41(6, 5) == 11
 @test
 def testMatchTuple03(): Bool = f41(100, 23) == 123
 
-def f42(x: Int, y: Bool): Str = match (x, y) {
+def f42(x: Int, y: Bool): String = match (x, y) {
   case (5, true) => "abc"
   case (5, _) => "def"
   case (_, true) => "ghi"
@@ -621,7 +621,7 @@ def testMatchTuple18(): Bool = f44(ConstProp44.Val44(0), ConstProp44.Val44(42)) 
 @test
 def testMatchTuple19(): Bool = f44(ConstProp44.Top44, ConstProp44.Bot44) == 5
 
-enum NameAndAge45 { case T45(Str,Int) }
+enum NameAndAge45 { case T45(String,Int) }
 
 def f45(x: Int, y: NameAndAge45): Int = match (x, y) {
   case (1, NameAndAge45.T45("James", _)) => 1

@@ -54,7 +54,7 @@ def matchEmptyInt64Array(): Bool & Impure = match ([]:Array[Int64]) {
 }
 
 @test
-def matchEmptyStrArray(): Bool & Impure = match ([]:Array[Str]) {
+def matchEmptyStrArray(): Bool & Impure = match ([]:Array[String]) {
     case [] => true
     case _ => false
 }
@@ -72,7 +72,7 @@ def matchEmptyOptionIntArray(): Bool & Impure = match ([]:Array[Option[Int]]) {
 }
 
 @test
-def matchEmptyResultArray(): Bool & Impure = match ([]:Array[Result[Int,Str]]) {
+def matchEmptyResultArray(): Bool & Impure = match ([]:Array[Result[Int,String]]) {
     case [] => true
     case _ => false
 }

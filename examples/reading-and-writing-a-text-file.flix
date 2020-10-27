@@ -11,9 +11,9 @@ def writeData(file: File): Result[Unit, IOError] & Impure =
     writeLines(file, getData())
 
 /// Reads the list of prominent figures back, returning surnames.
-def readData(file: File): Result[List[Str], IOError] & Impure =
+def readData(file: File): Result[List[String], IOError] & Impure =
     let splitAndGetFirst = (s: String -> String.split(s, ",")[0]);
-    let getSurname = (xs: List[Str]) -> List.map(splitAndGetFirst, xs);
+    let getSurname = (xs: List[String]) -> List.map(splitAndGetFirst, xs);
     Result.map(getSurname, readLines(file))
 
 /// Writes the text file and then reads it back in again.

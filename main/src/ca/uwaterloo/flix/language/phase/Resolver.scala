@@ -1253,7 +1253,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Int32" => Type.Int32.toSuccess
       case "Int64" => Type.Int64.toSuccess
       case "BigInt" => Type.BigInt.toSuccess
-      case "Str" => Type.Str.toSuccess
       case "String" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Channel" => Type.Channel.toSuccess

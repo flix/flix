@@ -1,10 +1,10 @@
 @test
-def testRecordSelect01(): Str =
+def testRecordSelect01(): String =
     let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
     r.fstName
 
 @test
-def testRecordSelect02(): Str =
+def testRecordSelect02(): String =
     let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
     r.lstName
 
@@ -89,7 +89,7 @@ def testSelectDuplicateLabels02(): Int =
     a1 + a2 + a3
 
 @test
-def testSelectDuplicateLabels03(): Str =
+def testSelectDuplicateLabels03(): String =
     let r = { a = true, a = "hello world", a = 84};
     { -a | r }.a
 

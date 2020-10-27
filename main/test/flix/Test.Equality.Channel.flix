@@ -12,7 +12,7 @@ namespace Test/Equality/Channel {
     
     @test
     def testEqualityChannel03(): Bool & Impure =
-        let c = chan Str 0;
+        let c = chan String 0;
         c == c
     
     @test
