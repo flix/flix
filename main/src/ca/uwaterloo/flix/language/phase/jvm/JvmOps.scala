@@ -66,6 +66,7 @@ object JvmOps {
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Channel(_) => JvmType.Object
+    case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
     case MonoType.RecordEmpty() => getRecordInterfaceType()
@@ -293,6 +294,12 @@ object JvmOps {
       JvmType.Reference(JvmName(RootPackage, name))
   }
 
+  def getLazyClassType(tpe: MonoType.Lazy)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Lazy(tpe) =>
+      val arg = stringify(getErasedJvmType(tpe))
+      val name = "Lazy$" + arg
+      JvmType.Reference(JvmName(RootPackage, name))
+  }
 
   /**
     * Returns the record interface type `IRecord`.
