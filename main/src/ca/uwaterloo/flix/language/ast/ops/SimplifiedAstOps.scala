@@ -183,6 +183,11 @@ object SimplifiedAstOps {
         checkExp(base, env0, ienv0)
         checkType(tpe)
 
+      case Expression.IndexMut(base, _, toInsert, tpe, _) =>
+        checkExp(base, env0, ienv0)
+        checkExp(toInsert, env0, ienv0)
+        checkType(tpe)
+
       case Expression.Tuple(elms, tpe, loc) =>
         for (elm <- elms) {
           checkExp(elm, env0, ienv0)
