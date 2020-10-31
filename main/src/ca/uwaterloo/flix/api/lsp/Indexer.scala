@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, FormalParam, MatchRule, ChoiceRule, Pattern, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Type, TypeConstructor}
 
 object Indexer {
 
@@ -43,7 +43,8 @@ object Indexer {
     val idx2 = def0.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    idx0 ++ idx1 ++ idx2
+    val idx3 = visitScheme(def0.declaredScheme, def0.loc)
+    idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -322,15 +323,6 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given type `tpe0` at the given source location `loc`.
-    */
-  private def visitType(tpe0: Type, loc: SourceLocation): Index =
-    tpe0.typeConstructors.foldLeft(Index.empty) {
-      case (idx, TypeConstructor.Enum(sym, _)) => idx ++ Index.useOf(sym, loc)
-      case (idx, _) => idx
-    }
-
-  /**
     * Returns a reverse index for the given constraint `c0`.
     */
   private def visitConstraint(c0: Constraint): Index = {
@@ -362,5 +354,21 @@ object Indexer {
   private def visitFormalParam(fparam0: FormalParam): Index = {
     Index.of(fparam0) ++ visitType(fparam0.tpe, fparam0.loc)
   }
+
+
+  /**
+    * Returns a reverse index for the given type scheme `sc0` at the given source location `loc`.
+    */
+  private def visitScheme(sc0: Scheme, loc: SourceLocation): Index = visitType(sc0.base, loc)
+
+  /**
+    * Returns a reverse index for the given type `tpe0` at the given source location `loc`.
+    */
+  private def visitType(tpe0: Type, loc: SourceLocation): Index =
+    tpe0.typeConstructors.foldLeft(Index.empty) {
+      case (idx, TypeConstructor.Enum(sym, _)) => idx ++ Index.useOf(sym, loc)
+      case (idx, TypeConstructor.SchemaExtend(pred)) => idx ++ Index.useOf(pred)
+      case (idx, _) => idx
+    }
 
 }
