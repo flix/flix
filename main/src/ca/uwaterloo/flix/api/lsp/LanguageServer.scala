@@ -342,15 +342,31 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(highlights.map(_.toJSON)))
     }
 
+    def highlightTag(sym: Symbol.EnumSym, tag: String): JValue = {
+      // Find all occurrences of the symbol.
+      val occurrences = (sym.loc, DocumentHighlightKind.Write) :: index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
+
+      // Construct the highlights.
+      val highlights = occurrences map {
+        case (loc, kind) => DocumentHighlight(Range.from(loc), kind)
+      }
+
+      // Construct the JSON result.
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    }
+
     index.query(uri, pos) match {
+      case Some(Entity.Case(caze)) => highlightTag(caze.sym, caze.tag.name)
       case Some(Entity.Def(defn)) => highlightDef(defn.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => highlightVar(sym)
         case Expression.Def(sym, _, _) => highlightDef(sym)
+        case Expression.Tag(sym, tag, _, _, _, _) => highlightTag(sym, tag)
         case _ => mkNotFound(requestId, uri, pos)
       }
       case Some(Entity.Pattern(pat)) => pat match {
         case Pattern.Var(sym, _, _) => highlightVar(sym)
+        case Pattern.Tag(sym, tag, _, _, _) => highlightTag(sym, tag)
         case _ => mkNotFound(requestId, uri, pos)
       }
       case Some(Entity.FormalParam(fparam)) => highlightVar(fparam.sym)
