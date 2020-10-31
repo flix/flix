@@ -316,6 +316,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a highlight request.
     */
   private def processHighlight(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    def highlightDef(sym: Symbol.DefnSym): JValue = {
+      // Find all occurrences of the symbol.
+      val occurrences = (sym.loc, DocumentHighlightKind.Write) :: index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+
+      // Construct the highlights.
+      val highlights = occurrences map {
+        case (loc, kind) => DocumentHighlight(Range.from(loc), kind)
+      }
+
+      // Construct the JSON result.
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    }
+
     def highlightVar(sym: Symbol.VarSym): JValue = {
       // Find all occurrences of the symbol.
       val occurrences = (sym.loc, DocumentHighlightKind.Write) :: index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
@@ -330,8 +343,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     }
 
     index.query(uri, pos) match {
+      case Some(Entity.Def(defn)) => highlightDef(defn.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => highlightVar(sym)
+        case Expression.Def(sym, _, _) => highlightDef(sym)
         case _ => mkNotFound(requestId, uri, pos)
       }
       case Some(Entity.Pattern(pat)) => pat match {
