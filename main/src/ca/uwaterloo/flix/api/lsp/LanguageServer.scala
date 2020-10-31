@@ -582,7 +582,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     def renameVar(sym: Symbol.VarSym): JValue = rename(sym.loc :: index.usesOf(sym).toList)
 
+    def renamePred(pred: Name.Pred): JValue = rename(index.usesOf(pred).toList)
+
     index.query(uri, pos) match {
+      case Some(Entity.Atom(pred)) => renamePred(pred)
       case Some(Entity.Def(defn)) => renameDef(defn.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => renameVar(sym)
@@ -739,6 +742,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processUses(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
+
+      case Some(Entity.Atom(pred)) =>
+        val uses = index.usesOf(pred)
+        val locs = uses.toList.map(Location.from)
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
       case Some(Entity.Case(caze)) =>
         val uses = index.usesOf(caze.sym, caze.tag.name)
