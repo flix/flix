@@ -245,7 +245,7 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given head predicate `h0`.
       */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
-      case Predicate.Head.Atom(name, den, terms, tpe, loc) => Map.empty
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Map.empty
       case Predicate.Head.Union(exp, tpe, loc) => visitExp(exp, env0)
     }
 
@@ -253,7 +253,7 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given body predicate `b0`.
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) => Map.empty
+      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => Map.empty
       case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
     }
 

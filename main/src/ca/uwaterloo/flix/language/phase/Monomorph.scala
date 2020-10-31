@@ -601,9 +601,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Specializes the given head predicate `h0` w.r.t. the given environment and current substitution.
         */
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
-        case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+        case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.Atom(name, den, ts, subst0(tpe), loc)
+          Predicate.Head.Atom(pred, den, ts, subst0(tpe), loc)
 
         case Predicate.Head.Union(exp, tpe, loc) =>
           val e = visitExp(exp, env0)
@@ -635,9 +635,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
 
         b0 match {
-          case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+          case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.Atom(name, den, polarity, ts, subst0(tpe), loc)
+            Predicate.Body.Atom(pred, den, polarity, ts, subst0(tpe), loc)
 
           case Predicate.Body.Guard(exp, loc) =>
             val e = visitExp(exp, env0)

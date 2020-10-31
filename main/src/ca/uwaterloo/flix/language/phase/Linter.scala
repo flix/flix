@@ -1021,7 +1021,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Applies the substitution to the head predicate `head0`.
       */
     private def apply(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Head.Atom(name, den, terms, tpe, loc) => Head.Atom(name, den, terms.map(apply), tpe, loc)
+      case Head.Atom(pred, den, terms, tpe, loc) => Head.Atom(pred, den, terms.map(apply), tpe, loc)
       case Head.Union(exp, tpe, loc) => Head.Union(apply(exp), tpe, loc)
     }
 
@@ -1029,7 +1029,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Applies the substitution to the body predicate `body0`.
       */
     private def apply(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Body.Atom(name, den, polarity, terms, tpe, loc) => Body.Atom(name, den, polarity, terms.map(apply), tpe, loc)
+      case Body.Atom(pred, den, polarity, terms, tpe, loc) => Body.Atom(pred, den, polarity, terms.map(apply), tpe, loc)
       case Body.Guard(exp, loc) => Body.Guard(apply(exp), loc)
     }
 

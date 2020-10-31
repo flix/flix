@@ -405,7 +405,7 @@ object SimplifiedAstOps {
       * Checks invariants of the given head predicate `h0`.
       */
     def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = h0 match {
-      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
@@ -421,7 +421,7 @@ object SimplifiedAstOps {
       * Checks invariants of the given body predicate `b0`.
       */
     def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = b0 match {
-      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }

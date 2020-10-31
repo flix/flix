@@ -371,9 +371,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the terms of the given head predicate `p0`.
       */
     def visitHeadPred(p0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = p0 match {
-      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         val ts = terms.map(visitHeadTerm(_, env0))
-        Predicate.Head.Atom(name, den, ts, tpe, loc)
+        Predicate.Head.Atom(pred, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
@@ -384,9 +384,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the terms of the given body predicate `p0`.
       */
     def visitBodyPred(p0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = p0 match {
-      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         val ts = terms.map(visitBodyTerm(_, env0))
-        Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(pred, den, polarity, ts, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp, env0)

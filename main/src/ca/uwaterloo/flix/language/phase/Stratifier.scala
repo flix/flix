@@ -648,7 +648,7 @@ object Stratifier extends Phase[Root, Root] {
     * Optionally returns the predicate symbol of the given head atom `head0`.
     */
   private def getPredicateSym(head0: Predicate.Head): Option[Name.Pred] = head0 match {
-    case Predicate.Head.Atom(ident, den, terms, tpe, loc) => Some(ident)
+    case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Some(pred)
     case Predicate.Head.Union(exp, tpe, loc) =>
       // NB: The situation is actually more complicated.
       // If the union expressions evaluates to predicate symbols A, B, C it could
@@ -660,9 +660,9 @@ object Stratifier extends Phase[Root, Root] {
     * Optionally returns a dependency edge of the right type for the given head symbol `head` and body predicate `body0`.
     */
   private def visitDependencyEdge(head: Name.Pred, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.Atom(ident, den, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, ident, loc))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, ident, loc))
+    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => polarity match {
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, pred, loc))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, pred, loc))
     }
 
     case Predicate.Body.Guard(exp, loc) => None
