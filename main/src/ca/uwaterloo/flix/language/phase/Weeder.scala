@@ -794,13 +794,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
       val (enum, tag) = asTag(qname)
 
-     expOpt match {
+      expOpt match {
         case None =>
           // Case 1: The tag does not have an expression. Nothing more to be done.
           WeededAst.Expression.Tag(enum, tag, None, mkSL(sp1, sp2)).toSuccess
         case Some(exp) =>
           // Case 2: The tag has an expression. Perform weeding on it.
-        mapN(visitExp(exp)) {
+          mapN(visitExp(exp)) {
             case e => WeededAst.Expression.Tag(enum, tag, Some(e), mkSL(sp1, sp2))
           }
       }
@@ -1449,14 +1449,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitExp)) {
-        case ts => WeededAst.Predicate.Head.Atom(ident, Denotation.Relational, ts, loc)
+        case ts => WeededAst.Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, ts, loc)
       }
 
     case ParsedAst.Predicate.Head.Atom(sp1, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitExp), visitExp(term)) {
-        case (ts, t) => WeededAst.Predicate.Head.Atom(ident, Denotation.Latticenal, ts ::: t :: Nil, loc)
+        case (ts, t) => WeededAst.Predicate.Head.Atom(Name.Pred(ident.name, mkSL(ident.sp1, ident.sp2)), Denotation.Latticenal, ts ::: t :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Head.Union(sp1, exp, sp2) =>
@@ -1474,7 +1474,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern)) {
         case ts =>
-          WeededAst.Predicate.Body.Atom(ident, Denotation.Relational, polarity, ts, loc)
+          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, ts, loc)
       }
 
     case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, Some(term), sp2) =>
@@ -1482,7 +1482,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern), visitPattern(term)) {
         case (ts, t) =>
-          WeededAst.Predicate.Body.Atom(ident, Denotation.Latticenal, polarity, ts ::: t :: Nil, loc)
+          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, ts ::: t :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>

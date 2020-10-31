@@ -275,7 +275,7 @@ object SimplifiedAst {
 
     object Head {
 
-      case class Atom(ident: Name.Ident, den: Denotation, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class Atom(pred: Name.Pred, den: Denotation, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
       case class Union(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
@@ -285,7 +285,7 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Guard(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 

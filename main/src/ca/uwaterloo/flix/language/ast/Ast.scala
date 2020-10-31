@@ -322,12 +322,12 @@ object Ast {
     /**
       * Represents a positive labelled edge.
       */
-    case class Positive(head: Name.Ident, body: Name.Ident, loc: SourceLocation) extends DependencyEdge
+    case class Positive(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
 
     /**
       * Represents a negative labelled edge.
       */
-    case class Negative(head: Name.Ident, body: Name.Ident, loc: SourceLocation) extends DependencyEdge
+    case class Negative(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
 
   }
 
@@ -358,7 +358,7 @@ object Ast {
     /**
       * Returns `this` dependency graph including only the edges where both the source and destination are in `syms`.
       */
-    def restrict(syms: Set[Name.Ident]): DependencyGraph =
+    def restrict(syms: Set[Name.Pred]): DependencyGraph =
       DependencyGraph(xs.filter {
         case DependencyEdge.Positive(x, y, _) => syms.contains(x) && syms.contains(y)
         case DependencyEdge.Negative(x, y, _) => syms.contains(x) && syms.contains(y)
@@ -375,7 +375,7 @@ object Ast {
   /**
     * Represents a stratification that maps every predicate symbol to its stratum.
     */
-  case class Stratification(m: Map[Name.Ident, Int])
+  case class Stratification(m: Map[Name.Pred, Int])
 
   /**
     * A hole context consists of a hole symbol and its type together with the local environment.

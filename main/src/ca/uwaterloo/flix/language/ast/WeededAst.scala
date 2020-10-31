@@ -57,6 +57,7 @@ object WeededAst {
   sealed trait Use
 
   object Use {
+
     case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
     case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
@@ -276,7 +277,7 @@ object WeededAst {
 
     object Head {
 
-      case class Atom(ident: Name.Ident, den: Denotation, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Atom(pred: Name.Pred, den: Denotation, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
       case class Union(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -286,7 +287,7 @@ object WeededAst {
 
     object Body {
 
-      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 

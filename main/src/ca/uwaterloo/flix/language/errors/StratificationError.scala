@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(cycle: List[(Name.Ident, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
+case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
   private implicit val audience: Audience = Audience.External
   def kind: String = "Stratification Error"
   def summary: String = "The expression is not stratified. A predicate depends negatively on itself."

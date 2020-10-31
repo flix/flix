@@ -21,7 +21,7 @@ object Name {
   /**
     * The root namespace.
     */
-  val RootNS = NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown)
+  val RootNS: NName = NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown)
 
   /**
     * Returns the given string `fqn` as a qualified name.
@@ -42,6 +42,11 @@ object Name {
     * Returns the given identifier `ident` as qualified name in the root namespace.
     */
   def mkQName(ident: Ident): QName = QName(ident.sp1, RootNS, ident, ident.sp2)
+
+  /**
+    * Returns the predicate obtained from the given identifier `ident`.
+    */
+  def mkPred(ident: Ident): Pred = Pred(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
 
   /**
     * Identifier.
@@ -179,6 +184,32 @@ object Name {
       * Human readable representation.
       */
     override def toString: String = if (isUnqualified) ident.toString else namespace.toString + "." + ident
+  }
+
+  /**
+    * The name of a predicate.
+    *
+    * @param name the name of the predicate.
+    * @param loc  the specific occurrence of the name.
+    */
+  case class Pred(name: String, loc: SourceLocation) {
+    /**
+      * Two predicate names are equal if their names are the same.
+      */
+    override def hashCode(): Int = name.hashCode
+
+    /**
+      * Two predicate names are equal if their names are the same.
+      */
+    override def equals(o: Any): Boolean = o match {
+      case that: Pred => this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = name
   }
 
 }

@@ -76,9 +76,9 @@ object Index {
   def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
 
   /**
-    * Returns an index with a use of the predicate `ident` with the given denotation `den` and type `tpe`.
+    * Returns an index with a use of the predicate `pred` with the given denotation `den` and type `tpe`.
     */
-  def useOf(ident: Name.Ident, den: Ast.Denotation, tpe: Type): Index = ??? // TODO
+  def useOf(ident: Name.Pred, den: Ast.Denotation, tpe: Type): Index = ??? // TODO
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`

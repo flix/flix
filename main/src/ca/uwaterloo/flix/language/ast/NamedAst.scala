@@ -275,7 +275,7 @@ object NamedAst {
 
     object Head {
 
-      case class Atom(ident: Name.Ident, den: Denotation, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Atom(pred: Name.Pred, den: Denotation, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
       case class Union(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
@@ -285,7 +285,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
