@@ -1201,7 +1201,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(visitExp(exp)) {
         case e =>
-          WeededAst.Expression.FixpointProject(ident, e, mkSL(sp1, sp2))
+          WeededAst.Expression.FixpointProject(Name.mkPred(ident), e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
@@ -1216,7 +1216,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(visitExp(init), visitExp(f), visitExp(constraints)) {
         case (e1, e2, e3) =>
-          WeededAst.Expression.FixpointFold(ident, e1, e2, e3, loc)
+          WeededAst.Expression.FixpointFold(Name.mkPred(ident), e1, e2, e3, loc)
       }
   }
 

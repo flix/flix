@@ -1303,7 +1303,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointProject(name, exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
         //
         //  exp1 : tpe    exp2 : #{ P : a  | b }
         //  -------------------------------------------
@@ -1315,8 +1315,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypeM(tpe, Type.mkSchemaExtend(Name.Pred(name, SourceLocation.Unknown), freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkSchemaExtend(Name.Pred(name, SourceLocation.Unknown), freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypeM(tpe, Type.mkSchemaExtend(pred, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchemaExtend(pred, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
@@ -1334,7 +1334,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tvar, loc) =>
         //
         // exp3 : #{P : a | c}    init : b   exp2 : a' -> b -> b
         // where a' is the tuple reification of relation a
@@ -1349,7 +1349,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (constrs2, fType, eff2) <- visitExp(exp2)
           (constrs3, constraintsType, eff3) <- visitExp(exp3)
           // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          constraintsType2 <- unifyTypeM(constraintsType, Type.mkSchemaExtend(Name.Pred(name, SourceLocation.Unknown), Type.Apply(freshPredicateNameTypeVar, tupleType), restRow), loc)
+          constraintsType2 <- unifyTypeM(constraintsType, Type.mkSchemaExtend(pred, Type.Apply(freshPredicateNameTypeVar, tupleType), restRow), loc)
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypeM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
           resultTyp <- unifyTypeM(tvar, initType, loc) // the result of the fold is the same type as init

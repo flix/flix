@@ -181,11 +181,11 @@ object ResolvedAst {
 
     case class FixpointSolve(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointProject(name: String, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointProject(pred: Name.Pred, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointEntails(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointFold(name: String, init: ResolvedAst.Expression, f: ResolvedAst.Expression, constraints: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointFold(pred: Name.Pred, init: ResolvedAst.Expression, f: ResolvedAst.Expression, constraints: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 

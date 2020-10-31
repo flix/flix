@@ -779,10 +779,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, loc)
 
-        case NamedAst.Expression.FixpointProject(ident, exp, tvar, loc) =>
+        case NamedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(ident.name, e, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointProject(pred, e, tvar, loc)
 
         case NamedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
           for {
@@ -790,12 +790,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, loc)
 
-        case NamedAst.Expression.FixpointFold(ident, exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
             e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.FixpointFold(ident.name, e1, e2, e3, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointFold(pred, e1, e2, e3, tvar, loc)
       }
 
       visit(exp0, Map.empty)
