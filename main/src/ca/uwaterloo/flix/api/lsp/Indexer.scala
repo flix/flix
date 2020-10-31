@@ -352,7 +352,7 @@ object Indexer {
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case Body.Atom(_, _, _, _, _, _) => Index.empty
+    case Body.Atom(_, _, _, terms, _, _) => visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
   }
 
