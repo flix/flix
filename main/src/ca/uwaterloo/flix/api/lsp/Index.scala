@@ -23,7 +23,7 @@ object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given case `case0`.
@@ -78,7 +78,7 @@ object Index {
   /**
     * Returns an index with a use of the predicate `pred` with the given denotation `den` and type `tpe`.
     */
-  def useOf(ident: Name.Pred, den: Ast.Denotation, tpe: Type): Index = ??? // TODO
+  def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -107,6 +107,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  tagUses: MultiMap[(Symbol.EnumSym, String), SourceLocation],
+                 predUses: MultiMap[Name.Pred, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
   /**
@@ -201,6 +202,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
       this.tagUses ++ that.tagUses,
+      this.predUses ++ that.predUses,
       this.varUses ++ that.varUses
     )
   }
