@@ -1327,7 +1327,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             r <- lookupType(rest, ns0, root)
             app <- mkApply(t, ts, loc)
             tpe <- Type.simplify(app).toSuccess[Type, ResolutionError]
-            schema <- mkSchemaExtend(qname.ident.name, tpe, r, loc)
+            schema <- mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
           } yield schema
       }
 
@@ -1336,7 +1336,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
         pred <- mkPredicate(den, ts, loc)
-        schema <- mkSchemaExtend(ident.name, pred, r, loc)
+        schema <- mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
 
     case NamedAst.Type.Relation(tpes, loc) =>
@@ -1826,8 +1826,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Creates a well-formed `SchemaExtend` type.
     */
-  private def mkSchemaExtend(name: String, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest), loc)
+  private def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred)), List(tpe, rest), loc)
   }
 
   /**

@@ -1315,8 +1315,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypeM(tpe, Type.mkSchemaExtend(name, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkSchemaExtend(name, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypeM(tpe, Type.mkSchemaExtend(Name.Pred(name, SourceLocation.Unknown), freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchemaExtend(Name.Pred(name, SourceLocation.Unknown), freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
@@ -1349,7 +1349,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (constrs2, fType, eff2) <- visitExp(exp2)
           (constrs3, constraintsType, eff3) <- visitExp(exp3)
           // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          constraintsType2 <- unifyTypeM(constraintsType, Type.mkSchemaExtend(name, Type.Apply(freshPredicateNameTypeVar, tupleType), restRow), loc)
+          constraintsType2 <- unifyTypeM(constraintsType, Type.mkSchemaExtend(Name.Pred(name, SourceLocation.Unknown), Type.Apply(freshPredicateNameTypeVar, tupleType), restRow), loc)
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypeM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
           resultTyp <- unifyTypeM(tvar, initType, loc) // the result of the fold is the same type as init
@@ -1925,7 +1925,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(pred.name, predicateType, restRow)
+      } yield Type.mkSchemaExtend(pred, predicateType, restRow)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
@@ -1967,7 +1967,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(pred.name, predicateType, restRow)
+      } yield Type.mkSchemaExtend(pred, predicateType, restRow)
 
     //
     //  exp : Bool

@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.FinalAst.Term.Head
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -821,7 +821,7 @@ object JvmOps {
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.mkRecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty
-    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
+    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2Type(rest))
   }
 
   // TODO: Remove

@@ -558,7 +558,7 @@ object Type {
   /**
     * Constructs a SchemaExtend type.
     */
-  def mkSchemaExtend(name: String, tpe: Type, rest: Type): Type = {
+  def mkSchemaExtend(name: Name.Pred, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
   }
 

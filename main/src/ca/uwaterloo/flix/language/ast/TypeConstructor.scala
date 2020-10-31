@@ -127,7 +127,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of extended schemas.
     */
-  case class SchemaExtend(name: String) extends TypeConstructor {
+  case class SchemaExtend(pred: Name.Pred) extends TypeConstructor {
     /**
       * The shape of an extended schema is { name: type | rest }
       */

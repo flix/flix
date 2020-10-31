@@ -601,7 +601,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.RecordExtend(label) => MonoType.RecordExtend(label, args.head, args(1))
 
-          case TypeConstructor.SchemaExtend(label) => MonoType.SchemaExtend(label, args.head, args(1))
+          case TypeConstructor.SchemaExtend(pred) => MonoType.SchemaExtend(pred.name, args.head, args(1))
 
           case TypeConstructor.True => MonoType.Unit
 

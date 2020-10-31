@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Kind, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Type}
 
 /**
   * A common super-type for unification errors.
@@ -74,13 +74,13 @@ object UnificationError {
   case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type) extends UnificationError
 
   /**
-    * An unification error due the predicate `sym` of type `predType` missing from the type `schemaType`.
+    * An unification error due the predicate `pred` of type `predType` missing from the type `schemaType`.
     *
-    * @param name       the name of the missing predicate.
+    * @param pred       the name of the missing predicate.
     * @param predType   the type of the missing predicate.
     * @param schemaType the schema type where the predicate is missing.
     */
-  case class UndefinedPredicate(name: String, predType: Type, schemaType: Type) extends UnificationError
+  case class UndefinedPredicate(pred: Name.Pred, predType: Type, schemaType: Type) extends UnificationError
 
   /**
     * An unification error due to an unexpected non-record type.
@@ -98,6 +98,7 @@ object UnificationError {
 
   /**
     * A unification error due to an mismatch in type variable kinds.
+    *
     * @param kind1 the first kind.
     * @param kind2 the second kind.
     */
