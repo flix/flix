@@ -558,8 +558,8 @@ object Type {
   /**
     * Constructs a SchemaExtend type.
     */
-  def mkSchemaExtend(name: Name.Pred, tpe: Type, rest: Type): Type = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest))
+  def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type): Type = {
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred)), List(tpe, rest))
   }
 
   /**
@@ -660,10 +660,10 @@ object Type {
         val t2 = eval(rest, subst)
         Type.mkRecordExtend(label, t1, t2)
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(sym)), tpe), rest) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred)), tpe), rest) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
-        Type.mkSchemaExtend(sym, t1, t2)
+        Type.mkSchemaExtend(pred, t1, t2)
 
       case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
 

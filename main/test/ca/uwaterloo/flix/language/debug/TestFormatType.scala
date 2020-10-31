@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualString}
 import org.scalatest.FunSuite
 
@@ -97,7 +97,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
   test("FormatWellFormedType.Schema.External.01") {
     val relationType = Type.mkRelation(Type.Int32 :: Type.Str :: Nil)
-    val tpe = Type.mkSchemaExtend("S", relationType, Type.SchemaEmpty)
+    val tpe = Type.mkSchemaExtend(Name.Pred("S", SourceLocation.Unknown), relationType, Type.SchemaEmpty)
 
     val expected = "#{ S(Int32, String) }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -110,7 +110,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
     val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
     restType.setText("theRest")
-    val tpe = Type.mkSchemaExtend("A", latticeType1, Type.mkSchemaExtend("B", latticeType2, restType))
+    val tpe = Type.mkSchemaExtend(Name.Pred("A", SourceLocation.Unknown), latticeType1, Type.mkSchemaExtend(Name.Pred("B", SourceLocation.Unknown), latticeType2, restType))
 
     val expected = "#{ A<>(String), B<>(Int32, String) | theRest }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -178,7 +178,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
   test("FormatWellFormedType.Schema.Internal.01") {
     val relationType = Type.mkRelation(List(Type.Int32, Type.Str))
-    val tpe = Type.mkSchemaExtend("S", relationType, Type.SchemaEmpty)
+    val tpe = Type.mkSchemaExtend(Name.Pred("S", SourceLocation.Unknown), relationType, Type.SchemaEmpty)
 
     val expected = "#{ S(Int32, String) }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -191,7 +191,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
     val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
     restType.setText("theRest")
-    val tpe = Type.mkSchemaExtend("A", latticeType1, Type.mkSchemaExtend("B", latticeType2, restType))
+    val tpe = Type.mkSchemaExtend(Name.Pred("A", SourceLocation.Unknown), latticeType1, Type.mkSchemaExtend(Name.Pred("B", SourceLocation.Unknown), latticeType2, restType))
 
     val expected = "#{ A<>(String), B<>(Int32, String) | '5 }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -242,7 +242,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Schema.External.01") {
-    val tpe = Type.Cst(TypeConstructor.SchemaExtend("X"))
+    val tpe = Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", SourceLocation.Unknown)))
 
     val expected = "#{ X?(???) }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -251,7 +251,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Schema.External.02") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.SchemaExtend("X")), Type.Int32)
+    val tpe = Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", SourceLocation.Unknown))), Type.Int32)
 
     val expected = "#{ X?(Int32) | ??? }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -260,7 +260,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   ignore("FormatIllFormedType.Schema.External.03") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.SchemaExtend("X")), List(Type.Int32, Type.Int32, Type.Str))
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", SourceLocation.Unknown))), List(Type.Int32, Type.Int32, Type.Str))
 
     val expected = "SchemaExtend(X)[Int32, Int32, String]"
     val actual = FormatType.formatType(tpe)(Audience.External)
