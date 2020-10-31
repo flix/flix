@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -74,6 +74,11 @@ object Index {
     * Returns an index with the symbol `sym` used at location `loc.`
     */
   def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with a use of the predicate `ident` with the given denotation `den` and type `tpe`.
+    */
+  def useOf(ident: Name.Ident, den: Ast.Denotation, tpe: Type): Index = ??? // TODO
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`

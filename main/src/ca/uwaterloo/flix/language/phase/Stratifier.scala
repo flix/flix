@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, SourcePosition, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -41,7 +41,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * A type alias for the stratification cache.
     */
-  type Cache = mutable.Map[Set[String], Ast.Stratification]
+  type Cache = mutable.Map[Set[Name.Ident], Ast.Stratification]
 
   /**
     * Returns a stratified version of the given AST `root`.
@@ -647,8 +647,8 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Optionally returns the predicate symbol of the given head atom `head0`.
     */
-  private def getPredicateSym(head0: Predicate.Head): Option[String] = head0 match {
-    case Predicate.Head.Atom(name, den, terms, tpe, loc) => Some(name)
+  private def getPredicateSym(head0: Predicate.Head): Option[Name.Ident] = head0 match {
+    case Predicate.Head.Atom(ident, den, terms, tpe, loc) => Some(ident)
     case Predicate.Head.Union(exp, tpe, loc) =>
       // NB: The situation is actually more complicated.
       // If the union expressions evaluates to predicate symbols A, B, C it could
@@ -659,10 +659,10 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Optionally returns a dependency edge of the right type for the given head symbol `head` and body predicate `body0`.
     */
-  private def visitDependencyEdge(head: String, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, name, loc))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, name, loc))
+  private def visitDependencyEdge(head: Name.Ident, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
+    case Predicate.Body.Atom(ident, den, polarity, terms, tpe, loc) => polarity match {
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, ident, loc))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, ident, loc))
     }
 
     case Predicate.Body.Guard(exp, loc) => None
@@ -714,7 +714,7 @@ object Stratifier extends Phase[Root, Root] {
     //
     // Any predicate symbol not explicitly in the map has a default value of zero.
     //
-    val stratumOf = mutable.Map.empty[String, Int]
+    val stratumOf = mutable.Map.empty[Name.Ident, Int]
 
     //
     // Compute the number of dependency edges.
@@ -779,9 +779,9 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: String, dst: String, g: DependencyGraph, loc: SourceLocation): List[(String, SourceLocation)] = {
+  private def findNegativeCycle(src: Name.Ident, dst: Name.Ident, g: DependencyGraph, loc: SourceLocation): List[(Name.Ident, SourceLocation)] = {
     // Computes a map from symbols to their successors.
-    val succ = mutable.Map.empty[String, Set[(String, SourceLocation)]]
+    val succ = mutable.Map.empty[Name.Ident, Set[(Name.Ident, SourceLocation)]]
     for (edge <- g.xs) {
       edge match {
         case DependencyEdge.Positive(head, body, loc) =>
@@ -796,13 +796,13 @@ object Stratifier extends Phase[Root, Root] {
     // We perform a DFS using recursion to find the cycle.
 
     // A map from symbols to their immediate predecessor in the DFS.
-    val pred = mutable.Map.empty[String, (String, SourceLocation)]
+    val pred = mutable.Map.empty[Name.Ident, (Name.Ident, SourceLocation)]
 
     // A set of previously seen symbols.
-    val seen = mutable.Set.empty[String]
+    val seen = mutable.Set.empty[Name.Ident]
 
     // Recursively visit the given symbol.
-    def visit(curr: String): Unit = {
+    def visit(curr: Name.Ident): Unit = {
       // Update the set of previously seen nodes.
       seen.add(curr)
 
@@ -819,7 +819,7 @@ object Stratifier extends Phase[Root, Root] {
     visit(dst)
 
     // Recursively constructs a path from `src` and backwards through the graph.
-    def unroll(curr: String): List[(String, SourceLocation)] = pred.get(curr) match {
+    def unroll(curr: Name.Ident): List[(Name.Ident, SourceLocation)] = pred.get(curr) match {
       case None => Nil
       case Some((prev, loc)) => (prev, loc) :: unroll(prev)
     }
@@ -859,8 +859,8 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns the set of predicate symbols that appears in the given row type `tpe`.
     */
-  private def predicateSymbolsOf(tpe: Type): Set[String] = tpe.typeConstructors.foldLeft(Set.empty[String]) {
-    case (acc, TypeConstructor.SchemaExtend(sym)) => acc + sym
+  private def predicateSymbolsOf(tpe: Type): Set[Name.Ident] = tpe.typeConstructors.foldLeft(Set.empty[Name.Ident]) {
+    case (acc, TypeConstructor.SchemaExtend(name)) => acc + Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
     case (acc, _) => acc
   }
 

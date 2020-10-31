@@ -67,6 +67,19 @@ object Name {
     def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
 
     /**
+      * Two identifiers are equal if they have the same name.
+      */
+    override def hashCode(): Int = name.hashCode
+
+    /**
+      * Two identifiers are equal if they have the same name.
+      */
+    override def equals(o: Any): Boolean = o match {
+      case that: Ident => this.name == that.name
+      case _ => false
+    }
+
+    /**
       * Human readable representation.
       */
     override def toString: String = name

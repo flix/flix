@@ -255,7 +255,7 @@ object ResolvedAst {
 
     object Head {
 
-      case class Atom(name: String, den: Denotation, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class Atom(ident: Name.Ident, den: Denotation, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
       case class Union(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
@@ -265,7 +265,7 @@ object ResolvedAst {
 
     object Body {
 
-      case class Atom(name: String, den: Denotation, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       case class Guard(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 

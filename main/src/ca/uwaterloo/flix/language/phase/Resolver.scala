@@ -881,7 +881,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Predicate.Head.Atom(ident, den, terms, tvar, loc) =>
           for {
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, root))
-          } yield ResolvedAst.Predicate.Head.Atom(ident.name, den, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(ident, den, ts, tvar, loc)
 
         case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
           for {
@@ -898,7 +898,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Predicate.Body.Atom(ident, den, polarity, terms, tvar, loc) =>
           for {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
-          } yield ResolvedAst.Predicate.Body.Atom(ident.name, den, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(ident, den, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {

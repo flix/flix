@@ -245,7 +245,7 @@ object FinalAst {
 
     object Head {
 
-      case class Atom(name: String, den: Denotation, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
+      case class Atom(ident: Name.Ident, den: Denotation, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
 
       case class Union(exp: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
 
@@ -255,7 +255,7 @@ object FinalAst {
 
     object Body {
 
-      case class Atom(name: String, den: Denotation, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Body
 
       case class Guard(exp: FinalAst.Expression, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 

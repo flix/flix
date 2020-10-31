@@ -1914,7 +1914,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Infers the type of the given head predicate.
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = head match {
-    case ResolvedAst.Predicate.Head.Atom(name, den, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(ident, den, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
       //  ------------------------------------------------------------
@@ -1924,8 +1924,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       for {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
-        predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(name, predicateType, restRow)
+        predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(ident.name, den, termTypes, root), loc)
+      } yield Type.mkSchemaExtend(ident.name, predicateType, restRow)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
@@ -1944,9 +1944,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, root: ResolvedAst.Root, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
-    case ResolvedAst.Predicate.Head.Atom(name, den0, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(ident, den0, terms, tvar, loc) =>
       val ts = terms.map(t => reassembleExp(t, root, subst0))
-      TypedAst.Predicate.Head.Atom(name, den0, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(ident, den0, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       val e = reassembleExp(exp, root, subst0)
@@ -1962,12 +1962,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     //  ------------------------------------------------------------
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
-    case ResolvedAst.Predicate.Body.Atom(name, den, polarity, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(ident, den, polarity, terms, tvar, loc) =>
       val restRow = Type.freshVar(Kind.Schema)
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
-        predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(name, predicateType, restRow)
+        predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(ident.name, den, termTypes, root), loc)
+      } yield Type.mkSchemaExtend(ident.name, predicateType, restRow)
 
     //
     //  exp : Bool
@@ -1987,9 +1987,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given body predicate `body0`.
     */
   private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-    case ResolvedAst.Predicate.Body.Atom(name, den0, polarity, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(ident, den0, polarity, terms, tvar, loc) =>
       val ts = terms.map(t => reassemblePattern(t, root, subst0))
-      TypedAst.Predicate.Body.Atom(name, den0, polarity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(ident, den0, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, root, subst0)

@@ -583,9 +583,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `head` predicate to the SimplifiedAst.
       */
     def visitHeadPred(head: TypedAst.Predicate.Head, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Head = head match {
-      case TypedAst.Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case TypedAst.Predicate.Head.Atom(ident, den, terms, tpe, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.Atom(name, den, ts, tpe, loc)
+        SimplifiedAst.Predicate.Head.Atom(ident, den, ts, tpe, loc)
 
       case TypedAst.Predicate.Head.Union(exp, tpe, loc) =>
         val e = newLambdaWrapper(cparams, exp, loc)
@@ -596,9 +596,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `body` predicate to the SimplifiedAst.
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
-      case TypedAst.Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case TypedAst.Predicate.Body.Atom(ident, den, polarity, terms, tpe, loc) =>
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
+        SimplifiedAst.Predicate.Body.Atom(ident, den, polarity, ts, tpe, loc)
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
         val e = newLambdaWrapper(cparams, exp, loc)
