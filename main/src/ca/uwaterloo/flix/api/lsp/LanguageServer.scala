@@ -23,7 +23,7 @@ import java.util.Date
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatCase, FormatDoc, FormatSignature, FormatType}
 import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
@@ -333,17 +333,23 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       highlight(write :: reads)
     }
 
-    def highlightVar(sym: Symbol.VarSym): JValue = {
+    def highlightPred(pred: Name.Pred): JValue = {
       // Find all occurrences of the symbol.
-      val write = (sym.loc, DocumentHighlightKind.Write)
-      val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-      highlight(write :: reads)
+      val uses = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
+      highlight(uses)
     }
 
     def highlightTag(sym: Symbol.EnumSym, tag: String): JValue = {
       // Find all occurrences of the symbol.
       val write = (sym.loc, DocumentHighlightKind.Write)
       val reads = index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
+      highlight(write :: reads)
+    }
+
+    def highlightVar(sym: Symbol.VarSym): JValue = {
+      // Find all occurrences of the symbol.
+      val write = (sym.loc, DocumentHighlightKind.Write)
+      val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
       highlight(write :: reads)
     }
 
@@ -361,6 +367,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case Pattern.Tag(sym, tag, _, _, _) => highlightTag(sym, tag)
         case _ => mkNotFound(requestId, uri, pos)
       }
+      case Some(Entity.Pred(pred)) => highlightPred(pred)
       case Some(Entity.FormalParam(fparam)) => highlightVar(fparam.sym)
       case Some(Entity.LocalVar(sym, _)) => highlightVar(sym)
       case _ => mkNotFound(requestId, uri, pos)

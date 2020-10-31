@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 
 sealed trait Entity {
   def loc: SourceLocation
@@ -44,6 +44,10 @@ object Entity {
   }
 
   case class Pattern(e: TypedAst.Pattern) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
+  case class Pred(e: Name.Pred) extends Entity {
     def loc: SourceLocation = e.loc
   }
 

@@ -135,7 +135,6 @@ case class Index(m: Map[(String, Int), List[Entity]],
     }
   }
 
-
   /**
     * Returns all uses of the given symbol `sym`.
     */
@@ -155,6 +154,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
+
+  /**
+    * Returns all uses of the given predicate `pred`.
+    */
+  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
 
   /**
     * Returns all uses of the given symbol `sym` and `tag`.
