@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Enum, Expression, FormalParam, MatchRule, ChoiceRule, Pattern, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Type, TypeConstructor}
 
 object Indexer {
 
@@ -43,7 +43,8 @@ object Indexer {
     val idx2 = def0.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    idx0 ++ idx1 ++ idx2
+    val idx3 = visitScheme(def0.declaredScheme, def0.loc)
+    idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -119,28 +120,28 @@ object Indexer {
       Index.of(exp0)
 
     case Expression.Lambda(fparam, exp, _, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) + exp0
+      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.of(exp0)
 
     case Expression.Apply(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps) + exp0
+      visitExp(exp) ++ visitExps(exps) ++ Index.of(exp0)
 
     case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
-      Index.of(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) + exp0
+      Index.of(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.of(exp0)
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Match(exp, rules, _, _, _) =>
-      val i0 = visitExp(exp) + exp0
+      val i0 = visitExp(exp) ++ Index.of(exp0)
       rules.foldLeft(i0) {
         case (index, MatchRule(pat, guard, exp)) => index ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
@@ -151,97 +152,97 @@ object Indexer {
       }
 
     case Expression.Tag(sym, tag, exp, _, _, loc) =>
-      visitExp(exp) + exp0 ++ Index.useOf(sym, tag, loc)
+      visitExp(exp) ++ Index.useOf(sym, tag, loc) ++ Index.of(exp0)
 
     case Expression.Tuple(exps, tpe, eff, loc) =>
-      visitExps(exps) + exp0
+      visitExps(exps) ++ Index.of(exp0)
 
     case Expression.RecordEmpty(tpe, loc) =>
       Index.of(exp0)
 
     case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.RecordRestrict(_, exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.ArrayLit(exps, _, _, _) =>
-      visitExps(exps) + exp0
+      visitExps(exps) ++ Index.of(exp0)
 
     case Expression.ArrayNew(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.ArrayLength(exp, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.ArrayStore(exp1, exp2, exp3, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.of(exp0)
 
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.of(exp0)
 
     case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.Deref(exp1, _, _, _) =>
-      visitExp(exp1) + exp0
+      visitExp(exp1) ++ Index.of(exp0)
 
     case Expression.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.Existential(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) + exp0
+      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.of(exp0)
 
     case Expression.Universal(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) + exp0
+      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.of(exp0)
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) + exp0
+      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) ++ Index.of(exp0)
 
     case Expression.Cast(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) + exp0
+      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) ++ Index.of(exp0)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
-      val i0 = visitExp(exp) + exp0
+      val i0 = visitExp(exp) ++ Index.of(exp0)
       rules.foldLeft(i0) {
         case (index, CatchRule(_, _, exp)) => index ++ visitExp(exp)
       }
 
     case Expression.InvokeConstructor(_, args, _, _, _) =>
-      visitExps(args) + exp0
+      visitExps(args) ++ Index.of(exp0)
 
     case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args) + exp0
+      visitExp(exp) ++ visitExps(args) ++ Index.of(exp0)
 
     case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-      visitExps(args) + exp0
+      visitExps(args) ++ Index.of(exp0)
 
     case Expression.GetField(_, exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.PutField(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.GetStaticField(_, _, _, _) =>
       Index.of(exp0)
 
     case Expression.PutStaticField(_, exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.NewChannel(exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.GetChannel(exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.PutChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
       val i0 = default.map(visitExp).getOrElse(Index.empty)
@@ -249,16 +250,16 @@ object Indexer {
         case (index, SelectChannelRule(sym, chan, body)) =>
           index ++ Index.of(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(chan)
       }
-      i0 ++ i1 + exp0
+      i0 ++ i1 ++ Index.of(exp0)
 
     case Expression.Spawn(exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.Lazy(exp, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.Force(exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(Index.empty) {
@@ -266,19 +267,19 @@ object Indexer {
       }
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.FixpointProject(_, exp, _, _, _) =>
-      visitExp(exp) + exp0
+      visitExp(exp) ++ Index.of(exp0)
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
     case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.of(exp0)
   }
 
   /**
@@ -322,15 +323,6 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given type `tpe0` at the given source location `loc`.
-    */
-  private def visitType(tpe0: Type, loc: SourceLocation): Index =
-    tpe0.typeConstructors.foldLeft(Index.empty) {
-      case (idx, TypeConstructor.Enum(sym, _)) => idx ++ Index.useOf(sym, loc)
-      case (idx, _) => idx
-    }
-
-  /**
     * Returns a reverse index for the given constraint `c0`.
     */
   private def visitConstraint(c0: Constraint): Index = {
@@ -344,7 +336,7 @@ object Indexer {
     * Returns a reverse index for the given head predicate `h0`.
     */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
-    case Head.Atom(_, _, terms, _, _) => visitExps(terms)
+    case a@Head.Atom(pred, den, terms, tpe, _) => Index.of(a) ++ Index.useOf(pred) ++ visitExps(terms)
     case Head.Union(exp, _, _) => visitExp(exp)
   }
 
@@ -352,7 +344,7 @@ object Indexer {
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case Body.Atom(_, _, _, _, _, _) => Index.empty
+    case b@Body.Atom(pred, den, _, terms, tpe, _) => Index.of(b) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
   }
 
@@ -362,5 +354,21 @@ object Indexer {
   private def visitFormalParam(fparam0: FormalParam): Index = {
     Index.of(fparam0) ++ visitType(fparam0.tpe, fparam0.loc)
   }
+
+
+  /**
+    * Returns a reverse index for the given type scheme `sc0` at the given source location `loc`.
+    */
+  private def visitScheme(sc0: Scheme, loc: SourceLocation): Index = visitType(sc0.base, loc)
+
+  /**
+    * Returns a reverse index for the given type `tpe0` at the given source location `loc`.
+    */
+  private def visitType(tpe0: Type, loc: SourceLocation): Index =
+    tpe0.typeConstructors.foldLeft(Index.empty) {
+      case (idx, TypeConstructor.Enum(sym, _)) => idx ++ Index.useOf(sym, loc)
+      case (idx, TypeConstructor.SchemaExtend(pred)) => idx ++ Index.useOf(pred)
+      case (idx, _) => idx
+    }
 
 }

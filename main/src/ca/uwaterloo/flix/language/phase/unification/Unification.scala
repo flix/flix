@@ -212,7 +212,7 @@ object Unification {
 
       case (Type.Cst(TypeConstructor.SchemaEmpty), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1)), fieldType1), _)) =>
         // Case 3: The `label` does not exist in the record.
-        Err(UnificationError.UndefinedLabel(label1, fieldType1, rewrittenRow))
+        Err(UnificationError.UndefinedPredicate(label1, fieldType1, rewrittenRow))
 
       case _ =>
         // Case 4: The type is not a row.

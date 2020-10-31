@@ -272,14 +272,14 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp, i0)
 
-      case Expression.FixpointProject(name, exp, tpe, loc) =>
+      case Expression.FixpointProject(pred, exp, tpe, loc) =>
         visitExp(exp, i0)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         val i2 = visitExp(exp2, i1)
         visitExp(exp3, i2)

@@ -1122,13 +1122,13 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
-    case Expression.FixpointProject(name, exp, tpe, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
       // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
-      newRelSym(name, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      newRelSym(pred.name, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1149,7 +1149,7 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.FixpointFold(name, init, f, constraints, tpe, loc) =>
+    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -2021,14 +2021,14 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
       den match {
-        case Denotation.Relational => newRelSym(name, mv)
-        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
+        case Denotation.Relational => newRelSym(pred.name, mv)
+        case Denotation.Latticenal => newLatSym(pred.name, terms.last.tpe, mv)
       }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
@@ -2059,14 +2059,14 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
       den match {
-        case Denotation.Relational => newRelSym(name, mv)
-        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
+        case Denotation.Relational => newRelSym(pred.name, mv)
+        case Denotation.Latticenal => newLatSym(pred.name, terms.last.tpe, mv)
       }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
@@ -2382,11 +2382,11 @@ object GenExpression {
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "<init>", "()V", false)
 
     // Add every predicate symbol with its stratum.
-    for ((name, stratum) <- stf.m) {
+    for ((ident, stratum) <- stf.m) {
       mv.visitInsn(DUP)
 
       // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
-      newRelSym(name, mv)
+      newRelSym(ident.name, mv)
 
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)

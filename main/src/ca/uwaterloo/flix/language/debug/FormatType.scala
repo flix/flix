@@ -155,11 +155,11 @@ object FormatType {
             case _ => formatApply(s"RecordExtend($label)", args)
           }
 
-          case TypeConstructor.SchemaExtend(name) => args.length match {
-            case 0 => s"#{ $name?(???) }"
-            case 1 => s"#{ ${formatSchemaField(name, args.head)} | ??? }"
+          case TypeConstructor.SchemaExtend(pred) => args.length match {
+            case 0 => s"#{ ${pred.name}?(???) }"
+            case 1 => s"#{ ${formatSchemaField(pred.name, args.head)} | ??? }"
             case 2 => formatWellFormedSchema(tpe)
-            case _ => formatApply(s"SchemaExtend($name)", args)
+            case _ => formatApply(s"SchemaExtend($pred)", args)
           }
 
           case TypeConstructor.Tuple(length) =>
@@ -326,8 +326,8 @@ object FormatType {
     * Convert a schema to a [[FlatNestable]].
     */
   private def flattenSchema(schema: Type): FlatNestable = schema match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label)), tpe), rest) =>
-      (label, tpe) :: flattenSchema(rest)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred)), tpe), rest) =>
+      (pred.name, tpe) :: flattenSchema(rest)
     case _ => FlatNestable(Nil, schema)
   }
 

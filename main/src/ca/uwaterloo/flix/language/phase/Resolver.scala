@@ -779,10 +779,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, loc)
 
-        case NamedAst.Expression.FixpointProject(ident, exp, tvar, loc) =>
+        case NamedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(ident.name, e, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointProject(pred, e, tvar, loc)
 
         case NamedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
           for {
@@ -790,12 +790,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, loc)
 
-        case NamedAst.Expression.FixpointFold(ident, exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
             e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.FixpointFold(ident.name, e1, e2, e3, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointFold(pred, e1, e2, e3, tvar, loc)
       }
 
       visit(exp0, Map.empty)
@@ -878,10 +878,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(ident, den, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
           for {
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, root))
-          } yield ResolvedAst.Predicate.Head.Atom(ident.name, den, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(pred, den, ts, tvar, loc)
 
         case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
           for {
@@ -895,10 +895,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(ident, den, polarity, terms, tvar, loc) =>
+        case NamedAst.Predicate.Body.Atom(pred, den, polarity, terms, tvar, loc) =>
           for {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
-          } yield ResolvedAst.Predicate.Body.Atom(ident.name, den, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {
@@ -1327,7 +1327,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             r <- lookupType(rest, ns0, root)
             app <- mkApply(t, ts, loc)
             tpe <- Type.simplify(app).toSuccess[Type, ResolutionError]
-            schema <- mkSchemaExtend(qname.ident.name, tpe, r, loc)
+            schema <- mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
           } yield schema
       }
 
@@ -1336,7 +1336,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
         pred <- mkPredicate(den, ts, loc)
-        schema <- mkSchemaExtend(ident.name, pred, r, loc)
+        schema <- mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
 
     case NamedAst.Type.Relation(tpes, loc) =>
@@ -1826,8 +1826,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Creates a well-formed `SchemaExtend` type.
     */
-  private def mkSchemaExtend(name: String, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest), loc)
+  private def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred)), List(tpe, rest), loc)
   }
 
   /**

@@ -333,20 +333,20 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointProject(name, e, tpe, eff, loc)
+        Expression.FixpointProject(pred, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
     }
 
     /**
@@ -363,7 +363,7 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given head predicate `h0`.
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
           getOrMkEq(term.tpe)
@@ -371,7 +371,7 @@ object Synthesize extends Phase[Root, Root] {
           getOrMkToString(term.tpe)
         }
         val ts = terms.map(visitExp)
-        Predicate.Head.Atom(name, den, ts, tpe, loc)
+        Predicate.Head.Atom(pred, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -382,14 +382,14 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
           getOrMkEq(term.tpe)
           getOrMkHash(term.tpe)
           getOrMkToString(term.tpe)
         }
-        Predicate.Body.Atom(name, den, polarity, terms, tpe, loc)
+        Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)

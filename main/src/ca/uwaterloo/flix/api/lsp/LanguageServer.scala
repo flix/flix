@@ -23,7 +23,7 @@ import java.util.Date
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatCase, FormatDoc, FormatSignature, FormatType}
 import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.tools.Tester.TestResult
@@ -316,10 +316,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a highlight request.
     */
   private def processHighlight(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    def highlightVar(sym: Symbol.VarSym): JValue = {
-      // Find all occurrences of the symbol.
-      val occurrences = (sym.loc, DocumentHighlightKind.Write) :: index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-
+    def highlight(occurrences: List[(SourceLocation, DocumentHighlightKind)]): JValue = {
       // Construct the highlights.
       val highlights = occurrences map {
         case (loc, kind) => DocumentHighlight(Range.from(loc), kind)
@@ -329,15 +326,48 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(highlights.map(_.toJSON)))
     }
 
+    def highlightDef(sym: Symbol.DefnSym): JValue = {
+      // Find all occurrences of the symbol.
+      val write = (sym.loc, DocumentHighlightKind.Write)
+      val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+      highlight(write :: reads)
+    }
+
+    def highlightPred(pred: Name.Pred): JValue = {
+      // Find all occurrences of the symbol.
+      val uses = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
+      highlight(uses)
+    }
+
+    def highlightTag(sym: Symbol.EnumSym, tag: String): JValue = {
+      // Find all occurrences of the symbol.
+      val write = (sym.loc, DocumentHighlightKind.Write)
+      val reads = index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
+      highlight(write :: reads)
+    }
+
+    def highlightVar(sym: Symbol.VarSym): JValue = {
+      // Find all occurrences of the symbol.
+      val write = (sym.loc, DocumentHighlightKind.Write)
+      val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+      highlight(write :: reads)
+    }
+
     index.query(uri, pos) match {
+      case Some(Entity.Case(caze)) => highlightTag(caze.sym, caze.tag.name)
+      case Some(Entity.Def(defn)) => highlightDef(defn.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => highlightVar(sym)
+        case Expression.Def(sym, _, _) => highlightDef(sym)
+        case Expression.Tag(sym, tag, _, _, _, _) => highlightTag(sym, tag)
         case _ => mkNotFound(requestId, uri, pos)
       }
       case Some(Entity.Pattern(pat)) => pat match {
         case Pattern.Var(sym, _, _) => highlightVar(sym)
+        case Pattern.Tag(sym, tag, _, _, _) => highlightTag(sym, tag)
         case _ => mkNotFound(requestId, uri, pos)
       }
+      case Some(Entity.Atom(pred)) => highlightPred(pred)
       case Some(Entity.FormalParam(fparam)) => highlightVar(fparam.sym)
       case Some(Entity.LocalVar(sym, _)) => highlightVar(sym)
       case _ => mkNotFound(requestId, uri, pos)
@@ -552,7 +582,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     def renameVar(sym: Symbol.VarSym): JValue = rename(sym.loc :: index.usesOf(sym).toList)
 
+    def renamePred(pred: Name.Pred): JValue = rename(index.usesOf(pred).toList)
+
     index.query(uri, pos) match {
+      case Some(Entity.Atom(pred)) => renamePred(pred)
       case Some(Entity.Def(defn)) => renameDef(defn.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => renameVar(sym)
@@ -709,6 +742,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processUses(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
+
+      case Some(Entity.Atom(pred)) =>
+        val uses = index.usesOf(pred)
+        val locs = uses.toList.map(Location.from)
+        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
       case Some(Entity.Case(caze)) =>
         val uses = index.usesOf(caze.sym, caze.tag.name)

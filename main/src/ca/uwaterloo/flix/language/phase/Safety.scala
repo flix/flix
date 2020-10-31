@@ -216,11 +216,11 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointProject(name, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
   }
 
@@ -251,7 +251,7 @@ object Safety extends Phase[Root, Root] {
     * with the given positively defined variable symbols `posVars`.
     */
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
-    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
 
     case Predicate.Body.Guard(exp, loc) => visitExp(exp)
@@ -283,7 +283,7 @@ object Safety extends Phase[Root, Root] {
     * Returns all positively defined variable symbols in the given body predicate `p0`.
     */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) => polarity match {
+    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
         terms.flatMap(freeVarsOf).toSet
