@@ -1724,10 +1724,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.FixpointSolve(e, Stratification.Empty, tpe, eff, loc)
 
-      case ResolvedAst.Expression.FixpointProject(name, exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.FixpointProject(name, e, subst0(tvar), eff, loc)
+        TypedAst.Expression.FixpointProject(pred, e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
@@ -1736,12 +1736,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.FixpointFold(name, init, f, constraints, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, loc) =>
         val e1 = visitExp(init, subst0)
         val e2 = visitExp(f, subst0)
         val e3 = visitExp(constraints, subst0)
         val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
-        TypedAst.Expression.FixpointFold(name, e1, e2, e3, subst0(tvar), eff, loc)
+        TypedAst.Expression.FixpointFold(pred, e1, e2, e3, subst0(tvar), eff, loc)
     }
 
     /**

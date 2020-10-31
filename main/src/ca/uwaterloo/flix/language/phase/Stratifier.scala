@@ -388,18 +388,18 @@ object Stratifier extends Phase[Root, Root] {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProject(name, e, tpe, eff, loc)
+        case e => Expression.FixpointProject(pred, e, tpe, eff, loc)
       }
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.FixpointEntails(e1, e2, tpe, eff, loc)
       }
-    case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
+        case (e1, e2, e3) => Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
       }
   }
 

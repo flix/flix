@@ -528,13 +528,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
-    case (Expression.FixpointProject(name1, exp1, _, _, _), Expression.FixpointProject(name2, exp2, _, _, _)) if name1 == name2 =>
+    case (Expression.FixpointProject(pred1, exp1, _, _, _), Expression.FixpointProject(pred2, exp2, _, _, _)) if pred1 == pred2 =>
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    case (Expression.FixpointFold(name1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(name2, exp21, exp22, exp23, _, _, _)) if name1 == name2 =>
+    case (Expression.FixpointFold(pred1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(pred2, exp21, exp22, exp23, _, _, _)) if pred1 == pred2 =>
       unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case _ => None
@@ -932,20 +932,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.FixpointProject(name, e, tpe, eff, loc)
+        Expression.FixpointProject(pred, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         val e3 = apply(exp3)
-        Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

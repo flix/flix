@@ -349,7 +349,7 @@ object SimplifiedAstOps {
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      case Expression.FixpointProject(name, exp, tpe, loc) =>
+      case Expression.FixpointProject(_, exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
@@ -358,7 +358,7 @@ object SimplifiedAstOps {
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkExp(exp3, env0, ienv0)

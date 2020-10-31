@@ -224,13 +224,13 @@ object TypedAstOps {
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(_, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
     }
 
