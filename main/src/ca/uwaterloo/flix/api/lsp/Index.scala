@@ -56,6 +56,16 @@ object Index {
   def of(pat0: Pattern): Index = empty + Entity.Pattern(pat0)
 
   /**
+    * Returns an index for the given atom `a0`.
+    */
+  def of(a0: Predicate.Head.Atom): Index = empty + Entity.Atom(a0.pred)
+
+  /**
+    * Returns an index for the given atom `a0`.
+    */
+  def of(b0: Predicate.Body.Atom): Index = empty + Entity.Atom(b0.pred)
+
+  /**
     * Returns an index for the given local variable definition `sym0`.
     */
   def of(sym0: Symbol.VarSym, tpe0: Type): Index = empty + Entity.LocalVar(sym0, tpe0)

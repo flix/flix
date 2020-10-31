@@ -367,7 +367,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case Pattern.Tag(sym, tag, _, _, _) => highlightTag(sym, tag)
         case _ => mkNotFound(requestId, uri, pos)
       }
-      case Some(Entity.Pred(pred)) => highlightPred(pred)
+      case Some(Entity.Atom(pred)) => highlightPred(pred)
       case Some(Entity.FormalParam(fparam)) => highlightVar(fparam.sym)
       case Some(Entity.LocalVar(sym, _)) => highlightVar(sym)
       case _ => mkNotFound(requestId, uri, pos)

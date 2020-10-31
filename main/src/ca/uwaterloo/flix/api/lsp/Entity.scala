@@ -47,7 +47,7 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
-  case class Pred(e: Name.Pred) extends Entity {
+  case class Atom(e: Name.Pred) extends Entity {
     def loc: SourceLocation = e.loc
   }
 
