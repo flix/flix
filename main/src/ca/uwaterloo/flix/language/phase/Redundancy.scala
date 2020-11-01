@@ -211,7 +211,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Def(sym, _, _) => Used.of(sym)
 
-    case Expression.Sig(sym, _, _) => Used.of(sym)
+    case Expression.Sig(sym, _, _) => Used.empty
 
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
@@ -704,11 +704,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
 
     /**
-      * Returns an object where the given sig symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.SigSym): Used = empty.copy(sigSyms = Set(sym))
-
-    /**
       * Returns an object where the given hole symbol `sym` is marked as used.
       */
     def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = Set(sym))
@@ -725,7 +720,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
                           defSyms: Set[Symbol.DefnSym],
-                          sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           unconditionallyRecurses: Boolean,
@@ -745,7 +739,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses && that.unconditionallyRecurses,
@@ -767,7 +760,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses || that.unconditionallyRecurses,
