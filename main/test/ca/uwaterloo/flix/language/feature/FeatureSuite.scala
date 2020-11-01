@@ -50,7 +50,6 @@ class FeatureSuite extends Suites(
 
   new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.IfThenElse", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.Infix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Infix.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.Let", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Let.flix")(Options.TestWithLibrary),
   new FlixTest("TestTailCallElimination", "main/test/ca/uwaterloo/flix/language/feature/TestTailCallElimination.flix")(Options.TestWithLibrary),
 
