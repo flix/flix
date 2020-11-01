@@ -139,8 +139,6 @@ object SimplifiedAst {
 
     case class Index(base: SimplifiedAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class IndexMut(base: SimplifiedAst.Expression, offset: scala.Int, toInsert: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

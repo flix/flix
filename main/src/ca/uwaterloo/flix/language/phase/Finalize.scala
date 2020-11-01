@@ -229,6 +229,12 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Index(b, offset, t, loc)
 
+      case LiftedAst.Expression.IndexMut(base, offset, toInsert, tpe, loc) =>
+        val b = visit(base)
+        val ti = visit(toInsert)
+        val t = visitType(tpe)
+        FinalAst.Expression.IndexMut(b, offset, ti, t, loc)
+
       case LiftedAst.Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visit
         val t = visitType(tpe)
