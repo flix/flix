@@ -111,6 +111,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
 
   //
+  // Postfix.
+  //
+  new FlixTest("Test.Exp.Postfix", "main/test/flix/Test.Exp.Postfix.flix"),
+
+  //
   // Record.
   //
   new FlixTest("Test.Exp.Record.Polymorphism", "main/test/flix/Test.Exp.Record.Polymorphism.flix"),

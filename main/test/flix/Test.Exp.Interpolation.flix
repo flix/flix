@@ -69,29 +69,29 @@ namespace Test/Exp/Interpolation {
         let x = "a";
         let y = "b";
         let z = "c";
-        "${String.toUpperCase(x)}${y}${z}" == "Abc"
+        "${toUpperCase(x)}${y}${z}" == "Abc"
 
     @test
     def interpolation13(): Bool =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${x}${String.toUpperCase(y)}${z}" == "aBc"
+        "${x}${toUpperCase(y)}${z}" == "aBc"
 
     @test
     def interpolation14(): Bool =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${x}${y}${String.toUpperCase(z)}" == "abC"
+        "${x}${y}${toUpperCase(z)}" == "abC"
 
     @test
     def interpolation15(): Bool =
-        "${String.toUpperCase("w")}" == "W"
+        "${toUpperCase("w")}" == "W"
 
     @test
     def interpolation16(): Bool =
-        "${String.toLowerCase("W")}" == "w"
+        "${toLowerCase("W")}" == "w"
 
     @test
     def interpolation17(): Bool =
@@ -110,5 +110,13 @@ namespace Test/Exp/Interpolation {
     def interpolation20(): Bool =
         let x = "a";
         "$${x}$" == "$a$"
+
+    def toLowerCase(s: String): String =
+        import java.lang.String.toLowerCase();
+        s.toUpperCase() as & Pure
+
+    def toUpperCase(s: String): String =
+        import java.lang.String.toUpperCase();
+        s.toUpperCase() as & Pure
 
 }

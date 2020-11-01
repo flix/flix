@@ -131,6 +131,8 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Reference.Deref.flix", LocalResource.get("/test/flix/Test.Exp.Reference.Deref.flix"))
     flix.addInput("Test.Exp.Reference.Precedence.flix", LocalResource.get("/test/flix/Test.Exp.Reference.Precedence.flix"))
     flix.addInput("Test.Exp.Reference.Ref.flix", LocalResource.get("/test/flix/Test.Exp.Reference.Ref.flix"))
+    flix.addInput("Test.Exp.Null.flix", LocalResource.get("/test/flix/Test.Exp.Null.flix"))
+    flix.addInput("Test.Exp.Postfix.flix", LocalResource.get("/test/flix/Test.Exp.Postfix.flix"))
     flix.addInput("Test.Exp.Record.Polymorphism.flix", LocalResource.get("/test/flix/Test.Exp.Record.Polymorphism.flix"))
     flix.addInput("Test.Exp.Stm.flix", LocalResource.get("/test/flix/Test.Exp.Stm.flix"))
     flix.addInput("Test.Exp.Tag.flix", LocalResource.get("/test/flix/Test.Exp.Tag.flix"))
