@@ -55,8 +55,6 @@ class FeatureSuite extends Suites(
 
   new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix")(Options.TestWithLibrary),
 
-  new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix")(Options.TestWithLibrary),
-
   //
   // Declarations.
   //
