@@ -51,6 +51,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix")(Options.TestWithLibrary),
 
   //
+  // Char.
+  //
+  new FlixTest("Test.Exp.Char", "main/test/flix/Test.Exp.Char.flix"),
+
+  //
   // Choose.
   //
   new FlixTest("Test.Exp.Choose", "main/test/flix/Test.Exp.Choose.flix")(Options.TestWithLibrary),
