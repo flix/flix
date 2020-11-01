@@ -118,6 +118,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Concurrency.Unbuffered.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.Unbuffered.flix"))
     flix.addInput("Test.Exp.Concurrency.Spawn.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.Spawn.flix"))
     flix.addInput("Test.Exp.Hole.flix", LocalResource.get("/test/flix/Test.Exp.Hole.flix"))
+    flix.addInput("Test.Exp.Interpolation.flix", LocalResource.get("/test/flix/Test.Exp.Interpolation.flix"))
     flix.addInput("Test.Exp.Jvm.GetField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"))
     flix.addInput("Test.Exp.Jvm.GetStaticField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticField.flix"))
     flix.addInput("Test.Exp.Jvm.InvokeConstructor.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"))

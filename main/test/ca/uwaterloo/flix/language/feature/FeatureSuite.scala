@@ -49,8 +49,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Str", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Str.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Def.flix")(Options.TestWithLibrary),
 
-  new FlixTest("Test.Expression.Interpolation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Interpolation.flix")(Options.TestWithLibrary),
-
   new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.IfThenElse", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.Infix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Infix.flix")(Options.TestWithLibrary),
