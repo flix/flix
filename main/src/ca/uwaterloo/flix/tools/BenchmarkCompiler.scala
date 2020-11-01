@@ -149,8 +149,6 @@ object BenchmarkCompiler {
     flix.addInput("Test.Expression.Record.Literal.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix"))
     flix.addInput("Test.Expression.Record.Multiple.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix"))
     flix.addInput("Test.Expression.Record.Restrict.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix"))
-    flix.addInput("Test.Expression.Record.Select.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix"))
-    flix.addInput("Test.Expression.Record.Update.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix"))
   }
 
   /**
