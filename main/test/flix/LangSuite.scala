@@ -129,6 +129,7 @@ class LangSuite extends Suites(
   // Record.
   //
   new FlixTest("Test.Exp.Record.Polymorphism", "main/test/flix/Test.Exp.Record.Polymorphism.flix"),
+  new FlixTest("Test.Exp.Record.Select", "main/test/flix/Test.Exp.Record.Select.flix"),
   new FlixTest("Test.Exp.Record.Update", "main/test/flix/Test.Exp.Record.Update.flix"),
 
   //
@@ -172,7 +173,6 @@ class LangSuite extends Suites(
   // Stratified Negation.
   //
   new FlixTest("Test.Stratification", "main/test/flix/Test.Stratification.flix"),
-
 
   //
   // Term.
