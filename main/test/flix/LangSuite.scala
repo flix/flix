@@ -129,6 +129,7 @@ class LangSuite extends Suites(
   // Record.
   //
   new FlixTest("Test.Exp.Record.Polymorphism", "main/test/flix/Test.Exp.Record.Polymorphism.flix"),
+  new FlixTest("Test.Exp.Record.Update", "main/test/flix/Test.Exp.Record.Update.flix"),
 
   //
   // Reference.
