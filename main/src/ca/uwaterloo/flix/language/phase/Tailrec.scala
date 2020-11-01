@@ -36,6 +36,7 @@ object Tailrec extends Phase[Root, Root] {
     * Identifies tail recursive calls in the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Tailrec") {
+    println("__________________Before TailRec____________________________________")
     println(PrettyPrinter.Lifted.fmtRoot(root).fmt(TerminalContext.AnsiTerminal))
     //
     // Check if tail call elimination is enabled.
@@ -50,8 +51,9 @@ object Tailrec extends Phase[Root, Root] {
       case (sym, defn) => sym -> tailrec(defn)
     }
     //root.copy(defs = defns).toSuccess
+
     val newRoot = root.copy(defs = defns)
-    println("__________________-----____________________________________")
+    println("__________________After TailRec____________________________________")
     println(PrettyPrinter.Lifted.fmtRoot(newRoot).fmt(TerminalContext.AnsiTerminal))
     newRoot.toSuccess
   }
@@ -120,6 +122,20 @@ object Tailrec extends Phase[Root, Root] {
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
+      case Expression.Tag(sym, tag, exp, tpe, loc) =>
+        // First check that `exp` is a Tuple
+        if (tag == "Cons") {
+          println(exp.getClass)
+        }
+        if (exp.getClass.getName == Expression.Tuple.getClass.getName) {
+          // Then we need to make sure that the `tag` is Cons
+          if (tag == "Cons") {
+            println(sym)
+            println(tag)
+          }
+        }
+
+        exp0
       /*
        * Other expression: No calls in tail position.
        */
