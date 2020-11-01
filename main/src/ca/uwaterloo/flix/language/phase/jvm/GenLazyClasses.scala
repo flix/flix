@@ -38,7 +38,7 @@ object GenLazyClasses {
         val fullType = JvmOps.getLazyClassType(tpe)
         val jvmName = fullType.name
         val lambdaType = MonoType.Arrow(List(MonoType.Unit), valueType)
-        val bytecode = genByteCode(fullType, lambdaType, JvmOps.getErasedJvmType(valueType))
+        val bytecode = genByteCode(fullType, lambdaType, valueType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, tpe) =>
         // Case 2: The type constructor is a non-tuple.
@@ -50,7 +50,7 @@ object GenLazyClasses {
   /**
    * TODO: make documentation
    */
-  private def genByteCode(classType: JvmType.Reference, lambdaType: MonoType, valueType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, lambdaType: MonoType, valueType: MonoType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -68,11 +68,11 @@ object GenLazyClasses {
 
     AsmOps.compileField(visitor, "initialized", JvmType.PrimBool, isStatic = false, isPrivate = true)
     AsmOps.compileField(visitor, "expression", erasedLambdaType, isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, "value", valueType, isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, "value", JvmOps.getErasedJvmType(valueType), isStatic = false, isPrivate = true)
     compileGetValueMethod(visitor, classType, valueType)
 
     // Emit the code for the constructor
-    compileLazyConstructor(visitor, classType, valueType, erasedLambdaType)
+    compileLazyConstructor(visitor, classType, erasedLambdaType)
 
 
     // TODO: Should these be supported?
@@ -95,11 +95,14 @@ object GenLazyClasses {
   /**
    * TODO: make documentation
    */
-  private def compileGetValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType)(implicit root: Root, flix: Flix): Unit = {
-    // header of the method
-    val returnDescription = AsmOps.getMethodDescriptor(List(), valueType)
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getValue", returnDescription, null, null)
+  private def compileGetValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+    val erasedValueType = JvmOps.getErasedJvmType(valueType)
+    val erasedValueTypeDescriptor = erasedValueType.toDescriptor
+    val internalClassType = classType.name.toInternalName
 
+    // header of the method
+    val returnDescription = AsmOps.getMethodDescriptor(List(), erasedValueType)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getValue", returnDescription, null, null)
     method.visitCode()
 
     /*
@@ -110,11 +113,16 @@ object GenLazyClasses {
     return this.value
      */
 
-    // TODO: conditionally run value = expression()
+    // TODO: Only do this conditionally and set initialized=false
+    method.visitVarInsn(ALOAD, 0)
+    method.visitInsn(DUP)
+    method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.name.toInternalName)
+    AsmOps.compileClosureApplication(method, MonoType.Arrow(List(MonoType.Unit), valueType), Nil, valueType)
+    method.visitFieldInsn(PUTFIELD, internalClassType, "value", erasedValueTypeDescriptor)
 
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, classType.name.toInternalName, "value", valueType.toDescriptor)
-    method.visitInsn(AsmOps.getReturnInstruction(valueType))
+    method.visitFieldInsn(GETFIELD, internalClassType, "value", erasedValueTypeDescriptor)
+    method.visitInsn(AsmOps.getReturnInstruction(erasedValueType))
 
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     method.visitMaxs(1, 1)
@@ -124,7 +132,7 @@ object GenLazyClasses {
   /**
    * TODO: make documentation
    */
-  def compileLazyConstructor(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType, erasedLambdaType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  def compileLazyConstructor(visitor: ClassWriter, classType: JvmType.Reference, erasedLambdaType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(erasedLambdaType), JvmType.Void), null, null)
 
@@ -133,14 +141,6 @@ object GenLazyClasses {
 
     // Call the super (java.lang.Object) constructor
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-
-    /*
-    Lazy$<valueType>(exp: () -> T) =
-      // this.value uninitialized
-      this.initialized = false
-      this.expression = exp
-      return
-     */
 
     // this.uninitialized = false
     constructor.visitVarInsn(ALOAD, 0)
