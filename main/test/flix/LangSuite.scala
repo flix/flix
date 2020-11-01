@@ -135,6 +135,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Tag.Lambda", "main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibrary),
 
   //
+  // Unit.
+  //
+  new FlixTest("Test.Exp.Unit", "main/test/flix/Test.Exp.Unit.flix"),
+
+  //
   // Stm.
   //
   new FlixTest("Test.Exp.Stm", "main/test/flix/Test.Exp.Stm.flix"),

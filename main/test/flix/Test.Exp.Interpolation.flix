@@ -113,7 +113,7 @@ namespace Test/Exp/Interpolation {
 
     def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
-        s.toUpperCase() as & Pure
+        s.toLowerCase() as & Pure
 
     def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase();
