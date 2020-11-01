@@ -1724,4 +1724,44 @@ def query09(): Bool =
 def query10(): Bool =
     Map.query(x -> if (x < 4) LessThan else if (x > 4) GreaterThan else Equal, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (4, 5) :: Nil
 
+@test
+def query11(): Bool =
+    let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
+    Map.query(x -> if (fst(x) < 1) LessThan else if (fst(x) > 1) GreaterThan else Equal, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
+
+@test
+def query12(): Bool =
+    let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
+    Map.query(x -> if (fst(x) < 3) LessThan else if (fst(x) > 3) GreaterThan else Equal, m) == ((3, 1), 5) :: Nil
+
+@test
+def query13(): Bool =
+    let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
+    Map.query(x -> if (fst(x) > 2) GreaterThan else Equal, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
+
+@test
+def query14(): Bool =
+    let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
+    Map.query(x -> if (fst(x) < 2) LessThan else Equal, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+
+@test
+def query15(): Bool =
+    let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
+    Map.query(x -> if (x <=> (2, 2) > 0) GreaterThan else Equal, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
+
+@test
+def query16(): Bool =
+    let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
+    Map.query(x -> if (x <=> (2, 2) < 0) LessThan else Equal, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+
+@test
+def query17(): Bool =
+    let m = Map#{(1, 2, 2) -> 0, (1, 2, 3) -> 1, (1, 2, 4) -> 2, (2, 2, 4) -> 3};
+    Map.query(x -> if (x <=> (1, 2, 3) < 0) LessThan else Equal, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
+
+@test
+def query18(): Bool =
+    let m = Map#{(1, 2, 2) -> 0, (1, 2, 3) -> 1, (1, 2, 4) -> 2, (2, 2, 4) -> 3};
+    Map.query(x -> if (x <=> (1, 2, 3) > 0) GreaterThan else Equal, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
+
 }

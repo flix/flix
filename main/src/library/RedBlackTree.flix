@@ -403,16 +403,25 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def queryWith(p: k -> Ordering & e, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & e = {
+    pub def queryWith(p: k -> Ordering & e, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & e =
+        let buffer = MutList.new() as & e;
+        queryWithHelper(p, f, buffer, tree) as & e;
+        MutList.foldRight((x, acc) -> x :: acc, Nil, buffer) as & e
+
+    pub def queryWithHelper(p: k -> Ordering & e, f: (k, v) -> a, buffer: MutList[a], tree: RedBlackTree[k, v]): Unit & Impure = {
         use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
         match tree {
             case Node(_, a, k, v, b) =>
                 match p(k) {
-                    case LessThan => queryWith(p, f, b)
-                    case Equal => queryWith(p, f, a) ::: f(k, v) :: queryWith(p, f, b)
-                    case GreaterThan => queryWith(p, f, a)
+                    case LessThan => queryWithHelper(p, f, buffer, b)
+                    case Equal => {
+                        queryWithHelper(p, f, buffer, a);
+                        MutList.push!(f(k, v), buffer);
+                        queryWithHelper(p, f, buffer, b)
+                    }
+                    case GreaterThan => queryWithHelper(p, f, buffer, a)
                 }
-            case _ => Nil
+            case _ => ()
         }
     }
 

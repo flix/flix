@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Core/Cmp.Ordering;
+
 ///
 /// The Mutable Set type.
 ///
@@ -300,6 +302,15 @@ namespace MutSet {
     pub def foreach(f: a ~> Unit, s: MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         Set.foreach(f, deref ms)
+
+    ///
+    /// Extracts a range of elements from the set `s`.
+    ///
+    /// That is, the result is a list of all elements `x` where `p(x)` returns `Equal`.
+    ///
+    pub def query(p: a -> Ordering, s: MutSet[a]): List[a] & Impure =
+        let MutSet(ms) = s;
+        Set.query(p, deref ms)
 
     ///
     /// Returns `true` if and only if the mutable sets `s1` and `s2` are equal, i.e. they have the same elements.
