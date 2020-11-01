@@ -308,7 +308,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     //
     // Compute all code lenses.
     //
-    val allCodeLenses = mkCodeLensForMain() ::: mkCodeLensesForUnitTests()
+    val allCodeLenses = mkCodeLensForMain() :: Nil
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
   }
 
