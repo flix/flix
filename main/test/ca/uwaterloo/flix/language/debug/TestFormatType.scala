@@ -232,15 +232,6 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatIllFormedType.Record.External.03") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.RecordExtend("x")), List(Type.Int32, Type.Int32, Type.Str))
-
-    val expected = "RecordExtend(x)[Int32, Int32, String]"
-    val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
   test("FormatIllFormedType.Schema.External.01") {
     val tpe = Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", SourceLocation.Unknown)))
 
@@ -272,15 +263,6 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2)), List(Type.Str))
 
     val expected = "(String, ???)"
-    val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
-  ignore("FormatIllFormedType.Tuple.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2)), List(Type.Str, Type.Int32, Type.Float32))
-
-    val expected = "(String, Int32)[Float32]"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -322,16 +304,6 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatIllFormedType.Effect.External.05") {
-    val tpe = Type.mkApply(Type.And, List(Type.Pure, Type.Impure, Type.Impure))
-
-    val expected = "∧[Pure, Impure, Impure]"
-    val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
-
   test("FormatIllFormedType.Effect.External.06") {
     val tpe = Type.Or
 
@@ -350,15 +322,6 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatIllFormedType.Effect.External.08") {
-    val tpe = Type.mkApply(Type.Or, List(Type.Pure, Type.Impure, Type.Impure))
-
-    val expected = "∨[Pure, Impure, Impure]"
-    val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
   test("FormatIllFormedType.Arrow.External.01") {
     val tpe = Type.Apply(Type.Cst(TypeConstructor.Arrow(2)), Type.Pure)
 
@@ -372,17 +335,6 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3)), List(Type.Impure, Type.Str))
 
     val expected = "String -> ??? ~> ???"
-    val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
-  ignore("FormatIllFormedType.Arrow.External.03") {
-    val eff = Type.Var(0, Kind.Bool, Rigidity.Flexible)
-    eff.setText("e")
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2)), List(eff, Type.Str, Type.Float32, Type.Int8))
-
-    val expected = "(String -> Float32 & e)[Int8]"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
