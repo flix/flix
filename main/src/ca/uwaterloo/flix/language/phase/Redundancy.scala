@@ -211,7 +211,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Def(sym, _, _) => Used.of(sym)
 
-    case Expression.Sig(sym, _, _) => Used.of(sym)
+    case Expression.Sig(sym, _, _) => Used.empty
 
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
@@ -232,9 +232,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         innerUsed and shadowedVar - fparam.sym
 
-    case Expression.Apply(defn@Expression.Def(sym, _, _), exps, _, _, _)
-      if env0.recursionContext.isRecursiveCall(sym, exps.length) =>
-      val us1 = visitExp(defn, env0)
+    case Expression.Apply(defn@Expression.Def(sym, _, _), exps, _, _, _) if env0.recursionContext.isRecursiveCall(sym, exps.length) =>
+      // Check for unconditional recursion.
+      // NB: A function that calls itself recursively is not used.
+      val us1 = Used.empty
       val us2 = visitExps(exps, env0)
       (us1 and us2).withUnconditionalRecursion
 
@@ -297,34 +298,45 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           // Extend the environment with the free variables.
           val extendedEnv = env0 ++ fvs
 
-          // Visit the guard and body.
+          // Visit the pattern, guard and body.
+          val usedPat = visitPat(pat)
           val usedGuard = visitExp(guard, extendedEnv)
           val usedBody = visitExp(body, extendedEnv)
-          val usedGuardAndBody = usedGuard and usedBody
+          val usedPatGuardAndBody = usedPat and usedGuard and usedBody
 
           // Check for unused variable symbols.
-          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedGuardAndBody)).map(UnusedVarSym)
+          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedPatGuardAndBody)).map(UnusedVarSym)
 
           // Check for shadowed variable symbols.
           val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ and _)
 
           // Combine everything together.
-          usedGuardAndBody -- fvs ++ unusedVarSyms and shadowedVarSyms
+          (usedPatGuardAndBody -- fvs) ++ unusedVarSyms and shadowedVarSyms
       }
 
       usedMatch and usedRules.reduceLeft(_ or _)
 
     case Expression.Choose(exps, rules, _, _, _) =>
-      // TODO: Null: Check unused and shadowed variables.
       val usedMatch = visitExps(exps, env0)
       val usedRules = rules.map {
         case ChoiceRule(pat, exp) =>
-          val fvs = pat.collect {
-            case ChoicePattern.Present(sym, _, _) => sym
-          }
+          // Compute the free variables in the pattern.
+          val fvs = freeVars(pat)
+
+          // Extend the environment with the free variables.
           val extendedEnv = env0 ++ fvs
+
+          // Visit the body.
           val usedBody = visitExp(exp, extendedEnv)
-          usedBody -- fvs
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedBody)).map(UnusedVarSym)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ and _)
+
+          // Combine everything together.
+          (usedBody -- fvs ++ unusedVarSyms) and shadowedVarSyms
       }
       usedMatch and usedRules.reduceLeft(_ or _)
 
@@ -536,6 +548,38 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
   /**
+    * Returns the symbols used in the given pattern `pat`.
+    */
+  private def visitPat(pat0: Pattern): Used = pat0 match {
+    case Pattern.Wild(_, _) => Used.empty
+    case Pattern.Var(_, _, _) => Used.empty
+    case Pattern.Unit(_) => Used.empty
+    case Pattern.True(_) => Used.empty
+    case Pattern.False(_) => Used.empty
+    case Pattern.Char(_, _) => Used.empty
+    case Pattern.Float32(_, _) => Used.empty
+    case Pattern.Float64(_, _) => Used.empty
+    case Pattern.Int8(_, _) => Used.empty
+    case Pattern.Int16(_, _) => Used.empty
+    case Pattern.Int32(_, _) => Used.empty
+    case Pattern.Int64(_, _) => Used.empty
+    case Pattern.BigInt(_, _) => Used.empty
+    case Pattern.Str(_, _) => Used.empty
+    case Pattern.Tag(sym, tag, _, _, _) => Used.of(sym, tag)
+    case Pattern.Tuple(elms, _, _) => visitPats(elms)
+    case Pattern.Array(elms, _, _) => visitPats(elms)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms)
+  }
+
+  /**
+    * Returns the symbols used in the given list of pattern `ps`.
+    */
+  private def visitPats(ps: List[Pattern]): Used = ps.foldLeft(Used.empty) {
+    case (acc, pat) => acc and visitPat(pat)
+  }
+
+  /**
     * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
     */
   private def visitConstraint(c0: Constraint, env0: Env): Used = {
@@ -600,6 +644,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, pat) => acc ++ freeVars(pat)
     }
   }
+
+  /**
+    * Returns the free variables in the list of choice patterns `ps`.
+    */
+  private def freeVars(ps: List[ChoicePattern]): Set[Symbol.VarSym] = ps.collect {
+    case ChoicePattern.Present(sym, _, _) => sym
+  }.toSet
 
   /**
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
@@ -691,7 +742,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -702,11 +753,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns an object where the given defn symbol `sym` is marked as used.
       */
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
-
-    /**
-      * Returns an object where the given sig symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.SigSym): Used = empty.copy(sigSyms = Set(sym))
 
     /**
       * Returns an object where the given hole symbol `sym` is marked as used.
@@ -725,7 +771,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
                           defSyms: Set[Symbol.DefnSym],
-                          sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           unconditionallyRecurses: Boolean,
@@ -745,7 +790,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses && that.unconditionallyRecurses,
@@ -767,7 +811,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses || that.unconditionallyRecurses,
