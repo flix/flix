@@ -176,7 +176,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         recordInterfaces,
         recordEmptyClasses,
         recordExtendClasses,
-        refClasses
+        refClasses,
+        lazyClasses
       ).reduce(_ ++ _)
     }
 

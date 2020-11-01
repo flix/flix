@@ -1066,6 +1066,9 @@ object Synthesize extends Phase[Root, Root] {
           case TypeConstructor.Channel =>
             Expression.Str("<<channel>>", sl)
 
+          case TypeConstructor.Lazy =>
+            Expression.Str("<<Lazy>>", sl)
+
           case TypeConstructor.Ref => Expression.Str("<<ref>>", sl)
 
           case TypeConstructor.Native(clazz) =>

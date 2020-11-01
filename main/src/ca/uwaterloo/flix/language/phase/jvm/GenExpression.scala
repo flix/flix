@@ -1087,12 +1087,22 @@ object GenExpression {
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.Lazy(exp, tpe, loc) =>
-    // TODO: Implement lazy
-      visitor.visitInsn(ICONST_0)
+      addSourceLine(visitor, loc)
+      val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
+      visitor.visitTypeInsn(NEW, classType)
+      visitor.visitInsn(DUP)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
     case Expression.Force(exp, tpe, loc) =>
-    // TODO: Implement force
-      visitor.visitInsn(ICONST_0)
+      addSourceLine(visitor, loc)
+      val classMonoType = exp.tpe.asInstanceOf[MonoType.Lazy]
+      val classType = JvmOps.getLazyClassType(classMonoType)
+      val internalClassType = classType.name.toInternalName
+      val MonoType.Lazy(tpe) = classMonoType
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, internalClassType)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "getValue", AsmOps.getMethodDescriptor(List(), JvmOps.getErasedJvmType(tpe)), false)
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       // Add source line numbers for debugging.

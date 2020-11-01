@@ -3,76 +3,62 @@ namespace Test/Exp/Lazy {
     // TODO: make better names a la Test.Exp.Force.flix
 
     @test
-    def testLazyCreation01(): Bool & Pure =
-        let _ = lazy ();
-        true
+    def testUnitLazy01(): Lazy[Unit] & Pure =
+        lazy ()
 
     @test
-    def testLazyCreation02(): Bool & Pure =
-        let _ = lazy true;
-        true
+    def testBoolLazy01(): Lazy[Bool] & Pure =
+        lazy true
 
     @test
-    def testLazyCreation03(): Bool & Pure =
-        let _ = lazy 'a';
-        true
+    def testCharLazy01(): Lazy[Char] & Pure =
+        lazy 'a'
 
     @test
-    def testLazyCreation04(): Bool & Pure =
-        let _ = lazy 12.34f32;
-        true
+    def testFloat32Lazy01(): Lazy[Float32] & Pure =
+        lazy 12.34f32
 
     @test
-    def testLazyCreation05(): Bool & Pure =
-        let _ = lazy 12.34f64;
-        true
+    def testFloat64Lazy01(): Lazy[Float64] & Pure =
+        lazy 12.34f64
 
     @test
-    def testLazyCreation06(): Bool & Pure =
-        let _ = lazy 12i8;
-        true
+    def testInt8Lazy01(): Lazy[Int8] & Pure =
+        lazy 12i8
 
     @test
-    def testLazyCreation07(): Bool & Pure =
-        let _ = lazy 12i16;
-        true
+    def testInt16Lazy01(): Lazy[Int16] & Pure =
+        lazy 12i16
 
     @test
-    def testLazyCreation08(): Bool & Pure =
-        let _ = lazy 12i32;
-        true
+    def testInt32Lazy01(): Lazy[Int32] & Pure =
+        lazy 12i32
 
     @test
-    def testLazyCreation09(): Bool & Pure =
-        let _ = lazy 12i64;
-        true
+    def testInt64Lazy01(): Lazy[Int64] & Pure =
+        lazy 12i64
 
     @test
-    def testLazyCreation10(): Bool & Pure =
-        let _ = lazy 12ii;
-        true
+    def testBigIntLazy01(): Lazy[BigInt] & Pure =
+        lazy 12ii
 
     @test
-    def testLazyCreation11(): Bool & Pure =
-        let _ = lazy "string";
-        true
+    def testStringLazy01(): Lazy[Str] & Pure =
+        lazy "string"
 
     @test
-    def testLazyCreation12(): Bool & Impure =
+    def testArrayOfIntLazy01(): Lazy[Array[Int]] & Impure =
         let array = [1, 2];
-        let _ = lazy array;
-        true
+        lazy array
 
     @test
-    def testLazyCreation13(): Bool & Impure =
+    def testArrayOfStringLazy01(): Lazy[Array[Str]] & Impure =
         let array = ["str", "str2"];
-        let _ = lazy array;
-        true
+        lazy array
 
     @test
-    def testLazyCreation14(): Bool & Pure =
-        let _ = lazy ("str", "str2");
-        true
+    def testTupleLazy01(): Lazy[(Str, Str)] & Pure =
+        lazy ("str", "str2")
 
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades
@@ -87,9 +73,8 @@ namespace Test/Exp/Lazy {
     }
 
     @test
-    def testLazyCreation15(): Bool & Pure =
-        let _ = lazy Card(Hearts, N(4));
-        true
+    def testNestedLazy01(): Lazy[Card] & Pure =
+        lazy Card(Hearts, N(4))
 
     pub enum Poly[a, b] {
         case None,
@@ -99,17 +84,14 @@ namespace Test/Exp/Lazy {
     }
 
     @test
-    def testLazyCreation16(): Bool & Pure =
-        let _ = lazy This(123);
-        true
+    def testPolyLazy01(): Lazy[Poly[Int, Str]] & Pure =
+        lazy This(123)
 
     @test
-    def testLazyCreation17(): Bool & Pure =
-        let _ = lazy That("str");
-        true
+    def testPolyLazy02(): Lazy[Poly[Str, Str]] & Pure =
+        lazy That("str")
 
     @test
-    def testLazyCreation18(): Bool & Pure =
-        let _ = lazy Both("str", 123);
-        true
+    def testPolyLazy03(): Lazy[Poly[Str, Int]] & Pure =
+        lazy Both("str", 123)
 }

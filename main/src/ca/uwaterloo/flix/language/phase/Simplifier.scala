@@ -513,6 +513,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
+      // TODO: What should the new type of these thunked expressions (spawn/lazy) be?
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
         // Wrap the expression in a closure: () -> tpe & eff
         val e = visitExp(exp)
@@ -525,7 +526,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe)
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
-        SimplifiedAst.Expression.Lazy(lambdaExp, lambdaTyp, loc)
+        SimplifiedAst.Expression.Lazy(lambdaExp, tpe, loc)
 
       case TypedAst.Expression.Force(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
