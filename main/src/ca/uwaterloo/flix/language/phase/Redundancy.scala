@@ -311,22 +311,32 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ and _)
 
           // Combine everything together.
-          usedPatGuardAndBody -- fvs ++ unusedVarSyms and shadowedVarSyms
+          (usedPatGuardAndBody -- fvs) ++ unusedVarSyms and shadowedVarSyms
       }
 
       usedMatch and usedRules.reduceLeft(_ or _)
 
     case Expression.Choose(exps, rules, _, _, _) =>
-      // TODO: Choose: Check unused and shadowed variables.
       val usedMatch = visitExps(exps, env0)
       val usedRules = rules.map {
         case ChoiceRule(pat, exp) =>
-          val fvs = pat.collect {
-            case ChoicePattern.Present(sym, _, _) => sym
-          }
+          // Compute the free variables in the pattern.
+          val fvs = freeVars(pat)
+
+          // Extend the environment with the free variables.
           val extendedEnv = env0 ++ fvs
+
+          // Visit the body.
           val usedBody = visitExp(exp, extendedEnv)
-          usedBody -- fvs
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedBody)).map(UnusedVarSym)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ and _)
+
+          // Combine everything together.
+          (usedBody -- fvs ++ unusedVarSyms) and shadowedVarSyms
       }
       usedMatch and usedRules.reduceLeft(_ or _)
 
@@ -634,6 +644,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, pat) => acc ++ freeVars(pat)
     }
   }
+
+  /**
+    * Returns the free variables in the list of choice patterns `ps`.
+    */
+  private def freeVars(ps: List[ChoicePattern]): Set[Symbol.VarSym] = ps.collect {
+    case ChoicePattern.Present(sym, _, _) => sym
+  }.toSet
 
   /**
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
