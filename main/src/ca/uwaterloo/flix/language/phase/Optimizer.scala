@@ -168,6 +168,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val b = visitExp(base, env0)
         Expression.Index(b, offset, tpe, loc)
 
+      case Expression.IndexMut(base, offset, toInsert, tpe, loc) =>
+        val b = visitExp(base, env0)
+        val ti = visitExp(toInsert, env0)
+        Expression.IndexMut(b, offset, ti, tpe, loc)
+
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map (visitExp(_, env0))
         Expression.Tuple(es, tpe, loc)
