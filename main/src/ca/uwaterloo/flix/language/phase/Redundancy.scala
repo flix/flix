@@ -232,9 +232,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         innerUsed and shadowedVar - fparam.sym
 
-    case Expression.Apply(defn@Expression.Def(sym, _, _), exps, _, _, _)
-      if env0.recursionContext.isRecursiveCall(sym, exps.length) =>
-      val us1 = visitExp(defn, env0)
+    case Expression.Apply(defn@Expression.Def(sym, _, _), exps, _, _, _) if env0.recursionContext.isRecursiveCall(sym, exps.length) =>
+      // Check for unconditional recursion.
+      // NB: A function that calls itself recursively is not used.
+      val us1 = Used.empty
       val us2 = visitExps(exps, env0)
       (us1 and us2).withUnconditionalRecursion
 
@@ -316,7 +317,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       usedMatch and usedRules.reduceLeft(_ or _)
 
     case Expression.Choose(exps, rules, _, _, _) =>
-      // TODO: Null: Check unused and shadowed variables.
+      // TODO: Choose: Check unused and shadowed variables.
       val usedMatch = visitExps(exps, env0)
       val usedRules = rules.map {
         case ChoiceRule(pat, exp) =>
