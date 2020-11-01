@@ -155,6 +155,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Stm", "main/test/flix/Test.Exp.Stm.flix"),
 
   //
+  // String.
+  //
+  new FlixTest("Test.Exp.String", "main/test/flix/Test.Exp.String.flix"),
+
+  //
   // Predicate.
   //
   new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix"),
