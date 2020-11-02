@@ -332,6 +332,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       highlight(write :: reads)
     }
 
+    def highlightEnum(sym: Symbol.EnumSym): JValue = {
+      // Find all occurrences of the symbol.
+      val write = (sym.loc, DocumentHighlightKind.Write)
+      val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+      highlight(write :: reads)
+    }
+
     def highlightField(field: Name.Field): JValue = {
       // Find all occurrences of the name.
       val uses = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
@@ -361,6 +368,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     index.query(uri, pos) match {
       case Some(Entity.Case(caze)) => highlightTag(caze.sym, caze.tag)
       case Some(Entity.Def(defn)) => highlightDef(defn.sym)
+      case Some(Entity.Enum(enum)) => highlightEnum(enum.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => highlightVar(sym)
         case Expression.Def(sym, _, _) => highlightDef(sym)
