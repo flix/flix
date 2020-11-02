@@ -24,23 +24,22 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatCase, FormatDoc, FormatSignature, FormatType}
-import ca.uwaterloo.flix.tools.{Packager, Tester}
+import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.tools.Tester.TestResult
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.ParserUtil.ParseException
-import org.json4s.native.JsonMethods
-import org.json4s.native.JsonMethods.parse
 import org.json4s.JsonAST.{JArray, JString, JValue}
 import org.json4s.JsonDSL._
+import org.json4s.ParserUtil.ParseException
 import org.json4s._
+import org.json4s.native.JsonMethods
+import org.json4s.native.JsonMethods.parse
 
 import scala.collection.mutable
 
@@ -333,8 +332,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       highlight(write :: reads)
     }
 
+    def highlightField(field: Name.Field): JValue = {
+      // Find all occurrences of the name.
+      val uses = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
+      highlight(uses)
+    }
+
     def highlightPred(pred: Name.Pred): JValue = {
-      // Find all occurrences of the symbol.
+      // Find all occurrences of the name.
       val uses = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
       highlight(uses)
     }
@@ -367,7 +372,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case Pattern.Tag(sym, tag, _, _, _) => highlightTag(sym, tag)
         case _ => mkNotFound(requestId, uri, pos)
       }
-      case Some(Entity.Atom(pred)) => highlightPred(pred)
+      case Some(Entity.Field(field)) => highlightField(field)
+      case Some(Entity.Pred(pred)) => highlightPred(pred)
       case Some(Entity.FormalParam(fparam)) => highlightVar(fparam.sym)
       case Some(Entity.LocalVar(sym, _)) => highlightVar(sym)
       case _ => mkNotFound(requestId, uri, pos)
@@ -585,7 +591,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     def renamePred(pred: Name.Pred): JValue = rename(index.usesOf(pred).toList)
 
     index.query(uri, pos) match {
-      case Some(Entity.Atom(pred)) => renamePred(pred)
+      case Some(Entity.Pred(pred)) => renamePred(pred)
       case Some(Entity.Def(defn)) => renameDef(defn.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => renameVar(sym)
@@ -743,7 +749,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processUses(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     index.query(uri, pos) match {
 
-      case Some(Entity.Atom(pred)) =>
+      case Some(Entity.Pred(pred)) =>
         val uses = index.usesOf(pred)
         val locs = uses.toList.map(Location.from)
         ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))

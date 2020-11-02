@@ -15,15 +15,17 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+
+  // TODO: Better division between uses and definitions.
 
   /**
     * Returns an index for the given case `case0`.
@@ -56,14 +58,19 @@ object Index {
   def of(pat0: Pattern): Index = empty + Entity.Pattern(pat0)
 
   /**
-    * Returns an index for the given atom `a0`.
+    * Returns an index for the given field `f0`.
     */
-  def of(a0: Predicate.Head.Atom): Index = empty + Entity.Atom(a0.pred)
+  def of(f0: Name.Field): Index = empty + Entity.Field(f0)
 
   /**
     * Returns an index for the given atom `a0`.
     */
-  def of(b0: Predicate.Body.Atom): Index = empty + Entity.Atom(b0.pred)
+  def of(a0: Predicate.Head.Atom): Index = empty + Entity.Pred(a0.pred)
+
+  /**
+    * Returns an index for the given atom `a0`.
+    */
+  def of(b0: Predicate.Body.Atom): Index = empty + Entity.Pred(b0.pred)
 
   /**
     * Returns an index for the given local variable definition `sym0`.
@@ -84,6 +91,11 @@ object Index {
     * Returns an index with the symbol `sym` used at location `loc.`
     */
   def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with a use of the field `field` with the given type `tpe`.
+    */
+  def useOf(field: Name.Field): Index = Index.empty.copy(fieldUses = MultiMap.singleton(field, field.loc))
 
   /**
     * Returns an index with a use of the predicate `pred` with the given denotation `den` and type `tpe`.
@@ -117,6 +129,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  tagUses: MultiMap[(Symbol.EnumSym, String), SourceLocation],
+                 fieldUses: MultiMap[Name.Field, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
@@ -164,6 +177,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
+
+  /**
+    * Returns all uses of the given field `field`.
+    */
+  def usesOf(field: Name.Field): Set[SourceLocation] = fieldUses(field)
 
   /**
     * Returns all uses of the given predicate `pred`.
@@ -216,6 +234,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
       this.tagUses ++ that.tagUses,
+      this.fieldUses ++ that.fieldUses,
       this.predUses ++ that.predUses,
       this.varUses ++ that.varUses
     )

@@ -160,14 +160,14 @@ object Indexer {
     case Expression.RecordEmpty(tpe, loc) =>
       Index.of(exp0)
 
-    case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+    case Expression.RecordSelect(exp, field, _, _, _) =>
+      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.of(exp0)
 
-    case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+    case Expression.RecordExtend(field, exp1, exp2, _, _, _) =>
+      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
-    case Expression.RecordRestrict(_, exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+    case Expression.RecordRestrict(field, exp, _, _, _) =>
+      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.of(exp0)
 
     case Expression.ArrayLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.of(exp0)
