@@ -355,7 +355,6 @@ object Indexer {
     Index.of(fparam0) ++ visitType(fparam0.tpe, fparam0.loc)
   }
 
-
   /**
     * Returns a reverse index for the given type scheme `sc0` at the given source location `loc`.
     */
@@ -367,6 +366,7 @@ object Indexer {
   private def visitType(tpe0: Type, loc: SourceLocation): Index =
     tpe0.typeConstructors.foldLeft(Index.empty) {
       case (idx, TypeConstructor.Enum(sym, _)) => idx ++ Index.useOf(sym, loc)
+      case (idx, TypeConstructor.RecordExtend(field)) => idx ++ Index.useOf(field)
       case (idx, TypeConstructor.SchemaExtend(pred)) => idx ++ Index.useOf(pred)
       case (idx, _) => idx
     }
