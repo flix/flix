@@ -30,22 +30,22 @@ object FormatType {
 
     def formatWellFormedRecord(record: Type): String = flattenRecord(record) match {
       case FlatNestable(fields, Type.Cst(TypeConstructor.RecordEmpty)) =>
-        fields.map { case (label, tpe) => formatRecordField(label, tpe) }.mkString("{ ", ", ", " }")
+        fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString("{ ", ", ", " }")
       case FlatNestable(fields, rest) =>
-        val fieldString = fields.map { case (label, tpe) => formatRecordField(label, tpe) }.mkString(", ")
+        val fieldString = fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString(", ")
         s"{ $fieldString | ${visit(rest)} }"
     }
 
     def formatWellFormedSchema(schema: Type): String = flattenSchema(schema) match {
       case FlatNestable(fields, Type.Cst(TypeConstructor.SchemaEmpty)) =>
-        fields.map { case (label, tpe) => formatSchemaField(label, tpe) }.mkString("#{ ", ", ", " }")
+        fields.map { case (field, tpe) => formatSchemaField(field, tpe) }.mkString("#{ ", ", ", " }")
       case FlatNestable(fields, rest) =>
-        val fieldString = fields.map { case (label, tpe) => formatSchemaField(label, tpe) }.mkString(", ")
+        val fieldString = fields.map { case (field, tpe) => formatSchemaField(field, tpe) }.mkString(", ")
         s"#{ $fieldString | ${visit(rest)} }"
     }
 
-    def formatRecordField(label: String, tpe: Type): String = {
-      s"$label: ${visit(tpe)}"
+    def formatRecordField(field: String, tpe: Type): String = {
+      s"$field: ${visit(tpe)}"
     }
 
     def formatSchemaField(name: String, tpe: Type): String = {
@@ -148,11 +148,11 @@ object FormatType {
 
           case TypeConstructor.Ref => formatApply("Ref", args)
 
-          case TypeConstructor.RecordExtend(label) => args.length match {
-            case 0 => s"{ $label: ??? }"
-            case 1 => s"{ $label: ${visit(args.head)} | ??? }"
+          case TypeConstructor.RecordExtend(field) => args.length match {
+            case 0 => s"{ $field: ??? }"
+            case 1 => s"{ $field: ${visit(args.head)} | ??? }"
             case 2 => formatWellFormedRecord(tpe)
-            case _ => formatApply(s"RecordExtend($label)", args)
+            case _ => formatApply(s"RecordExtend($field)", args)
           }
 
           case TypeConstructor.SchemaExtend(pred) => args.length match {
@@ -317,8 +317,8 @@ object FormatType {
     * Convert a record to a [[FlatNestable]].
     */
   private def flattenRecord(record: Type): FlatNestable = record match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
-      (label, tpe) :: flattenRecord(rest)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field)), tpe), rest) =>
+      (field.name, tpe) :: flattenRecord(rest)
     case _ => FlatNestable(Nil, record)
   }
 

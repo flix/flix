@@ -160,14 +160,14 @@ object Indexer {
     case Expression.RecordEmpty(tpe, loc) =>
       Index.of(exp0)
 
-    case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+    case Expression.RecordSelect(exp, field, _, _, _) =>
+      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.of(exp0)
 
-    case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+    case Expression.RecordExtend(field, exp1, exp2, _, _, _) =>
+      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
 
-    case Expression.RecordRestrict(_, exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+    case Expression.RecordRestrict(field, exp, _, _, _) =>
+      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.of(exp0)
 
     case Expression.ArrayLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.of(exp0)
@@ -355,7 +355,6 @@ object Indexer {
     Index.of(fparam0) ++ visitType(fparam0.tpe, fparam0.loc)
   }
 
-
   /**
     * Returns a reverse index for the given type scheme `sc0` at the given source location `loc`.
     */
@@ -367,6 +366,7 @@ object Indexer {
   private def visitType(tpe0: Type, loc: SourceLocation): Index =
     tpe0.typeConstructors.foldLeft(Index.empty) {
       case (idx, TypeConstructor.Enum(sym, _)) => idx ++ Index.useOf(sym, loc)
+      case (idx, TypeConstructor.RecordExtend(field)) => idx ++ Index.useOf(field)
       case (idx, TypeConstructor.SchemaExtend(pred)) => idx ++ Index.useOf(pred)
       case (idx, _) => idx
     }

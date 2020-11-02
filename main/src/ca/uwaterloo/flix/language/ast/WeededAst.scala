@@ -134,11 +134,11 @@ object WeededAst {
 
     case class RecordEmpty(loc: SourceLocation) extends WeededAst.Expression
 
-    case class RecordSelect(exp: WeededAst.Expression, label: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
+    case class RecordSelect(exp: WeededAst.Expression, field: Name.Field, loc: SourceLocation) extends WeededAst.Expression
 
-    case class RecordExtend(label: Name.Ident, value: WeededAst.Expression, rest: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class RecordExtend(field: Name.Field, value: WeededAst.Expression, rest: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class RecordRestrict(label: Name.Ident, rest: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class RecordRestrict(field: Name.Field, rest: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -309,7 +309,7 @@ object WeededAst {
 
     case class RecordEmpty(loc: SourceLocation) extends WeededAst.Type
 
-    case class RecordExtend(label: Name.Ident, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class RecordExtend(field: Name.Field, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class RecordGeneric(tvar: WeededAst.Type.Var, loc: SourceLocation) extends WeededAst.Type
 

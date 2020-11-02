@@ -866,43 +866,43 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultType <- unifyTypeM(tvar, Type.RecordEmpty, loc)
         } yield (List.empty, resultType, Type.Pure)
 
-      case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
+      case ResolvedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
         //
-        // r : { label = tpe | row }
+        // r : { field = tpe | row }
         // -------------------------
-        // r.label : tpe
+        // r.field : tpe
         //
         val freshRowVar = Type.freshVar(Kind.Record)
-        val expectedType = Type.mkRecordExtend(label, tvar, freshRowVar)
+        val expectedType = Type.mkRecordExtend(field, tvar, freshRowVar)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           recordType <- unifyTypeM(tpe, expectedType, loc)
           resultEff = eff
         } yield (constrs, tvar, resultEff)
 
-      case ResolvedAst.Expression.RecordExtend(label, exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.RecordExtend(field, exp1, exp2, tvar, loc) =>
         //
         // exp1 : tpe
         // ---------------------------------------------
-        // { label = exp1 | exp2 } : { label : tpe | r }
+        // { field = exp1 | exp2 } : { field : tpe | r }
         //
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          resultTyp <- unifyTypeM(tvar, Type.mkRecordExtend(label, tpe1, tpe2), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkRecordExtend(field, tpe1, tpe2), loc)
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.RecordRestrict(label, exp, tvar, loc) =>
+      case ResolvedAst.Expression.RecordRestrict(field, exp, tvar, loc) =>
         //
         // ----------------------
-        // { -label | r } : { r }
+        // { -field | r } : { r }
         //
         val freshFieldType = Type.freshVar(Kind.Star)
         val freshRowVar = Type.freshVar(Kind.Record)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          recordType <- unifyTypeM(tpe, Type.mkRecordExtend(label, freshFieldType, freshRowVar), loc)
+          recordType <- unifyTypeM(tpe, Type.mkRecordExtend(field, freshFieldType, freshRowVar), loc)
           resultTyp <- unifyTypeM(tvar, freshRowVar, loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
@@ -1518,21 +1518,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
         TypedAst.Expression.RecordEmpty(subst0(tvar), loc)
 
-      case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
+      case ResolvedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.RecordSelect(e, label, subst0(tvar), eff, loc)
+        TypedAst.Expression.RecordSelect(e, field, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
+      case ResolvedAst.Expression.RecordExtend(field, value, rest, tvar, loc) =>
         val v = visitExp(value, subst0)
         val r = visitExp(rest, subst0)
         val eff = Type.mkAnd(v.eff, r.eff)
-        TypedAst.Expression.RecordExtend(label, v, r, subst0(tvar), eff, loc)
+        TypedAst.Expression.RecordExtend(field, v, r, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
+      case ResolvedAst.Expression.RecordRestrict(field, rest, tvar, loc) =>
         val r = visitExp(rest, subst0)
         val eff = r.eff
-        TypedAst.Expression.RecordRestrict(label, r, subst0(tvar), eff, loc)
+        TypedAst.Expression.RecordRestrict(field, r, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
         val es = elms.map(e => visitExp(e, subst0))

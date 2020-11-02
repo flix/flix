@@ -181,11 +181,11 @@ object SimplifiedAst {
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class RecordSelect(exp: SimplifiedAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class RecordSelect(exp: SimplifiedAst.Expression, field: Name.Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class RecordExtend(label: String, value: SimplifiedAst.Expression, rest: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class RecordExtend(field: Name.Field, value: SimplifiedAst.Expression, rest: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class RecordRestrict(label: String, rest: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class RecordRestrict(field: Name.Field, rest: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class ArrayLit(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

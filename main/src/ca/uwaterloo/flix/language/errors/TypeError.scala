@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt._
@@ -191,25 +191,25 @@ object TypeError {
   /**
     * Undefined field error.
     *
-    * @param fieldName  the name of the missing field.
+    * @param field      the name of the missing field.
     * @param fieldType  the type of the missing field.
     * @param recordType the record type where the field is missing.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedField(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Missing field '$fieldName' of type '$fieldType'."
+  case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Missing field '$field' of type '$fieldType'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(FormatType.formatType(fieldType)) << "'." << NewLine
+      vt << ">> Missing field '" << Red(field.name) << "' of type '" << Cyan(FormatType.formatType(fieldType)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing field.") << NewLine
       vt << "The record type: " << Indent << NewLine
       vt << NewLine
       vt << FormatType.formatType(recordType) << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the field '" << Red(fieldName) << "' of type " << Cyan(FormatType.formatType(fieldType)) << "." << NewLine
+      vt << "does not contain the field '" << Red(field.name) << "' of type " << Cyan(FormatType.formatType(fieldType)) << "." << NewLine
     }
   }
 

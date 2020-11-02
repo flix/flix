@@ -193,19 +193,19 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.RecordEmpty(tpe, loc) =>
       Expression.RecordEmpty(tpe, loc).toSuccess
 
-    case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+    case Expression.RecordSelect(base, field, tpe, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expression.RecordSelect(b, label, tpe, eff, loc)
+        case b => Expression.RecordSelect(b, field, tpe, eff, loc)
       }
 
-    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
       mapN(visitExp(value), visitExp(rest)) {
-        case (v, r) => Expression.RecordExtend(label, v, r, tpe, eff, loc)
+        case (v, r) => Expression.RecordExtend(field, v, r, tpe, eff, loc)
       }
 
-    case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
       mapN(visitExp(rest)) {
-        case r => Expression.RecordRestrict(label, r, tpe, eff, loc)
+        case r => Expression.RecordRestrict(field, r, tpe, eff, loc)
       }
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>

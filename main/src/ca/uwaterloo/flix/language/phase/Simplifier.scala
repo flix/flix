@@ -379,18 +379,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)
 
-      case TypedAst.Expression.RecordSelect(base, label, tpe, eff, loc) =>
+      case TypedAst.Expression.RecordSelect(base, field, tpe, eff, loc) =>
         val b = visitExp(base)
-        SimplifiedAst.Expression.RecordSelect(b, label, tpe, loc)
+        SimplifiedAst.Expression.RecordSelect(b, field, tpe, loc)
 
-      case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+      case TypedAst.Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
         val v = visitExp(value)
         val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordExtend(label, v, r, tpe, loc)
+        SimplifiedAst.Expression.RecordExtend(field, v, r, tpe, loc)
 
-      case TypedAst.Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+      case TypedAst.Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
         val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordRestrict(label, r, tpe, loc)
+        SimplifiedAst.Expression.RecordRestrict(field, r, tpe, loc)
 
       case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
@@ -911,10 +911,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       // Create a branch for each rule.
       val branches = (ruleLabels zip rules) map {
         // Process each (label, rule) pair.
-        case (label, TypedAst.MatchRule(pat, guard, body)) =>
+        case (field, TypedAst.MatchRule(pat, guard, body)) =>
           // Retrieve the label of the next rule.
           // If this rule is the last, the next label is the default label.
-          val next = nextLabel(label)
+          val next = nextLabel(field)
 
           // Success case: evaluate the match body.
           val success = visitExp(body)
@@ -923,7 +923,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val failure = SimplifiedAst.Expression.JumpTo(next, tpe, loc)
 
           // Return the branch with its label.
-          label -> patternMatchList(List(pat), List(matchVar), guard, success, failure
+          field -> patternMatchList(List(pat), List(matchVar), guard, success, failure
           )
       }
 
@@ -1331,18 +1331,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)
 
-      case SimplifiedAst.Expression.RecordSelect(exp, label, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordSelect(exp, field, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.RecordSelect(e, label, tpe, loc)
+        SimplifiedAst.Expression.RecordSelect(e, field, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
         val v = visitExp(value)
         val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordExtend(label, v, r, tpe, loc)
+        SimplifiedAst.Expression.RecordExtend(field, v, r, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordRestrict(label, rest, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
         val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordRestrict(label, r, tpe, loc)
+        SimplifiedAst.Expression.RecordRestrict(field, r, tpe, loc)
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)

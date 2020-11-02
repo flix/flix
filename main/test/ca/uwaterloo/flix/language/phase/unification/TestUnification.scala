@@ -313,7 +313,7 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.12") {
     val tpe1 = Type.Var(1, Kind.Record)
     val field = Type.Bool
-    val label = "x"
+    val label = Name.Field("x", SourceLocation.Unknown)
     val tpe2 = Type.mkRecordExtend(label, field, tpe1)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))

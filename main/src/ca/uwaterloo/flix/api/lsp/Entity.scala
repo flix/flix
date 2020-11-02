@@ -21,6 +21,8 @@ sealed trait Entity {
   def loc: SourceLocation
 }
 
+// TODO: Restructure this?
+
 object Entity {
 
   case class Case(e: TypedAst.Case) extends Entity {
@@ -47,7 +49,11 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
-  case class Atom(e: Name.Pred) extends Entity {
+  case class Field(e: Name.Field) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
+  case class Pred(e: Name.Pred) extends Entity {
     def loc: SourceLocation = e.loc
   }
 

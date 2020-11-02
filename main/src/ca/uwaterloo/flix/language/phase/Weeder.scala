@@ -819,13 +819,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
       val fieldsVal = traverse(fields) {
-        case ParsedAst.RecordField(fsp1, label, exp, fsp2) =>
+        case ParsedAst.RecordField(fsp1, ident, exp, fsp2) =>
           flatMapN(visitExp(exp)) {
             case e =>
-              if (label.name == "length")
-                WeederError.IllegalFieldName(label.loc).toFailure
+              if (ident.name == "length")
+                WeederError.IllegalFieldName(ident.loc).toFailure
               else
-                (label -> e).toSuccess
+                (ident -> e).toSuccess
           }
       }
 
@@ -834,57 +834,57 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Rewrite into a sequence of nested record extensions.
           val zero = WeededAst.Expression.RecordEmpty(mkSL(sp1, sp2))
           fs.foldRight(zero: WeededAst.Expression) {
-            case ((l, e), acc) => WeededAst.Expression.RecordExtend(l, e, acc, mkSL(sp1, sp2))
+            case ((ident, e), acc) => WeededAst.Expression.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2))
           }
       }
 
-    case ParsedAst.Expression.RecordSelect(exp, label, sp2) =>
+    case ParsedAst.Expression.RecordSelect(exp, ident, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       mapN(visitExp(exp)) {
         case e =>
           // Special Case: Array Length
-          if (label.name == "length")
+          if (ident.name == "length")
             WeededAst.Expression.ArrayLength(e, mkSL(sp1, sp2))
           else
-            WeededAst.Expression.RecordSelect(e, label, mkSL(sp1, sp2))
+            WeededAst.Expression.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.RecordSelectLambda(sp1, label, sp2) =>
+    case ParsedAst.Expression.RecordSelectLambda(sp1, ident, sp2) =>
       val loc = mkSL(sp1, sp2)
       val ident = Name.Ident(sp1, "_rec", sp2)
       val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
       val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
       val varExp = WeededAst.Expression.VarOrDefOrSig(qname, loc)
-      val lambdaBody = WeededAst.Expression.RecordSelect(varExp, label, loc)
+      val lambdaBody = WeededAst.Expression.RecordSelect(varExp, Name.mkField(ident), loc)
       WeededAst.Expression.Lambda(fparam, lambdaBody, loc).toSuccess
 
     case ParsedAst.Expression.RecordOperation(_, ops, rest, _) =>
       // We translate the sequence of record operations into a nested tree using a fold right.
       foldRight(ops)(visitExp(rest)) {
-        case (ParsedAst.RecordOp.Extend(sp1, label, exp, sp2), acc) =>
+        case (ParsedAst.RecordOp.Extend(sp1, ident, exp, sp2), acc) =>
           flatMapN(visitExp(exp)) {
             case e =>
-              if (label.name == "length")
-                WeederError.IllegalFieldName(label.loc).toFailure
+              if (ident.name == "length")
+                WeederError.IllegalFieldName(ident.loc).toFailure
               else
-                WeededAst.Expression.RecordExtend(label, e, acc, mkSL(sp1, sp2)).toSuccess
+                WeededAst.Expression.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2)).toSuccess
           }
 
-        case (ParsedAst.RecordOp.Restrict(sp1, label, sp2), acc) =>
-          if (label.name == "length")
-            WeederError.IllegalFieldName(label.loc).toFailure
+        case (ParsedAst.RecordOp.Restrict(sp1, ident, sp2), acc) =>
+          if (ident.name == "length")
+            WeederError.IllegalFieldName(ident.loc).toFailure
           else
-            WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2)).toSuccess
+            WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2)).toSuccess
 
-        case (ParsedAst.RecordOp.Update(sp1, label, exp, sp2), acc) =>
+        case (ParsedAst.RecordOp.Update(sp1, ident, exp, sp2), acc) =>
           flatMapN(visitExp(exp)) {
             case e =>
-              if (label.name == "length")
-                WeederError.IllegalFieldName(label.loc).toFailure
+              if (ident.name == "length")
+                WeederError.IllegalFieldName(ident.loc).toFailure
               else {
                 // An update is a restrict followed by an extension.
-                val inner = WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2))
-                WeededAst.Expression.RecordExtend(label, e, inner, mkSL(sp1, sp2)).toSuccess
+                val inner = WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
+                WeededAst.Expression.RecordExtend(Name.mkField(ident), e, inner, mkSL(sp1, sp2)).toSuccess
               }
           }
       }
@@ -1668,8 +1668,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) => {
       def buildRecord(base: WeededAst.Type): WeededAst.Type = {
         fields.foldRight(base) {
-          case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) =>
-            WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
+          case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
+            WeededAst.Type.RecordExtend(Name.mkField(ident), visitType(t), acc, mkSL(ssp1, ssp2))
         }
       }
 

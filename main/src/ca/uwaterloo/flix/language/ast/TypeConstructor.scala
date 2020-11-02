@@ -110,9 +110,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of extended records.
     */
-  case class RecordExtend(label: String) extends TypeConstructor {
+  case class RecordExtend(field: Name.Field) extends TypeConstructor {
     /**
-      * The shape of an extended record is { label: type | rest }
+      * The shape of an extended record is { field: type | rest }
       */
     def kind: Kind = Kind.Star ->: Kind.Record ->: Kind.Record
   }

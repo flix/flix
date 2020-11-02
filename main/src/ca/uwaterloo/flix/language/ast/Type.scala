@@ -551,8 +551,8 @@ object Type {
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordExtend(label: String, tpe: Type, rest: Type): Type = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(label)), List(tpe, rest))
+  def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type): Type = {
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(field)), List(tpe, rest))
   }
 
   /**
@@ -655,10 +655,10 @@ object Type {
 
       case Type.Cst(_) => t
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field)), tpe), rest) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
-        Type.mkRecordExtend(label, t1, t2)
+        Type.mkRecordExtend(field, t1, t2)
 
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred)), tpe), rest) =>
         val t1 = eval(tpe, subst)

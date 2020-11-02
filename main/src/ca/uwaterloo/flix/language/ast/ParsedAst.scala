@@ -651,19 +651,19 @@ object ParsedAst {
       * Record Select Expression.
       *
       * @param exp   the record expression.
-      * @param label the label to select from the record.
+      * @param field the field to select from the record.
       * @param sp2   the position of the last character in the expression.
       */
-    case class RecordSelect(exp: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordSelect(exp: ParsedAst.Expression, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Select Lambda Expression.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param label the label to select from the record.
+      * @param field the field to select from the record.
       * @param sp2   the position of the last character in the expression.
       */
-    case class RecordSelectLambda(sp1: SourcePosition, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordSelectLambda(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Operation Expression.
@@ -1611,30 +1611,30 @@ object ParsedAst {
       * Record Extension.
       *
       * @param sp1   the position of the first character in the operation.
-      * @param label the label of the field.
+      * @param field the field of the field.
       * @param exp   the value of the field.
       * @param sp2   the position of the last character in the operation.
       */
-    case class Extend(sp1: SourcePosition, label: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends RecordOp
+    case class Extend(sp1: SourcePosition, field: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends RecordOp
 
     /**
       * Record Restriction.
       *
       * @param sp1   the position of the first character in the operation.
-      * @param label the label of the field.
+      * @param field the field of the field.
       * @param sp2   the position of the last character in the operation.
       */
-    case class Restrict(sp1: SourcePosition, label: Name.Ident, sp2: SourcePosition) extends RecordOp
+    case class Restrict(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends RecordOp
 
     /**
       * Record Update.
       *
       * @param sp1   the position of the first character in the operation.
-      * @param label the label of the field.
+      * @param field the field of the field.
       * @param exp   the value of the field.
       * @param sp2   the position of the last character in the operation.
       */
-    case class Update(sp1: SourcePosition, label: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends RecordOp
+    case class Update(sp1: SourcePosition, field: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends RecordOp
 
   }
 
@@ -1642,21 +1642,21 @@ object ParsedAst {
     * Record Field Value.
     *
     * @param sp1   the position of the first character in the field.
-    * @param label the label of the field.
+    * @param field the field of the field.
     * @param value the value of the field.
     * @param sp2   the position of the last character in the field.
     */
-  case class RecordField(sp1: SourcePosition, label: Name.Ident, value: ParsedAst.Expression, sp2: SourcePosition)
+  case class RecordField(sp1: SourcePosition, field: Name.Ident, value: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Record Field Type.
     *
     * @param sp1   the position of the first character in the field.
-    * @param label the label of the field.
+    * @param field the field of the field.
     * @param tpe   the type of the field.
     * @param sp2   the position of the last character in the field.
     */
-  case class RecordFieldType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+  case class RecordFieldType(sp1: SourcePosition, field: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
   /**
     * A common super-type for schema predicate types.

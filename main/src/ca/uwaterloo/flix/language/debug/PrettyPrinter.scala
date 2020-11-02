@@ -251,23 +251,23 @@ object PrettyPrinter {
         case Expression.RecordEmpty(tpe, loc) =>
           vt.text("{}")
 
-        case Expression.RecordSelect(exp, label, tpe, loc) =>
+        case Expression.RecordSelect(exp, field, tpe, loc) =>
           visitExp(exp)
           vt.text(".")
-          vt.text(label)
+          vt.text(field.name)
 
-        case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+        case Expression.RecordExtend(field, value, rest, tpe, loc) =>
           vt.text("{ ")
-          vt.text(label)
+          vt.text(field.name)
           vt.text(" = ")
           visitExp(value)
           vt.text(" | ")
           visitExp(rest)
           vt.text(" }")
 
-        case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        case Expression.RecordRestrict(field, rest, tpe, loc) =>
           vt.text("{ -")
-          vt.text(label)
+          vt.text(field.name)
           vt.text(" | ")
           visitExp(rest)
           vt.text("}")

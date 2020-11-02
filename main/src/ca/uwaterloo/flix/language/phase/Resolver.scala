@@ -527,21 +527,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.RecordEmpty(tvar, loc) =>
           ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
 
-        case NamedAst.Expression.RecordSelect(base, label, tvar, loc) =>
+        case NamedAst.Expression.RecordSelect(base, field, tvar, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.RecordSelect(b, label.name, tvar, loc)
+          } yield ResolvedAst.Expression.RecordSelect(b, field, tvar, loc)
 
-        case NamedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
+        case NamedAst.Expression.RecordExtend(field, value, rest, tvar, loc) =>
           for {
             v <- visit(value, tenv0)
             r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordExtend(label.name, v, r, tvar, loc)
+          } yield ResolvedAst.Expression.RecordExtend(field, v, r, tvar, loc)
 
-        case NamedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
+        case NamedAst.Expression.RecordRestrict(field, rest, tvar, loc) =>
           for {
             r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordRestrict(label.name, r, tvar, loc)
+          } yield ResolvedAst.Expression.RecordRestrict(field, r, tvar, loc)
 
         case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for {
@@ -1303,11 +1303,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Type.RecordEmpty(loc) =>
       Type.RecordEmpty.toSuccess
 
-    case NamedAst.Type.RecordExtend(label, value, rest, loc) =>
+    case NamedAst.Type.RecordExtend(field, value, rest, loc) =>
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-        rec <- mkRecordExtend(label.name, v, r, loc)
+        rec <- mkRecordExtend(field, v, r, loc)
       } yield rec
 
     case NamedAst.Type.SchemaEmpty(loc) =>
@@ -1819,8 +1819,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Creates a well-formed `RecordExtend` type.
     */
-  private def mkRecordExtend(label: String, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(label)), List(tpe, rest), loc)
+  private def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(field)), List(tpe, rest), loc)
   }
 
   /**

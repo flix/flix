@@ -139,35 +139,35 @@ object Unification {
   private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label2)), fieldType2), restRow2),
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label1)), fieldType1), _)) =>
-        // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
-        if (label1 == label2) {
-          // Case 1.1: The labels match, their types must match.
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field2)), fieldType2), restRow2),
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1)), fieldType1), _)) =>
+        // Case 1: The row is of the form %{ field2: fieldType2 | restRow2 }
+        if (field1 == field2) {
+          // Case 1.1: The fields match, their types must match.
           for {
             subst <- unifyTypes(fieldType1, fieldType2)
           } yield (subst, restRow2)
         } else {
-          // Case 1.2: The labels do not match, attempt to match with a label further down.
+          // Case 1.2: The fields do not match, attempt to match with a field further down.
           visit(restRow2) map {
-            case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(label2, fieldType2, rewrittenRow))
+            case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label1)), fieldType1), _)) =>
+      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1)), fieldType1), _)) =>
         // Case 2: The row is a type variable.
         if (staticRow.typeVars contains tvar) {
           Err(UnificationError.OccursCheck(tvar, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
           val restRow2 = Type.freshVar(Kind.Record)
-          val type2 = Type.mkRecordExtend(label1, fieldType1, restRow2)
+          val type2 = Type.mkRecordExtend(field1, fieldType1, restRow2)
           val subst = Substitution.singleton(tvar, type2)
           Ok((subst, restRow2))
         }
 
-      case (Type.Cst(TypeConstructor.RecordEmpty), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label1)), fieldType1), _)) =>
-        // Case 3: The `label` does not exist in the record.
-        Err(UnificationError.UndefinedLabel(label1, fieldType1, rewrittenRow))
+      case (Type.Cst(TypeConstructor.RecordEmpty), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1)), fieldType1), _)) =>
+        // Case 3: The `field` does not exist in the record.
+        Err(UnificationError.UndefinedField(field1, fieldType1, rewrittenRow))
 
       case _ =>
         // Case 4: The type is not a row.
@@ -266,7 +266,7 @@ object Unification {
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
 
-        case Result.Err(UnificationError.UndefinedLabel(fieldName, fieldType, recordType)) =>
+        case Result.Err(UnificationError.UndefinedField(fieldName, fieldType, recordType)) =>
           Err(TypeError.UndefinedField(fieldName, fieldType, recordType, loc))
 
         case Result.Err(UnificationError.NonRecordType(tpe)) =>

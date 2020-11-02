@@ -359,18 +359,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.RecordEmpty(tpe, loc) =>
           Expression.RecordEmpty(subst0(tpe), loc)
 
-        case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+        case Expression.RecordSelect(base, field, tpe, eff, loc) =>
           val b = visitExp(base, env0)
-          Expression.RecordSelect(b, label, subst0(tpe), eff, loc)
+          Expression.RecordSelect(b, field, subst0(tpe), eff, loc)
 
-        case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+        case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
           val v = visitExp(value, env0)
           val r = visitExp(rest, env0)
-          Expression.RecordExtend(label, v, r, subst0(tpe), eff, loc)
+          Expression.RecordExtend(field, v, r, subst0(tpe), eff, loc)
 
-        case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+        case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
           val r = visitExp(rest, env0)
-          Expression.RecordRestrict(label, r, subst0(tpe), eff, loc)
+          Expression.RecordRestrict(field, r, subst0(tpe), eff, loc)
 
         case Expression.ArrayLit(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
