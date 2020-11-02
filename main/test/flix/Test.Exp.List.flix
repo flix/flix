@@ -54,14 +54,22 @@ namespace Test/Exp/List {
     @test
     def testListAppend06(): List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
+}
 
-    enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
+enum Option[t] {
+    case None,
+    case Some(t)
+}
+
+enum List[t] {
+    case Nil,
+    case Cons(t, List[t])
+}
+
+namespace List {
+
+    pub def append(xs: List[a], ys: List[a]): List[a] = {
+        foldRight((x, acc) -> x :: acc, ys, xs)
     }
 
 }
