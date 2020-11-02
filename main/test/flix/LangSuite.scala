@@ -121,6 +121,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Let.MatchStar", "main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibrary),
 
   //
+  // Match.
+  //
+  new FlixTest("Test.Exp.Match.Wild", "main/test/flix/Test.Exp.Match.Wild.flix"),
+
+  //
   // Null.
   //
   new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
