@@ -789,18 +789,18 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.RecordEmpty(_, _) => exp0
 
-      case Expression.RecordSelect(exp, label, tpe, eff, loc) =>
+      case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.RecordSelect(e, label, tpe, eff, loc)
+        Expression.RecordSelect(e, field, tpe, eff, loc)
 
-      case Expression.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+      case Expression.RecordExtend(field, exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
-        Expression.RecordExtend(label, e1, e2, tpe, eff, loc)
+        Expression.RecordExtend(field, e1, e2, tpe, eff, loc)
 
-      case Expression.RecordRestrict(label, exp, tpe, eff, loc) =>
+      case Expression.RecordRestrict(field, exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.RecordRestrict(label, e, tpe, eff, loc)
+        Expression.RecordRestrict(field, e, tpe, eff, loc)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         val es = elms.map(apply)

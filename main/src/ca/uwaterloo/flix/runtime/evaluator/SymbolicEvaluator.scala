@@ -724,17 +724,17 @@ object SymbolicEvaluator {
       /**
         * RecordSelect.
         */
-      case Expression.RecordSelect(base, label, tpe, loc) => ???
+      case Expression.RecordSelect(base, field, tpe, loc) => ???
 
       /**
         * RecordExtend.
         */
-      case Expression.RecordExtend(base, label, value, tpe, loc) => ???
+      case Expression.RecordExtend(base, field, value, tpe, loc) => ???
 
       /**
         * RecordRestrict.
         */
-      case Expression.RecordRestrict(base, label, tpe, loc) => ???
+      case Expression.RecordRestrict(base, field, tpe, loc) => ???
 
       /**
         * Index (into tuple).

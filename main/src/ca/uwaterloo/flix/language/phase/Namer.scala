@@ -557,19 +557,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.RecordEmpty(loc) =>
       NamedAst.Expression.RecordEmpty(Type.freshVar(Kind.Record), loc).toSuccess
 
-    case WeededAst.Expression.RecordSelect(exp, label, loc) =>
+    case WeededAst.Expression.RecordSelect(exp, field, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshVar(Kind.Star), loc)
+        case e => NamedAst.Expression.RecordSelect(e, field, Type.freshVar(Kind.Star), loc)
       }
 
-    case WeededAst.Expression.RecordExtend(label, value, rest, loc) =>
+    case WeededAst.Expression.RecordExtend(field, value, rest, loc) =>
       mapN(visitExp(value, env0, uenv0, tenv0), visitExp(rest, env0, uenv0, tenv0)) {
-        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshVar(Kind.Record), loc)
+        case (v, r) => NamedAst.Expression.RecordExtend(field, v, r, Type.freshVar(Kind.Record), loc)
       }
 
-    case WeededAst.Expression.RecordRestrict(label, rest, loc) =>
+    case WeededAst.Expression.RecordRestrict(field, rest, loc) =>
       mapN(visitExp(rest, env0, uenv0, tenv0)) {
-        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshVar(Kind.Record), loc)
+        case r => NamedAst.Expression.RecordRestrict(field, r, Type.freshVar(Kind.Record), loc)
       }
 
     case WeededAst.Expression.ArrayLit(elms, loc) =>
@@ -1148,9 +1148,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.RecordEmpty(loc) => Nil
-    case WeededAst.Expression.RecordSelect(exp, label, loc) => freeVars(exp)
-    case WeededAst.Expression.RecordExtend(label, exp, rest, loc) => freeVars(exp) ++ freeVars(rest)
-    case WeededAst.Expression.RecordRestrict(label, rest, loc) => freeVars(rest)
+    case WeededAst.Expression.RecordSelect(exp, _, loc) => freeVars(exp)
+    case WeededAst.Expression.RecordExtend(_, exp, rest, loc) => freeVars(exp) ++ freeVars(rest)
+    case WeededAst.Expression.RecordRestrict(_, rest, loc) => freeVars(rest)
     case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm) ++ freeVars(len)
     case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)

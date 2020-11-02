@@ -69,7 +69,7 @@ object JvmOps {
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
     case MonoType.RecordEmpty() => getRecordInterfaceType()
-    case MonoType.RecordExtend(label, value, rest) => getRecordInterfaceType()
+    case MonoType.RecordExtend(_, value, rest) => getRecordInterfaceType()
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Relation(attr) => JvmType.Reference(JvmName.PredSym)
@@ -610,11 +610,11 @@ object JvmOps {
 
       case Expression.RecordEmpty(tpe, loc) => Set.empty
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) => visitExp(value) ++ visitExp(rest)
+      case Expression.RecordExtend(_, value, rest, tpe, loc) => visitExp(value) ++ visitExp(rest)
 
-      case Expression.RecordSelect(exp, label, tpe, loc) => visitExp(exp)
+      case Expression.RecordSelect(exp, _, tpe, loc) => visitExp(exp)
 
-      case Expression.RecordRestrict(label, rest, tpe, loc) => visitExp(rest)
+      case Expression.RecordRestrict(_, rest, tpe, loc) => visitExp(rest)
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -960,11 +960,11 @@ object JvmOps {
 
       case Expression.RecordEmpty(tpe, loc) => Set(tpe)
 
-      case Expression.RecordSelect(exp, label, tpe, loc) => Set(tpe) ++ visitExp(exp)
+      case Expression.RecordSelect(exp, _, tpe, loc) => Set(tpe) ++ visitExp(exp)
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value) ++ visitExp(rest)
+      case Expression.RecordExtend(_, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value) ++ visitExp(rest)
 
-      case Expression.RecordRestrict(label, rest, tpe, loc) => Set(tpe) ++ visitExp(rest)
+      case Expression.RecordRestrict(_, rest, tpe, loc) => Set(tpe) ++ visitExp(rest)
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -1139,7 +1139,7 @@ object JvmOps {
       case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
 
       case MonoType.RecordEmpty() => Set(tpe)
-      case MonoType.RecordExtend(label, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
+      case MonoType.RecordExtend(_, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
 
       case MonoType.SchemaEmpty() => Set(tpe)
       case MonoType.SchemaExtend(sym, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest

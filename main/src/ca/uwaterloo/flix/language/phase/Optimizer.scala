@@ -175,18 +175,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.RecordEmpty(tpe, loc) =>
         Expression.RecordEmpty(tpe, loc)
 
-      case Expression.RecordSelect(exp, label, tpe, loc) =>
+      case Expression.RecordSelect(exp, field, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.RecordSelect(e, label, tpe, loc)
+        Expression.RecordSelect(e, field, tpe, loc)
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      case Expression.RecordExtend(field, value, rest, tpe, loc) =>
         val v = visitExp(value, env0)
         val r = visitExp(rest, env0)
-        Expression.RecordExtend(label, v, r, tpe, loc)
+        Expression.RecordExtend(field, v, r, tpe, loc)
 
-      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+      case Expression.RecordRestrict(field, rest, tpe, loc) =>
         val r = visitExp(rest, env0)
-        Expression.RecordRestrict(label, r, tpe, loc)
+        Expression.RecordRestrict(field, r, tpe, loc)
 
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map (visitExp(_, env0))

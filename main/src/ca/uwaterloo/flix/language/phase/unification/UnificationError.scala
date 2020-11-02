@@ -71,7 +71,7 @@ object UnificationError {
     * @param fieldType  the type of the missing field.
     * @param recordType the record type where the field is missing.
     */
-  case class UndefinedLabel(field: Name.Field, fieldType: Type, recordType: Type) extends UnificationError
+  case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type) extends UnificationError
 
   /**
     * An unification error due the predicate `pred` of type `predType` missing from the type `schemaType`.

@@ -238,21 +238,21 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.RecordEmpty(t, loc)
 
-      case SimplifiedAst.Expression.RecordSelect(exp, label, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordSelect(exp, field, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.RecordSelect(e, label, t, loc)
+        FinalAst.Expression.RecordSelect(e, field, t, loc)
 
-      case SimplifiedAst.Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
         val v = visit(value)
         val r = visit(rest)
         val t = visitType(tpe)
-        FinalAst.Expression.RecordExtend(label, v, r, t, loc)
+        FinalAst.Expression.RecordExtend(field, v, r, t, loc)
 
-      case SimplifiedAst.Expression.RecordRestrict(label, rest, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
         val r = visit(rest)
         val t = visitType(tpe)
-        FinalAst.Expression.RecordRestrict(label, r, t, loc)
+        FinalAst.Expression.RecordRestrict(field, r, t, loc)
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visit

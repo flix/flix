@@ -192,16 +192,16 @@ object SimplifiedAstOps {
       case Expression.RecordEmpty(tpe, loc) =>
         checkType(tpe)
 
-      case Expression.RecordSelect(base, label, tpe, loc) =>
+      case Expression.RecordSelect(base, field, tpe, loc) =>
         checkExp(base, env0, ienv0)
         checkType(tpe)
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      case Expression.RecordExtend(field, value, rest, tpe, loc) =>
         checkExp(value, env0, ienv0)
         checkExp(rest, env0, ienv0)
         checkType(tpe)
 
-      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+      case Expression.RecordRestrict(field, rest, tpe, loc) =>
         checkExp(rest, env0, ienv0)
         checkType(tpe)
 
