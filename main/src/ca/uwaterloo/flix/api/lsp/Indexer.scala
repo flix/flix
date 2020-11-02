@@ -151,8 +151,8 @@ object Indexer {
         case (acc, ChoiceRule(_, exp)) => acc ++ visitExp(exp)
       }
 
-    case Expression.Tag(sym, tag, exp, _, _, loc) =>
-      visitExp(exp) ++ Index.useOf(sym, tag, loc) ++ Index.of(exp0)
+    case Expression.Tag(sym, tag, exp, _, _, _) =>
+      visitExp(exp) ++ Index.useOf(sym, tag) ++ Index.of(exp0)
 
     case Expression.Tuple(exps, tpe, eff, loc) =>
       visitExps(exps) ++ Index.of(exp0)
@@ -308,7 +308,7 @@ object Indexer {
     case Pattern.Int64(_, _) => Index.of(pat0)
     case Pattern.BigInt(_, _) => Index.of(pat0)
     case Pattern.Str(_, _) => Index.of(pat0)
-    case Pattern.Tag(sym, tag, pat, _, loc) => Index.of(pat0) ++ visitPat(pat) ++ Index.useOf(sym, tag, loc)
+    case Pattern.Tag(sym, tag, pat, _, loc) => Index.of(pat0) ++ visitPat(pat) ++ Index.useOf(sym, tag)
     case Pattern.Tuple(elms, _, _) => Index.of(pat0) ++ visitPats(elms)
     case Pattern.Array(elms, _, _) => Index.of(pat0) ++ visitPats(elms)
     case Pattern.ArrayTailSpread(elms, _, _, _) => Index.of(pat0) ++ visitPats(elms)
