@@ -95,6 +95,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Hole", "main/test/flix/Test.Exp.Hole.flix")(Options.TestWithLibrary),
 
   //
+  // IfThenElse.
+  //
+  new FlixTest("Test.Exp.IfThenElse", "main/test/flix/Test.Exp.IfThenElse.flix"),
+
+  //
   // Infix.
   //
   new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
