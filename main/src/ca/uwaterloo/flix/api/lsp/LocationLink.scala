@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -40,7 +40,7 @@ object LocationLink {
   /**
     * Returns a location link to the given symbol `sym`.
     */
-  def fromEnumSym(sym: Symbol.EnumSym, tag: String, root: Root, loc: SourceLocation): LocationLink = {
+  def fromEnumSym(sym: Symbol.EnumSym, tag: Name.Tag, root: Root, loc: SourceLocation): LocationLink = {
     val enumDecl = root.enums(sym)
     val caseDecl = enumDecl.cases(tag)
     val originSelectionRange = Range.from(loc)

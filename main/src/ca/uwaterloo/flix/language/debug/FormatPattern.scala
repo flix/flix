@@ -26,8 +26,8 @@ object FormatPattern {
     case TypedAst.Pattern.BigInt(lit, _) => s"${lit}ii"
     case TypedAst.Pattern.Str(lit, _) => "\"" + lit + "\""
     case TypedAst.Pattern.Tag(_, tag, pat, _, _) => pat match {
-      case TypedAst.Pattern.Unit(_) => tag
-      case _ => tag + "(" + format(pat) + ")"
+      case TypedAst.Pattern.Unit(_) => tag.name
+      case _ => tag.name + "(" + format(pat) + ")"
     }
     case TypedAst.Pattern.Tuple(elms, _, _) => "(" + elms.map(format).mkString(", ") + ")"
     case TypedAst.Pattern.Array(elms, _, _) => "[" + elms.map(format).mkString(", ") + "]"

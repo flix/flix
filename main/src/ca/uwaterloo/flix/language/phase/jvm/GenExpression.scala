@@ -371,7 +371,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
 
@@ -385,7 +385,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
-      val tagInfo = JvmOps.getTagInfo(tpe, tag)
+      val tagInfo = JvmOps.getTagInfo(tpe, tag.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
       /*
@@ -413,7 +413,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag.name)
       // We get the JvmType of the class for the tag
       val classType = JvmOps.getTagClassType(tagInfo)
       // Evaluate the exp

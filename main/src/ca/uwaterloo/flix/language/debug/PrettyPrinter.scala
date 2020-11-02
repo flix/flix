@@ -219,12 +219,12 @@ object PrettyPrinter {
         case Expression.Is(sym, tag, exp, loc) =>
           visitExp(exp)
           vt.text(" is ")
-          vt.text(tag)
+          vt.text(tag.name)
 
         case Expression.Tag(sym, tag, exp, tpe, loc) => exp match {
-          case Expression.Unit => vt.text(tag)
+          case Expression.Unit => vt.text(tag.name)
           case _ =>
-            vt.text(tag).text("(")
+            vt.text(tag.name).text("(")
             visitExp(exp)
             vt.text(")")
         }

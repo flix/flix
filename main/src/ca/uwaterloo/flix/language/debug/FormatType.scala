@@ -170,9 +170,9 @@ object FormatType {
 
           case TypeConstructor.Tag(sym, tag) => // TODO better unhappy case handling
             if (args.lengthIs == 2)
-              s"$tag${args.head}"
+              s"${tag.name}${args.head}"
             else
-              formatApply(tag, args)
+              formatApply(tag.name, args)
 
           case TypeConstructor.Not => args match {
             case (t1: Type.Var) :: Nil => s"¬${visit(t1)}"

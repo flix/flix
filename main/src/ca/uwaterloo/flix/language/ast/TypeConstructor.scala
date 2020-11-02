@@ -167,7 +167,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of tags.
     */
-  case class Tag(sym: Symbol.EnumSym, tag: String) extends TypeConstructor {
+  case class Tag(sym: Symbol.EnumSym, tag: Name.Tag) extends TypeConstructor {
     /**
       * The shape of a tag is "like" a function `caseType` -> (`resultType`) -> *.
       */

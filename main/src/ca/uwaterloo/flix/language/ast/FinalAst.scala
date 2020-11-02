@@ -34,7 +34,7 @@ object FinalAst {
     var method: Method = _
   }
 
-  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, FinalAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
+  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, FinalAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: FinalAst.Expression) {
     def loc: SourceLocation = defn.loc
@@ -141,13 +141,13 @@ object FinalAst {
 
     case class Let(sym: Symbol.VarSym, exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Is(sym: Symbol.EnumSym, tag: String, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
+    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe: MonoType = MonoType.Bool
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: String, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Untag(sym: Symbol.EnumSym, tag: String, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class Untag(sym: Symbol.EnumSym, tag: Name.Tag, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class Index(base: FinalAst.Expression, offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -301,7 +301,7 @@ object FinalAst {
 
   case class Attribute(name: String, tpe: MonoType)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpeDeprecated: MonoType, loc: SourceLocation)
+  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 

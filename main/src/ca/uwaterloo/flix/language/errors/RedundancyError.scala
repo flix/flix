@@ -38,6 +38,7 @@ object RedundancyError {
     */
   case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Hidden variable symbol."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -62,6 +63,7 @@ object RedundancyError {
     */
   case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Shadowed variable."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -74,6 +76,7 @@ object RedundancyError {
       vt << Code(sym1.loc, "shadowed variable.") << NewLine
       vt << NewLine
     }
+
     def loc: SourceLocation = sym1.loc min sym2.loc
   }
 
@@ -84,6 +87,7 @@ object RedundancyError {
     */
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
     def summary: String = "Unused definition."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -100,6 +104,7 @@ object RedundancyError {
       vt << NewLine
       vt
     }
+
     def loc: SourceLocation = sym.loc
   }
 
@@ -110,6 +115,7 @@ object RedundancyError {
     */
   case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
     def summary: String = "Unused enum."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -126,6 +132,7 @@ object RedundancyError {
       vt << NewLine
       vt
     }
+
     def loc: SourceLocation = sym.loc
   }
 
@@ -135,8 +142,9 @@ object RedundancyError {
     * @param sym the enum symbol.
     * @param tag the unused tag.
     */
-  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Ident) extends RedundancyError {
+  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Tag) extends RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -152,6 +160,7 @@ object RedundancyError {
       vt << NewLine
       vt
     }
+
     def loc: SourceLocation = sym.loc
   }
 
@@ -162,6 +171,7 @@ object RedundancyError {
     */
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Unused formal parameter."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -177,6 +187,7 @@ object RedundancyError {
       vt << NewLine
       vt
     }
+
     def loc: SourceLocation = sym.loc
   }
 
@@ -187,6 +198,7 @@ object RedundancyError {
     */
   case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
     def summary: String = "Unused type parameter."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -202,6 +214,7 @@ object RedundancyError {
       vt << NewLine
       vt
     }
+
     def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
   }
 
@@ -212,6 +225,7 @@ object RedundancyError {
     */
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Unused local variable."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -227,6 +241,7 @@ object RedundancyError {
       vt << NewLine
       vt
     }
+
     def loc: SourceLocation = sym.loc
   }
 
@@ -237,6 +252,7 @@ object RedundancyError {
     */
   case class UselessExpression(loc: SourceLocation) extends RedundancyError {
     def summary: String = "Useless expression."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -261,6 +277,7 @@ object RedundancyError {
     */
   case class UnconditionalRecursion(sym: Symbol.DefnSym) extends RedundancyError {
     def summary: String = "Unconditional recursion."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -274,6 +291,7 @@ object RedundancyError {
       vt << NewLine
       vt
     }
+
     def loc: SourceLocation = sym.loc
   }
 

@@ -344,7 +344,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       highlight(uses)
     }
 
-    def highlightTag(sym: Symbol.EnumSym, tag: String): JValue = {
+    def highlightTag(sym: Symbol.EnumSym, tag: Name.Tag): JValue = {
       // Find all occurrences of the symbol.
       val write = (sym.loc, DocumentHighlightKind.Write)
       val reads = index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
@@ -359,7 +359,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     }
 
     index.query(uri, pos) match {
-      case Some(Entity.Case(caze)) => highlightTag(caze.sym, caze.tag.name)
+      case Some(Entity.Case(caze)) => highlightTag(caze.sym, caze.tag)
       case Some(Entity.Def(defn)) => highlightDef(defn.sym)
       case Some(Entity.Exp(exp)) => exp match {
         case Expression.Var(sym, _, _) => highlightVar(sym)
@@ -755,7 +755,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
       case Some(Entity.Case(caze)) =>
-        val uses = index.usesOf(caze.sym, caze.tag.name)
+        val uses = index.usesOf(caze.sym, caze.tag)
         val locs = uses.toList.map(Location.from)
         ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 

@@ -111,7 +111,7 @@ object Index {
   /**
     * Returns an index with the symbol `sym` and `tag` used at location `loc.`
     */
-  def useOf(sym: Symbol.EnumSym, tag: String, loc: SourceLocation): Index =
+  def useOf(sym: Symbol.EnumSym, tag: Name.Tag, loc: SourceLocation): Index =
     Index.empty.copy(enumUses = MultiMap.singleton(sym, loc), tagUses = MultiMap.singleton((sym, tag), loc))
 
   /**
@@ -128,7 +128,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  sigUses: MultiMap[Symbol.SigSym, SourceLocation],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
-                 tagUses: MultiMap[(Symbol.EnumSym, String), SourceLocation],
+                 tagUses: MultiMap[(Symbol.EnumSym, Name.Tag), SourceLocation],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
@@ -191,7 +191,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
   /**
     * Returns all uses of the given symbol `sym` and `tag`.
     */
-  def usesOf(sym: Symbol.EnumSym, tag: String): Set[SourceLocation] = tagUses((sym, tag))
+  def usesOf(sym: Symbol.EnumSym, tag: Name.Tag): Set[SourceLocation] = tagUses((sym, tag))
 
   /**
     * Returns all uses of the given symbol `sym`.

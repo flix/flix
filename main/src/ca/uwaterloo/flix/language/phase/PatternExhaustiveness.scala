@@ -652,7 +652,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
         // other enums
         case TyCon.Enum(_, sym, _, _) => {
-          root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1, sym, countTypeArgs(x._2.tpeDeprecated), List.empty[TyCon]))
+          root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1.name, sym, countTypeArgs(x._2.tpeDeprecated), List.empty[TyCon]))
           }.toList ::: xs
 
         /* For numeric types, we consider them as "infinite" types union
@@ -798,7 +798,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
           case a => (List(patToCtor(a)), 1)
         }
-        TyCon.Enum(tag, sym, numArgs, args)
+        TyCon.Enum(tag.name, sym, numArgs, args)
       }
       case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
       case Pattern.Array(elm, _, _) => TyCon.Array

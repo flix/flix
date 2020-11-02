@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -107,17 +107,17 @@ object WeederError {
     * An error raised to indicate that the tag `name` was declared multiple times.
     *
     * @param enumName the name of the enum.
-    * @param tagName  the name of the tag.
+    * @param tag      the name of the tag.
     * @param loc1     the location of the first tag.
     * @param loc2     the location of the second tag.
     */
-  case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Duplicate tag: '$tagName'."
+  case class DuplicateTag(enumName: String, tag: Name.Tag, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    def summary: String = s"Duplicate tag: '$tag'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Multiple declarations of the tag '" << Red(tagName) << "' in the enum '" << Cyan(enumName) << "'." << NewLine
+      vt << ">> Multiple declarations of the tag '" << Red(tag.name) << "' in the enum '" << Cyan(enumName) << "'." << NewLine
       vt << NewLine
       vt << Code(loc1, "the first declaration was here.") << NewLine
       vt << NewLine

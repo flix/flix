@@ -213,11 +213,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           /*
            * Check for `DuplicateTag`.
            */
-          Validation.fold[ParsedAst.Case, Map[String, WeededAst.Case], WeederError](cases, Map.empty) {
+          Validation.fold[ParsedAst.Case, Map[Name.Tag, WeededAst.Case], WeederError](cases, Map.empty) {
             case (macc, caze: ParsedAst.Case) =>
-              val tagName = caze.ident.name
+              val tagName = Name.mkTag(caze.ident)
               macc.get(tagName) match {
-                case None => (macc + (tagName -> WeededAst.Case(ident, caze.ident, visitType(caze.tpe)))).toSuccess
+                case None => (macc + (tagName -> WeededAst.Case(ident, Name.mkTag(caze.ident), visitType(caze.tpe)))).toSuccess
                 case Some(otherTag) =>
                   val loc1 = otherTag.tag.loc
                   val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
@@ -243,7 +243,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       modVal map {
         case mod =>
           val tparams = visitTypeParams(tparams0)
-          val cases = Map(ident.name -> WeededAst.Case(ident, ident, visitType(tpe0)))
+          val cases = Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(tpe0)))
           List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, cases, mkSL(sp1, sp2)))
       }
   }
@@ -355,13 +355,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       us.toSuccess
 
     case ParsedAst.Use.UseOneTag(sp1, qname, tag, sp2) =>
-      List(WeededAst.Use.UseTag(qname, tag, tag, mkSL(sp1, sp2))).toSuccess
+      List(WeededAst.Use.UseTag(qname, Name.mkTag(tag), tag, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseManyTag(sp1, qname, tags, sp2) =>
       val us = tags.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
           val alias = aliasOpt.getOrElse(ident)
-          WeededAst.Use.UseTag(qname, ident, alias, mkSL(sp1, sp2)) :: acc
+          WeededAst.Use.UseTag(qname, Name.mkTag(ident), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
   }
@@ -797,11 +797,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       expOpt match {
         case None =>
           // Case 1: The tag does not have an expression. Nothing more to be done.
-          WeededAst.Expression.Tag(enum, tag, None, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Expression.Tag(enum, Name.mkTag(tag), None, mkSL(sp1, sp2)).toSuccess
         case Some(exp) =>
           // Case 2: The tag has an expression. Perform weeding on it.
           mapN(visitExp(exp)) {
-            case e => WeededAst.Expression.Tag(enum, tag, Some(e), mkSL(sp1, sp2))
+            case e => WeededAst.Expression.Tag(enum, Name.mkTag(tag), Some(e), mkSL(sp1, sp2))
           }
       }
 
@@ -946,9 +946,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /*
        * Rewrites a `FNil` expression into a tag expression.
        */
-      val tag = Name.Ident(sp1, "Nil", sp2)
-      val exp = WeededAst.Expression.Unit(mkSL(sp1, sp2))
-      WeededAst.Expression.Tag(None, tag, Some(exp), mkSL(sp1, sp2)).toSuccess
+      val loc = mkSL(sp1, sp2)
+      val tag = Name.Tag("Nil", loc)
+      val exp = WeededAst.Expression.Unit(loc)
+      WeededAst.Expression.Tag(None, tag, Some(exp), loc).toSuccess
 
     case ParsedAst.Expression.FCons(hd, sp1, sp2, tl) =>
       /*
@@ -956,9 +957,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        */
       mapN(visitExp(hd), visitExp(tl)) {
         case (e1, e2) =>
-          val tag = Name.Ident(sp1, "Cons", sp2)
-          val exp = WeededAst.Expression.Tuple(List(e1, e2), mkSL(sp1, sp2))
-          WeededAst.Expression.Tag(None, tag, Some(exp), mkSL(sp1, sp2))
+          val loc = mkSL(sp1, sp2)
+          val tag = Name.Tag("Cons", loc)
+          val exp = WeededAst.Expression.Tuple(List(e1, e2), loc)
+          WeededAst.Expression.Tag(None, tag, Some(exp), loc)
       }
 
     case ParsedAst.Expression.FAppend(fst, sp1, sp2, snd) =>
@@ -1363,9 +1365,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case None =>
             val loc = mkSL(sp1, sp2)
             val lit = WeededAst.Pattern.Unit(SourceLocation.Generated)
-            WeededAst.Pattern.Tag(enum, tag, lit, loc).toSuccess
+            WeededAst.Pattern.Tag(enum, Name.mkTag(tag), lit, loc).toSuccess
           case Some(pat) => visit(pat) map {
-            case p => WeededAst.Pattern.Tag(enum, tag, p, mkSL(sp1, sp2))
+            case p => WeededAst.Pattern.Tag(enum, Name.mkTag(tag), p, mkSL(sp1, sp2))
           }
         }
 
@@ -1421,9 +1423,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         /*
          * Rewrites a `FNil` pattern into a tag pattern.
          */
-        val tag = Name.Ident(sp1, "Nil", sp2)
+        val loc = mkSL(sp1, sp2)
+        val tag = Name.Tag("Nil", loc)
         val pat = WeededAst.Pattern.Unit(SourceLocation.Generated)
-        WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2)).toSuccess
+        WeededAst.Pattern.Tag(None, tag, pat, loc).toSuccess
 
       case ParsedAst.Pattern.FCons(pat1, sp1, sp2, pat2) =>
         /*
@@ -1431,9 +1434,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          */
         mapN(visitPattern(pat1), visitPattern(pat2)) {
           case (hd, tl) =>
-            val tag = Name.Ident(sp1, "Cons", sp2)
-            val pat = WeededAst.Pattern.Tuple(List(hd, tl), mkSL(sp1, sp2))
-            WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2))
+            val loc = mkSL(sp1, sp2)
+            val tag = Name.Tag("Cons", loc)
+            val pat = WeededAst.Pattern.Tuple(List(hd, tl), loc)
+            WeededAst.Pattern.Tag(None, tag, pat, loc)
         }
 
     }

@@ -1199,11 +1199,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val isAbsent = SimplifiedAst.Expression.Is(sym, "Absent", varExp, loc)
+              val tag = Name.Tag("Absent", SourceLocation.Generated)
+              val isAbsent = SimplifiedAst.Expression.Is(sym, tag, varExp, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isAbsent, acc, Type.Bool, loc)
             case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val isPresent = SimplifiedAst.Expression.Is(sym, "Present", varExp, loc)
+              val tag = Name.Tag("Present", SourceLocation.Generated)
+              val isPresent = SimplifiedAst.Expression.Is(sym, tag, varExp, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isPresent, acc, Type.Bool, loc)
           }
           val bodyExp = visitExp(body)
@@ -1212,7 +1214,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, tpe, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val untagExp = SimplifiedAst.Expression.Untag(sym, "Present", varExp, tpe, loc)
+              val tag = Name.Tag("Present", SourceLocation.Generated)
+              val untagExp = SimplifiedAst.Expression.Untag(sym, tag, varExp, tpe, loc)
               SimplifiedAst.Expression.Let(matchVar, untagExp, acc, acc.tpe, loc)
           }
           val elseExp = acc
