@@ -30,4 +30,9 @@ namespace Test/Exp/Match/Wild {
         case Some(t)
     }
 
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
+
 }
