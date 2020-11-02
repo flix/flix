@@ -1,7 +1,7 @@
-namespace Test/Expression/Match/Guard {
+namespace Test/Exp/Match/Guard {
 
     @test
-    def guard01(): Bool =
+    def testGuard01(): Bool =
         let r = match Some('a') {
             case Some(x) if x == 'a' => 1
             case Some(x) if x == 'b' => 2
@@ -11,7 +11,7 @@ namespace Test/Expression/Match/Guard {
         r == 1
 
     @test
-    def guard02(): Bool =
+    def testGuard02(): Bool =
         let r = match Some('b') {
             case Some(x) if x == 'a' => 1
             case Some(x) if x == 'b' => 2
@@ -21,7 +21,7 @@ namespace Test/Expression/Match/Guard {
         r == 2
 
     @test
-    def guard03(): Bool =
+    def testGuard03(): Bool =
         let r = match Some('c') {
             case Some(x) if x == 'a' => 1
             case Some(x) if x == 'b' => 2
@@ -31,7 +31,7 @@ namespace Test/Expression/Match/Guard {
         r == 3
 
     @test
-    def guard04(): Bool =
+    def testGuard04(): Bool =
         let r = match Some('z') {
             case Some(x) if x == 'a' => 1
             case Some(x) if x == 'b' => 2
@@ -41,7 +41,7 @@ namespace Test/Expression/Match/Guard {
         r == 42
 
     @test
-    def guard05(): Bool =
+    def testGuard05(): Bool =
         let r = match None {
             case Some(x) if x == 'a' => 1
             case Some(x) if x == 'b' => 2
@@ -50,4 +50,9 @@ namespace Test/Expression/Match/Guard {
         };
         r == 42
 
+}
+
+pub enum Option[t] {
+    case None,
+    case Some(t)
 }
