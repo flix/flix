@@ -346,7 +346,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     def highlightTag(sym: Symbol.EnumSym, tag: Name.Tag): JValue = {
       // Find all occurrences of the symbol.
-      val write = (sym.loc, DocumentHighlightKind.Write)
+      val write = (root.enums(sym).cases(tag).loc, DocumentHighlightKind.Write)
       val reads = index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
       highlight(write :: reads)
     }
