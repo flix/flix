@@ -123,6 +123,7 @@ class LangSuite extends Suites(
   //
   // Let.
   //
+  new FlixTest("Test.Exp.Let.Match", "main/test/flix/Test.Exp.Let.Match.flix"),
   new FlixTest("Test.Exp.Let.MatchStar", "main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibrary),
 
   //
