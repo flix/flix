@@ -72,4 +72,11 @@ namespace List {
         foldRight((x, acc) -> x :: acc, ys, xs)
     }
 
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = foldRightHelper(f, s, xs, s1 -> s1 as & e)
+
+    def foldRightHelper(f: (a, b) -> b & e, s: b, xs: List[a], k: b -> b & e): b & e = match xs {
+        case Nil => k(s)
+        case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
+    }
+
 }

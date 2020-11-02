@@ -27,12 +27,12 @@ namespace Test/Exp/Match/Wild {
 
 }
 
-enum Option[t] {
+pub enum Option[t] {
     case None,
     case Some(t)
 }
 
-enum Result[t, e] {
+pub enum Result[t, e] {
     case Ok(t),
     case Err(e)
 }
