@@ -472,7 +472,7 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordSelect(exp, label, tpe, loc) =>
+    case Expression.RecordSelect(exp, field, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
@@ -488,7 +488,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       //Push the desired label of the field we want get of the record onto the stack
-      visitor.visitLdcInsn(label)
+      visitor.visitLdcInsn(field.name)
 
       //Invoke the lookupField method on the record. (To get the proper record object)
       visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "lookupField",
@@ -504,7 +504,7 @@ object GenExpression {
       // Cast the field value to the expected type.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+    case Expression.RecordExtend(field, value, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the class for the record extend
@@ -521,7 +521,7 @@ object GenExpression {
       //Push the required argument to call the RecordExtend constructor.
 
       //Push the label of field (which is going to be the extension).
-      visitor.visitLdcInsn(label)
+      visitor.visitLdcInsn(field.name)
 
       //Push the value of the field onto the stack, since it is an expression we first need to compile it.
       compileExpression(value, visitor, currentClass, lenv0, entryPoint)
@@ -535,7 +535,7 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordRestrict(label, rest, tpe, loc) =>
+    case Expression.RecordRestrict(field, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the record interface
@@ -544,7 +544,7 @@ object GenExpression {
       //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
       compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
       //Push the label of field (which is going to be the removed/restricted).
-      visitor.visitLdcInsn(label)
+      visitor.visitLdcInsn(field.name)
 
       // Invoking the restrictField method
       visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "restrictField",

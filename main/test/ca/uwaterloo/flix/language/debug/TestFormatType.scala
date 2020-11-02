@@ -23,7 +23,7 @@ import org.scalatest.FunSuite
 
 class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.WellFormedType.Record.External.01") {
-    val tpe = Type.mkRecordExtend("x", Type.Int32, Type.mkRecordExtend("y", Type.Str, Type.RecordEmpty))
+    val tpe = Type.mkRecordExtend(Name.Field("x", SourceLocation.Unknown), Type.Int32, Type.mkRecordExtend(Name.Field("y", SourceLocation.Unknown), Type.Str, Type.RecordEmpty))
 
     val expected = "{ x: Int32, y: String }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -34,7 +34,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Record.External.02") {
     val rest = Type.Var(0, Kind.Record, Rigidity.Rigid)
     rest.setText("theRest")
-    val tpe = Type.mkRecordExtend("x", Type.Int32, rest)
+    val tpe = Type.mkRecordExtend(Name.Field("x", SourceLocation.Unknown), Type.Int32, rest)
 
     val expected = "{ x: Int32 | theRest }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -134,7 +134,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.WellFormedType.Record.Internal.01") {
-    val tpe = Type.mkRecordExtend("x", Type.Int32, Type.mkRecordExtend("y", Type.Str, Type.RecordEmpty))
+    val tpe = Type.mkRecordExtend(Name.Field("x", SourceLocation.Unknown), Type.Int32, Type.mkRecordExtend(Name.Field("y", SourceLocation.Unknown), Type.Str, Type.RecordEmpty))
 
     val expected = "{ x: Int32, y: String }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -145,7 +145,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Record.Internal.02") {
     val rest = Type.Var(0, Kind.Record, Rigidity.Rigid)
     rest.setText("theRest")
-    val tpe = Type.mkRecordExtend("x", Type.Int32, rest)
+    val tpe = Type.mkRecordExtend(Name.Field("x", SourceLocation.Unknown), Type.Int32, rest)
 
     val expected = "{ x: Int32 | '0 }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -215,7 +215,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Record.External.01") {
-    val tpe = Type.Cst(TypeConstructor.RecordExtend("x"))
+    val tpe = Type.Cst(TypeConstructor.RecordExtend(Name.Field("x", SourceLocation.Unknown)))
 
     val expected = "{ x: ??? }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -224,7 +224,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Record.External.02") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.RecordExtend("x")), Type.Int32)
+    val tpe = Type.Apply(Type.Cst(TypeConstructor.RecordExtend(Name.Field("x", SourceLocation.Unknown))), Type.Int32)
 
     val expected = "{ x: Int32 | ??? }"
     val actual = FormatType.formatType(tpe)(Audience.External)

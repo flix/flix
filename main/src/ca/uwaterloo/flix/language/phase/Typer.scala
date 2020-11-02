@@ -866,21 +866,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultType <- unifyTypeM(tvar, Type.RecordEmpty, loc)
         } yield (List.empty, resultType, Type.Pure)
 
-      case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
+      case ResolvedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
         //
         // r : { label = tpe | row }
         // -------------------------
         // r.label : tpe
         //
         val freshRowVar = Type.freshVar(Kind.Record)
-        val expectedType = Type.mkRecordExtend(label, tvar, freshRowVar)
+        val expectedType = Type.mkRecordExtend(field, tvar, freshRowVar)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           recordType <- unifyTypeM(tpe, expectedType, loc)
           resultEff = eff
         } yield (constrs, tvar, resultEff)
 
-      case ResolvedAst.Expression.RecordExtend(label, exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.RecordExtend(field, exp1, exp2, tvar, loc) =>
         //
         // exp1 : tpe
         // ---------------------------------------------
@@ -889,11 +889,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          resultTyp <- unifyTypeM(tvar, Type.mkRecordExtend(label, tpe1, tpe2), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkRecordExtend(field, tpe1, tpe2), loc)
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.RecordRestrict(label, exp, tvar, loc) =>
+      case ResolvedAst.Expression.RecordRestrict(field, exp, tvar, loc) =>
         //
         // ----------------------
         // { -label | r } : { r }
@@ -902,7 +902,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val freshRowVar = Type.freshVar(Kind.Record)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          recordType <- unifyTypeM(tpe, Type.mkRecordExtend(label, freshFieldType, freshRowVar), loc)
+          recordType <- unifyTypeM(tpe, Type.mkRecordExtend(field, freshFieldType, freshRowVar), loc)
           resultTyp <- unifyTypeM(tvar, freshRowVar, loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)

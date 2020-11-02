@@ -317,8 +317,8 @@ object FormatType {
     * Convert a record to a [[FlatNestable]].
     */
   private def flattenRecord(record: Type): FlatNestable = record match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
-      (label, tpe) :: flattenRecord(rest)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field)), tpe), rest) =>
+      (field.name, tpe) :: flattenRecord(rest)
     case _ => FlatNestable(Nil, record)
   }
 

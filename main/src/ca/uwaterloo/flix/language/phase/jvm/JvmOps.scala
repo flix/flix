@@ -819,7 +819,7 @@ object JvmOps {
     case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type))
     case MonoType.Tuple(length) => Type.mkTuple(Nil) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
-    case MonoType.RecordExtend(label, value, rest) => Type.mkRecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
+    case MonoType.RecordExtend(field, value, rest) => Type.mkRecordExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty
     case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2Type(rest))
   }

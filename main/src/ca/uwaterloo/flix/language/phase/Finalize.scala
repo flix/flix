@@ -599,7 +599,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
 
-          case TypeConstructor.RecordExtend(label) => MonoType.RecordExtend(label, args.head, args(1))
+          case TypeConstructor.RecordExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
 
           case TypeConstructor.SchemaExtend(pred) => MonoType.SchemaExtend(pred.name, args.head, args(1))
 

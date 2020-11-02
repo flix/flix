@@ -1009,9 +1009,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.RecordEmpty(loc) =>
       NamedAst.Type.RecordEmpty(loc).toSuccess
 
-    case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
+    case WeededAst.Type.RecordExtend(field, value, rest, loc) =>
       mapN(visitType(value, uenv0, tenv0), visitType(rest, uenv0, tenv0)) {
-        case (t, r) => NamedAst.Type.RecordExtend(label, t, r, loc)
+        case (t, r) => NamedAst.Type.RecordExtend(field, t, r, loc)
       }
 
     case WeededAst.Type.RecordGeneric(tvar, loc) =>
