@@ -139,16 +139,6 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Tag.Lambda.flix", LocalResource.get("/test/flix/Test.Exp.Tag.Lambda.flix"))
 
     flix.addInput("Test.Use.Tag.flix", LocalResource.get("/test/flix/Test.Use.Tag.flix"))
-
-    flix.addInput("Test.Expression.Binary.Arithmetic.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix"))
-    flix.addInput("Test.Expression.Binary.Bitwise.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Bitwise.flix"))
-    flix.addInput("Test.Expression.Binary.Comparison.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix"))
-    flix.addInput("Test.Expression.Block.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Block.flix"))
-    flix.addInput("Test.Expression.IfThenElse.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix"))
-    flix.addInput("Test.Expression.Record.Extend.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix"))
-    flix.addInput("Test.Expression.Record.Literal.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix"))
-    flix.addInput("Test.Expression.Record.Multiple.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix"))
-    flix.addInput("Test.Expression.Record.Restrict.flix", LocalResource.get("/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix"))
   }
 
   /**
