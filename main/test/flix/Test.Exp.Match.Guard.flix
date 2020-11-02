@@ -50,9 +50,9 @@ namespace Test/Exp/Match/Guard {
         };
         r == 42
 
-}
+    pub enum Option[t] {
+        case None,
+        case Some(t)
+    }
 
-pub enum Option[t] {
-    case None,
-    case Some(t)
 }
