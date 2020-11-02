@@ -72,14 +72,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Match.Array.HeadSpread", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.Array.HeadSpread.flix")(Options.TestWithLibrary),
 
   //
-  // Records.
-  //
-  new FlixTest("Test.Expression.Record.Literal", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.Record.Extend", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.Record.Restrict", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.Record.Multiple", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix")(Options.TestWithLibrary),
-
-  //
   // Equality
   //
   new FlixTest("Test.Equality", "main/test/ca/uwaterloo/flix/language/feature/Test.Equality.flix")(Options.TestWithLibrary),

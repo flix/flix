@@ -128,7 +128,11 @@ class LangSuite extends Suites(
   //
   // Record.
   //
+  new FlixTest("Test.Exp.Record.Extend", "main/test/flix/Test.Exp.Record.Extend.flix"),
+  new FlixTest("Test.Exp.Record.Literal", "main/test/flix/Test.Exp.Record.Literal.flix"),
+  new FlixTest("Test.Exp.Record.Multiple", "main/test/flix/Test.Exp.Record.Multiple.flix"),
   new FlixTest("Test.Exp.Record.Polymorphism", "main/test/flix/Test.Exp.Record.Polymorphism.flix"),
+  new FlixTest("Test.Exp.Record.Restrict", "main/test/flix/Test.Exp.Record.Restrict.flix"),
   new FlixTest("Test.Exp.Record.Select", "main/test/flix/Test.Exp.Record.Select.flix"),
   new FlixTest("Test.Exp.Record.Update", "main/test/flix/Test.Exp.Record.Update.flix"),
 
