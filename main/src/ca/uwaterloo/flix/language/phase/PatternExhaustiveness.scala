@@ -316,7 +316,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.SelectChannel(rules, default, _, _, _) => for {
           _ <- sequence(rules.map(r => {
-            checkPats(r.chan, root);
+            checkPats(r.chan, root)
             checkPats(r.exp, root)
           }))
           _ <- default match {
@@ -529,7 +529,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypedAst.Pattern.Tag(_, tag, exp, _, _) =>
           ctor match {
             case TyCon.Enum(name, _, _, _) =>
-              if (tag == name) {
+              if (tag.name == name) {
                 exp match {
                   // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
                   // => Tuple. If there are arguments, we add them to the matrix

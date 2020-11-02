@@ -1144,9 +1144,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         // Find all matching enums in the current namespace.
         val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])) {
-          for ((tagName, caze) <- decl.cases) {
-            if (tag.name == tagName) {
+        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[Name.Tag, NamedAst.Enum])) {
+          for ((enumTag, caze) <- decl.cases) {
+            if (tag == enumTag) {
               namespaceMatches += decl
             }
           }
@@ -1167,8 +1167,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val globalMatches = mutable.Set.empty[NamedAst.Enum]
         for (decls <- root.enums.get(Name.RootNS)) {
           for ((enumName, decl) <- decls) {
-            for ((tagName, caze) <- decl.cases) {
-              if (tag.name == tagName) {
+            for ((enumTag, caze) <- decl.cases) {
+              if (tag == enumTag) {
                 globalMatches += decl
               }
             }
@@ -1208,8 +1208,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
           case Some(enumDecl) =>
             // Case 2.2: Enum declaration found. Look for the tag.
-            for ((tagName, caze) <- enumDecl.cases) {
-              if (tag.name == tagName) {
+            for ((enumTag, caze) <- enumDecl.cases) {
+              if (tag == enumTag) {
                 // Case 2.2.1: Tag found.
                 return getEnumIfAccessible(enumDecl, ns0, tag.loc)
               }
