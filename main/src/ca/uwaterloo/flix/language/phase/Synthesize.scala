@@ -1177,7 +1177,7 @@ object Synthesize extends Phase[Root, Root] {
 
                 // Generate the rule body.
                 val b = concatAll(List(
-                  Expression.Str(tag, sl),
+                  Expression.Str(tag.name, sl),
                   Expression.Str("(", sl),
                   mkApplyToString(Expression.Var(freshX, caseType, sl)),
                   Expression.Str(")", sl)
@@ -1253,7 +1253,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns an association list of the (tag, type)s of the given `enum` specialized to the given type `tpe`.
       */
-    def casesOf(enum: Enum, tpe: Type): List[(String, Type)] = {
+    def casesOf(enum: Enum, tpe: Type): List[(Name.Tag, Type)] = {
       // Compute a substitution for the parametric enum specialized to the specific type.
       val subst = Unification.unifyTypes(enum.tpeDeprecated, tpe).get
 

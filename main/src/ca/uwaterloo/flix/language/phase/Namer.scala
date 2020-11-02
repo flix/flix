@@ -280,7 +280,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given `cases` map.
     */
-  private def casesOf(cases: Map[String, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[Map[String, NamedAst.Case], NameError] = {
+  private def casesOf(cases: Map[Name.Tag, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[Map[Name.Tag, NamedAst.Case], NameError] = {
     val casesVal = cases map {
       case (name, WeededAst.Case(enum, tag, tpe)) =>
         mapN(visitType(tpe, uenv0, tenv0)) {
@@ -1597,7 +1597,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given use environment `uenv0`.
     */
-  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Ident, uenv0: UseEnv): (Option[Name.QName], Name.Ident) = {
+  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Tag, uenv0: UseEnv): (Option[Name.QName], Name.Tag) = {
     enumOpt0 match {
       case None =>
         // Case 1: The tag is unqualified. Look it up in the use environment.
@@ -1684,7 +1684,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(classes: Map[String, Name.QName], defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
+  private case class UseEnv(classes: Map[String, Name.QName], defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
     /**
       * Binds the class name `s` to the qualified name `n`.
       */
@@ -1703,7 +1703,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /**
       * Binds the tag name `s` to the qualified name `n` and tag `t`.
       */
-    def addTag(s: String, n: Name.QName, t: Name.Ident): UseEnv = copy(tags = tags + (s -> (n, t)))
+    def addTag(s: String, n: Name.QName, t: Name.Tag): UseEnv = copy(tags = tags + (s -> (n, t)))
   }
 
 }

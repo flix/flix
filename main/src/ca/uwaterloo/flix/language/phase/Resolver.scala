@@ -170,7 +170,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val freeVars = e0.tparams.map(_.tpe)
           val caseType = t
           val enumType = Type.mkEnum(e0.sym, freeVars)
-          val base = Type.mkTag(e0.sym, tag.name, caseType, enumType)
+          val base = Type.mkTag(e0.sym, tag, caseType, enumType)
           val sc = Scheme(freeVars, List.empty, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
         }
@@ -484,13 +484,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             lookupEnumByTag(enum, tag, ns0, root) map {
               case decl =>
                 // Retrieve the relevant case.
-                val caze = decl.cases(tag.name)
+                val caze = decl.cases(tag)
 
                 // Check if the tag value has Unit type.
                 if (isUnitType(caze.tpe)) {
                   // Case 1.1: The tag value has Unit type. Construct the Unit expression.
                   val e = ResolvedAst.Expression.Unit(loc)
-                  ResolvedAst.Expression.Tag(decl.sym, tag.name, e, tvar, loc)
+                  ResolvedAst.Expression.Tag(decl.sym, tag, e, tvar, loc)
                 } else {
                   // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
@@ -505,7 +505,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshVar(Kind.Star), loc)
+                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag, varExp, Type.freshVar(Kind.Star), loc)
 
                   // Assemble the lambda expressions.
                   ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshVar(Kind.Star), loc)
@@ -516,7 +516,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             for {
               d <- lookupEnumByTag(enum, tag, ns0, root)
               e <- visit(exp, tenv0)
-            } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, loc)
+            } yield ResolvedAst.Expression.Tag(d.sym, tag, e, tvar, loc)
         }
 
         case NamedAst.Expression.Tuple(elms, loc) =>
@@ -843,7 +843,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             d <- lookupEnumByTag(enum, tag, ns0, root)
             p <- visit(pat)
-          } yield ResolvedAst.Pattern.Tag(d.sym, tag.name, p, tvar, loc)
+          } yield ResolvedAst.Pattern.Tag(d.sym, tag, p, tvar, loc)
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
           for {
@@ -1136,7 +1136,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
+  def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Tag, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
     // Determine whether the name is qualified.
     qnameOpt match {
       case None =>
@@ -1144,9 +1144,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         // Find all matching enums in the current namespace.
         val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])) {
-          for ((tagName, caze) <- decl.cases) {
-            if (tag.name == tagName) {
+        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[Name.Tag, NamedAst.Enum])) {
+          for ((enumTag, caze) <- decl.cases) {
+            if (tag == enumTag) {
               namespaceMatches += decl
             }
           }
@@ -1167,8 +1167,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val globalMatches = mutable.Set.empty[NamedAst.Enum]
         for (decls <- root.enums.get(Name.RootNS)) {
           for ((enumName, decl) <- decls) {
-            for ((tagName, caze) <- decl.cases) {
-              if (tag.name == tagName) {
+            for ((enumTag, caze) <- decl.cases) {
+              if (tag == enumTag) {
                 globalMatches += decl
               }
             }
@@ -1208,8 +1208,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
           case Some(enumDecl) =>
             // Case 2.2: Enum declaration found. Look for the tag.
-            for ((tagName, caze) <- enumDecl.cases) {
-              if (tag.name == tagName) {
+            for ((enumTag, caze) <- enumDecl.cases) {
+              if (tag == enumTag) {
                 // Case 2.2.1: Tag found.
                 return getEnumIfAccessible(enumDecl, ns0, tag.loc)
               }

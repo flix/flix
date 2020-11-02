@@ -696,7 +696,7 @@ object SymbolicEvaluator {
         */
       case Expression.Tag(sym, tag, exp, _, _) =>
         eval(pc0, exp, env0, lenv0, qua0) flatMap {
-          case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag, v))
+          case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag.name, v))
         }
 
       /**

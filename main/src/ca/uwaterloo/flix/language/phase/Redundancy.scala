@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Validation._
@@ -147,7 +147,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           case Some(usedTags) =>
             // Case 2: Enum is used and here are its used tags.
             // Check if there is any unused tag.
-            decl.cases.values.find(caze => !usedTags.contains(caze.tag.name)) match {
+            decl.cases.values.find(caze => !usedTags.contains(caze.tag)) match {
               case None => acc
               case Some(caze) => acc + UnusedEnumTag(sym, caze.tag)
             }
@@ -747,7 +747,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
-    def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.empty + (sym, tag))
+    def of(sym: Symbol.EnumSym, tag: Name.Tag): Used = empty.copy(enumSyms = MultiMap.empty + (sym, tag))
 
     /**
       * Returns an object where the given defn symbol `sym` is marked as used.
@@ -769,7 +769,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * A representation of used symbols.
     */
-  private case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
+  private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Name.Tag],
                           defSyms: Set[Symbol.DefnSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],

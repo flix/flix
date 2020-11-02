@@ -316,7 +316,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
             case (tag, caze) =>
               val innerMonoType = caze.tpeDeprecated // TODO: Assumes that the enum is non-polymorphic.
               new Generator[SymVal] {
-                def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerMonoType, root).gen.mk(r))
+                def mk(r: Random): SymVal = SymVal.Tag(tag.name, new ArbSymVal(innerMonoType, root).gen.mk(r))
               }
           }
           oneOf(elms.toIndexedSeq: _*)

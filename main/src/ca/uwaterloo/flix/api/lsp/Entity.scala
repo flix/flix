@@ -34,7 +34,7 @@ object Entity {
   }
 
   case class Enum(e: TypedAst.Enum) extends Entity {
-    def loc: SourceLocation = e.loc
+    def loc: SourceLocation = e.sym.loc
   }
 
   case class Exp(e: TypedAst.Expression) extends Entity {

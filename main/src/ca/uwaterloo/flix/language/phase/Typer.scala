@@ -802,7 +802,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           //
           // Special Case 1: Absent or Present Tag
           //
-          if (tag == "Absent") {
+          if (tag.name == "Absent") {
             // Case 1.1: Absent Tag.
             val elmVar = Type.freshVar(Kind.Star)
             val isAbsent = Type.True
@@ -812,7 +812,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               resultEff = Type.Pure
             } yield (List.empty, resultTyp, resultEff)
           }
-          else if (tag == "Present") {
+          else if (tag.name == "Present") {
             // Case 1.2: Present Tag.
             val isAbsent = Type.freshVar(Kind.Bool)
             val isPresent = Type.True

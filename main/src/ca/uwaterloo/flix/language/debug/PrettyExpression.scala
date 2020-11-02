@@ -84,8 +84,8 @@ object PrettyExpression {
     //
 
     case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe.typeConstructor match {
-      case Some(TypeConstructor.Unit) => tag
-      case _ => s"$tag${pretty(exp)}"
+      case Some(TypeConstructor.Unit) => tag.name
+      case _ => s"${tag.name}${pretty(exp)}"
     }
 
     case Expression.Tuple(elms, _, _, _) =>

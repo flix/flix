@@ -529,7 +529,7 @@ object Type {
     *   Cons: (a, List[a]) -> List[a]   (caseType = (a, List[a]), resultType = List[a])
     * }}}
     */
-  def mkTag(sym: Symbol.EnumSym, tag: String, caseType: Type, resultType: Type): Type = {
+  def mkTag(sym: Symbol.EnumSym, tag: Name.Tag, caseType: Type, resultType: Type): Type = {
     Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Tag(sym, tag)), caseType), resultType)
   }
 
