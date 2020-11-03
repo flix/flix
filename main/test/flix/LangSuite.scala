@@ -27,6 +27,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Channel", "main/test/flix/Test.Equality.Channel.flix"),
 
   //
+  // Apply.Tail.
+  //
+  new FlixTest("Test.Exp.Apply.Tail", "main/test/flix/Test.Exp.Apply.Tail.flix"),
+
+  //
   // Array.
   //
   new FlixTest("Test.Exp.ArrayLength", "main/test/flix/Test.Exp.ArrayLength.flix")(Options.TestWithLibrary),

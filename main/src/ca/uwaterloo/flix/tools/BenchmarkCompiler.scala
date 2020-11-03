@@ -102,6 +102,7 @@ object BenchmarkCompiler {
 
     flix.addInput("Test.Eff.Polymorphism.flix", LocalResource.get("/test/flix/Test.Eff.Polymorphism.flix"))
 
+    flix.addInput("Test.Exp.Apply.Tail.flix", LocalResource.get("/test/flix/Test.Exp.Apply.Tail.flix"))
     flix.addInput("Test.Exp.ArrayLength.flix", LocalResource.get("/test/flix/Test.Exp.ArrayLength.flix"))
     flix.addInput("Test.Exp.ArrayLit.flix", LocalResource.get("/test/flix/Test.Exp.ArrayLit.flix"))
     flix.addInput("Test.Exp.ArrayLoad.flix", LocalResource.get("/test/flix/Test.Exp.ArrayLoad.flix"))
