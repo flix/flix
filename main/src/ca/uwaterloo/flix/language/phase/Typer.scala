@@ -27,8 +27,9 @@ import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, InferMonad, Substitution}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, InferMonad, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -90,6 +91,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns [[Err]] if a definition fails to type check.
     */
   private def visitInstances(root: ResolvedAst.Root)(implicit flix: Flix): Validation[MultiMap[Symbol.ClassSym, TypedAst.Instance], TypeError] = {
+
+    /**
+      * Reassembles a single instance.
+      */
     def visitInstance(inst: ResolvedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
       case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, loc) =>
         for {
@@ -97,14 +102,37 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, loc)
     }
 
-    def visitInstances(insts0: Set[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, Set[TypedAst.Instance]), TypeError] = {
-      for {
-        insts <- Validation.traverse(insts0)(visitInstance)
-      } yield insts.head.sym -> insts.toSet
+    /**
+      * Checks for overlap of instance types, assuming the instances are of the same class.
+      */
+    def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, TypeError] = {
+      if (Unification.unifyTypes(inst1.tpe, inst2.tpe).isOk) {
+        TypeError.OverlappingInstance(inst1.loc, inst2.loc).toFailure
+      } else {
+        ().toSuccess
+      }
+    }
+
+    /**
+      * Reassembles a set of instances of the same class.
+      */
+    def foldOverInstances(insts0: Set[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, Set[TypedAst.Instance]), TypeError] = {
+      val instsVal = Validation.fold(insts0.toSeq, List.empty[TypedAst.Instance]) {
+        case (acc, inst0) =>
+          for {
+            inst <- visitInstance(inst0)
+            _ <- Validation.traverse(acc)(checkOverlap(_, inst))
+          } yield inst :: acc
+
+      }
+
+      instsVal.map {
+        insts => (insts.head.sym -> insts.toSet)
+      }
     }
 
     // visit each instance
-    val result = root.instances.m.values.map(visitInstances)
+    val result = root.instances.m.values.map(foldOverInstances)
 
     Validation.sequence(result).map(insts => MultiMap(insts.toMap))
 

@@ -274,4 +274,26 @@ object TypeError {
     }
   }
 
+  /**
+    * Error indicating that the types of two instances overlap.
+    *
+    * @param loc1 the location of the first instance.
+    * @param loc2 the location of the second instance.
+    */
+  case class OverlappingInstance(loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def summary: String = "Overlapping instance."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove or change the type of one of the occurrences." << NewLine
+    }
+
+    def loc: SourceLocation = loc1 min loc2
+  }
 }

@@ -882,6 +882,46 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("Test.OverlappingInstance.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[Int]
+        |
+        |instance C[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstance](result)
+  }
+
+
+  test("Test.OverlappingInstance.02") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[a]
+        |
+        |instance C[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstance](result)
+  }
+
+  test("Test.OverlappingInstance.03") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[(a, Int)]
+        |
+        |instance C[(Bool, b)]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstance](result)
+  }
+
   test("MattTest") { // MATT tmp
     val input =
       """
