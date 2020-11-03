@@ -34,48 +34,24 @@ object FindReferencesProvider {
 
         case Entity.Exp(exp) => exp match {
           case Expression.Def(sym, _, _) => findDefRefs(requestId, sym)
-
-          case Expression.Var(sym, _, _) =>
-            val uses = index.usesOf(sym)
-            val locs = uses.toList.map(Location.from)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
+          case Expression.Var(sym, _, _) => findVarRefs(requestId, sym)
           case Expression.Tag(sym, tag, _, _, _, _) => findTagRefs(requestId, sym, tag)
-
           case _ => mkNotFound(requestId, uri, pos)
         }
 
-        case Entity.FormalParam(param) =>
-          val uses = index.usesOf(param.sym)
-          val locs = uses.toList.map(Location.from)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+        case Entity.FormalParam(param) => findVarRefs(requestId, param.sym)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) =>
-            val uses = index.usesOf(sym)
-            val locs = uses.toList.map(Location.from)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
+          case Pattern.Var(sym, _, _) => findVarRefs(requestId, sym)
           case Pattern.Tag(sym, tag, _, _, _) => findTagRefs(requestId, sym, tag)
-
           case _ => mkNotFound(requestId, uri, pos)
         }
 
         case Entity.Pred(pred) => findPredRefs(requestId, pred)
-
-        case Entity.LocalVar(sym, _) =>
-          val uses = index.usesOf(sym)
-          val locs = uses.toList.map(Location.from)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+        case Entity.LocalVar(sym, _) => findVarRefs(requestId, sym)
 
       }
     }
-  }
-
-  private def findTagRefs(requestId: String, sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JValue = {
-    val uses = index.usesOf(sym, tag)
-    val locs = uses.toList.map(Location.from)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
   private def findDefRefs(requestId: String, sym: Symbol.DefnSym)(implicit index: Index, root: Root): JValue = {
@@ -88,6 +64,18 @@ object FindReferencesProvider {
     val defs = index.defsOf(pred)
     val uses = index.usesOf(pred)
     val locs = (defs ++ uses).toList.map(Location.from)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findTagRefs(requestId: String, sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JValue = {
+    val uses = index.usesOf(sym, tag)
+    val locs = uses.toList.map(Location.from)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findVarRefs(requestId: String, sym: Symbol.VarSym)(implicit index: Index, root: Root): JValue = {
+    val uses = index.usesOf(sym)
+    val locs = uses.toList.map(Location.from)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
