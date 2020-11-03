@@ -121,6 +121,14 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
 
   //
+  // Int.
+  //
+  new FlixTest("Test.Exp.Int8", "main/test/flix/Test.Exp.Int8.flix"),
+  new FlixTest("Test.Exp.Int16", "main/test/flix/Test.Exp.Int16.flix"),
+  new FlixTest("Test.Exp.Int32", "main/test/flix/Test.Exp.Int32.flix"),
+  new FlixTest("Test.Exp.Int64", "main/test/flix/Test.Exp.Int64.flix"),
+
+  //
   // Interpolation.
   //
   new FlixTest("Test.Exp.Interpolation", "main/test/flix/Test.Exp.Interpolation.flix"),
