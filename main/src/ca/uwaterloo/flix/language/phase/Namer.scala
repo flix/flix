@@ -1500,7 +1500,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
   private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, allowElision: Boolean, uenv: UseEnv, tenv: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
-    // MATT need uenv here for class resolution
     tparams0 match {
       case WeededAst.TypeParams.Elided =>
         if (allowElision)
