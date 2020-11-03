@@ -60,7 +60,7 @@ object Index {
   /**
     * Returns an index for the given field `f0`.
     */
-  def of(f0: Name.Field): Index = empty + Entity.Field(f0)
+  def occurrenceOf(field: Name.Field): Index = empty + Entity.Field(field)
 
   /**
     * Returns an index for the given atom `a0`.
@@ -115,14 +115,14 @@ object Index {
   def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
 
   /**
-    * Returns an index with a read of the given `field`.
+    * Returns an index with a def of the given `field`.
     */
-  def readOf(field: Name.Field): Index = Index.empty.copy(fieldUses = MultiMap.singleton(field, field.loc))
+  def defOf(field: Name.Field): Index = Index.empty.copy(fieldDefs = MultiMap.singleton(field, field.loc))
 
   /**
-    * Returns an index with a write of the given `field`.
+    * Returns an index with a use of the given `field`.
     */
-  def writeOf(field: Name.Field): Index = Index.empty.copy(fieldDefs = MultiMap.singleton(field, field.loc))
+  def useOf(field: Name.Field): Index = Index.empty.copy(fieldUses = MultiMap.singleton(field, field.loc))
 
 }
 
