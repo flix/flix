@@ -63,7 +63,7 @@ object HighlightProvider {
     }
   }
 
-  def highlight(requestId: String, occurrences: List[(SourceLocation, DocumentHighlightKind)]): JValue = {
+  private def highlight(requestId: String, occurrences: List[(SourceLocation, DocumentHighlightKind)]): JValue = {
     // Construct the highlights.
     val highlights = occurrences map {
       case (loc, kind) => DocumentHighlight(Range.from(loc), kind)
@@ -73,37 +73,37 @@ object HighlightProvider {
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(highlights.map(_.toJSON)))
   }
 
-  def highlightDef(requestId: String, sym: Symbol.DefnSym)(implicit index: Index, root: Root): JValue = {
+  private def highlightDef(requestId: String, sym: Symbol.DefnSym)(implicit index: Index, root: Root): JValue = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, write :: reads)
   }
 
-  def highlightEnum(requestId: String, sym: Symbol.EnumSym)(implicit index: Index, root: Root): JValue = {
+  private def highlightEnum(requestId: String, sym: Symbol.EnumSym)(implicit index: Index, root: Root): JValue = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, write :: reads)
   }
 
-  def highlightField(requestId: String, field: Name.Field)(implicit index: Index, root: Root): JValue = {
+  private def highlightField(requestId: String, field: Name.Field)(implicit index: Index, root: Root): JValue = {
     val writes = index.defsOf(field).toList.map(loc => (loc, DocumentHighlightKind.Write))
     val reads = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, reads ::: writes)
   }
 
-  def highlightPred(requestId: String, pred: Name.Pred)(implicit index: Index, root: Root): JValue = {
+  private def highlightPred(requestId: String, pred: Name.Pred)(implicit index: Index, root: Root): JValue = {
     val writes = index.defsOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Write))
     val reads = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, reads ::: writes)
   }
 
-  def highlightTag(requestId: String, sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JValue = {
+  private def highlightTag(requestId: String, sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JValue = {
     val write = (root.enums(sym).cases(tag).loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, write :: reads)
   }
 
-  def highlightVar(requestId: String, sym: Symbol.VarSym)(implicit index: Index, root: Root): JValue = {
+  private def highlightVar(requestId: String, sym: Symbol.VarSym)(implicit index: Index, root: Root): JValue = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, write :: reads)
