@@ -20,7 +20,7 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import ca.uwaterloo.flix.api.lsp.provider.{FindReferencesProvider, HighlightProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{FindReferencesProvider, GotoProvider, HighlightProvider}
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -223,7 +223,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
 
-    case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
+    case Request.Goto(id, uri, pos) =>
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
     case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
 
@@ -475,35 +476,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       case _ =>
         mkNotFound(requestId, uri, pos)
-    }
-  }
-
-  /**
-    * Processes a goto request.
-    */
-  private def processGoto(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Def(sym, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
-
-        case Expression.Var(sym, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
-
-        case Expression.Tag(sym, tag, _, _, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
-
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-
-      case Some(Entity.Pattern(pat)) => pat match {
-        case Pattern.Tag(sym, tag, _, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
-
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-
-      case _ => mkNotFound(requestId, uri, pos)
     }
   }
 
