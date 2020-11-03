@@ -26,37 +26,35 @@ object Index {
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
-  // TODO: Better division between uses and definitions.
+  /**
+    * Returns an index for the given `case0`.
+    */
+  def occurrenceOf(case0: Case): Index = empty + Entity.Case(case0)
 
   /**
-    * Returns an index for the given case `case0`.
+    * Returns an index for the given `defn0`.
     */
-  def of(case0: Case): Index = empty + Entity.Case(case0)
+  def occurrenceOf(defn0: Def): Index = empty + Entity.Def(defn0)
 
   /**
-    * Returns an index for the given definition `def0`.
+    * Returns an index for the given `enum0`.
     */
-  def of(def0: Def): Index = empty + Entity.Def(def0)
+  def occurrenceOf(enum0: Enum): Index = empty + Entity.Enum(enum0)
 
   /**
-    * Returns an index for the given expression `exp0`.
+    * Returns an index for the given `exp0`.
     */
-  def of(enum0: Enum): Index = empty + Entity.Enum(enum0)
+  def occurrenceOf(exp0: Expression): Index = empty + Entity.Exp(exp0)
 
   /**
-    * Returns an index for the given expression `exp0`.
+    * Returns an index for the given `fparam0`.
     */
-  def of(exp0: Expression): Index = empty + Entity.Exp(exp0)
+  def occurrenceOf(fparam0: FormalParam): Index = empty + Entity.FormalParam(fparam0)
 
   /**
-    * Returns an index for the formal parameter `fparam0`.
+    * Returns an index for the given `pat0`.
     */
-  def of(fparam0: FormalParam): Index = empty + Entity.FormalParam(fparam0)
-
-  /**
-    * Returns an index for the given pattern `pat0`.
-    */
-  def of(pat0: Pattern): Index = empty + Entity.Pattern(pat0)
+  def occurrenceOf(pat0: Pattern): Index = empty + Entity.Pattern(pat0)
 
   /**
     * Returns an index for the given field `f0`.
@@ -69,9 +67,9 @@ object Index {
   def occurrenceOf(pred: Name.Pred): Index = empty + Entity.Pred(pred)
 
   /**
-    * Returns an index for the given local variable definition `sym0`.
+    * Returns an index for the given local variable `sym0`.
     */
-  def of(sym0: Symbol.VarSym, tpe0: Type): Index = empty + Entity.LocalVar(sym0, tpe0)
+  def occurrenceOf(sym: Symbol.VarSym, tpe0: Type): Index = empty + Entity.LocalVar(sym, tpe0)
 
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
