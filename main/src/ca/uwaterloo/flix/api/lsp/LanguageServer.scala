@@ -209,17 +209,22 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Shutdown(id) => processShutdown()
 
     case Request.RunBenchmarks(id) => runBenchmarks(id)
+
     case Request.RunMain(id) => runMain(id)
+
     case Request.RunTests(id) => runTests(id)
 
     case Request.Check(id) => processCheck(id)
+
     case Request.Codelens(id, uri) => processCodelens(id, uri)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
+
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
+
     case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
 
     case Request.Uses(id, uri, pos) =>
