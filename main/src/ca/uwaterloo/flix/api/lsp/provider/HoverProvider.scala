@@ -25,18 +25,9 @@ import org.json4s.JsonDSL._
 
 object HoverProvider {
 
+  implicit val audience: Audience = Audience.External
+
   def processHover(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
-
-    implicit val audience: Audience = Audience.External
-
-    def formatTypAndEff(tpe0: Type, eff0: Type): String = {
-      val t = FormatType.formatType(tpe0)
-      eff0 match {
-        case Type.Cst(TypeConstructor.True) => t
-        case Type.Cst(TypeConstructor.False) => s"$t & Impure"
-        case eff => s"$t & ${FormatType.formatType(eff)}"
-      }
-    }
 
     def formatStratification(stf: Ast.Stratification): String = {
       val sb = new StringBuilder()
@@ -175,6 +166,15 @@ object HoverProvider {
 
       case _ =>
         mkNotFound(uri, pos)
+    }
+  }
+
+  private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
+    val t = FormatType.formatType(tpe0)
+    eff0 match {
+      case Type.Cst(TypeConstructor.True) => t
+      case Type.Cst(TypeConstructor.False) => s"$t & Impure"
+      case eff => s"$t & ${FormatType.formatType(eff)}"
     }
   }
 
