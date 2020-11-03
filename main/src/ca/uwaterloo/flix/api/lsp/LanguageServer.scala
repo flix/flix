@@ -20,6 +20,7 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import ca.uwaterloo.flix.api.lsp.provider.{FindReferencesProvider, GotoProvider, HighlightProvider}
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -35,11 +36,11 @@ import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST.{JArray, JString, JValue}
-import org.json4s.JsonDSL._
 import org.json4s.ParserUtil.ParseException
 import org.json4s._
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
+import org.json4s.JsonDSL._
 
 import scala.collection.mutable
 
@@ -208,16 +209,27 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Shutdown(id) => processShutdown()
 
     case Request.RunBenchmarks(id) => runBenchmarks(id)
+
     case Request.RunMain(id) => runMain(id)
+
     case Request.RunTests(id) => runTests(id)
 
     case Request.Check(id) => processCheck(id)
+
     case Request.Codelens(id, uri) => processCodelens(id, uri)
-    case Request.Highlight(id, uri, pos) => processHighlight(id, uri, pos)
+
+    case Request.Highlight(id, uri, pos) =>
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
+
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
-    case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
+
+    case Request.Goto(id, uri, pos) =>
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
+
     case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
-    case Request.Uses(id, uri, pos) => processUses(id, uri, pos)
+
+    case Request.Uses(id, uri, pos) =>
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
     case Request.PackageBenchmark(id, projectRoot) => benchmarkPackage(id, projectRoot)
     case Request.PackageBuild(id, projectRoot) => buildPackage(id, projectRoot)
@@ -311,82 +323,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
   }
 
-  /**
-    * Processes a highlight request.
-    */
-  private def processHighlight(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    def highlight(occurrences: List[(SourceLocation, DocumentHighlightKind)]): JValue = {
-      // Construct the highlights.
-      val highlights = occurrences map {
-        case (loc, kind) => DocumentHighlight(Range.from(loc), kind)
-      }
-
-      // Construct the JSON result.
-      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(highlights.map(_.toJSON)))
-    }
-
-    def highlightDef(sym: Symbol.DefnSym): JValue = {
-      // Find all occurrences of the symbol.
-      val write = (sym.loc, DocumentHighlightKind.Write)
-      val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-      highlight(write :: reads)
-    }
-
-    def highlightEnum(sym: Symbol.EnumSym): JValue = {
-      // Find all occurrences of the symbol.
-      val write = (sym.loc, DocumentHighlightKind.Write)
-      val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-      highlight(write :: reads)
-    }
-
-    def highlightField(field: Name.Field): JValue = {
-      // Find all occurrences of the name.
-      val uses = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
-      highlight(uses)
-    }
-
-    def highlightPred(pred: Name.Pred): JValue = {
-      // Find all occurrences of the name.
-      val uses = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
-      highlight(uses)
-    }
-
-    def highlightTag(sym: Symbol.EnumSym, tag: Name.Tag): JValue = {
-      // Find all occurrences of the symbol.
-      val write = (root.enums(sym).cases(tag).loc, DocumentHighlightKind.Write)
-      val reads = index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
-      highlight(write :: reads)
-    }
-
-    def highlightVar(sym: Symbol.VarSym): JValue = {
-      // Find all occurrences of the symbol.
-      val write = (sym.loc, DocumentHighlightKind.Write)
-      val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-      highlight(write :: reads)
-    }
-
-    index.query(uri, pos) match {
-      case Some(Entity.Case(caze)) => highlightTag(caze.sym, caze.tag)
-      case Some(Entity.Def(defn)) => highlightDef(defn.sym)
-      case Some(Entity.Enum(enum)) => highlightEnum(enum.sym)
-      case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Var(sym, _, _) => highlightVar(sym)
-        case Expression.Def(sym, _, _) => highlightDef(sym)
-        case Expression.Tag(sym, tag, _, _, _, _) => highlightTag(sym, tag)
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-      case Some(Entity.Pattern(pat)) => pat match {
-        case Pattern.Var(sym, _, _) => highlightVar(sym)
-        case Pattern.Tag(sym, tag, _, _, _) => highlightTag(sym, tag)
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-      case Some(Entity.Field(field)) => highlightField(field)
-      case Some(Entity.Pred(pred)) => highlightPred(pred)
-      case Some(Entity.FormalParam(fparam)) => highlightVar(fparam.sym)
-      case Some(Entity.LocalVar(sym, _)) => highlightVar(sym)
-      case _ => mkNotFound(requestId, uri, pos)
-    }
-  }
 
   /**
     * Processes a hover request.
@@ -540,35 +476,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       case _ =>
         mkNotFound(requestId, uri, pos)
-    }
-  }
-
-  /**
-    * Processes a goto request.
-    */
-  private def processGoto(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Def(sym, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
-
-        case Expression.Var(sym, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
-
-        case Expression.Tag(sym, tag, _, _, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
-
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-
-      case Some(Entity.Pattern(pat)) => pat match {
-        case Pattern.Tag(sym, tag, _, _, loc) =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, loc).toJSON)
-
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-
-      case _ => mkNotFound(requestId, uri, pos)
     }
   }
 
@@ -749,74 +656,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
     throw null // unreachable
-  }
-
-  /**
-    * Processes a uses request.
-    */
-  private def processUses(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    index.query(uri, pos) match {
-
-      case Some(Entity.Pred(pred)) =>
-        val uses = index.usesOf(pred)
-        val locs = uses.toList.map(Location.from)
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-      case Some(Entity.Case(caze)) =>
-        val uses = index.usesOf(caze.sym, caze.tag)
-        val locs = uses.toList.map(Location.from)
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-      case Some(Entity.Def(defn)) =>
-        val uses = index.usesOf(defn.sym)
-        val locs = uses.toList.map(Location.from)
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-      case Some(Entity.FormalParam(param)) =>
-        val uses = index.usesOf(param.sym)
-        val locs = uses.toList.map(Location.from)
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-      case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Def(sym, _, _) =>
-          val uses = index.usesOf(sym)
-          val locs = uses.toList.map(Location.from)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-        case Expression.Var(sym, _, _) =>
-          val uses = index.usesOf(sym)
-          val locs = uses.toList.map(Location.from)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-        case Expression.Tag(sym, tag, _, _, _, _) =>
-          val uses = index.usesOf(sym, tag)
-          val locs = uses.toList.map(Location.from)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-
-      case Some(Entity.Pattern(pat)) => pat match {
-        case Pattern.Var(sym, _, _) =>
-          val uses = index.usesOf(sym)
-          val locs = uses.toList.map(Location.from)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-        case Pattern.Tag(sym, tag, _, _, _) =>
-          val uses = index.usesOf(sym, tag)
-          val locs = uses.toList.map(Location.from)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-
-      case Some(Entity.LocalVar(sym, _)) =>
-        val uses = index.usesOf(sym)
-        val locs = uses.toList.map(Location.from)
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
-
-      case _ => mkNotFound(requestId, uri, pos)
-    }
   }
 
   /**

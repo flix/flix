@@ -41,15 +41,15 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
+  case class Field(e: Name.Field) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
   case class FormalParam(e: TypedAst.FormalParam) extends Entity {
     def loc: SourceLocation = e.loc
   }
 
   case class Pattern(e: TypedAst.Pattern) extends Entity {
-    def loc: SourceLocation = e.loc
-  }
-
-  case class Field(e: Name.Field) extends Entity {
     def loc: SourceLocation = e.loc
   }
 

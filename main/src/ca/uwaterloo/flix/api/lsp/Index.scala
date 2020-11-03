@@ -23,59 +23,53 @@ object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
-
-  // TODO: Better division between uses and definitions.
-
-  /**
-    * Returns an index for the given case `case0`.
-    */
-  def of(case0: Case): Index = empty + Entity.Case(case0)
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
+    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
-    * Returns an index for the given definition `def0`.
+    * Returns an index for the given `case0`.
     */
-  def of(def0: Def): Index = empty + Entity.Def(def0)
+  def occurrenceOf(case0: Case): Index = empty + Entity.Case(case0)
 
   /**
-    * Returns an index for the given expression `exp0`.
+    * Returns an index for the given `defn0`.
     */
-  def of(enum0: Enum): Index = empty + Entity.Enum(enum0)
+  def occurrenceOf(defn0: Def): Index = empty + Entity.Def(defn0)
 
   /**
-    * Returns an index for the given expression `exp0`.
+    * Returns an index for the given `enum0`.
     */
-  def of(exp0: Expression): Index = empty + Entity.Exp(exp0)
+  def occurrenceOf(enum0: Enum): Index = empty + Entity.Enum(enum0)
 
   /**
-    * Returns an index for the formal parameter `fparam0`.
+    * Returns an index for the given `exp0`.
     */
-  def of(fparam0: FormalParam): Index = empty + Entity.FormalParam(fparam0)
+  def occurrenceOf(exp0: Expression): Index = empty + Entity.Exp(exp0)
 
   /**
-    * Returns an index for the given pattern `pat0`.
+    * Returns an index for the given `fparam0`.
     */
-  def of(pat0: Pattern): Index = empty + Entity.Pattern(pat0)
+  def occurrenceOf(fparam0: FormalParam): Index = empty + Entity.FormalParam(fparam0)
+
+  /**
+    * Returns an index for the given `pat0`.
+    */
+  def occurrenceOf(pat0: Pattern): Index = empty + Entity.Pattern(pat0)
 
   /**
     * Returns an index for the given field `f0`.
     */
-  def of(f0: Name.Field): Index = empty + Entity.Field(f0)
+  def occurrenceOf(field: Name.Field): Index = empty + Entity.Field(field)
 
   /**
     * Returns an index for the given atom `a0`.
     */
-  def of(a0: Predicate.Head.Atom): Index = empty + Entity.Pred(a0.pred)
+  def occurrenceOf(pred: Name.Pred): Index = empty + Entity.Pred(pred)
 
   /**
-    * Returns an index for the given atom `a0`.
+    * Returns an index for the given local variable `sym0`.
     */
-  def of(b0: Predicate.Body.Atom): Index = empty + Entity.Pred(b0.pred)
-
-  /**
-    * Returns an index for the given local variable definition `sym0`.
-    */
-  def of(sym0: Symbol.VarSym, tpe0: Type): Index = empty + Entity.LocalVar(sym0, tpe0)
+  def occurrenceOf(sym: Symbol.VarSym, tpe0: Type): Index = empty + Entity.LocalVar(sym, tpe0)
 
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
@@ -93,31 +87,40 @@ object Index {
   def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
 
   /**
-    * Returns an index with a use of the field `field` with the given type `tpe`.
-    */
-  def useOf(field: Name.Field): Index = Index.empty.copy(fieldUses = MultiMap.singleton(field, field.loc))
-
-  /**
-    * Returns an index with a use of the predicate `pred` with the given denotation `den` and type `tpe`.
-    */
-  def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
-
-  /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.EnumSym, loc: SourceLocation): Index =
-    Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.EnumSym, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
 
   /**
     * Returns an index with the symbol `sym` and `tag` used at location `loc.`
     */
-  def useOf(sym: Symbol.EnumSym, tag: Name.Tag): Index =
-    Index.empty.copy(tagUses = MultiMap.singleton((sym, tag), tag.loc))
+  def useOf(sym: Symbol.EnumSym, tag: Name.Tag): Index = Index.empty.copy(tagUses = MultiMap.singleton((sym, tag), tag.loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
   def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with a def of the given `field`.
+    */
+  def defOf(field: Name.Field): Index = Index.empty.copy(fieldDefs = MultiMap.singleton(field, field.loc))
+
+  /**
+    * Returns an index with a use of the given `field`.
+    */
+  def useOf(field: Name.Field): Index = Index.empty.copy(fieldUses = MultiMap.singleton(field, field.loc))
+
+  /**
+    * Returns an index with a def of the predicate `pred`.
+    */
+  def defOf(pred: Name.Pred): Index = Index.empty.copy(predDefs = MultiMap.singleton(pred, pred.loc))
+
+  /**
+    * Returns an index with a use of the predicate `pred`.
+    */
+  def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
+
 }
 
 /**
@@ -129,7 +132,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  tagUses: MultiMap[(Symbol.EnumSym, Name.Tag), SourceLocation],
+                 fieldDefs: MultiMap[Name.Field, SourceLocation],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
+                 predDefs: MultiMap[Name.Pred, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
@@ -179,16 +184,6 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
 
   /**
-    * Returns all uses of the given field `field`.
-    */
-  def usesOf(field: Name.Field): Set[SourceLocation] = fieldUses(field)
-
-  /**
-    * Returns all uses of the given predicate `pred`.
-    */
-  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
-
-  /**
     * Returns all uses of the given symbol `sym` and `tag`.
     */
   def usesOf(sym: Symbol.EnumSym, tag: Name.Tag): Set[SourceLocation] = tagUses((sym, tag))
@@ -197,6 +192,26 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
+
+  /**
+    * Returns all defs of the given `field`.
+    */
+  def defsOf(field: Name.Field): Set[SourceLocation] = fieldDefs(field)
+
+  /**
+    * Returns all uses of the given `field`.
+    */
+  def usesOf(field: Name.Field): Set[SourceLocation] = fieldUses(field)
+
+  /**
+    * Returns all defs of the given predicate `pred`.
+    */
+  def defsOf(pred: Name.Pred): Set[SourceLocation] = predDefs(pred)
+
+  /**
+    * Returns all uses of the given predicate `pred`.
+    */
+  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
 
   /**
     * Adds the given entity `exp0` to `this` index.
@@ -234,7 +249,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
       this.tagUses ++ that.tagUses,
+      this.fieldDefs ++ that.fieldDefs,
       this.fieldUses ++ that.fieldUses,
+      this.predDefs ++ that.predDefs,
       this.predUses ++ that.predUses,
       this.varUses ++ that.varUses
     )

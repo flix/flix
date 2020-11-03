@@ -38,7 +38,7 @@ object Indexer {
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = {
-    val idx0 = Index.of(def0)
+    val idx0 = Index.occurrenceOf(def0)
     val idx1 = visitExp(def0.exp)
     val idx2 = def0.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
@@ -51,9 +51,9 @@ object Indexer {
     * Returns a reverse index for the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum): Index = {
-    val idx0 = Index.of(enum0)
+    val idx0 = Index.occurrenceOf(enum0)
     val idx1 = enum0.cases.foldLeft(Index.empty) {
-      case (idx, (tag, caze)) => idx ++ Index.of(caze)
+      case (idx, (tag, caze)) => idx ++ Index.occurrenceOf(caze)
     }
     idx0 ++ idx1
   }
@@ -63,85 +63,85 @@ object Indexer {
     */
   private def visitExp(exp0: Expression): Index = exp0 match {
     case Expression.Unit(_) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Null(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.True(_) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.False(_) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Char(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Float32(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Float64(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Int8(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Int16(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Int32(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Int64(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.BigInt(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Str(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Default(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Wild(_, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Var(sym, _, loc) =>
-      Index.of(exp0) ++ Index.useOf(sym, loc)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
 
     case Expression.Def(sym, _, loc) =>
-      Index.of(exp0) ++ Index.useOf(sym, loc)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
 
     case Expression.Sig(sym, _, loc) =>
-      Index.of(exp0) ++ Index.useOf(sym, loc)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
 
     case Expression.Hole(_, _, _, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.Lambda(fparam, exp, _, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.of(exp0)
+      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Apply(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps) ++ Index.of(exp0)
+      visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
 
     case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
-      Index.of(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Match(exp, rules, _, _, _) =>
-      val i0 = visitExp(exp) ++ Index.of(exp0)
+      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       rules.foldLeft(i0) {
         case (index, MatchRule(pat, guard, exp)) => index ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
@@ -152,114 +152,114 @@ object Indexer {
       }
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
-      visitExp(exp) ++ Index.useOf(sym, tag) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.useOf(sym, tag) ++ Index.occurrenceOf(exp0)
 
     case Expression.Tuple(exps, tpe, eff, loc) =>
-      visitExps(exps) ++ Index.of(exp0)
+      visitExps(exps) ++ Index.occurrenceOf(exp0)
 
     case Expression.RecordEmpty(tpe, loc) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.RecordSelect(exp, field, _, _, _) =>
-      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.of(exp0)
+      Index.occurrenceOf(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.RecordExtend(field, exp1, exp2, _, _, _) =>
-      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.RecordRestrict(field, exp, _, _, _) =>
-      Index.of(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.of(exp0)
+      Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.ArrayLit(exps, _, _, _) =>
-      visitExps(exps) ++ Index.of(exp0)
+      visitExps(exps) ++ Index.occurrenceOf(exp0)
 
     case Expression.ArrayNew(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.ArrayLength(exp, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.ArrayStore(exp1, exp2, exp3, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
     case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Deref(exp1, _, _, _) =>
-      visitExp(exp1) ++ Index.of(exp0)
+      visitExp(exp1) ++ Index.occurrenceOf(exp0)
 
     case Expression.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.Existential(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.of(exp0)
+      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Universal(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.of(exp0)
+      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) ++ Index.of(exp0)
+      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) ++ Index.occurrenceOf(exp0)
 
     case Expression.Cast(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) ++ Index.of(exp0)
+      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) ++ Index.occurrenceOf(exp0)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
-      val i0 = visitExp(exp) ++ Index.of(exp0)
+      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       rules.foldLeft(i0) {
         case (index, CatchRule(_, _, exp)) => index ++ visitExp(exp)
       }
 
     case Expression.InvokeConstructor(_, args, _, _, _) =>
-      visitExps(args) ++ Index.of(exp0)
+      visitExps(args) ++ Index.occurrenceOf(exp0)
 
     case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args) ++ Index.of(exp0)
+      visitExp(exp) ++ visitExps(args) ++ Index.occurrenceOf(exp0)
 
     case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-      visitExps(args) ++ Index.of(exp0)
+      visitExps(args) ++ Index.occurrenceOf(exp0)
 
     case Expression.GetField(_, exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.PutField(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.GetStaticField(_, _, _, _) =>
-      Index.of(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expression.PutStaticField(_, exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.NewChannel(exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.GetChannel(exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.PutChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = rules.foldLeft(Index.empty) {
         case (index, SelectChannelRule(sym, chan, body)) =>
-          index ++ Index.of(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(chan)
+          index ++ Index.occurrenceOf(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(chan)
       }
-      i0 ++ i1 ++ Index.of(exp0)
+      i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
     case Expression.Spawn(exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Lazy(exp, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Force(exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(Index.empty) {
@@ -267,19 +267,19 @@ object Indexer {
       }
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointProject(_, exp, _, _, _) =>
-      visitExp(exp) ++ Index.of(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.of(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
   }
 
   /**
@@ -294,25 +294,25 @@ object Indexer {
     * Returns a reverse index for the given pattern `pat0`.
     */
   private def visitPat(pat0: Pattern): Index = pat0 match {
-    case Pattern.Wild(_, _) => Index.of(pat0)
-    case Pattern.Var(sym, _, loc) => Index.of(pat0) ++ Index.useOf(sym, loc)
-    case Pattern.Unit(_) => Index.of(pat0)
-    case Pattern.True(_) => Index.of(pat0)
-    case Pattern.False(_) => Index.of(pat0)
-    case Pattern.Char(_, _) => Index.of(pat0)
-    case Pattern.Float32(_, _) => Index.of(pat0)
-    case Pattern.Float64(_, _) => Index.of(pat0)
-    case Pattern.Int8(_, _) => Index.of(pat0)
-    case Pattern.Int16(_, _) => Index.of(pat0)
-    case Pattern.Int32(_, _) => Index.of(pat0)
-    case Pattern.Int64(_, _) => Index.of(pat0)
-    case Pattern.BigInt(_, _) => Index.of(pat0)
-    case Pattern.Str(_, _) => Index.of(pat0)
-    case Pattern.Tag(sym, tag, pat, _, loc) => Index.of(pat0) ++ visitPat(pat) ++ Index.useOf(sym, tag)
-    case Pattern.Tuple(elms, _, _) => Index.of(pat0) ++ visitPats(elms)
-    case Pattern.Array(elms, _, _) => Index.of(pat0) ++ visitPats(elms)
-    case Pattern.ArrayTailSpread(elms, _, _, _) => Index.of(pat0) ++ visitPats(elms)
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => Index.of(pat0) ++ visitPats(elms)
+    case Pattern.Wild(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Var(sym, _, loc) => Index.occurrenceOf(pat0) ++ Index.useOf(sym, loc)
+    case Pattern.Unit(_) => Index.occurrenceOf(pat0)
+    case Pattern.True(_) => Index.occurrenceOf(pat0)
+    case Pattern.False(_) => Index.occurrenceOf(pat0)
+    case Pattern.Char(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Float32(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Float64(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Int8(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Int16(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Int32(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Int64(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.BigInt(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Str(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Tag(sym, tag, pat, _, loc) => Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, tag)
+    case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
+    case Pattern.Array(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
   }
 
   /**
@@ -336,7 +336,7 @@ object Indexer {
     * Returns a reverse index for the given head predicate `h0`.
     */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
-    case a@Head.Atom(pred, den, terms, tpe, _) => Index.of(a) ++ Index.useOf(pred) ++ visitExps(terms)
+    case Head.Atom(pred, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.defOf(pred) ++ visitExps(terms)
     case Head.Union(exp, _, _) => visitExp(exp)
   }
 
@@ -344,7 +344,7 @@ object Indexer {
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case b@Body.Atom(pred, den, _, terms, tpe, _) => Index.of(b) ++ Index.useOf(pred) ++ visitPats(terms)
+    case Body.Atom(pred, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
   }
 
@@ -352,7 +352,7 @@ object Indexer {
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Index = {
-    Index.of(fparam0) ++ visitType(fparam0.tpe, fparam0.loc)
+    Index.occurrenceOf(fparam0) ++ visitType(fparam0.tpe, fparam0.loc)
   }
 
   /**
