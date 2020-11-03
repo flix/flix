@@ -20,11 +20,10 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import ca.uwaterloo.flix.api.lsp.provider.{FindReferencesProvider, GotoProvider, HighlightProvider}
+import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.tools.Tester.TestResult
 import ca.uwaterloo.flix.tools.{Packager, Tester}
@@ -36,11 +35,11 @@ import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonDSL._
 import org.json4s.ParserUtil.ParseException
 import org.json4s._
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
-import org.json4s.JsonDSL._
 
 import scala.collection.mutable
 
@@ -221,12 +220,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
-    case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
+    case Request.Hover(id, uri, pos) =>
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(index, root)
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
-    case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
+    case Request.Rename(id, newName, uri, pos) =>
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
 
     case Request.Uses(id, uri, pos) =>
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
@@ -323,205 +324,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
   }
 
-
-  /**
-    * Processes a hover request.
-    */
-  private def processHover(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    implicit val _ = Audience.External
-
-    def formatTypAndEff(tpe0: Type, eff0: Type): String = {
-      val t = FormatType.formatType(tpe0)
-      eff0 match {
-        case Type.Cst(TypeConstructor.True) => t
-        case Type.Cst(TypeConstructor.False) => s"$t & Impure"
-        case eff => s"$t & ${FormatType.formatType(eff)}"
-      }
-    }
-
-    def formatStratification(stf: Ast.Stratification): String = {
-      val sb = new StringBuilder()
-      val max = stf.m.values.max
-      for (i <- 0 to max) {
-        sb.append("Stratum ").append(i).append(":").append("\r\n")
-        for ((sym, stratum) <- stf.m) {
-          if (i == stratum) {
-            sb.append("  ").append(sym).append("\r\n")
-          }
-        }
-      }
-      sb.toString()
-    }
-
-    index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) =>
-        exp match {
-          case Expression.Def(sym, _, _) =>
-            val decl = root.defs(sym)
-            val markup =
-              s"""${FormatSignature.asMarkDown(decl)}
-                 |
-                 |${FormatDoc.asMarkDown(decl.doc)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-
-          case Expression.Hole(sym, _, _, _) =>
-            val holes = TypedAstOps.holesOf(root)
-            val holeContext = holes(sym)
-            val env = holeContext.env.map {
-              case (localSym, localTpe) => s"${localSym.text}: ${FormatType.formatType(localTpe)}"
-            }
-            val markup =
-              s"""Hole: ${sym.name}
-                 |
-                 |Context:
-                 |  ${holeContext.env.mkString("\r\n  ")}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-
-          case Expression.Tag(sym, tag, _, _, _, _) =>
-            val decl = root.enums(sym)
-            val caze = decl.cases(tag)
-            val markup =
-              s"""${FormatCase.asMarkDown(caze)}
-                 |
-                 |${FormatDoc.asMarkDown(decl.doc)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-
-          case Expression.FixpointConstraintSet(_, stf, _, _) =>
-            val markup =
-              s"""${formatTypAndEff(exp.tpe, exp.eff)}
-                 |
-                 |${formatStratification(stf)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-
-          case Expression.FixpointCompose(_, _, stf, _, _, _) =>
-            val markup =
-              s"""${formatTypAndEff(exp.tpe, exp.eff)}
-                 |
-                 |${formatStratification(stf)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-
-          case Expression.FixpointSolve(_, stf, _, _, _) =>
-            val markup =
-              s"""${formatTypAndEff(exp.tpe, exp.eff)}
-                 |
-                 |${formatStratification(stf)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-
-          case _ =>
-            //
-            // Other Expression.
-            //
-            val markup = formatTypAndEff(exp.tpe, exp.eff)
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-        }
-
-      case Some(Entity.Pattern(pat)) => pat match {
-        case Pattern.Tag(sym, tag, _, _, _) =>
-          val decl = root.enums(sym)
-          val caze = decl.cases(tag)
-          val markup =
-            s"""${FormatCase.asMarkDown(caze)}
-               |
-               |${FormatDoc.asMarkDown(decl.doc)}
-               |""".stripMargin
-          val contents = MarkupContent(MarkupKind.Markdown, markup)
-          val range = Range.from(pat.loc)
-          val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-
-        case _ =>
-          //
-          // Other pattern.
-          //
-          val markup = FormatType.formatType(pat.tpe)
-          val contents = MarkupContent(MarkupKind.Markdown, markup)
-          val range = Range.from(pat.loc)
-          val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-      }
-
-      case Some(Entity.LocalVar(sym, tpe)) =>
-        val markup = formatTypAndEff(tpe, Type.Pure)
-        val contents = MarkupContent(MarkupKind.Markdown, markup)
-        val range = Range.from(sym.loc)
-        val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result)
-
-      case _ =>
-        mkNotFound(requestId, uri, pos)
-    }
-  }
-
-  /**
-    * Processes a rename request.
-    */
-  private def processRename(requestId: String, newName: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    def rename(occurrences: List[SourceLocation]): JValue = {
-      // Group by URI.
-      val groupedByUri = occurrences.groupBy(_.source.name)
-
-      // Construct text edits.
-      val textEdits = groupedByUri map {
-        case (uri, locs) => uri -> locs.map(loc => TextEdit(Range.from(loc), newName))
-      }
-
-      // Assemble the workspace edit.
-      val workspaceEdit = WorkspaceEdit(textEdits)
-
-      // Construct the JSON result.
-      ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> workspaceEdit.toJSON)
-    }
-
-    def renameDef(sym: Symbol.DefnSym): JValue = rename(sym.loc :: index.usesOf(sym).toList)
-
-    def renameVar(sym: Symbol.VarSym): JValue = rename(sym.loc :: index.usesOf(sym).toList)
-
-    def renamePred(pred: Name.Pred): JValue = rename(index.usesOf(pred).toList)
-
-    index.query(uri, pos) match {
-      case Some(Entity.Pred(pred)) => renamePred(pred)
-      case Some(Entity.Def(defn)) => renameDef(defn.sym)
-      case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Var(sym, _, _) => renameVar(sym)
-        case Expression.Def(sym, _, _) => renameDef(sym)
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-      case Some(Entity.Pattern(pat)) => pat match {
-        case Pattern.Var(sym, _, _) => renameVar(sym)
-        case _ => mkNotFound(requestId, uri, pos)
-      }
-      case Some(Entity.FormalParam(fparam)) => renameVar(fparam.sym)
-      case Some(Entity.LocalVar(sym, _)) => renameVar(sym)
-      case _ => mkNotFound(requestId, uri, pos)
-    }
-  }
 
   /**
     * Processes a request to run all benchmarks. Re-compiles and runs the program.
