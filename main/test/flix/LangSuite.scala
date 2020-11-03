@@ -85,6 +85,12 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Default", "main/test/flix/Test.Exp.Default.flix"),
 
   //
+  // Floats.
+  //
+  new FlixTest("Test.Exp.Float32", "main/test/flix/Test.Exp.Float32.flix"),
+  new FlixTest("Test.Exp.Float64", "main/test/flix/Test.Exp.Float64.flix"),
+
+  //
   // Fixpoint.
   //
   new FlixTest("Test.Exp.Fixpoint.Constraint", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix"),

@@ -119,6 +119,8 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Concurrency.NewChannel.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.NewChannel.flix"))
     flix.addInput("Test.Exp.Concurrency.Unbuffered.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.Unbuffered.flix"))
     flix.addInput("Test.Exp.Concurrency.Spawn.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.Spawn.flix"))
+    flix.addInput("Test.Exp.Float32.flix", LocalResource.get("/test/flix/Test.Exp.Float32.flix"))
+    flix.addInput("Test.Exp.Float64.flix", LocalResource.get("/test/flix/Test.Exp.Float64.flix"))
     flix.addInput("Test.Exp.Hole.flix", LocalResource.get("/test/flix/Test.Exp.Hole.flix"))
     flix.addInput("Test.Exp.IfThenElse.flix", LocalResource.get("/test/flix/Test.Exp.IfThenElse.flix"))
     flix.addInput("Test.Exp.Infix.flix", LocalResource.get("/test/flix/Test.Exp.Infix.flix"))
