@@ -29,13 +29,17 @@ object RenameProvider {
   def processRename(newName: String, uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
+
       case Some(entity) => entity match {
+
+        case Entity.Case(caze) => renameTag(caze.sym, caze.tag, newName)
 
         case Entity.Def(defn) => renameDef(defn.sym, newName)
 
         case Entity.Exp(exp) => exp match {
           case Expression.Var(sym, _, _) => renameVar(sym, newName)
           case Expression.Def(sym, _, _) => renameDef(sym, newName)
+          case Expression.Tag(sym, tag, _, _, _, _) => renameTag(sym, tag, newName)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -43,6 +47,7 @@ object RenameProvider {
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => renameVar(sym, newName)
+          case Pattern.Tag(sym, tag, _, _, _) => renameTag(sym, tag, newName)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -90,6 +95,12 @@ object RenameProvider {
     val defs = index.defsOf(pred)
     val uses = index.usesOf(pred)
     rename(newName, (defs ++ uses).toList)
+  }
+
+  private def renameTag(sym: Symbol.EnumSym, tag: Name.Tag, newName: String)(implicit index: Index, root: Root): JObject = {
+    val defn = root.enums(sym).cases(tag).tag.loc
+    val uses = index.usesOf(sym, tag)
+    rename(newName, defn :: uses.toList)
   }
 
   private def renameVar(sym: Symbol.VarSym, newName: String)(implicit index: Index, root: Root): JObject = {
