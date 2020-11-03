@@ -18,71 +18,81 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
-import org.json4s.JsonAST.JValue
+import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
 object FindReferencesProvider {
 
-  def findReferences(requestId: String, uri: String, pos: Position)(implicit index: Index, root: Root): JValue = {
+  def findReferences(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
-      case None => mkNotFound(requestId, uri, pos)
+      case None => mkNotFound(uri, pos)
       case Some(entity) => entity match {
 
-        case Entity.Case(caze) => findTagRefs(requestId, caze.sym, caze.tag)
+        case Entity.Case(caze) => tagRefs(caze.sym, caze.tag)
 
-        case Entity.Def(defn) => findDefRefs(requestId, defn.sym)
+        case Entity.Def(defn) => defRefs(defn.sym)
 
         case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, _) => findDefRefs(requestId, sym)
-          case Expression.Var(sym, _, _) => findVarRefs(requestId, sym)
-          case Expression.Tag(sym, tag, _, _, _, _) => findTagRefs(requestId, sym, tag)
-          case _ => mkNotFound(requestId, uri, pos)
+          case Expression.Def(sym, _, _) => defRefs(sym)
+          case Expression.Var(sym, _, _) => varRefs(sym)
+          case Expression.Tag(sym, tag, _, _, _, _) => tagRefs(sym, tag)
+          case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.FormalParam(param) => findVarRefs(requestId, param.sym)
+        case Entity.Field(field) => fieldRefs(field)
+
+        case Entity.FormalParam(param) => varRefs(param.sym)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) => findVarRefs(requestId, sym)
-          case Pattern.Tag(sym, tag, _, _, _) => findTagRefs(requestId, sym, tag)
-          case _ => mkNotFound(requestId, uri, pos)
+          case Pattern.Var(sym, _, _) => varRefs(sym)
+          case Pattern.Tag(sym, tag, _, _, _) => tagRefs(sym, tag)
+          case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Pred(pred) => findPredRefs(requestId, pred)
-        case Entity.LocalVar(sym, _) => findVarRefs(requestId, sym)
+        case Entity.Pred(pred) => predRefs(pred)
+
+        case Entity.LocalVar(sym, _) => varRefs(sym)
 
       }
     }
   }
 
-  private def findDefRefs(requestId: String, sym: Symbol.DefnSym)(implicit index: Index, root: Root): JValue = {
+  private def defRefs(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
     val uses = index.usesOf(sym)
     val locs = uses.toList.map(Location.from)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findPredRefs(requestId: String, pred: Name.Pred)(implicit index: Index, root: Root): JValue = {
+  private def fieldRefs(field: Name.Field)(implicit index: Index, root: Root): JObject = {
+    val defs = index.defsOf(field)
+    val uses = index.usesOf(field)
+    val locs = (defs ++ uses).toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def predRefs(pred: Name.Pred)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(pred)
     val uses = index.usesOf(pred)
     val locs = (defs ++ uses).toList.map(Location.from)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findTagRefs(requestId: String, sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JValue = {
+  private def tagRefs(sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JObject = {
     val uses = index.usesOf(sym, tag)
     val locs = uses.toList.map(Location.from)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findVarRefs(requestId: String, sym: Symbol.VarSym)(implicit index: Index, root: Root): JValue = {
+  private def varRefs(sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
     val uses = index.usesOf(sym)
     val locs = uses.toList.map(Location.from)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
   /**
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
-  private def mkNotFound(requestId: String, uri: String, pos: Position): JValue =
-    ("id" -> requestId) ~ ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+  private def mkNotFound(uri: String, pos: Position): JObject =
+    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
 }

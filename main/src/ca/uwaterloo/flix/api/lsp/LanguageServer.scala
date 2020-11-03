@@ -36,11 +36,11 @@ import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST.{JArray, JString, JValue}
-import org.json4s.JsonDSL._
 import org.json4s.ParserUtil.ParseException
 import org.json4s._
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
+import org.json4s.JsonDSL._
 
 import scala.collection.mutable
 
@@ -218,7 +218,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
     case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
-    case Request.Uses(id, uri, pos) => FindReferencesProvider.findReferences(id, uri, pos)(index, root)
+
+    case Request.Uses(id, uri, pos) =>
+      ("id" -> id) ~ FindReferencesProvider.findReferences(id, uri, pos)(index, root)
 
     case Request.PackageBenchmark(id, projectRoot) => benchmarkPackage(id, projectRoot)
     case Request.PackageBuild(id, projectRoot) => buildPackage(id, projectRoot)
