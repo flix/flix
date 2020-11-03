@@ -46,64 +46,64 @@ namespace Test/Dec/TypeAlias {
     type alias E[a] = Result[a, String]
 
     @test
-    def typeAlias01(): Celsius = 123
+    def testTypeAlias01(): Celsius = 123
 
     @test
-    def typeAlias02(): Fahrenheit = 123
+    def testTypeAlias02(): Fahrenheit = 123
 
     @test
-    def typeAlias03(): Int = (123: Celsius) + (123: Fahrenheit)
+    def testTypeAlias03(): Int = (123: Celsius) + (123: Fahrenheit)
 
     @test
-    def typeAlias04(): USD = 123.456
+    def testTypeAlias04(): USD = 123.456
 
     @test
-    def typeAlias05(): CAD = 123.456
+    def testTypeAlias05(): CAD = 123.456
 
     @test
-    def typeAlias06(): Float64 = (123.456: USD) + (123.456: CAD)
+    def testTypeAlias06(): Float64 = (123.456: USD) + (123.456: CAD)
 
     @test
-    def typeAlias07(): A = None
+    def testTypeAlias07(): A = None
 
     @test
-    def typeAlias08(): A = Some(123)
+    def testTypeAlias08(): A = Some(123)
 
     @test
-    def typeAlias09(): B = Ok(true)
+    def testTypeAlias09(): B = Ok(true)
 
     @test
-    def typeAlias10(): B = Err(123)
+    def testTypeAlias10(): B = Err(123)
 
     @test
-    def typeAlias11(): C[Bool] = None
+    def testTypeAlias11(): C[Bool] = None
 
     @test
-    def typeAlias12(): C[Bool] = Some(true)
+    def testTypeAlias12(): C[Bool] = Some(true)
 
     @test
-    def typeAlias13(): C[Int] = None
+    def testTypeAlias13(): C[Int] = None
 
     @test
-    def typeAlias14(): C[Int] = Some(123)
+    def testTypeAlias14(): C[Int] = Some(123)
 
     @test
-    def typeAlias15(): D[Bool, Int] = Ok(true)
+    def testTypeAlias15(): D[Bool, Int] = Ok(true)
 
     @test
-    def typeAlias16(): D[Bool, Int] = Err(123)
+    def testTypeAlias16(): D[Bool, Int] = Err(123)
 
     @test
-    def typeAlias17(): E[Bool] = Ok(true)
+    def testTypeAlias17(): E[Bool] = Ok(true)
 
     @test
-    def typeAlias18(): E[Int] = Ok(123)
+    def testTypeAlias18(): E[Int] = Ok(123)
 
     @test
-    def typeAlias19(): E[Bool] = Err("Hello World")
+    def testTypeAlias19(): E[Bool] = Err("Hello World")
 
     @test
-    def typeAlias20(): E[Int] = Err("Hello World")
+    def testTypeAlias20(): E[Int] = Err("Hello World")
 
     /**
      * An opaque type for Int.
@@ -136,25 +136,25 @@ namespace Test/Dec/TypeAlias {
     type alias W[a, b] = Z[a, b]
 
     @test
-    def typeAlias21(): U = X(123)
+    def testTypeAlias21(): U = X(123)
 
     @test
-    def typeAlias22(): V[Bool] = Y(None)
+    def testTypeAlias22(): V[Bool] = Y(None)
 
     @test
-    def typeAlias23(): V[Bool] = Y(Some(true))
+    def testTypeAlias23(): V[Bool] = Y(Some(true))
 
     @test
-    def typeAlias24(): V[Int] = Y(None)
+    def testTypeAlias24(): V[Int] = Y(None)
 
     @test
-    def typeAlias25(): V[Int] = Y(Some(123))
+    def testTypeAlias25(): V[Int] = Y(Some(123))
 
     @test
-    def typeAlias26(): W[Bool, Int] = Z(Ok(true))
+    def testTypeAlias26(): W[Bool, Int] = Z(Ok(true))
 
     @test
-    def typeAlias27(): W[Bool, Int] = Z(Err(123))
+    def testTypeAlias27(): W[Bool, Int] = Z(Err(123))
 
     enum Option[t] {
         case None,
