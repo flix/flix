@@ -147,6 +147,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
 
   //
+  // Lambda.
+  //
+  new FlixTest("Test.Exp.Lambda.Match", "main/test/flix/Test.Exp.Lambda.Match.flix"),
+
+  //
   // Let.
   //
   new FlixTest("Test.Exp.Let.Match", "main/test/flix/Test.Exp.Let.Match.flix"),
