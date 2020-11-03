@@ -23,67 +23,75 @@ import org.json4s.JsonDSL._
 
 object FindReferencesProvider {
 
-  def findReferences(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
+  def findRefs(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
       case Some(entity) => entity match {
 
-        case Entity.Case(caze) => tagRefs(caze.sym, caze.tag)
+        case Entity.Case(caze) => findTagUses(caze.sym, caze.tag)
 
-        case Entity.Def(defn) => defRefs(defn.sym)
+        case Entity.Def(defn) => findDefUses(defn.sym)
+
+        case Entity.Enum(enum0) => findEnumUses(enum0.sym)
 
         case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, _) => defRefs(sym)
-          case Expression.Var(sym, _, _) => varRefs(sym)
-          case Expression.Tag(sym, tag, _, _, _, _) => tagRefs(sym, tag)
+          case Expression.Def(sym, _, _) => findDefUses(sym)
+          case Expression.Var(sym, _, _) => findVarUses(sym)
+          case Expression.Tag(sym, tag, _, _, _, _) => findTagUses(sym, tag)
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Field(field) => fieldRefs(field)
+        case Entity.Field(field) => findFieldUses(field)
 
-        case Entity.FormalParam(param) => varRefs(param.sym)
+        case Entity.FormalParam(param) => findVarUses(param.sym)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) => varRefs(sym)
-          case Pattern.Tag(sym, tag, _, _, _) => tagRefs(sym, tag)
+          case Pattern.Var(sym, _, _) => findVarUses(sym)
+          case Pattern.Tag(sym, tag, _, _, _) => findTagUses(sym, tag)
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Pred(pred) => predRefs(pred)
+        case Entity.Pred(pred) => findPredUses(pred)
 
-        case Entity.LocalVar(sym, _) => varRefs(sym)
+        case Entity.LocalVar(sym, _) => findVarUses(sym)
 
       }
     }
   }
 
-  private def defRefs(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
+  private def findDefUses(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
     val uses = index.usesOf(sym)
     val locs = uses.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def fieldRefs(field: Name.Field)(implicit index: Index, root: Root): JObject = {
+  private def findEnumUses(sym: Symbol.EnumSym)(implicit index: Index, root: Root): JObject = {
+    val uses = index.usesOf(sym)
+    val locs = uses.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findFieldUses(field: Name.Field)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(field)
     val uses = index.usesOf(field)
     val locs = (defs ++ uses).toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def predRefs(pred: Name.Pred)(implicit index: Index, root: Root): JObject = {
+  private def findPredUses(pred: Name.Pred)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(pred)
     val uses = index.usesOf(pred)
     val locs = (defs ++ uses).toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def tagRefs(sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JObject = {
+  private def findTagUses(sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JObject = {
     val uses = index.usesOf(sym, tag)
     val locs = uses.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def varRefs(sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
+  private def findVarUses(sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
     val uses = index.usesOf(sym)
     val locs = uses.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
