@@ -220,7 +220,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findReferences(id, uri, pos)(index, root)
+      ("id" -> id) ~ FindReferencesProvider.findReferences(uri, pos)(index, root)
 
     case Request.PackageBenchmark(id, projectRoot) => benchmarkPackage(id, projectRoot)
     case Request.PackageBuild(id, projectRoot) => buildPackage(id, projectRoot)
