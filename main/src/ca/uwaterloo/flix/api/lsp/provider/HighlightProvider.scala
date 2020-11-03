@@ -88,9 +88,9 @@ object HighlightProvider {
   }
 
   def highlightField(requestId: String, field: Name.Field)(implicit index: Index, root: Root): JValue = {
-    // Find all occurrences of the name.
-    val uses = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(requestId, uses)
+    val reads = index.readsOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    val writes = index.readsOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(requestId, writes)
   }
 
   def highlightPred(requestId: String, pred: Name.Pred)(implicit index: Index, root: Root): JValue = {
