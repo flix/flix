@@ -1,52 +1,52 @@
 namespace Test/Currying {
 
     @test
-    def curry01(): Bool = f(1, 2) == f(1)(2)
+    def testCurry01(): Bool = f(1, 2) == f(1)(2)
 
     @test
-    def curry02(): Bool = g(1, 2, 3) == g(1)(2)(3)
+    def testCurry02(): Bool = g(1, 2, 3) == g(1)(2)(3)
 
     @test
-    def curry03(): Bool = g(1, 2, 3) == g(1, 2)(3)
+    def testCurry03(): Bool = g(1, 2, 3) == g(1, 2)(3)
 
     @test
-    def curry04(): Bool = g(1, 2, 3) == g(1)(2, 3)
+    def testCurry04(): Bool = g(1, 2, 3) == g(1)(2, 3)
 
     @test
-    def curry05(): Bool = h(1, 2, 3, 4) == h(1)(2)(3)(4)
+    def testCurry05(): Bool = h(1, 2, 3, 4) == h(1)(2)(3)(4)
 
     @test
-    def curry06(): Bool = h(1, 2, 3, 4) == h(1, 2)(3)(4)
+    def testCurry06(): Bool = h(1, 2, 3, 4) == h(1, 2)(3)(4)
 
     @test
-    def curry07(): Bool = h(1, 2, 3, 4) == h(1)(2, 3)(4)
+    def testCurry07(): Bool = h(1, 2, 3, 4) == h(1)(2, 3)(4)
 
     @test
-    def curry08(): Bool = h(1, 2, 3, 4) == h(1)(2)(3, 4)
+    def testCurry08(): Bool = h(1, 2, 3, 4) == h(1)(2)(3, 4)
 
     @test
-    def curry09(): Bool = h(1, 2, 3, 4) == h(1, 2)(3, 4)
+    def testCurry09(): Bool = h(1, 2, 3, 4) == h(1, 2)(3, 4)
 
     @test
-    def curry10(): Bool = h(1, 2, 3, 4) == h(1, 2, 3)(4)
+    def testCurry10(): Bool = h(1, 2, 3, 4) == h(1, 2, 3)(4)
 
     @test
-    def curry11(): Bool = h(1, 2, 3, 4) == h(1)(2, 3, 4)
+    def testCurry11(): Bool = h(1, 2, 3, 4) == h(1)(2, 3, 4)
 
     @test
-    def curry12(): Bool = i(1, 2) == i(1)(2)
+    def testCurry12(): Bool = i(1, 2) == i(1)(2)
 
     @test
-    def curry13(): Bool = j(1, 2, 3) == j(1)(2)(3)
+    def testCurry13(): Bool = j(1, 2, 3) == j(1)(2)(3)
 
     @test
-    def curry14(): Bool = j(1, 2, 3) == j(1, 2)(3)
+    def testCurry14(): Bool = j(1, 2, 3) == j(1, 2)(3)
 
     @test
-    def curry15(): Bool = j(1, 2, 3) == j(1)(2, 3)
+    def testCurry15(): Bool = j(1, 2, 3) == j(1)(2, 3)
 
     @test
-    def curry16(): Bool = k(x -> x, 42) == k(x -> x)(42)
+    def testCurry16(): Bool = k(x -> x, 42) == k(x -> x)(42)
 
     ///
     /// A function of arity 2.
