@@ -214,7 +214,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Check(id) => processCheck(id)
     case Request.Codelens(id, uri) => processCodelens(id, uri)
-    case Request.Highlight(id, uri, pos) => HighlightProvider.processHighlight(id, uri, pos)(index, root)
+
+    case Request.Highlight(id, uri, pos) =>
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
+
     case Request.Hover(id, uri, pos) => processHover(id, uri, pos)
     case Request.Goto(id, uri, pos) => processGoto(id, uri, pos)
     case Request.Rename(id, newName, uri, pos) => processRename(id, newName, uri, pos)
