@@ -44,17 +44,17 @@ object HighlightProvider {
           case _ => mkNotFound(requestId, uri, pos)
         }
 
+        case Entity.Field(field) => highlightField(requestId, field)
+
+        case Entity.FormalParam(fparam) => highlightVar(requestId, fparam.sym)
+
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => highlightVar(requestId, sym)
           case Pattern.Tag(sym, tag, _, _, _) => highlightTag(requestId, sym, tag)
           case _ => mkNotFound(requestId, uri, pos)
         }
 
-        case Entity.Field(field) => highlightField(requestId, field)
-
         case Entity.Pred(pred) => highlightPred(requestId, pred)
-
-        case Entity.FormalParam(fparam) => highlightVar(requestId, fparam.sym)
 
         case Entity.LocalVar(sym, _) => highlightVar(requestId, sym)
 
