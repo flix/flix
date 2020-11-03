@@ -86,8 +86,8 @@ object HighlightProvider {
   }
 
   def highlightField(requestId: String, field: Name.Field)(implicit index: Index, root: Root): JValue = {
-    val reads = index.readsOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    val writes = index.writesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Write))
+    val reads = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    val writes = index.defsOf(field).toList.map(loc => (loc, DocumentHighlightKind.Write))
     highlight(requestId, writes)
   }
 

@@ -117,12 +117,12 @@ object Index {
   /**
     * Returns an index with a read of the given `field`.
     */
-  def readOf(field: Name.Field): Index = Index.empty.copy(fieldReads = MultiMap.singleton(field, field.loc))
+  def readOf(field: Name.Field): Index = Index.empty.copy(fieldUses = MultiMap.singleton(field, field.loc))
 
   /**
     * Returns an index with a write of the given `field`.
     */
-  def writeOf(field: Name.Field): Index = Index.empty.copy(fieldWrites = MultiMap.singleton(field, field.loc))
+  def writeOf(field: Name.Field): Index = Index.empty.copy(fieldDefs = MultiMap.singleton(field, field.loc))
 
 }
 
@@ -135,8 +135,8 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  tagUses: MultiMap[(Symbol.EnumSym, Name.Tag), SourceLocation],
-                 fieldReads: MultiMap[Name.Field, SourceLocation],
-                 fieldWrites: MultiMap[Name.Field, SourceLocation],
+                 fieldUses: MultiMap[Name.Field, SourceLocation],
+                 fieldDefs: MultiMap[Name.Field, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
@@ -201,14 +201,14 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
 
   /**
-    * Returns all reads of the given `field`.
+    * Returns all defs of the given `field`.
     */
-  def readsOf(field: Name.Field): Set[SourceLocation] = fieldReads(field)
+  def defsOf(field: Name.Field): Set[SourceLocation] = fieldDefs(field)
 
   /**
-    * Returns all writes of the given `field`.
+    * Returns all uses of the given `field`.
     */
-  def writesOf(field: Name.Field): Set[SourceLocation] = fieldWrites(field)
+  def usesOf(field: Name.Field): Set[SourceLocation] = fieldUses(field)
 
   /**
     * Adds the given entity `exp0` to `this` index.
@@ -246,8 +246,8 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
       this.tagUses ++ that.tagUses,
-      this.fieldReads ++ that.fieldReads,
-      this.fieldWrites ++ that.fieldWrites,
+      this.fieldUses ++ that.fieldUses,
+      this.fieldDefs ++ that.fieldDefs,
       this.predUses ++ that.predUses,
       this.varUses ++ that.varUses
     )
