@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.debug._
 import org.json4s.JsonAST.JObject
@@ -27,65 +27,38 @@ object HoverProvider {
   implicit val audience: Audience = Audience.External
 
   def processHover(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
-
-
     index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) =>
-        exp match {
-          case Expression.Def(sym, _, loc) => hoverDef(sym, loc)
+      case None => mkNotFound(uri, pos)
+      case Some(entity) => entity match {
 
-          case Expression.FixpointConstraintSet(_, stf, tpe, loc) => hoverFixpoint(tpe, Type.Pure, stf, loc)
+        case Entity.Exp(exp) =>
+          exp match {
+            case Expression.Def(sym, _, loc) => hoverDef(sym, loc)
 
-          case Expression.FixpointCompose(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
+            case Expression.FixpointConstraintSet(_, stf, tpe, loc) => hoverFixpoint(tpe, Type.Pure, stf, loc)
 
-          case Expression.FixpointSolve(_, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
+            case Expression.FixpointCompose(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
 
-          case _ =>
-            //
-            // Other Expression.
-            //
-            val markup = formatTypAndEff(exp.tpe, exp.eff)
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("status" -> "success") ~ ("result" -> result)
-        }
+            case Expression.FixpointSolve(_, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
 
-      case Some(Entity.Pattern(pat)) => pat match {
-        case Pattern.Tag(sym, tag, _, _, _) =>
-          val decl = root.enums(sym)
-          val caze = decl.cases(tag)
-          val markup =
-            s"""${FormatCase.asMarkDown(caze)}
-               |
-               |${FormatDoc.asMarkDown(decl.doc)}
-               |""".stripMargin
-          val contents = MarkupContent(MarkupKind.Markdown, markup)
-          val range = Range.from(pat.loc)
-          val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-          ("status" -> "success") ~ ("result" -> result)
+            case _ => hoverTypAndEff(exp.tpe, exp.eff, exp.loc)
+          }
 
-        case _ =>
-          //
-          // Other pattern.
-          //
-          val markup = FormatType.formatType(pat.tpe)
-          val contents = MarkupContent(MarkupKind.Markdown, markup)
-          val range = Range.from(pat.loc)
-          val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-          ("status" -> "success") ~ ("result" -> result)
+        case Entity.Pattern(pat) => hoverTypAndEff(pat.tpe, Type.Pure, pat.loc)
+
+        case Entity.LocalVar(sym, tpe) => hoverTypAndEff(tpe, Type.Pure, sym.loc)
+
+        case _ => mkNotFound(uri, pos)
       }
-
-      case Some(Entity.LocalVar(sym, tpe)) =>
-        val markup = formatTypAndEff(tpe, Type.Pure)
-        val contents = MarkupContent(MarkupKind.Markdown, markup)
-        val range = Range.from(sym.loc)
-        val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
-
-      case _ =>
-        mkNotFound(uri, pos)
     }
+  }
+
+  private def hoverTypAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+    val markup = formatTypAndEff(tpe, eff)
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
   }
 
   private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
