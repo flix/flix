@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 import org.json4s.JsonAST.JValue
 import org.json4s.JsonDSL._
 
@@ -27,10 +28,7 @@ object FindReferencesProvider {
       case None => mkNotFound(requestId, uri, pos)
       case Some(entity) => entity match {
 
-        case Entity.Case(caze) =>
-          val uses = index.usesOf(caze.sym, caze.tag)
-          val locs = uses.toList.map(Location.from)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+        case Entity.Case(caze) => findTag(requestId, caze.sym, caze.tag)
 
         case Entity.Def(defn) =>
           val uses = index.usesOf(defn.sym)
@@ -48,10 +46,7 @@ object FindReferencesProvider {
             val locs = uses.toList.map(Location.from)
             ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
 
-          case Expression.Tag(sym, tag, _, _, _, _) =>
-            val uses = index.usesOf(sym, tag)
-            val locs = uses.toList.map(Location.from)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+          case Expression.Tag(sym, tag, _, _, _, _) => findTag(requestId, sym, tag)
 
           case _ => mkNotFound(requestId, uri, pos)
         }
@@ -88,6 +83,12 @@ object FindReferencesProvider {
 
       }
     }
+  }
+
+  private def findTag(requestId: String, sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JValue = {
+    val uses = index.usesOf(sym, tag)
+    val locs = uses.toList.map(Location.from)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
   /**
