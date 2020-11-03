@@ -74,14 +74,12 @@ object HighlightProvider {
   }
 
   def highlightDef(requestId: String, sym: Symbol.DefnSym)(implicit index: Index, root: Root): JValue = {
-    // Find all occurrences of the symbol.
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, write :: reads)
   }
 
   def highlightEnum(requestId: String, sym: Symbol.EnumSym)(implicit index: Index, root: Root): JValue = {
-    // Find all occurrences of the symbol.
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, write :: reads)
@@ -94,20 +92,17 @@ object HighlightProvider {
   }
 
   def highlightPred(requestId: String, pred: Name.Pred)(implicit index: Index, root: Root): JValue = {
-    // Find all occurrences of the name.
     val uses = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, uses)
   }
 
   def highlightTag(requestId: String, sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JValue = {
-    // Find all occurrences of the symbol.
     val write = (root.enums(sym).cases(tag).loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, write :: reads)
   }
 
   def highlightVar(requestId: String, sym: Symbol.VarSym)(implicit index: Index, root: Root): JValue = {
-    // Find all occurrences of the symbol.
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, write :: reads)
