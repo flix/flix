@@ -922,6 +922,48 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.OverlappingInstance](result)
   }
 
+  test("Test.MissingImplementation.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def get(): a
+        |}
+        |
+        |instance C[Bool] {
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MissingImplementation](result)
+  }
+
+  test("Test.MismatchedSignatures.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def get(): a
+        |}
+        |
+        |instance C[Bool] {
+        |    def get(_i: Int): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.ExtraneousDefinition.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[Bool] {
+        |    def get(): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.ExtraneousDefinition](result)
+  }
+
   test("MattTest") { // MATT tmp
     val input =
       """

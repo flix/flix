@@ -28,8 +28,8 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, InferMonad, Substitution, Unification}
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, sequence}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -41,17 +41,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
     val classesVal = visitClasses(root)
-    val instancesVal = visitInstances(root)
     val defsVal = visitDefs(root)
     val enumsVal = visitEnums(root)
     val latticeOpsVal = visitLatticeOps(root)
     val propertiesVal = visitProperties(root)
 
-    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
-      case (classes, instances, defs, enums, latticeOps, properties) =>
-        val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-        TypedAst.Root(classes, sigs, instances, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
+    Validation.flatMapN(classesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
+      case (classes, defs, enums, latticeOps, properties) =>
+        visitInstances(root, classes).map {
+          instances =>
+            val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
+            val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
+            TypedAst.Root(classes, sigs, instances, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
+        }
     }
   }
 
@@ -90,7 +92,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: ResolvedAst.Root)(implicit flix: Flix): Validation[MultiMap[Symbol.ClassSym, TypedAst.Instance], TypeError] = {
+  private def visitInstances(root: ResolvedAst.Root, classes: Map[Symbol.ClassSym, TypedAst.Class])(implicit flix: Flix): Validation[MultiMap[Symbol.ClassSym, TypedAst.Instance], TypeError] = {
 
     /**
       * Reassembles a single instance.
@@ -114,6 +116,40 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
 
     /**
+      * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
+      */
+    def checkSigMatch(inst: TypedAst.Instance)(implicit flix: Flix): Validation[List[Unit], TypeError] = {
+      val clazz = classes(inst.sym)
+
+      // Step 1: check that each signature has an implementation.
+      val sigMatchVal = traverse(clazz.signatures) {
+        sig => inst.defs.find(_.sym.name == sig.sym.name) match {
+          // Case 1: there is no definition with the same name
+          case None => TypeError.MissingImplementation(sig.sym, inst.loc).toFailure
+          case Some(defn) =>
+            val subst = Substitution.singleton(clazz.tparam.tpe, inst.tpe)
+            val expectedScheme = subst(sig.sc)
+            if (Scheme.lessThanEqual(expectedScheme, defn.declaredScheme, root.instances)) { // MATT need to check equal rather than leq
+              // Case 2.1: the schemes match. Success!
+              ().toSuccess
+            } else {
+              // Case 2.2: the schemes do not match
+              TypeError.MismatchedSignatures(sig.loc, defn.loc, sig.sc, defn.declaredScheme).toFailure
+            }
+        }
+      }
+      // Step 2: check that there are no extra definitions
+      sigMatchVal.flatMap {
+        _ => traverse(inst.defs) {
+          defn => clazz.signatures.find(_.sym.name == defn.sym.name) match {
+            case None => TypeError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
+            case _ => ().toSuccess
+          }
+        }
+      }
+    }
+
+    /**
       * Reassembles a set of instances of the same class.
       */
     def foldOverInstances(insts0: Set[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, Set[TypedAst.Instance]), TypeError] = {
@@ -122,6 +158,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           for {
             inst <- visitInstance(inst0)
             _ <- Validation.traverse(acc)(checkOverlap(_, inst))
+            _ <- checkSigMatch(inst)
           } yield inst :: acc
 
       }

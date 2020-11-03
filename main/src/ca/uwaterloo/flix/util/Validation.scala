@@ -236,6 +236,28 @@ object Validation {
     }
 
   /**
+    * FlatMaps over t1, t2, t3, and t4.
+    */
+  def flatMapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                     t4: Validation[T4, E])
+                                     (f: (T1, T2, T3, T4) => Validation[U, E]): Validation[U, E] =
+    (t1, t2, t3, t4) match {
+      case (Success(v1), Success(v2), Success(v3), Success(v4)) => f(v1, v2, v3, v4)
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
+    }
+
+  /**
+    * FlatMaps over t1, t2, t3, t4, and t5.
+    */
+  def flatMapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                         t4: Validation[T4, E], t5: Validation[T5, E])
+                                         (f: (T1, T2, T3, T4, T5) => Validation[U, E]): Validation[U, E] =
+    (t1, t2, t3, t4, t5) match {
+      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5)) => f(v1, v2, v3, v4, v5)
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
+    }
+
+  /**
     * Folds Right over `xs` using the function `f` with the initial value `zero`.
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -91,6 +91,19 @@ case class Substitution(m: Map[Type.Var, Type]) {
     * Applies `this` substitution to the given type constraint `tc`.
     */
   def apply(tc: TypedAst.TypeConstraint): TypedAst.TypeConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
+
+  /**
+    * Applies `this` substitution to the given type scheme `sc`.
+    *
+    * NB: Throws an InternalCompilerException if quantifiers are present in the substitution.
+    */
+  def apply(sc: Scheme): Scheme = sc match {
+    case Scheme(quantifiers, constraints, base) =>
+      if (sc.quantifiers.exists(m.contains)) {
+        throw InternalCompilerException("Quantifier in substitution.")
+      }
+      Scheme(quantifiers, constraints.map(apply), apply(base))
+  }
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.

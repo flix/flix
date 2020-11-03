@@ -296,4 +296,53 @@ object TypeError {
 
     def loc: SourceLocation = loc1 min loc2
   }
+
+  // MATT docs
+  // MATT improve messaging
+  case class MismatchedSignatures(sigLoc: SourceLocation, defLoc: SourceLocation, sigScheme: Scheme, defScheme: Scheme) extends TypeError {
+    def summary: String = "Mismatched signature."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << Code(sigLoc, "signature.") << NewLine
+      vt << NewLine
+      vt << Code(defLoc, "definition.") << NewLine
+      vt << NewLine
+      vt << s"Signature scheme: ${FormatScheme.formatScheme(sigScheme)}" << NewLine
+      vt << s"Definition scheme: ${FormatScheme.formatScheme(sigScheme)}" << NewLine
+      vt << Underline("Tip:") << " Modify the definition to match the signature."
+    }
+
+    def loc: SourceLocation = defLoc
+  }
+
+  // MATT docs
+  case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends TypeError {
+    def summary: String = "Missing implementation."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << s"The signature ${sig.name} is missing from the instance."
+      vt << NewLine
+      vt << Underline("Tip:") << " Add an implementation of the signature to the instance."
+    }
+  }
+
+  // MATT docs
+  case class ExtraneousDefinition(defn: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def summary: String = "Extraneous implementation."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << s"The signature ${defn.name} is not present in the class."
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove this definition from the instance."
+    }
+  }
 }
