@@ -33,13 +33,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Let", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Let.flix")(Options.TestWithLibrary),
 
   //
-  // Declarations.
-  //
-  new FlixTest("Test.Decl.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Def.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Decl.OpaqueType", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.OpaqueType.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Decl.Class", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Class.flix")(Options.TestWithLibrary),
-
-  //
   // Pattern Match.
   //
   new FlixTest("Test.Expression.Match", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.flix")(Options.TestWithLibrary),
