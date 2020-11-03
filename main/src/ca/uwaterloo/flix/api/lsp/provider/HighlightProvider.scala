@@ -86,14 +86,14 @@ object HighlightProvider {
   }
 
   def highlightField(requestId: String, field: Name.Field)(implicit index: Index, root: Root): JValue = {
-    val reads = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
     val writes = index.defsOf(field).toList.map(loc => (loc, DocumentHighlightKind.Write))
+    val reads = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, reads ::: writes)
   }
 
   def highlightPred(requestId: String, pred: Name.Pred)(implicit index: Index, root: Root): JValue = {
-    val reads = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
     val writes = index.defsOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Write))
+    val reads = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(requestId, reads ::: writes)
   }
 
