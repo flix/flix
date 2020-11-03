@@ -98,6 +98,8 @@ object BenchmarkCompiler {
     * Adds the compiler test cases.
     */
   private def addCompilerTests(flix: Flix): Unit = {
+    flix.addInput("Test.Currying.flix", LocalResource.get("/test/flix/Test.Currying.flix"))
+
     flix.addInput("Test.Eff.Polymorphism.flix", LocalResource.get("/test/flix/Test.Eff.Polymorphism.flix"))
 
     flix.addInput("Test.Exp.ArrayLength.flix", LocalResource.get("/test/flix/Test.Exp.ArrayLength.flix"))

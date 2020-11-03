@@ -6,6 +6,11 @@ import org.scalatest.Suites
 class LangSuite extends Suites(
 
   //
+  // Currying.
+  //
+  new FlixTest("Test.Currying", "main/test/flix/Test.Currying.flix"),
+
+  //
   // Declarations.
   //
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),

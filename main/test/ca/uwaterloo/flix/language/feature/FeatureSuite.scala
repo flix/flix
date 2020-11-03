@@ -19,10 +19,7 @@ package ca.uwaterloo.flix.language.feature
 import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
-// TODO: Sort
 class FeatureSuite extends Suites(
-
-  new FlixTest("TestCurrying", "main/test/ca/uwaterloo/flix/language/feature/TestCurrying.flix")(Options.TestWithLibrary),
 
   new FlixTest("Test.Pattern.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Pattern.List.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.LambdaMatch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LambdaMatch.flix")(Options.TestWithLibrary),
@@ -43,8 +40,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.Let", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Let.flix")(Options.TestWithLibrary),
   new FlixTest("TestTailCallElimination", "main/test/ca/uwaterloo/flix/language/feature/TestTailCallElimination.flix")(Options.TestWithLibrary),
-
-  new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix")(Options.TestWithLibrary),
 
   //
   // Declarations.
