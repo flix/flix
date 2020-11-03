@@ -336,7 +336,7 @@ object Indexer {
     * Returns a reverse index for the given head predicate `h0`.
     */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
-    case a@Head.Atom(pred, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.defOf(pred) ++ visitExps(terms)
+    case Head.Atom(pred, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.defOf(pred) ++ visitExps(terms)
     case Head.Union(exp, _, _) => visitExp(exp)
   }
 
@@ -344,7 +344,7 @@ object Indexer {
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case b@Body.Atom(pred, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
+    case Body.Atom(pred, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
   }
 
