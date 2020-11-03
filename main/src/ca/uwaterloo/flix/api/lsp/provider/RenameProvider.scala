@@ -31,26 +31,26 @@ object RenameProvider {
       case None => mkNotFound(uri, pos)
       case Some(entity) => entity match {
 
-        case Entity.Def(defn) => renameDef(newName, defn.sym)
+        case Entity.Def(defn) => renameDef(defn.sym, newName)
 
         case Entity.Exp(exp) => exp match {
-          case Expression.Var(sym, _, _) => renameVar(newName, sym)
-          case Expression.Def(sym, _, _) => renameDef(newName, sym)
+          case Expression.Var(sym, _, _) => renameVar(sym, newName)
+          case Expression.Def(sym, _, _) => renameDef(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Field(field) => renameField(newName, field)
+        case Entity.Field(field) => renameField(field, newName)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) => renameVar(newName, sym)
+          case Pattern.Var(sym, _, _) => renameVar(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Pred(pred) => renamePred(newName, pred)
+        case Entity.Pred(pred) => renamePred(pred, newName)
 
-        case Entity.FormalParam(fparam) => renameVar(newName, fparam.sym)
+        case Entity.FormalParam(fparam) => renameVar(fparam.sym, newName)
 
-        case Entity.LocalVar(sym, _) => renameVar(newName, sym)
+        case Entity.LocalVar(sym, _) => renameVar(sym, newName)
 
         case _ => mkNotFound(uri, pos)
       }
@@ -74,25 +74,25 @@ object RenameProvider {
     ("status" -> "success") ~ ("result" -> workspaceEdit.toJSON)
   }
 
-  private def renameDef(newName: String, sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
+  private def renameDef(sym: Symbol.DefnSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, defn :: uses.toList)
   }
 
-  private def renameField(newName: String, field: Name.Field)(implicit index: Index, root: Root): JObject = {
+  private def renameField(field: Name.Field, newName: String)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(field)
     val uses = index.usesOf(field)
     rename(newName, (defs ++ uses).toList)
   }
 
-  private def renamePred(newName: String, pred: Name.Pred)(implicit index: Index, root: Root): JObject = {
+  private def renamePred(pred: Name.Pred, newName: String)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(pred)
     val uses = index.usesOf(pred)
     rename(newName, (defs ++ uses).toList)
   }
 
-  private def renameVar(newName: String, sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
+  private def renameVar(sym: Symbol.VarSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, defn :: uses.toList)
