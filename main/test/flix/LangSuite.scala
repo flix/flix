@@ -6,9 +6,15 @@ import org.scalatest.Suites
 class LangSuite extends Suites(
 
   //
+  // Currying.
+  //
+  new FlixTest("Test.Currying", "main/test/flix/Test.Currying.flix"),
+
+  //
   // Declarations.
   //
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
+  new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
   // Effects.
@@ -20,6 +26,11 @@ class LangSuite extends Suites(
   // Equality.
   //
   new FlixTest("Test.Equality.Channel", "main/test/flix/Test.Equality.Channel.flix"),
+
+  //
+  // Apply.Tail.
+  //
+  new FlixTest("Test.Exp.Apply.Tail", "main/test/flix/Test.Exp.Apply.Tail.flix"),
 
   //
   // Array.
@@ -80,6 +91,12 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Default", "main/test/flix/Test.Exp.Default.flix"),
 
   //
+  // Floats.
+  //
+  new FlixTest("Test.Exp.Float32", "main/test/flix/Test.Exp.Float32.flix"),
+  new FlixTest("Test.Exp.Float64", "main/test/flix/Test.Exp.Float64.flix"),
+
+  //
   // Fixpoint.
   //
   new FlixTest("Test.Exp.Fixpoint.Constraint", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
@@ -103,6 +120,14 @@ class LangSuite extends Suites(
   // Infix.
   //
   new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
+
+  //
+  // Int.
+  //
+  new FlixTest("Test.Exp.Int8", "main/test/flix/Test.Exp.Int8.flix"),
+  new FlixTest("Test.Exp.Int16", "main/test/flix/Test.Exp.Int16.flix"),
+  new FlixTest("Test.Exp.Int32", "main/test/flix/Test.Exp.Int32.flix"),
+  new FlixTest("Test.Exp.Int64", "main/test/flix/Test.Exp.Int64.flix"),
 
   //
   // Interpolation.
@@ -135,6 +160,7 @@ class LangSuite extends Suites(
   // Match.
   //
   new FlixTest("Test.Exp.Match.Guard", "main/test/flix/Test.Exp.Match.Guard.flix"),
+  new FlixTest("Test.Exp.Match.List", "main/test/flix/Test.Exp.Match.List.flix"),
   new FlixTest("Test.Exp.Match.Wild", "main/test/flix/Test.Exp.Match.Wild.flix"),
 
   //
@@ -217,6 +243,11 @@ class LangSuite extends Suites(
   // Type Alias.
   //
   new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix"),
+
+  //
+  // Unused.
+  //
+  new FlixTest("Test.Unused.Var", "main/test/flix/Test.Unused.Var.flix"),
 
   //
   // Use.

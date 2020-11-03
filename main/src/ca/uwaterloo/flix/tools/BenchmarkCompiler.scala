@@ -98,8 +98,13 @@ object BenchmarkCompiler {
     * Adds the compiler test cases.
     */
   private def addCompilerTests(flix: Flix): Unit = {
+    flix.addInput("Test.Currying.flix", LocalResource.get("/test/flix/Test.Currying.flix"))
+
+    flix.addInput("Test.Dec.TypeAlias.flix", LocalResource.get("/test/flix/Test.Dec.TypeAlias.flix"))
+
     flix.addInput("Test.Eff.Polymorphism.flix", LocalResource.get("/test/flix/Test.Eff.Polymorphism.flix"))
 
+    flix.addInput("Test.Exp.Apply.Tail.flix", LocalResource.get("/test/flix/Test.Exp.Apply.Tail.flix"))
     flix.addInput("Test.Exp.ArrayLength.flix", LocalResource.get("/test/flix/Test.Exp.ArrayLength.flix"))
     flix.addInput("Test.Exp.ArrayLit.flix", LocalResource.get("/test/flix/Test.Exp.ArrayLit.flix"))
     flix.addInput("Test.Exp.ArrayLoad.flix", LocalResource.get("/test/flix/Test.Exp.ArrayLoad.flix"))
@@ -117,9 +122,15 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Concurrency.NewChannel.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.NewChannel.flix"))
     flix.addInput("Test.Exp.Concurrency.Unbuffered.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.Unbuffered.flix"))
     flix.addInput("Test.Exp.Concurrency.Spawn.flix", LocalResource.get("/test/flix/Test.Exp.Concurrency.Spawn.flix"))
+    flix.addInput("Test.Exp.Float32.flix", LocalResource.get("/test/flix/Test.Exp.Float32.flix"))
+    flix.addInput("Test.Exp.Float64.flix", LocalResource.get("/test/flix/Test.Exp.Float64.flix"))
     flix.addInput("Test.Exp.Hole.flix", LocalResource.get("/test/flix/Test.Exp.Hole.flix"))
     flix.addInput("Test.Exp.IfThenElse.flix", LocalResource.get("/test/flix/Test.Exp.IfThenElse.flix"))
     flix.addInput("Test.Exp.Infix.flix", LocalResource.get("/test/flix/Test.Exp.Infix.flix"))
+    flix.addInput("Test.Exp.Int8.flix", LocalResource.get("/test/flix/Test.Exp.Int8.flix"))
+    flix.addInput("Test.Exp.Int16.flix", LocalResource.get("/test/flix/Test.Exp.Int16.flix"))
+    flix.addInput("Test.Exp.Int32.flix", LocalResource.get("/test/flix/Test.Exp.Int32.flix"))
+    flix.addInput("Test.Exp.Int64.flix", LocalResource.get("/test/flix/Test.Exp.Int64.flix"))
     flix.addInput("Test.Exp.Interpolation.flix", LocalResource.get("/test/flix/Test.Exp.Interpolation.flix"))
     flix.addInput("Test.Exp.Jvm.GetField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"))
     flix.addInput("Test.Exp.Jvm.GetStaticField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticField.flix"))
@@ -130,6 +141,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Jvm.PutStaticField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"))
     flix.addInput("Test.Exp.Let.MatchStar.flix", LocalResource.get("/test/flix/Test.Exp.Let.MatchStar.flix"))
     flix.addInput("Test.Exp.Match.Guard.flix", LocalResource.get("/test/flix/Test.Exp.Match.Guard.flix"))
+    flix.addInput("Test.Exp.Match.List.flix", LocalResource.get("/test/flix/Test.Exp.Match.List.flix"))
     flix.addInput("Test.Exp.Match.Wild.flix", LocalResource.get("/test/flix/Test.Exp.Match.Wild.flix"))
     flix.addInput("Test.Exp.Reference.Assign.flix", LocalResource.get("/test/flix/Test.Exp.Reference.Assign.flix"))
     flix.addInput("Test.Exp.Reference.Deref.flix", LocalResource.get("/test/flix/Test.Exp.Reference.Deref.flix"))
@@ -151,6 +163,8 @@ object BenchmarkCompiler {
     flix.addInput("Test.Predicate.Filter.flix", LocalResource.get("/test/flix/Test.Predicate.Filter.flix"))
     flix.addInput("Test.Predicate.Guard.flix", LocalResource.get("/test/flix/Test.Predicate.Guard.flix"))
     flix.addInput("Test.Predicate.Nullary.flix", LocalResource.get("/test/flix/Test.Predicate.Nullary.flix"))
+
+    flix.addInput("Test.Unused.Var.flix", LocalResource.get("/test/flix/Test.Unused.Var.flix"))
 
     flix.addInput("Test.Use.Tag.flix", LocalResource.get("/test/flix/Test.Use.Tag.flix"))
   }
