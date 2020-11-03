@@ -65,12 +65,12 @@ object Index {
   /**
     * Returns an index for the given atom `a0`.
     */
-  def of(a0: Predicate.Head.Atom): Index = empty + Entity.Pred(a0.pred)
+  def occurrenceOf(a0: Predicate.Head.Atom): Index = empty + Entity.Pred(a0.pred)
 
   /**
     * Returns an index for the given atom `a0`.
     */
-  def of(b0: Predicate.Body.Atom): Index = empty + Entity.Pred(b0.pred)
+  def occurrenceOf(b0: Predicate.Body.Atom): Index = empty + Entity.Pred(b0.pred)
 
   /**
     * Returns an index for the given local variable definition `sym0`.
@@ -91,11 +91,6 @@ object Index {
     * Returns an index with the symbol `sym` used at location `loc.`
     */
   def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
-
-  /**
-    * Returns an index with a use of the predicate `pred` with the given denotation `den` and type `tpe`.
-    */
-  def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -122,6 +117,16 @@ object Index {
     */
   def useOf(field: Name.Field): Index = Index.empty.copy(fieldUses = MultiMap.singleton(field, field.loc))
 
+  /**
+    * Returns an index with a def of the predicate `pred`.
+    */
+  def defOf(pred: Name.Pred): Index = Index.empty.copy(predDefs = MultiMap.singleton(pred, pred.loc))
+
+  /**
+    * Returns an index with a use of the predicate `pred`.
+    */
+  def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
+
 }
 
 /**
@@ -133,8 +138,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  tagUses: MultiMap[(Symbol.EnumSym, Name.Tag), SourceLocation],
-                 fieldUses: MultiMap[Name.Field, SourceLocation],
                  fieldDefs: MultiMap[Name.Field, SourceLocation],
+                 fieldUses: MultiMap[Name.Field, SourceLocation],
+                 predDefs: MultiMap[Name.Pred, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
 
@@ -183,10 +189,6 @@ case class Index(m: Map[(String, Int), List[Entity]],
     */
   def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
 
-  /**
-    * Returns all uses of the given predicate `pred`.
-    */
-  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
 
   /**
     * Returns all uses of the given symbol `sym` and `tag`.
@@ -207,6 +209,16 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Returns all uses of the given `field`.
     */
   def usesOf(field: Name.Field): Set[SourceLocation] = fieldUses(field)
+
+  /**
+    * Returns all defs of the given predicate `pred`.
+    */
+  def defsOf(pred: Name.Pred): Set[SourceLocation] = predDefs(pred)
+
+  /**
+    * Returns all uses of the given predicate `pred`.
+    */
+  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
 
   /**
     * Adds the given entity `exp0` to `this` index.
@@ -244,8 +256,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
       this.tagUses ++ that.tagUses,
-      this.fieldUses ++ that.fieldUses,
       this.fieldDefs ++ that.fieldDefs,
+      this.fieldUses ++ that.fieldUses,
+      this.predDefs ++ that.predDefs,
       this.predUses ++ that.predUses,
       this.varUses ++ that.varUses
     )
