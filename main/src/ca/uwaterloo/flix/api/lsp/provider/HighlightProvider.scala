@@ -23,9 +23,6 @@ import org.json4s.JsonDSL._
 
 object HighlightProvider {
 
-  /**
-    * Processes a highlight request.
-    */
   def processHighlight(requestId: String, uri: String, pos: Position)(implicit index: Index, root: Root): JValue = {
     index.query(uri, pos) match {
       case None => mkNotFound(requestId, uri, pos)
