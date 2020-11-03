@@ -100,6 +100,8 @@ object BenchmarkCompiler {
   private def addCompilerTests(flix: Flix): Unit = {
     flix.addInput("Test.Currying.flix", LocalResource.get("/test/flix/Test.Currying.flix"))
 
+    flix.addInput("Test.Dec.TypeAlias.flix", LocalResource.get("/test/flix/Test.Dec.TypeAlias.flix"))
+
     flix.addInput("Test.Eff.Polymorphism.flix", LocalResource.get("/test/flix/Test.Eff.Polymorphism.flix"))
 
     flix.addInput("Test.Exp.Apply.Tail.flix", LocalResource.get("/test/flix/Test.Exp.Apply.Tail.flix"))
@@ -161,6 +163,8 @@ object BenchmarkCompiler {
     flix.addInput("Test.Predicate.Filter.flix", LocalResource.get("/test/flix/Test.Predicate.Filter.flix"))
     flix.addInput("Test.Predicate.Guard.flix", LocalResource.get("/test/flix/Test.Predicate.Guard.flix"))
     flix.addInput("Test.Predicate.Nullary.flix", LocalResource.get("/test/flix/Test.Predicate.Nullary.flix"))
+
+    flix.addInput("Test.Unused.Var.flix", LocalResource.get("/test/flix/Test.Unused.Var.flix"))
 
     flix.addInput("Test.Use.Tag.flix", LocalResource.get("/test/flix/Test.Use.Tag.flix"))
   }

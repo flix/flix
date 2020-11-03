@@ -14,6 +14,7 @@ class LangSuite extends Suites(
   // Declarations.
   //
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
+  new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
   // Effects.
