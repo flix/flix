@@ -17,8 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.debug._
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -29,97 +28,17 @@ object HoverProvider {
 
   def processHover(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
 
-    def formatStratification(stf: Ast.Stratification): String = {
-      val sb = new StringBuilder()
-      val max = stf.m.values.max
-      for (i <- 0 to max) {
-        sb.append("Stratum ").append(i).append(":").append("\r\n")
-        for ((sym, stratum) <- stf.m) {
-          if (i == stratum) {
-            sb.append("  ").append(sym).append("\r\n")
-          }
-        }
-      }
-      sb.toString()
-    }
 
     index.query(uri, pos) match {
       case Some(Entity.Exp(exp)) =>
         exp match {
-          case Expression.Def(sym, _, _) =>
-            val decl = root.defs(sym)
-            val markup =
-              s"""${FormatSignature.asMarkDown(decl)}
-                 |
-                 |${FormatDoc.asMarkDown(decl.doc)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("status" -> "success") ~ ("result" -> result)
+          case Expression.Def(sym, _, loc) => hoverDef(sym, loc)
 
-          case Expression.Hole(sym, _, _, _) =>
-            val holes = TypedAstOps.holesOf(root)
-            val holeContext = holes(sym)
-            val env = holeContext.env.map {
-              case (localSym, localTpe) => s"${localSym.text}: ${FormatType.formatType(localTpe)}"
-            }
-            val markup =
-              s"""Hole: ${sym.name}
-                 |
-                 |Context:
-                 |  ${holeContext.env.mkString("\r\n  ")}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("status" -> "success") ~ ("result" -> result)
+          case Expression.FixpointConstraintSet(_, stf, tpe, loc) => hoverFixpoint(tpe, Type.Pure, stf, loc)
 
-          case Expression.Tag(sym, tag, _, _, _, _) =>
-            val decl = root.enums(sym)
-            val caze = decl.cases(tag)
-            val markup =
-              s"""${FormatCase.asMarkDown(caze)}
-                 |
-                 |${FormatDoc.asMarkDown(decl.doc)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("status" -> "success") ~ ("result" -> result)
+          case Expression.FixpointCompose(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
 
-          case Expression.FixpointConstraintSet(_, stf, _, _) =>
-            val markup =
-              s"""${formatTypAndEff(exp.tpe, exp.eff)}
-                 |
-                 |${formatStratification(stf)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("status" -> "success") ~ ("result" -> result)
-
-          case Expression.FixpointCompose(_, _, stf, _, _, _) =>
-            val markup =
-              s"""${formatTypAndEff(exp.tpe, exp.eff)}
-                 |
-                 |${formatStratification(stf)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("status" -> "success") ~ ("result" -> result)
-
-          case Expression.FixpointSolve(_, stf, _, _, _) =>
-            val markup =
-              s"""${formatTypAndEff(exp.tpe, exp.eff)}
-                 |
-                 |${formatStratification(stf)}
-                 |""".stripMargin
-            val contents = MarkupContent(MarkupKind.Markdown, markup)
-            val range = Range.from(exp.loc)
-            val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-            ("status" -> "success") ~ ("result" -> result)
+          case Expression.FixpointSolve(_, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
 
           case _ =>
             //
@@ -169,6 +88,31 @@ object HoverProvider {
     }
   }
 
+  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+    val decl = root.defs(sym)
+    val markup =
+      s"""${FormatSignature.asMarkDown(decl)}
+         |
+         |${FormatDoc.asMarkDown(decl.doc)}
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
+  }
+
+  private def hoverFixpoint(tpe: Type, eff: Type, stf: Ast.Stratification, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+    val markup =
+      s"""${formatTypAndEff(tpe, eff)}
+         |
+         |${formatStratification(stf)}
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
+  }
+
   private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
     val t = FormatType.formatType(tpe0)
     eff0 match {
@@ -176,6 +120,20 @@ object HoverProvider {
       case Type.Cst(TypeConstructor.False) => s"$t & Impure"
       case eff => s"$t & ${FormatType.formatType(eff)}"
     }
+  }
+
+  private def formatStratification(stf: Ast.Stratification): String = {
+    val sb = new StringBuilder()
+    val max = stf.m.values.max
+    for (i <- 0 to max) {
+      sb.append("Stratum ").append(i).append(":").append("\r\n")
+      for ((sym, stratum) <- stf.m) {
+        if (i == stratum) {
+          sb.append("  ").append(sym).append("\r\n")
+        }
+      }
+    }
+    sb.toString()
   }
 
   /**
