@@ -66,12 +66,7 @@ object Index {
   /**
     * Returns an index for the given atom `a0`.
     */
-  def occurrenceOf(a0: Predicate.Head.Atom): Index = empty + Entity.Pred(a0.pred)
-
-  /**
-    * Returns an index for the given atom `a0`.
-    */
-  def occurrenceOf(b0: Predicate.Body.Atom): Index = empty + Entity.Pred(b0.pred)
+  def occurrenceOf(pred: Name.Pred): Index = empty + Entity.Pred(pred)
 
   /**
     * Returns an index for the given local variable definition `sym0`.
