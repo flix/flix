@@ -101,6 +101,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Currying.flix", LocalResource.get("/test/flix/Test.Currying.flix"))
 
     flix.addInput("Test.Dec.OpaqueType.flix", LocalResource.get("/test/flix/Test.Dec.OpaqueType.flix"))
+    flix.addInput("Test.Dec.RelAlias.flix", LocalResource.get("/test/flix/Test.Dec.RelAlias.flix"))
     flix.addInput("Test.Dec.TypeAlias.flix", LocalResource.get("/test/flix/Test.Dec.TypeAlias.flix"))
 
     flix.addInput("Test.Eff.Polymorphism.flix", LocalResource.get("/test/flix/Test.Eff.Polymorphism.flix"))
