@@ -73,5 +73,15 @@ namespace Test07 {
     pub def g[a: C](x: a): a = x
 }
 
+pub enum List[a] {
+    case Nil
+    case Cons(a, List[a])
+}
+
+pub enum Option[a] {
+    case None
+    case Some(a)
+}
+
 @test
 def empty(): Bool = true
