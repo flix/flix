@@ -134,7 +134,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               ().toSuccess
             } else {
               // Case 2.2: the schemes do not match
-              TypeError.MismatchedSignatures(sig.loc, defn.loc, sig.sc, defn.declaredScheme).toFailure
+              TypeError.MismatchedSignatures(defn.loc, sig.sc, defn.declaredScheme).toFailure
             }
         }
       }

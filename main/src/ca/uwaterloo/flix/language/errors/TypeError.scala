@@ -297,28 +297,33 @@ object TypeError {
     def loc: SourceLocation = loc1 min loc2
   }
 
-  // MATT docs
-  // MATT improve messaging
-  case class MismatchedSignatures(sigLoc: SourceLocation, defLoc: SourceLocation, sigScheme: Scheme, defScheme: Scheme) extends TypeError {
+  /**
+    * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
+    * @param loc the location of the definition
+    * @param sigScheme the scheme of the signature
+    * @param defScheme the scheme of the definition
+    */
+  case class MismatchedSignatures(loc: SourceLocation, sigScheme: Scheme, defScheme: Scheme) extends TypeError {
     def summary: String = "Mismatched signature."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << Code(sigLoc, "signature.") << NewLine
+      vt << Code(loc, "mismatched signature.") << NewLine
       vt << NewLine
-      vt << Code(defLoc, "definition.") << NewLine
+      vt << s"Expected scheme: ${FormatScheme.formatScheme(sigScheme)}" << NewLine
+      vt << s"Actual scheme: ${FormatScheme.formatScheme(defScheme)}" << NewLine
       vt << NewLine
-      vt << s"Signature scheme: ${FormatScheme.formatScheme(sigScheme)}" << NewLine
-      vt << s"Definition scheme: ${FormatScheme.formatScheme(sigScheme)}" << NewLine
       vt << Underline("Tip:") << " Modify the definition to match the signature."
     }
-
-    def loc: SourceLocation = defLoc
   }
 
-  // MATT docs
+  /**
+    * Error indicating the instance is missing a signature implementation.
+    * @param sig the missing signature.
+    * @param loc the location of the instance.
+    */
   case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends TypeError {
     def summary: String = "Missing implementation."
 
@@ -326,13 +331,17 @@ object TypeError {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << s"The signature ${sig.name} is missing from the instance."
+      vt << Code(loc, s"The signature ${sig.name} is missing from the instance.")
       vt << NewLine
       vt << Underline("Tip:") << " Add an implementation of the signature to the instance."
     }
   }
 
-  // MATT docs
+  /**
+    * Error indicating the instance has a definition not present in the implemented class.
+    * @param defn the extraneous definition.
+    * @param loc the location of the definition.
+    */
   case class ExtraneousDefinition(defn: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
     def summary: String = "Extraneous implementation."
 
@@ -340,7 +349,7 @@ object TypeError {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << s"The signature ${defn.name} is not present in the class."
+      vt << Code(loc, s"The signature ${defn.name} is not present in the class.")
       vt << NewLine
       vt << Underline("Tip:") << " Remove this definition from the instance."
     }
