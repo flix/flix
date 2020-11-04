@@ -100,6 +100,8 @@ object BenchmarkCompiler {
   private def addCompilerTests(flix: Flix): Unit = {
     flix.addInput("Test.Currying.flix", LocalResource.get("/test/flix/Test.Currying.flix"))
 
+    flix.addInput("Test.Dec.OpaqueType.flix", LocalResource.get("/test/flix/Test.Dec.OpaqueType.flix"))
+    flix.addInput("Test.Dec.RelAlias.flix", LocalResource.get("/test/flix/Test.Dec.RelAlias.flix"))
     flix.addInput("Test.Dec.TypeAlias.flix", LocalResource.get("/test/flix/Test.Dec.TypeAlias.flix"))
 
     flix.addInput("Test.Eff.Polymorphism.flix", LocalResource.get("/test/flix/Test.Eff.Polymorphism.flix"))
@@ -115,6 +117,9 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.ArraySliceNoStartIndex.flix", LocalResource.get("/test/flix/Test.Exp.ArraySliceNoStartIndex.flix"))
     flix.addInput("Test.Exp.ArrayStore.flix", LocalResource.get("/test/flix/Test.Exp.ArrayStore.flix"))
     flix.addInput("Test.Exp.Ascribe.flix", LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"))
+    flix.addInput("Test.Exp.Binary.Bitwise.flix", LocalResource.get("/test/flix/Test.Exp.Binary.Bitwise.flix"))
+    flix.addInput("Test.Exp.Binary.Comparison.flix", LocalResource.get("/test/flix/Test.Exp.Binary.Comparison.flix"))
+    flix.addInput("Test.Exp.Binary.Logic.flix", LocalResource.get("/test/flix/Test.Exp.Binary.Logic.flix"))
     flix.addInput("Test.Exp.Binary.Spaceship.flix", LocalResource.get("/test/flix/Test.Exp.Binary.Spaceship.flix"))
     flix.addInput("Test.Exp.Cast.flix", LocalResource.get("/test/flix/Test.Exp.Cast.flix"))
     flix.addInput("Test.Exp.Choose.flix", LocalResource.get("/test/flix/Test.Exp.Choose.flix"))
@@ -139,6 +144,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Jvm.InvokeStaticMethod.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"))
     flix.addInput("Test.Exp.Jvm.PutField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"))
     flix.addInput("Test.Exp.Jvm.PutStaticField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"))
+    flix.addInput("Test.Exp.Lambda.Match.flix", LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"))
     flix.addInput("Test.Exp.Let.MatchStar.flix", LocalResource.get("/test/flix/Test.Exp.Let.MatchStar.flix"))
     flix.addInput("Test.Exp.Match.Guard.flix", LocalResource.get("/test/flix/Test.Exp.Match.Guard.flix"))
     flix.addInput("Test.Exp.Match.List.flix", LocalResource.get("/test/flix/Test.Exp.Match.List.flix"))
@@ -159,6 +165,9 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Stm.flix", LocalResource.get("/test/flix/Test.Exp.Stm.flix"))
     flix.addInput("Test.Exp.Tag.flix", LocalResource.get("/test/flix/Test.Exp.Tag.flix"))
     flix.addInput("Test.Exp.Tag.Lambda.flix", LocalResource.get("/test/flix/Test.Exp.Tag.Lambda.flix"))
+    flix.addInput("Test.Exp.Unary.Arithmetic.flix", LocalResource.get("/test/flix/Test.Exp.Unary.Arithmetic.flix"))
+    flix.addInput("Test.Exp.Unary.Bitwise.flix", LocalResource.get("/test/flix/Test.Exp.Unary.Bitwise.flix"))
+    flix.addInput("Test.Exp.Unary.Logic.flix", LocalResource.get("/test/flix/Test.Exp.Unary.Logic.flix"))
     flix.addInput("Test.Exp.Unit.flix", LocalResource.get("/test/flix/Test.Exp.Unit.flix"))
     flix.addInput("Test.Predicate.Filter.flix", LocalResource.get("/test/flix/Test.Predicate.Filter.flix"))
     flix.addInput("Test.Predicate.Guard.flix", LocalResource.get("/test/flix/Test.Predicate.Guard.flix"))

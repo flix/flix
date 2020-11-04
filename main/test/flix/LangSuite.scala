@@ -14,6 +14,8 @@ class LangSuite extends Suites(
   // Declarations.
   //
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
+  new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
+  new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix"),
   new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
@@ -51,9 +53,16 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix")(Options.TestWithLibrary),
 
   //
-  // Binary.Spaceship.
+  // BigInt.
   //
-  new FlixTest("Test.Exp.Binary.Logic", "main/test/flix/Test.Exp.Binary.Logic.flix")(Options.TestWithoutLibrary),
+  new FlixTest("Test.Exp.BigInt", "main/test/flix/Test.Exp.BigInt.flix"),
+
+  //
+  // Binary.
+  //
+  new FlixTest("Test.Exp.Binary.Bitwise", "main/test/flix/Test.Exp.Binary.Bitwise.flix"),
+  new FlixTest("Test.Exp.Binary.Comparison", "main/test/flix/Test.Exp.Binary.Comparison.flix"),
+  new FlixTest("Test.Exp.Binary.Logic", "main/test/flix/Test.Exp.Binary.Logic.flix"),
   new FlixTest("Test.Exp.Binary.Spaceship", "main/test/flix/Test.Exp.Binary.Spaceship.flix")(Options.TestWithLibrary),
 
   //
@@ -146,6 +155,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
 
   //
+  // Lambda.
+  //
+  new FlixTest("Test.Exp.Lambda.Match", "main/test/flix/Test.Exp.Lambda.Match.flix"),
+
+  //
   // Let.
   //
   new FlixTest("Test.Exp.Let.Match", "main/test/flix/Test.Exp.Let.Match.flix"),
@@ -197,6 +211,13 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.flix"),
   new FlixTest("Test.Exp.Tag.Lambda", "main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibrary),
+
+  //
+  // Unary.
+  //
+  new FlixTest("Test.Exp.Unary.Arithmetic", "main/test/flix/Test.Exp.Unary.Arithmetic.flix"),
+  new FlixTest("Test.Exp.Unary.Bitwise", "main/test/flix/Test.Exp.Unary.Bitwise.flix"),
+  new FlixTest("Test.Exp.Unary.Logic", "main/test/flix/Test.Exp.Unary.Logic.flix"),
 
   //
   // Unit.
