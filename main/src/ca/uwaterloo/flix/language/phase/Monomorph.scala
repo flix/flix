@@ -670,14 +670,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       // lookup the instance corresponding to this type
       val instances = root.instances(sig.sym.clazz)
 
-      val defn = instances.flatMap {
+      val defns = instances.flatMap {
         inst => inst.defs.find {
           defn => defn.sym.name == sig.sym.name && Unification.unifyTypes(defn.declaredScheme.base, tpe).isOk
           // MATT probably need to do leq check instead
         }
-      }.head // MATT do something monadic or throw internalcompilerexception if this is impossible
+      }
 
-      specializeDef(defn, tpe)
+      if (defns.size != 1) {
+        throw InternalCompilerException(s"Expected exactly 1 matching signature, found ${defns.size}")
+      }
+
+      specializeDef(defns.head, tpe)
     }
 
     /**
