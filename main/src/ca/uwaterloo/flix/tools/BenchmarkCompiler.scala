@@ -117,6 +117,8 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.ArraySliceNoStartIndex.flix", LocalResource.get("/test/flix/Test.Exp.ArraySliceNoStartIndex.flix"))
     flix.addInput("Test.Exp.ArrayStore.flix", LocalResource.get("/test/flix/Test.Exp.ArrayStore.flix"))
     flix.addInput("Test.Exp.Ascribe.flix", LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"))
+    flix.addInput("Test.Exp.Binary.Bitwise.flix", LocalResource.get("/test/flix/Test.Exp.Binary.Bitwise.flix"))
+    flix.addInput("Test.Exp.Binary.Logic.flix", LocalResource.get("/test/flix/Test.Exp.Binary.Logic.flix"))
     flix.addInput("Test.Exp.Binary.Spaceship.flix", LocalResource.get("/test/flix/Test.Exp.Binary.Spaceship.flix"))
     flix.addInput("Test.Exp.Cast.flix", LocalResource.get("/test/flix/Test.Exp.Cast.flix"))
     flix.addInput("Test.Exp.Choose.flix", LocalResource.get("/test/flix/Test.Exp.Choose.flix"))
