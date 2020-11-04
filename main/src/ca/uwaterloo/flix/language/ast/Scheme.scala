@@ -18,9 +18,10 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
-import ca.uwaterloo.flix.language.phase.unification.{ContextReduction, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{ContextReduction, Unification, UnificationError}
+import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.collection.MultiMap
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Scheme {
 
@@ -120,6 +121,23 @@ object Scheme {
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def lessThanEqual(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
+
+
+    /**
+      * Checks that all retained constraints are entailed by the base constraints,
+      * and that there are no deferred constraints.
+      */
+    def checkConstraints(deferredTconstrs: List[TypedAst.TypeConstraint], retainedTconstrs: List[TypedAst.TypeConstraint], baseTconstrs: List[TypedAst.TypeConstraint]): Result[Unit, UnificationError] = {
+      if (deferredTconstrs.nonEmpty) {
+        throw InternalCompilerException("Unexpected deferred type constraint.")
+      } else {
+        retainedTconstrs.find(!ContextReduction.entail(instances, baseTconstrs, _)) match {
+          case Some(tconstr) => UnificationError.UnfulfilledConstraint(tconstr).toErr
+          case None => ().toOk
+        }
+      }
+    }
+
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
@@ -142,21 +160,14 @@ object Scheme {
       subst <- Unification.unifyTypes(tpe1, tpe2)
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
-      splitTconstrs <- ContextReduction.split(instances, Nil, Nil, newTconstrs1) // MATT not using this split; can remove?
+      splitTconstrs <- ContextReduction.split(instances, Nil, Nil, newTconstrs1) // TODO remove split and skip to reduce?
+      // deferredTconstrs contains the constraints that need to be validated by the surrounding scope
+      // This must be empty because we injected the constraints from the surrounding scope into the instance defs
       (deferredTconstrs, retainedTconstrs) = splitTconstrs
-    } yield retainedTconstrs.forall(ContextReduction.entail(instances, newTconstrs2, _)) && deferredTconstrs.isEmpty
-    // deferredTconstrs contains the constraints that need to be validated by the surrounding scope
-    // This must be empty because we injected the constraints from the surrounding scope into the instance defs
+      _ <- checkConstraints(deferredTconstrs, retainedTconstrs, newTconstrs2)
+    } yield ()
 
-    // MATT probably need to split up the leq logic, return a monad
-
-    // MATT add docs
-    // MATT this checks for instances as well. does it belong here? If so, need better errors sent back to caller
-    // MATT clean up
-    result match {
-      case Result.Ok(true) => true
-      case _ => false
-    }
+    result.isOk
   }
 
 }

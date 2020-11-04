@@ -277,6 +277,9 @@ object Unification {
 
         case Result.Err(err@UnificationError.NoMatchingInstance(_, _)) =>
           throw InternalCompilerException(s"Unexpected unification error: $err")
+
+        case Result.Err(err@UnificationError.UnfulfilledConstraint(_)) =>
+          throw InternalCompilerException(s"Unexpected unification error: $err")
       }
     }
     )
