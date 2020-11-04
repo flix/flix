@@ -165,6 +165,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Stm.flix", LocalResource.get("/test/flix/Test.Exp.Stm.flix"))
     flix.addInput("Test.Exp.Tag.flix", LocalResource.get("/test/flix/Test.Exp.Tag.flix"))
     flix.addInput("Test.Exp.Tag.Lambda.flix", LocalResource.get("/test/flix/Test.Exp.Tag.Lambda.flix"))
+    flix.addInput("Test.Exp.Unary.Bitwise.flix", LocalResource.get("/test/flix/Test.Exp.Unary.Bitwise.flix"))
     flix.addInput("Test.Exp.Unit.flix", LocalResource.get("/test/flix/Test.Exp.Unit.flix"))
     flix.addInput("Test.Predicate.Filter.flix", LocalResource.get("/test/flix/Test.Predicate.Filter.flix"))
     flix.addInput("Test.Predicate.Guard.flix", LocalResource.get("/test/flix/Test.Predicate.Guard.flix"))

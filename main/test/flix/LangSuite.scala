@@ -213,6 +213,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Tag.Lambda", "main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibrary),
 
   //
+  // Unary.
+  //
+  new FlixTest("Test.Exp.Unary.Bitwise", "main/test/flix/Test.Exp.Unary.Bitwise.flix"),
+
+  //
   // Unit.
   //
   new FlixTest("Test.Exp.Unit", "main/test/flix/Test.Exp.Unit.flix"),
