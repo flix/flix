@@ -295,6 +295,24 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
+  test("UndefinedName.04") {
+    val input =
+      """
+        |instance C[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.05") {
+    val input =
+      """
+        |def f[a: C](x: a): a = x
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
   test("UndefinedJvmConstructor.01") {
     val input =
       s"""
