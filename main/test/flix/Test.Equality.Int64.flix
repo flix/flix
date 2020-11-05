@@ -1,4 +1,4 @@
-namespace Test/Equality/Int64.flix {
+namespace Test/Equality/Int64 {
 
     @test
     def testEqInt64_01(): Bool = 0i64 == 0i64
