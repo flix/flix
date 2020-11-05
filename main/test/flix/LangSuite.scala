@@ -28,6 +28,12 @@ class LangSuite extends Suites(
   // Equality.
   //
   new FlixTest("Test.Equality.Channel", "main/test/flix/Test.Equality.Channel.flix"),
+  new FlixTest("Test.Equality.Float32", "main/test/flix/Test.Equality.Float32.flix"),
+  new FlixTest("Test.Equality.Float64", "main/test/flix/Test.Equality.Float64.flix"),
+  new FlixTest("Test.Equality.Int8", "main/test/flix/Test.Equality.Int8.flix"),
+  new FlixTest("Test.Equality.Int16", "main/test/flix/Test.Equality.Int16.flix"),
+  new FlixTest("Test.Equality.Int32", "main/test/flix/Test.Equality.Int32.flix"),
+  new FlixTest("Test.Equality.Int64", "main/test/flix/Test.Equality.Int64.flix"),
 
   //
   // Apply.Tail.
