@@ -263,12 +263,12 @@ object FormatType {
         case TypeDiff.Arrow =>
           intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
         case TypeDiff.Enum =>
-          vt << "*"
+          vt << "..."
           intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         case TypeDiff.Tuple =>
           intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
         case TypeDiff.Other =>
-          vt << "*"
+          vt << "..."
           intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         case TypeDiff.Mismatch(tpe1, _) => vt << color(formatType(tpe1))
         case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
