@@ -416,6 +416,158 @@ object Type {
   }
 
   /**
+    * Returns the Unit type with given source location `loc`.
+    */
+  def mkUnit(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Unit, loc)
+
+  /**
+    * Returns the Null type with the given source location `loc`.
+    */
+  def mkNull(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Null, loc)
+
+  /**
+    * Returns the Bool type with the given source location `loc`.
+    */
+  def mkBool(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Bool, loc)
+
+
+  // TODO:
+  //  /**
+  //    * Represents the Char type.
+  //    */
+  //  val Char: Type = Type.Cst(TypeConstructor.Char, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Float32 type.
+  //    */
+  //  val Float32: Type = Type.Cst(TypeConstructor.Float32, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Float64 type.
+  //    */
+  //  val Float64: Type = Type.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Int8 type.
+  //    */
+  //  val Int8: Type = Type.Cst(TypeConstructor.Int8, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Int16 type.
+  //    */
+  //  val Int16: Type = Type.Cst(TypeConstructor.Int16, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Int32 type.
+  //    */
+  //  val Int32: Type = Type.Cst(TypeConstructor.Int32, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Int64 type.
+  //    */
+  //  val Int64: Type = Type.Cst(TypeConstructor.Int64, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the BigInt type.
+  //    */
+  //  val BigInt: Type = Type.Cst(TypeConstructor.BigInt, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the String type.
+  //    */
+  //  val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Array type constructor.
+  //    *
+  //    * NB: This type has kind: * -> *.
+  //    */
+  //  val Array: Type = Type.Cst(TypeConstructor.Array, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Channel type constructor.
+  //    *
+  //    * NB: This type has kind: * -> *.
+  //    */
+  //  val Channel: Type = Type.Cst(TypeConstructor.Channel, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Lazy type constructor.
+  //    *
+  //    * NB: This type has kind: * -> *.
+  //    */
+  //  val Lazy: Type = Type.Cst(TypeConstructor.Lazy, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Reference type constructor.
+  //    *
+  //    * NB: This type has kind: * -> *.
+  //    */
+  //  val Ref: Type = Type.Cst(TypeConstructor.Ref, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Relation type constructor.
+  //    */
+  //  val Relation: Type = Type.Cst(TypeConstructor.Relation, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Lattice type constructor.
+  //    */
+  //  val Lattice: Type = Type.Cst(TypeConstructor.Lattice, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the type of an empty record.
+  //    */
+  //  val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the type of an empty schema.
+  //    */
+  //  val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Boolean True.
+  //    */
+  //  val True: Type = Type.Cst(TypeConstructor.True, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Boolean False.
+  //    */
+  //  val False: Type = Type.Cst(TypeConstructor.False, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Pure effect. (TRUE in the Boolean algebra.)
+  //    */
+  //  val Pure: Type = True
+  //
+  //  /**
+  //    * Represents the Impure effect. (FALSE in the Boolean algebra.)
+  //    */
+  //  val Impure: Type = False
+  //
+  //  /**
+  //    * Represents the Not type constructor.
+  //    *
+  //    * NB: This type has kind: * -> *.
+  //    */
+  //  val Not: Type = Type.Cst(TypeConstructor.Not, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the And type constructor.
+  //    *
+  //    * NB: This type has kind: * -> (* -> *).
+  //    */
+  //  val And: Type = Type.Cst(TypeConstructor.And, SourceLocation.Unknown)
+  //
+  //  /**
+  //    * Represents the Or type constructor.
+  //    *
+  //    * NB: This type has kind: * -> (* -> *).
+  //    */
+  //  val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
+
+
+  /**
     * Constructs the pure arrow type A -> B.
     */
   def mkPureArrow(a: Type, b: Type): Type = mkArrowWithEffect(a, Pure, b)
