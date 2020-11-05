@@ -164,6 +164,8 @@ object Type {
   // Constants                                                               //
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: Reduce usage of these in favor of the ones with source locations.
+
   /**
     * Represents the Unit type.
     */
