@@ -106,13 +106,20 @@ object BenchmarkCompiler {
 
     flix.addInput("Test.Eff.Polymorphism.flix", LocalResource.get("/test/flix/Test.Eff.Polymorphism.flix"))
 
+    flix.addInput("Test.Equality.BigInt.flix", LocalResource.get("/test/flix/Test.Equality.BigInt.flix"))
+    flix.addInput("Test.Equality.Bool.flix", LocalResource.get("/test/flix/Test.Equality.Bool.flix"))
     flix.addInput("Test.Equality.Channel.flix", LocalResource.get("/test/flix/Test.Equality.Channel.flix"))
+    flix.addInput("Test.Equality.Char.flix", LocalResource.get("/test/flix/Test.Equality.Char.flix"))
     flix.addInput("Test.Equality.Float32.flix", LocalResource.get("/test/flix/Test.Equality.Float32.flix"))
     flix.addInput("Test.Equality.Float64.flix", LocalResource.get("/test/flix/Test.Equality.Float64.flix"))
     flix.addInput("Test.Equality.Int8.flix", LocalResource.get("/test/flix/Test.Equality.Int8.flix"))
     flix.addInput("Test.Equality.Int16.flix", LocalResource.get("/test/flix/Test.Equality.Int16.flix"))
     flix.addInput("Test.Equality.Int32.flix", LocalResource.get("/test/flix/Test.Equality.Int32.flix"))
     flix.addInput("Test.Equality.Int64.flix", LocalResource.get("/test/flix/Test.Equality.Int64.flix"))
+    flix.addInput("Test.Equality.String.flix", LocalResource.get("/test/flix/Test.Equality.String.flix"))
+    flix.addInput("Test.Equality.Tag.flix", LocalResource.get("/test/flix/Test.Equality.Tag.flix"))
+    flix.addInput("Test.Equality.Tuple.flix", LocalResource.get("/test/flix/Test.Equality.Tuple.flix"))
+    flix.addInput("Test.Equality.Unit.flix", LocalResource.get("/test/flix/Test.Equality.Unit.flix"))
 
     flix.addInput("Test.Exp.Apply.Tail.flix", LocalResource.get("/test/flix/Test.Exp.Apply.Tail.flix"))
     flix.addInput("Test.Exp.ArrayLength.flix", LocalResource.get("/test/flix/Test.Exp.ArrayLength.flix"))
