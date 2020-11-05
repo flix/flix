@@ -27,7 +27,20 @@ class LangSuite extends Suites(
   //
   // Equality.
   //
+  new FlixTest("Test.Equality.BigInt", "main/test/flix/Test.Equality.BigInt.flix"),
+  new FlixTest("Test.Equality.Bool", "main/test/flix/Test.Equality.Bool.flix"),
   new FlixTest("Test.Equality.Channel", "main/test/flix/Test.Equality.Channel.flix"),
+  new FlixTest("Test.Equality.Char", "main/test/flix/Test.Equality.Char.flix"),
+  new FlixTest("Test.Equality.Float32", "main/test/flix/Test.Equality.Float32.flix"),
+  new FlixTest("Test.Equality.Float64", "main/test/flix/Test.Equality.Float64.flix"),
+  new FlixTest("Test.Equality.Int8", "main/test/flix/Test.Equality.Int8.flix"),
+  new FlixTest("Test.Equality.Int16", "main/test/flix/Test.Equality.Int16.flix"),
+  new FlixTest("Test.Equality.Int32", "main/test/flix/Test.Equality.Int32.flix"),
+  new FlixTest("Test.Equality.Int64", "main/test/flix/Test.Equality.Int64.flix"),
+  new FlixTest("Test.Equality.String", "main/test/flix/Test.Equality.String.flix"),
+  new FlixTest("Test.Equality.Tag", "main/test/flix/Test.Equality.Tag.flix"),
+  new FlixTest("Test.Equality.Tuple", "main/test/flix/Test.Equality.Tuple.flix"),
+  new FlixTest("Test.Equality.Unit", "main/test/flix/Test.Equality.Unit.flix"),
 
   //
   // Apply.Tail.
@@ -60,6 +73,7 @@ class LangSuite extends Suites(
   //
   // Binary.
   //
+  new FlixTest("Test.Exp.Binary.Arithmetic", "main/test/flix/Test.Exp.Binary.Arithmetic.flix"),
   new FlixTest("Test.Exp.Binary.Bitwise", "main/test/flix/Test.Exp.Binary.Bitwise.flix"),
   new FlixTest("Test.Exp.Binary.Comparison", "main/test/flix/Test.Exp.Binary.Comparison.flix"),
   new FlixTest("Test.Exp.Binary.Logic", "main/test/flix/Test.Exp.Binary.Logic.flix"),
@@ -162,6 +176,7 @@ class LangSuite extends Suites(
   //
   // Let.
   //
+  new FlixTest("Test.Exp.Let", "main/test/flix/Test.Exp.Let.flix"),
   new FlixTest("Test.Exp.Let.Match", "main/test/flix/Test.Exp.Let.Match.flix"),
   new FlixTest("Test.Exp.Let.MatchStar", "main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibrary),
 
