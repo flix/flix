@@ -1243,7 +1243,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Unit" => Type.mkUnit(loc).toSuccess
       case "Null" => Type.mkNull(loc).toSuccess
       case "Bool" => Type.mkBool(loc).toSuccess
-      case "Char" => Type.Char.toSuccess
+      case "Char" => Type.mkChar(loc).toSuccess
       case "Float" => Type.Float64.toSuccess
       case "Float32" => Type.Float32.toSuccess
       case "Float64" => Type.Float64.toSuccess

@@ -430,27 +430,27 @@ object Type {
     */
   def mkBool(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Bool, loc)
 
+  /**
+    * Returns the Char type with the given source location `loc`.
+    */
+  def mkChar(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Char, loc)
+
+  /**
+    * Returns the Float32 type with the given source location `loc`.
+    */
+  def mkFloat32(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Float32, loc)
+
+  /**
+    * Returns the Float64 type with the given source location `loc`.
+    */
+  def mkFloat64(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Float64, loc)
+
+  /**
+    * Returns the Int8 type with the given source location `loc`.
+    */
+  def mkInt8(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Int8, loc)
 
   // TODO:
-  //  /**
-  //    * Represents the Char type.
-  //    */
-  //  val Char: Type = Type.Cst(TypeConstructor.Char, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Float32 type.
-  //    */
-  //  val Float32: Type = Type.Cst(TypeConstructor.Float32, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Float64 type.
-  //    */
-  //  val Float64: Type = Type.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Int8 type.
-  //    */
-  //  val Int8: Type = Type.Cst(TypeConstructor.Int8, SourceLocation.Unknown)
   //
   //  /**
   //    * Represents the Int16 type.
