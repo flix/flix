@@ -452,25 +452,22 @@ object Type {
     */
   def mkInt8(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Int8, loc)
 
+  /**
+    * Returns the Int16 type with the given source location `loc`.
+    */
+  def mkInt16(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Int16, loc)
 
+  /**
+    * Returns the Int32 type with the given source location `loc`.
+    */
+  def mkInt32(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Int32, loc)
+
+  /**
+    * Returns the Int64 type with the given source location `loc`.
+    */
+  def mkInt64(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Int64, loc)
 
   // TODO:
-  //
-  //  /**
-  //    * Represents the Int16 type.
-  //    */
-  //  val Int16: Type = Type.Cst(TypeConstructor.Int16, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Int32 type.
-  //    */
-  //  val Int32: Type = Type.Cst(TypeConstructor.Int32, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Int64 type.
-  //    */
-  //  val Int64: Type = Type.Cst(TypeConstructor.Int64, SourceLocation.Unknown)
-  //
   //  /**
   //    * Represents the BigInt type.
   //    */
