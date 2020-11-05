@@ -48,7 +48,7 @@ object HoverProvider {
 
         case Entity.LocalVar(sym, tpe) => hoverTypAndEff(tpe, Type.Pure, sym.loc)
 
-        case Entity.TypeCon(tc, loc) => hoverTypeConstructor(tc, loc)
+        case Entity.TypeCon(tc, loc) => hoverType(tc, loc)
 
         case _ => mkNotFound(uri, pos)
       }
@@ -97,7 +97,7 @@ object HoverProvider {
     }
   }
 
-  private def hoverTypeConstructor(tc: TypeConstructor, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+  private def hoverType(tc: TypeConstructor, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
     val markup = formatKind(tc)
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
