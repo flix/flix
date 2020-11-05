@@ -154,6 +154,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Jvm.PutField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"))
     flix.addInput("Test.Exp.Jvm.PutStaticField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"))
     flix.addInput("Test.Exp.Lambda.Match.flix", LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"))
+    flix.addInput("Test.Exp.Let.flix", LocalResource.get("/test/flix/Test.Exp.Let.flix"))
     flix.addInput("Test.Exp.Let.MatchStar.flix", LocalResource.get("/test/flix/Test.Exp.Let.MatchStar.flix"))
     flix.addInput("Test.Exp.Match.Guard.flix", LocalResource.get("/test/flix/Test.Exp.Match.Guard.flix"))
     flix.addInput("Test.Exp.Match.List.flix", LocalResource.get("/test/flix/Test.Exp.Match.List.flix"))
