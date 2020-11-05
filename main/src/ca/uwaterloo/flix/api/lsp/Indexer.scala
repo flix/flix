@@ -203,10 +203,10 @@ object Indexer {
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) ++ Index.occurrenceOf(exp0)
+      visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
     case Expression.Cast(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe, loc) ++ visitType(eff, loc) ++ Index.occurrenceOf(exp0)
+      visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -352,23 +352,27 @@ object Indexer {
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Index = {
-    Index.occurrenceOf(fparam0) ++ visitType(fparam0.tpe, fparam0.loc)
+    Index.occurrenceOf(fparam0) ++ visitType(fparam0.tpe)
   }
 
   /**
     * Returns a reverse index for the given type scheme `sc0` at the given source location `loc`.
     */
-  private def visitScheme(sc0: Scheme, loc: SourceLocation): Index = visitType(sc0.base, loc)
+  private def visitScheme(sc0: Scheme, loc: SourceLocation): Index = visitType(sc0.base)
 
   /**
-    * Returns a reverse index for the given type `tpe0` at the given source location `loc`.
+    * Returns a reverse index for the given type `tpe0`.
     */
-  private def visitType(tpe0: Type, loc: SourceLocation): Index =
-    tpe0.typeConstructors.foldLeft(Index.empty) {
-      case (idx, TypeConstructor.Enum(sym, _)) => idx ++ Index.useOf(sym, loc)
-      case (idx, TypeConstructor.RecordExtend(field)) => idx ++ Index.useOf(field)
-      case (idx, TypeConstructor.SchemaExtend(pred)) => idx ++ Index.useOf(pred)
-      case (idx, _) => idx
+  private def visitType(tpe0: Type): Index = tpe0 match {
+    case Type.Var(_, _, _) => Index.empty
+    case Type.Cst(tc, loc) => tc match {
+      case TypeConstructor.RecordExtend(field) => Index.useOf(field)
+      case TypeConstructor.SchemaExtend(pred) => Index.useOf(pred)
+      case _ => Index.occurrenceOf(tc, loc)
     }
+    case Type.Lambda(_, tpe) => visitType(tpe)
+    case Type.Apply(tpe1, tpe2) => visitType(tpe1) ++ visitType(tpe2)
+  }
+
 
 }

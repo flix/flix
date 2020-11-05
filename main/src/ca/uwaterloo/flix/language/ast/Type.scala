@@ -39,7 +39,7 @@ sealed trait Type {
     */
   def typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
-    case Type.Cst(tc) => SortedSet.empty
+    case Type.Cst(tc, _) => SortedSet.empty
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
@@ -66,7 +66,7 @@ sealed trait Type {
     */
   def typeConstructor: Option[TypeConstructor] = this match {
     case Type.Var(_, _, _) => None
-    case Type.Cst(tc) => Some(tc)
+    case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _) => t1.typeConstructor
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
@@ -76,7 +76,7 @@ sealed trait Type {
     */
   def typeConstructors: List[TypeConstructor] = this match {
     case Type.Var(_, _, _) => Nil
-    case Type.Cst(tc) => tc :: Nil
+    case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
@@ -106,7 +106,7 @@ sealed trait Type {
     */
   def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
-    case Type.Cst(_) => this
+    case Type.Cst(_, _) => this
     case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, tpe.map(f))
     case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
   }
@@ -146,7 +146,7 @@ sealed trait Type {
     */
   def size: Int = this match {
     case Type.Var(_, _, _) => 1
-    case Type.Cst(tc) => 1
+    case Type.Cst(tc, _) => 1
     case Type.Lambda(_, tpe) => tpe.size + 1
     case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
   }
@@ -167,120 +167,120 @@ object Type {
   /**
     * Represents the Unit type.
     */
-  val Unit: Type = Type.Cst(TypeConstructor.Unit)
+  val Unit: Type = Type.Cst(TypeConstructor.Unit, SourceLocation.Unknown)
 
   /**
     * Represents the Null type.
     */
-  val Null: Type = Type.Cst(TypeConstructor.Null)
+  val Null: Type = Type.Cst(TypeConstructor.Null, SourceLocation.Unknown)
 
   /**
     * Represents the Bool type.
     */
-  val Bool: Type = Type.Cst(TypeConstructor.Bool)
+  val Bool: Type = Type.Cst(TypeConstructor.Bool, SourceLocation.Unknown)
 
   /**
     * Represents the Char type.
     */
-  val Char: Type = Type.Cst(TypeConstructor.Char)
+  val Char: Type = Type.Cst(TypeConstructor.Char, SourceLocation.Unknown)
 
   /**
     * Represents the Float32 type.
     */
-  val Float32: Type = Type.Cst(TypeConstructor.Float32)
+  val Float32: Type = Type.Cst(TypeConstructor.Float32, SourceLocation.Unknown)
 
   /**
     * Represents the Float64 type.
     */
-  val Float64: Type = Type.Cst(TypeConstructor.Float64)
+  val Float64: Type = Type.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
 
   /**
     * Represents the Int8 type.
     */
-  val Int8: Type = Type.Cst(TypeConstructor.Int8)
+  val Int8: Type = Type.Cst(TypeConstructor.Int8, SourceLocation.Unknown)
 
   /**
     * Represents the Int16 type.
     */
-  val Int16: Type = Type.Cst(TypeConstructor.Int16)
+  val Int16: Type = Type.Cst(TypeConstructor.Int16, SourceLocation.Unknown)
 
   /**
     * Represents the Int32 type.
     */
-  val Int32: Type = Type.Cst(TypeConstructor.Int32)
+  val Int32: Type = Type.Cst(TypeConstructor.Int32, SourceLocation.Unknown)
 
   /**
     * Represents the Int64 type.
     */
-  val Int64: Type = Type.Cst(TypeConstructor.Int64)
+  val Int64: Type = Type.Cst(TypeConstructor.Int64, SourceLocation.Unknown)
 
   /**
     * Represents the BigInt type.
     */
-  val BigInt: Type = Type.Cst(TypeConstructor.BigInt)
+  val BigInt: Type = Type.Cst(TypeConstructor.BigInt, SourceLocation.Unknown)
 
   /**
     * Represents the String type.
     */
-  val Str: Type = Type.Cst(TypeConstructor.Str)
+  val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
 
   /**
     * Represents the Array type constructor.
     *
     * NB: This type has kind: * -> *.
     */
-  val Array: Type = Type.Cst(TypeConstructor.Array)
+  val Array: Type = Type.Cst(TypeConstructor.Array, SourceLocation.Unknown)
 
   /**
     * Represents the Channel type constructor.
     *
     * NB: This type has kind: * -> *.
     */
-  val Channel: Type = Type.Cst(TypeConstructor.Channel)
+  val Channel: Type = Type.Cst(TypeConstructor.Channel, SourceLocation.Unknown)
 
   /**
     * Represents the Lazy type constructor.
     *
     * NB: This type has kind: * -> *.
     */
-  val Lazy: Type = Type.Cst(TypeConstructor.Lazy)
+  val Lazy: Type = Type.Cst(TypeConstructor.Lazy, SourceLocation.Unknown)
 
   /**
     * Represents the Reference type constructor.
     *
     * NB: This type has kind: * -> *.
     */
-  val Ref: Type = Type.Cst(TypeConstructor.Ref)
+  val Ref: Type = Type.Cst(TypeConstructor.Ref, SourceLocation.Unknown)
 
   /**
     * Represents the Relation type constructor.
     */
-  val Relation: Type = Type.Cst(TypeConstructor.Relation)
+  val Relation: Type = Type.Cst(TypeConstructor.Relation, SourceLocation.Unknown)
 
   /**
     * Represents the Lattice type constructor.
     */
-  val Lattice: Type = Type.Cst(TypeConstructor.Lattice)
+  val Lattice: Type = Type.Cst(TypeConstructor.Lattice, SourceLocation.Unknown)
 
   /**
     * Represents the type of an empty record.
     */
-  val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty)
+  val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty, SourceLocation.Unknown)
 
   /**
     * Represents the type of an empty schema.
     */
-  val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty)
+  val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty, SourceLocation.Unknown)
 
   /**
     * Represents the Boolean True.
     */
-  val True: Type = Type.Cst(TypeConstructor.True)
+  val True: Type = Type.Cst(TypeConstructor.True, SourceLocation.Unknown)
 
   /**
     * Represents the Boolean False.
     */
-  val False: Type = Type.Cst(TypeConstructor.False)
+  val False: Type = Type.Cst(TypeConstructor.False, SourceLocation.Unknown)
 
   /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
@@ -297,21 +297,21 @@ object Type {
     *
     * NB: This type has kind: * -> *.
     */
-  val Not: Type = Type.Cst(TypeConstructor.Not)
+  val Not: Type = Type.Cst(TypeConstructor.Not, SourceLocation.Unknown)
 
   /**
     * Represents the And type constructor.
     *
     * NB: This type has kind: * -> (* -> *).
     */
-  val And: Type = Type.Cst(TypeConstructor.And)
+  val And: Type = Type.Cst(TypeConstructor.And, SourceLocation.Unknown)
 
   /**
     * Represents the Or type constructor.
     *
     * NB: This type has kind: * -> (* -> *).
     */
-  val Or: Type = Type.Cst(TypeConstructor.Or)
+  val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
 
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
@@ -360,8 +360,15 @@ object Type {
   /**
     * A type represented by the type constructor `tc`.
     */
-  case class Cst(tc: TypeConstructor) extends Type {
+  case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type {
     def kind: Kind = tc.kind
+
+    override def hashCode(): Int = tc.hashCode()
+
+    override def equals(o: Any): Boolean = o match {
+      case that: Cst => this.tc == that.tc
+      case _ => false
+    }
   }
 
   /**
@@ -421,7 +428,7 @@ object Type {
   /**
     * Constructs the arrow type A -> B & e.
     */
-  def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2)), List(e, a, b))
+  def mkArrowWithEffect(a: Type, e: Type, b: Type): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), SourceLocation.Unknown), List(e, a, b))
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
@@ -456,7 +463,7 @@ object Type {
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type): Type = {
-    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1)), e)
+    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1), SourceLocation.Unknown), e)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -487,7 +494,7 @@ object Type {
     val sym = Symbol.mkEnumSym("Choice")
     val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
     val tc = TypeConstructor.Enum(sym, kind)
-    Apply(Apply(Apply(Cst(tc), tpe0), isAbsent), isPresent)
+    Apply(Apply(Apply(Cst(tc, SourceLocation.Unknown), tpe0), isAbsent), isPresent)
   }
 
   /**
@@ -503,12 +510,12 @@ object Type {
   /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkEnum(sym: Symbol.EnumSym, k: Kind): Type = Type.Cst(TypeConstructor.Enum(sym, k))
+  def mkEnum(sym: Symbol.EnumSym, k: Kind): Type = Type.Cst(TypeConstructor.Enum(sym, k), SourceLocation.Unknown)
 
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length))), ts)
+  def mkEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length)), SourceLocation.Unknown), ts)
 
   /**
     * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
@@ -530,14 +537,14 @@ object Type {
     * }}}
     */
   def mkTag(sym: Symbol.EnumSym, tag: Name.Tag, caseType: Type, resultType: Type): Type = {
-    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Tag(sym, tag)), caseType), resultType)
+    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Tag(sym, tag), SourceLocation.Unknown), caseType), resultType)
   }
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
-    val init = Type.Cst(TypeConstructor.Tuple(ts.length))
+    val init = Type.Cst(TypeConstructor.Tuple(ts.length), SourceLocation.Unknown)
     ts.foldLeft(init: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -546,20 +553,20 @@ object Type {
   /**
     * Constructs the a native type.
     */
-  def mkNative(clazz: Class[_]): Type = Type.Cst(TypeConstructor.Native(clazz))
+  def mkNative(clazz: Class[_]): Type = Type.Cst(TypeConstructor.Native(clazz), SourceLocation.Unknown)
 
   /**
     * Constructs a RecordExtend type.
     */
   def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type): Type = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(field)), List(tpe, rest))
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(field), SourceLocation.Unknown), List(tpe, rest))
   }
 
   /**
     * Constructs a SchemaExtend type.
     */
   def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type): Type = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred)), List(tpe, rest))
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred), SourceLocation.Unknown), List(tpe, rest))
   }
 
   /**
@@ -601,10 +608,10 @@ object Type {
     * Returns the type `And(tpe1, tpe2)`.
     */
   def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-    case (Type.Cst(TypeConstructor.True), _) => tpe2
-    case (_, Type.Cst(TypeConstructor.True)) => tpe1
-    case (Type.Cst(TypeConstructor.False), _) => Type.False
-    case (_, Type.Cst(TypeConstructor.False)) => Type.False
+    case (Type.Cst(TypeConstructor.True, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
+    case (Type.Cst(TypeConstructor.False, _), _) => Type.False
+    case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
     case _ => Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
   }
 
@@ -625,10 +632,10 @@ object Type {
     * Returns the type `Or(tpe1, tpe2)`.
     */
   def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-    case (Type.Cst(TypeConstructor.True), _) => Type.True
-    case (_, Type.Cst(TypeConstructor.True)) => Type.True
-    case (Type.Cst(TypeConstructor.False), _) => tpe2
-    case (_, Type.Cst(TypeConstructor.False)) => tpe1
+    case (Type.Cst(TypeConstructor.True, _), _) => Type.True
+    case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
+    case (Type.Cst(TypeConstructor.False, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
   }
 
@@ -653,14 +660,14 @@ object Type {
     def eval(t: Type, subst: Map[Type.Var, Type]): Type = t match {
       case tvar: Type.Var => subst.getOrElse(tvar, tvar)
 
-      case Type.Cst(_) => t
+      case Type.Cst(_, _) => t
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field)), tpe), rest) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe), rest) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
         Type.mkRecordExtend(field, t1, t2)
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred)), tpe), rest) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe), rest) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
         Type.mkSchemaExtend(pred, t1, t2)

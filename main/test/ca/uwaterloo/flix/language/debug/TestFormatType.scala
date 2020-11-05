@@ -215,7 +215,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Record.External.01") {
-    val tpe = Type.Cst(TypeConstructor.RecordExtend(Name.Field("x", SourceLocation.Unknown)))
+    val tpe = Type.Cst(TypeConstructor.RecordExtend(Name.Field("x", SourceLocation.Unknown)), SourceLocation.Unknown)
 
     val expected = "{ x: ??? }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -224,7 +224,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Record.External.02") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.RecordExtend(Name.Field("x", SourceLocation.Unknown))), Type.Int32)
+    val tpe = Type.Apply(Type.Cst(TypeConstructor.RecordExtend(Name.Field("x", SourceLocation.Unknown)), SourceLocation.Unknown), Type.Int32)
 
     val expected = "{ x: Int32 | ??? }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -233,7 +233,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Schema.External.01") {
-    val tpe = Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", SourceLocation.Unknown)))
+    val tpe = Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", SourceLocation.Unknown)), SourceLocation.Unknown)
 
     val expected = "#{ X?(???) }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -242,7 +242,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Schema.External.02") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", SourceLocation.Unknown))), Type.Int32)
+    val tpe = Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", SourceLocation.Unknown)), SourceLocation.Unknown), Type.Int32)
 
     val expected = "#{ X?(Int32) | ??? }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -251,7 +251,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Tuple.External.01") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2)), List(Type.Str))
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2), SourceLocation.Unknown), List(Type.Str))
 
     val expected = "(String, ???)"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -305,7 +305,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Arrow.External.01") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.Arrow(2)), Type.Pure)
+    val tpe = Type.Apply(Type.Cst(TypeConstructor.Arrow(2), SourceLocation.Unknown), Type.Pure)
 
     val expected = "??? -> ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -314,7 +314,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatIllFormedType.Arrow.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3)), List(Type.Impure, Type.Str))
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), SourceLocation.Unknown), List(Type.Impure, Type.Str))
 
     val expected = "String -> ??? ~> ???"
     val actual = FormatType.formatType(tpe)(Audience.External)

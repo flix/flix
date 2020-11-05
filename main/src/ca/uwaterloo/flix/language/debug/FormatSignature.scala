@@ -47,8 +47,8 @@ object FormatSignature {
     val resultEff = getEffectType(baseType)
 
     resultEff match {
-      case Type.Cst(TypeConstructor.True) => FormatType.formatType(resultTyp)
-      case Type.Cst(TypeConstructor.False) => s"${FormatType.formatType(resultTyp)} & Impure"
+      case Type.Cst(TypeConstructor.True, _) => FormatType.formatType(resultTyp)
+      case Type.Cst(TypeConstructor.False, _) => s"${FormatType.formatType(resultTyp)} & Impure"
       case eff => s"${FormatType.formatType(resultTyp)} & ${FormatType.formatType(eff)}"
     }
   }

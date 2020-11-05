@@ -1813,21 +1813,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Creates a well-formed `Tuple` type.
     */
   private def mkTuple(tpes: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.Tuple(tpes.length)), tpes, loc)
+    mkApply(Type.Cst(TypeConstructor.Tuple(tpes.length), loc), tpes, loc)
   }
 
   /**
     * Creates a well-formed `RecordExtend` type.
     */
   private def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(field)), List(tpe, rest), loc)
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(field), loc), List(tpe, rest), loc)
   }
 
   /**
     * Creates a well-formed `SchemaExtend` type.
     */
   private def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred)), List(tpe, rest), loc)
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred), loc), List(tpe, rest), loc)
   }
 
   /**

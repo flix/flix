@@ -97,12 +97,12 @@ object Unification {
         else
           unifyVar(x, tpe1)
 
-      case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
+      case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
 
       case _ if tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool =>
         BoolUnification.unify(tpe1, tpe2)
 
-      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_)), _), restRow1), row2) =>
+      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_), _), _), restRow1), row2) =>
         // Attempt to write the row to match.
         rewriteRecordRow(row2, row1) flatMap {
           case (subst1, restRow2) =>
@@ -111,7 +111,7 @@ object Unification {
             }
         }
 
-      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(_)), _), restRow1), row2) =>
+      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(_), _), _), restRow1), row2) =>
         // Attempt to write the row to match.
         rewriteSchemaRow(row2, row1) flatMap {
           case (subst1, restRow2) =>
@@ -139,8 +139,8 @@ object Unification {
   private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field2)), fieldType2), restRow2),
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1)), fieldType1), _)) =>
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field2), _), fieldType2), restRow2),
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
         // Case 1: The row is of the form %{ field2: fieldType2 | restRow2 }
         if (field1 == field2) {
           // Case 1.1: The fields match, their types must match.
@@ -153,7 +153,7 @@ object Unification {
             case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1)), fieldType1), _)) =>
+      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
         // Case 2: The row is a type variable.
         if (staticRow.typeVars contains tvar) {
           Err(UnificationError.OccursCheck(tvar, staticRow))
@@ -165,7 +165,7 @@ object Unification {
           Ok((subst, restRow2))
         }
 
-      case (Type.Cst(TypeConstructor.RecordEmpty), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1)), fieldType1), _)) =>
+      case (Type.Cst(TypeConstructor.RecordEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
         // Case 3: The `field` does not exist in the record.
         Err(UnificationError.UndefinedField(field1, fieldType1, rewrittenRow))
 
@@ -184,8 +184,8 @@ object Unification {
   private def rewriteSchemaRow(rewrittenRow: Type, staticRow: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label2)), fieldType2), restRow2),
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1)), fieldType1), _)) =>
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label2), _), fieldType2), restRow2),
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
         // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
         if (label1 == label2) {
           // Case 1.1: The labels match, their types must match.
@@ -198,7 +198,7 @@ object Unification {
             case (subst, rewrittenRow) => (subst, Type.mkSchemaExtend(label2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1)), fieldType1), _)) =>
+      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
         // Case 2: The row is a type variable.
         if (staticRow.typeVars contains tvar) {
           Err(UnificationError.OccursCheck(tvar, staticRow))
@@ -210,7 +210,7 @@ object Unification {
           Ok((subst, restRow2))
         }
 
-      case (Type.Cst(TypeConstructor.SchemaEmpty), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1)), fieldType1), _)) =>
+      case (Type.Cst(TypeConstructor.SchemaEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
         // Case 3: The `label` does not exist in the record.
         Err(UnificationError.UndefinedPredicate(label1, fieldType1, rewrittenRow))
 
