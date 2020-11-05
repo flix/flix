@@ -1266,10 +1266,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, loc)
 
           // Case 3: TypeAlias.
-          case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
+          case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, loc)
 
           // Case 4: Errors.
           case (x, y) =>
