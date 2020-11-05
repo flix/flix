@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, LocationLink, Position}
+import ca.uwaterloo.flix.language.ast.TypeConstructor
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -27,27 +28,40 @@ object GotoProvider {
     */
   def processGoto(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
-      case Some(Entity.Exp(exp)) => exp match {
-        case Expression.Def(sym, _, loc) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
+      case None => mkNotFound(uri, pos)
 
-        case Expression.Var(sym, _, loc) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+      case Some(entity) => entity match {
 
-        case Expression.Tag(sym, tag, _, _, _, _) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, tag.loc).toJSON)
+        case Entity.Exp(exp) => exp match {
+          case Expression.Def(sym, _, loc) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
+
+          case Expression.Var(sym, _, loc) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+
+          case Expression.Tag(sym, tag, _, _, _, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, tag.loc).toJSON)
+
+          case _ => mkNotFound(uri, pos)
+        }
+
+        case Entity.Pattern(pat) => pat match {
+          case Pattern.Tag(sym, tag, _, _, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, tag.loc).toJSON)
+
+          case _ => mkNotFound(uri, pos)
+        }
+
+        case Entity.TypeCon(tc, loc) => tc match {
+          case TypeConstructor.Enum(sym, kind) =>
+            // TODO
+            ???
+
+          case _ => mkNotFound(uri, pos)
+        }
 
         case _ => mkNotFound(uri, pos)
       }
-
-      case Some(Entity.Pattern(pat)) => pat match {
-        case Pattern.Tag(sym, tag, _, _, _) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, tag, root, tag.loc).toJSON)
-
-        case _ => mkNotFound(uri, pos)
-      }
-
-      case _ => mkNotFound(uri, pos)
     }
   }
 
