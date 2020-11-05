@@ -322,14 +322,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, mod, ident, tparam, signatures, loc) =>
+    case WeededAst.Declaration.Class(doc, mod, ident, tparams0, signatures, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
-      val className = Name.mkQName(ident)
-      val tparams = getProperTypeParams(tparam) // only 1 tparam allowed for now
+      val tparams = getProperTypeParams(tparams0)
+      val tparam = tparams.head // only 1 tparam allowed for now
       val tenv = tenv0 ++ getTypeEnv(tparams)
       for {
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, className, sym, tparams.head)) // MATT check for shadowing?
-      } yield NamedAst.Class(doc, mod, sym, tparams.head, sigs, loc)
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, sym, tparam)) // MATT check for shadowing?
+      } yield NamedAst.Class(doc, mod, sym, tparam, sigs, loc)
   }
 
   /**
@@ -359,7 +359,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
+  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0), checkSigType(classTparam, tpe, loc)) {
         case (tparams, _) =>
@@ -368,7 +368,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case fparams =>
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-              val schemeVal = getSigScheme(tparams, tpe, uenv0, tenv, className, classTparam)
+              val schemeVal = getSigScheme(tparams, tpe, uenv0, tenv)
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, schemeVal, tpeVal) {
                 case (as, sc, eff) =>
@@ -1680,17 +1680,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
     */
-  private def getSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var], clazz: Name.QName, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+  private def getSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
     for {
       t <- visitType(tpe, uenv0, tenv0)
       tparams = tparams0.map(_.tpe)
-      // constrained as part of definition
-      tconstrs1 = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, NamedAst.Type.Var(tparam.tpe, tparam.loc))))
-      // constrained as class type parameters
-      // MATT do we need this if we're resolving variables correctly?
-      tconstrs2 = tparams0.find(_.name.name == classTparam.name.name).map(tparam => NamedAst.TypeConstraint(clazz, NamedAst.Type.Var(tparam.tpe, tparam.loc))).toList
-    } yield NamedAst.Scheme(tparams, tconstrs1 ++ tconstrs2, t)
+      tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, NamedAst.Type.Var(tparam.tpe, tparam.loc))))
+    } yield NamedAst.Scheme(tparams, tconstrs, t)
   }
+  // MATT merge def scheme, sig scheme, instancedef scheme
 
   /**
     * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given use environment `uenv0`.
