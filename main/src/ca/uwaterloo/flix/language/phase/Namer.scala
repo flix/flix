@@ -129,7 +129,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defns.get(ident.name) match {
         case None =>
           // Case 1: The definition does not already exist. Update it.
-          visitDef(decl, uenv0, Map.empty, ns0) map {
+          visitDef(decl, uenv0, Map.empty, ns0, Nil) map {
             case defn => prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
           }
         case Some(defn) =>
@@ -342,7 +342,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         tenv = tenv0 ++ getTypeEnv(tparams)
         tpe <- visitType(tpe0, uenv0, tenv)
         tconstrs <- traverse(tconstrs)(visitConstrainedType(_, uenv0, tenv, ns0))
-        defs <- traverse(defs0)(visitInstanceDef(_, uenv0, tenv, ns0, tconstrs.flatten))
+        defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, tconstrs.flatten))
       } yield NamedAst.Instance(doc, mod, clazz, tpe, tconstrs.flatten, defs, loc)
   }
 
@@ -368,7 +368,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case fparams =>
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-              val schemeVal = getSigScheme(tparams, tpe, uenv0, tenv)
+              val schemeVal = getDefOrSigScheme(tparams, tpe, uenv0, tenv, Nil)
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, schemeVal, tpeVal) {
                 case (as, sc, eff) =>
@@ -391,9 +391,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
-  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
+  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, tconstrs: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0)) {
         tparams =>
@@ -403,32 +403,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
               val expVal = visitExp(exp, env0, uenv0, tenv)
-              val schemeVal = getDefScheme(tparams, tpe, uenv0, tenv)
-              val tpeVal = visitType(eff0, uenv0, tenv)
-              mapN(annVal, expVal, schemeVal, tpeVal) {
-                case (as, e, sc, eff) =>
-                  val sym = Symbol.mkDefnSym(ns0, ident)
-                  NamedAst.Def(doc, as, mod, sym, tparams, fparams, e, sc, eff, loc)
-              }
-          }
-      }
-  }
-
-  // MATT dedupe?
-  /**
-    * Performs naming on the given instance definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`.
-    */
-  private def visitInstanceDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, tconstrs: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0)) {
-        tparams =>
-          val tenv = tenv0 ++ getTypeEnv(tparams)
-          flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
-            case fparams =>
-              val env0 = getVarEnv(fparams)
-              val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-              val expVal = visitExp(exp, env0, uenv0, tenv)
-              val schemeVal = getInstanceDefScheme(tparams, tpe, uenv0, tenv, tconstrs)
+              val schemeVal = getDefOrSigScheme(tparams, tpe, uenv0, tenv, tconstrs)
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, expVal, schemeVal, tpeVal) {
                 case (as, e, sc, eff) =>
@@ -1656,38 +1631,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
-    */
-  private def getDefScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
-    for {
-      t <- visitType(tpe, uenv0, tenv0)
-      tparams = tparams0.map(_.tpe)
-      tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, NamedAst.Type.Var(tparam.tpe, tparam.loc))))
-    } yield NamedAst.Scheme(tparams, tconstrs, t)
-  }
-
-  /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`, with the added type constraints `tconstrs0`.
     */
-  private def getInstanceDefScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var], tconstrs0: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+  private def getDefOrSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var], tconstrs0: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
     for {
       t <- visitType(tpe, uenv0, tenv0)
       tparams = tparams0.map(_.tpe)
       tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, NamedAst.Type.Var(tparam.tpe, tparam.loc))))
     } yield NamedAst.Scheme(tparams, tconstrs0 ++ tconstrs, t)
   }
-
-  /**
-    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
-    */
-  private def getSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
-    for {
-      t <- visitType(tpe, uenv0, tenv0)
-      tparams = tparams0.map(_.tpe)
-      tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, NamedAst.Type.Var(tparam.tpe, tparam.loc))))
-    } yield NamedAst.Scheme(tparams, tconstrs, t)
-  }
-  // MATT merge def scheme, sig scheme, instancedef scheme
 
   /**
     * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given use environment `uenv0`.
