@@ -510,7 +510,7 @@ object Type {
   /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkEnum(sym: Symbol.EnumSym, k: Kind): Type = Type.Cst(TypeConstructor.Enum(sym, k), SourceLocation.Unknown)
+  def mkEnum(sym: Symbol.EnumSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Enum(sym, k), loc)
 
   /**
     * Construct the enum type `Sym[ts]`.

@@ -303,7 +303,7 @@ object NamedAst {
 
     case class Unit(loc: SourceLocation) extends NamedAst.Type
 
-    case class Enum(name: Symbol.EnumSym, kind: Kind) extends NamedAst.Type
+    case class Enum(name: Symbol.EnumSym, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 

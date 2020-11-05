@@ -345,7 +345,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatTypeDiff.Enum.01") {
-    val map = Type.mkEnum(Symbol.mkEnumSym("Map"), Kind.Star ->: Kind.Star ->: Kind.Star)
+    val map = Type.mkEnum(Symbol.mkEnumSym("Map"), Kind.Star ->: Kind.Star ->: Kind.Star, SourceLocation.Unknown)
     val tpe1 = Type.mkApply(map, List(Type.Int32, Type.Bool))
     val tpe2 = Type.mkApply(map, List(Type.Int32, Type.Str))
 

@@ -1291,8 +1291,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
       }
 
-    case NamedAst.Type.Enum(sym, kind) =>
-      Type.mkEnum(sym, kind).toSuccess
+    case NamedAst.Type.Enum(sym, kind, loc) =>
+      Type.mkEnum(sym, kind, loc).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for {
@@ -1581,7 +1581,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.mkEnum(enum.sym, enum0.kind)
+      case enum => Type.mkEnum(enum.sym, enum0.kind, loc)
     }
 
   /**

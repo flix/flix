@@ -55,6 +55,8 @@ object FindReferencesProvider {
 
         case Entity.LocalVar(sym, _) => findVarUses(sym)
 
+        case _ => mkNotFound(uri, pos)
+
       }
     }
   }
