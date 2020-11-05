@@ -478,6 +478,8 @@ object Type {
   //    */
   //  val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
   //
+
+  // TODO
   //  /**
   //    * Represents the Array type constructor.
   //    *
@@ -485,6 +487,8 @@ object Type {
   //    */
   //  val Array: Type = Type.Cst(TypeConstructor.Array, SourceLocation.Unknown)
   //
+
+  // TODO
   //  /**
   //    * Represents the Channel type constructor.
   //    *
@@ -492,6 +496,8 @@ object Type {
   //    */
   //  val Channel: Type = Type.Cst(TypeConstructor.Channel, SourceLocation.Unknown)
   //
+
+  // TODO
   //  /**
   //    * Represents the Lazy type constructor.
   //    *
@@ -499,6 +505,8 @@ object Type {
   //    */
   //  val Lazy: Type = Type.Cst(TypeConstructor.Lazy, SourceLocation.Unknown)
   //
+
+  // TODO
   //  /**
   //    * Represents the Reference type constructor.
   //    *
@@ -511,11 +519,15 @@ object Type {
   //    */
   //  val Relation: Type = Type.Cst(TypeConstructor.Relation, SourceLocation.Unknown)
   //
+
+  // TODO
   //  /**
   //    * Represents the Lattice type constructor.
   //    */
   //  val Lattice: Type = Type.Cst(TypeConstructor.Lattice, SourceLocation.Unknown)
   //
+
+  // TODO
   //  /**
   //    * Represents the type of an empty record.
   //    */
@@ -526,6 +538,8 @@ object Type {
   //    */
   //  val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty, SourceLocation.Unknown)
   //
+
+  // TODO
   //  /**
   //    * Represents the Boolean True.
   //    */
