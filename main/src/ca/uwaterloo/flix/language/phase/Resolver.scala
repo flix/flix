@@ -1236,7 +1236,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
 
-    case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
+    case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
