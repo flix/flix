@@ -1244,11 +1244,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Null" => Type.mkNull(loc).toSuccess
       case "Bool" => Type.mkBool(loc).toSuccess
       case "Char" => Type.mkChar(loc).toSuccess
-      case "Float" => Type.Float64.toSuccess
-      case "Float32" => Type.Float32.toSuccess
-      case "Float64" => Type.Float64.toSuccess
+      case "Float" => Type.mkFloat32(loc).toSuccess
+      case "Float32" => Type.mkFloat32(loc).toSuccess
+      case "Float64" => Type.mkFloat64(loc).toSuccess
       case "Int" => Type.Int32.toSuccess
-      case "Int8" => Type.Int8.toSuccess
+      case "Int8" => Type.mkInt8(loc).toSuccess
       case "Int16" => Type.Int16.toSuccess
       case "Int32" => Type.Int32.toSuccess
       case "Int64" => Type.Int64.toSuccess
