@@ -361,8 +361,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, className: Name.QName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
-      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0)) {
-        tparams =>
+      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0), checkSigType(classTparam, tpe, loc)) {
+        case (tparams, _) =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
           flatMapN(getFormalParams(fparams0, uenv0, tenv)) {
             case fparams =>
@@ -377,6 +377,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               }
           }
       }
+  }
+
+  /**
+    * Checks the type `tpe` of the signature to ensure that it contains the class type parameter `classTparam`.
+    */
+  private def checkSigType(classTparam: NamedAst.TypeParam, tpe: WeededAst.Type, loc: SourceLocation): Validation[Unit, NameError] = {
+    if (freeVars(tpe).exists(_.name == classTparam.name.name)) {
+      ().toSuccess
+    } else {
+      NameError.IllegalSignature(loc).toFailure
+    }
   }
 
   /**

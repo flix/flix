@@ -308,4 +308,16 @@ object NameError {
     def loc: SourceLocation = loc1 min loc2
   }
 
+  case class IllegalSignature(loc: SourceLocation) extends NameError {
+    def summary: String = "Illegal signature."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << Code(loc, "Illegal signature.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Change the signature to include the class type parameter, or remove the signature."
+    }
+  }
+
 }

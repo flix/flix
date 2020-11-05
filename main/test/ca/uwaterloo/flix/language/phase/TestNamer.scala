@@ -1035,4 +1035,15 @@ class TestNamer extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[NameError.MismatchedTypeParamKinds](result)
   }
+
+  test("IllegalSignature.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.IllegalSignature](result)
+  }
 }
