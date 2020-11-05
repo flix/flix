@@ -88,14 +88,6 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverTypeConstructor(tc: TypeConstructor, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
-    val markup = formatKind(tc)
-    val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> "success") ~ ("result" -> result)
-  }
-
   private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
     val t = FormatType.formatType(tpe0)
     eff0 match {
@@ -103,6 +95,14 @@ object HoverProvider {
       case Type.Cst(TypeConstructor.False, _) => s"$t & Impure"
       case eff => s"$t & ${FormatType.formatType(eff)}"
     }
+  }
+
+  private def hoverTypeConstructor(tc: TypeConstructor, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+    val markup = formatKind(tc)
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
   }
 
   private def formatKind(tc: TypeConstructor): String = {
