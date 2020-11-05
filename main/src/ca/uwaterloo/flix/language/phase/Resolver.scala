@@ -1247,17 +1247,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Float" => Type.mkFloat64(loc).toSuccess
       case "Float32" => Type.mkFloat32(loc).toSuccess
       case "Float64" => Type.mkFloat64(loc).toSuccess
-      case "Int" => Type.Int32.toSuccess
+      case "Int" => Type.mkInt32(loc).toSuccess
       case "Int8" => Type.mkInt8(loc).toSuccess
-      case "Int16" => Type.Int16.toSuccess
-      case "Int32" => Type.Int32.toSuccess
-      case "Int64" => Type.Int64.toSuccess
-      case "BigInt" => Type.BigInt.toSuccess
-      case "String" => Type.Str.toSuccess
-      case "Array" => Type.Array.toSuccess
-      case "Channel" => Type.Channel.toSuccess
-      case "Lazy" => Type.Lazy.toSuccess
-      case "Ref" => Type.Ref.toSuccess
+      case "Int16" => Type.mkInt16(loc).toSuccess
+      case "Int32" => Type.mkInt32(loc).toSuccess
+      case "Int64" => Type.mkInt64(loc).toSuccess
+      case "BigInt" => Type.mkBigInt(loc).toSuccess
+      case "String" => Type.mkString(loc).toSuccess
+      case "Array" => Type.mkArray(loc).toSuccess
+      case "Channel" => Type.mkChannel(loc).toSuccess
+      case "Lazy" => Type.mkLazy(loc).toSuccess
+      case "Ref" => Type.mkRef(loc).toSuccess
 
       // Disambiguate type.
       case typeName =>

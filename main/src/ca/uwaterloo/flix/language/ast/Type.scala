@@ -467,120 +467,55 @@ object Type {
     */
   def mkInt64(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Int64, loc)
 
-  // TODO:
-  //  /**
-  //    * Represents the BigInt type.
-  //    */
-  //  val BigInt: Type = Type.Cst(TypeConstructor.BigInt, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the String type.
-  //    */
-  //  val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
-  //
+  /**
+    * Returns the BigInt type with the given source location `loc`.
+    */
+  def mkBigInt(loc: SourceLocation): Type = Type.Cst(TypeConstructor.BigInt, loc)
 
-  // TODO
-  //  /**
-  //    * Represents the Array type constructor.
-  //    *
-  //    * NB: This type has kind: * -> *.
-  //    */
-  //  val Array: Type = Type.Cst(TypeConstructor.Array, SourceLocation.Unknown)
-  //
+  /**
+    * Returns the String type with the given source location `loc`.
+    */
+  def mkString(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Str, loc)
 
-  // TODO
-  //  /**
-  //    * Represents the Channel type constructor.
-  //    *
-  //    * NB: This type has kind: * -> *.
-  //    */
-  //  val Channel: Type = Type.Cst(TypeConstructor.Channel, SourceLocation.Unknown)
-  //
+  /**
+    * Returns the Array type with the given source location `loc`.
+    */
+  def mkArray(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Array, loc)
 
-  // TODO
-  //  /**
-  //    * Represents the Lazy type constructor.
-  //    *
-  //    * NB: This type has kind: * -> *.
-  //    */
-  //  val Lazy: Type = Type.Cst(TypeConstructor.Lazy, SourceLocation.Unknown)
-  //
+  /**
+    * Returns the type `Array[tpe]` with the given optional source location `loc`.
+    */
+  def mkArray(elmType: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Apply(Type.Cst(TypeConstructor.Array, loc), elmType)
 
-  // TODO
-  //  /**
-  //    * Represents the Reference type constructor.
-  //    *
-  //    * NB: This type has kind: * -> *.
-  //    */
-  //  val Ref: Type = Type.Cst(TypeConstructor.Ref, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Relation type constructor.
-  //    */
-  //  val Relation: Type = Type.Cst(TypeConstructor.Relation, SourceLocation.Unknown)
-  //
+  /**
+    * Returns the Channel type with the given source location `loc`.
+    */
+  def mkChannel(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Channel, loc)
 
-  // TODO
-  //  /**
-  //    * Represents the Lattice type constructor.
-  //    */
-  //  val Lattice: Type = Type.Cst(TypeConstructor.Lattice, SourceLocation.Unknown)
-  //
+  /**
+    * Returns the type `Channel[tpe]` with the given optional source location `loc`.
+    */
+  def mkChannel(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Channel, loc), tpe)
 
-  // TODO
-  //  /**
-  //    * Represents the type of an empty record.
-  //    */
-  //  val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the type of an empty schema.
-  //    */
-  //  val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty, SourceLocation.Unknown)
-  //
+  /**
+    * Returns the Lazy type with the given source location `loc`.
+    */
+  def mkLazy(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Lazy, loc)
 
-  // TODO
-  //  /**
-  //    * Represents the Boolean True.
-  //    */
-  //  val True: Type = Type.Cst(TypeConstructor.True, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Boolean False.
-  //    */
-  //  val False: Type = Type.Cst(TypeConstructor.False, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Pure effect. (TRUE in the Boolean algebra.)
-  //    */
-  //  val Pure: Type = True
-  //
-  //  /**
-  //    * Represents the Impure effect. (FALSE in the Boolean algebra.)
-  //    */
-  //  val Impure: Type = False
-  //
-  //  /**
-  //    * Represents the Not type constructor.
-  //    *
-  //    * NB: This type has kind: * -> *.
-  //    */
-  //  val Not: Type = Type.Cst(TypeConstructor.Not, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the And type constructor.
-  //    *
-  //    * NB: This type has kind: * -> (* -> *).
-  //    */
-  //  val And: Type = Type.Cst(TypeConstructor.And, SourceLocation.Unknown)
-  //
-  //  /**
-  //    * Represents the Or type constructor.
-  //    *
-  //    * NB: This type has kind: * -> (* -> *).
-  //    */
-  //  val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
+  /**
+    * Returns the type `Lazy[tpe]` with the given optional source location `loc`.
+    */
+  def mkLazy(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Lazy, loc), tpe)
 
+  /**
+    * Returns the Ref type with the given source location `loc`.
+    */
+  def mkRef(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Ref, loc)
+
+  /**
+    * Returns the type `Ref[tpe]` with the given optional source location `loc`.
+    */
+  def mkRef(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Ref, loc), tpe)
 
   /**
     * Constructs the pure arrow type A -> B.
@@ -645,16 +580,6 @@ object Type {
   }
 
   /**
-    * Returns the type `Array[tpe]`.
-    */
-  def mkArray(elmType: Type): Type = Apply(Array, elmType)
-
-  /**
-    * Returns the type `Channel[tpe]`.
-    */
-  def mkChannel(tpe: Type): Type = Type.Apply(Channel, tpe)
-
-  /**
     * Returns the type `Choice[tpe, isAbsent, isPresent]`.
     */
   def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type): Type = {
@@ -663,16 +588,6 @@ object Type {
     val tc = TypeConstructor.Enum(sym, kind)
     Apply(Apply(Apply(Cst(tc, SourceLocation.Unknown), tpe0), isAbsent), isPresent)
   }
-
-  /**
-    * Returns the type `Lazy[tpe]`.
-    */
-  def mkLazy(tpe: Type): Type = Type.Apply(Lazy, tpe)
-
-  /**
-    * Returns the type `Ref[tpe]`.
-    */
-  def mkRef(tpe: Type): Type = Type.Apply(Ref, tpe)
 
   /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
