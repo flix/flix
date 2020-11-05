@@ -91,7 +91,7 @@ object HoverProvider {
   private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
     val t = FormatType.formatType(tpe0)
     eff0 match {
-      case Type.Cst(TypeConstructor.True, _) => s"$t & Pure"
+      case Type.Cst(TypeConstructor.True, _) => t
       case Type.Cst(TypeConstructor.False, _) => s"$t & Impure"
       case eff => s"$t & ${FormatType.formatType(eff)}"
     }
