@@ -26,6 +26,7 @@ object FindReferencesProvider {
   def findRefs(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
+
       case Some(entity) => entity match {
 
         case Entity.Case(caze) => findTagUses(caze.sym, caze.tag)
