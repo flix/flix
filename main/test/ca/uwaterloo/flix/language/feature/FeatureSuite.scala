@@ -21,8 +21,6 @@ import org.scalatest.Suites
 
 class FeatureSuite extends Suites(
 
-  new FlixTest("Test.Expression.Tuple", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Tuple.flix")(Options.TestWithLibrary),
-
   //
   // Pattern Match.
   //
