@@ -178,25 +178,58 @@ namespace Test/Exp/Tuple {
     @test
     def testOptionTuple04(): (Option[Int], Option[Int]) = (Some(1), Some(2))
 
-///   /**
-///     * A type constructor that represent the type of enums.
-///     */
-///   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
+    @test
+    def testOptionTuple05(): Option[(Int, Int)] = None
 
+    @test
+    def testOptionTuple06(): Option[(Int, Int)] = Some((1, 2))
+
+    @test
+    def testResultTuple01(): (Result[Int, Int], Result[Int, Int]) = (Ok(1), Ok(2))
+
+    @test
+    def testResultTuple02(): (Result[Int, Int], Result[Int, Int]) = (Ok(1), Err(2))
+
+    @test
+    def testResultTuple03(): (Result[Int, Int], Result[Int, Int]) = (Err(1), Ok(2))
+
+    @test
+    def testResultTuple04(): (Result[Int, Int], Result[Int, Int]) = (Err(1), Err(2))
+
+    @test
+    def testResultTuple05(): Result[Int, (Int, Int)] = Ok(1)
+
+    @test
+    def testResultTuple06(): Result[Int, (Int, Int)] = Err((1, 2))
+
+    @test
+    def testListTuple01(): (List[Int], List[Int]) = (Nil, Nil)
+
+    @test
+    def testListTuple02(): (List[Int], List[Int]) = (1 :: Nil, 2 :: Nil)
+
+    @test
+    def testListTuple03(): List[(Int, Int)] = Nil
+
+    @test
+    def testListTuple04(): List[(Int, Int)] = (1, 2) :: Nil
+
+    @test
+    def testListTuple05(): List[(Int, Int)] = (1, 2) :: (3, 4) :: Nil
 
     enum Option[t] {
         case None,
         case Some(t)
     }
 
-    /// enum Result[t, e] {
-    ///     case Ok(t),
-    ///     case Err(e)
-    /// }
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
 
-    /// enum List[t] {
-    ///     case Nil,
-    ///     case Cons(t, List[t])
-    /// }
+    enum List[t] {
+        case Nil,
+        case Cons(t, List[t])
+    }
 
 }
