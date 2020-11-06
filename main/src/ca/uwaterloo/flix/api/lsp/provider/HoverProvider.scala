@@ -31,6 +31,10 @@ object HoverProvider {
       case None => mkNotFound(uri, pos)
       case Some(entity) => entity match {
 
+        case Entity.Case(caze) => hoverTypAndEff(caze.sc.base, Type.Pure, caze.tag.loc)
+
+        case Entity.Enum(enu) => hoverType(enu.sc.base.typeConstructor.getOrElse(TypeConstructor.Unit), enu.sym.loc)
+
         case Entity.Exp(exp) =>
           exp match {
             case Expression.Def(sym, _, loc) => hoverDef(sym, loc)
