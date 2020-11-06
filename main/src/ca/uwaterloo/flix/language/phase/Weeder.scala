@@ -21,6 +21,7 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.WeededAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -120,7 +121,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
         sigs <- traverse(sigs0)(visitSig)
+        _ <- checkSingleTypeParam(tparams, loc)
       } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparams, sigs.flatten, loc))
+  }
+
+  /**
+    * Verifies the size of `tparams0` is exactly 1.
+    */
+  private def checkSingleTypeParam(tparams0: WeededAst.TypeParams, loc: SourceLocation): Validation[Unit, WeederError] = tparams0 match {
+    case TypeParams.Explicit(tparams) if (tparams.length == 1) => ().toSuccess
+    case _ => WeederError.NonSingleTypeParameter(loc).toFailure
   }
 
   /**

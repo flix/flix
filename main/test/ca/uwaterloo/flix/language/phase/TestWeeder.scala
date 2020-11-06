@@ -288,4 +288,21 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
+  test("NonSingleTypeParameter.01") {
+    val input =
+      """
+        |class C
+        |""".stripMargin
+        val result = compile(input, DefaultOptions)
+    expectError[WeederError.NonSingleTypeParameter](result)
+  }
+
+  test("NonSingleTypeParameter.02") {
+    val input =
+      """
+        |class C[a, b]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.NonSingleTypeParameter](result)
+  }
 }

@@ -432,4 +432,19 @@ object WeederError {
     }
   }
 
+  /**
+    * Non-single type parameter.
+    * @param loc the location where the error occurred.
+    */
+  case class NonSingleTypeParameter(loc: SourceLocation) extends WeederError {
+    def summary: String = "Non-single type parameter"
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << Code(loc, "missing or extra type parameter.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Ensure this class has exactly one type parameter."
+    }
+  }
 }
