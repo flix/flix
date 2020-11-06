@@ -92,7 +92,7 @@ object ContextReduction {
 
     matchingInstances.map(tryInst).find(_.isOk) match {
       case Some(Result.Ok(tconstrs)) => tconstrs.toOk
-      case None => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
+      case _ => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
     }
   }
 
