@@ -42,6 +42,8 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Tuple", "main/test/flix/Test.Equality.Tuple.flix"),
   new FlixTest("Test.Equality.Unit", "main/test/flix/Test.Equality.Unit.flix"),
 
+  new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibrary),
+
   //
   // Apply.Tail.
   //
