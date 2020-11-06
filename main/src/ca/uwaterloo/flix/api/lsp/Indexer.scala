@@ -366,13 +366,12 @@ object Indexer {
   private def visitType(tpe0: Type): Index = tpe0 match {
     case Type.Var(_, _, _) => Index.empty
     case Type.Cst(tc, loc) => tc match {
-      case TypeConstructor.RecordExtend(field) => Index.useOf(field)
-      case TypeConstructor.SchemaExtend(pred) => Index.useOf(pred)
+      case TypeConstructor.RecordExtend(field) => Index.occurrenceOf(tc, loc) ++ Index.useOf(field)
+      case TypeConstructor.SchemaExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
       case _ => Index.occurrenceOf(tc, loc)
     }
     case Type.Lambda(_, tpe) => visitType(tpe)
     case Type.Apply(tpe1, tpe2) => visitType(tpe1) ++ visitType(tpe2)
   }
-
 
 }
