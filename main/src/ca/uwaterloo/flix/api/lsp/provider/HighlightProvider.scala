@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL._
 
@@ -54,6 +54,13 @@ object HighlightProvider {
         case Entity.Pred(pred) => highlightPred(pred)
 
         case Entity.LocalVar(sym, _) => highlightVar(sym)
+
+        case Entity.TypeCon(tc, loc) => tc match {
+          case TypeConstructor.RecordExtend(field) => highlightField(field)
+          case TypeConstructor.SchemaExtend(pred) => highlightPred(pred)
+          case TypeConstructor.Enum(sym, _) => highlightEnum(sym)
+          case _ => mkNotFound(uri, pos)
+        }
 
         case _ => mkNotFound(uri, pos)
       }
