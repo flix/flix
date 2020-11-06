@@ -181,6 +181,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Record.Update.flix", LocalResource.get("/test/flix/Test.Exp.Record.Update.flix"))
     flix.addInput("Test.Exp.Stm.flix", LocalResource.get("/test/flix/Test.Exp.Stm.flix"))
     flix.addInput("Test.Exp.Tag.flix", LocalResource.get("/test/flix/Test.Exp.Tag.flix"))
+    flix.addInput("Test.Exp.Tuple.flix", LocalResource.get("/test/flix/Test.Exp.Tuple.flix"))
     flix.addInput("Test.Exp.Tag.Lambda.flix", LocalResource.get("/test/flix/Test.Exp.Tag.Lambda.flix"))
     flix.addInput("Test.Exp.Unary.Arithmetic.flix", LocalResource.get("/test/flix/Test.Exp.Unary.Arithmetic.flix"))
     flix.addInput("Test.Exp.Unary.Bitwise.flix", LocalResource.get("/test/flix/Test.Exp.Unary.Bitwise.flix"))
