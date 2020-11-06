@@ -147,29 +147,47 @@ namespace Test/Exp/Tuple {
 ///     def kind: Kind = Kind.Star ->: Kind.Star ->: Kind.Star
 ///   }
 
+
+    @test
+    def testTupleTuple01(): (Int, (Int, Int)) = (1, (2, 3))
+
+    @test
+    def testTupleTuple02(): ((Int, Int), Int) = ((1, 2), 3)
+
+    @test
+    def testTupleTuple03(): ((Int, Int), (Int, Int)) = ((1, 2), (3, 4))
+
+    @test
+    def testTupleTuple04(): (Int, (Int, (Int, Int))) = (1, (2, (3, 4)))
+
+    @test
+    def testTupleTuple05(): (((Int, Int), Int), Int) = (((1, 2), 3), 4)
+
+    @test
+    def testTupleTuple06(): ((Int, Int), (Int, Int), (Int, Int)) = ((1, 2), (3, 4), (5, 6))
+
+    @test
+    def testOptionTuple01(): (Option[Int], Option[Int]) = (None, None)
+
+    @test
+    def testOptionTuple02(): (Option[Int], Option[Int]) = (None, Some(2))
+
+    @test
+    def testOptionTuple03(): (Option[Int], Option[Int]) = (Some(1), None)
+
+    @test
+    def testOptionTuple04(): (Option[Int], Option[Int]) = (Some(1), Some(2))
+
 ///   /**
 ///     * A type constructor that represent the type of enums.
 ///     */
 ///   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
 
-
-///   /**
-///     * A type constructor that represent the type of tuples.
-///     */
-///   case class Tuple(l: Int) extends TypeConstructor {
-///     /**
-///       * The shape of a tuple is (t1, ..., tn).
-///       */
-///     def kind: Kind = Kind.mkArrow(l)
-///   }
-
-
-
-    /// enum Option[t] {
-    ///     case None,
-    ///     case Some(t)
-    /// }
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
 
     /// enum Result[t, e] {
     ///     case Ok(t),
