@@ -350,8 +350,23 @@ object FormatType {
     * Rename the variables in the given type.
     */
   private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
-    tpe0.typeVars.toList.sortBy(_.id).zipWithIndex.map {
+    typeVars(tpe0).zipWithIndex.map {
       case (tvar, index) => tvar.id -> getVarName(index)
     }.toMap
   }
+
+  /**
+    * Returns all type variables in the type in the order in which they appear.
+    */
+  private def typeVars(tpe0: Type): List[Type.Var] = {
+    def visit(t: Type): List[Type.Var] = t match {
+      case tvar: Type.Var => tvar :: Nil
+      case Type.Cst(tc, loc) => Nil
+      case Type.Lambda(tvar, tpe) => tvar :: visit(tpe)
+      case Type.Apply(tpe1, tpe2) => visit(tpe1) ::: visit(tpe2)
+    }
+
+    visit(tpe0).distinct
+  }
+
 }
