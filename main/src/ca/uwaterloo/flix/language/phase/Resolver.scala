@@ -89,8 +89,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
 
     for {
-      classes <- sequence(classesVal).map(_ ++ mkSynthClasses())
-      instances <- sequence(instancesVal) // MATT add synth instances instead of synth classes
+      classes <- sequence(classesVal)
+      instances <- sequence(instancesVal) // MATT add synth instances
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
       latticeComponents <- sequence(latticeComponentsVal)
@@ -1884,58 +1884,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   private def mkLattice(ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
     mkPredicate(Ast.Denotation.Latticenal, ts0, loc)
   }
-
-  /**
-   * Creates the synthetic type classes.
-   */
-  private def mkSynthClasses()(implicit flix: Flix): List[(Symbol.ClassSym, ResolvedAst.Class)] = {
-    val classes = List(mkShowClass())
-    // TODO: Eq, Ord, Hash
-
-    classes.map(clazz => clazz.sym -> clazz)
-  }
-
-  /**
-   * Creates the synthetic `Show` type class.
-   * {{{
-   *   trait Show[a] {
-   *     def show(x: a): Str
-   *   }
-   * }}}
-   *
-   */
-  private def mkShowClass()(implicit flix: Flix): ResolvedAst.Class = {
-    val classSym = Symbol.mkClassSym(Name.RootNS, mkSynthIdent("Show"))
-
-    val tparamType = Type.freshVar(Kind.Star)
-    val tparam = ResolvedAst.TypeParam(mkSynthIdent("a"), tparamType, Nil, SourceLocation.Generated)
-    val showSig = Sig(doc = synthDoc,
-      ann = Nil,
-      mod = Ast.Modifiers(List(Ast.Modifier.Synthetic)),
-      sym = Symbol.mkSigSym(classSym, mkSynthIdent("show")),
-      tparams = List(tparam),
-      fparams = List(ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, tparamType, SourceLocation.Generated)),
-      sc = Scheme.generalize(List(TypedAst.TypeConstraint(classSym, tparamType)), Type.mkPureArrow(tparamType, Type.Str)),
-      eff = Type.Pure,
-      loc = SourceLocation.Generated)
-
-    ResolvedAst.Class(doc = synthDoc,
-      mod = Ast.Modifiers(List(Ast.Modifier.Public, Ast.Modifier.Synthetic)),
-      sym = classSym,
-      tparam = tparam,
-      signatures = List(showSig),
-      loc = SourceLocation.Generated)
-  }
-
-  /**
-   * Creates a synthetic Ident.
-   */
-  private def mkSynthIdent(name: String): Name.Ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-
-  /**
-   * Synthetic documentation.
-   */
-  private val synthDoc: Ast.Doc = Ast.Doc(List(), SourceLocation.Generated)
 
   sealed trait NameLookupResult
   object NameLookupResult {

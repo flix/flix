@@ -29,7 +29,7 @@ object FormatScheme {
       if (sc.quantifiers.isEmpty)
         ""
       else
-        "∀(" + sc.quantifiers.map(tvar => tvar.text.getOrElse(tvar.id)).mkString(", ") + ")."
+        "∀(" + sc.quantifiers.map(FormatType.formatType).mkString(", ") + ")."
 
     val typePart = FormatType.formatType(sc.base)
 
