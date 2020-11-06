@@ -29,6 +29,7 @@ object HoverProvider {
   def processHover(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
+
       case Some(entity) => entity match {
 
         case Entity.Case(caze) => hoverTypAndEff(caze.sc.base, Type.Pure, caze.tag.loc)
