@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -57,6 +57,13 @@ object RenameProvider {
 
         case Entity.LocalVar(sym, _) => renameVar(sym, newName)
 
+        case Entity.TypeCon(tc, _) => tc match {
+          case TypeConstructor.RecordExtend(field) => renameField(field, newName)
+          case TypeConstructor.SchemaExtend(pred) => renamePred(pred, newName)
+          case TypeConstructor.Enum(sym, _) => renameEnum(sym, newName)
+          case _ => mkNotFound(uri, pos)
+        }
+
         case _ => mkNotFound(uri, pos)
       }
     }
@@ -80,6 +87,12 @@ object RenameProvider {
   }
 
   private def renameDef(sym: Symbol.DefnSym, newName: String)(implicit index: Index, root: Root): JObject = {
+    val defn = sym.loc
+    val uses = index.usesOf(sym)
+    rename(newName, defn :: uses.toList)
+  }
+
+  private def renameEnum(sym: Symbol.EnumSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, defn :: uses.toList)
