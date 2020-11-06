@@ -20,7 +20,6 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.ResolvedAst.Sig
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation
@@ -182,29 +181,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
-    val tparamsVal = traverse(e0.tparams)(p => Params.resolve(p, ns0, root))
-    val casesVal = traverse(e0.cases) {
-      case (name, NamedAst.Case(enum, tag, tpe)) =>
-        for {
-          _ <- tparamsVal
-          t <- lookupType(tpe, ns0, root)
-          _ <- checkProperType(t, tag.loc)
-        } yield {
-          val freeVars = e0.tparams.map(_.tpe)
-          val caseType = t
-          val enumType = Type.mkEnum(e0.sym, freeVars)
-          val base = Type.mkTag(e0.sym, tag, caseType, enumType)
-          val sc = Scheme(freeVars, List.empty, base)
-          name -> ResolvedAst.Case(enum, tag, t, sc)
+    traverse(e0.tparams)(p => Params.resolve(p, ns0, root)).flatMap {
+      tparams =>
+        val tconstrs = tparams.flatMap(tparam => tparam.classes.map(clazz => TypedAst.TypeConstraint(clazz, tparam.tpe)))
+        val casesVal = traverse(e0.cases) {
+          case (name, NamedAst.Case(enum, tag, tpe)) =>
+            for {
+              t <- lookupType(tpe, ns0, root)
+              _ <- checkProperType(t, tag.loc)
+            } yield {
+              val freeVars = e0.tparams.map(_.tpe)
+              val caseType = t
+              val enumType = Type.mkEnum(e0.sym, freeVars)
+              val base = Type.mkTag(e0.sym, tag, caseType, enumType)
+              val sc = Scheme(freeVars, tconstrs, base)
+              name -> ResolvedAst.Case(enum, tag, t, sc)
+            }
         }
-    }
-    for {
-      tparams <- tparamsVal
-      cases <- casesVal
-      tpe <- lookupType(e0.tpe, ns0, root)
-    } yield {
-      val sc = Scheme(tparams.map(_.tpe), List.empty, tpe)
-      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
+        for {
+          cases <- casesVal
+          tpe <- lookupType(e0.tpe, ns0, root)
+        } yield {
+          val sc = Scheme(tparams.map(_.tpe), tconstrs, tpe)
+          ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
+        }
     }
   }
 

@@ -931,7 +931,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           val caze = decl.cases(tag)
 
           // Instantiate the type scheme of the case.
-          val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+          val (tagConstrs, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
 
           //
           // The tag type can be thought of as a function from the type of variant to the type of the enum.
@@ -942,7 +942,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             _ <- unifyTypeM(tagType, Type.mkTag(sym, tag, tpe, tvar), loc)
             resultTyp = tvar
             resultEff = eff
-          } yield (constrs, resultTyp, resultEff)
+          } yield (tagConstrs ++ constrs, resultTyp, resultEff)
         }
 
       case ResolvedAst.Expression.Tuple(elms, loc) =>

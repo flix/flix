@@ -238,7 +238,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
-  test("TestLeq.Class.05") {
+  test("TestLeq.Class.03") {
     val input =
       """
         |enum Box[a] {
@@ -260,6 +260,21 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |def doShow(x: Box[Float]): String = show(x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.04") {
+    val input =
+      """
+        |class C[a]
+        |
+        |enum E[a : C] {
+        |    case E1(a)
+        |}
+        |
+        |def f(): E[Int] = E1(1)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
