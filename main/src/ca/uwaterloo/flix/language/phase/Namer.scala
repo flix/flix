@@ -328,7 +328,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tparam = tparams.head // only 1 tparam allowed for now
       val tenv = tenv0 ++ getTypeEnv(tparams)
       for {
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, sym, tparam)) // MATT check for shadowing?
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam)) // MATT check for shadowing?
       } yield NamedAst.Class(doc, mod, sym, tparam, sigs, loc)
   }
 
@@ -359,7 +359,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
+  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0), checkSigType(classTparam, tpe, loc)) {
         case (tparams, _) =>
@@ -368,7 +368,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case fparams =>
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-              val schemeVal = getDefOrSigScheme(tparams, tpe, uenv0, tenv, Nil)
+              val tconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc))
+              val schemeVal = getDefOrSigScheme(tparams, tpe, uenv0, tenv, List(tconstr))
               val tpeVal = visitType(eff0, uenv0, tenv)
               mapN(annVal, schemeVal, tpeVal) {
                 case (as, sc, eff) =>

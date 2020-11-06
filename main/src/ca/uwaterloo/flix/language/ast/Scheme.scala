@@ -129,7 +129,7 @@ object Scheme {
       */
     def checkConstraints(deferredTconstrs: List[TypedAst.TypeConstraint], retainedTconstrs: List[TypedAst.TypeConstraint], baseTconstrs: List[TypedAst.TypeConstraint]): Result[Unit, UnificationError] = {
       if (deferredTconstrs.nonEmpty) {
-        throw InternalCompilerException("Unexpected deferred type constraint.")
+        UnificationError.UnfulfilledConstraint(deferredTconstrs.head).toErr
       } else {
         retainedTconstrs.find(!ContextReduction.entail(instances, baseTconstrs, _)) match {
           case Some(tconstr) => UnificationError.UnfulfilledConstraint(tconstr).toErr

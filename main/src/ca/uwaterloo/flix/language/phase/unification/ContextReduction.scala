@@ -90,10 +90,9 @@ object ContextReduction {
       } yield inst.tconstrs.map(subst(_))
     }
 
-    matchingInstances.map(tryInst).filter(_.isOk) match {
-      case Result.Ok(tconstrs) :: Nil => tconstrs.toOk
-      case Nil => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
-      case _ => throw InternalCompilerException("Multiple matching instances.")
+    matchingInstances.map(tryInst).find(_.isOk) match {
+      case Some(Result.Ok(tconstrs)) => tconstrs.toOk
+      case None => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
     }
   }
 

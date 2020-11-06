@@ -238,6 +238,33 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
+  test("TestLeq.Class.05") {
+    val input =
+      """
+        |enum Box[a] {
+        |    case Just(a)
+        |}
+        |
+        |class Show[a] {
+        |    def show(x: a): String
+        |}
+        |
+        |instance Show[Int] {
+        |    def show(x: Int): String = "123"
+        |}
+        |
+        |instance Show[Box[a]] with [a : Show] {
+        |    def show(x: Box[a]): String = match x {
+        |        case Just(y) => show(y)
+        |    }
+        |}
+        |
+        |def doShow(x: Box[Float]): String = show(x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
   test("TestChoose.Arity1.01") {
     val input =
       """
@@ -1003,6 +1030,9 @@ class TestTyper extends FunSuite with TestUtils {
         |        def show(x: Int): String = "123"
         |    }
         |
+        |    instance Show[String] {
+        |        def show(x: String): String = x
+        |    }
         |
         |    instance Show[Box[a]] with [a : Show] {
         |        def show(x: Box[a]): String = match x {
