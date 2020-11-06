@@ -32,11 +32,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Match.Array.HeadSpread", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.Array.HeadSpread.flix")(Options.TestWithLibrary),
 
   //
-  // Equality
-  //
-  new FlixTest("Test.Equality", "main/test/ca/uwaterloo/flix/language/feature/Test.Equality.flix")(Options.TestWithLibrary),
-
-  //
   // Unused
   //
   new FlixTest("Test.UnusedTypeVar", "main/test/ca/uwaterloo/flix/language/feature/Test.UnusedTypeVar.flix")(Options.TestWithLibrary),
