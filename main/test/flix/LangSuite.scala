@@ -42,6 +42,9 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Tuple", "main/test/flix/Test.Equality.Tuple.flix"),
   new FlixTest("Test.Equality.Unit", "main/test/flix/Test.Equality.Unit.flix"),
 
+  new FlixTest("Test.Equality.Map", "main/test/flix/Test.Equality.Map.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibrary),
+
   //
   // Apply.Tail.
   //
@@ -226,6 +229,11 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.flix"),
   new FlixTest("Test.Exp.Tag.Lambda", "main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibrary),
+
+  //
+  // Tuple.
+  //
+  new FlixTest("Test.Exp.Tuple", "main/test/flix/Test.Exp.Tuple.flix"),
 
   //
   // Unary.
