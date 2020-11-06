@@ -29,7 +29,12 @@ object HoverProvider {
   def processHover(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
+
       case Some(entity) => entity match {
+
+        case Entity.Case(caze) => hoverTypAndEff(caze.sc.base, Type.Pure, caze.tag.loc)
+
+        case Entity.Enum(enu) => hoverTypeConstructor(enu.sc.base.typeConstructor.getOrElse(TypeConstructor.Unit), enu.sym.loc)
 
         case Entity.Exp(exp) =>
           exp match {
@@ -47,6 +52,8 @@ object HoverProvider {
         case Entity.Pattern(pat) => hoverTypAndEff(pat.tpe, Type.Pure, pat.loc)
 
         case Entity.LocalVar(sym, tpe) => hoverTypAndEff(tpe, Type.Pure, sym.loc)
+
+        case Entity.TypeCon(tc, loc) => hoverTypeConstructor(tc, loc)
 
         case _ => mkNotFound(uri, pos)
       }
@@ -89,10 +96,22 @@ object HoverProvider {
   private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
     val t = FormatType.formatType(tpe0)
     eff0 match {
-      case Type.Cst(TypeConstructor.True) => t
-      case Type.Cst(TypeConstructor.False) => s"$t & Impure"
+      case Type.Cst(TypeConstructor.True, _) => t
+      case Type.Cst(TypeConstructor.False, _) => s"$t & Impure"
       case eff => s"$t & ${FormatType.formatType(eff)}"
     }
+  }
+
+  private def hoverTypeConstructor(tc: TypeConstructor, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+    val markup = formatKind(tc)
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
+  }
+
+  private def formatKind(tc: TypeConstructor): String = {
+    FormatKind.formatKind(tc.kind)
   }
 
   private def formatStratification(stf: Ast.Stratification): String = {

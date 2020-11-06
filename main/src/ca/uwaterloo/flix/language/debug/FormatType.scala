@@ -29,7 +29,7 @@ object FormatType {
     val renameMap = alphaRenameVars(tpe)
 
     def formatWellFormedRecord(record: Type): String = flattenRecord(record) match {
-      case FlatNestable(fields, Type.Cst(TypeConstructor.RecordEmpty)) =>
+      case FlatNestable(fields, Type.Cst(TypeConstructor.RecordEmpty, _)) =>
         fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString("{ ", ", ", " }")
       case FlatNestable(fields, rest) =>
         val fieldString = fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString(", ")
@@ -37,7 +37,7 @@ object FormatType {
     }
 
     def formatWellFormedSchema(schema: Type): String = flattenSchema(schema) match {
-      case FlatNestable(fields, Type.Cst(TypeConstructor.SchemaEmpty)) =>
+      case FlatNestable(fields, Type.Cst(TypeConstructor.SchemaEmpty, _)) =>
         fields.map { case (field, tpe) => formatSchemaField(field, tpe) }.mkString("#{ ", ", ", " }")
       case FlatNestable(fields, rest) =>
         val fieldString = fields.map { case (field, tpe) => formatSchemaField(field, tpe) }.mkString(", ")
@@ -219,13 +219,13 @@ object FormatType {
               val argPart = typeStrings.init.mkString(" -> ")
               // Format the arrow.
               val arrowPart = eff match {
-                case Type.Cst(TypeConstructor.False) => " ~> "
+                case Type.Cst(TypeConstructor.False, _) => " ~> "
                 case _ => " -> "
               }
               // Format the effect.
               val effPart = eff match {
-                case Type.Cst(TypeConstructor.True) => ""
-                case Type.Cst(TypeConstructor.False) => ""
+                case Type.Cst(TypeConstructor.True, _) => ""
+                case Type.Cst(TypeConstructor.False, _) => ""
                 case _: Type.Var => s" & ${visit(eff)}"
                 case _ => " & (" + visit(eff) + ")"
               }
@@ -263,12 +263,12 @@ object FormatType {
         case TypeDiff.Arrow =>
           intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
         case TypeDiff.Enum =>
-          vt << "*"
+          vt << "..."
           intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         case TypeDiff.Tuple =>
           intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
         case TypeDiff.Other =>
-          vt << "*"
+          vt << "..."
           intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         case TypeDiff.Mismatch(tpe1, _) => vt << color(formatType(tpe1))
         case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
@@ -317,7 +317,7 @@ object FormatType {
     * Convert a record to a [[FlatNestable]].
     */
   private def flattenRecord(record: Type): FlatNestable = record match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field)), tpe), rest) =>
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe), rest) =>
       (field.name, tpe) :: flattenRecord(rest)
     case _ => FlatNestable(Nil, record)
   }
@@ -326,7 +326,7 @@ object FormatType {
     * Convert a schema to a [[FlatNestable]].
     */
   private def flattenSchema(schema: Type): FlatNestable = schema match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred)), tpe), rest) =>
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe), rest) =>
       (pred.name, tpe) :: flattenSchema(rest)
     case _ => FlatNestable(Nil, schema)
   }

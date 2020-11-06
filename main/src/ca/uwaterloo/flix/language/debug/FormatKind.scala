@@ -9,7 +9,7 @@ object FormatKind {
     */
   def formatKind(kind: Kind): String = kind match {
     case Kind.Var(id) => s"`$id"
-    case Kind.Star => "*"
+    case Kind.Star => "Type"
     case Kind.Bool => "Bool"
     case Kind.Record => "Record"
     case Kind.Schema => "Schema"

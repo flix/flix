@@ -326,13 +326,13 @@ object BoolUnification {
       //                println(s.substring(0, Math.min(len, 300)))
       //              }
 
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), tpe1), tpe2)
+      Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
   }
 
   private object NOT {
     @inline
     def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Apply(Type.Cst(TypeConstructor.Not), x) => Some(x)
+      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x) => Some(x)
       case _ => None
     }
   }
@@ -340,7 +340,7 @@ object BoolUnification {
   private object AND {
     @inline
     def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x), y) => Some((x, y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x), y) => Some((x, y))
       case _ => None
     }
   }
@@ -348,7 +348,7 @@ object BoolUnification {
   private object OR {
     @inline
     def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => Some((x, y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x), y) => Some((x, y))
       case _ => None
     }
   }

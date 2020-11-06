@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object Index {
@@ -65,6 +65,11 @@ object Index {
     * Returns an index for the given atom `a0`.
     */
   def occurrenceOf(pred: Name.Pred): Index = empty + Entity.Pred(pred)
+
+  /**
+    * Returns an index for the given `tpe0`.
+    */
+  def occurrenceOf(tc: TypeConstructor, loc: SourceLocation): Index = empty + Entity.TypeCon(tc, loc)
 
   /**
     * Returns an index for the given local variable `sym0`.

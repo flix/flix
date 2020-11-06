@@ -155,9 +155,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
               val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
               val enumType = if (quantifiers.isEmpty)
-                NamedAst.Type.Enum(sym, kind)
+                NamedAst.Type.Enum(sym, kind, loc)
               else {
-                val base = NamedAst.Type.Enum(sym, kind)
+                val base = NamedAst.Type.Enum(sym, kind, loc)
                 quantifiers.foldLeft(base: NamedAst.Type) {
                   case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
                 }

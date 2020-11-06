@@ -67,6 +67,10 @@ jar {
     from('main') {
         include '**/*.flix'
     }
+
+    from('main') {
+        include '**/*.jar'
+    }
 }
 
 task testAll(dependsOn: ['testClasses'], type: JavaExec) {

@@ -1236,28 +1236,28 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
 
-    case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
+    case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => Type.Unit.toSuccess
-      case "Null" => Type.Null.toSuccess
-      case "Bool" => Type.Bool.toSuccess
-      case "Char" => Type.Char.toSuccess
-      case "Float" => Type.Float64.toSuccess
-      case "Float32" => Type.Float32.toSuccess
-      case "Float64" => Type.Float64.toSuccess
-      case "Int" => Type.Int32.toSuccess
-      case "Int8" => Type.Int8.toSuccess
-      case "Int16" => Type.Int16.toSuccess
-      case "Int32" => Type.Int32.toSuccess
-      case "Int64" => Type.Int64.toSuccess
-      case "BigInt" => Type.BigInt.toSuccess
-      case "String" => Type.Str.toSuccess
-      case "Array" => Type.Array.toSuccess
-      case "Channel" => Type.Channel.toSuccess
-      case "Lazy" => Type.Lazy.toSuccess
-      case "Ref" => Type.Ref.toSuccess
+      case "Unit" => Type.mkUnit(loc).toSuccess
+      case "Null" => Type.mkNull(loc).toSuccess
+      case "Bool" => Type.mkBool(loc).toSuccess
+      case "Char" => Type.mkChar(loc).toSuccess
+      case "Float" => Type.mkFloat64(loc).toSuccess
+      case "Float32" => Type.mkFloat32(loc).toSuccess
+      case "Float64" => Type.mkFloat64(loc).toSuccess
+      case "Int" => Type.mkInt32(loc).toSuccess
+      case "Int8" => Type.mkInt8(loc).toSuccess
+      case "Int16" => Type.mkInt16(loc).toSuccess
+      case "Int32" => Type.mkInt32(loc).toSuccess
+      case "Int64" => Type.mkInt64(loc).toSuccess
+      case "BigInt" => Type.mkBigInt(loc).toSuccess
+      case "String" => Type.mkString(loc).toSuccess
+      case "Array" => Type.mkArray(loc).toSuccess
+      case "Channel" => Type.mkChannel(loc).toSuccess
+      case "Lazy" => Type.mkLazy(loc).toSuccess
+      case "Ref" => Type.mkRef(loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1266,10 +1266,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, loc)
 
           // Case 3: TypeAlias.
-          case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
+          case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, loc)
 
           // Case 4: Errors.
           case (x, y) =>
@@ -1291,8 +1291,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
       }
 
-    case NamedAst.Type.Enum(sym, kind) =>
-      Type.mkEnum(sym, kind).toSuccess
+    case NamedAst.Type.Enum(sym, kind, loc) =>
+      Type.mkEnum(sym, kind, loc).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for {
@@ -1581,7 +1581,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.mkEnum(enum.sym, enum0.kind)
+      case enum => Type.mkEnum(enum.sym, enum0.kind, loc)
     }
 
   /**
@@ -1813,21 +1813,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Creates a well-formed `Tuple` type.
     */
   private def mkTuple(tpes: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.Tuple(tpes.length)), tpes, loc)
+    mkApply(Type.Cst(TypeConstructor.Tuple(tpes.length), loc), tpes, loc)
   }
 
   /**
     * Creates a well-formed `RecordExtend` type.
     */
   private def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(field)), List(tpe, rest), loc)
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(field), loc), List(tpe, rest), loc)
   }
 
   /**
     * Creates a well-formed `SchemaExtend` type.
     */
   private def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred)), List(tpe, rest), loc)
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred), loc), List(tpe, rest), loc)
   }
 
   /**
