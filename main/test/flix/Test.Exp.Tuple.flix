@@ -51,102 +51,29 @@ namespace Test/Exp/Tuple {
     @test
     def testInt64Tuple02(): (Int64, Int64, Int64) = (1i64, 2i64, 3i64)
 
+    @test
+    def testBigIntTuple01(): (BigInt, BigInt) = (1ii, 2ii)
 
-///   /**
-///     * A type constructor that represent the type of arbitrary-precision integers.
-///     */
-///   case object BigInt extends TypeConstructor {
-///     def kind: Kind = Kind.Star
-///   }
+    @test
+    def testBigIntTuple02(): (BigInt, BigInt, BigInt) = (1ii, 2ii, 3ii)
 
-///   /**
-///     * A type constructor that represent the type of strings.
-///     */
-///   case object Str extends TypeConstructor {
-///     def kind: Kind = Kind.Star
-///   }
+    @test
+    def testStringTuple01(): (String, String) = ("abc", "def")
 
-///   /**
-///     * A type constructor that represents the type of functions.
-///     */
-///   case class Arrow(arity: Int) extends TypeConstructor {
-///     def kind: Kind = Kind.Bool ->: Kind.mkArrow(arity)
-///   }
+    @test
+    def testStringTuple02(): (String, String, String) = ("abc", "def", "geh")
 
-///   /**
-///     * A type constructor that represents the type of empty records.
-///     */
-///   case object RecordEmpty extends TypeConstructor {
-///     def kind: Kind = Kind.Record
-///   }
+    @test
+    def testRecordTuple01(): ({x: Int}, {x: Int}) = ({x = 1}, {x = 2})
 
-///   /**
-///     * A type constructor that represents the type of extended records.
-///     */
-///   case class RecordExtend(field: Name.Field) extends TypeConstructor {
-///     /**
-///       * The shape of an extended record is { field: type | rest }
-///       */
-///     def kind: Kind = Kind.Star ->: Kind.Record ->: Kind.Record
-///   }
+    @test
+    def testRecordTuple02(): ({x: Int}, {x: Int}, {x: Int}) = ({x = 1}, {x = 2}, {x = 3})
 
-///   /**
-///     * A type constructor that represents the type of empty schemas.
-///     */
-///   case object SchemaEmpty extends TypeConstructor {
-///     def kind: Kind = Kind.Schema
-///   }
+    @test
+    def testSchemaTuple01(): (#{A(Int)}, #{B(Int)}) = (#{A(1).}, #{B(2).})
 
-///   /**
-///     * A type constructor that represents the type of extended schemas.
-///     */
-///   case class SchemaExtend(pred: Name.Pred) extends TypeConstructor {
-///     /**
-///       * The shape of an extended schema is { name: type | rest }
-///       */
-///     def kind: Kind = Kind.Star ->: Kind.Schema ->: Kind.Schema
-///   }
-
-///   /**
-///     * A type constructor that represent the type of arrays.
-///     */
-///   case object Array extends TypeConstructor {
-///     /**
-///       * The shape of an array is Array[t].
-///       */
-///     def kind: Kind = Kind.Star ->: Kind.Star
-///   }
-
-///   /**
-///     * A type constructor that represent the type of channels.
-///     */
-///   case object Channel extends TypeConstructor {
-///     /**
-///       * The shape of a channel is Channel[t].
-///       */
-///     def kind: Kind = Kind.Star ->: Kind.Star
-///   }
-
-///   /**
-///     * A type constructor that represent the type of lazy expressions.
-///     */
-///   case object Lazy extends TypeConstructor {
-///     /**
-///       * The shape of lazy is Lazy[t].
-///       */
-///     def kind: Kind = Kind.Star ->: Kind.Star
-///   }
-
-///   /**
-///     * A type constructor that represent the type of tags.
-///     */
-///   case class Tag(sym: Symbol.EnumSym, tag: Name.Tag) extends TypeConstructor {
-///     /**
-///       * The shape of a tag is "like" a function `caseType` -> (`resultType`) -> *.
-///       */
-///     def kind: Kind = Kind.Star ->: Kind.Star ->: Kind.Star
-///   }
-
+    @test
+    def testSchemaTuple03(): (#{A(Int)}, #{B(Int)}, #{C(Int)}) = (#{A(1).}, #{B(2).}, #{C(3).})
 
     @test
     def testTupleTuple01(): (Int, (Int, Int)) = (1, (2, 3))
