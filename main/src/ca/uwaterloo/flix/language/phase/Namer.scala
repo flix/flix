@@ -1476,15 +1476,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         // Use a kind variable if not found; this will be caught later by redundancy checks.
         val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
         val tvar = Type.freshVar(kind)
-        // Remember the original textual name.
-        tvar.setText(ident.name)
         NamedAst.TypeParam(ident, tvar, classes, ident.loc)
 
       case WeededAst.ConstrainedType(ident, Some(kind), classes) =>
         // Case 2: The kind is explicitly available.
         val tvar = Type.freshVar(kind)
-        // Remember the original textual name.
-        tvar.setText(ident.name)
         NamedAst.TypeParam(ident, tvar, classes, ident.loc)
     }
   }
@@ -1550,7 +1546,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         kindedNames.values.toList.sortBy(_._1.name).map {
           case (id, kind) =>
             val tvar = Type.freshVar(kind) // use the kind we validated from the parameter context
-            tvar.setText(id.name)
             NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
           // MATT may need to be not Nil for type constraints in enums
         }
@@ -1575,7 +1570,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
         // We use a kind variable since we do not know the kind of the type variable.
         val tvar = Type.freshVar(Kind.freshVar())
-        tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, Nil, loc)
     }
   }

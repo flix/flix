@@ -326,19 +326,12 @@ object Type {
     /**
       * The optional textual name of `this` type variable.
       */
-    private var text: Option[String] = None
+    private var text: Option[String] = None // TODO: Deprecated
 
     /**
       * Optionally returns the textual name of `this` type variable.
       */
-    def getText: Option[String] = text
-
-    /**
-      * Sets the textual name of `this` type variable.
-      */
-    def setText(s: String): Unit = {
-      text = Some(s)
-    }
+    def getText: Option[String] = text // TODO: Deprecated
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.
