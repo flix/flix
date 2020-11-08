@@ -57,7 +57,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val effectType = Type.Var(2, Kind.Bool, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType)
 
-    val expected = "a -> 'b & 'c"
+    val expected = "'a -> 'b & 'c"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
