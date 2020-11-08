@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Bool
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
@@ -350,7 +350,13 @@ object FormatType {
     * Rename the variables in the given type.
     */
   private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
-    typeVars(tpe0).zipWithIndex.map {
+    val tvars = typeVars(tpe0)
+    val starTypeVars = tvars.filter(_.kind == Kind.Star)
+    val boolTypeVars = tvars.filter(_.kind == Kind.Bool)
+    val otherTypeVars = tvars.filter(k => k.kind != Kind.Star || k.kind != Kind.Bool)
+    val orderedTypeVars = starTypeVars ::: boolTypeVars ::: otherTypeVars
+
+    orderedTypeVars.zipWithIndex.map {
       case (tvar, index) => tvar.id -> getVarName(index)
     }.toMap
   }
