@@ -63,16 +63,10 @@ object Unification {
     }
 
     // Check if the kind of `x` matches the kind of `tpe`.
-
     if (!(tpe.kind <:: x.kind)) {
       return Result.Err(UnificationError.MismatchedKinds(x.kind, tpe.kind))
     }
 
-    // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
-    if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
-      // TODO: Get rid of this insanity.
-      tpe.asInstanceOf[Type.Var].setText(x.getText.get)
-    }
     Result.Ok(Substitution.singleton(x, tpe))
   }
 

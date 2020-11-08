@@ -57,7 +57,14 @@ case class Substitution(m: Map[Type.Var, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.Var => m.getOrElse(x, x)
+        case x: Type.Var => m.get(x) match {
+          case None => x
+          case Some(t0) => t0 match {
+            // NB: This small trick is used to propagate variable names.
+            case tr: Type.Var => tr.copy(text = x.text)
+            case tr => tr
+          }
+        }
         case Type.Cst(tc, _) => t
         case Type.Apply(t1, t2) =>
           val y = visit(t2)

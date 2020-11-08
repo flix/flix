@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Bool
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
@@ -87,16 +87,16 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case tvar@Type.Var(id, kind, _) => audience match {
+          case tvar@Type.Var(id, kind, _, _) => audience match {
             case Audience.Internal => kind match {
               case Bool => s"''$id"
               case _ => s"'$id"
             }
-            case Audience.External => tvar.getText.getOrElse(renameMap(tvar.id))
+            case Audience.External => tvar.text.getOrElse(renameMap(tvar.id))
           }
           case Type.Lambda(tvar, tpe) => audience match {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-            case Audience.External => s"${tvar.getText.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
+            case Audience.External => s"${tvar.text.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
           }
           case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
         }
@@ -341,17 +341,38 @@ object FormatType {
     */
   private def getVarName(index: Int): String = {
     if (index / 26 <= 0)
-      (index + 'a').toChar.toString
+      "'" + (index + 'a').toChar.toString
     else
-      (index + 'a').toChar.toString + (index / 26).toString
+      "'" + (index + 'a').toChar.toString + (index / 26).toString
   }
 
   /**
     * Rename the variables in the given type.
     */
   private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
-    tpe0.typeVars.toList.sortBy(_.id).zipWithIndex.map {
+    val tvars = typeVars(tpe0)
+    val starTypeVars = tvars.filter(_.kind == Kind.Star)
+    val boolTypeVars = tvars.filter(_.kind == Kind.Bool)
+    val otherTypeVars = tvars.filter(k => k.kind != Kind.Star && k.kind != Kind.Bool)
+    val orderedTypeVars = starTypeVars ::: boolTypeVars ::: otherTypeVars
+
+    orderedTypeVars.zipWithIndex.map {
       case (tvar, index) => tvar.id -> getVarName(index)
     }.toMap
   }
+
+  /**
+    * Returns all type variables in the type in the order in which they appear.
+    */
+  private def typeVars(tpe0: Type): List[Type.Var] = {
+    def visit(t: Type): List[Type.Var] = t match {
+      case tvar: Type.Var => tvar :: Nil
+      case Type.Cst(tc, loc) => Nil
+      case Type.Lambda(tvar, tpe) => tvar :: visit(tpe)
+      case Type.Apply(tpe1, tpe2) => visit(tpe1) ::: visit(tpe2)
+    }
+
+    visit(tpe0).distinct
+  }
+
 }
