@@ -217,7 +217,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         case Some(typealias) =>
           // Case 2: Duplicate type alias.
-          NameError.DuplicateTypeAlias(ident.name, typealias.sym.loc, ident.loc).toFailure
+          val name = ident.name
+          val loc1 = typealias.sym.loc
+          val loc2 = ident.loc
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            NameError.DuplicateTypeAlias(name, loc1, loc2),
+            NameError.DuplicateTypeAlias(name, loc2, loc1)
+          ))
       }
 
     /*
