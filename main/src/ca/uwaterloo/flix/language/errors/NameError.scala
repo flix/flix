@@ -75,7 +75,7 @@ object NameError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
     }
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -98,7 +98,7 @@ object NameError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
     }
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**

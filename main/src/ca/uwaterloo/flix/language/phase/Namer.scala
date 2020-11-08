@@ -103,7 +103,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         case Some(clazz) =>
           // Case 2: Duplicate class.
-          NameError.DuplicateClass(ident.name, clazz.sym.loc, ident.loc).toFailure
+          val name = ident.name
+          val loc1 = clazz.sym.loc
+          val loc2 = ident.loc
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            NameError.DuplicateClass(name, loc1, loc2),
+            NameError.DuplicateClass(ident.name, loc1, loc2)
+          ))
       }
 
     case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, defs, loc) =>
@@ -127,7 +134,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         case Some(defn) =>
           // Case 2: Duplicate definition.
-          NameError.DuplicateDef(ident.name, defn.loc, ident.loc).toFailure
+          val name = ident.name
+          val loc1 = defn.loc
+          val loc2 = ident.loc
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            NameError.DuplicateDef(name, loc1, loc2),
+            NameError.DuplicateDef(name, loc2, loc1),
+          ))
       }
 
     /*
@@ -172,7 +186,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         case Some(enum) =>
           // Case 2.2: Duplicate definition.
-          NameError.DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
+          val name = ident.name
+          val loc1 = enum.sym.loc
+          val loc2 = ident.loc
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            NameError.DuplicateDef(name, loc1, loc2),
+            NameError.DuplicateDef(name, loc2, loc1)
+          ))
       }
 
     /*
