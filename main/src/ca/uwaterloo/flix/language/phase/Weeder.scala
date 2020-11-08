@@ -219,9 +219,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               macc.get(tagName) match {
                 case None => (macc + (tagName -> WeededAst.Case(ident, Name.mkTag(caze.ident), visitType(caze.tpe)))).toSuccess
                 case Some(otherTag) =>
+                  val enumName = ident.name
                   val loc1 = otherTag.tag.loc
                   val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
-                  DuplicateTag(ident.name, tagName, loc1, loc2).toFailure
+
+                  // NB: We report an error at both source locations.
+
+                  DuplicateTag(enumName, tagName, loc1, loc2).toFailure
               }
           } map {
             case m => List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, m, mkSL(sp1, sp2)))
@@ -1520,7 +1524,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           seen += (x.ident.name -> x)
           visitAnnotation(x)
         case Some(otherAnn) =>
-          DuplicateAnnotation(x.ident.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
+          val name = x.ident.name
+          val loc1 = mkSL(otherAnn.sp1, otherAnn.sp2)
+          val loc2 = mkSL(x.sp1, x.sp2)
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            DuplicateAnnotation(name, loc1, loc2),
+            DuplicateAnnotation(name, loc2, loc1),
+          ))
       }
     }
 
@@ -1562,9 +1573,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             seen += (modifier.name -> modifier)
             visitModifier(modifier, legalModifiers)
           case Some(other) =>
+            val name = modifier.name
             val loc1 = mkSL(other.sp1, other.sp2)
             val loc2 = mkSL(modifier.sp1, modifier.sp2)
-            WeederError.DuplicateModifier(modifier.name, loc1, loc2).toFailure
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              WeederError.DuplicateModifier(name, loc1, loc2),
+              WeederError.DuplicateModifier(name, loc2, loc1)
+            ))
         }
     }
 
@@ -1843,9 +1859,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 WeededAst.FormalParam(ident, mod, typeOpt.map(visitType), mkSL(sp1, sp2)).toSuccess
           }
         case Some(otherParam) =>
+          val name = ident.name
           val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
           val loc2 = mkSL(param.sp1, param.sp2)
-          DuplicateFormalParam(ident.name, loc1, loc2).toFailure
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            DuplicateFormalParam(name, loc1, loc2),
+            DuplicateFormalParam(name, loc2, loc1)
+          ))
       }
     }
   }
