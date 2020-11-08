@@ -31,21 +31,21 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatWellFormedType.Record.External.02") {
+  test("FormatWellFormedType.Record.External.02") {
     val rest = Type.Var(0, Kind.Record, Rigidity.Rigid)
     val tpe = Type.mkRecordExtend(Name.Field("x", SourceLocation.Unknown), Type.Int32, rest)
 
-    val expected = "{ x: Int32 | theRest }"
+    val expected = "{ x: Int32 | 'a }"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
 
-  ignore("FormatWellFormedType.Arrow.External.01") {
+  test("FormatWellFormedType.Arrow.External.01") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType)
 
-    val expected = "t1 -> t1"
+    val expected = "'a -> 'a"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -57,7 +57,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val effectType = Type.Var(2, Kind.Bool, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType)
 
-    val expected = "a -> b & c"
+    val expected = "'b -> 'c & 'a"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -68,7 +68,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType)
 
-    val expected = "a ~> b"
+    val expected = "'a ~> 'b"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -87,7 +87,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val eff = Type.mkAnd(Type.Var(1, Kind.Bool, Rigidity.Flexible), Type.Var(2, Kind.Bool, Rigidity.Flexible))
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool)
 
-    val expected = "BigInt -> Bool & (a ∧ b)"
+    val expected = "BigInt -> Bool & ('a ∧ 'b)"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -103,25 +103,25 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatWellFormedType.Schema.External.02") {
+  test("FormatWellFormedType.Schema.External.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str))
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
     val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
     val tpe = Type.mkSchemaExtend(Name.Pred("A", SourceLocation.Unknown), latticeType1, Type.mkSchemaExtend(Name.Pred("B", SourceLocation.Unknown), latticeType2, restType))
 
-    val expected = "#{ A<>(String), B<>(Int32, String) | theRest }"
+    val expected = "#{ A<>(String), B<>(Int32, String) | 'a }"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
 
-  ignore("FormatWellFormedType.Enum.External.07") {
+  test("FormatWellFormedType.Enum.External.07") {
     val tvar1 = Type.Var(1, Kind.Star, Rigidity.Flexible)
     val tvar2 = Type.Var(2, Kind.Star, Rigidity.Flexible)
     val tvar3 = Type.Var(3, Kind.Star, Rigidity.Flexible)
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3))
 
-    val expected = "Triplet[a, b, c]"
+    val expected = "Triplet['a, 'b, 'c]"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -136,7 +136,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatWellFormedType.Record.Internal.02") {
+  test("FormatWellFormedType.Record.Internal.02") {
     val rest = Type.Var(0, Kind.Record, Rigidity.Rigid)
     val tpe = Type.mkRecordExtend(Name.Field("x", SourceLocation.Unknown), Type.Int32, rest)
 
@@ -146,7 +146,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatWellFormedType.Arrow.Internal.01") {
+  test("FormatWellFormedType.Arrow.Internal.01") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType)
 
@@ -178,7 +178,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatWellFormedType.Schema.Internal.02") {
+  test("FormatWellFormedType.Schema.Internal.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str))
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
     val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
@@ -190,7 +190,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("FormatWellFormedType.Enum.Internal.07") {
+  test("FormatWellFormedType.Enum.Internal.07") {
     val tvar1 = Type.Var(1, Kind.Star, Rigidity.Flexible)
     val tvar2 = Type.Var(2, Kind.Star, Rigidity.Flexible)
     val tvar3 = Type.Var(3, Kind.Star, Rigidity.Flexible)
