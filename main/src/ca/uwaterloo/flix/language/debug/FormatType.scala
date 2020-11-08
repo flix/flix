@@ -87,16 +87,16 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case tvar@Type.Var(id, kind, _) => audience match {
+          case tvar@Type.Var(id, kind, _, _) => audience match {
             case Audience.Internal => kind match {
               case Bool => s"''$id"
               case _ => s"'$id"
             }
-            case Audience.External => tvar.getText.getOrElse(renameMap(tvar.id))
+            case Audience.External => tvar.text.getOrElse(renameMap(tvar.id))
           }
           case Type.Lambda(tvar, tpe) => audience match {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-            case Audience.External => s"${tvar.getText.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
+            case Audience.External => s"${tvar.text.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
           }
           case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
         }

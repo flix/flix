@@ -543,7 +543,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
     base match {
       case None => t0 match {
-        case Type.Var(id, _, _) => MonoType.Var(id)
+        case Type.Var(id, _, _, _) => MonoType.Var(id)
         case _ => throw InternalCompilerException(s"Unexpected type: '$t0'.")
       }
 

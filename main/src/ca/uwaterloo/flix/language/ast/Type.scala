@@ -65,7 +65,7 @@ sealed trait Type {
     * }}}
     */
   def typeConstructor: Option[TypeConstructor] = this match {
-    case Type.Var(_, _, _) => None
+    case Type.Var(_, _, _, _) => None
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _) => t1.typeConstructor
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
@@ -75,7 +75,7 @@ sealed trait Type {
     * Returns a list of all type constructors in `this` type.
     */
   def typeConstructors: List[TypeConstructor] = this match {
-    case Type.Var(_, _, _) => Nil
+    case Type.Var(_, _, _, _) => Nil
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
@@ -145,7 +145,7 @@ sealed trait Type {
     * Returns the size of `this` type.
     */
   def size: Int = this match {
-    case Type.Var(_, _, _) => 1
+    case Type.Var(_, _, _, _) => 1
     case Type.Cst(tc, _) => 1
     case Type.Lambda(_, tpe) => tpe.size + 1
     case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
@@ -322,17 +322,7 @@ object Type {
   /**
     * A type variable expression.
     */
-  case class Var(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible) extends Type with Ordered[Type.Var] {
-    /**
-      * The optional textual name of `this` type variable.
-      */
-    private var text: Option[String] = None // TODO: Deprecated
-
-    /**
-      * Optionally returns the textual name of `this` type variable.
-      */
-    def getText: Option[String] = text // TODO: Deprecated
-
+  case class Var(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Ordered[Type.Var] {
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
@@ -405,9 +395,9 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var = {
+  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.Var = {
     val id = flix.genSym.freshId()
-    Type.Var(id, k, r)
+    Type.Var(id, k, r, text)
   }
 
   /**

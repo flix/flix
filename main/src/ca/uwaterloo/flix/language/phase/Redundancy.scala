@@ -682,7 +682,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def deadTypeVar(tvar: Type.Var, used: Set[Type.Var]): Boolean = {
-    !tvar.getText.exists(_.startsWith("_")) &&
+    !tvar.text.exists(_.startsWith("_")) &&
       !used.contains(tvar)
   }
 
