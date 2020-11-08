@@ -109,7 +109,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           Failure(LazyList(
             // NB: We report an error at both source locations.
             NameError.DuplicateClass(name, loc1, loc2),
-            NameError.DuplicateClass(ident.name, loc1, loc2)
+            NameError.DuplicateClass(name, loc1, loc2)
           ))
       }
 
