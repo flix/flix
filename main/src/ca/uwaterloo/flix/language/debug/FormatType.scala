@@ -353,7 +353,7 @@ object FormatType {
     val tvars = typeVars(tpe0)
     val starTypeVars = tvars.filter(_.kind == Kind.Star)
     val boolTypeVars = tvars.filter(_.kind == Kind.Bool)
-    val otherTypeVars = tvars.filter(k => k.kind != Kind.Star || k.kind != Kind.Bool)
+    val otherTypeVars = tvars.filter(k => k.kind != Kind.Star && k.kind != Kind.Bool)
     val orderedTypeVars = starTypeVars ::: boolTypeVars ::: otherTypeVars
 
     orderedTypeVars.zipWithIndex.map {
