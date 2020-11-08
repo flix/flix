@@ -1673,25 +1673,53 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val name = alias.name
         uenv1.classes.get(name) match {
           case None => uenv1.addClass(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUseClass(name, otherQName.loc, qname.loc).toFailure
+          case Some(otherQName) =>
+            val loc1 = otherQName.loc
+            val loc2 = qname.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseClass(name, loc1, loc2),
+              NameError.DuplicateUseClass(name, loc2, loc1)
+            ))
         }
       case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
         val name = alias.name
         uenv1.defs.get(name) match {
           case None => uenv1.addDef(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUseDef(name, otherQName.loc, qname.loc).toFailure
+          case Some(otherQName) =>
+            val loc1 = otherQName.loc
+            val loc2 = qname.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseDef(name, loc1, loc2),
+              NameError.DuplicateUseDef(name, loc2, loc1)
+            ))
         }
       case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
         val name = alias.name
         uenv1.tpes.get(name) match {
           case None => uenv1.addTpe(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUseTyp(name, otherQName.loc, qname.loc).toFailure
+          case Some(otherQName) =>
+            val loc1 = otherQName.loc
+            val loc2 = qname.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseTyp(name, loc1, loc2),
+              NameError.DuplicateUseTyp(name, loc2, loc1)
+            ))
         }
       case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>
         val name = alias.name
         uenv1.tags.get(name) match {
           case None => uenv1.addTag(name, qname, tag).toSuccess
-          case Some((otherQName, otherTag)) => NameError.DuplicateUseTag(name, otherTag.loc, tag.loc).toFailure
+          case Some((otherQName, otherTag)) =>
+            val loc1 = otherTag.loc
+            val loc2 = tag.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseTag(name, loc1, loc2),
+              NameError.DuplicateUseTag(name, loc2, loc1)
+            ))
         }
     }
 
