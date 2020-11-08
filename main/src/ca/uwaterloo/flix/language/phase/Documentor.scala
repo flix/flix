@@ -76,7 +76,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       val s = JsonMethods.pretty(JsonMethods.render(json))
 
       // The path to the file to write.
-      val p = OutputDirectory.resolve("api.js")
+      val p = OutputDirectory.resolve("api.json")
 
       // Write the string to the path.
       writeString(s, p)
