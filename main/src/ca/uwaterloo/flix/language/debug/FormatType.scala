@@ -341,9 +341,9 @@ object FormatType {
     */
   private def getVarName(index: Int): String = {
     if (index / 26 <= 0)
-      (index + 'a').toChar.toString
+      "'" + (index + 'a').toChar.toString
     else
-      (index + 'a').toChar.toString + (index / 26).toString
+      "'" + (index + 'a').toChar.toString + (index / 26).toString
   }
 
   /**
