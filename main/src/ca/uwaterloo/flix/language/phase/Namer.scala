@@ -394,7 +394,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case (macc, ident) => macc.get(ident.name) match {
         case None =>
           // We use a kind variable since we do not know the kind of the type variable.
-          val tvar = Type.freshVar(Kind.freshVar())
+          val tvar = Type.freshVar(Kind.freshVar(), text = Some(ident.name))
           macc + (ident.name -> tvar)
         case Some(tvar) => macc
       }
@@ -494,9 +494,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
 
-    case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, uenv0, tenv0) map {
-      case e => NamedAst.Expression.Unary(op, e, Type.freshVar(Kind.Star), loc)
-    }
+    case WeededAst.Expression.Unary(op, exp, loc) =>
+      visitExp(exp, env0, uenv0, tenv0) map {
+        case e => NamedAst.Expression.Unary(op, e, Type.freshVar(Kind.Star), loc)
+      }
 
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
@@ -1431,7 +1432,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
     case TypeParams.Elided => Nil
     case TypeParams.Explicit(tparams) => tparams.map {
-      case WeededAst.ConstrainedType(ident, _, classes) => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), classes, ident.loc)
+      case WeededAst.ConstrainedType(ident, _, classes) =>
+        NamedAst.TypeParam(ident, Type.freshVar(Kind.Star, text = Some(ident.name)), classes, ident.loc)
     }
   }
 
@@ -1475,12 +1477,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         // Case 1: Get the kind for each type variable from the implicit type params.
         // Use a kind variable if not found; this will be caught later by redundancy checks.
         val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
-        val tvar = Type.freshVar(kind)
+        val tvar = Type.freshVar(kind, text = Some(ident.name))
         NamedAst.TypeParam(ident, tvar, classes, ident.loc)
 
       case WeededAst.ConstrainedType(ident, Some(kind), classes) =>
         // Case 2: The kind is explicitly available.
-        val tvar = Type.freshVar(kind)
+        val tvar = Type.freshVar(kind, text = Some(ident.name))
         NamedAst.TypeParam(ident, tvar, classes, ident.loc)
     }
   }
@@ -1545,7 +1547,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       kindedNames =>
         kindedNames.values.toList.sortBy(_._1.name).map {
           case (id, kind) =>
-            val tvar = Type.freshVar(kind) // use the kind we validated from the parameter context
+            val tvar = Type.freshVar(kind, text = Some(id.name)) // use the kind we validated from the parameter context
             NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
           // MATT may need to be not Nil for type constraints in enums
         }
@@ -1569,7 +1571,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case name =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
         // We use a kind variable since we do not know the kind of the type variable.
-        val tvar = Type.freshVar(Kind.freshVar())
+        val tvar = Type.freshVar(Kind.freshVar(), text = Some(name))
         NamedAst.TypeParam(ident, tvar, Nil, loc)
     }
   }
