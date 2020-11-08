@@ -126,7 +126,7 @@ object WeederError {
       vt << Underline("Tip:") << " Remove or rename one of the tags to avoid the name clash." << NewLine
     }
 
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**

@@ -222,10 +222,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   val enumName = ident.name
                   val loc1 = otherTag.tag.loc
                   val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
-
-                  // NB: We report an error at both source locations.
-
-                  DuplicateTag(enumName, tagName, loc1, loc2).toFailure
+                  Failure(LazyList(
+                    // NB: We report an error at both source locations.
+                    DuplicateTag(enumName, tagName, loc1, loc2),
+                    DuplicateTag(enumName, tagName, loc2, loc1)
+                  ))
               }
           } map {
             case m => List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, m, mkSL(sp1, sp2)))
