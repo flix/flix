@@ -33,7 +33,7 @@ sealed trait ResolutionError extends CompilationError {
 
 object ResolutionError {
 
-  private implicit val audience = Audience.External
+  private implicit val audience: Audience = Audience.External
 
   /**
     * Ambiguous Name Error.

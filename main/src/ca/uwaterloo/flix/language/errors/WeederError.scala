@@ -52,7 +52,7 @@ object WeederError {
       vt << Underline("Tip:") << " Remove one of the two annotations." << NewLine
     }
 
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -77,7 +77,7 @@ object WeederError {
       vt << Underline("Tip:") << " Remove or rename one of the formal parameters to avoid the name clash." << NewLine
     }
 
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -100,7 +100,7 @@ object WeederError {
       vt << Code(loc2, "the second occurrence was here.") << NewLine
     }
 
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -126,7 +126,7 @@ object WeederError {
       vt << Underline("Tip:") << " Remove or rename one of the tags to avoid the name clash." << NewLine
     }
 
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**
