@@ -167,6 +167,8 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Match.Bool.flix", LocalResource.get("/test/flix/Test.Exp.Match.Bool.flix"))
     flix.addInput("Test.Exp.Match.Char.flix", LocalResource.get("/test/flix/Test.Exp.Match.Char.flix"))
     flix.addInput("Test.Exp.Match.Guard.flix", LocalResource.get("/test/flix/Test.Exp.Match.Guard.flix"))
+    flix.addInput("Test.Exp.Match.Float32.flix", LocalResource.get("/test/flix/Test.Exp.Match.Float32.flix"))
+    flix.addInput("Test.Exp.Match.Float64.flix", LocalResource.get("/test/flix/Test.Exp.Match.Float64.flix"))
     flix.addInput("Test.Exp.Match.Int8.flix", LocalResource.get("/test/flix/Test.Exp.Match.Int8.flix"))
     flix.addInput("Test.Exp.Match.Int16.flix", LocalResource.get("/test/flix/Test.Exp.Match.Int16.flix"))
     flix.addInput("Test.Exp.Match.Int32.flix", LocalResource.get("/test/flix/Test.Exp.Match.Int32.flix"))
