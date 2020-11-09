@@ -2,6 +2,9 @@
 
 HEAD:
 
+Version 0.14.3:
+- Minor improvements to LSP.
+
 Version 0.14.2:
 - Minor improvements to LSP.
 
