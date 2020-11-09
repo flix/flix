@@ -807,6 +807,24 @@ class TestRedundancy extends FunSuite with TestUtils {
     compile(input, DefaultOptions).get
   }
 
+  test("UnconditionalRecursion.06") {
+    val input =
+      """
+        |namespace LL {
+        |
+        |    pub enum LazyList[t] {
+        |        case Empty,
+        |        case Cons(t, Lazy[LazyList[t]])
+        |    }
+        |
+        |    pub def constant(x: a): LazyList[a] =
+        |        Cons(x, lazy constant(x))
+        |
+        |}
+        |""".stripMargin
+      compile(input, DefaultOptions).get
+  }
+
   test("UselessExpression.01") {
     val input =
       s"""
