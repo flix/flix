@@ -60,91 +60,34 @@ namespace Test/Exp/Match/Array {
         case _  => false
     }
 
-
-
-
     @test
-    def testMatchEmptyOptionIntArray(): Bool & Impure = match ([]:Array[Option[Int]]) {
+    def testMatchEmptyOptionIntArray01(): Bool & Impure = match ([]: Array[Option[Int]]) {
         case [] => true
-        case _ => false
+        case _  => false
     }
 
     @test
-    def testMatchEmptyResultArray(): Bool & Impure = match ([]:Array[Result[Int,String]]) {
+    def testMatchEmptyResultArray01(): Bool & Impure = match ([]: Array[Result[Int,String]]) {
         case [] => true
-        case _ => false
+        case _  => false
     }
 
     @test
-    def testMatchUnitArray1(): Bool & Impure = match [()] {
+    def testMatchUnitArray01(): Bool & Impure = match [()] {
         case [()] => true
-        case _ => false
+        case _    => false
     }
 
     @test
-    def testMatchUnitArray2(): Bool & Impure = match [(),()] {
-        case [(),()] => true
-        case _ => false
+    def testMatchUnitArray02(): Bool & Impure = match [(), ()] {
+        case [(), ()] => true
+        case _        => false
     }
 
     @test
-    def testMatchUnitArray3(): Bool & Impure = match [[()],[()]] {
-        case [[()],[()]] => true
-        case _ => false
-    }
-
-    @test
-    def testMatchIntArray1(): Bool & Impure = match [1] {
-        case [1] => true
-        case _ => false
-    }
-
-    @test
-    def testMatchIntArray2(): Bool & Impure = match [1,2] {
-        case [1] => false
-        case _ => true
-    }
-
-    @test
-    def testMatchIntArray3(): Bool & Impure = match [1,2] {
-        case [1,2] => true
-        case _ => false
-    }
-
-    @test
-    def testMatchIntArray4(): Bool & Impure = match [1,2] {
-        case [1,_] => true
-        case _ => false
-    }
-
-    @test
-    def testMatchIntArray5(): Bool & Impure = match [2,1] {
-        case [1,2] => false
-        case _ => true
-    }
-
-    @test
-    def testMatchIntArray6(): Bool & Impure = match [[1],[2]] {
-        case [[1],[2]] => true
-        case _ => false
-    }
-
-    @test
-    def testMatchIntArray7(): Bool & Impure = match [[1],[2]] {
-        case [[1]] => false
-        case _ => true
-    }
-
-    @test
-    def testMatchIntArray8(): Bool & Impure = match [[1,2,3],[1,2,3]] {
-        case [[1,2,3],[1,2,3]] => true
-        case _ => false
-    }
-
-    @test
-    def testMatchIntArray9(): Bool & Impure = match [[[1]],[[2]]] {
-        case [[[1]],[[2]]] => true
-        case _ => false
+    def testMatchUnitArray03(): Bool & Impure = match [[()], [()]] {
+        case [[()], [()]] => true
+        case _            => false
     }
 
     @test
@@ -192,6 +135,61 @@ namespace Test/Exp/Match/Array {
     @test
     def testMatchInt16Array4(): Bool & Impure = match [[1i16],[2i16]] {
         case [[1i16],[2i16]] => true
+        case _ => false
+    }
+
+
+    @test
+    def testMatchInt32Array1(): Bool & Impure = match [1] {
+        case [1] => true
+        case _ => false
+    }
+
+    @test
+    def testMatchInt32Array2(): Bool & Impure = match [1,2] {
+        case [1] => false
+        case _ => true
+    }
+
+    @test
+    def testMatchInt32Array3(): Bool & Impure = match [1,2] {
+        case [1,2] => true
+        case _ => false
+    }
+
+    @test
+    def testMatchInt32Array4(): Bool & Impure = match [1,2] {
+        case [1,_] => true
+        case _ => false
+    }
+
+    @test
+    def testMatchInt32Array5(): Bool & Impure = match [2,1] {
+        case [1,2] => false
+        case _ => true
+    }
+
+    @test
+    def testMatchInt32Array6(): Bool & Impure = match [[1],[2]] {
+        case [[1],[2]] => true
+        case _ => false
+    }
+
+    @test
+    def testMatchInt32Array7(): Bool & Impure = match [[1],[2]] {
+        case [[1]] => false
+        case _ => true
+    }
+
+    @test
+    def testMatchInt32Array8(): Bool & Impure = match [[1,2,3],[1,2,3]] {
+        case [[1,2,3],[1,2,3]] => true
+        case _ => false
+    }
+
+    @test
+    def testMatchInt32Array9(): Bool & Impure = match [[[1]],[[2]]] {
+        case [[[1]],[[2]]] => true
         case _ => false
     }
 
