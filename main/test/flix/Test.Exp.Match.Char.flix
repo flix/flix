@@ -60,8 +60,40 @@ namespace Test/Exp/Match/Char {
     def testMatchChar08(): Bool = match '\u0040' {
         case '\n' => false
         case '\r' => false
-        case '\t' => true
-        case _    => false
+        case '\t' => false
+        case _    => true
+    }
+
+    @test
+    def testMatchChar09(): Bool = match '\u0040' {
+        case '\u0040' => true
+        case '\u0041' => true
+        case '\u0042' => true
+        case _        => false
+    }
+
+    @test
+    def testMatchChar10(): Bool = match '\u0041' {
+        case '\u0040' => false
+        case '\u0041' => true
+        case '\u0042' => false
+        case _        => false
+    }
+
+    @test
+    def testMatchChar11(): Bool = match '\u0042' {
+        case '\u0040' => false
+        case '\u0041' => false
+        case '\u0042' => true
+        case _        => false
+    }
+
+    @test
+    def testMatchChar12(): Bool = match '\u0043' {
+        case '\u0040' => false
+        case '\u0041' => false
+        case '\u0042' => false
+        case _        => true
     }
 
 }
