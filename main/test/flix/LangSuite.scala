@@ -193,6 +193,7 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Match.Array", "main/test/flix/Test.Exp.Match.Array.flix"),
   new FlixTest("Test.Exp.Match.Bool", "main/test/flix/Test.Exp.Match.Bool.flix"),
+  new FlixTest("Test.Exp.Match.Char", "main/test/flix/Test.Exp.Match.Char.flix"),
   new FlixTest("Test.Exp.Match.Guard", "main/test/flix/Test.Exp.Match.Guard.flix"),
   new FlixTest("Test.Exp.Match.List", "main/test/flix/Test.Exp.Match.List.flix"),
   new FlixTest("Test.Exp.Match.Unit", "main/test/flix/Test.Exp.Match.Unit.flix"),
