@@ -1,6 +1,7 @@
 namespace Test/Exp/Match/Unit {
 
-    // TODO
-
+    @test
+    def testMatchUnit01(): Bool = match () {
+        case () => true
+    }
 }
-
