@@ -7,17 +7,55 @@ namespace Test/Exp/Match/Tag {
     }
 
     @test
-    def testMatchOption02(): Bool = match Some(123) {
+    def testMatchOption02(): Bool = match None {
+        case Some(_) => false
+        case None    => true
+    }
+
+    @test
+    def testMatchOption03(): Bool = match Some(123) {
         case None    => false
         case Some(_) => true
     }
 
-    // TODO: Add more
-    // TODO: Add vars to tests
+    @test
+    def testMatchOption04(): Bool = match Some(123) {
+        case Some(_) => true
+        case None    => false
+    }
+
+    @test
+    def testMatchResult01(): Bool = match Ok(123) {
+        case Ok(_)  => true
+        case Err(_) => false
+    }
+
+    @test
+    def testMatchResult02(): Bool = match Ok(123) {
+        case Err(_) => false
+        case Ok(_)  => true
+    }
+
+    @test
+    def testMatchResult03(): Bool = match Err(123) {
+        case Ok(_)  => false
+        case Err(_) => true
+    }
+
+    @test
+    def testMatchResult04(): Bool = match Err(123) {
+        case Err(_) => true
+        case Ok(_)  => false
+    }
 
     enum Option[t] {
         case None,
         case Some(t)
+    }
+
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
     }
 
 }
