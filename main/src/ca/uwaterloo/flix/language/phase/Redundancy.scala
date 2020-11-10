@@ -217,7 +217,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
-      // Subtract one from Apply count for abstraction
+      // Remove the recursion context for abstraction
       val env1 = env0.withoutRecursionContext + fparam.sym
 
       // Visit the expression with the extended environment.
@@ -507,7 +507,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Spawn(exp, _, _, _) => visitExp(exp, env0)
 
-    case Expression.Lazy(exp, _, _) => visitExp(exp, env0)
+    case Expression.Lazy(exp, _, _) =>
+      // Remove the recursion context as `exp` will not necessarily be evaluated.
+      visitExp(exp, env0.withoutRecursionContext)
 
     case Expression.Force(exp, _, _, _) => visitExp(exp, env0)
 
