@@ -48,6 +48,27 @@ namespace Test/Exp/Match/Tag {
         case Ok(_)  => false
     }
 
+    @test
+    def testMatchNested01(): Bool = match None {
+        case None           => true
+        case Some(None)     => false
+        case Some(Some(_))  => false
+    }
+
+    @test
+    def testMatchNested02(): Bool = match Some(None) {
+        case None           => false
+        case Some(None)     => true
+        case Some(Some(_))  => false
+    }
+
+    @test
+    def testMatchNested03(): Bool = match Some(Some(123)) {
+        case None           => false
+        case Some(None)     => false
+        case Some(Some(_))  => true
+    }
+
     enum Option[t] {
         case None,
         case Some(t)
