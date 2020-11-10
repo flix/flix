@@ -174,6 +174,7 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Match.Int32.flix", LocalResource.get("/test/flix/Test.Exp.Match.Int32.flix"))
     flix.addInput("Test.Exp.Match.Int64.flix", LocalResource.get("/test/flix/Test.Exp.Match.Int64.flix"))
     flix.addInput("Test.Exp.Match.List.flix", LocalResource.get("/test/flix/Test.Exp.Match.List.flix"))
+    flix.addInput("Test.Exp.Match.String.flix", LocalResource.get("/test/flix/Test.Exp.Match.String.flix"))
     flix.addInput("Test.Exp.Match.Tag.flix", LocalResource.get("/test/flix/Test.Exp.Match.Tag.flix"))
     flix.addInput("Test.Exp.Match.Unit.flix", LocalResource.get("/test/flix/Test.Exp.Match.Unit.flix"))
     flix.addInput("Test.Exp.Match.Wild.flix", LocalResource.get("/test/flix/Test.Exp.Match.Wild.flix"))
