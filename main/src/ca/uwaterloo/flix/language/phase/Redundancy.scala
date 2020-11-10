@@ -507,7 +507,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Spawn(exp, _, _, _) => visitExp(exp, env0)
 
-    case Expression.Lazy(exp, _, _) => visitExp(exp, env0.withoutRecursionContext)
+    case Expression.Lazy(exp, _, _) =>
+      // Remove the recursion context as `exp` will not necessarily be evaluated.
+      visitExp(exp, env0.withoutRecursionContext)
 
     case Expression.Force(exp, _, _, _) => visitExp(exp, env0)
 
