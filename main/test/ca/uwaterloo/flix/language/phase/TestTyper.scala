@@ -654,6 +654,138 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("TestChoose.If.01") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (Absent, Absent)    => 1
+        |            case (Present(_), Absent)    => 2
+        |        }
+        |    };
+        |    f(Absent, if (true) Absent else Present(456)) == 1
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.If.02") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (Absent, Absent)    => 1
+        |            case (Present(_), Absent)    => 2
+        |        }
+        |    };
+        |    f(Present(123), if (true) Absent else Present(456)) == 1
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.If.03") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (Absent, Absent)    => 1
+        |            case (Present(_), Absent)    => 2
+        |        }
+        |    };
+        |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.If.04") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (_, Absent)    => 1
+        |            case (_, Absent)    => 2
+        |        }
+        |    };
+        |    f(Absent, if (true) Absent else Present(456)) == 1
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.If.05") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (_, Absent)    => 1
+        |            case (_, Absent)    => 2
+        |        }
+        |    };
+        |    f(Present(123), if (true) Absent else Present(456)) == 1
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestChoose.If.06") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let f = (x, y) -> {
+        |        choose (x, y) {
+        |            case (_, Absent)    => 1
+        |            case (_, Absent)    => 2
+        |        }
+        |    };
+        |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
+        |
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
   test("TestLeq.Choice.01") {
     val input =
       """

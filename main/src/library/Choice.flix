@@ -39,4 +39,6 @@ namespace Choice {
         case Present(v) => Some(v)
     }
 
+    // TODO: Add combinators
+
 }

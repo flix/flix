@@ -708,10 +708,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
             case (isAbsentVar :: restAbsentVars, isPresentVar :: restPresentVars) =>
               val absentTails = rs.collect {
+                case ResolvedAst.ChoicePattern.Wild(_) :: xs => xs
                 case ResolvedAst.ChoicePattern.Absent(_) :: xs => xs
               }
 
               val presentTails = rs.collect {
+                case ResolvedAst.ChoicePattern.Wild(_) :: xs => xs
                 case ResolvedAst.ChoicePattern.Present(_, _, _) :: xs => xs
               }
 
