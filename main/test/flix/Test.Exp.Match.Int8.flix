@@ -32,4 +32,16 @@ namespace Test/Exp/Match/Int8 {
         case _   => true
     }
 
+    @test
+    def testMatchInt8Var01(): Bool = match 0i8 {
+        case x => x == 0i8
+    }
+
+    @test
+    def testMatchInt8Var02(): Bool = match 2i8 {
+        case 0i8 => false
+        case 1i8 => false
+        case x   => x == 2i8
+    }
+
 }

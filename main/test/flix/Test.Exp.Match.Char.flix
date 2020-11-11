@@ -96,4 +96,16 @@ namespace Test/Exp/Match/Char {
         case _        => true
     }
 
+    @test
+    def testMatchCharVar01(): Bool = match 'a' {
+        case x => x == 'a'
+    }
+
+    @test
+    def testMatchCharVar02(): Bool = match 'c' {
+        case 'a' => false
+        case 'b' => false
+        case x   => x == 'c'
+    }
+
 }

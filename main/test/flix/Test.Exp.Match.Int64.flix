@@ -32,4 +32,16 @@ namespace Test/Exp/Match/Int64 {
         case _    => true
     }
 
+    @test
+    def testMatchInt64Var01(): Bool = match 0i64 {
+        case x => x == 0i64
+    }
+
+    @test
+    def testMatchInt64Var02(): Bool = match 2i64 {
+        case 0i64 => false
+        case 1i64 => false
+        case x   => x == 2i64
+    }
+
 }

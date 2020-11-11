@@ -32,4 +32,16 @@ namespace Test/Exp/Match/Float32 {
         case _      => true
     }
 
+    @test
+    def testMatchFloat32Var01(): Bool = match 0.0f32 {
+        case x => x == 0.0f32
+    }
+
+    @test
+    def testMatchFloat32Var02(): Bool = match 2.0f32 {
+        case 0.0f32 => false
+        case 1.0f32 => false
+        case x   => x == 2.0f32
+    }
+
 }

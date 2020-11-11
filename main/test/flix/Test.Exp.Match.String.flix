@@ -32,4 +32,17 @@ namespace Test/Exp/Match/String {
         case _     => true
     }
 
+    @test
+    def testMatchStringVar01(): Bool = match "abc" {
+        case x => x == "abc"
+    }
+
+    @test
+    def testMatchStringVar02(): Bool = match "def" {
+        case ""    => false
+        case "a"   => false
+        case "abc" => false
+        case x     => x == "def"
+    }
+
 }

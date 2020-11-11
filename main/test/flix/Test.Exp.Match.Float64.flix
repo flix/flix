@@ -32,4 +32,16 @@ namespace Test/Exp/Match/Float64 {
         case _      => true
     }
 
+    @test
+    def testMatchFloat64Var01(): Bool = match 0.0f64 {
+        case x => x == 0.0f64
+    }
+
+    @test
+    def testMatchFloat64Var02(): Bool = match 2.0f64 {
+        case 0.0f64 => false
+        case 1.0f64 => false
+        case x   => x == 2.0f64
+    }
+
 }

@@ -24,4 +24,26 @@ namespace Test/Exp/Match/Bool {
         case false => true
     }
 
+    @test
+    def testMatchBoolVar01(): Bool = match true {
+        case x  => x == true
+    }
+
+    @test
+    def testMatchBoolVar02(): Bool = match false {
+        case x  => x == false
+    }
+
+    @test
+    def testMatchBoolVar03(): Bool = match false {
+        case true => false
+        case x    => x == false
+    }
+
+    @test
+    def testMatchBoolVar04(): Bool = match true {
+        case false => false
+        case x     => x == true
+    }
+
 }

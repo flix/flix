@@ -32,4 +32,16 @@ namespace Test/Exp/Match/Int16 {
         case _    => true
     }
 
+    @test
+    def testMatchInt16Var01(): Bool = match 0i16 {
+        case x => x == 0i16
+    }
+
+    @test
+    def testMatchInt16Var02(): Bool = match 2i16 {
+        case 0i16 => false
+        case 1i16 => false
+        case x   => x == 2i16
+    }
+
 }

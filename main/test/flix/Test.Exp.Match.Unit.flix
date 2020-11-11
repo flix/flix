@@ -4,4 +4,10 @@ namespace Test/Exp/Match/Unit {
     def testMatchUnit01(): Bool = match () {
         case () => true
     }
+
+    @test
+    def testMatchUnitVar01(): Bool = match () {
+        case x => x == ()
+    }
+
 }
