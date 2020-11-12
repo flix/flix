@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.text.SimpleDateFormat
