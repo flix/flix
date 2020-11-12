@@ -55,62 +55,6 @@ The aim of this project is to: (1) understand how the semi-naive evaluation algo
 
 
 
-# Type Classes
-Type classes, not to be confused with classes from object-oriented programming, provide a powerful and flexible 
-mechanism for polymorphism that allows overloading of functions. For example, we can define a type class "Eq" with a 
-function "equals" that determine if two values are equal, and then we can implement the "Eq" for booleans, integers, 
-strings, list of integers, pairs, tuples, and so forth, and have the compiler use the "right" Eq instance
-based on the type of an expression. Type classes have recently become quite popular and are being implemented in
-languages such as Scala and Rust.  
-
-The aim of this project is (1) explore the haskell implementation of type classes, (2) read and understand some
-of the research literature on type classes to understand the fundamental issues, and (3) lay the foundations for a
-simple implementation of type classes for the Flix programming language.
-
-
-### Literature
-- Philip Wadler: How to make ad-hoc polymorphism less ad hoc
-
-
-
-# Uniqueness / Ownership Typing 
-Resources, such a raw memory, file handles, sockets, database connections etc. must be carefully managed to ensure 
-correct use and to ensure they are released when no longer needed. In languages such as C and Java, it is to
-a high-degree the responsibility of the programmer to ensure such correct use. For example, in C it is easy to forget
-to free memory or to free memory twice, whereas in Java it is easy to forget to close a file stream.
-
-Programming languages such as Rust and Clean attempt to address these issues with uniqueness / ownership type systems.
-In these languages, the type system tracks the use of a resource and ensures that it accessed correctly and released
-at an appropriate time. 
-
-The aim of this project is to explore the design space of uniqueness/ownership typing for a functional language.
-The work will include reading papers, language design, and implementation in a real-world programming language.
-
-### Literature
-- Walker, David: Substructural type systems. Advanced Topics in Types and Programming Languages
-- Clarke, David G., John M. Potter, and James Noble: Ownership types for flexible alias protection
-
-Contact: Magnus Madsen <magnusm@cs.au.dk>
-
-
-
-# Algebraic Effects
-Modern languages, such as Java, JavaScript, Python, Kotlin, Go, etc., offer an increasing number of control-flow constructs,
-such as async/await, exception, co-routines, generators, etc. Algebraic effects is a promising approach to a unified mechanism 
-that is sufficiently powerful to express each of the former features and gives the programmer the power to define new such
-control-flow constructs.
-
-The aim of this project is to explore the design space of algebraic effects for a functional language.
-The work will include reading papers, language design, and implementation in a real-world programming language
-being developed at Aarhus University (see flix.dev).
-
-### Literature
-- Pretnar, Matija. An introduction to algebraic effects and handlers. (invited tutorial paper.)
-- Bauer, Andrej, and Matija Pretnar: Programming with algebraic effects and handlers.
-
-Contact: Magnus Madsen <magnusm@cs.au.dk>
-
-
 # Termination Analysis
 A common programming mistake is to unintentional write an infinite loop. 
 Most contemporary programming languages such as C, C++, C#, Java, Kotlin, Scala, etc. do not help programmers avoid such issues.
