@@ -1,5 +1,26 @@
 # Bachelor Project Proposals
 
+# Package Management
+Today, programs are rarely written from scratch, but rather build on a large collection of external libraries.
+Different languages have different package ecosystems: Java has Maven, JavaScript has NPM, Rust has Cargo, and so forth.
+All of these languages offer some form of package manager that is used to download, install, upgrade, and keep track
+of the dependencies of a software project. The problem is non-trivial: For example, how should we handle the 
+situation where a project depends on package A and package B, and A depends on C (version 1.0), but B depends on C
+(version 2.0)?
+
+The aim of this project is to (1) explore the design space of package managers for programming languages, and to
+(2) design and implement a package manager for the Flix programming language. 
+The work will include reading papers, language design, and implementation in a real-world programming language
+being developed at Aarhus University (see flix.dev).
+
+### Literature
+- Michael Hanus: Semantic Versioning Checking in a Declarative Package Manager
+- https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527 
+
+Contact: Magnus Madsen <magnusm@cs.au.dk>
+
+
+
 # Termination Analysis
 A common programming mistake is to unintentional write an infinite loop. 
 Most contemporary programming languages such as C, C++, C#, Java, Kotlin, Scala, etc. do not help programmers avoid such issues.
@@ -9,36 +30,13 @@ SMT solvers. In the case of functional programming, such termination checkers ma
 verifying that recursion is always on structurally smaller elements. 
 
 The aim of this project is to explore the design space of termination analysis for a functional language.
-The work will include reading papers, language design, and implementation in a real-world programming language.
+The work will include reading papers, language design, and implementation in a real-world programming language
+being developed at Aarhus University (see flix.dev).
 
 ### Literature
 - Andreas Abel: Termination Checker for Simple Functional Programs
 
 Contact: Magnus Madsen <magnusm@cs.au.dk>
-
-
-
-
-
-# Package Management
-Today, programs are not written from scratch, but rather build on a large collection of external libraries.
-Different languages have different package ecosystems: Java has Maven, JavaScript has NPM, Rust has Cargo, and so forth.
-All of these languages offer some form of package manager that is used to download, install, upgrade, and keep track
-of the dependencies of a software project. The problem is non-trivial: For example, how should we handle the 
-situation where a project depends on package A and package B, and A depends on C (version 1.0), but B depends on C
-(version 2.0)?
-
-The aim of this project is to (1) explore the design space of package managers for programming languages, and to
-(2) design and implement a package manager for the Flix programming language. 
-The work will include reading papers, language design, and implementation in a real-world programming language.
-
-### Literature
-- Michael Hanus: Semantic Versioning Checking in a Declarative Package Manager
-- https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527 
-
-Contact: Magnus Madsen <magnusm@cs.au.dk>
-
-
 
 
 
@@ -53,11 +51,11 @@ choices.
 The aim of this project is to: (1) explore the design space of such program completions, and to 
 (2) design and implement such a system for the Flix programming language.
 
-The work will include reading papers, language design, and implementation in a real-world programming language.
+The work will include reading papers, language design, and implementation in a real-world programming language
+being developed at Aarhus University (see flix.dev).
 
 ### Literature
 - Edwin Brady: Type Driven Development with Idris
-
 
 
 
@@ -76,7 +74,6 @@ The aim of this project is to: (1) understand how the semi-naive evaluation algo
 
 
 
-
 # Type Classes
 Type classes, not to be confused with classes from object-oriented programming, provide a powerful and flexible 
 mechanism for polymorphism that allows overloading of functions. For example, we can define a type class "Eq" with a 
@@ -92,7 +89,6 @@ simple implementation of type classes for the Flix programming language.
 
 ### Literature
 - Philip Wadler: How to make ad-hoc polymorphism less ad hoc
-
 
 
 
@@ -117,8 +113,6 @@ Contact: Magnus Madsen <magnusm@cs.au.dk>
 
 
 
-
-
 # Algebraic Effects
 Modern languages, such as Java, JavaScript, Python, Kotlin, Go, etc., offer an increasing number of control-flow constructs,
 such as async/await, exception, co-routines, generators, etc. Algebraic effects is a promising approach to a unified mechanism 
@@ -126,7 +120,8 @@ that is sufficiently powerful to express each of the former features and gives t
 control-flow constructs.
 
 The aim of this project is to explore the design space of algebraic effects for a functional language.
-The work will include reading papers, language design, and implementation in a real-world programming language.
+The work will include reading papers, language design, and implementation in a real-world programming language
+being developed at Aarhus University (see flix.dev).
 
 ### Literature
 - Pretnar, Matija. An introduction to algebraic effects and handlers. (invited tutorial paper.)
