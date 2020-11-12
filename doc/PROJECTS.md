@@ -21,32 +21,13 @@ Contact: Magnus Madsen <magnusm@cs.au.dk>
 
 
 
-# Termination Analysis
-A common programming mistake is to unintentional write an infinite loop. 
-Most contemporary programming languages such as C, C++, C#, Java, Kotlin, Scala, etc. do not help programmers avoid such issues.
-Termination analysis or termination checkers describe a wide-range of techniques that can be used to verify that a program 
-(or part of a program) always terminates, for any input. These techniques range from sophisticated type systems to the use of
-SMT solvers. In the case of functional programming, such termination checkers may try to ensure termination by 
-verifying that recursion is always on structurally smaller elements. 
-
-The aim of this project is to explore the design space of termination analysis for a functional language.
-The work will include reading papers, language design, and implementation in a real-world programming language
-being developed at Aarhus University (see flix.dev).
-
-### Literature
-- Andreas Abel: Termination Checker for Simple Functional Programs
-
-Contact: Magnus Madsen <magnusm@cs.au.dk>
-
-
-
-# Program Completion
-Integrated development environments (IDEs), such as Intellij IDEA, aid programmers by providing 
-auto-completion for field and method names. Dependently-typed programming languages such as Agda and Idris take
+# Auto-Completion and Program Synthesis
+Integrated development environments (IDEs), such as Intellij IDEA, aid programmers by providing auto-completion for 
+field and method names. Dependently-typed programming languages such as Agda and Idris take
 this a step further by allowing the programmer to have the compiler fill in entire expressions based on the
 types of the program. Effectively, the compiler searches for expressions that satisfy the requirements (e.g. types)
-of a "hole" in the program. If there are multiple candidates, the compiler uses heuristics to rank the different
-choices.
+of a "hole" in the program. If there are multiple candidates, the compiler uses heuristics (e.g. Machine Learning) to 
+rank the different choices.
 
 The aim of this project is to: (1) explore the design space of such program completions, and to 
 (2) design and implement such a system for the Flix programming language.
@@ -130,3 +111,19 @@ being developed at Aarhus University (see flix.dev).
 Contact: Magnus Madsen <magnusm@cs.au.dk>
 
 
+# Termination Analysis
+A common programming mistake is to unintentional write an infinite loop. 
+Most contemporary programming languages such as C, C++, C#, Java, Kotlin, Scala, etc. do not help programmers avoid such issues.
+Termination analysis or termination checkers describe a wide-range of techniques that can be used to verify that a program 
+(or part of a program) always terminates, for any input. These techniques range from sophisticated type systems to the use of
+SMT solvers. In the case of functional programming, such termination checkers may try to ensure termination by 
+verifying that recursion is always on structurally smaller elements. 
+
+The aim of this project is to explore the design space of termination analysis for a functional language.
+The work will include reading papers, language design, and implementation in a real-world programming language
+being developed at Aarhus University (see flix.dev).
+
+### Literature
+- Andreas Abel: Termination Checker for Simple Functional Programs
+
+Contact: Magnus Madsen <magnusm@cs.au.dk>
