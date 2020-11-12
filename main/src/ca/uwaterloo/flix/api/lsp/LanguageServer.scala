@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -140,15 +141,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       System.exit(2)
     case t: Throwable =>
       t.printStackTrace(System.err)
-      System.exit(3)
   }
 
   /**
     * Invoked when an error occurs.
     */
   override def onError(ws: WebSocket, e: Exception): Unit = {
-    e.printStackTrace(System.err)
-    System.exit(4)
+    // Nop - Keep LanguageServer alive.
   }
 
   /**
