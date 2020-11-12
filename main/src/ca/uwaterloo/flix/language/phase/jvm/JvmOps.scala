@@ -1178,7 +1178,7 @@ object JvmOps {
       }
 
       // Check that the file is empty or a class file.
-      if (!isEmpty(path) || !isClassFile(path)) {
+      if (!(isEmpty(path) || isClassFile(path))) {
         throw InternalCompilerException(s"Refusing to overwrite non-empty, non-class file: '$path'.")
       }
     }
