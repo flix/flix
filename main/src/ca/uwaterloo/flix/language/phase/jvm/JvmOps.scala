@@ -1152,25 +1152,6 @@ object JvmOps {
   }
 
   /**
-    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
-    */
-  def isClassFile(path: Path): Boolean = {
-    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
-      // Read the first four bytes of the file.
-      val is = Files.newInputStream(path)
-      val b1 = is.read()
-      val b2 = is.read()
-      val b3 = is.read()
-      val b4 = is.read()
-      is.close()
-
-      // Check if the four first bytes match CAFE BABE.
-      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
-    }
-    false
-  }
-
-  /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
     *
     * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
@@ -1196,14 +1177,38 @@ object JvmOps {
         throw InternalCompilerException(s"Unable to write to read-only file: '$path'.")
       }
 
-      // Check that the file is a class file.
-      if (!isClassFile(path)) {
-        throw InternalCompilerException(s"Refusing to overwrite non-class file: '$path'.")
+      // Check that the file is empty or a class file.
+      if (!(isEmpty(path) || isClassFile(path))) {
+        throw InternalCompilerException(s"Refusing to overwrite non-empty, non-class file: '$path'.")
       }
     }
 
     // Write the bytecode.
     Files.write(path, clazz.bytecode)
+  }
+
+  /**
+    * Returns `true` if the given `path` is non-empty (i.e. contains data).
+    */
+  private def isEmpty(path: Path): Boolean = Files.size(path) == 0L
+
+  /**
+    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
+    */
+  private def isClassFile(path: Path): Boolean = {
+    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
+      // Read the first four bytes of the file.
+      val is = Files.newInputStream(path)
+      val b1 = is.read()
+      val b2 = is.read()
+      val b3 = is.read()
+      val b4 = is.read()
+      is.close()
+
+      // Check if the four first bytes match CAFE BABE.
+      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
+    }
+    false
   }
 
   /**
