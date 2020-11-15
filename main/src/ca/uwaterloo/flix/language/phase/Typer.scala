@@ -100,7 +100,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     def visitInstance(inst: ResolvedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
       case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, loc) =>
         for {
-          defs <- Validation.traverse(defs0)(visitDefn(_, root))
+          defs <- Validation.traverse(defs0)(visitInstanceDefn(_, tconstrs, root))
         } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, loc)
     }
 
@@ -129,7 +129,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           case Some(defn) =>
             val subst = Substitution.singleton(clazz.tparam.tpe, inst.tpe)
             val expectedScheme = subst(sig.sc)
-            if (Scheme.lessThanEqual(expectedScheme, defn.declaredScheme, root.instances)) { // MATT need to check equal rather than leq
+            if (Scheme.equal(expectedScheme, defn.declaredScheme, Nil, root.instances)) {
               // Case 2.1: the schemes match. Success!
               ().toSuccess
             } else {
@@ -179,7 +179,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Performs type inference and reassembly on the given definition `defn`.
     */
   private def visitDefn(defn: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
-    typeCheckDef(defn, root) map {
+    typeCheckDef(defn, Nil, root) map {
+      case (defn, _) => defn
+    }
+
+  /**
+    * Performs type inference and reassembly on the given instance definition `defn`.
+    */
+  private def visitInstanceDefn(defn: ResolvedAst.Def, tconstrs: List[TypedAst.TypeConstraint], root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
+    typeCheckDef(defn, tconstrs, root) map {
       case (defn, _) => defn
     }
 
@@ -203,7 +211,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
+  private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[TypedAst.TypeConstraint], root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
     case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, declaredScheme, declaredEff, loc) =>
 
       ///
@@ -240,7 +248,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
               val sc = Scheme.generalize(inferredConstrs, inferredType)
-              if (!Scheme.lessThanEqual(sc, declaredScheme, root.instances)) {
+              if (!Scheme.lessThanEqual(sc, declaredScheme, assumedTconstrs, root.instances)) {
                 return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
               }
 

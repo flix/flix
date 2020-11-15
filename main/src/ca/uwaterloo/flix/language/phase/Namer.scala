@@ -342,7 +342,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         tenv = tenv0 ++ getTypeEnv(tparams)
         tpe <- visitType(tpe0, uenv0, tenv)
         tconstrs <- traverse(tconstrs)(visitConstrainedType(_, uenv0, tenv, ns0))
-        defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, tconstrs.flatten))
+        instTconstr = NamedAst.TypeConstraint(clazz, tpe)
+        defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr)))
       } yield NamedAst.Instance(doc, mod, clazz, tpe, tconstrs.flatten, defs, loc)
   }
 

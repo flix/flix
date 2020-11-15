@@ -118,20 +118,28 @@ object Scheme {
   }
 
   /**
-    * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
+    * Returns `true` if the given schemes are equivalent, under the assumption that `assumedTconstrs` all hold.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
+  // TODO can optimize?
+  def equal(sc1: Scheme, sc2: Scheme, assumedTconstrs: List[TypedAst.TypeConstraint], instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
+    lessThanEqual(sc1, sc2, assumedTconstrs, instances) && lessThanEqual(sc2, sc1, assumedTconstrs, instances)
+  }
+
+  /**
+    * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`, under the assumption that `assumedTconstrs` all hold.
+    */
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, assumedTconstrs: List[TypedAst.TypeConstraint], instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
 
 
     /**
       * Checks that all retained constraints are entailed by the base constraints,
       * and that there are no deferred constraints.
       */
-    def checkConstraints(deferredTconstrs: List[TypedAst.TypeConstraint], retainedTconstrs: List[TypedAst.TypeConstraint], baseTconstrs: List[TypedAst.TypeConstraint]): Result[Unit, UnificationError] = {
-      if (deferredTconstrs.nonEmpty) {
-        UnificationError.UnfulfilledConstraint(deferredTconstrs.head).toErr
+    def checkConstraints(deferredTconstrs: List[TypedAst.TypeConstraint], retainedTconstrs: List[TypedAst.TypeConstraint]): Result[Unit, UnificationError] = {
+      if (retainedTconstrs.nonEmpty) {
+        UnificationError.UnfulfilledConstraint(retainedTconstrs.head).toErr
       } else {
-        retainedTconstrs.find(!ContextReduction.entail(instances, baseTconstrs, _)) match {
+        deferredTconstrs.find(!ContextReduction.entail(instances, assumedTconstrs, _)) match {
           case Some(tconstr) => UnificationError.UnfulfilledConstraint(tconstr).toErr
           case None => ().toOk
         }
@@ -158,13 +166,21 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     val result = for {
       subst <- Unification.unifyTypes(tpe1, tpe2)
+      // Variables whose constraints are assumed in the surrounding scope.
+      fixedVars = assumedTconstrs.map(subst.apply).flatMap(_.arg.typeVars)
+      // Variables which we need to quantify
+      quantifiedVars = tpe1.typeVars.removedAll(fixedVars).toList
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
-      splitTconstrs <- ContextReduction.split(instances, Nil, Nil, newTconstrs1) // TODO remove split and skip to reduce?
-      // deferredTconstrs contains the constraints that need to be validated by the surrounding scope
-      // This must be empty because we injected the constraints from the surrounding scope into the instance defs
+
+      // Type constraints not immediately entailed from tconstrs2
+      checkedTconstrs = newTconstrs1.filterNot(ContextReduction.entail(instances, newTconstrs2, _))
+
+      // Split tconstrs among those that must be handled within the expression scope (`retained`)
+      // and those that must be handled by the surrounding scope (`deferred`)
+      splitTconstrs <- ContextReduction.split(instances, fixedVars, quantifiedVars, newTconstrs1)
       (deferredTconstrs, retainedTconstrs) = splitTconstrs
-      _ <- checkConstraints(deferredTconstrs, retainedTconstrs, newTconstrs2)
+      _ <- checkConstraints(deferredTconstrs, retainedTconstrs)
     } yield ()
 
     result.isOk
