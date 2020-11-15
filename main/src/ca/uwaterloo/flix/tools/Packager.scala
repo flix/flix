@@ -288,12 +288,13 @@ object Packager {
   /**
     * Runs all tests in the flix package for the given project path `p`.
     */
-  def test(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
+  def test(p: Path, o: Options)(implicit tc: TerminalContext): Tester.OverallTestResult = {
     build(p, o) match {
-      case None => // nop
+      case None => Tester.OverallTestResult.NoTests
       case Some(compilationResult) =>
         val results = Tester.test(compilationResult)
         Console.println(results.output.fmt)
+        results.overallResult
     }
   }
 

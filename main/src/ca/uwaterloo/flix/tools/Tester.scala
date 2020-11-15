@@ -36,6 +36,29 @@ object Tester {
   }
 
   /**
+    * Represents the outcome of a run of a suite of tests.
+    */
+  sealed trait OverallTestResult
+
+  object OverallTestResult {
+
+    /**
+      * Represents the outcome where all tests succeeded.
+      */
+    case object Success extends OverallTestResult
+
+    /**
+      * Represents the outcome where at least one test failed.
+      */
+    case object Failure extends OverallTestResult
+
+    /**
+      * Represents the outcome where no tests were run.
+      */
+    case object NoTests extends OverallTestResult
+  }
+
+  /**
     * Represents the results of running all the tests in a given model.
     */
   case class TestResults(results: List[TestResult]) {
@@ -56,6 +79,16 @@ object Tester {
         vt << Dedent << NewLine
       }
       vt
+    }
+
+    def overallResult: OverallTestResult = {
+      if (results.isEmpty) {
+        OverallTestResult.NoTests
+      } else if (results.forall(_.isInstanceOf[TestResult.Success])) {
+        OverallTestResult.Success
+      } else {
+        OverallTestResult.Failure
+      }
     }
   }
 

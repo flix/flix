@@ -139,8 +139,10 @@ object Main {
           System.exit(0)
 
         case Command.Test =>
-          Packager.test(cwd, options)
-          System.exit(0)
+          Packager.test(cwd, options) match {
+            case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
+            case Tester.OverallTestResult.Failure => System.exit(1)
+          }
       }
     } catch {
       case ex: RuntimeException =>
