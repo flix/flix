@@ -194,18 +194,18 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.RecordEmpty(tpe, loc) =>
       Expression.RecordEmpty(tpe, loc)
 
-    case Expression.RecordSelect(exp, label, tpe, loc) =>
+    case Expression.RecordSelect(exp, field, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.RecordSelect(e, label, tpe, loc)
+      Expression.RecordSelect(e, field, tpe, loc)
 
-    case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+    case Expression.RecordExtend(field, value, rest, tpe, loc) =>
       val v = visitExp(value)
       val r = visitExp(rest)
-      Expression.RecordExtend(label, v, r, tpe, loc)
+      Expression.RecordExtend(field, v, r, tpe, loc)
 
-    case Expression.RecordRestrict(label, rest, tpe, loc) =>
+    case Expression.RecordRestrict(field, rest, tpe, loc) =>
       val r = visitExp(rest)
-      Expression.RecordRestrict(label, r, tpe, loc)
+      Expression.RecordRestrict(field, r, tpe, loc)
 
     case Expression.ArrayLit(elms, tpe, loc) =>
       Expression.ArrayLit(elms.map(visitExp), tpe, loc)
@@ -347,20 +347,20 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.FixpointSolve(e, stf, tpe, loc)
 
-    case Expression.FixpointProject(name, exp, tpe, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.FixpointProject(name, e, tpe, loc)
+      Expression.FixpointProject(pred, e, tpe, loc)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       Expression.FixpointEntails(e1, e2, tpe, loc)
 
-    case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      Expression.FixpointFold(name, e1, e2, e3, tpe, loc)
+      Expression.FixpointFold(pred, e1, e2, e3, tpe, loc)
 
     case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
@@ -388,9 +388,9 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given head predicate `head0`.
     */
   private def visitHeadPredicate(head0: Predicate.Head)(implicit flix: Flix): Predicate.Head = head0 match {
-    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
       val ts = terms map visitHeadTerm
-      Predicate.Head.Atom(name, den, ts, tpe, loc)
+      Predicate.Head.Atom(pred, den, ts, tpe, loc)
 
     case Predicate.Head.Union(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -401,9 +401,9 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given body predicate `body0`.
     */
   private def visitBodyPredicate(body0: Predicate.Body)(implicit flix: Flix): Predicate.Body = body0 match {
-    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val ts = terms map visitBodyTerm
-      Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
+      Predicate.Body.Atom(pred, den, polarity, ts, tpe, loc)
 
     case Predicate.Body.Guard(exp0, loc) =>
       val e = visitExp(exp0)
@@ -484,9 +484,9 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Index(base, offset, tpe, loc) => freeVars(base)
     case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
     case Expression.RecordEmpty(tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.RecordSelect(exp, label, tpe, loc) => freeVars(exp)
-    case Expression.RecordExtend(label, value, rest, tpe, loc) => freeVars(value) ++ freeVars(rest)
-    case Expression.RecordRestrict(label, rest, tpe, loc) => freeVars(rest)
+    case Expression.RecordSelect(exp, field, tpe, loc) => freeVars(exp)
+    case Expression.RecordExtend(field, value, rest, tpe, loc) => freeVars(value) ++ freeVars(rest)
+    case Expression.RecordRestrict(field, rest, tpe, loc) => freeVars(rest)
     case Expression.ArrayLit(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
     case Expression.ArrayNew(elm, len, tpe, loc) => freeVars(elm) ++ freeVars(len)
     case Expression.ArrayLoad(base, index, tpe, loc) => freeVars(base) ++ freeVars(index)
@@ -547,9 +547,9 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
     case Expression.FixpointSolve(exp, stf, tpe, loc) => freeVars(exp)
-    case Expression.FixpointProject(name, exp, tpe, loc) => freeVars(exp)
+    case Expression.FixpointProject(pred, exp, tpe, loc) => freeVars(exp)
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
@@ -575,7 +575,7 @@ object ClosureConv extends Phase[Root, Root] {
     * Returns the free variables in the given head predicate `head0`.
     */
   private def freeVars(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
-    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
       mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
 
     case Predicate.Head.Union(exp, tpe, loc) =>
@@ -586,7 +586,7 @@ object ClosureConv extends Phase[Root, Root] {
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
-    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
 
     case Predicate.Body.Guard(exp, loc) =>
@@ -741,18 +741,18 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.RecordEmpty(tpe, loc) =>
         Expression.RecordEmpty(tpe, loc)
 
-      case Expression.RecordSelect(base, label, tpe, loc) =>
+      case Expression.RecordSelect(base, field, tpe, loc) =>
         val b = visitExp(base)
-        Expression.RecordSelect(b, label, tpe, loc)
+        Expression.RecordSelect(b, field, tpe, loc)
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      case Expression.RecordExtend(field, value, rest, tpe, loc) =>
         val v = visitExp(value)
         val r = visitExp(rest)
-        Expression.RecordExtend(label, v, r, tpe, loc)
+        Expression.RecordExtend(field, v, r, tpe, loc)
 
-      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+      case Expression.RecordRestrict(field, rest, tpe, loc) =>
         val r = visitExp(rest)
-        Expression.RecordRestrict(label, r, tpe, loc)
+        Expression.RecordRestrict(field, r, tpe, loc)
 
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visitExp
@@ -899,20 +899,20 @@ object ClosureConv extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, stf, tpe, loc)
 
-      case Expression.FixpointProject(name, exp, tpe, loc) =>
+      case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointProject(name, e, tpe, loc)
+        Expression.FixpointProject(pred, e, tpe, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        Expression.FixpointFold(name, e1, e2, e3, tpe, loc)
+        Expression.FixpointFold(pred, e1, e2, e3, tpe, loc)
 
       case Expression.HoleError(sym, tpe, loc) => e
 
@@ -937,9 +937,9 @@ object ClosureConv extends Phase[Root, Root] {
     }
 
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.Atom(name, den, ts, tpe, loc)
+        Predicate.Head.Atom(pred, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -947,9 +947,9 @@ object ClosureConv extends Phase[Root, Root] {
     }
 
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         val ts = terms map visitBodyTerm
-        Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(pred, den, polarity, ts, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)

@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.FinalAst.Term.Head
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -70,7 +70,7 @@ object JvmOps {
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
     case MonoType.RecordEmpty() => getRecordInterfaceType()
-    case MonoType.RecordExtend(label, value, rest) => getRecordInterfaceType()
+    case MonoType.RecordExtend(_, value, rest) => getRecordInterfaceType()
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Relation(attr) => JvmType.Reference(JvmName.PredSym)
@@ -617,11 +617,11 @@ object JvmOps {
 
       case Expression.RecordEmpty(tpe, loc) => Set.empty
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) => visitExp(value) ++ visitExp(rest)
+      case Expression.RecordExtend(_, value, rest, tpe, loc) => visitExp(value) ++ visitExp(rest)
 
-      case Expression.RecordSelect(exp, label, tpe, loc) => visitExp(exp)
+      case Expression.RecordSelect(exp, _, tpe, loc) => visitExp(exp)
 
-      case Expression.RecordRestrict(label, rest, tpe, loc) => visitExp(rest)
+      case Expression.RecordRestrict(_, rest, tpe, loc) => visitExp(rest)
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -706,11 +706,11 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointProject(name, exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.HoleError(sym, tpe, loc) => Set.empty
 
@@ -830,9 +830,9 @@ object JvmOps {
     case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type))
     case MonoType.Tuple(length) => Type.mkTuple(Nil) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
-    case MonoType.RecordExtend(label, value, rest) => Type.mkRecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
+    case MonoType.RecordExtend(field, value, rest) => Type.mkRecordExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty
-    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
+    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2Type(rest))
   }
 
   // TODO: Remove
@@ -971,11 +971,11 @@ object JvmOps {
 
       case Expression.RecordEmpty(tpe, loc) => Set(tpe)
 
-      case Expression.RecordSelect(exp, label, tpe, loc) => Set(tpe) ++ visitExp(exp)
+      case Expression.RecordSelect(exp, _, tpe, loc) => Set(tpe) ++ visitExp(exp)
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value) ++ visitExp(rest)
+      case Expression.RecordExtend(_, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value) ++ visitExp(rest)
 
-      case Expression.RecordRestrict(label, rest, tpe, loc) => Set(tpe) ++ visitExp(rest)
+      case Expression.RecordRestrict(_, rest, tpe, loc) => Set(tpe) ++ visitExp(rest)
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -1057,11 +1057,11 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointProject(name, exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
 
@@ -1074,7 +1074,7 @@ object JvmOps {
     }
 
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
-      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         Set(tpe) ++ terms.flatMap(visitHeadTerm)
 
       case Predicate.Head.Union(exp, terms, tpe, loc) =>
@@ -1083,7 +1083,7 @@ object JvmOps {
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
-      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         terms.flatMap(visitBodyTerm).toSet
 
       case Predicate.Body.Guard(exp, terms, loc) =>
@@ -1154,7 +1154,7 @@ object JvmOps {
       case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
 
       case MonoType.RecordEmpty() => Set(tpe)
-      case MonoType.RecordExtend(label, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
+      case MonoType.RecordExtend(_, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
 
       case MonoType.SchemaEmpty() => Set(tpe)
       case MonoType.SchemaExtend(sym, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
@@ -1164,25 +1164,6 @@ object JvmOps {
       case MonoType.Native(_) => Set(tpe)
       case MonoType.Var(_) => Set.empty
     }
-  }
-
-  /**
-    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
-    */
-  def isClassFile(path: Path): Boolean = {
-    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
-      // Read the first four bytes of the file.
-      val is = Files.newInputStream(path)
-      val b1 = is.read()
-      val b2 = is.read()
-      val b3 = is.read()
-      val b4 = is.read()
-      is.close()
-
-      // Check if the four first bytes match CAFE BABE.
-      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
-    }
-    false
   }
 
   /**
@@ -1211,14 +1192,38 @@ object JvmOps {
         throw InternalCompilerException(s"Unable to write to read-only file: '$path'.")
       }
 
-      // Check that the file is a class file.
-      if (!isClassFile(path)) {
-        throw InternalCompilerException(s"Refusing to overwrite non-class file: '$path'.")
+      // Check that the file is empty or a class file.
+      if (!(isEmpty(path) || isClassFile(path))) {
+        throw InternalCompilerException(s"Refusing to overwrite non-empty, non-class file: '$path'.")
       }
     }
 
     // Write the bytecode.
     Files.write(path, clazz.bytecode)
+  }
+
+  /**
+    * Returns `true` if the given `path` is non-empty (i.e. contains data).
+    */
+  private def isEmpty(path: Path): Boolean = Files.size(path) == 0L
+
+  /**
+    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
+    */
+  private def isClassFile(path: Path): Boolean = {
+    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
+      // Read the first four bytes of the file.
+      val is = Files.newInputStream(path)
+      val b1 = is.read()
+      val b2 = is.read()
+      val b3 = is.read()
+      val b4 = is.read()
+      is.close()
+
+      // Check if the four first bytes match CAFE BABE.
+      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
+    }
+    false
   }
 
   /**

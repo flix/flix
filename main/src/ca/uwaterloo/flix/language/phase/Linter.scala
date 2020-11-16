@@ -528,13 +528,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
-    case (Expression.FixpointProject(name1, exp1, _, _, _), Expression.FixpointProject(name2, exp2, _, _, _)) if name1 == name2 =>
+    case (Expression.FixpointProject(pred1, exp1, _, _, _), Expression.FixpointProject(pred2, exp2, _, _, _)) if pred1 == pred2 =>
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    case (Expression.FixpointFold(name1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(name2, exp21, exp22, exp23, _, _, _)) if name1 == name2 =>
+    case (Expression.FixpointFold(pred1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(pred2, exp21, exp22, exp23, _, _, _)) if pred1 == pred2 =>
       unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case _ => None
@@ -789,18 +789,18 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.RecordEmpty(_, _) => exp0
 
-      case Expression.RecordSelect(exp, label, tpe, eff, loc) =>
+      case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.RecordSelect(e, label, tpe, eff, loc)
+        Expression.RecordSelect(e, field, tpe, eff, loc)
 
-      case Expression.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+      case Expression.RecordExtend(field, exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
-        Expression.RecordExtend(label, e1, e2, tpe, eff, loc)
+        Expression.RecordExtend(field, e1, e2, tpe, eff, loc)
 
-      case Expression.RecordRestrict(label, exp, tpe, eff, loc) =>
+      case Expression.RecordRestrict(field, exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.RecordRestrict(label, e, tpe, eff, loc)
+        Expression.RecordRestrict(field, e, tpe, eff, loc)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         val es = elms.map(apply)
@@ -932,20 +932,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.FixpointProject(name, e, tpe, eff, loc)
+        Expression.FixpointProject(pred, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         val e3 = apply(exp3)
-        Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
@@ -1021,7 +1021,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Applies the substitution to the head predicate `head0`.
       */
     private def apply(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Head.Atom(name, den, terms, tpe, loc) => Head.Atom(name, den, terms.map(apply), tpe, loc)
+      case Head.Atom(pred, den, terms, tpe, loc) => Head.Atom(pred, den, terms.map(apply), tpe, loc)
       case Head.Union(exp, tpe, loc) => Head.Union(apply(exp), tpe, loc)
     }
 
@@ -1029,7 +1029,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Applies the substitution to the body predicate `body0`.
       */
     private def apply(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Body.Atom(name, den, polarity, terms, tpe, loc) => Body.Atom(name, den, polarity, terms.map(apply), tpe, loc)
+      case Body.Atom(pred, den, polarity, terms, tpe, loc) => Body.Atom(pred, den, polarity, terms.map(apply), tpe, loc)
       case Body.Guard(exp, loc) => Body.Guard(apply(exp), loc)
     }
 

@@ -696,7 +696,7 @@ object SymbolicEvaluator {
         */
       case Expression.Tag(sym, tag, exp, _, _) =>
         eval(pc0, exp, env0, lenv0, qua0) flatMap {
-          case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag, v))
+          case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag.name, v))
         }
 
       /**
@@ -724,17 +724,17 @@ object SymbolicEvaluator {
       /**
         * RecordSelect.
         */
-      case Expression.RecordSelect(base, label, tpe, loc) => ???
+      case Expression.RecordSelect(base, field, tpe, loc) => ???
 
       /**
         * RecordExtend.
         */
-      case Expression.RecordExtend(base, label, value, tpe, loc) => ???
+      case Expression.RecordExtend(base, field, value, tpe, loc) => ???
 
       /**
         * RecordRestrict.
         */
-      case Expression.RecordRestrict(base, label, tpe, loc) => ???
+      case Expression.RecordRestrict(base, field, tpe, loc) => ???
 
       /**
         * Index (into tuple).
@@ -835,9 +835,9 @@ object SymbolicEvaluator {
       case Expression.FixpointConstraintSet(cs, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointProject(name, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointProject(pred, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Hole Error.

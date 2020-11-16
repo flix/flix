@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt._
@@ -123,11 +123,11 @@ object TypeError {
   /**
     * Mismatched kinds.
     *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
+    * @param tpe1  the first type.
+    * @param tpe2  the second type.
     * @param kind1 the first kind.
     * @param kind2 the second kind.
-    * @param loc the location where the error occurred.
+    * @param loc   the location where the error occurred.
     */
   case class MismatchedKinds(tpe1: Type, tpe2: Type, kind1: Kind, kind2: Kind, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the kinds '$kind1' and '$kind2'.'"
@@ -191,50 +191,50 @@ object TypeError {
   /**
     * Undefined field error.
     *
-    * @param fieldName  the name of the missing field.
+    * @param field      the name of the missing field.
     * @param fieldType  the type of the missing field.
     * @param recordType the record type where the field is missing.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedField(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Missing field '$fieldName' of type '$fieldType'."
+  case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Missing field '$field' of type '$fieldType'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(FormatType.formatType(fieldType)) << "'." << NewLine
+      vt << ">> Missing field '" << Red(field.name) << "' of type '" << Cyan(FormatType.formatType(fieldType)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing field.") << NewLine
       vt << "The record type: " << Indent << NewLine
       vt << NewLine
       vt << FormatType.formatType(recordType) << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the field '" << Red(fieldName) << "' of type " << Cyan(FormatType.formatType(fieldType)) << "." << NewLine
+      vt << "does not contain the field '" << Red(field.name) << "' of type " << Cyan(FormatType.formatType(fieldType)) << "." << NewLine
     }
   }
 
   /**
     * Undefined predicate error.
     *
-    * @param predName   the missing predicate.
+    * @param pred       the missing predicate.
     * @param predType   the type of the missing predicate.
     * @param schemaType the schema type where the predicate is missing.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedPredicate(predName: String, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Missing predicate '$predName' of type '$predType'."
+  case class UndefinedPredicate(pred: Name.Pred, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing predicate '" << Red(predName) << "' of type '" << Cyan(FormatType.formatType(predType)) << "'." << NewLine
+      vt << ">> Missing predicate '" << Red(pred.name) << "' of type '" << Cyan(FormatType.formatType(predType)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing predicate.") << NewLine
       vt << "The schema type: " << Indent << NewLine
       vt << NewLine
       vt << FormatType.formatType(schemaType) << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the predicate '" << Red(predName) << "' of type " << Cyan(FormatType.formatType(predType)) << "." << NewLine
+      vt << "does not contain the predicate '" << Red(pred.name) << "' of type " << Cyan(FormatType.formatType(predType)) << "." << NewLine
     }
   }
 
@@ -273,4 +273,5 @@ object TypeError {
       vt << Code(loc, "unexpected non-schema type.") << NewLine
     }
   }
+
 }

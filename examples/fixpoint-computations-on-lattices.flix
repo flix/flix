@@ -48,9 +48,9 @@ def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
 let Sign<> = (Bot, Top, equ, leq, lub, glb)
 
 /// We can now declare three map lattices:
-lat A(x: Str, s: Sign)
-lat B(x: Str, s: Sign)
-lat R(x: Str, s: Sign)
+lat A(x: String, s: Sign)
+lat B(x: String, s: Sign)
+lat R(x: String, s: Sign)
 
 /// We can write facts with lattice semantics:
 A("a"; Pos).

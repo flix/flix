@@ -21,7 +21,7 @@ def testNew01(): Channel[Bool] & Impure = Channel.new()
 def testNew02(): Channel[Int] & Impure = Channel.new()
 
 @test
-def testNew03(): Channel[Str] & Impure = Channel.new()
+def testNew03(): Channel[String] & Impure = Channel.new()
 
 @test
 def testNewWithCapacity01(): Channel[Bool] & Impure = Channel.newWithCapacity(123)
@@ -30,7 +30,7 @@ def testNewWithCapacity01(): Channel[Bool] & Impure = Channel.newWithCapacity(12
 def testNewWithCapacity02(): Channel[Int] & Impure = Channel.newWithCapacity(123)
 
 @test
-def testNewWithCapacity03(): Channel[Str] & Impure = Channel.newWithCapacity(123)
+def testNewWithCapacity03(): Channel[String] & Impure = Channel.newWithCapacity(123)
 
 @test
 def testGetPut01(): Bool & Impure =

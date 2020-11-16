@@ -210,18 +210,18 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.RecordEmpty(tpe, loc) =>
           tast.toSuccess
 
-        case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+        case Expression.RecordSelect(base, field, tpe, eff, loc) =>
           for {
             _ <- checkPats(base, root)
           } yield tast
 
-        case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+        case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
           for {
             _ <- checkPats(rest, root)
             _ <- checkPats(value, root)
           } yield tast
 
-        case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+        case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
           for {
             _ <- checkPats(rest, root)
           } yield tast
@@ -316,7 +316,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.SelectChannel(rules, default, _, _, _) => for {
           _ <- sequence(rules.map(r => {
-            checkPats(r.chan, root);
+            checkPats(r.chan, root)
             checkPats(r.exp, root)
           }))
           _ <- default match {
@@ -529,7 +529,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypedAst.Pattern.Tag(_, tag, exp, _, _) =>
           ctor match {
             case TyCon.Enum(name, _, _, _) =>
-              if (tag == name) {
+              if (tag.name == name) {
                 exp match {
                   // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
                   // => Tuple. If there are arguments, we add them to the matrix
@@ -652,7 +652,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
         // other enums
         case TyCon.Enum(_, sym, _, _) => {
-          root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1, sym, countTypeArgs(x._2.tpeDeprecated), List.empty[TyCon]))
+          root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1.name, sym, countTypeArgs(x._2.tpeDeprecated), List.empty[TyCon]))
           }.toList ::: xs
 
         /* For numeric types, we consider them as "infinite" types union
@@ -798,7 +798,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
           case a => (List(patToCtor(a)), 1)
         }
-        TyCon.Enum(tag, sym, numArgs, args)
+        TyCon.Enum(tag.name, sym, numArgs, args)
       }
       case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
       case Pattern.Array(elm, _, _) => TyCon.Array

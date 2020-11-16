@@ -20,4 +20,4 @@ def unusedTypeVar06[t](a: {x: t | _}): t = a.x
 def unusedTypeVar07(a: {x: Int | _}, b: List[_]): Bool = a.x == List.length(b)
 
 @test
-def unusedTypeVar08(_a: Int -> Bool & _, b: Str): Str = b
+def unusedTypeVar08(_a: Int -> Bool & _, b: String): String = b

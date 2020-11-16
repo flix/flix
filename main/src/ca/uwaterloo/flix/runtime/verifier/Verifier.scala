@@ -530,7 +530,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
           decl.cases.flatMap {
             // TODO: Assumes non-polymorphic type.
             case (tag, caze) => visit(caze.tpeDeprecated) map {
-              case e => SymVal.Tag(tag, e)
+              case e => SymVal.Tag(tag.name, e)
             }
           }.toList
 

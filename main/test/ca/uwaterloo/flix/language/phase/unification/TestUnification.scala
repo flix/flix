@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
@@ -313,7 +313,7 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.12") {
     val tpe1 = Type.Var(1, Kind.Record)
     val field = Type.Bool
-    val label = "x"
+    val label = Name.Field("x", SourceLocation.Unknown)
     val tpe2 = Type.mkRecordExtend(label, field, tpe1)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
@@ -322,7 +322,7 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.13") {
     val tpe1 = Type.Var(1, Kind.Schema)
     val field = Type.mkRelation(List(Type.Bool))
-    val label = "x"
+    val label = Name.Pred("X", SourceLocation.Unknown)
     val tpe2 = Type.mkSchemaExtend(label, field, tpe1)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))

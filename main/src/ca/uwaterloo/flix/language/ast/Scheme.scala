@@ -74,7 +74,7 @@ object Scheme {
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
     val newBase = baseType.map {
-      case Type.Var(x, k, rigidity) =>
+      case Type.Var(x, k, rigidity, _) =>
         freshVars.get(x) match {
           case None =>
             // Determine the rigidity of the free type variable.
@@ -89,7 +89,7 @@ object Scheme {
     }
 
     val newConstrs = sc.constraints.map {
-      case tconstr@TypedAst.TypeConstraint(_, Type.Var(x, k, rigidity)) =>
+      case tconstr@TypedAst.TypeConstraint(_, Type.Var(x, k, rigidity, _)) =>
         freshVars.get(x) match {
           case None =>
             // Determine the rigidity of the free type variable.

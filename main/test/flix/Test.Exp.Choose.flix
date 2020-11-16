@@ -13,7 +13,7 @@ namespace Test/Exp/Choose {
     def testChooseOne02(): Bool =
         let f = x -> {
             choose x {
-                case Present(x) => x
+                case Present(r) => r
             }
         };
         f(Present("a")) == "a"
@@ -52,7 +52,7 @@ namespace Test/Exp/Choose {
         let f = x -> {
             choose x {
                 case Absent     => "a"
-                case Present(x) => x
+                case Present(r) => r
 
             }
         };
@@ -84,7 +84,7 @@ namespace Test/Exp/Choose {
     def testChooseOne09(): Bool =
         let f = x -> {
             choose x {
-                case Present(x) => x
+                case Present(r) => r
                 case _          => "b"
 
             }
@@ -95,7 +95,7 @@ namespace Test/Exp/Choose {
     def testChooseOne10(): Bool =
         let f = x -> {
             choose x {
-                case Present(x) => x
+                case Present(r) => r
                 case _          => "b"
 
             }
@@ -115,7 +115,7 @@ namespace Test/Exp/Choose {
     def testChooseTwo02(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Absent, Present(x)) => x
+                case (Absent, Present(r)) => r
             }
         };
         f(Absent, Present("a")) == "a"
@@ -124,7 +124,7 @@ namespace Test/Exp/Choose {
     def testChooseTwo03(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Present(x), Absent) => x
+                case (Present(r), Absent) => r
             }
         };
         f(Present("a"), Absent) == "a"
@@ -133,7 +133,7 @@ namespace Test/Exp/Choose {
     def testChooseTwo04(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Present(x), Present(y)) => x + y
+                case (Present(r1), Present(r2)) => r1 + r2
             }
         };
         f(Present("a"), Present("b")) == "ab"
@@ -142,7 +142,7 @@ namespace Test/Exp/Choose {
     def testChooseTwo05(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Present(x), _) => x
+                case (Present(r), _) => r
             }
         };
         f(Present("a"), Absent) == "a"
@@ -151,7 +151,7 @@ namespace Test/Exp/Choose {
     def testChooseTwo06(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Present(x), _) => x
+                case (Present(r), _) => r
             }
         };
         f(Present("a"), Present("b")) == "a"
@@ -160,7 +160,7 @@ namespace Test/Exp/Choose {
     def testChooseTwo07(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (_, Present(y)) => y
+                case (_, Present(r)) => r
             }
         };
         f(Absent, Present("b")) == "b"
@@ -169,7 +169,7 @@ namespace Test/Exp/Choose {
     def testChooseTwo08(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (_, Present(y)) => y
+                case (_, Present(r)) => r
             }
         };
         f(Present("a"), Present("b")) == "b"
@@ -215,7 +215,7 @@ namespace Test/Exp/Choose {
         let f = (x, y) -> {
             choose (x, y) {
                 case (Absent, Absent)     => "a"
-                case (Absent, Present(x)) => x
+                case (Absent, Present(r)) => r
             }
         };
         f(Absent, Absent) == "a"
@@ -225,7 +225,7 @@ namespace Test/Exp/Choose {
         let f = (x, y) -> {
             choose (x, y) {
                 case (Absent, Absent)     => "a"
-                case (Absent, Present(x)) => x
+                case (Absent, Present(r)) => r
             }
         };
         f(Absent, Present("b")) == "b"
@@ -235,7 +235,7 @@ namespace Test/Exp/Choose {
         let f = (x, y) -> {
             choose (x, y) {
                 case (Absent, Absent)     => "a"
-                case (Present(x), Absent) => x
+                case (Present(r), Absent) => r
             }
         };
         f(Absent, Absent) == "a"
@@ -245,7 +245,7 @@ namespace Test/Exp/Choose {
         let f = (x, y) -> {
             choose (x, y) {
                 case (Absent, Absent)     => "a"
-                case (Present(x), Absent) => x
+                case (Present(r), Absent) => r
             }
         };
         f(Present("b"), Absent) == "b"
@@ -254,8 +254,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithTwoCases05(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Absent, Absent)         => "a"
-                case (Present(x), Present(y)) => x + y
+                case (Absent, Absent)           => "a"
+                case (Present(r1), Present(r2)) => r1 + r2
             }
         };
         f(Absent, Absent) == "a"
@@ -264,8 +264,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithTwoCases06(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Absent, Absent)         => "a"
-                case (Present(x), Present(y)) => x + y
+                case (Absent, Absent)           => "a"
+                case (Present(r1), Present(r2)) => r1 + r2
             }
         };
         f(Present("a"), Present("b")) == "ab"
@@ -274,8 +274,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithTwoCases07(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Absent, Present(y)) => y
-                case (Present(x), Absent) => x
+                case (Absent, Present(r)) => r
+                case (Present(r), Absent) => r
             }
         };
         f(Absent, Present("b")) == "b"
@@ -284,8 +284,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithTwoCases08(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Absent, Present(y)) => y
-                case (Present(x), Absent) => x
+                case (Absent, Present(r)) => r
+                case (Present(r), Absent) => r
             }
         };
         f(Present("a"), Absent) == "a"
@@ -294,8 +294,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithTwoCases09(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (_, Present(y)) => y
-                case (Present(x), _) => x
+                case (_, Present(r)) => r
+                case (Present(r), _) => r
             }
         };
         f(Absent, Present("b")) == "b"
@@ -304,8 +304,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithTwoCases10(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (_, Present(y)) => y
-                case (Present(x), _) => x
+                case (_, Present(r)) => r
+                case (Present(r), _) => r
             }
         };
         f(Present("a"), Absent) == "a"
@@ -314,8 +314,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithTwoCases11(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (_, Present(y)) => y
-                case (Present(x), _) => x
+                case (_, Present(r)) => r
+                case (Present(r), _) => r
             }
         };
         f(Present("a"), Present("b")) == "b"
@@ -325,8 +325,8 @@ namespace Test/Exp/Choose {
         let f = (x, y) -> {
             choose (x, y) {
                 case (Absent, Absent)     => "a"
-                case (Absent, Present(y)) => y
-                case (Present(x), Absent) => x
+                case (Absent, Present(r)) => r
+                case (Present(r), Absent) => r
             }
         };
         f(Absent, Absent) == "a"
@@ -336,8 +336,8 @@ namespace Test/Exp/Choose {
         let f = (x, y) -> {
             choose (x, y) {
                 case (Absent, Absent)     => "a"
-                case (Absent, Present(y)) => y
-                case (Present(x), Absent) => x
+                case (Absent, Present(r)) => r
+                case (Present(r), Absent) => r
             }
         };
         f(Absent, Present("b")) == "b"
@@ -347,8 +347,8 @@ namespace Test/Exp/Choose {
         let f = (x, y) -> {
             choose (x, y) {
                 case (Absent, Absent)     => "a"
-                case (Absent, Present(y)) => y
-                case (Present(x), Absent) => x
+                case (Absent, Present(r)) => r
+                case (Present(r), Absent) => r
             }
         };
         f(Present("b"), Absent) == "b"
@@ -357,8 +357,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithThreeCases04(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Absent, Present(y)) => y
-                case (Present(x), Absent) => x
+                case (Absent, Present(r)) => r
+                case (Present(r), Absent) => r
                 case (_, _)               => "c"
             }
         };
@@ -368,8 +368,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithThreeCases05(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Absent, Present(y)) => y
-                case (Present(x), Absent) => x
+                case (Absent, Present(r)) => r
+                case (Present(r), Absent) => r
                 case (_, _)               => "c"
             }
         };
@@ -379,8 +379,8 @@ namespace Test/Exp/Choose {
     def testChooseTwoWithThreeCases06(): Bool =
         let f = (x, y) -> {
             choose (x, y) {
-                case (Absent, Present(y)) => y
-                case (Present(x), Absent) => x
+                case (Absent, Present(r)) => r
+                case (Present(r), Absent) => r
                 case (_, _)               => "c"
             }
         };

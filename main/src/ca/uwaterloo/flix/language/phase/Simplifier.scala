@@ -379,18 +379,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)
 
-      case TypedAst.Expression.RecordSelect(base, label, tpe, eff, loc) =>
+      case TypedAst.Expression.RecordSelect(base, field, tpe, eff, loc) =>
         val b = visitExp(base)
-        SimplifiedAst.Expression.RecordSelect(b, label, tpe, loc)
+        SimplifiedAst.Expression.RecordSelect(b, field, tpe, loc)
 
-      case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+      case TypedAst.Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
         val v = visitExp(value)
         val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordExtend(label, v, r, tpe, loc)
+        SimplifiedAst.Expression.RecordExtend(field, v, r, tpe, loc)
 
-      case TypedAst.Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+      case TypedAst.Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
         val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordRestrict(label, r, tpe, loc)
+        SimplifiedAst.Expression.RecordRestrict(field, r, tpe, loc)
 
       case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
@@ -545,16 +545,16 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointSolve(e, stf, tpe, loc)
 
-      case TypedAst.Expression.FixpointProject(name, exp, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointProject(name, e, tpe, loc)
+        SimplifiedAst.Expression.FixpointProject(pred, e, tpe, loc)
 
       case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case TypedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
         val var1 = Symbol.freshVarSym()
         val e1 = visitExp(exp1)
         val var2 = Symbol.freshVarSym()
@@ -568,8 +568,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         // This enables simpler code generation without breaking the semantics
         SimplifiedAst.Expression.Let(var1, e1,
           SimplifiedAst.Expression.Let(var2, e2,
-            SimplifiedAst.Expression.Let(var3, SimplifiedAst.Expression.FixpointProject(name, e3, e3.tpe, loc),
-              SimplifiedAst.Expression.FixpointFold(name,
+            SimplifiedAst.Expression.Let(var3, SimplifiedAst.Expression.FixpointProject(pred, e3, e3.tpe, loc),
+              SimplifiedAst.Expression.FixpointFold(pred,
                 SimplifiedAst.Expression.Var(var1, e1.tpe, loc),
                 SimplifiedAst.Expression.Var(var2, e2.tpe, loc),
                 SimplifiedAst.Expression.Var(var3, e3.tpe, loc), tpe, loc), tpe, loc), tpe, loc), tpe, loc)
@@ -584,9 +584,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `head` predicate to the SimplifiedAst.
       */
     def visitHeadPred(head: TypedAst.Predicate.Head, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Head = head match {
-      case TypedAst.Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.Atom(name, den, ts, tpe, loc)
+        SimplifiedAst.Predicate.Head.Atom(pred, den, ts, tpe, loc)
 
       case TypedAst.Predicate.Head.Union(exp, tpe, loc) =>
         val e = newLambdaWrapper(cparams, exp, loc)
@@ -597,9 +597,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `body` predicate to the SimplifiedAst.
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
-      case TypedAst.Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case TypedAst.Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
+        SimplifiedAst.Predicate.Body.Atom(pred, den, polarity, ts, tpe, loc)
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
         val e = newLambdaWrapper(cparams, exp, loc)
@@ -912,10 +912,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       // Create a branch for each rule.
       val branches = (ruleLabels zip rules) map {
         // Process each (label, rule) pair.
-        case (label, TypedAst.MatchRule(pat, guard, body)) =>
+        case (field, TypedAst.MatchRule(pat, guard, body)) =>
           // Retrieve the label of the next rule.
           // If this rule is the last, the next label is the default label.
-          val next = nextLabel(label)
+          val next = nextLabel(field)
 
           // Success case: evaluate the match body.
           val success = visitExp(body)
@@ -924,7 +924,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val failure = SimplifiedAst.Expression.JumpTo(next, tpe, loc)
 
           // Return the branch with its label.
-          label -> patternMatchList(List(pat), List(matchVar), guard, success, failure
+          field -> patternMatchList(List(pat), List(matchVar), guard, success, failure
           )
       }
 
@@ -1200,11 +1200,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val isAbsent = SimplifiedAst.Expression.Is(sym, "Absent", varExp, loc)
+              val tag = Name.Tag("Absent", SourceLocation.Generated)
+              val isAbsent = SimplifiedAst.Expression.Is(sym, tag, varExp, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isAbsent, acc, Type.Bool, loc)
             case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val isPresent = SimplifiedAst.Expression.Is(sym, "Present", varExp, loc)
+              val tag = Name.Tag("Present", SourceLocation.Generated)
+              val isPresent = SimplifiedAst.Expression.Is(sym, tag, varExp, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isPresent, acc, Type.Bool, loc)
           }
           val bodyExp = visitExp(body)
@@ -1213,7 +1215,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, tpe, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val untagExp = SimplifiedAst.Expression.Untag(sym, "Present", varExp, tpe, loc)
+              val tag = Name.Tag("Present", SourceLocation.Generated)
+              val untagExp = SimplifiedAst.Expression.Untag(sym, tag, varExp, tpe, loc)
               SimplifiedAst.Expression.Let(matchVar, untagExp, acc, acc.tpe, loc)
           }
           val elseExp = acc
@@ -1332,18 +1335,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)
 
-      case SimplifiedAst.Expression.RecordSelect(exp, label, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordSelect(exp, field, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.RecordSelect(e, label, tpe, loc)
+        SimplifiedAst.Expression.RecordSelect(e, field, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
         val v = visitExp(value)
         val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordExtend(label, v, r, tpe, loc)
+        SimplifiedAst.Expression.RecordExtend(field, v, r, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordRestrict(label, rest, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
         val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordRestrict(label, r, tpe, loc)
+        SimplifiedAst.Expression.RecordRestrict(field, r, tpe, loc)
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)
@@ -1472,20 +1475,20 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointSolve(e, stf, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointProject(name, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointProject(name, e, tpe, loc)
+        SimplifiedAst.Expression.FixpointProject(pred, e, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
         val e1 = visitExp(exp1).asInstanceOf[SimplifiedAst.Expression.Var]
         val e2 = visitExp(exp2).asInstanceOf[SimplifiedAst.Expression.Var]
         val e3 = visitExp(exp3).asInstanceOf[SimplifiedAst.Expression.Var]
-        SimplifiedAst.Expression.FixpointFold(name, e1, e2, e3, tpe, loc)
+        SimplifiedAst.Expression.FixpointFold(pred, e1, e2, e3, tpe, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
 
@@ -1514,9 +1517,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     def visitHeadPred(h0: SimplifiedAst.Predicate.Head): SimplifiedAst.Predicate.Head = h0 match {
-      case SimplifiedAst.Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case SimplifiedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         val ts = terms.map(visitHeadTerm)
-        SimplifiedAst.Predicate.Head.Atom(name, den, ts, tpe, loc)
+        SimplifiedAst.Predicate.Head.Atom(pred, den, ts, tpe, loc)
 
       case SimplifiedAst.Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -1524,9 +1527,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     def visitBodyPred(b0: SimplifiedAst.Predicate.Body): SimplifiedAst.Predicate.Body = b0 match {
-      case SimplifiedAst.Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case SimplifiedAst.Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         val ts = terms.map(visitBodyTerm)
-        SimplifiedAst.Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
+        SimplifiedAst.Predicate.Body.Atom(pred, den, polarity, ts, tpe, loc)
 
       case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)

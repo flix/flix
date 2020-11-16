@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Bool
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
@@ -29,23 +29,23 @@ object FormatType {
     val renameMap = alphaRenameVars(tpe)
 
     def formatWellFormedRecord(record: Type): String = flattenRecord(record) match {
-      case FlatNestable(fields, Type.Cst(TypeConstructor.RecordEmpty)) =>
-        fields.map { case (label, tpe) => formatRecordField(label, tpe) }.mkString("{ ", ", ", " }")
+      case FlatNestable(fields, Type.Cst(TypeConstructor.RecordEmpty, _)) =>
+        fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString("{ ", ", ", " }")
       case FlatNestable(fields, rest) =>
-        val fieldString = fields.map { case (label, tpe) => formatRecordField(label, tpe) }.mkString(", ")
+        val fieldString = fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString(", ")
         s"{ $fieldString | ${visit(rest)} }"
     }
 
     def formatWellFormedSchema(schema: Type): String = flattenSchema(schema) match {
-      case FlatNestable(fields, Type.Cst(TypeConstructor.SchemaEmpty)) =>
-        fields.map { case (label, tpe) => formatSchemaField(label, tpe) }.mkString("#{ ", ", ", " }")
+      case FlatNestable(fields, Type.Cst(TypeConstructor.SchemaEmpty, _)) =>
+        fields.map { case (field, tpe) => formatSchemaField(field, tpe) }.mkString("#{ ", ", ", " }")
       case FlatNestable(fields, rest) =>
-        val fieldString = fields.map { case (label, tpe) => formatSchemaField(label, tpe) }.mkString(", ")
+        val fieldString = fields.map { case (field, tpe) => formatSchemaField(field, tpe) }.mkString(", ")
         s"#{ $fieldString | ${visit(rest)} }"
     }
 
-    def formatRecordField(label: String, tpe: Type): String = {
-      s"$label: ${visit(tpe)}"
+    def formatRecordField(field: String, tpe: Type): String = {
+      s"$field: ${visit(tpe)}"
     }
 
     def formatSchemaField(name: String, tpe: Type): String = {
@@ -87,16 +87,16 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case tvar@Type.Var(id, kind, _) => audience match {
+          case tvar@Type.Var(id, kind, _, _) => audience match {
             case Audience.Internal => kind match {
               case Bool => s"''$id"
               case _ => s"'$id"
             }
-            case Audience.External => tvar.getText.getOrElse(renameMap(tvar.id))
+            case Audience.External => tvar.text.getOrElse(renameMap(tvar.id))
           }
           case Type.Lambda(tvar, tpe) => audience match {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-            case Audience.External => s"${tvar.getText.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
+            case Audience.External => s"${tvar.text.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
           }
           case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
         }
@@ -148,18 +148,18 @@ object FormatType {
 
           case TypeConstructor.Ref => formatApply("Ref", args)
 
-          case TypeConstructor.RecordExtend(label) => args.length match {
-            case 0 => s"{ $label: ??? }"
-            case 1 => s"{ $label: ${visit(args.head)} | ??? }"
+          case TypeConstructor.RecordExtend(field) => args.length match {
+            case 0 => s"{ $field: ??? }"
+            case 1 => s"{ $field: ${visit(args.head)} | ??? }"
             case 2 => formatWellFormedRecord(tpe)
-            case _ => formatApply(s"RecordExtend($label)", args)
+            case _ => formatApply(s"RecordExtend($field)", args)
           }
 
-          case TypeConstructor.SchemaExtend(name) => args.length match {
-            case 0 => s"#{ $name?(???) }"
-            case 1 => s"#{ ${formatSchemaField(name, args.head)} | ??? }"
+          case TypeConstructor.SchemaExtend(pred) => args.length match {
+            case 0 => s"#{ ${pred.name}?(???) }"
+            case 1 => s"#{ ${formatSchemaField(pred.name, args.head)} | ??? }"
             case 2 => formatWellFormedSchema(tpe)
-            case _ => formatApply(s"SchemaExtend($name)", args)
+            case _ => formatApply(s"SchemaExtend($pred)", args)
           }
 
           case TypeConstructor.Tuple(length) =>
@@ -170,9 +170,9 @@ object FormatType {
 
           case TypeConstructor.Tag(sym, tag) => // TODO better unhappy case handling
             if (args.lengthIs == 2)
-              s"$tag${args.head}"
+              s"${tag.name}${args.head}"
             else
-              formatApply(tag, args)
+              formatApply(tag.name, args)
 
           case TypeConstructor.Not => args match {
             case (t1: Type.Var) :: Nil => s"¬${visit(t1)}"
@@ -219,13 +219,13 @@ object FormatType {
               val argPart = typeStrings.init.mkString(" -> ")
               // Format the arrow.
               val arrowPart = eff match {
-                case Type.Cst(TypeConstructor.False) => " ~> "
+                case Type.Cst(TypeConstructor.False, _) => " ~> "
                 case _ => " -> "
               }
               // Format the effect.
               val effPart = eff match {
-                case Type.Cst(TypeConstructor.True) => ""
-                case Type.Cst(TypeConstructor.False) => ""
+                case Type.Cst(TypeConstructor.True, _) => ""
+                case Type.Cst(TypeConstructor.False, _) => ""
                 case _: Type.Var => s" & ${visit(eff)}"
                 case _ => " & (" + visit(eff) + ")"
               }
@@ -263,12 +263,12 @@ object FormatType {
         case TypeDiff.Arrow =>
           intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
         case TypeDiff.Enum =>
-          vt << "*"
+          vt << "..."
           intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         case TypeDiff.Tuple =>
           intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
         case TypeDiff.Other =>
-          vt << "*"
+          vt << "..."
           intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         case TypeDiff.Mismatch(tpe1, _) => vt << color(formatType(tpe1))
         case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
@@ -317,8 +317,8 @@ object FormatType {
     * Convert a record to a [[FlatNestable]].
     */
   private def flattenRecord(record: Type): FlatNestable = record match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(label)), tpe), rest) =>
-      (label, tpe) :: flattenRecord(rest)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe), rest) =>
+      (field.name, tpe) :: flattenRecord(rest)
     case _ => FlatNestable(Nil, record)
   }
 
@@ -326,8 +326,8 @@ object FormatType {
     * Convert a schema to a [[FlatNestable]].
     */
   private def flattenSchema(schema: Type): FlatNestable = schema match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label)), tpe), rest) =>
-      (label, tpe) :: flattenSchema(rest)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe), rest) =>
+      (pred.name, tpe) :: flattenSchema(rest)
     case _ => FlatNestable(Nil, schema)
   }
 
@@ -341,17 +341,38 @@ object FormatType {
     */
   private def getVarName(index: Int): String = {
     if (index / 26 <= 0)
-      (index + 'a').toChar.toString
+      "'" + (index + 'a').toChar.toString
     else
-      (index + 'a').toChar.toString + (index / 26).toString
+      "'" + (index + 'a').toChar.toString + (index / 26).toString
   }
 
   /**
     * Rename the variables in the given type.
     */
   private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
-    tpe0.typeVars.toList.sortBy(_.id).zipWithIndex.map {
+    val tvars = typeVars(tpe0)
+    val starTypeVars = tvars.filter(_.kind == Kind.Star)
+    val boolTypeVars = tvars.filter(_.kind == Kind.Bool)
+    val otherTypeVars = tvars.filter(k => k.kind != Kind.Star && k.kind != Kind.Bool)
+    val orderedTypeVars = starTypeVars ::: boolTypeVars ::: otherTypeVars
+
+    orderedTypeVars.zipWithIndex.map {
       case (tvar, index) => tvar.id -> getVarName(index)
     }.toMap
   }
+
+  /**
+    * Returns all type variables in the type in the order in which they appear.
+    */
+  private def typeVars(tpe0: Type): List[Type.Var] = {
+    def visit(t: Type): List[Type.Var] = t match {
+      case tvar: Type.Var => tvar :: Nil
+      case Type.Cst(tc, loc) => Nil
+      case Type.Lambda(tvar, tpe) => tvar :: visit(tpe)
+      case Type.Apply(tpe1, tpe2) => visit(tpe1) ::: visit(tpe2)
+    }
+
+    visit(tpe0).distinct
+  }
+
 }

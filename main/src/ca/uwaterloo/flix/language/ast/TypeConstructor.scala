@@ -110,9 +110,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of extended records.
     */
-  case class RecordExtend(label: String) extends TypeConstructor {
+  case class RecordExtend(field: Name.Field) extends TypeConstructor {
     /**
-      * The shape of an extended record is { label: type | rest }
+      * The shape of an extended record is { field: type | rest }
       */
     def kind: Kind = Kind.Star ->: Kind.Record ->: Kind.Record
   }
@@ -127,7 +127,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of extended schemas.
     */
-  case class SchemaExtend(name: String) extends TypeConstructor {
+  case class SchemaExtend(pred: Name.Pred) extends TypeConstructor {
     /**
       * The shape of an extended schema is { name: type | rest }
       */
@@ -168,7 +168,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of tags.
     */
-  case class Tag(sym: Symbol.EnumSym, tag: String) extends TypeConstructor {
+  case class Tag(sym: Symbol.EnumSym, tag: Name.Tag) extends TypeConstructor {
     /**
       * The shape of a tag is "like" a function `caseType` -> (`resultType`) -> *.
       */

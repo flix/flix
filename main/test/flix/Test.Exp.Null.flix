@@ -1,4 +1,4 @@
-namespace Test/Exp/Null/Null {
+namespace Test/Exp/Null {
 
     @test
     def testNull01(): Null = null

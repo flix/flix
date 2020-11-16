@@ -65,7 +65,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Str.01") {
     val input =
-      """def f(x: Str): Int = match x {
+      """def f(x: String): Int = match x {
         |  case "foo" => 1
         |  case "bar" => 2
         |  case "baz" => 3
@@ -93,7 +93,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Tuples.02") {
     val input =
-      """def f(x: (Int8, (Str, Str))): Int = match x {
+      """def f(x: (Int8, (String, String))): Int = match x {
         |  case (5i8, ("five", _)) => 5
         |  case (6i8, (_, "six")) => 6
         |  case (7i8, (_,_)) => 7

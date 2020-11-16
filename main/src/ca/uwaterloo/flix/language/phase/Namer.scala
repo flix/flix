@@ -103,7 +103,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         case Some(clazz) =>
           // Case 2: Duplicate class.
-          NameError.DuplicateClass(ident.name, clazz.sym.loc, ident.loc).toFailure
+          val name = ident.name
+          val loc1 = clazz.sym.loc
+          val loc2 = ident.loc
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            NameError.DuplicateClass(name, loc1, loc2),
+            NameError.DuplicateClass(name, loc1, loc2)
+          ))
       }
 
     case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, defs, loc) =>
@@ -127,7 +134,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         case Some(defn) =>
           // Case 2: Duplicate definition.
-          NameError.DuplicateDef(ident.name, defn.loc, ident.loc).toFailure
+          val name = ident.name
+          val loc1 = defn.loc
+          val loc2 = ident.loc
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            NameError.DuplicateDef(name, loc1, loc2),
+            NameError.DuplicateDef(name, loc2, loc1),
+          ))
       }
 
     /*
@@ -155,9 +169,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
               val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
               val enumType = if (quantifiers.isEmpty)
-                NamedAst.Type.Enum(sym, kind)
+                NamedAst.Type.Enum(sym, kind, loc)
               else {
-                val base = NamedAst.Type.Enum(sym, kind)
+                val base = NamedAst.Type.Enum(sym, kind, loc)
                 quantifiers.foldLeft(base: NamedAst.Type) {
                   case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
                 }
@@ -172,7 +186,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         case Some(enum) =>
           // Case 2.2: Duplicate definition.
-          NameError.DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
+          val name = ident.name
+          val loc1 = enum.sym.loc
+          val loc2 = ident.loc
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            NameError.DuplicateDef(name, loc1, loc2),
+            NameError.DuplicateDef(name, loc2, loc1)
+          ))
       }
 
     /*
@@ -196,7 +217,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         case Some(typealias) =>
           // Case 2: Duplicate type alias.
-          NameError.DuplicateTypeAlias(ident.name, typealias.sym.loc, ident.loc).toFailure
+          val name = ident.name
+          val loc1 = typealias.sym.loc
+          val loc2 = ident.loc
+          Failure(LazyList(
+            // NB: We report an error at both source locations.
+            NameError.DuplicateTypeAlias(name, loc1, loc2),
+            NameError.DuplicateTypeAlias(name, loc2, loc1)
+          ))
       }
 
     /*
@@ -280,7 +308,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given `cases` map.
     */
-  private def casesOf(cases: Map[String, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[Map[String, NamedAst.Case], NameError] = {
+  private def casesOf(cases: Map[Name.Tag, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[Map[Name.Tag, NamedAst.Case], NameError] = {
     val casesVal = cases map {
       case (name, WeededAst.Case(enum, tag, tpe)) =>
         mapN(visitType(tpe, uenv0, tenv0)) {
@@ -366,7 +394,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case (macc, ident) => macc.get(ident.name) match {
         case None =>
           // We use a kind variable since we do not know the kind of the type variable.
-          val tvar = Type.freshVar(Kind.freshVar())
+          val tvar = Type.freshVar(Kind.freshVar(), text = Some(ident.name))
           macc + (ident.name -> tvar)
         case Some(tvar) => macc
       }
@@ -466,9 +494,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
 
-    case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, uenv0, tenv0) map {
-      case e => NamedAst.Expression.Unary(op, e, Type.freshVar(Kind.Star), loc)
-    }
+    case WeededAst.Expression.Unary(op, exp, loc) =>
+      visitExp(exp, env0, uenv0, tenv0) map {
+        case e => NamedAst.Expression.Unary(op, e, Type.freshVar(Kind.Star), loc)
+      }
 
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
@@ -557,19 +586,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.RecordEmpty(loc) =>
       NamedAst.Expression.RecordEmpty(Type.freshVar(Kind.Record), loc).toSuccess
 
-    case WeededAst.Expression.RecordSelect(exp, label, loc) =>
+    case WeededAst.Expression.RecordSelect(exp, field, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshVar(Kind.Star), loc)
+        case e => NamedAst.Expression.RecordSelect(e, field, Type.freshVar(Kind.Star), loc)
       }
 
-    case WeededAst.Expression.RecordExtend(label, value, rest, loc) =>
+    case WeededAst.Expression.RecordExtend(field, value, rest, loc) =>
       mapN(visitExp(value, env0, uenv0, tenv0), visitExp(rest, env0, uenv0, tenv0)) {
-        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshVar(Kind.Record), loc)
+        case (v, r) => NamedAst.Expression.RecordExtend(field, v, r, Type.freshVar(Kind.Record), loc)
       }
 
-    case WeededAst.Expression.RecordRestrict(label, rest, loc) =>
+    case WeededAst.Expression.RecordRestrict(field, rest, loc) =>
       mapN(visitExp(rest, env0, uenv0, tenv0)) {
-        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshVar(Kind.Record), loc)
+        case r => NamedAst.Expression.RecordRestrict(field, r, Type.freshVar(Kind.Record), loc)
       }
 
     case WeededAst.Expression.ArrayLit(elms, loc) =>
@@ -913,10 +942,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given head predicate `head` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.Atom(ident, den, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(pred, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(ident, den, ts, Type.freshVar(Kind.Star), loc)
+      } yield NamedAst.Predicate.Head.Atom(pred, den, ts, Type.freshVar(Kind.Star), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
@@ -928,9 +957,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given body predicate `body` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(ident, den, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(pred, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0, uenv0))
-      NamedAst.Predicate.Body.Atom(ident, den, polarity, ts, Type.freshVar(Kind.Star), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(pred, den, polarity, ts, Type.freshVar(Kind.Star), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -942,7 +971,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -950,7 +979,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1009,9 +1038,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.RecordEmpty(loc) =>
       NamedAst.Type.RecordEmpty(loc).toSuccess
 
-    case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
+    case WeededAst.Type.RecordExtend(field, value, rest, loc) =>
       mapN(visitType(value, uenv0, tenv0), visitType(rest, uenv0, tenv0)) {
-        case (t, r) => NamedAst.Type.RecordExtend(label, t, r, loc)
+        case (t, r) => NamedAst.Type.RecordExtend(field, t, r, loc)
       }
 
     case WeededAst.Type.RecordGeneric(tvar, loc) =>
@@ -1102,7 +1131,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case "int32" => true
     case "int64" => true
     case "bigint" => true
-    case "str" => true
     case "string" => true
     case "array" => true
     case "ref" => true
@@ -1149,9 +1177,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.RecordEmpty(loc) => Nil
-    case WeededAst.Expression.RecordSelect(exp, label, loc) => freeVars(exp)
-    case WeededAst.Expression.RecordExtend(label, exp, rest, loc) => freeVars(exp) ++ freeVars(rest)
-    case WeededAst.Expression.RecordRestrict(label, rest, loc) => freeVars(rest)
+    case WeededAst.Expression.RecordSelect(exp, _, loc) => freeVars(exp)
+    case WeededAst.Expression.RecordExtend(_, exp, rest, loc) => freeVars(exp) ++ freeVars(rest)
+    case WeededAst.Expression.RecordRestrict(_, rest, loc) => freeVars(rest)
     case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm) ++ freeVars(len)
     case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
@@ -1310,7 +1338,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given head predicate `h0`.
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
-    case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Head.Atom(_, den, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Head.Union(exp, loc) => freeVars(exp)
   }
 
@@ -1318,7 +1346,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given body predicate `b0`.
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
-    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
   }
 
@@ -1404,7 +1432,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
     case TypeParams.Elided => Nil
     case TypeParams.Explicit(tparams) => tparams.map {
-      case WeededAst.ConstrainedType(ident, _, classes) => NamedAst.TypeParam(ident, Type.freshVar(Kind.Star), classes, ident.loc)
+      case WeededAst.ConstrainedType(ident, _, classes) =>
+        NamedAst.TypeParam(ident, Type.freshVar(Kind.Star, text = Some(ident.name)), classes, ident.loc)
     }
   }
 
@@ -1448,16 +1477,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         // Case 1: Get the kind for each type variable from the implicit type params.
         // Use a kind variable if not found; this will be caught later by redundancy checks.
         val kind = kindPerName.getOrElse(ident.name, Kind.freshVar())
-        val tvar = Type.freshVar(kind)
-        // Remember the original textual name.
-        tvar.setText(ident.name)
+        val tvar = Type.freshVar(kind, text = Some(ident.name))
         NamedAst.TypeParam(ident, tvar, classes, ident.loc)
 
       case WeededAst.ConstrainedType(ident, Some(kind), classes) =>
         // Case 2: The kind is explicitly available.
-        val tvar = Type.freshVar(kind)
-        // Remember the original textual name.
-        tvar.setText(ident.name)
+        val tvar = Type.freshVar(kind, text = Some(ident.name))
         NamedAst.TypeParam(ident, tvar, classes, ident.loc)
     }
   }
@@ -1522,8 +1547,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       kindedNames =>
         kindedNames.values.toList.sortBy(_._1.name).map {
           case (id, kind) =>
-            val tvar = Type.freshVar(kind) // use the kind we validated from the parameter context
-            tvar.setText(id.name)
+            val tvar = Type.freshVar(kind, text = Some(id.name)) // use the kind we validated from the parameter context
             NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
           // MATT may need to be not Nil for type constraints in enums
         }
@@ -1547,8 +1571,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case name =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
         // We use a kind variable since we do not know the kind of the type variable.
-        val tvar = Type.freshVar(Kind.freshVar())
-        tvar.setText(name)
+        val tvar = Type.freshVar(Kind.freshVar(), text = Some(name))
         NamedAst.TypeParam(ident, tvar, Nil, loc)
     }
   }
@@ -1598,7 +1621,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given use environment `uenv0`.
     */
-  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Ident, uenv0: UseEnv): (Option[Name.QName], Name.Ident) = {
+  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Tag, uenv0: UseEnv): (Option[Name.QName], Name.Tag) = {
     enumOpt0 match {
       case None =>
         // Case 1: The tag is unqualified. Look it up in the use environment.
@@ -1653,25 +1676,53 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val name = alias.name
         uenv1.classes.get(name) match {
           case None => uenv1.addClass(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUseClass(name, otherQName.loc, qname.loc).toFailure
+          case Some(otherQName) =>
+            val loc1 = otherQName.loc
+            val loc2 = qname.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseClass(name, loc1, loc2),
+              NameError.DuplicateUseClass(name, loc2, loc1)
+            ))
         }
       case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
         val name = alias.name
         uenv1.defs.get(name) match {
           case None => uenv1.addDef(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUseDef(name, otherQName.loc, qname.loc).toFailure
+          case Some(otherQName) =>
+            val loc1 = otherQName.loc
+            val loc2 = qname.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseDef(name, loc1, loc2),
+              NameError.DuplicateUseDef(name, loc2, loc1)
+            ))
         }
       case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
         val name = alias.name
         uenv1.tpes.get(name) match {
           case None => uenv1.addTpe(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUseTyp(name, otherQName.loc, qname.loc).toFailure
+          case Some(otherQName) =>
+            val loc1 = otherQName.loc
+            val loc2 = qname.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseTyp(name, loc1, loc2),
+              NameError.DuplicateUseTyp(name, loc2, loc1)
+            ))
         }
       case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>
         val name = alias.name
         uenv1.tags.get(name) match {
           case None => uenv1.addTag(name, qname, tag).toSuccess
-          case Some((otherQName, otherTag)) => NameError.DuplicateUseTag(name, otherTag.loc, tag.loc).toFailure
+          case Some((otherQName, otherTag)) =>
+            val loc1 = otherTag.loc
+            val loc2 = tag.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseTag(name, loc1, loc2),
+              NameError.DuplicateUseTag(name, loc2, loc1)
+            ))
         }
     }
 
@@ -1685,7 +1736,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(classes: Map[String, Name.QName], defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
+  private case class UseEnv(classes: Map[String, Name.QName], defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
     /**
       * Binds the class name `s` to the qualified name `n`.
       */
@@ -1704,7 +1755,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /**
       * Binds the tag name `s` to the qualified name `n` and tag `t`.
       */
-    def addTag(s: String, n: Name.QName, t: Name.Ident): UseEnv = copy(tags = tags + (s -> (n, t)))
+    def addTag(s: String, n: Name.QName, t: Name.Tag): UseEnv = copy(tags = tags + (s -> (n, t)))
   }
 
 }

@@ -170,7 +170,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val freeVars = e0.tparams.map(_.tpe)
           val caseType = t
           val enumType = Type.mkEnum(e0.sym, freeVars)
-          val base = Type.mkTag(e0.sym, tag.name, caseType, enumType)
+          val base = Type.mkTag(e0.sym, tag, caseType, enumType)
           val sc = Scheme(freeVars, List.empty, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
         }
@@ -484,13 +484,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             lookupEnumByTag(enum, tag, ns0, root) map {
               case decl =>
                 // Retrieve the relevant case.
-                val caze = decl.cases(tag.name)
+                val caze = decl.cases(tag)
 
                 // Check if the tag value has Unit type.
                 if (isUnitType(caze.tpe)) {
                   // Case 1.1: The tag value has Unit type. Construct the Unit expression.
                   val e = ResolvedAst.Expression.Unit(loc)
-                  ResolvedAst.Expression.Tag(decl.sym, tag.name, e, tvar, loc)
+                  ResolvedAst.Expression.Tag(decl.sym, tag, e, tvar, loc)
                 } else {
                   // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
@@ -505,7 +505,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshVar(Kind.Star), loc)
+                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag, varExp, Type.freshVar(Kind.Star), loc)
 
                   // Assemble the lambda expressions.
                   ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshVar(Kind.Star), loc)
@@ -516,7 +516,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             for {
               d <- lookupEnumByTag(enum, tag, ns0, root)
               e <- visit(exp, tenv0)
-            } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, loc)
+            } yield ResolvedAst.Expression.Tag(d.sym, tag, e, tvar, loc)
         }
 
         case NamedAst.Expression.Tuple(elms, loc) =>
@@ -527,21 +527,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.RecordEmpty(tvar, loc) =>
           ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
 
-        case NamedAst.Expression.RecordSelect(base, label, tvar, loc) =>
+        case NamedAst.Expression.RecordSelect(base, field, tvar, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.RecordSelect(b, label.name, tvar, loc)
+          } yield ResolvedAst.Expression.RecordSelect(b, field, tvar, loc)
 
-        case NamedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
+        case NamedAst.Expression.RecordExtend(field, value, rest, tvar, loc) =>
           for {
             v <- visit(value, tenv0)
             r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordExtend(label.name, v, r, tvar, loc)
+          } yield ResolvedAst.Expression.RecordExtend(field, v, r, tvar, loc)
 
-        case NamedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
+        case NamedAst.Expression.RecordRestrict(field, rest, tvar, loc) =>
           for {
             r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordRestrict(label.name, r, tvar, loc)
+          } yield ResolvedAst.Expression.RecordRestrict(field, r, tvar, loc)
 
         case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for {
@@ -779,10 +779,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, loc)
 
-        case NamedAst.Expression.FixpointProject(ident, exp, tvar, loc) =>
+        case NamedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(ident.name, e, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointProject(pred, e, tvar, loc)
 
         case NamedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
           for {
@@ -790,12 +790,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, loc)
 
-        case NamedAst.Expression.FixpointFold(ident, exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
             e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.FixpointFold(ident.name, e1, e2, e3, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointFold(pred, e1, e2, e3, tvar, loc)
       }
 
       visit(exp0, Map.empty)
@@ -843,7 +843,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             d <- lookupEnumByTag(enum, tag, ns0, root)
             p <- visit(pat)
-          } yield ResolvedAst.Pattern.Tag(d.sym, tag.name, p, tvar, loc)
+          } yield ResolvedAst.Pattern.Tag(d.sym, tag, p, tvar, loc)
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
           for {
@@ -878,10 +878,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(ident, den, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
           for {
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, root))
-          } yield ResolvedAst.Predicate.Head.Atom(ident.name, den, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(pred, den, ts, tvar, loc)
 
         case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
           for {
@@ -895,10 +895,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(ident, den, polarity, terms, tvar, loc) =>
+        case NamedAst.Predicate.Body.Atom(pred, den, polarity, terms, tvar, loc) =>
           for {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
-          } yield ResolvedAst.Predicate.Body.Atom(ident.name, den, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {
@@ -1136,7 +1136,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
+  def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Tag, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
     // Determine whether the name is qualified.
     qnameOpt match {
       case None =>
@@ -1144,9 +1144,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         // Find all matching enums in the current namespace.
         val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])) {
-          for ((tagName, caze) <- decl.cases) {
-            if (tag.name == tagName) {
+        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[Name.Tag, NamedAst.Enum])) {
+          for ((enumTag, caze) <- decl.cases) {
+            if (tag == enumTag) {
               namespaceMatches += decl
             }
           }
@@ -1167,8 +1167,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val globalMatches = mutable.Set.empty[NamedAst.Enum]
         for (decls <- root.enums.get(Name.RootNS)) {
           for ((enumName, decl) <- decls) {
-            for ((tagName, caze) <- decl.cases) {
-              if (tag.name == tagName) {
+            for ((enumTag, caze) <- decl.cases) {
+              if (tag == enumTag) {
                 globalMatches += decl
               }
             }
@@ -1208,8 +1208,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
           case Some(enumDecl) =>
             // Case 2.2: Enum declaration found. Look for the tag.
-            for ((tagName, caze) <- enumDecl.cases) {
-              if (tag.name == tagName) {
+            for ((enumTag, caze) <- enumDecl.cases) {
+              if (tag == enumTag) {
                 // Case 2.2.1: Tag found.
                 return getEnumIfAccessible(enumDecl, ns0, tag.loc)
               }
@@ -1236,29 +1236,28 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
 
-    case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
+    case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => Type.Unit.toSuccess
-      case "Null" => Type.Null.toSuccess
-      case "Bool" => Type.Bool.toSuccess
-      case "Char" => Type.Char.toSuccess
-      case "Float" => Type.Float64.toSuccess
-      case "Float32" => Type.Float32.toSuccess
-      case "Float64" => Type.Float64.toSuccess
-      case "Int" => Type.Int32.toSuccess
-      case "Int8" => Type.Int8.toSuccess
-      case "Int16" => Type.Int16.toSuccess
-      case "Int32" => Type.Int32.toSuccess
-      case "Int64" => Type.Int64.toSuccess
-      case "BigInt" => Type.BigInt.toSuccess
-      case "Str" => Type.Str.toSuccess
-      case "String" => Type.Str.toSuccess
-      case "Array" => Type.Array.toSuccess
-      case "Channel" => Type.Channel.toSuccess
-      case "Lazy" => Type.Lazy.toSuccess
-      case "Ref" => Type.Ref.toSuccess
+      case "Unit" => Type.mkUnit(loc).toSuccess
+      case "Null" => Type.mkNull(loc).toSuccess
+      case "Bool" => Type.mkBool(loc).toSuccess
+      case "Char" => Type.mkChar(loc).toSuccess
+      case "Float" => Type.mkFloat64(loc).toSuccess
+      case "Float32" => Type.mkFloat32(loc).toSuccess
+      case "Float64" => Type.mkFloat64(loc).toSuccess
+      case "Int" => Type.mkInt32(loc).toSuccess
+      case "Int8" => Type.mkInt8(loc).toSuccess
+      case "Int16" => Type.mkInt16(loc).toSuccess
+      case "Int32" => Type.mkInt32(loc).toSuccess
+      case "Int64" => Type.mkInt64(loc).toSuccess
+      case "BigInt" => Type.mkBigInt(loc).toSuccess
+      case "String" => Type.mkString(loc).toSuccess
+      case "Array" => Type.mkArray(loc).toSuccess
+      case "Channel" => Type.mkChannel(loc).toSuccess
+      case "Lazy" => Type.mkLazy(loc).toSuccess
+      case "Ref" => Type.mkRef(loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1267,10 +1266,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, loc)
 
           // Case 3: TypeAlias.
-          case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
+          case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, loc)
 
           // Case 4: Errors.
           case (x, y) =>
@@ -1292,8 +1291,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
       }
 
-    case NamedAst.Type.Enum(sym, kind) =>
-      Type.mkEnum(sym, kind).toSuccess
+    case NamedAst.Type.Enum(sym, kind, loc) =>
+      Type.mkEnum(sym, kind, loc).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for {
@@ -1304,11 +1303,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Type.RecordEmpty(loc) =>
       Type.RecordEmpty.toSuccess
 
-    case NamedAst.Type.RecordExtend(label, value, rest, loc) =>
+    case NamedAst.Type.RecordExtend(field, value, rest, loc) =>
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-        rec <- mkRecordExtend(label.name, v, r, loc)
+        rec <- mkRecordExtend(field, v, r, loc)
       } yield rec
 
     case NamedAst.Type.SchemaEmpty(loc) =>
@@ -1328,7 +1327,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             r <- lookupType(rest, ns0, root)
             app <- mkApply(t, ts, loc)
             tpe <- Type.simplify(app).toSuccess[Type, ResolutionError]
-            schema <- mkSchemaExtend(qname.ident.name, tpe, r, loc)
+            schema <- mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
           } yield schema
       }
 
@@ -1337,7 +1336,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
         pred <- mkPredicate(den, ts, loc)
-        schema <- mkSchemaExtend(ident.name, pred, r, loc)
+        schema <- mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
 
     case NamedAst.Type.Relation(tpes, loc) =>
@@ -1582,7 +1581,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.mkEnum(enum.sym, enum0.kind)
+      case enum => Type.mkEnum(enum.sym, enum0.kind, loc)
     }
 
   /**
@@ -1814,21 +1813,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Creates a well-formed `Tuple` type.
     */
   private def mkTuple(tpes: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.Tuple(tpes.length)), tpes, loc)
+    mkApply(Type.Cst(TypeConstructor.Tuple(tpes.length), loc), tpes, loc)
   }
 
   /**
     * Creates a well-formed `RecordExtend` type.
     */
-  private def mkRecordExtend(label: String, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(label)), List(tpe, rest), loc)
+  private def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(field), loc), List(tpe, rest), loc)
   }
 
   /**
     * Creates a well-formed `SchemaExtend` type.
     */
-  private def mkSchemaExtend(name: String, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(name)), List(tpe, rest), loc)
+  private def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred), loc), List(tpe, rest), loc)
   }
 
   /**

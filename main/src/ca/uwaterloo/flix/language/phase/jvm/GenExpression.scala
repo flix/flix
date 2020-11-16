@@ -371,7 +371,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
 
@@ -385,7 +385,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
-      val tagInfo = JvmOps.getTagInfo(tpe, tag)
+      val tagInfo = JvmOps.getTagInfo(tpe, tag.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
       /*
@@ -413,7 +413,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag.name)
       // We get the JvmType of the class for the tag
       val classType = JvmOps.getTagClassType(tagInfo)
       // Evaluate the exp
@@ -472,7 +472,7 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordSelect(exp, label, tpe, loc) =>
+    case Expression.RecordSelect(exp, field, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
@@ -488,7 +488,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       //Push the desired label of the field we want get of the record onto the stack
-      visitor.visitLdcInsn(label)
+      visitor.visitLdcInsn(field.name)
 
       //Invoke the lookupField method on the record. (To get the proper record object)
       visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "lookupField",
@@ -504,7 +504,7 @@ object GenExpression {
       // Cast the field value to the expected type.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+    case Expression.RecordExtend(field, value, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the class for the record extend
@@ -521,7 +521,7 @@ object GenExpression {
       //Push the required argument to call the RecordExtend constructor.
 
       //Push the label of field (which is going to be the extension).
-      visitor.visitLdcInsn(label)
+      visitor.visitLdcInsn(field.name)
 
       //Push the value of the field onto the stack, since it is an expression we first need to compile it.
       compileExpression(value, visitor, currentClass, lenv0, entryPoint)
@@ -535,7 +535,7 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordRestrict(label, rest, tpe, loc) =>
+    case Expression.RecordRestrict(field, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the record interface
@@ -544,7 +544,7 @@ object GenExpression {
       //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
       compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
       //Push the label of field (which is going to be the removed/restricted).
-      visitor.visitLdcInsn(label)
+      visitor.visitLdcInsn(field.name)
 
       // Invoking the restrictField method
       visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "restrictField",
@@ -1142,13 +1142,13 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
-    case Expression.FixpointProject(name, exp, tpe, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
       // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
-      newRelSym(name, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      newRelSym(pred.name, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1169,7 +1169,7 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.FixpointFold(name, init, f, constraints, tpe, loc) =>
+    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -2041,14 +2041,14 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
       den match {
-        case Denotation.Relational => newRelSym(name, mv)
-        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
+        case Denotation.Relational => newRelSym(pred.name, mv)
+        case Denotation.Latticenal => newLatSym(pred.name, terms.last.tpe, mv)
       }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
@@ -2079,14 +2079,14 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
       den match {
-        case Denotation.Relational => newRelSym(name, mv)
-        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
+        case Denotation.Relational => newRelSym(pred.name, mv)
+        case Denotation.Latticenal => newLatSym(pred.name, terms.last.tpe, mv)
       }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
@@ -2402,11 +2402,11 @@ object GenExpression {
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "<init>", "()V", false)
 
     // Add every predicate symbol with its stratum.
-    for ((name, stratum) <- stf.m) {
+    for ((ident, stratum) <- stf.m) {
       mv.visitInsn(DUP)
 
       // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
-      newRelSym(name, mv)
+      newRelSym(ident.name, mv)
 
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)

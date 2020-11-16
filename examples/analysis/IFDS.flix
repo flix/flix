@@ -1,25 +1,25 @@
 namespace IFDS {
 
     // Inputs
-    rel EshIntra(node: Str, factin: Str, factout: Str)
-    rel EshCallStart(node: Str, factin: Str, proc: Str, factout: Str)
-    rel EshEndReturn(proc: Str, factin: Str, node: Str, factout: Str)
+    rel EshIntra(node: String, factin: String, factout: String)
+    rel EshCallStart(node: String, factin: String, proc: String, factout: String)
+    rel EshEndReturn(proc: String, factin: String, node: String, factout: String)
 
     // Call-to-Return edges should be included above in EshIntra
-    rel CFG(from: Str, to: Str)
-    rel CallGraph(site: Str, proc: Str)
-    rel StartNode(proc: Str, node: Str) // TODO: should really be a function
-    rel EndNode(proc: Str, node: Str)
+    rel CFG(from: String, to: String)
+    rel CallGraph(site: String, proc: String)
+    rel StartNode(proc: String, node: String) // TODO: should really be a function
+    rel EndNode(proc: String, node: String)
 
     // Internal lattices
-    rel PathEdge(factin: Str, node: Str, fact: Str)
-    rel SummaryEdge(node: Str, factin: Str, factout: Str)
+    rel PathEdge(factin: String, node: String, fact: String)
+    rel SummaryEdge(node: String, factin: String, factout: String)
 
     // Output
-    rel Results(node: Str, fact: Str)
+    rel Results(node: String, fact: String)
 
-    rel Facts(fact: Str)
-    rel Identity(node: Str)
+    rel Facts(fact: String)
+    rel Identity(node: String)
 
     // Rules
     @test

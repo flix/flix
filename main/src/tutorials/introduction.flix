@@ -14,9 +14,9 @@
 // We will represent the program-under-analysis using three input
 // relations. One for each type of statement:
 //
-rel LitStm(r: Str, c: Int)         // r = c
-rel AddStm(r: Str, x: Str, y: Str) // r = x + y
-rel DivStm(r: Str, x: Str, y: Str) // r = x / y
+rel LitStm(r: String, c: Int)         // r = c
+rel AddStm(r: String, x: String, y: String) // r = x + y
+rel DivStm(r: String, x: String, y: String) // r = x / y
 
 //
 // The next step is to define the lattice LocalVar which maps every local
@@ -25,7 +25,7 @@ rel DivStm(r: Str, x: Str, y: Str) // r = x / y
 //
 // We can think of this lattice as the result of the analysis.
 //
-lat LocalVar(k: Str, v: Constant)
+lat LocalVar(k: String, v: Constant)
 
 //
 // To define the constant propagation lattice, we begin by defining the
@@ -152,7 +152,7 @@ def div(e1: Constant, e2: Constant): Constant = match (e1, e2) {
 // We define a relation to hold the names of local variables possibly
 // involved in a division-by-zero error:
 //
-rel ArithmeticError(r: Str)
+rel ArithmeticError(r: String)
 
 //
 // We populate this relation with the rule below. This rule states that if

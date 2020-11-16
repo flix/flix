@@ -15,11 +15,13 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 
 sealed trait Entity {
   def loc: SourceLocation
 }
+
+// TODO: Restructure this?
 
 object Entity {
 
@@ -32,10 +34,14 @@ object Entity {
   }
 
   case class Enum(e: TypedAst.Enum) extends Entity {
-    def loc: SourceLocation = e.loc
+    def loc: SourceLocation = e.sym.loc
   }
 
   case class Exp(e: TypedAst.Expression) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
+  case class Field(e: Name.Field) extends Entity {
     def loc: SourceLocation = e.loc
   }
 
@@ -47,9 +53,15 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
+  case class Pred(e: Name.Pred) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
   // TODO: Split this into LetBound and SelectBound?
   case class LocalVar(sym: Symbol.VarSym, tpe: Type) extends Entity {
     def loc: SourceLocation = sym.loc
   }
+
+  case class TypeCon(tc: TypeConstructor, loc: SourceLocation) extends Entity
 
 }

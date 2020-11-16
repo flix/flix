@@ -110,13 +110,13 @@ object TypedAstOps {
 
       case Expression.RecordEmpty(tpe, loc) => Map.empty
 
-      case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+      case Expression.RecordSelect(base, _, tpe, eff, loc) =>
         visitExp(base, env0)
 
-      case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+      case Expression.RecordExtend(_, value, rest, tpe, eff, loc) =>
         visitExp(rest, env0) ++ visitExp(value, env0)
 
-      case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+      case Expression.RecordRestrict(_, rest, tpe, eff, loc) =>
         visitExp(rest, env0)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
@@ -224,13 +224,13 @@ object TypedAstOps {
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(_, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
     }
 
@@ -245,7 +245,7 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given head predicate `h0`.
       */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
-      case Predicate.Head.Atom(name, den, terms, tpe, loc) => Map.empty
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Map.empty
       case Predicate.Head.Union(exp, tpe, loc) => visitExp(exp, env0)
     }
 
@@ -253,7 +253,7 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given body predicate `b0`.
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) => Map.empty
+      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => Map.empty
       case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
     }
 

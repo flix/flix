@@ -42,9 +42,9 @@ object FormatExpression {
     case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => s"Tag($sym, $tag, $exp)"
     case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => s"Tuple(${elms.mkString(", ")})"
     case TypedAst.Expression.RecordEmpty(tpe, loc) => s"RecordEmpty"
-    case TypedAst.Expression.RecordSelect(exp, label, tpe, eff, loc) => s"RecordSelect($exp, $label)"
-    case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) => s"RecordExtend($label, $value, $rest)"
-    case TypedAst.Expression.RecordRestrict(label, rest, tpe, eff, loc) => s"RecordRestrict($label, $rest)"
+    case TypedAst.Expression.RecordSelect(exp, field, tpe, eff, loc) => s"RecordSelect($exp, $field)"
+    case TypedAst.Expression.RecordExtend(field, value, rest, tpe, eff, loc) => s"RecordExtend($field, $value, $rest)"
+    case TypedAst.Expression.RecordRestrict(field, rest, tpe, eff, loc) => s"RecordRestrict($field, $rest)"
     case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => s"ArrayLit(${elms.mkString(", ")})"
     case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => s"ArrayNew($elm, $len)"
     case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => s"ArrayLoad($base, $index)"
@@ -76,9 +76,9 @@ object FormatExpression {
     case TypedAst.Expression.FixpointConstraintSet(cs, stf, tpe, loc) => s"FixpointConstraintSet($cs})"
     case TypedAst.Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => s"FixpointCompose($exp1, $exp2)"
     case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) => s"FixpointSolve($exp, $stf)"
-    case TypedAst.Expression.FixpointProject(name, exp, tpe, eff, loc) => s"FixpointProject($name, $exp)"
+    case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) => s"FixpointProject($pred, $exp)"
     case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => s"FixpointEntails($exp1, $exp2)"
-    case TypedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) => s"FixpointFold($name, $exp1, $exp2, $exp3)"
+    case TypedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => s"FixpointFold($pred, $exp1, $exp2, $exp3)"
   }
 
 }

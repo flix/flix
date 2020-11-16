@@ -219,12 +219,12 @@ object PrettyPrinter {
         case Expression.Is(sym, tag, exp, loc) =>
           visitExp(exp)
           vt.text(" is ")
-          vt.text(tag)
+          vt.text(tag.name)
 
         case Expression.Tag(sym, tag, exp, tpe, loc) => exp match {
-          case Expression.Unit => vt.text(tag)
+          case Expression.Unit => vt.text(tag.name)
           case _ =>
-            vt.text(tag).text("(")
+            vt.text(tag.name).text("(")
             visitExp(exp)
             vt.text(")")
         }
@@ -251,23 +251,23 @@ object PrettyPrinter {
         case Expression.RecordEmpty(tpe, loc) =>
           vt.text("{}")
 
-        case Expression.RecordSelect(exp, label, tpe, loc) =>
+        case Expression.RecordSelect(exp, field, tpe, loc) =>
           visitExp(exp)
           vt.text(".")
-          vt.text(label)
+          vt.text(field.name)
 
-        case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+        case Expression.RecordExtend(field, value, rest, tpe, loc) =>
           vt.text("{ ")
-          vt.text(label)
+          vt.text(field.name)
           vt.text(" = ")
           visitExp(value)
           vt.text(" | ")
           visitExp(rest)
           vt.text(" }")
 
-        case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        case Expression.RecordRestrict(field, rest, tpe, loc) =>
           vt.text("{ -")
-          vt.text(label)
+          vt.text(field.name)
           vt.text(" | ")
           visitExp(rest)
           vt.text("}")
@@ -475,9 +475,9 @@ object PrettyPrinter {
           vt.text("solve ")
           visitExp(exp)
 
-        case Expression.FixpointProject(name, exp, tpe, loc) =>
+        case Expression.FixpointProject(pred, exp, tpe, loc) =>
           vt.text("project ")
-          vt.text(name)
+          vt.text(pred.name)
           vt.text(" ")
           visitExp(exp)
 
@@ -486,9 +486,9 @@ object PrettyPrinter {
           vt.text("|=")
           visitExp(exp2)
 
-        case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
+        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
           vt.text("fold ")
-          vt.text(name)
+          vt.text(pred.name)
           vt.text(" ")
           visitExp(exp1)
           vt.text(" ")
@@ -517,8 +517,8 @@ object PrettyPrinter {
     }
 
     def fmtHeadAtom(p0: Predicate.Head, vt: VirtualTerminal): Unit = p0 match {
-      case Predicate.Head.Atom(name, _, terms, _, _) =>
-        vt.text(name)
+      case Predicate.Head.Atom(pred, _, terms, _, _) =>
+        vt.text(pred.name)
         vt.text("(")
         for (term <- terms) {
           fmtHeadTerm(term, vt)

@@ -173,18 +173,18 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.RecordEmpty(tpe, loc) =>
         Expression.RecordEmpty(tpe, loc)
 
-      case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+      case Expression.RecordSelect(base, field, tpe, eff, loc) =>
         val b = visitExp(base)
-        Expression.RecordSelect(b, label, tpe, eff, loc)
+        Expression.RecordSelect(b, field, tpe, eff, loc)
 
-      case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+      case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
         val v = visitExp(value)
         val r = visitExp(rest)
-        Expression.RecordExtend(label, v, r, tpe, eff, loc)
+        Expression.RecordExtend(field, v, r, tpe, eff, loc)
 
-      case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+      case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
         val r = visitExp(rest)
-        Expression.RecordRestrict(label, r, tpe, eff, loc)
+        Expression.RecordRestrict(field, r, tpe, eff, loc)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         val es = elms map visitExp
@@ -333,20 +333,20 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointProject(name, e, tpe, eff, loc)
+        Expression.FixpointProject(pred, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
     }
 
     /**
@@ -363,7 +363,7 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given head predicate `h0`.
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
           getOrMkEq(term.tpe)
@@ -371,7 +371,7 @@ object Synthesize extends Phase[Root, Root] {
           getOrMkToString(term.tpe)
         }
         val ts = terms.map(visitExp)
-        Predicate.Head.Atom(name, den, ts, tpe, loc)
+        Predicate.Head.Atom(pred, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -382,14 +382,14 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
           getOrMkEq(term.tpe)
           getOrMkHash(term.tpe)
           getOrMkToString(term.tpe)
         }
-        Predicate.Body.Atom(name, den, polarity, terms, tpe, loc)
+        Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
@@ -1078,7 +1078,7 @@ object Synthesize extends Phase[Root, Root] {
           case TypeConstructor.RecordEmpty =>
             Expression.Str("<<record>>", sl)
 
-          case TypeConstructor.RecordExtend(label) =>
+          case TypeConstructor.RecordExtend(field) =>
             Expression.Str("<<record>>", sl)
 
           case TypeConstructor.SchemaEmpty =>
@@ -1182,7 +1182,7 @@ object Synthesize extends Phase[Root, Root] {
 
                 // Generate the rule body.
                 val b = concatAll(List(
-                  Expression.Str(tag, sl),
+                  Expression.Str(tag.name, sl),
                   Expression.Str("(", sl),
                   mkApplyToString(Expression.Var(freshX, caseType, sl)),
                   Expression.Str(")", sl)
@@ -1258,7 +1258,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns an association list of the (tag, type)s of the given `enum` specialized to the given type `tpe`.
       */
-    def casesOf(enum: Enum, tpe: Type): List[(String, Type)] = {
+    def casesOf(enum: Enum, tpe: Type): List[(Name.Tag, Type)] = {
       // Compute a substitution for the parametric enum specialized to the specific type.
       val subst = Unification.unifyTypes(enum.tpeDeprecated, tpe).get
 
