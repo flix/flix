@@ -161,6 +161,7 @@ object TypeConstructor {
     /**
       * The shape of lazy is Lazy[t].
       */
+    // TODO: add type argument (seperate PR)
     def kind: Kind = Kind.Star ->: Kind.Star
   }
 

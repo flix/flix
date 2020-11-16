@@ -1,7 +1,5 @@
 namespace Test/Exp/Lazy {
 
-    // TODO: make better names a la Test.Exp.Force.flix
-
     @test
     def testUnitLazy01(): Lazy[Unit] & Pure =
         lazy ()

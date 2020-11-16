@@ -94,6 +94,7 @@ object GenLazyClasses {
 
   /**
    * TODO: make documentation
+   * TODO: rename to force(...)
    */
   private def compileGetValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     val erasedValueType = JvmOps.getErasedJvmType(valueType)
@@ -101,7 +102,7 @@ object GenLazyClasses {
     val internalClassType = classType.name.toInternalName
 
     // header of the method
-    val returnDescription = AsmOps.getMethodDescriptor(List(), erasedValueType)
+    val returnDescription = AsmOps.getMethodDescriptor(List(JvmType.Context), erasedValueType)
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getValue", returnDescription, null, null)
     method.visitCode()
 
@@ -114,10 +115,17 @@ object GenLazyClasses {
      */
 
     // TODO: Only do this conditionally and set initialized=false
+    method.visitVarInsn(ALOAD, 1)
     method.visitVarInsn(ALOAD, 0)
-    method.visitInsn(DUP)
-    method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.name.toInternalName)
+    method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
     AsmOps.compileClosureApplication(method, MonoType.Arrow(List(MonoType.Unit), valueType), Nil, valueType)
+    method.visitVarInsn(ALOAD, 0)
+    if (AsmOps.getStackSize(JvmOps.getErasedJvmType(valueType)) == 1) {
+      method.visitInsn(SWAP)
+    } else {
+      method.visitInsn(DUP_X2)
+      method.visitInsn(POP)
+    }
     method.visitFieldInsn(PUTFIELD, internalClassType, "value", erasedValueTypeDescriptor)
 
     method.visitVarInsn(ALOAD, 0)

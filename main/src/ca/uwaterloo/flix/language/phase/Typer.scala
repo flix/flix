@@ -1253,6 +1253,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //  -------------------------
         //  lazy exp : Lazy[t] @ Pure
         //
+        // TODO: try to change this to only be impure on force if content is impure (Seperate PR)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.mkLazy(tpe)
