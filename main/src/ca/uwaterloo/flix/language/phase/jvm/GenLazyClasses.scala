@@ -37,8 +37,7 @@ object GenLazyClasses {
         // Construct lazy class.
         val fullType = JvmOps.getLazyClassType(tpe)
         val jvmName = fullType.name
-        val lambdaType = MonoType.Arrow(List(MonoType.Unit), valueType)
-        val bytecode = genByteCode(fullType, lambdaType, valueType)
+        val bytecode = genByteCode(fullType, valueType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, tpe) =>
         // Case 2: The type constructor is a non-tuple.
@@ -50,7 +49,7 @@ object GenLazyClasses {
   /**
    * TODO: make documentation
    */
-  private def genByteCode(classType: JvmType.Reference, lambdaType: MonoType, valueType: MonoType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, valueType: MonoType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -63,19 +62,14 @@ object GenLazyClasses {
     // Source of the class TODO: what is the point of this?
     visitor.visitSource(classType.name.toInternalName, null)
 
-    // Should always be JvmType.Object because its () -> targetType
-    val erasedLambdaType = JvmOps.getErasedJvmType(lambdaType)
-
     AsmOps.compileField(visitor, "initialized", JvmType.PrimBool, isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, "expression", erasedLambdaType, isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, "expression", JvmType.Object, isStatic = false, isPrivate = true)
     AsmOps.compileField(visitor, "value", JvmOps.getErasedJvmType(valueType), isStatic = false, isPrivate = true)
-    compileGetValueMethod(visitor, classType, valueType)
+    compileForceMethod(visitor, classType, valueType)
 
     // Emit the code for the constructor
-    compileLazyConstructor(visitor, classType, erasedLambdaType)
+    compileLazyConstructor(visitor, classType)
 
-
-    // TODO: Should these be supported?
     // Generate `toString` method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
       "toString method shouldn't be called")
@@ -94,16 +88,15 @@ object GenLazyClasses {
 
   /**
    * TODO: make documentation
-   * TODO: rename to force(...)
    */
-  private def compileGetValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileForceMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     val erasedValueType = JvmOps.getErasedJvmType(valueType)
     val erasedValueTypeDescriptor = erasedValueType.toDescriptor
     val internalClassType = classType.name.toInternalName
 
     // header of the method
     val returnDescription = AsmOps.getMethodDescriptor(List(JvmType.Context), erasedValueType)
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getValue", returnDescription, null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "force", returnDescription, null, null)
     method.visitCode()
 
     /*
@@ -120,7 +113,7 @@ object GenLazyClasses {
     method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
     AsmOps.compileClosureApplication(method, MonoType.Arrow(List(MonoType.Unit), valueType), Nil, valueType)
     method.visitVarInsn(ALOAD, 0)
-    if (AsmOps.getStackSize(JvmOps.getErasedJvmType(valueType)) == 1) {
+    if (AsmOps.getStackSize(erasedValueType) == 1) {
       method.visitInsn(SWAP)
     } else {
       method.visitInsn(DUP_X2)
@@ -140,9 +133,9 @@ object GenLazyClasses {
   /**
    * TODO: make documentation
    */
-  def compileLazyConstructor(visitor: ClassWriter, classType: JvmType.Reference, erasedLambdaType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  def compileLazyConstructor(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
 
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(erasedLambdaType), JvmType.Void), null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), null, null)
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
@@ -167,5 +160,4 @@ object GenLazyClasses {
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
   }
-
 }

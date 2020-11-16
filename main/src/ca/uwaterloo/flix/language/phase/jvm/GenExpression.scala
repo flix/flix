@@ -1103,7 +1103,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, internalClassType)
       visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "getValue", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmOps.getErasedJvmType(tpe)), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmOps.getErasedJvmType(tpe)), false)
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       // Add source line numbers for debugging.
