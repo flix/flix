@@ -845,6 +845,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("lazy") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Lazy
     }
 
+    // TODO: fix that `force x == ()` is parsed as `force (x == ())`
     def Force: Rule1[ParsedAst.Expression.Force] = rule {
       SP ~ keyword("force") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Force
     }
