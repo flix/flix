@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 import org.objectweb.asm.Opcodes._
 
 /**
@@ -87,6 +87,45 @@ object GenLazyClasses {
   }
 
   /**
+   * Emits code to call a closure (not in tail position). fType is the type of the called closure. argsType is the type of its arguments, and resultType is the type of its result.
+   * TODO: avoid all this dublication
+   * OBS: This is copied since the last cast of the original method is not known at the class but at the force expression instead
+   */
+  def compileClosureApplication(visitor: MethodVisitor, valueType: MonoType)(implicit root: Root, flix: Flix) = {
+    val fType = MonoType.Arrow(List(MonoType.Unit), valueType)
+    // Type of the continuation interface
+    val cont = JvmOps.getContinuationInterfaceType(fType)
+    // Label for the loop
+    val loop = new Label
+    visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    // Begin of the loop
+    visitor.visitLabel(loop)
+    // Getting `continuation` field on `Context`
+    visitor.visitVarInsn(ALOAD, 1)
+    visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    // Setting `continuation` field of global to `null`
+    visitor.visitVarInsn(ALOAD, 1)
+    visitor.visitInsn(ACONST_NULL)
+    visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    // Cast to the continuation
+    visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
+    // Duplicate
+    visitor.visitInsn(DUP)
+    // Save it on the IFO local variable
+    visitor.visitVarInsn(ASTORE, 2)
+    // Call invoke
+    visitor.visitVarInsn(ALOAD, 1)
+    visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+    // Getting `continuation` field on `Context`
+    visitor.visitVarInsn(ALOAD, 1)
+    visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    visitor.visitJumpInsn(IFNONNULL, loop)
+    // Load IFO from local variable and invoke `getResult` on it
+    visitor.visitVarInsn(ALOAD, 2)
+    visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(valueType)), true)
+  }
+
+    /**
    * TODO: make documentation
    */
   private def compileForceMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: MonoType)(implicit root: Root, flix: Flix): Unit = {
@@ -111,7 +150,7 @@ object GenLazyClasses {
     method.visitVarInsn(ALOAD, 1)
     method.visitVarInsn(ALOAD, 0)
     method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
-    AsmOps.compileClosureApplication(method, MonoType.Arrow(List(MonoType.Unit), valueType), Nil, valueType)
+    compileClosureApplication(method, valueType)
     method.visitVarInsn(ALOAD, 0)
     if (AsmOps.getStackSize(erasedValueType) == 1) {
       method.visitInsn(SWAP)
