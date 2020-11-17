@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.SimplifiedAst._
+import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -26,7 +25,7 @@ object PrettyPrinter {
 
   private implicit val audience: Audience = Audience.External
 
-  object Simplified {
+  object Lifted {
 
     def fmtRoot(root: Root): VirtualTerminal = {
       val vt = new VirtualTerminal()
@@ -44,7 +43,7 @@ object PrettyPrinter {
       vt
     }
 
-    def fmtDef(defn: SimplifiedAst.Def, vt: VirtualTerminal): Unit = {
+    def fmtDef(defn: Def, vt: VirtualTerminal): Unit = {
       fmtExp(defn.exp, vt)
     }
 
@@ -77,37 +76,6 @@ object PrettyPrinter {
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
-
-        case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
-
-        case Expression.Lambda(fparams, body, tpe, loc) =>
-          vt.text("(")
-          for (fparam <- fparams) {
-            vt.text(fparam.sym.toString)
-            vt.text(", ")
-          }
-          vt.text(")")
-          vt.text(" -> ")
-          visitExp(body)
-
-        case Expression.Apply(exp, args, tpe, loc) =>
-          visitExp(exp)
-          vt.text("(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
-        case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
-          vt.text("LambdaClosure(")
-          visitExp(exp)
-          vt.text(", [")
-          for (freeVar <- freeVars) {
-            fmtSym(freeVar.sym, vt)
-            vt.text(", ")
-          }
-          vt.text("])")
 
         case Expression.Closure(sym, freeVars, tpe, loc) =>
           vt.text("Closure(")
