@@ -69,20 +69,20 @@ namespace Test/Exp/Force {
         let x = lazy array;
         array[0] == (force x)[0]
 
-    // TODO: how is equality done in the remaining tests?
-
     @test
     def testArrayOfStringForce01(): Bool & Impure =
         let array = ["str", "str2"];
         let x = lazy array;
-        let _ = force x;
-        true
+        array[0] == (force x)[0]
 
     @test
     def testTupleForce01(): Bool & Pure =
         let x = lazy ("str", "str2");
-        let _ = force x;
-        true
+        let y = force x;
+        match y {
+            case (s, _) => s == "str"
+            case _ => false
+        }
 
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades
@@ -99,8 +99,10 @@ namespace Test/Exp/Force {
     @test
     def testNestedForce01(): Bool & Pure =
         let x = lazy Card(Hearts, N(4));
-        let _ = force x;
-        true
+        match (force x) {
+            case Card(Hearts, N(y)) => y == 4
+            case _ => false
+        }
 
     pub enum Poly[a, b] {
         case None,
@@ -112,18 +114,27 @@ namespace Test/Exp/Force {
     @test
     def testPolyForce01(): Bool & Pure =
         let x = lazy This(123);
-        let _ = force x;
-        true
+        let y = force x;
+        match y {
+            case This(n) => n == 123
+            case _ => false
+        }
 
     @test
     def testPolyForce02(): Bool & Pure =
         let x = lazy That("str");
-        let _ = force x;
-        true
+        let y = force x;
+        match y {
+            case That(s) => s == "str"
+            case _ => false
+        }
 
     @test
     def testPolyForce03(): Bool & Pure =
         let x = lazy Both("str", 123);
-        let _ = force x;
-        true
+        let y = force x;
+        match y {
+            case Both(_, n) => n == 123
+            case _ => false
+        }
 }
