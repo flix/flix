@@ -77,8 +77,6 @@ object Optimizer extends Phase[Root, Root] {
           case Some(srcSym) => Expression.Var(srcSym, tpe, loc)
         }
 
-      case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
-
       case Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars map {
           case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), varType)

@@ -446,8 +446,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       case LiftedAst.Expression.MatchError(tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.MatchError(t, loc)
-
-      case LiftedAst.Expression.Def(sym, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
     }
 
     visit(exp0)

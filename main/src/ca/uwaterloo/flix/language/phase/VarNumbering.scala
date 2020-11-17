@@ -88,8 +88,6 @@ object VarNumbering extends Phase[Root, Root] {
 
       case Expression.Var(sym, tpe, loc) => i0
 
-      case Expression.Def(sym, tpe, loc) => i0
-
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>

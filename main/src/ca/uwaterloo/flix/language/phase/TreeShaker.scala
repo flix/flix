@@ -106,9 +106,6 @@ object TreeShaker extends Phase[Root, Root] {
       case Expression.Var(_, _, _) =>
         Set.empty
 
-      case Expression.Def(sym, _, _) =>
-        Set(sym)
-
       case Expression.Closure(sym, _, _, _) =>
         Set(sym)
 
