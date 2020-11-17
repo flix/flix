@@ -252,24 +252,29 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     // Measure elapsed time.
     val t = System.nanoTime()
+    try {
+      // Run the compiler up to the type checking phase.
+      flix.check() match {
+        case Success(root) =>
+          // Case 1: Compilation was successful. Build the reverse the reverse index.
+          this.root = root
+          this.index = Indexer.visitRoot(root)
 
-    // Run the compiler up to the type checking phase.
-    flix.check() match {
-      case Success(root) =>
-        // Case 1: Compilation was successful. Build the reverse the reverse index.
-        this.root = root
-        this.index = Indexer.visitRoot(root)
+          // Compute elapsed time.
+          val e = System.nanoTime() - t
 
-        // Compute elapsed time.
-        val e = System.nanoTime() - t
+          // Send back a status message.
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
 
-        // Send back a status message.
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
-
-      case Failure(errors) =>
-        // Case 2: Compilation failed. Send back the error messages.
-        val results = PublishDiagnosticsParams.from(errors)
-        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+        case Failure(errors) =>
+          // Case 2: Compilation failed. Send back the error messages.
+          val results = PublishDiagnosticsParams.from(errors)
+          ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+      }
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace(System.err)
+        ("id" -> requestId) ~ ("status" -> "failure")
     }
   }
 
