@@ -146,7 +146,11 @@ object GenLazyClasses {
     return this.value
      */
 
-    // TODO: Only do this conditionally and set initialized=false
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, internalClassType, "initialized", JvmType.PrimBool.toDescriptor)
+    val skip = new Label
+    method.visitJumpInsn(IFNE, skip)
+
     method.visitVarInsn(ALOAD, 1)
     method.visitVarInsn(ALOAD, 0)
     method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
@@ -160,6 +164,11 @@ object GenLazyClasses {
     }
     method.visitFieldInsn(PUTFIELD, internalClassType, "value", erasedValueTypeDescriptor)
 
+    method.visitVarInsn(ALOAD, 0)
+    method.visitInsn(ICONST_1)
+    method.visitFieldInsn(PUTFIELD, internalClassType, "initialized", JvmType.PrimBool.toDescriptor)
+
+    method.visitLabel(skip)
     method.visitVarInsn(ALOAD, 0)
     method.visitFieldInsn(GETFIELD, internalClassType, "value", erasedValueTypeDescriptor)
     method.visitInsn(AsmOps.getReturnInstruction(erasedValueType))
