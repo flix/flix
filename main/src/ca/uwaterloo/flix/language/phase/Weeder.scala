@@ -48,8 +48,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         // Check if there are top-level constraints and we should introduce a main.
         if (cs.isEmpty)
           WeededAst.Program(rs, flix.getReachableRoots)
-        else
-          WeededAst.Program(mkMain(cs) :: rs, flix.getReachableRoots)
+        else {
+          val sp1 = program.roots.headOption.map(_.sp1).getOrElse(SourcePosition.Unknown)
+          val sp2 = program.roots.headOption.map(_.sp2).getOrElse(SourcePosition.Unknown)
+          WeededAst.Program(mkMain(cs, sp1, sp2) :: rs, flix.getReachableRoots)
+        }
     }
   }
 
@@ -2145,11 +2148,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Introduces a main declaration that wraps the given constraints in a solve expression.
     */
-  private def mkMain(cs: List[WeededAst.Constraint])(implicit flix: Flix): WeededAst.Root = {
+  private def mkMain(cs: List[WeededAst.Constraint], sp1: SourcePosition, sp2: SourcePosition)(implicit flix: Flix): WeededAst.Root = {
     // Source positions and source locations for the generated main.
-    val sp1 = SourcePosition.Unknown
-    val sp2 = SourcePosition.Unknown
-    val loc = SourceLocation.Generated
+    val loc = SourceLocation.mk(sp1, sp2)
 
     // Useful types.
     val StringType = WeededAst.Type.Ambiguous(Name.mkQName("String"), loc)
