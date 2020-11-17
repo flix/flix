@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, IntroducedBy, Source}
-import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 
 object LiftedAst {
 
@@ -128,6 +127,9 @@ object LiftedAst {
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
     case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+
+    // TODO: Remove?:
+    case class Apply(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
     case class ApplyClo(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
