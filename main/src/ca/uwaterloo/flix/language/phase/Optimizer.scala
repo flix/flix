@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt._
@@ -33,12 +33,12 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * - Elimination of dead branches (e.g. if (true) e1 else e2).
   * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
   */
-object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
+object Optimizer extends Phase[Root, Root] {
 
   /**
     * Returns an optimized version of the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("Optimizer") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Optimizer") {
 
     /**
       * Performs intra-procedural optimization on the given expression `exp0` and substitution map `env0`.
@@ -350,21 +350,17 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
 
-      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-
-      case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-
       case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
     }
 
     /**
       * Performs intra-procedural optimization on the given constraint `c0`.
       */
-    def visitConstraint(c0: SimplifiedAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Constraint = c0 match {
-      case SimplifiedAst.Constraint(cparams, head0, body0, loc) =>
+    def visitConstraint(c0: Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): Constraint = c0 match {
+      case Constraint(cparams, head0, body0, loc) =>
         val head = visitHeadPred(head0, env0)
         val body = body0.map(visitBodyPred(_, env0))
-        SimplifiedAst.Constraint(cparams, head, body, loc)
+        Constraint(cparams, head, body, loc)
     }
 
     /**
@@ -444,7 +440,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
-      println(PrettyPrinter.Simplified.fmtRoot(result).fmt(TerminalContext.AnsiTerminal))
+      println(PrettyPrinter.Lifted.fmtRoot(result).fmt(TerminalContext.AnsiTerminal))
     }
 
     result.toSuccess

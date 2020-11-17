@@ -124,7 +124,7 @@ object LiftedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression // TODO: Remove?
 
     case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 

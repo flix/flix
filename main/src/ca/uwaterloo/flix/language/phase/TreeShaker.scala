@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.LiftedAst.Root
+import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -38,11 +39,11 @@ import scala.collection.mutable
   * (f) Appear in a function which itself is reachable.
   *
   */
-object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
+object TreeShaker extends Phase[Root, Root] {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("TreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("TreeShaker") {
     /**
       * A set used to collect the definition symbols of reachable functions.
       */
@@ -57,7 +58,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       *
       * it means that the function definition f should be considered to determine new reachable functions.
       */
-    val queue: mutable.Queue[SimplifiedAst.Def] = mutable.Queue.empty
+    val queue: mutable.Queue[Def] = mutable.Queue.empty
 
     /**
       * Returns the function symbols reachable from the given Expression `e0`.
@@ -107,9 +108,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Def(sym, _, _) =>
         Set(sym)
-
-      case Expression.Lambda(_, exp, _, _) =>
-        visitExp(exp)
 
       case Expression.Closure(sym, _, _, _) =>
         Set(sym)
@@ -282,9 +280,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.MatchError(_, _) =>
         Set.empty
 
-      case Expression.LambdaClosure(_, _, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
-
       case Expression.Apply(_, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
     }
@@ -297,20 +292,20 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Returns the function symbols reachable from the given constraint `c0`.
       */
-    def visitConstraint(c0: SimplifiedAst.Constraint): Set[Symbol.DefnSym] = {
+    def visitConstraint(c0: Constraint): Set[Symbol.DefnSym] = {
       val headSymbols = c0.head match {
-        case SimplifiedAst.Predicate.Head.Atom(_, _, terms, tpe, loc) =>
+        case Predicate.Head.Atom(_, _, terms, tpe, loc) =>
           terms.map(visitHeadTerm).fold(Set.empty)(_ ++ _)
 
-        case SimplifiedAst.Predicate.Head.Union(exp, _, _) =>
+        case Predicate.Head.Union(exp, _, _) =>
           visitExp(exp)
       }
 
       val bodySymbols = c0.body.map {
-        case SimplifiedAst.Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) =>
+        case Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) =>
           terms.map(visitBodyTerm).fold(Set.empty)(_ ++ _)
 
-        case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
+        case Predicate.Body.Guard(exp, loc) =>
           visitExp(exp)
       }.fold(Set())(_ ++ _)
 
@@ -320,24 +315,24 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `head`.
       */
-    def visitHeadTerm(h0: SimplifiedAst.Term.Head): Set[Symbol.DefnSym] = {
+    def visitHeadTerm(h0: Term.Head): Set[Symbol.DefnSym] = {
       h0 match {
-        case SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-        case SimplifiedAst.Term.Head.App(exp, args, tpe, loc) => visitExp(exp)
+        case Term.Head.QuantVar(sym, tpe, loc) => Set.empty
+        case Term.Head.CapturedVar(sym, tpe, loc) => Set.empty
+        case Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
+        case Term.Head.App(exp, args, tpe, loc) => visitExp(exp)
       }
     }
 
     /**
       * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `body`.
       */
-    def visitBodyTerm(b0: SimplifiedAst.Term.Body): Set[Symbol.DefnSym] = {
+    def visitBodyTerm(b0: Term.Body): Set[Symbol.DefnSym] = {
       b0 match {
-        case SimplifiedAst.Term.Body.Wild(tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
+        case Term.Body.Wild(tpe, loc) => Set.empty
+        case Term.Body.QuantVar(sym, tpe, loc) => Set.empty
+        case Term.Body.CapturedVar(sym, tpe, loc) => Set.empty
+        case Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
       }
     }
 
@@ -378,7 +373,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      * (c) A function that appears in a lattice component.
      */
     reachableFunctions ++= root.latticeOps.values.map {
-      case SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
+      case LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
         Set(bot, top, equ, leq, lub, glb)
     }.fold(Set())(_ ++ _)
 
@@ -386,7 +381,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      * (d) A function that appears in a property.
      */
     reachableFunctions ++= root.properties.map {
-      case SimplifiedAst.Property(law, defn, exp) => visitExp(exp) + law + defn
+      case Property(law, defn, exp) => visitExp(exp) + law + defn
     }.fold(Set())(_ ++ _)
 
     /*
