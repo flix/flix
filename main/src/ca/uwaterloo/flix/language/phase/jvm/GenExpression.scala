@@ -1087,23 +1087,41 @@ object GenExpression {
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.Lazy(exp, tpe, loc) =>
+      // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
+
+      // Find the Lazy class name (Lazy$tpe).
       val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
+
+      // Make a new lazy object and dup it to leave it on the stack.
       visitor.visitTypeInsn(NEW, classType)
       visitor.visitInsn(DUP)
+
+      // Compile the thunked expression and call new Lazy$erased_tpe(expression).
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
     case Expression.Force(exp, tpe, loc) =>
+      // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
+
+      // Find the Lazy class type (Lazy$tpe) and the inner value type.
       val classMonoType = exp.tpe.asInstanceOf[MonoType.Lazy]
       val classType = JvmOps.getLazyClassType(classMonoType)
       val internalClassType = classType.name.toInternalName
       val MonoType.Lazy(tpe) = classMonoType
+
+      // Emit code for the lazy expression.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // Lazy$tpe is expected.
       visitor.visitTypeInsn(CHECKCAST, internalClassType)
+
+      // Call force(context).
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmOps.getErasedJvmType(tpe)), false)
+
+      // The result of force is a generic object so a cast is needed.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
