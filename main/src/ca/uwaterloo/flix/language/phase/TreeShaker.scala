@@ -279,9 +279,6 @@ object TreeShaker extends Phase[Root, Root] {
 
       case Expression.MatchError(_, _) =>
         Set.empty
-
-      case Expression.Apply(_, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
     }
 
     /**

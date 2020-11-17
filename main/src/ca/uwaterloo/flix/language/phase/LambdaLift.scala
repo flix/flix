@@ -57,7 +57,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
     }
 
     LiftedAst.Root(
-      newDefs,
+      newDefs ++ m,
       newEnums,
       newLatticeOps,
       newProperties,

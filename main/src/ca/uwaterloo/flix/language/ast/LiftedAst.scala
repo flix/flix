@@ -128,9 +128,6 @@ object LiftedAst {
 
     case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
-    // TODO: Remove?:
-    case class Apply(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
-
     case class ApplyClo(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
     case class ApplyDef(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression

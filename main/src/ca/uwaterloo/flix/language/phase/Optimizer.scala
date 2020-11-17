@@ -349,8 +349,6 @@ object Optimizer extends Phase[Root, Root] {
       case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
 
       case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
-
-      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
     }
 
     /**

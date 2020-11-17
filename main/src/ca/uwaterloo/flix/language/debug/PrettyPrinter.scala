@@ -79,15 +79,6 @@ object PrettyPrinter {
 
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
 
-        case Expression.Apply(exp, args, tpe, loc) =>
-          visitExp(exp)
-          vt.text("(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
         case Expression.Closure(sym, freeVars, tpe, loc) =>
           vt.text("Closure(")
           fmtSym(sym, vt)

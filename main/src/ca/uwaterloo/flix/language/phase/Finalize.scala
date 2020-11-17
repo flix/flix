@@ -448,7 +448,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         FinalAst.Expression.MatchError(t, loc)
 
       case LiftedAst.Expression.Def(sym, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
-      case LiftedAst.Expression.Apply(exp, args, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
     }
 
     visit(exp0)

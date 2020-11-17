@@ -287,8 +287,6 @@ object VarNumbering extends Phase[Root, Root] {
       case Expression.HoleError(sym, tpe, loc) => i0
 
       case Expression.MatchError(tpe, loc) => i0
-
-      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
     }
 
     /**
