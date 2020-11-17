@@ -55,23 +55,21 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
   /**
     * Performs lambda lifting on the given definition `def0`.
     */
-  private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = {
-    // Lift the closure converted expression.
-    val liftedExp = liftExp(def0.sym.namespace, def0.exp, def0.sym.name, m)
+  private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, loc) =>
+      val fs = fparams.map(visitFormalParam)
+      val e = liftExp(def0.sym.namespace, def0.exp, def0.sym.name, m)
 
-    // Reassemble the definition.
-    def0.copy(exp = liftedExp)
+      LiftedAst.Def(ann, mod, sym, fs, e, tpe, loc)
   }
 
   /**
     * Performs lambda lifting on the given property `property0`.
     */
-  private def liftProperty(property0: SimplifiedAst.Property, m: TopLevel)(implicit flix: Flix): LiftedAst.Property = {
-    // Lift the closure converted expression.
-    val liftedExp = liftExp(property0.defn.namespace, property0.exp, "property", m)
-
-    // Reassemble the property.
-    property0.copy(exp = liftedExp)
+  private def liftProperty(property0: SimplifiedAst.Property, m: TopLevel)(implicit flix: Flix): LiftedAst.Property = property0 match {
+    case SimplifiedAst.Property(law, defn, exp) =>
+      val e = liftExp(property0.defn.namespace, property0.exp, "property", m)
+      LiftedAst.Property(law, defn, e)
   }
 
   /**
@@ -98,19 +96,19 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
 
       case SimplifiedAst.Expression.Int8(lit) => LiftedAst.Expression.Int8(lit)
 
-      case SimplifiedAst.Expression.Int16(lit) => e
+      case SimplifiedAst.Expression.Int16(lit) => LiftedAst.Expression.Int16(lit)
 
-      case SimplifiedAst.Expression.Int32(lit) => e
+      case SimplifiedAst.Expression.Int32(lit) => LiftedAst.Expression.Int32(lit)
 
-      case SimplifiedAst.Expression.Int64(lit) => e
+      case SimplifiedAst.Expression.Int64(lit) => LiftedAst.Expression.Int64(lit)
 
-      case SimplifiedAst.Expression.BigInt(lit) => e
+      case SimplifiedAst.Expression.BigInt(lit) => LiftedAst.Expression.BigInt(lit)
 
-      case SimplifiedAst.Expression.Str(lit) => e
+      case SimplifiedAst.Expression.Str(lit) => LiftedAst.Expression.Str(lit)
 
-      case SimplifiedAst.Expression.Var(sym, tpe, loc) => e
+      case SimplifiedAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.Def(sym, tpe, loc) => e
+      case SimplifiedAst.Expression.Def(sym, tpe, loc) => LiftedAst.Expression.Def(sym, tpe, loc)
 
       case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         // Recursively lift the inner expression.
@@ -466,29 +464,29 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         LiftedAst.Term.Body.Lit(e, tpe, loc)
     }
 
-    /**
-      * Translates the given simplified formal parameter `fparam` into a lifted formal parameter.
-      */
-    def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
-      case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
-    }
-
-    /**
-      * Translates the given simplified constraint parameter `cparam` into a lifted constraint parameter.
-      */
-    def visitConstraintParam(cparam: SimplifiedAst.ConstraintParam): LiftedAst.ConstraintParam = cparam match {
-      case ConstraintParam.HeadParam(sym, tpe, loc) => LiftedAst.ConstraintParam.HeadParam(sym, tpe, loc)
-      case ConstraintParam.RuleParam(sym, tpe, loc) => LiftedAst.ConstraintParam.RuleParam(sym, tpe, loc)
-    }
-
-    /**
-      * Translates the given simplified free variable `fv` into a lifted free variable.
-      */
-    def visitFreeVar(fv: SimplifiedAst.FreeVar): LiftedAst.FreeVar = fv match {
-      case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.FreeVar(sym, tpe)
-    }
-
     visitExp(exp0)
+  }
+
+  /**
+    * Translates the given simplified formal parameter `fparam` into a lifted formal parameter.
+    */
+  private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
+    case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+  }
+
+  /**
+    * Translates the given simplified constraint parameter `cparam` into a lifted constraint parameter.
+    */
+  private def visitConstraintParam(cparam: SimplifiedAst.ConstraintParam): LiftedAst.ConstraintParam = cparam match {
+    case ConstraintParam.HeadParam(sym, tpe, loc) => LiftedAst.ConstraintParam.HeadParam(sym, tpe, loc)
+    case ConstraintParam.RuleParam(sym, tpe, loc) => LiftedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+  }
+
+  /**
+    * Translates the given simplified free variable `fv` into a lifted free variable.
+    */
+  private def visitFreeVar(fv: SimplifiedAst.FreeVar): LiftedAst.FreeVar = fv match {
+    case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.FreeVar(sym, tpe)
   }
 
 }
