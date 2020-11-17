@@ -256,7 +256,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       // Run the compiler up to the type checking phase.
       flix.check() match {
         case Success(root) =>
-          // Case 1: Compilation was successful. Build the reverse the reverse index.
+          // Case 1: Compilation was successful. Build the reverse index.
           this.root = root
           this.index = Indexer.visitRoot(root)
 
