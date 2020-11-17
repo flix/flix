@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -991,6 +992,50 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchedSignatures.02") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a): Bool
+        |}
+        |
+        |enum Box[a] {
+        |    case Just(a)
+        |}
+        |
+        |instance C[Box[a]] {
+        |    def f[a: C](_x: Box[a]): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchSignatures.03") {
+    val input =
+      """
+        |    class Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    enum Box[a] {
+        |        case Just(a)
+        |    }
+        |
+        |    instance Show[Int] {
+        |        pub def show(x: Int): String = ""
+        |    }
+        |
+        |    instance Show[Box[a]] {
+        |        def show[a: Show](x: Box[a]): String = match x {
+        |            case Just(y) => show(y)
+        |        }
+        |    }
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[CompilationError](result) // TODO should be MismatchedSignature
   }
 
   test("Test.ExtraneousDefinition.01") {

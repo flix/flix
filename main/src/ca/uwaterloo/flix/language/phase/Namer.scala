@@ -328,7 +328,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tparam = tparams.head // only 1 tparam allowed for now
       val tenv = tenv0 ++ getTypeEnv(tparams)
       for {
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam)) // MATT check for shadowing?
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
       } yield NamedAst.Class(doc, mod, sym, tparam, sigs, loc)
   }
 
@@ -397,6 +397,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, tconstrs: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+      // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
+      // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
+      // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
+      // To fix: require explicit kind annotations (getting rid of the formal-param-first logic)
+      // Or delay using the tenv until evaluating explicit tparams (could become complex)
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0)) {
         tparams =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
