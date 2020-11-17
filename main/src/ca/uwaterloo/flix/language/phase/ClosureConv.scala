@@ -365,13 +365,10 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
 
-    case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyClo(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyCloTail(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.ApplyClo(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.ApplyDef(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
   }
 
   /**
@@ -554,13 +551,10 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
 
-    case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyCloTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.ApplyClo(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.ApplyDef(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
   }
 
   /**
@@ -917,12 +911,6 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.HoleError(sym, tpe, loc) => e
 
       case Expression.MatchError(tpe, loc) => e
-
-      case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
-
-      case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
-
-      case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
     }
 
     def visitConstraint(c0: Constraint): Constraint = {

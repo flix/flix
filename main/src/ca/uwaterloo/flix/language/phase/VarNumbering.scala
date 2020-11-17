@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -33,12 +33,12 @@ import scala.annotation.tailrec
   * slot, but longs and doubles require two consecutive slots. Thus, the n-th variable may not necessarily be the
   * n-th slot. This phase computes the specific offsets used by each formal parameter and local variable.
   */
-object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
+object VarNumbering extends Phase[Root, Root] {
 
   /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("VarNumbering") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("VarNumbering") {
     // Compute stack offset for each definition.
     for ((sym, defn) <- root.defs) {
       number(defn)
@@ -52,7 +52,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     *
     * Returns Unit since the variable symbols are mutated to store their stack offsets.
     */
-  def number(defn: SimplifiedAst.Def): Unit = {
+  def number(defn: Def): Unit = {
     /**
       * Returns the next available stack offset.
       *
@@ -87,8 +87,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Str(lit) => i0
 
       case Expression.Var(sym, tpe, loc) => i0
-
-      case Expression.Def(sym, tpe, loc) => i0
 
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
 
@@ -287,12 +285,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.HoleError(sym, tpe, loc) => i0
 
       case Expression.MatchError(tpe, loc) => i0
-
-      case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
-
-      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
-
-      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
     }
 
     /**

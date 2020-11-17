@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, IntroducedBy, Source}
-import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, IntroducedBy, Source}
+import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift}
 
 object SimplifiedAst {
 
@@ -127,14 +127,11 @@ object SimplifiedAst {
 
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    @EliminatedBy(LambdaLift.getClass)
     case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    @EliminatedBy(ClosureConv.getClass)
     case class Apply(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(ClosureConv.getClass)
-    @EliminatedBy(LambdaLift.getClass)
     case class LambdaClosure(fparams: List[SimplifiedAst.FormalParam], freeVars: List[FreeVar], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(LambdaLift.getClass)
@@ -145,15 +142,6 @@ object SimplifiedAst {
 
     @IntroducedBy(ClosureConv.getClass)
     case class ApplyDef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    @IntroducedBy(Tailrec.getClass)
-    case class ApplyCloTail(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    @IntroducedBy(Tailrec.getClass)
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    @IntroducedBy(Tailrec.getClass)
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], actuals: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

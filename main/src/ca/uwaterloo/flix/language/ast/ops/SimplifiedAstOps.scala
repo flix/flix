@@ -110,30 +110,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      case Expression.ApplyCloTail(exp, args, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        for (arg <- args) {
-          checkExp(arg, env0, ienv0)
-        }
-        checkType(tpe)
-
-      case Expression.ApplyDefTail(sym, args, tpe, loc) =>
-        assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
-        for (arg <- args) {
-          checkExp(arg, env0, ienv0)
-        }
-        checkType(tpe)
-
-      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
-        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
-        for (param <- formals) {
-          checkFormalParam(param)
-        }
-        for (arg <- actuals) {
-          checkExp(arg, env0, ienv0)
-        }
-        checkType(tpe)
-
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
