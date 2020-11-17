@@ -41,7 +41,7 @@ namespace Test/Exp/Lazy {
         lazy 12ii
 
     @test
-    def testStringLazy01(): Lazy[Str] & Pure =
+    def testStringLazy01(): Lazy[String] & Pure =
         lazy "string"
 
     @test
@@ -50,12 +50,12 @@ namespace Test/Exp/Lazy {
         lazy array
 
     @test
-    def testArrayOfStringLazy01(): Lazy[Array[Str]] & Impure =
+    def testArrayOfStringLazy01(): Lazy[Array[String]] & Impure =
         let array = ["str", "str2"];
         lazy array
 
     @test
-    def testTupleLazy01(): Lazy[(Str, Str)] & Pure =
+    def testTupleLazy01(): Lazy[(String, String)] & Pure =
         lazy ("str", "str2")
 
     pub enum Suit {
@@ -82,14 +82,14 @@ namespace Test/Exp/Lazy {
     }
 
     @test
-    def testPolyLazy01(): Lazy[Poly[Int, Str]] & Pure =
+    def testPolyLazy01(): Lazy[Poly[Int, String]] & Pure =
         lazy This(123)
 
     @test
-    def testPolyLazy02(): Lazy[Poly[Str, Str]] & Pure =
+    def testPolyLazy02(): Lazy[Poly[String, String]] & Pure =
         lazy That("str")
 
     @test
-    def testPolyLazy03(): Lazy[Poly[Str, Int]] & Pure =
+    def testPolyLazy03(): Lazy[Poly[String, Int]] & Pure =
         lazy Both("str", 123)
 }
