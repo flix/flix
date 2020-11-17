@@ -20,7 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.ConstraintParam
 import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -38,18 +40,31 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 
-    // Definitions.
-    val definitions = root.defs.map {
+    val newDefs = root.defs.map {
       case (sym, decl) => sym -> liftDef(decl, m)
     }
 
-    // Properties.
-    val properties = root.properties.map {
+    val newEnums = root.enums.map {
+      case (sym, enum0) => sym -> visitEnum(enum0)
+    }
+
+    val newLatticeOps = root.latticeOps.map {
+      case (tpe, latticeOp) => tpe -> visitLatticeOp(latticeOp)
+    }
+
+    val newProperties = root.properties.map {
       property => liftProperty(property, m)
     }
 
-    // Return the updated AST root.
-    root.copy(defs = definitions ++ m, properties = properties).toSuccess
+    LiftedAst.Root(
+      newDefs,
+      newEnums,
+      newLatticeOps,
+      newProperties,
+      root.specialOps,
+      root.reachable,
+      root.sources
+    ).toSuccess
   }
 
   /**
@@ -61,6 +76,25 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
       val e = liftExp(def0.sym.namespace, def0.exp, def0.sym.name, m)
 
       LiftedAst.Def(ann, mod, sym, fs, e, tpe, loc)
+  }
+
+  /**
+    * Translates the given simplified enum declaration `enum0` into a lifted enum declaration.
+    */
+  private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
+    case SimplifiedAst.Enum(mod, sym, cases, tpeDeprecated, loc) =>
+      val cs = cases.map {
+        case (tag, SimplifiedAst.Case(_, _, tpeDeprecated, loc)) => tag -> LiftedAst.Case(sym, tag, tpeDeprecated, loc)
+      }
+      LiftedAst.Enum(mod, sym, cs, tpeDeprecated, loc)
+  }
+
+  /**
+    * Translates the given simplified lattice op `op0` into a lifted lattice op.
+    */
+  private def visitLatticeOp(op0: SimplifiedAst.LatticeOps): LiftedAst.LatticeOps = op0 match {
+    case SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
+      LiftedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
   }
 
   /**
