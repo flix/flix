@@ -174,9 +174,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val fvs = freeVars.map(visitFreeVar)
         LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
 
-      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
-        ??? // TODO: Needed? If not remove, and remove in LiftedAst.
-
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp)
         val as = args map visitExp
@@ -418,7 +415,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
       case SimplifiedAst.Expression.MatchError(tpe, loc) =>
         LiftedAst.Expression.MatchError(tpe, loc)
 
+        // TODO: Cleanup
       case SimplifiedAst.Expression.Lambda(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected lambda expression. Every lambda expression should have been converted to a LambdaClosure.")
+      case SimplifiedAst.Expression.Apply(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+
       case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case SimplifiedAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
