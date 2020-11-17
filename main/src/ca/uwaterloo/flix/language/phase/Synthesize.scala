@@ -575,7 +575,7 @@ object Synthesize extends Phase[Root, Root] {
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
             Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Lazy => ??? // TODO: implement this. call force?
+          case TypeConstructor.Lazy => throw InternalCompilerException("Synthesize Error: Equality on lazy values unsupported")
 
           case TypeConstructor.Native(_) =>
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])

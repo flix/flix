@@ -513,7 +513,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-      // TODO: What should the new type of these thunked expressions (spawn/lazy) be?
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
         // Wrap the expression in a closure: () -> tpe & eff
         val e = visitExp(exp)
