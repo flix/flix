@@ -2,6 +2,9 @@
 
 HEAD:
 
+Version 0.14.5:
+- Critical bug fixes.
+
 Version 0.14.4:
 - Minor bug fixes.
 

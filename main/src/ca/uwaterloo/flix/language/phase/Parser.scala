@@ -359,9 +359,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Char: Rule1[ParsedAst.Literal.Char] = {
       def Normal: Rule1[String] = {
-        def Quote: Rule0 = rule("'")
+        def Quote: Rule0 = rule("'" | EOI)
 
-        def Backslash: Rule0 = rule("\\")
+        def Backslash: Rule0 = rule("\\" | EOI)
 
         rule {
           capture(!Quote ~ !Backslash ~ CharPredicate.All)
@@ -432,7 +432,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Str: Rule1[ParsedAst.Literal.Str] = {
-      def Quote: Rule0 = rule("\"")
+      def Quote: Rule0 = rule("\"" | EOI)
 
       rule {
         SP ~ "\"" ~ capture(zeroOrMore(!Quote ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
