@@ -359,12 +359,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Char: Rule1[ParsedAst.Literal.Char] = {
       def Normal: Rule1[String] = {
-        def Quote: Rule0 = rule("'" | EOI)
+        def Quote: Rule0 = rule("'")
 
-        def Backslash: Rule0 = rule("\\" | EOI)
+        def Backslash: Rule0 = rule("\\")
 
         rule {
-          capture(!Quote ~ !Backslash ~ CharPredicate.All)
+          capture(!(Quote | Backslash | EOI) ~ CharPredicate.All)
         }
       }
 
@@ -432,10 +432,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Str: Rule1[ParsedAst.Literal.Str] = {
-      def Quote: Rule0 = rule("\"" | EOI)
+      def Quote: Rule0 = rule("\"")
 
       rule {
-        SP ~ "\"" ~ capture(zeroOrMore(!Quote ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+        SP ~ "\"" ~ capture(zeroOrMore(!(Quote | EOI) ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
       }
     }
 
@@ -674,7 +674,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        capture(oneOrMore(!(DblQuote | DollarLBrace) ~ CharPredicate.All)) ~> ParsedAst.InterpolationPart.StrPart
+        capture(oneOrMore(!(DblQuote | DollarLBrace | EOI) ~ CharPredicate.All)) ~> ParsedAst.InterpolationPart.StrPart
       }
 
       def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
