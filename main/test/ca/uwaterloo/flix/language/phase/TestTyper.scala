@@ -935,7 +935,7 @@ class TestTyper extends FunSuite with TestUtils {
         |instance C[Int]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.OverlappingInstance](result)
+    expectError[TypeError.OverlappingInstances](result)
   }
 
 
@@ -949,7 +949,7 @@ class TestTyper extends FunSuite with TestUtils {
         |instance C[Int]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.OverlappingInstance](result)
+    expectError[TypeError.OverlappingInstances](result)
   }
 
   test("Test.OverlappingInstance.03") {
@@ -962,7 +962,7 @@ class TestTyper extends FunSuite with TestUtils {
         |instance C[(Bool, b)]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.OverlappingInstance](result)
+    expectError[TypeError.OverlappingInstances](result)
   }
 
   test("Test.MissingImplementation.01") {

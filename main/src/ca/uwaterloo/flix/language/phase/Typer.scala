@@ -109,7 +109,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, TypeError] = {
       if (Unification.unifyTypes(inst1.tpe, inst2.tpe).isOk) {
-        TypeError.OverlappingInstance(inst1.loc, inst2.loc).toFailure
+        TypeError.OverlappingInstances(inst1.loc, inst2.loc).toFailure
       } else {
         ().toSuccess
       }
