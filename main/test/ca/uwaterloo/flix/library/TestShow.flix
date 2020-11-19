@@ -17,6 +17,15 @@
 namespace TestShow {
     use Show.show;
 
+//    @test
+//    def testShowUnit(): Bool = show(()) == "()"
+
+    @test
+    def testShowTrue(): Bool = show(true) == "true"
+
+    @test
+    def testShowFalse(): Bool = show(false) == "false"
+
     @test
     def testShowString(): Bool = show("abcd") == "abcd"
 
@@ -39,5 +48,14 @@ namespace TestShow {
     def testShowFloat64(): Bool = show(123.0f64) == "123.0"
 
     @test
-    def testShowInt32List(): Bool = show(1 :: 2 :: 3 :: Nil) == "[1, 2, 3]"
+    def testShowInt32List(): Bool = show(1 :: 2 :: 3 :: Nil) == "1 :: 2 :: 3 :: Nil"
+
+    @test
+    def testShowNil(): Bool = show(Nil) == "Nil" // MATT this only currently works because we have Show[Unit]
+
+    @test
+    def testShowSomeInt32(): Bool = show(Some(123)) == "Some(123)"
+
+    @test
+    def testShowNone(): Bool = show(None) == "None"
 }

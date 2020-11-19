@@ -19,6 +19,17 @@ namespace Show {
         pub def show(x: a): String
     }
 
+    instance Show[Unit] {
+        def show(x: Unit): String = "()"
+    }
+
+    instance Show[Bool] {
+        def show(x: Bool): String = match x {
+            case true => "true"
+            case false => "false"
+        }
+    }
+
     instance Show[String] {
         def show(x: String): String = x
     }
@@ -52,8 +63,17 @@ namespace Show {
     }
 
     instance Show[List[a]] with [a : Show] {
-        def show(x: List[a]): String =
-            let inside = List.map(show, x) |> String.intercalate(", ");
-            String.flatten("[" :: inside :: "]" :: Nil)
+        def show(xs: List[a]): String = {
+            let strings = List.map(x -> String.concat(show(x), " :: "), xs);
+            let start = String.flatten(strings);
+            String.concat(start, "Nil")
+        }
+    }
+
+    instance Show[Option[a]] with [a : Show] {
+        def show(x: Option[a]): String = match x {
+            case Some(y) => "Some(${show(y)})"
+            case None => "None"
+        }
     }
 }
