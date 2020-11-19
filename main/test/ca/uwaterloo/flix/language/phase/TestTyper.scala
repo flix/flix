@@ -243,7 +243,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |enum Box[a] {
-        |    case Just(a)
+        |    case Box(a)
         |}
         |
         |class Show[a] {
@@ -256,7 +256,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |instance Show[Box[a]] with [a : Show] {
         |    def show(x: Box[a]): String = match x {
-        |        case Just(y) => show(y)
+        |        case Box(y) => show(y)
         |    }
         |}
         |
@@ -1002,7 +1002,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |enum Box[a] {
-        |    case Just(a)
+        |    case Box(a)
         |}
         |
         |instance C[Box[a]] {
@@ -1021,7 +1021,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    }
         |
         |    enum Box[a] {
-        |        case Just(a)
+        |        case Box(a)
         |    }
         |
         |    instance Show[Int] {
@@ -1030,7 +1030,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |    instance Show[Box[a]] {
         |        def show[a: Show](x: Box[a]): String = match x {
-        |            case Just(y) => show(y)
+        |            case Box(y) => show(y)
         |        }
         |    }
         |""".stripMargin
