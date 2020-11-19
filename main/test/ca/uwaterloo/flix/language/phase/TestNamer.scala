@@ -1037,6 +1037,7 @@ class TestNamer extends FunSuite with TestUtils {
   }
 
   test("IllegalSignature.01") {
+    // The type variable `a` does not appear in the signature of `f`
     val input =
       """
         |class C[a] {
