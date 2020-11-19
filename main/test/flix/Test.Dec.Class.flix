@@ -76,21 +76,6 @@ namespace Test/Dec/Class {
         pub def g[a: C](x: a): a = x
     }
 
-    namespace Test08 {
-
-        pub class C[a]
-
-        pub enum E[a: C] {
-            case E1(a)
-        }
-
-        pub def g[a: C](x: a): a = x
-
-        pub def f(x: E[a]): a = match x {
-            case E1(x1) => g(x1)
-        }
-    }
-
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
