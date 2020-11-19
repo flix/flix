@@ -243,7 +243,7 @@ object Validation {
                                      (f: (T1, T2, T3, T4) => Validation[U, E]): Validation[U, E] =
     (t1, t2, t3, t4) match {
       case (Success(v1), Success(v2), Success(v3), Success(v4)) => f(v1, v2, v3, v4)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors)
     }
 
   /**
@@ -254,7 +254,7 @@ object Validation {
                                          (f: (T1, T2, T3, T4, T5) => Validation[U, E]): Validation[U, E] =
     (t1, t2, t3, t4, t5) match {
       case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5)) => f(v1, v2, v3, v4, v5)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors)
     }
 
   /**
