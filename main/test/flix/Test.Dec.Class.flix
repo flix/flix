@@ -1,97 +1,106 @@
-namespace Test01 {
+namespace Test/Dec/Class {
+    namespace Test01 {
 
-    class X[a]
-}
-
-namespace Test02 {
-
-    class X[a] {
-        def f(x: a): Bool
+        class X[a]
     }
 
-}
+    namespace Test02 {
 
-namespace Test03 {
-    class X[a] {
-        def f(x: a): Bool
+        class X[a] {
+            def f(x: a): Bool
+        }
+
     }
 
-    instance X[Int] {
-        def f(x: Int): Bool = x == 0
+    namespace Test03 {
+        class X[a] {
+            def f(x: a): Bool
+        }
+
+        instance X[Int] {
+            def f(x: Int): Bool = x == 0
+        }
+
+        pub def g(x: Int): Bool = f(x)
     }
 
-    pub def g(x: Int): Bool = f(x)
-}
+    namespace Test04 {
+        class C[a] {
+            def f(x: a): Bool
+        }
 
-namespace Test04 {
-    class C[a] {
-        def f(x: a): Bool
+        class D[a] {
+            def g(x: a): Bool
+        }
+
+        pub def h[a : C : D](x: a): Bool = f(x) && g(x)
     }
 
-    class D[a] {
-        def g(x: a): Bool
+    namespace Test05 {
+        use Test/Dec/Class.List;
+        use Test/Dec/Class.Option;
+
+        class C[a]
+
+        instance C[List[a]] with [a : C, Option[a] : C]
     }
 
-    pub def h[a : C : D](x: a): Bool = f(x) && g(x)
-}
+    namespace Test06 {
+        use Test/Dec/Class.List;
+        use Test/Dec/Class.List.Nil;
+        use Test/Dec/Class.Option;
 
-namespace Test05 {
-    class C[a]
+        pub class C[a] {
+            def f(x: a): Bool
+        }
 
-    instance C[List[a]] with [a : C, Option[a] : C]
-}
+        instance C[Int] {
+            def f(x: Int): Bool = x == 0
+        }
 
-namespace Test06 {
-    pub class C[a] {
-        def f(x: a): Bool
-    }
-
-    instance C[Int] {
-        def f(x: Int): Bool = x == 0
-    }
-
-    instance C[List[a]] with [a: C] {
-        def f(x: List[a]): Bool = {
-            match x {
-                case Nil => true
-                case _ => false
+        instance C[List[a]] with [a: C] {
+            def f(x: List[a]): Bool = {
+                match x {
+                    case Nil => true
+                    case _ => false
+                }
             }
+        }
+
+        pub def g(x: List[Int]): Bool = f(x)
+    }
+
+    namespace Test07 {
+        use class Test/Dec/Class/Test06.C;
+
+        pub def g[a: C](x: a): a = x
+    }
+
+    namespace Test08 {
+
+        pub class C[a]
+
+        pub enum E[a: C] {
+            case E1(a)
+        }
+
+        pub def g[a: C](x: a): a = x
+
+        pub def f(x: E[a]): a = match x {
+            case E1(x1) => g(x1)
         }
     }
 
-    pub def g(x: List[Int]): Bool = f(x)
-}
-
-namespace Test07 {
-    use class Test06.C;
-
-    pub def g[a: C](x: a): a = x
-}
-
-namespace Test08 {
-
-    pub class C[a]
-
-    pub enum E[a: C] {
-        case E1(a)
+    pub enum List[a] {
+        case Nil
+        case Cons(a, List[a])
     }
 
-    pub def g[a: C](x: a): a = x
-
-    pub def f(x: E[a]): a = match x {
-        case E1(x1) => g(x1)
+    pub enum Option[a] {
+        case None
+        case Some(a)
     }
-}
 
-pub enum List[a] {
-    case Nil
-    case Cons(a, List[a])
+    @test
+    def empty(): Bool = true
 }
-
-pub enum Option[a] {
-    case None
-    case Some(a)
-}
-
-@test
-def empty(): Bool = true
