@@ -183,11 +183,11 @@ object ParsedAst {
       * @param mod     the associated modifiers.
       * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the definition.
-      * @param tparams the type parameters.
+      * @param tparam  the type parameter.
       * @param sigs    the signatures of the class.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
@@ -1407,7 +1407,7 @@ object ParsedAst {
     /**
       * Represents an explicit sequence of type parameters.
       */
-    case class Explicit(tparams: List[ParsedAst.ConstrainedTypeParam]) extends TypeParams
+    case class Explicit(tparams: List[ParsedAst.TypeParam]) extends TypeParams
 
   }
 
@@ -1421,15 +1421,15 @@ object ParsedAst {
   case class Doc(sp1: SourcePosition, lines: Seq[String], sp2: SourcePosition)
 
   /**
-    * Context Bound on a type variable.
+    * A single type parameter, with optional kind and constraint.
     *
-    * @param sp1     the position of the first character in the context bound.
+    * @param sp1     the position of the first character in the type parameter.
     * @param ident   the type variable being bound
     * @param kind    the optional kind of the type variable.
     * @param classes the bounding classes.
-    * @param sp2     the position of the last character in the context bound.
+    * @param sp2     the position of the last character in the type parameter.
     */
-  case class ConstrainedTypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
+  case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
 
 
   /**

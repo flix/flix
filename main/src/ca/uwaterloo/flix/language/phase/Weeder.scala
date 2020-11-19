@@ -114,23 +114,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given class declaration `c0`.
     */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparams0, sigs0, sp2) =>
+    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparam0, sigs0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
-      val tparams = visitTypeParams(tparams0)
+      val tparam = visitTypeParam(tparam0)
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
         sigs <- traverse(sigs0)(visitSig)
-        _ <- checkSingleTypeParam(tparams, loc)
-      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparams, sigs.flatten, loc))
-  }
-
-  /**
-    * Verifies the size of `tparams0` is exactly 1.
-    */
-  private def checkSingleTypeParam(tparams0: WeededAst.TypeParams, loc: SourceLocation): Validation[Unit, WeederError] = tparams0 match {
-    case TypeParams.Explicit(tparams) if (tparams.length == 1) => ().toSuccess
-    case _ => WeederError.NonSingleTypeParameter(loc).toFailure
+      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, sigs.flatten, loc))
   }
 
   /**
@@ -1898,17 +1889,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitTypeParams(tparams0: ParsedAst.TypeParams): WeededAst.TypeParams = tparams0 match {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided
     case ParsedAst.TypeParams.Explicit(tparams) =>
-      val tparams1 = tparams.map {
-        case ParsedAst.ConstrainedTypeParam(sp1, ident, kind, classes, sp2) =>
-          val k = kind.map {
-            case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
-            case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
-            case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
-            case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
-          }
-          WeededAst.ConstrainedTypeParam(ident, k, classes.toList)
-      }
+      val tparams1 = tparams.map(visitTypeParam)
       WeededAst.TypeParams.Explicit(tparams1)
+  }
+
+  /**
+    * Weeds the given type param `tparam`.
+    */
+  private def visitTypeParam(tparam: ParsedAst.TypeParam): WeededAst.TypeParam = tparam match {
+    case ParsedAst.TypeParam(sp1, ident, kind, classes, sp2) =>
+      val k = kind.map {
+        case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
+        case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
+        case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
+        case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
+      }
+      WeededAst.TypeParam(ident, k, classes.toList)
   }
 
   /**

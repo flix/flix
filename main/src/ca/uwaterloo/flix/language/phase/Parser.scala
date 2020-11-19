@@ -226,7 +226,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams
+        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]"
       }
 
       def EmptyBody = rule {
@@ -264,13 +264,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def TypeParams: Rule1[ParsedAst.TypeParams] = {
-      def ConstrainedTypeParam: Rule1[ParsedAst.ConstrainedTypeParam] = rule {
-        SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ zeroOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedTypeParam
-      }
+    def TypeParam: Rule1[ParsedAst.TypeParam] = rule {
+      SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ zeroOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.TypeParam
+    }
 
+    def TypeParams: Rule1[ParsedAst.TypeParams] = {
       rule {
-        optional("[" ~ optWS ~ oneOrMore(ConstrainedTypeParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ConstrainedTypeParam]]) => o match {
+        optional("[" ~ optWS ~ oneOrMore(TypeParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.TypeParam]]) => o match {
           case None => ParsedAst.TypeParams.Elided
           case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
         })

@@ -324,9 +324,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
     case WeededAst.Declaration.Class(doc, mod, ident, tparams0, signatures, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
-      val tparams = getProperTypeParams(tparams0)
-      val tparam = tparams.head // only 1 tparam allowed for now
-      val tenv = tenv0 ++ getTypeEnv(tparams)
+      val tparam = getProperTypeParam(tparams0)
+      val tenv = tenv0 ++ getTypeEnv(List(tparam))
       for {
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
       } yield NamedAst.Class(doc, mod, sym, tparam, sigs, loc)
@@ -1470,10 +1469,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
     case TypeParams.Elided => Nil
-    case TypeParams.Explicit(tparams) => tparams.map {
-      case WeededAst.ConstrainedTypeParam(ident, _, classes) =>
-        NamedAst.TypeParam(ident, Type.freshVar(Kind.Star, text = Some(ident.name)), classes, ident.loc)
-    }
+    case TypeParams.Explicit(tparams) => tparams.map(getProperTypeParam)
+  }
+
+  /**
+    * Gets the type param where its kind must be `*`.
+    */
+  private def getProperTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
+    case WeededAst.TypeParam(ident, _, classes) =>
+      NamedAst.TypeParam(ident, Type.freshVar(Kind.Star, text = Some(ident.name)), classes, ident.loc)
   }
 
   /**
@@ -1509,10 +1513,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the explicit type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitTypeParams(tparams0: List[WeededAst.ConstrainedTypeParam], implicitTparams: List[NamedAst.TypeParam], uenv0: UseEnv)(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getExplicitTypeParams(tparams0: List[WeededAst.TypeParam], implicitTparams: List[NamedAst.TypeParam], uenv0: UseEnv)(implicit flix: Flix): List[NamedAst.TypeParam] = {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {
-      case WeededAst.ConstrainedTypeParam(ident, kindOpt, classes) =>
+      case WeededAst.TypeParam(ident, kindOpt, classes) =>
         val qualifiedClasses = classes.map(clazz => uenv0.classes.getOrElse(clazz.ident.name, clazz))
         val kind = kindOpt match {
           // Case 1: Get the kind for each type variable from the implicit type params.
