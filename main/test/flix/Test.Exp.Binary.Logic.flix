@@ -5,7 +5,7 @@ namespace Test/Exp/Binary/Logic {
     //
 
     @test
-    def binaryLogical01a(): Bool = (!false and true) == true
+    def binaryLogical01a(): Bool = (not false and true) == true
 
     @test
     def binaryLogical01b(): Bool = (not false and true) == true
@@ -17,7 +17,7 @@ namespace Test/Exp/Binary/Logic {
     def binaryLogical02b(): Bool = (true and not false) == true
 
     @test
-    def binaryLogical03a(): Bool = (!true or true) == true
+    def binaryLogical03a(): Bool = (not true or true) == true
 
     @test
     def binaryLogical03b(): Bool = (not true or true) == true
@@ -33,25 +33,25 @@ namespace Test/Exp/Binary/Logic {
     //
 
     @test
-    def binaryLogicalNotTest01a(): Bool = (!true) == false
+    def binaryLogicalNotTest01a(): Bool = (not true) == false
 
     @test
     def binaryLogicalNotTest01b(): Bool = (not true) == false
 
     @test
-    def binaryLogicalNotTest02a(): Bool = (!false) == true
+    def binaryLogicalNotTest02a(): Bool = (not false) == true
 
     @test
     def binaryLogicalNotTest02b(): Bool = (not false) == true
 
     @test
-    def binaryLogicalNotTest03a(): Bool = (!!true) == true
+    def binaryLogicalNotTest03a(): Bool = (!not true) == true
 
     @test
     def binaryLogicalNotTest03b(): Bool = (not not true) == true
 
     @test
-    def binaryLogicalNotTest04a(): Bool = (!!false) == false
+    def binaryLogicalNotTest04a(): Bool = (!not false) == false
 
     @test
     def binaryLogicalNotTest04b(): Bool = (not not false) == false
