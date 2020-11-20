@@ -296,7 +296,7 @@ namespace Int16 {
     pub def tryToInt8(x: Int16): Option[Int8] =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.byteValue();
-        if (x < Int8.toInt16(Int8.minValue()) and x > Int8.toInt16(Int8.maxValue()))
+        if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
             Some(valueOf(x).byteValue()) as & Pure
