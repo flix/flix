@@ -45,13 +45,13 @@ namespace Test/Exp/Binary/Logic {
     def binaryLogicalNotTest02b(): Bool = (not false) == true
 
     @test
-    def binaryLogicalNotTest03a(): Bool = (!not true) == true
+    def binaryLogicalNotTest03a(): Bool = (not not true) == true
 
     @test
     def binaryLogicalNotTest03b(): Bool = (not not true) == true
 
     @test
-    def binaryLogicalNotTest04a(): Bool = (!not false) == false
+    def binaryLogicalNotTest04a(): Bool = (not not false) == false
 
     @test
     def binaryLogicalNotTest04b(): Bool = (not not false) == false
