@@ -81,7 +81,7 @@ namespace Test/Exp/Record/Polymorphism {
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = p1 |> withAgeAndSex(21, "m");
         let p3 = p2 |> withAgeAndSex(22, "f");
-        p3.age == 22 && p3.sex == "f"
+        p3.age == 22 and p3.sex == "f"
 
     @test
     def testRecordPolySelectDuplicate02(): Bool =
@@ -89,7 +89,7 @@ namespace Test/Exp/Record/Polymorphism {
         let p2 = p1 |> withAgeAndSex(21, "m");
         let p3 = p2 |> withAgeAndSex(22, "f");
         let p4 = p3 |> withAgeAndSex(23, "m");
-        p4.age == 23 && p4.sex == "m"
+        p4.age == 23 and p4.sex == "m"
 
     def |>(x: a, f: a -> b & e): b & e = f(x)
 

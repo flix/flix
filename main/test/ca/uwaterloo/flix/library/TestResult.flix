@@ -161,37 +161,37 @@ def find03(): Bool = Result.find(i -> i == 2, Ok(2)) == Some(2)
 // foldLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldLeft01(): Bool = Result.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Err(-1ii)) == false
+def foldLeft01(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Err(-1ii)) == false
 
 @test
-def foldLeft02(): Bool = Result.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Ok(1)) == false
+def foldLeft02(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Ok(1)) == false
 
 @test
-def foldLeft03(): Bool = Result.foldLeft((b, i) -> if (i == 2 && b) true else false, true, Ok(1)) == false
+def foldLeft03(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Ok(1)) == false
 
 @test
-def foldLeft04(): Bool = Result.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Ok(2)) == false
+def foldLeft04(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Ok(2)) == false
 
 @test
-def foldLeft05(): Bool = Result.foldLeft((b, i) -> if (i == 2 && b) true else false, true, Ok(2)) == true
+def foldLeft05(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Ok(2)) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Result.foldRight((i, b) -> if (i == 2 && b) true else false, Err(-1ii), false) == false
+def foldRight01(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Err(-1ii), false) == false
 
 @test
-def foldRight02(): Bool = Result.foldRight((i, b) -> if (i == 2 && b) true else false, Ok(1), false) == false
+def foldRight02(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(1), false) == false
 
 @test
-def foldRight03(): Bool = Result.foldRight((i, b) -> if (i == 2 && b) true else false, Ok(1), true) == false
+def foldRight03(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(1), true) == false
 
 @test
-def foldRight04(): Bool = Result.foldRight((i, b) -> if (i == 2 && b) true else false, Ok(2), false) == false
+def foldRight04(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(2), false) == false
 
 @test
-def foldRight05(): Bool = Result.foldRight((i, b) -> if (i == 2 && b) true else false, Ok(2), true) == true
+def foldRight05(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //

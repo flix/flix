@@ -76,7 +76,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `not` operator.
     ///
-    #safe1(x -> !x)
+    #safe1(x -> not x)
     #strict1 #monotone1
     pub def not(e: Belnap): Belnap = match e {
         case Bot    => Bot
@@ -88,7 +88,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `and` operator.
     ///
-    #safe2((x, y) -> x && y)
+    #safe2((x, y) -> x and y)
     #strict2 #monotone2 #commutative #associative
     pub def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Bot, _)       => Bot
@@ -103,7 +103,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `or` operator.
     ///
-    #safe2((x, y) -> x || y)
+    #safe2((x, y) -> x or y)
     #strict2 #monotone2 #commutative #associative
     pub def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) {
         case (Bot, _)       => Bot

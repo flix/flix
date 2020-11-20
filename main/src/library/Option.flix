@@ -500,12 +500,12 @@ namespace Option {
     @lint
     def filterFilter(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
-            filter(g, filter(f, o)) === filter(x -> f(x) && g(x), o)
+            filter(g, filter(f, o)) === filter(x -> f(x) and g(x), o)
 
     @lint
     def findFind(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
-            find(g, find(f, o)) === find(x -> f(x) && g(x), o)
+            find(g, find(f, o)) === find(x -> f(x) and g(x), o)
 
     @lint
     def mapIdentity(): Bool =

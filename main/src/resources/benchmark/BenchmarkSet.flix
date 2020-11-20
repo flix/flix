@@ -33,7 +33,7 @@ namespace BenchmarkSet {
     ///
     @benchmark
     pub def benchmark05(): Bool =
-        !Set.memberOf(24, Set.range(0, 24))
+        not Set.memberOf(24, Set.range(0, 24))
 
     ///
     /// create a set of `Int32`, delete the lower half of the elements and compute the size.
@@ -75,7 +75,7 @@ namespace BenchmarkSet {
     ///
     @benchmark
     pub def benchmark11(): Bool =
-        !Set.exists(x -> x > 23, Set.range(0, 24))
+        not Set.exists(x -> x > 23, Set.range(0, 24))
 
     ///
     /// create a set of `Int32`, filter out the even values and compute the size.

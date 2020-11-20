@@ -573,7 +573,7 @@ namespace Array {
             []
         else {
             let jlen = length(a[0]);
-            if (jlen == 0 || uniformHelper(a, jlen))
+            if (jlen == 0 or uniformHelper(a, jlen))
                 a
             else
                 init(i -> init(j -> a[j][i], ilen), jlen)
@@ -879,7 +879,7 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space()
     pub def span(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
-        match findIndexOfLeft(x -> !(f(x)), a) {
+        match findIndexOfLeft(x -> not (f(x)), a) {
             case None => (takeLeft(length(a), a), [])
             case Some(i) => (takeLeft(i, a), dropLeft(i, a))
         }
@@ -936,7 +936,7 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def dropWhileLeft(f: a -> Bool, a: Array[a]): Array[a]  & Impure =
-        match findIndexOfLeft(x -> !(f(x)), a) {
+        match findIndexOfLeft(x -> not (f(x)), a) {
             case None => []
             case Some(i) => dropLeft(i, a)
         }
@@ -948,7 +948,7 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def dropWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
-        match findIndexOfRight(x -> !(f(x)), a) {
+        match findIndexOfRight(x -> not (f(x)), a) {
             case None => []
             case Some(i) => slice(a, 0, i+1)
         }
@@ -1004,7 +1004,7 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def takeWhileLeft(f: a -> Bool, a: Array[a]): Array[a] & Impure =
-        match findIndexOfLeft(x -> !(f(x)), a) {
+        match findIndexOfLeft(x -> not (f(x)), a) {
             case None => a
             case Some(i) => takeLeft(i, a)
         }
@@ -1016,7 +1016,7 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def takeWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
-        match findIndexOfRight(x -> !(f(x)), a) {
+        match findIndexOfRight(x -> not (f(x)), a) {
             case None => slice(a, 0, length(a))
             case Some(i) => slice(a, i+1, length(a))
         }
@@ -1066,7 +1066,7 @@ namespace Array {
     def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
         case Nil => true
         case x :: rs =>
-            if ((f(x, a) && f(a, x)) == false)
+            if ((f(x, a) and f(a, x)) == false)
                 false
             else
                 agreeHelper(f, a, rs)
@@ -1141,7 +1141,7 @@ namespace Array {
     /// Helper function for `foldLeft2`.
     ///
     def foldLeft2Helper(f: (c, a, b) ->  c & e , s: c, a: Array[a], b: Array[b], lena: Int32, lenb: Int32, i: Int32): c & Impure =
-        if (i >= lena || i >= lenb)
+        if (i >= lena or i >= lenb)
             s
         else {
             let x = a[i];
@@ -1164,7 +1164,7 @@ namespace Array {
     /// Helper function for `foldRight2`.
     ///
     def foldRight2Helper(f: (a, b, c) -> c & e , s: c, a: Array[a], b: Array[b], ia: Int32, ib: Int32): c & Impure =
-        if (ia < 0 || ib < 0)
+        if (ia < 0 or ib < 0)
             s
         else {
             let x = a[ia];
@@ -1451,7 +1451,7 @@ namespace Array {
     @Time(length(a)) @Space(length(a))
     pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
         let end = i + length(sub);
-        let f = ix -> if (ix >= i && ix < end) sub[ix - i] else a[ix];
+        let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
         init(f, length(a))
 
     ///
@@ -1461,7 +1461,7 @@ namespace Array {
     pub def updateSequence!(i: Int32, sub: Array[a], a: mut Array[a]): Unit & Impure =
         let end = i + length(sub);
         let f = { (_,ix) ->
-            if (ix >= i && ix < end)
+            if (ix >= i and ix < end)
                 a[ix] = sub[ix-i]
             else
                 ()

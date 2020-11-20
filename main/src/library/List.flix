@@ -325,7 +325,7 @@ namespace List {
     /// Helper function for `patch`.
     ///
     def patchHelper(i: Int32, n: Int32, xs: List[a], ys: List[a], c: Int32): List[a] = match (xs, ys) {
-        case (x :: qs, y :: rs) => if (c >= i && c < i+n) x :: patchHelper(i, n, qs, rs, c+1) else y :: patchHelper(i, n, xs, rs, c+1)
+        case (x :: qs, y :: rs) => if (c >= i and c < i+n) x :: patchHelper(i, n, qs, rs, c+1) else y :: patchHelper(i, n, xs, rs, c+1)
         case _ => ys
     }
 
@@ -419,7 +419,7 @@ namespace List {
         case Nil => Nil
         case x :: _ =>
             let len = length(x);
-                if (!uniformHelper(xs, len) || len == 0) xs else transposeHelper(xs, len)
+                if (not uniformHelper(xs, len) or len == 0) xs else transposeHelper(xs, len)
     }
 
     ///
@@ -594,7 +594,7 @@ namespace List {
     @Time(time(f) * length(xs)) @Space(space(f))
     pub def forall(f: a -> Bool, xs: List[a]): Bool = match xs {
         case Nil => true
-        case x :: rs => if (!f(x)) false else forall(f, rs)
+        case x :: rs => if (not f(x)) false else forall(f, rs)
     }
 
 
@@ -647,7 +647,7 @@ namespace List {
         case Nil => Nil
         case x :: rs =>
             let r = sliceHelper(b, e, rs, i+1);
-                if (i >= b && i < e) x :: r else r
+                if (i >= b and i < e) x :: r else r
     }
 
     ///
@@ -767,7 +767,7 @@ namespace List {
     ///
     def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
         case Nil => true
-        case x :: rs => if (f(x, a) && f(a, x)) agreeHelper(f, a, rs) else false
+        case x :: rs => if (f(x, a) and f(a, x)) agreeHelper(f, a, rs) else false
     }
 
 
@@ -1174,12 +1174,12 @@ namespace List {
     @lint
     def filterFilter(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
-            filter(g, filter(f, xs)) === filter(x -> f(x) && g(x), xs)
+            filter(g, filter(f, xs)) === filter(x -> f(x) and g(x), xs)
 
     @lint
     def findFind(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
-            Option.find(g, List.find(f, xs)) === find(x -> f(x) && g(x), xs)
+            Option.find(g, List.find(f, xs)) === find(x -> f(x) and g(x), xs)
 
     @lint
     def mapIdentity(): Bool =

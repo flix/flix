@@ -27,7 +27,7 @@ namespace Domain/PrefixSuffix {
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     def leq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = match (e1, e2) {
         case (Bot, _)                           => true
-        case (PreSuf(p1, s1), PreSuf(p2, s2))   => p1 == p2 && s1 == s2
+        case (PreSuf(p1, s1), PreSuf(p2, s2))   => p1 == p2 and s1 == s2
         case (PreSuf(p1, _), Pre(p2))           => p1 == p2
         case (PreSuf(_, s1), Suf(s2))           => s1 == s2
         case (Pre(p1), Pre(p2))                 => p1 == p2
@@ -44,9 +44,9 @@ namespace Domain/PrefixSuffix {
         case (Bot, x)                           => x
         case (x, Bot)                           => x
         case (PreSuf(p1, s1), PreSuf(p2, s2))   => {
-            if      ((p1 == p2) && (s1 == s2))  PreSuf(p1, s1)
-            else if ((p1 == p2) && (s1 != s2))  Pre(p1)
-            else if ((p1 != p2) && (s1 == s2))  Suf(s1)
+            if      ((p1 == p2) and (s1 == s2))  PreSuf(p1, s1)
+            else if ((p1 == p2) and (s1 != s2))  Pre(p1)
+            else if ((p1 != p2) and (s1 == s2))  Suf(s1)
             else                                Top
         }
         case (PreSuf(p1, _), Pre(p2))           => if (p1 == p2) Pre(p1) else Top
@@ -65,7 +65,7 @@ namespace Domain/PrefixSuffix {
     def glb(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
         case (Top, x)                           => x
         case (x, Top)                           => x
-        case (PreSuf(p1, s1), PreSuf(p2, s2))   => if (p1 == p2 && s1 == s2) PreSuf(p1, s1) else Bot
+        case (PreSuf(p1, s1), PreSuf(p2, s2))   => if (p1 == p2 and s1 == s2) PreSuf(p1, s1) else Bot
         case (PreSuf(p1, s1), Pre(p2))          => if (p1 == p2) PreSuf(p1, s1) else Bot
         case (Pre(p1), PreSuf(p2, s2))          => if (p1 == p2) PreSuf(p2, s2) else Bot
         case (PreSuf(p1, s1), Suf(s2))          => if (s1 == s2) PreSuf(p1, s1) else Bot

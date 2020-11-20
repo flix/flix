@@ -74,13 +74,13 @@ namespace Float64 {
     /// Returns true if and only if `x` is a non-infinite and non-Nan `Float64` value.
     ///
     @Time(1) @Space(1)
-    pub def isFinite(x: Float64): Bool = x >= minValue() && x <= maxValue()
+    pub def isFinite(x: Float64): Bool = x >= minValue() and x <= maxValue()
 
     ///
     /// Returns true if and only if `x` is an infinite and non-Nan `Float64` value.
     ///
     @Time(1) @Space(1)
-    pub def isInfinite(x: Float64): Bool = x == positiveInfinity() || x == negativeInfinity()
+    pub def isInfinite(x: Float64): Bool = x == positiveInfinity() or x == negativeInfinity()
 
     ///
     /// Returns true if and only if `x` is the NaN value of type `Float64`.
@@ -153,7 +153,7 @@ namespace Float64 {
     pub def tryToInt8(x: Float64): Option[Int8] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.byteValue();
-        if (x < Int8.toFloat64(Int8.minValue()) || x > Int8.toFloat64(Int8.maxValue()) || isNan(x) || isInfinite(x))
+        if (x < Int8.toFloat64(Int8.minValue()) or x > Int8.toFloat64(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
             Some(valueOf(x).byteValue()) as & Pure
@@ -171,7 +171,7 @@ namespace Float64 {
     pub def tryToInt16(x: Float64): Option[Int16] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.shortValue();
-        if (x < Int16.toFloat64(Int16.minValue()) || x > Int16.toFloat64(Int16.maxValue()) || isNan(x) || isInfinite(x))
+        if (x < Int16.toFloat64(Int16.minValue()) or x > Int16.toFloat64(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
             Some(valueOf(x).shortValue()) as & Pure
@@ -189,7 +189,7 @@ namespace Float64 {
     pub def tryToInt32(x: Float64): Option[Int32] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.intValue();
-        if (x < Int32.toFloat64(Int32.minValue()) || x > Int32.toFloat64(Int32.maxValue()) || isNan(x) || isInfinite(x))
+        if (x < Int32.toFloat64(Int32.minValue()) or x > Int32.toFloat64(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
             Some(valueOf(x).intValue()) as & Pure
@@ -210,7 +210,7 @@ namespace Float64 {
     pub def tryToInt64(x: Float64): Option[Int64] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.longValue();
-        if (x < Int64.toFloat64(Int64.minValue()) || x > Int64.toFloat64(Int64.maxValue()) || isNan(x) || isInfinite(x))
+        if (x < Int64.toFloat64(Int64.minValue()) or x > Int64.toFloat64(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
             Some(valueOf(x).longValue()) as & Pure
@@ -249,7 +249,7 @@ namespace Float64 {
     pub def tryToFloat32(x: Float64): Option[Float32] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.floatValue();
-        if (x < Float32.toFloat64(Float32.minValue()) || x > Float32.toFloat64(Float32.maxValue()))
+        if (x < Float32.toFloat64(Float32.minValue()) or x > Float32.toFloat64(Float32.maxValue()))
             None
         else
             Some(valueOf(x).floatValue()) as & Pure

@@ -1403,27 +1403,27 @@ def takeWhile08(): Bool = List.takeWhile(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 ::
 // groupBy                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def groupBy01(): Bool = List.groupBy((a, b) -> a > 3 || b > 8, Nil) == Nil
+def groupBy01(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, Nil) == Nil
 
 @test
-def groupBy02(): Bool = List.groupBy((a, b) -> a > 3 || b > 8, 1 :: Nil) == (1 :: Nil) :: Nil
+def groupBy02(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: Nil) == (1 :: Nil) :: Nil
 
 @test
-def groupBy03(): Bool = List.groupBy((a, b) -> a > 3 || b > 8, 1 :: 4 :: Nil) == (1 :: Nil) :: (4 :: Nil) :: Nil
+def groupBy03(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 4 :: Nil) == (1 :: Nil) :: (4 :: Nil) :: Nil
 
 @test
-def groupBy04(): Bool = List.groupBy((a, b) -> a > 3 || b > 8, 1 :: 9 :: Nil) == (1 :: 9 :: Nil) :: Nil
+def groupBy04(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 9 :: Nil) == (1 :: 9 :: Nil) :: Nil
 
 @test
-def groupBy05(): Bool = List.groupBy((a, b) -> a > 3 || b > 8, 1 :: 4 :: 7 :: 6 :: 9 :: 2 :: 4 :: 4 :: 8 :: 16 :: Nil) ==
+def groupBy05(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 4 :: 7 :: 6 :: 9 :: 2 :: 4 :: 4 :: 8 :: 16 :: Nil) ==
                       (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
 
 @test
-def groupBy06(): Bool = List.groupBy((a, b) -> a > -6 || a*b >= 0, -1 :: -11 :: 4 :: -11 :: 0 :: 8 :: 2 :: 1 :: -3 :: -24 :: Nil) ==
+def groupBy06(): Bool = List.groupBy((a, b) -> a > -6 or a*b >= 0, -1 :: -11 :: 4 :: -11 :: 0 :: 8 :: 2 :: 1 :: -3 :: -24 :: Nil) ==
                       (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
 
 @test
-def groupBy07(): Bool = List.groupBy((a, b) -> a < 0 || (a > 10 || (b > 10 || a == b)), -5 :: 6 :: 11 :: 8 :: 8 :: -11 :: -1 :: 0 :: 4 :: -1 :: Nil) ==
+def groupBy07(): Bool = List.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), -5 :: 6 :: 11 :: 8 :: 8 :: -11 :: -1 :: 0 :: 4 :: -1 :: Nil) ==
                       (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////

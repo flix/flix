@@ -2024,42 +2024,42 @@ def filter08(): Bool & Impure =
 @test
 def partition01(): Bool & Impure =
     let (a,b) = Array.partition(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, []: Array[Int32])
+    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Int32])
 
 @test
 def partition02(): Bool & Impure =
     let (a,b) = Array.partition(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, [1])
+    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1])
 
 @test
 def partition03(): Bool & Impure =
     let (a,b) = Array.partition(i -> i > 3, [4]);
-    Array.sameElements(a, [4]) && Array.sameElements(b, []: Array[Int32])
+    Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32])
 
 @test
 def partition04(): Bool & Impure =
     let (a,b) = Array.partition(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, [1,2])
+    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,2])
 
 @test
 def partition05(): Bool & Impure =
     let (a,b) = Array.partition(i -> i > 3, [1,5]);
-    Array.sameElements(a, [5]) && Array.sameElements(b, [1])
+    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
 
 @test
 def partition06(): Bool & Impure =
     let (a,b) = Array.partition(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5]) && Array.sameElements(b, [1])
+    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
 
 @test
 def partition07(): Bool & Impure =
     let (a,b) = Array.partition(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8]) && Array.sameElements(b, []: Array[Int32])
+    Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32])
 
 @test
 def partition08(): Bool & Impure =
     let (a,b) = Array.partition(i -> i > 3, [4, -3, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 16, 7, 7]) && Array.sameElements(b, [-3, -5, 1, 2, 1])
+    Array.sameElements(a, [4, 16, 7, 7]) and Array.sameElements(b, [-3, -5, 1, 2, 1])
 
 /////////////////////////////////////////////////////////////////////////////
 // span                                                                    //
@@ -2068,42 +2068,42 @@ def partition08(): Bool & Impure =
 @test
 def span01(): Bool & Impure =
     let (a,b) = Array.span(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, []: Array[Int32])
+    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Int32])
 
 @test
 def span02(): Bool & Impure =
     let (a,b) = Array.span(i -> i > 3, [1]);
-    Array.sameElements(a,[]: Array[Int32]) && Array.sameElements(b, [1])
+    Array.sameElements(a,[]: Array[Int32]) and Array.sameElements(b, [1])
 
 @test
 def span03(): Bool & Impure =
     let (a,b) = Array.span(i -> i > 3, [4]);
-    Array.sameElements(a, [4]) && Array.sameElements(b, []: Array[Int32])
+    Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32])
 
 @test
 def span04(): Bool & Impure =
     let (a,b) = Array.span(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, [1,2])
+    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,2])
 
 @test
 def span05(): Bool & Impure =
     let (a,b) = Array.span(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, [1,5])
+    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,5])
 
 @test
 def span06(): Bool & Impure =
     let (a,b) = Array.span(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5]) && Array.sameElements(b, [1])
+    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
 
 @test
 def span07(): Bool & Impure =
     let (a,b) = Array.span(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8]) && Array.sameElements(b, []: Array[Int32])
+    Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32])
 
 @test
 def span08(): Bool & Impure =
     let (a,b) = Array.span(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6]) && Array.sameElements(b, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+    Array.sameElements(a, [4, 6]) and Array.sameElements(b, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
 
 /////////////////////////////////////////////////////////////////////////////
 // drop                                                                    //
@@ -2759,43 +2759,43 @@ def takeWhileRight08(): Bool & Impure =
 
 @test
 def groupBy01(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 || b > 8, []: Array[Int32]);
+    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, []: Array[Int32]);
     let xs = Array.toList(arr) |> List.map(Array.toList);
     xs == Nil
 
 @test
 def groupBy02(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 || b > 8, [1]);
+    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1]);
     let xs = Array.toList(arr) |> List.map(Array.toList);
     xs == (1 :: Nil) :: Nil
 
 @test
 def groupBy03(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 || b > 8, [1,4]);
+    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,4]);
     let xs = Array.toList(arr) |> List.map(Array.toList);
     xs == (1 :: Nil) :: (4 :: Nil) :: Nil
 
 @test
 def groupBy04(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 || b > 8, [1,9]);
+    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,9]);
     let xs = Array.toList(arr) |> List.map(Array.toList);
     xs == (1 :: 9 :: Nil) :: Nil
 
 @test
 def groupBy05(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 || b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16]);
+    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16]);
     let xs = Array.toList(arr) |> List.map(Array.toList);
     xs == (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
 
 @test
 def groupBy06(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > -6 || a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24]);
+    let arr = Array.groupBy((a, b) -> a > -6 or a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24]);
     let xs = Array.toList(arr) |> List.map(Array.toList);
     xs == (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
 
 @test
 def groupBy07(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a < 0 || (a > 10 || (b > 10 || a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1]);
+    let arr = Array.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1]);
     let xs = Array.toList(arr) |> List.map(Array.toList);
     xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
 
@@ -2881,22 +2881,22 @@ def zipWith06(): Bool & Impure =
 @test
 def unzip01(): Bool & Impure =
     let (a,b) = Array.unzip([]);
-    Array.sameElements(a, []) && Array.sameElements(b, [])
+    Array.sameElements(a, []) and Array.sameElements(b, [])
 
 @test
 def unzip02(): Bool & Impure =
     let (a,b) = Array.unzip([(1, true)]);
-    Array.sameElements(a, [1]) && Array.sameElements(b, [true])
+    Array.sameElements(a, [1]) and Array.sameElements(b, [true])
 
 @test
 def unzip03(): Bool & Impure =
     let (a,b) = Array.unzip([(1, true), (2, true)]);
-    Array.sameElements(a, [1,2])  && Array.sameElements(b, [true,true])
+    Array.sameElements(a, [1,2])  and Array.sameElements(b, [true,true])
 
 @test
 def unzip04(): Bool & Impure =
     let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
-    Array.sameElements(a, [1,2,3]) && Array.sameElements(b, [true,true,false])
+    Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
 
 /////////////////////////////////////////////////////////////////////////////
 // map2                                                                    //
@@ -3338,27 +3338,27 @@ def init05(): Bool & Impure =
 @test
 def init201(): Bool & Impure =
     let (a,b) = Array.init2(x -> (x,true), 0);
-    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, []: Array[Bool])
+    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Bool])
 
 @test
 def init202(): Bool & Impure =
     let (a,b) = Array.init2(x -> (x,true), -1);
-    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, []: Array[Bool])
+    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Bool])
 
 @test
 def init203(): Bool & Impure =
     let (a,b) = Array.init2(x -> (x,true), 1);
-    Array.sameElements(a, [0]) && Array.sameElements(b, [true])
+    Array.sameElements(a, [0]) and Array.sameElements(b, [true])
 
 @test
 def init204(): Bool & Impure =
     let (a,b) = Array.init2(x -> (x,true), 2);
-    Array.sameElements(a, [0,1]) && Array.sameElements(b, [true, true])
+    Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
 
 @test
 def init205(): Bool & Impure =
     let (a,b) = Array.init2(x -> (x,true), 50);
-    Array.length(a) == 50 && Array.length(b) == 50
+    Array.length(a) == 50 and Array.length(b) == 50
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3500,7 +3500,7 @@ def foreachAccum01(): Bool & Impure =
         st+1
     };
     let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "" && n == 0
+    StringBuilder.toString(sb) == "" and n == 0
 
 @test
 def foreachAccum02(): Bool & Impure =
@@ -3511,7 +3511,7 @@ def foreachAccum02(): Bool & Impure =
         st+1
     };
     let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "F" && n == 1
+    StringBuilder.toString(sb) == "F" and n == 1
 
 @test
 def foreachAccum03(): Bool & Impure =
@@ -3522,7 +3522,7 @@ def foreachAccum03(): Bool & Impure =
         st+1
     };
     let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "T" && n == 1
+    StringBuilder.toString(sb) == "T" and n == 1
 
 @test
 def foreachAccum04(): Bool & Impure =
@@ -3533,7 +3533,7 @@ def foreachAccum04(): Bool & Impure =
         st+1
     };
     let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "FT" && n == 2
+    StringBuilder.toString(sb) == "FT" and n == 2
 
 /////////////////////////////////////////////////////////////////////////////
 // updateSequence                                                          //

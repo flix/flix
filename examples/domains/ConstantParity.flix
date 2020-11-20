@@ -45,8 +45,8 @@ namespace Domain/ConstantParity {
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => {
             if      (n1 == n2)                  Cst(n1)
-            else if (isOdd(n1) && isOdd(n2))    Odd
-            else if (isEven(n1) && isEven(n2))  Even
+            else if (isOdd(n1) and isOdd(n2))    Odd
+            else if (isEven(n1) and isEven(n2))  Even
             else                                Top
         }
         case (Cst(n), Odd)      => if (isOdd(n))  Odd else Top
@@ -234,7 +234,7 @@ namespace Domain/ConstantParity {
     ///
     /// Returns `true` iff the given number `n` is even.
     ///
-    pub def isEven(n: BigInt): Bool = !isOdd(n)
+    pub def isEven(n: BigInt): Bool = not isOdd(n)
 
     let ConstantParity<> = (Bot, Top, equ, leq, lub, glb)
 

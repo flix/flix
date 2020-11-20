@@ -7,7 +7,7 @@ namespace Test/Exp/Cast {
     def testCast02(): Bool = true as Bool
 
     @test
-    def testCast03(): Bool = !false as Bool
+    def testCast03(): Bool = not false as Bool
 
     @test
     def testCast04(): Char = 'a' as Char
@@ -49,7 +49,7 @@ namespace Test/Exp/Cast {
     def testCastWithEff02(): Bool & Impure = true as Bool & Impure
 
     @test
-    def testCastWithEff03(): Bool & Impure = !false as Bool & Impure
+    def testCastWithEff03(): Bool & Impure = not false as Bool & Impure
 
     @test
     def testCastWithEff04(): Char & Impure = 'a' as Char & Impure
@@ -91,7 +91,7 @@ namespace Test/Exp/Cast {
     def testCastWithWildAndEff02(): Bool & Impure = true as & Impure
 
     @test
-    def testCastWithWildAndEff03(): Bool & Impure = !false as & Impure
+    def testCastWithWildAndEff03(): Bool & Impure = not false as & Impure
 
     @test
     def testCastWithWildAndEff04(): Char & Impure = 'a' as & Impure

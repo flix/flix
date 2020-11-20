@@ -111,7 +111,7 @@ namespace Set {
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool = size(xs) != size(ys) && isSubsetOf(xs, ys)
+    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool = size(xs) != size(ys) and isSubsetOf(xs, ys)
 
     ///
     /// Alias for `findLeft`.
@@ -261,7 +261,7 @@ namespace Set {
     ///
     @Time(size(xs) * Int32.log2(size(ys))) @Space(size(xs) * Int32.log2(size(ys)))
     pub def difference(xs: Set[a], ys: Set[a]): Set[a] =
-        foldLeft((acc, x) -> if (!memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
+        foldLeft((acc, x) -> if (not memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
 
     ///
     /// Returns all subsets of `xs`.

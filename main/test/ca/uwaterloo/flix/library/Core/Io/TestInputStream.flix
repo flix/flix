@@ -40,7 +40,7 @@ namespace Core/Io/TestInputStream {
         let b = testBuffer();
         let a = [0 as Int8; 3];
         let r = readBuffer(a, b)
-            |> Result.flatMap(c -> available(b) |> Result.map(d -> c == 3 && d == 0));
+            |> Result.flatMap(c -> available(b) |> Result.map(d -> c == 3 and d == 0));
         Result.getWithDefault(r, false)
     }
 
@@ -57,7 +57,7 @@ namespace Core/Io/TestInputStream {
         let b = testBuffer();
         let r1 = readByte(b);
         let r2 = readByte(b);
-        let m = Result.flatMap(v1 -> Result.map(v2 -> v1 == 0 && v2 == 1, r2), r1);
+        let m = Result.flatMap(v1 -> Result.map(v2 -> v1 == 0 and v2 == 1, r2), r1);
         Result.getWithDefault(m, false)
     }
 
@@ -67,7 +67,7 @@ namespace Core/Io/TestInputStream {
         let r1 = readByte(b);
         let r2 = readByte(b);
         let r3 = readByte(b);
-        let m = Result.flatMap(v1 -> Result.flatMap(v2 -> Result.map(v3 -> v1 == 0 && v2 == 1 && v3 == 2, r3), r2), r1);
+        let m = Result.flatMap(v1 -> Result.flatMap(v2 -> Result.map(v3 -> v1 == 0 and v2 == 1 and v3 == 2, r3), r2), r1);
         Result.getWithDefault(m, false)
     }
 
@@ -78,7 +78,7 @@ namespace Core/Io/TestInputStream {
         let g = readBuffer(a, b) |> resultEq(2);
         let a0 = a[0] == 0 as Int8;
         let a1 = a[1] == 1 as Int8;
-        g && a0 && a1
+        g and a0 and a1
     }
 
     @test
@@ -90,7 +90,7 @@ namespace Core/Io/TestInputStream {
         let a1 = a[1] == 1 as Int8;
         let a2 = a[2] == 2 as Int8;
         let a3 = a[3] == -1 as Int8;
-        g && a0 && a1 && a2 && a3
+        g and a0 and a1 and a2 and a3
     }
 
     @test
@@ -99,7 +99,7 @@ namespace Core/Io/TestInputStream {
         let a = [-1 as Int8; 0];
         let r = readBuffer(a, b) |> resultEq(0);
         let p = available(b) |> resultEq(3);
-        r && p
+        r and p
     }
 
     @test
@@ -111,7 +111,7 @@ namespace Core/Io/TestInputStream {
         let a1 = a[1] == 0 as Int8;
         let a2 = a[2] == 1 as Int8;
         let a3 = a[3] == 2 as Int8;
-        g && a0 && a1 && a2 && a3
+        g and a0 and a1 and a2 and a3
     }
 
     @test
@@ -121,7 +121,7 @@ namespace Core/Io/TestInputStream {
         let r = readBufferWithOffset(a, 1, -1, b);
         let s = resultSwap(r);
         let m = Result.map(e -> e == IOError.IncorrectBufferSize, s);
-        Result.isErr(r) && Result.getWithDefault(m, false)
+        Result.isErr(r) and Result.getWithDefault(m, false)
     }
 
     @test
@@ -129,7 +129,7 @@ namespace Core/Io/TestInputStream {
         let b = testBuffer();
         let a = [-1 as Int8; 1];
         let g = readBufferWithOffset(a, 0, 1, b) |> resultEq(1);
-        g && a[0] == 0 as Int8
+        g and a[0] == 0 as Int8
     }
 
     @test
@@ -137,7 +137,7 @@ namespace Core/Io/TestInputStream {
         let b = testBuffer();
         let a = [-1 as Int8; 4];
         let g = readBufferWithOffset(a, 0, 4, b) |> resultEq(3);
-        g && a[0] == 0 as Int8 && a[1] == 1 as Int8 && a[2] == 2 as Int8 && a[3] == -1 as Int8
+        g and a[0] == 0 as Int8 and a[1] == 1 as Int8 and a[2] == 2 as Int8 and a[3] == -1 as Int8
     }
 
     @test

@@ -222,7 +222,7 @@ namespace RedBlackTree {
     ///
     @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
     pub def exists(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool = match tree {
-        case Node(_, a, k, v, b) => f(k, v) || exists(f, a) || exists(f, b)
+        case Node(_, a, k, v, b) => f(k, v) or exists(f, a) or exists(f, b)
         case _ => false
     }
 
@@ -235,7 +235,7 @@ namespace RedBlackTree {
     ///
     @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
     pub def forall(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool = match tree {
-        case Node(_, a, k, v, b) => f(k, v) && forall(f, a) && forall(f, b)
+        case Node(_, a, k, v, b) => f(k, v) and forall(f, a) and forall(f, b)
         case _ => true
     }
 

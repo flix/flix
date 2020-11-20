@@ -34,10 +34,10 @@ enum BExp {
     // a logical negation expression: !e.
     case Not(BExp),
 
-    // a logical conjunction expression: e1 && e2.
+    // a logical conjunction expression: e1 and e2.
     case Conj(BExp, BExp),
 
-    // a logical disjunction expression: e1 || e2.
+    // a logical disjunction expression: e1 or e2.
     case Disj(BExp, BExp),
 
     // an equality of expression: e1 == e2.
@@ -67,9 +67,9 @@ def evalAExp(e: AExp): Int = match e {
 def evalBExp(e: BExp): Bool = match e {
     case True           => true
     case False          => false
-    case Not(e1)        => !evalBExp(e1)
-    case Conj(e1, e2)   => evalBExp(e1) && evalBExp(e2)
-    case Disj(e1, e2)   => evalBExp(e1) || evalBExp(e2)
+    case Not(e1)        => not evalBExp(e1)
+    case Conj(e1, e2)   => evalBExp(e1) and evalBExp(e2)
+    case Disj(e1, e2)   => evalBExp(e1) or evalBExp(e2)
     case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
     case Neq(e1,e2)     => evalAExp(e1) != evalAExp(e2)
 }

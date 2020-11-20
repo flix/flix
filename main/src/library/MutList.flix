@@ -86,7 +86,7 @@ namespace MutList {
         if (i >= len)
             false
         else
-            f(a[i]) || existsHelper(f, a, len, i + 1)
+            f(a[i]) or existsHelper(f, a, len, i + 1)
 
     ///
     /// Returns `true` if the given predicate `f` holds for all elements of the given mutable list `v`.
@@ -104,7 +104,7 @@ namespace MutList {
         if (i >= len)
             true
         else
-            f(a[i]) && existsHelper(f, a, len, i + 1)
+            f(a[i]) and existsHelper(f, a, len, i + 1)
 
     ///
     /// Optionally returns the first element of the given mutable list `v`.
@@ -612,7 +612,7 @@ namespace MutList {
         let MutList(a2, l2) = v2;
         let len1 = deref l1;
         let len2 = deref l2;
-        len1 == len2 && sameElementsHelper(deref a1, deref a2, 0, len1)
+        len1 == len2 and sameElementsHelper(deref a1, deref a2, 0, len1)
 
     ///
     /// Helper function for `sameElements`.
@@ -621,7 +621,7 @@ namespace MutList {
         if (i >= n)
             true
         else
-            a1[i] == a2[i] && sameElementsHelper(a1, a2, i + 1, n)
+            a1[i] == a2[i] and sameElementsHelper(a1, a2, i + 1, n)
 
     ///
     /// Render `v` as a String. Elements are rendered with the
@@ -692,7 +692,7 @@ namespace MutList {
         let c = capacity(v);
         let len = length(v);
         let loadFactor = Int32.toFloat32(len) / Int32.toFloat32(c);
-        if (loadFactor < 1.0f32/4.0f32 && len > 0) {
+        if (loadFactor < 1.0f32/4.0f32 and len > 0) {
             if (len == 1)
                 shrinkTo!(1, v)
             else

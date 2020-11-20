@@ -5,25 +5,25 @@ namespace Test/Exp/Binary/Logic {
     //
 
     @test
-    def binaryLogical01a(): Bool = (!false && true) == true
+    def binaryLogical01a(): Bool = (!false and true) == true
 
     @test
     def binaryLogical01b(): Bool = (not false and true) == true
 
     @test
-    def binaryLogical02a(): Bool = (true && !false) == true
+    def binaryLogical02a(): Bool = (true and not false) == true
 
     @test
     def binaryLogical02b(): Bool = (true and not false) == true
 
     @test
-    def binaryLogical03a(): Bool = (!true || true) == true
+    def binaryLogical03a(): Bool = (!true or true) == true
 
     @test
     def binaryLogical03b(): Bool = (not true or true) == true
 
     @test
-    def binaryLogical04a(): Bool = (true || !true) == true
+    def binaryLogical04a(): Bool = (true or not true) == true
 
     @test
     def binaryLogical04b(): Bool = (true or not true) == true
@@ -61,37 +61,37 @@ namespace Test/Exp/Binary/Logic {
     //
 
     @test
-    def testBinaryLogicalAnd01a(): Bool = (true && true) == true
+    def testBinaryLogicalAnd01a(): Bool = (true and true) == true
 
     @test
     def testBinaryLogicalAnd01b(): Bool = (true and true) == true
 
     @test
-    def testBinaryLogicalAnd02a(): Bool = (true && false) == false
+    def testBinaryLogicalAnd02a(): Bool = (true and false) == false
 
     @test
     def testBinaryLogicalAnd02b(): Bool = (true and false) == false
 
     @test
-    def testBinaryLogicalAnd03a(): Bool = (false && true) == false
+    def testBinaryLogicalAnd03a(): Bool = (false and true) == false
 
     @test
     def testBinaryLogicalAnd03b(): Bool = (false and true) == false
 
     @test
-    def testBinaryLogicalAnd04a(): Bool = (false && false) == false
+    def testBinaryLogicalAnd04a(): Bool = (false and false) == false
 
     @test
     def testBinaryLogicalAnd04b(): Bool = (false and false) == false
 
     @test
-    def testBinaryLogicalAnd05a(): Bool = (false && ???) == false
+    def testBinaryLogicalAnd05a(): Bool = (false and ???) == false
 
     @test
     def testBinaryLogicalAnd05b(): Bool = (false and ???) == false
 
     @test
-    def testBinaryLogicalAnd06a(): Bool = (true && true && true) == true
+    def testBinaryLogicalAnd06a(): Bool = (true and true and true) == true
 
     @test
     def testBinaryLogicalAnd06b(): Bool = (true and true and true) == true
@@ -101,37 +101,37 @@ namespace Test/Exp/Binary/Logic {
     //
 
     @test
-    def binaryLogicalOrTest01a(): Bool = (true || true) == true
+    def binaryLogicalOrTest01a(): Bool = (true or true) == true
 
     @test
     def binaryLogicalOrTest01b(): Bool = (true or true) == true
 
     @test
-    def binaryLogicalOrTest02a(): Bool = (true || false) == true
+    def binaryLogicalOrTest02a(): Bool = (true or false) == true
 
     @test
     def binaryLogicalOrTest02b(): Bool = (true or false) == true
 
     @test
-    def binaryLogicalOrTest03a(): Bool = (false || true) == true
+    def binaryLogicalOrTest03a(): Bool = (false or true) == true
 
     @test
     def binaryLogicalOrTest03b(): Bool = (false or true) == true
 
     @test
-    def binaryLogicalOrTest04a(): Bool = (false || false) == false
+    def binaryLogicalOrTest04a(): Bool = (false or false) == false
 
     @test
     def binaryLogicalOrTest04b(): Bool = (false or false) == false
 
     @test
-    def binaryLogicalOrTest05a(): Bool = (true || ???) == true
+    def binaryLogicalOrTest05a(): Bool = (true or ???) == true
 
     @test
     def binaryLogicalOrTest05b(): Bool = (true or ???) == true
 
     @test
-    def binaryLogicalOrTest06a(): Bool = (true || true || true) == true
+    def binaryLogicalOrTest06a(): Bool = (true or true or true) == true
 
     @test
     def binaryLogicalOrTest06b(): Bool = (true or true or true) == true

@@ -590,11 +590,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Unary: Rule1[ParsedAst.Expression] = {
-      def UnaryOp: Rule1[String] = rule {
-        capture(keyword("not") ~ WS | atomic("+") | atomic("-") | atomic("~~~"))
+      def UnaryOp1: Rule1[String] = rule {
+        capture(atomic("+") | atomic("-") | atomic("~~~"))
+      }
+      def UnaryOp2: Rule1[String] = rule {
+        capture(keyword("not")) ~ WS
       }
       rule {
-        !Literal ~ (SP ~ UnaryOp ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
+        !Literal ~ (SP ~ (UnaryOp1 | UnaryOp2) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
       }
     }
 

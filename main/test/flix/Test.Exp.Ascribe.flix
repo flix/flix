@@ -7,7 +7,7 @@ namespace Test/Exp/Ascribe {
     def testAscribe02(): Bool = true : Bool
 
     @test
-    def testAscribe03(): Bool = !false : Bool
+    def testAscribe03(): Bool = not false : Bool
 
     @test
     def testAscribe04(): Char = 'a' : Char

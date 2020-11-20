@@ -408,6 +408,6 @@ namespace MutMap {
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
     ///
     pub def __eq(m1: MutMap[k, v], m2: MutMap[k, v]): Bool =
-        (isSubmapOf(m1, m2) && isSubmapOf(m2, m1)) as & Pure
+        (isSubmapOf(m1, m2) and isSubmapOf(m2, m1)) as & Pure
 
 }
