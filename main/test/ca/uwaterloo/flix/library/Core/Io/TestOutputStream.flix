@@ -34,7 +34,7 @@ namespace Core/Io/TestOutputStream {
         let _ = writeByte(52 as Int8, b);
         let _ = writeByte(76 as Int8, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 2 and a[0] == 52 as Int8 and a[1] == 76 as Int8
+        Array.length(a) == 2 and (a[0] == 52 as Int8) and a[1] == 76 as Int8
     }
 
     @test
@@ -79,7 +79,7 @@ namespace Core/Io/TestOutputStream {
         let b = testBuffer();
         let _ = writeBufferWithOffset(e, 1, 2, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 2  and a[0] == 2 as Int8 and a[1] == 3 as Int8
+        Array.length(a) == 2 and (a[0] == 2 as Int8) and a[1] == 3 as Int8
     }
 
     @test
