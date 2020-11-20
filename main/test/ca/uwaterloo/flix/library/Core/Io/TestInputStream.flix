@@ -137,7 +137,7 @@ namespace Core/Io/TestInputStream {
         let b = testBuffer();
         let a = [-1 as Int8; 4];
         let g = readBufferWithOffset(a, 0, 4, b) |> resultEq(3);
-        g and a[0] == 0 as Int8 and a[1] == 1 as Int8 and a[2] == 2 as Int8 and a[3] == -1 as Int8
+        g and (a[0] == 0 as Int8) and (a[1] == 1 as Int8) and (a[2] == 2 as Int8) and a[3] == -1 as Int8
     }
 
     @test
