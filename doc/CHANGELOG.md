@@ -2,6 +2,9 @@
 
 HEAD:
 
+Version 0.14.6:
+- Fix a bug in the parser.
+
 Version 0.14.5:
 - Critical bug fixes.
 
