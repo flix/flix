@@ -66,6 +66,7 @@ object JvmOps {
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Channel(_) => JvmType.Object
+    case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
     case MonoType.RecordEmpty() => getRecordInterfaceType()
@@ -293,6 +294,12 @@ object JvmOps {
       JvmType.Reference(JvmName(RootPackage, name))
   }
 
+  def getLazyClassType(tpe: MonoType.Lazy)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Lazy(tpe) =>
+      val arg = stringify(getErasedJvmType(tpe))
+      val name = "Lazy$" + arg
+      JvmType.Reference(JvmName(RootPackage, name))
+  }
 
   /**
     * Returns the record interface type `IRecord`.
@@ -687,6 +694,10 @@ object JvmOps {
 
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
 
+      case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.Force(exp, tpe, loc) => visitExp(exp)
+
       case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, constraint) => sacc ++ visitConstraint(constraint)
       }
@@ -1035,6 +1046,10 @@ object JvmOps {
         rs ++ d
 
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Lazy(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Force(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set(tpe))((ts, c) => ts ++ visitConstraint(c))
 

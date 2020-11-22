@@ -133,6 +133,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Fixpoint.Solve", "main/test/flix/Test.Exp.Fixpoint.Solve.flix"),
 
   //
+  // Force.
+  //
+  new FlixTest("Test.Exp.Force", "main/test/flix/Test.Exp.Force.flix"),
+
+  //
   // Hole.
   //
   new FlixTest("Test.Exp.Hole", "main/test/flix/Test.Exp.Hole.flix")(Options.TestWithLibrary),
@@ -175,6 +180,11 @@ class LangSuite extends Suites(
   // Lambda.
   //
   new FlixTest("Test.Exp.Lambda.Match", "main/test/flix/Test.Exp.Lambda.Match.flix"),
+
+  //
+  // Lazy
+  //
+  new FlixTest("Test.Exp.Lazy", "main/test/flix/Test.Exp.Lazy.flix"),
 
   //
   // Let.

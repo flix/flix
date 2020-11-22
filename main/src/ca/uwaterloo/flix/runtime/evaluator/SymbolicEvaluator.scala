@@ -829,6 +829,9 @@ object SymbolicEvaluator {
       case Expression.SelectChannel(rules, default, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.Spawn(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
+      case Expression.Lazy(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.Force(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.FixpointConstraintSet(cs, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
