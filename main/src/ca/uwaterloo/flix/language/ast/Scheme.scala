@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
+import ca.uwaterloo.flix.language.phase.unification.UnificationError.UnfulfilledConstraint
 import ca.uwaterloo.flix.language.phase.unification.{ContextReduction, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -146,6 +147,15 @@ object Scheme {
       }
     }
 
+    // MATT docs
+    def checkEntailment(tconstrs: List[TypedAst.TypeConstraint], tconstr: TypedAst.TypeConstraint): Result[Unit, UnificationError] = {
+      if (ContextReduction.entail(instances, tconstrs, tconstr)) {
+        ().toOk
+      } else {
+        UnificationError.UnfulfilledConstraint(tconstr).toErr
+      }
+    }
+
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
@@ -166,21 +176,10 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     val result = for {
       subst <- Unification.unifyTypes(tpe1, tpe2)
-      // Variables whose constraints are assumed in the surrounding scope.
-      fixedVars = assumedTconstrs.map(subst.apply).flatMap(_.arg.typeVars)
-      // Variables which we need to quantify
-      quantifiedVars = tpe1.typeVars.removedAll(fixedVars).toList
+      newAssumedTconstrs = assumedTconstrs.map(subst.apply)
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
-
-      // Type constraints not immediately entailed from tconstrs2
-      checkedTconstrs = newTconstrs1.filterNot(ContextReduction.entail(instances, newTconstrs2, _))
-
-      // Split tconstrs among those that must be handled within the expression scope (`retained`)
-      // and those that must be handled by the surrounding scope (`deferred`)
-      splitTconstrs <- ContextReduction.split(instances, fixedVars, quantifiedVars, newTconstrs1)
-      (deferredTconstrs, retainedTconstrs) = splitTconstrs
-      _ <- checkConstraints(deferredTconstrs, retainedTconstrs)
+      _ <- Result.sequence(newTconstrs1.map(checkEntailment(newTconstrs2 ::: newAssumedTconstrs, _)))
     } yield ()
 
     result.isOk
