@@ -70,4 +70,16 @@ namespace TestShow {
 
     @test
     def testShowNel(): Bool = show(Nel("abc", Nil)) == "abc :: Nil"
+
+    @test
+    def testShowNest01(): Bool =
+        show(Some(None) :: None :: Some(Some(Ok(123))) :: Some(Some(Err(false))) :: Nil) == "Some(None) :: None :: Some(Some(Ok(123))) :: Some(Some(Err(false))) :: Nil"
+
+    @test
+    def testShowNest02(): Bool =
+        show(Some(Nil) :: None :: Some(Success(true) :: Failure(Nel("zut", Nil)) :: Nil) :: Nil) == "Some(Nil) :: None :: Some(Success(true) :: Failure(zut :: Nil) :: Nil) :: Nil"
+
+    @test
+    def testShowNest03(): Bool =
+        show(Nil :: (1 :: Nil) :: (1 :: 2 :: Nil) :: Nil) == "Nil :: 1 :: Nil :: 1 :: 2 :: Nil :: Nil"
 }
