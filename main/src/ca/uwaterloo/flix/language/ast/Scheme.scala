@@ -103,20 +103,24 @@ object Scheme {
         }
     }
 
+    // MATT dedupe
     val newConstrs = sc.constraints.map {
-      case tconstr@TypedAst.TypeConstraint(_, Type.Var(x, k, rigidity, _)) =>
-        freshVars.get(x) match {
-          case None =>
-            // Determine the rigidity of the free type variable.
-            val newRigidity = mode match {
-              case InstantiateMode.Flexible => rigidity
-              case InstantiateMode.Rigid => Rigidity.Rigid
-              case InstantiateMode.Mixed => Rigidity.Rigid
+      case TypedAst.TypeConstraint(sym, tpe0) =>
+        val tpe = tpe0.map {
+          case Type.Var(x, k, rigidity, _) =>
+            freshVars.get(x) match {
+              case None =>
+                // Determine the rigidity of the free type variable.
+                val newRigidity = mode match {
+                  case InstantiateMode.Flexible => rigidity
+                  case InstantiateMode.Rigid => Rigidity.Rigid
+                  case InstantiateMode.Mixed => Rigidity.Rigid
+                }
+                Type.Var(x, k, newRigidity)
+              case Some(tvar) => tvar
             }
-            tconstr.copy(arg = Type.Var(x, k, newRigidity))
-          case Some(tvar) => tconstr.copy(arg = tvar)
         }
-      case tconstr@TypedAst.TypeConstraint(_, _) => tconstr
+        TypedAst.TypeConstraint(sym, tpe)
     }
 
     (newConstrs, newBase)

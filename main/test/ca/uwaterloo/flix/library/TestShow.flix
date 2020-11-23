@@ -51,20 +51,23 @@ namespace TestShow {
     def testShowInt32List(): Bool = show(1 :: 2 :: 3 :: Nil) == "1 :: 2 :: 3 :: Nil"
 
     @test
-    def testShowNil(): Bool = show(Nil) == "Nil"
+    def testShowNil(): Bool = show(Nil: List[Int]) == "Nil"
 
     @test
     def testShowSomeInt32(): Bool = show(Some(123)) == "Some(123)"
 
     @test
-    def testShowNone(): Bool = show(None) == "None"
+    def testShowNone(): Bool = show(None: Option[String]) == "None"
 
     @test
-    def testShowErr(): Bool = show(Err("error")) == "Err(error)"
+    def testShowErr(): Bool = show(Err("error"): Result[String, String]) == "Err(error)"
 
     @test
-    def testShowOk(): Bool = show(Ok("all good")) == "Ok(all good)"
+    def testShowOk(): Bool = show(Ok("all good"): Result[String, String]) == "Ok(all good)"
 
     @test
-    def testShowSuccess(): Bool = show(Success("hooray")) == "Success(hooray)"
+    def testShowSuccess(): Bool = show(Success("hooray"): Validation[String, String]) == "Success(hooray)"
+
+    @test
+    def testShowNel(): Bool = show(Nel("abc", Nil)) == "abc :: Nil"
 }

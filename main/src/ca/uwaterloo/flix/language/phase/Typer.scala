@@ -224,6 +224,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp))
 
       ///
+      /// Add assumptions to the declared scheme.
+      ///
+      val completeScheme = declaredScheme.copy(constraints = declaredScheme.constraints ++ assumedTconstrs)
+
+      ///
       /// Pattern match on the result to determine if type inference was successful.
       ///
       result match {
@@ -250,7 +255,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
               val sc = Scheme.generalize(inferredConstrs, inferredType)
-              if (!Scheme.lessThanEqual(sc, declaredScheme, assumedTconstrs, root.instances)) {
+              if (!Scheme.lessThanEqual(sc, completeScheme, assumedTconstrs, root.instances)) { // MATT ?
                 return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
               }
 
