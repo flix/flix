@@ -174,7 +174,10 @@ object Scheme {
       _ <- Result.sequence(newTconstrs1.map(checkEntailment(newTconstrs2, _)))
     } yield ()
 
-    result.isOk
+    result match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
+    }
   }
 
 }

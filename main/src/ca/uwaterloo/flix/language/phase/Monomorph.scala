@@ -677,7 +677,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
       val defns = instances.flatMap {
         inst => inst.defs.find {
-          defn => defn.sym.name == sig.sym.name && Unification.unifyTypes(defn.declaredScheme.base, tpe).isOk
+          defn =>
+            defn.sym.name == sig.sym.name && (
+              Unification.unifyTypes(defn.declaredScheme.base, tpe) match {
+                case Result.Ok(_) => true
+                case Result.Err(_) => false
+              }
+            )
         }
       }
 

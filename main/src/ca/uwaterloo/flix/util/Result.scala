@@ -59,15 +59,6 @@ sealed trait Result[T, E] {
     case Result.Ok(t) => Validation.Success(t)
     case Result.Err(e) => Validation.Failure(LazyList(e))
   }
-
-  /**
-    * Returns `true` iff this result is Ok.
-    */
-  final def isOk: Boolean = this match {
-    case Result.Ok(_) => true
-    case Result.Err(_) => false
-  }
-
 }
 
 object Result {

@@ -90,7 +90,10 @@ object ContextReduction {
       } yield inst.tconstrs.map(subst(_))
     }
 
-    matchingInstances.map(tryInst).find(_.isOk) match {
+    matchingInstances.map(tryInst).find {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
+    } match {
       case Some(Result.Ok(tconstrs)) => tconstrs.toOk
       case _ => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
     }
