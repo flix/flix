@@ -76,4 +76,22 @@ namespace Show {
             case None => "None"
         }
     }
+
+//    instance Show[Result[a, b]] with [a : Show, b : Show] {
+//        def show(x: Result[a, b]): String = match x {
+//            case Ok(y) => "Ok(${show(y)})"
+//            case Err(z) => "Err(${show(z)})"
+//        }
+//    }
+
+//    instance Show[Validation[a, b]] with [a : Show, Nel[b] : Show] {
+//        def show(x: Validation[a, b]): String = match x {
+//            case Success(y) => "Success(${show(y)})"
+//            case Failure(z) => "Failure(${show(z)})"
+//        }
+//    }
+
+    instance Show[Nel[a]] with [List[a] : Show] {
+        def show(x: Nel[a]): String = show(Nel.toList(x))
+    }
 }

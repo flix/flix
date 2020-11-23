@@ -1035,4 +1035,40 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.ExtraneousDefinition](result)
   }
+
+  test("MattTest") {
+    val input =
+      """
+        |
+        |enum Result[t, e] {
+        |    case Ok(t),
+        |    case Err(e)
+        |}
+        |    class Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Result[a, b]] with [a : Show, b : Show] {
+        |        def show(x: Result[a, b]): String = match x {
+        |            case Ok(y) => "Ok(${show(y)})"
+        |            case Err(z) => "Err(${show(z)})"
+        |        }
+        |    }
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    result.get
+  }
+
+  test("MattTest2") {
+    val input =
+      """
+        |def id(x: a): a = x
+        |
+        |def s2i(_s: String): Int = 123
+        |
+        |pub def f(i: Int, s: String): Int = id(i) + s2i(id(s))
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    result.get
+  }
 }

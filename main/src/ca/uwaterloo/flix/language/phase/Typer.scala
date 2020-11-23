@@ -130,14 +130,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           // Case 1: there is no definition with the same name
           case None => TypeError.MissingImplementation(sig.sym, inst.loc).toFailure
           case Some(defn) =>
-            val subst = Substitution.singleton(clazz.tparam.tpe, inst.tpe)
-            val expectedScheme = subst(sig.sc)
+            val expectedScheme = Scheme.partiallyInstantiate(sig.sc, clazz.tparam.tpe, inst.tpe)
             if (Scheme.equal(expectedScheme, defn.declaredScheme, Nil, root.instances)) {
               // Case 2.1: the schemes match. Success!
               ().toSuccess
             } else {
               // Case 2.2: the schemes do not match
-              TypeError.MismatchedSignatures(defn.loc, sig.sc, defn.declaredScheme).toFailure
+              TypeError.MismatchedSignatures(defn.loc, expectedScheme, defn.declaredScheme).toFailure
             }
         }
       }
@@ -459,10 +458,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (_, defType) = Scheme.instantiate(defn.sc, InstantiateMode.Flexible)
+        val (tconstrs, defType) = Scheme.instantiate(defn.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
-        } yield (List.empty, resultTyp, Type.Pure)
+        } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
@@ -700,6 +699,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val bodies = rules.map(_.exp)
 
         for {
+          // MATT have to unify with constrs separately???
           (constrs, tpe, eff) <- visitExp(exp)
           patternTypes <- inferPatterns(patterns, root)
           patternType <- unifyTypeM(tpe :: patternTypes, loc)

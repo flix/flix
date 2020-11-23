@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.UnificationError.UnfulfilledConstraint
-import ca.uwaterloo.flix.language.phase.unification.{ContextReduction, Unification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{ContextReduction, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -48,6 +48,18 @@ object Scheme {
       */
     case object Mixed extends InstantiateMode
 
+  }
+
+  // MATT docs
+  def partiallyInstantiate(sc: Scheme, quantifier: Type.Var, value: Type)(implicit flix: Flix): Scheme = sc match {
+    case Scheme(quantifiers, constraints, base) =>
+      if (!quantifiers.contains(quantifier)) {
+        throw InternalCompilerException("Quantifier not in scheme.")
+      }
+      val subst = Substitution.singleton(quantifier, value)
+      val newConstraints = constraints.map(subst.apply)
+      val newBase = subst(base)
+      generalize(newConstraints, newBase)
   }
 
   /**

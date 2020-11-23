@@ -30,7 +30,8 @@ sealed trait TypeError extends CompilationError {
 }
 
 object TypeError {
-  implicit val audience: Audience = Audience.External
+//  implicit val audience: Audience = Audience.External // MATT
+  implicit val audience: Audience = Audience.Internal
 
   /**
     * Generalization Error.
@@ -300,10 +301,10 @@ object TypeError {
   /**
     * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
     * @param loc the location of the definition
-    * @param sigScheme the scheme of the signature
-    * @param defScheme the scheme of the definition
+    * @param expected the scheme of the signature
+    * @param actual the scheme of the definition
     */
-  case class MismatchedSignatures(loc: SourceLocation, sigScheme: Scheme, defScheme: Scheme) extends TypeError {
+  case class MismatchedSignatures(loc: SourceLocation, expected: Scheme, actual: Scheme) extends TypeError {
     def summary: String = "Mismatched signature."
 
     def message: VirtualTerminal = {
@@ -312,8 +313,8 @@ object TypeError {
       vt << NewLine
       vt << Code(loc, "mismatched signature.") << NewLine
       vt << NewLine
-      vt << s"Expected scheme: ${FormatScheme.formatScheme(sigScheme)}" << NewLine
-      vt << s"Actual scheme: ${FormatScheme.formatScheme(defScheme)}" << NewLine
+      vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)}" << NewLine
+      vt << s"Actual scheme: ${FormatScheme.formatScheme(actual)}" << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Modify the definition to match the signature."
     }
