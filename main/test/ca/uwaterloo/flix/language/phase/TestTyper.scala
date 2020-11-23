@@ -950,6 +950,76 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.OverlappingInstances](result)
   }
 
+  test("Test.OverlappingInstance.04") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[() -> a]
+        |
+        |instance C[a -> ()]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstance.05") {
+    val input =
+      """
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |class C[a]
+        |
+        |instance C[Box[a]]
+        |
+        |instance C[Box[Int]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstance.06") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[() -> a]
+        |
+        |instance C[a -> ()]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstance.07") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[() -> a & e]
+        |
+        |instance C[a -> () & e]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+
+  test("Test.OverlappingInstance.08") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[Box(a) -> a & e]
+        |
+        |instance C[Box(Int) ~> ()]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
   test("Test.MissingImplementation.01") {
     val input =
       """
