@@ -1010,11 +1010,15 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.OverlappingInstance.08") {
     val input =
       """
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
         |class C[a]
         |
-        |instance C[Box(a) -> a & e]
+        |instance C[Box[a] -> b & e]
         |
-        |instance C[Box(Int) ~> ()]
+        |instance C[Box[Int] ~> ()]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.OverlappingInstances](result)
