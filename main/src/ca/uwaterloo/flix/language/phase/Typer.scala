@@ -131,7 +131,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           case None => TypeError.MissingImplementation(sig.sym, inst.loc).toFailure
           case Some(defn) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.sc, clazz.tparam.tpe, inst.tpe)
-            if (Scheme.equal(expectedScheme, defn.declaredScheme, Nil, root.instances)) {
+            if (Scheme.equal(expectedScheme, defn.declaredScheme, root.instances)) {
               // Case 2.1: the schemes match. Success!
               ().toSuccess
             } else {
@@ -255,7 +255,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
               val sc = Scheme.generalize(inferredConstrs, inferredType)
-              if (!Scheme.lessThanEqual(sc, completeScheme, assumedTconstrs, root.instances)) { // MATT ?
+              if (!Scheme.lessThanEqual(sc, completeScheme, root.instances)) {
                 return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
               }
 
@@ -704,7 +704,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val bodies = rules.map(_.exp)
 
         for {
-          // MATT have to unify with constrs separately???
           (constrs, tpe, eff) <- visitExp(exp)
           patternTypes <- inferPatterns(patterns, root)
           patternType <- unifyTypeM(tpe :: patternTypes, loc)

@@ -50,7 +50,9 @@ object Scheme {
 
   }
 
-  // MATT docs
+  /**
+    * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
+    */
   def partiallyInstantiate(sc: Scheme, quantifier: Type.Var, value: Type)(implicit flix: Flix): Scheme = sc match {
     case Scheme(quantifiers, constraints, base) =>
       if (!quantifiers.contains(quantifier)) {
@@ -135,35 +137,22 @@ object Scheme {
   }
 
   /**
-    * Returns `true` if the given schemes are equivalent, under the assumption that `assumedTconstrs` all hold.
+    * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, assumedTconstrs: List[TypedAst.TypeConstraint], instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
-    lessThanEqual(sc1, sc2, assumedTconstrs, instances) && lessThanEqual(sc2, sc1, assumedTconstrs, instances)
+  def equal(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
+    lessThanEqual(sc1, sc2, instances) && lessThanEqual(sc2, sc1, instances)
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`, under the assumption that `assumedTconstrs` all hold.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, assumedTconstrs: List[TypedAst.TypeConstraint], instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
 
 
     /**
-      * Checks that all retained constraints are entailed by the base constraints,
-      * and that there are no deferred constraints.
+      * Checks that `tconstr` is entailed by `tconstrs`.
       */
-    def checkConstraints(deferredTconstrs: List[TypedAst.TypeConstraint], retainedTconstrs: List[TypedAst.TypeConstraint]): Result[Unit, UnificationError] = {
-      if (retainedTconstrs.nonEmpty) {
-        UnificationError.UnfulfilledConstraint(retainedTconstrs.head).toErr
-      } else {
-        deferredTconstrs.find(!ContextReduction.entail(instances, assumedTconstrs, _)) match {
-          case Some(tconstr) => UnificationError.UnfulfilledConstraint(tconstr).toErr
-          case None => ().toOk
-        }
-      }
-    }
-
-    // MATT docs
     def checkEntailment(tconstrs: List[TypedAst.TypeConstraint], tconstr: TypedAst.TypeConstraint): Result[Unit, UnificationError] = {
       if (ContextReduction.entail(instances, tconstrs, tconstr)) {
         ().toOk
@@ -192,10 +181,9 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     val result = for {
       subst <- Unification.unifyTypes(tpe1, tpe2)
-      newAssumedTconstrs = assumedTconstrs.map(subst.apply)
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
-      _ <- Result.sequence(newTconstrs1.map(checkEntailment(newTconstrs2 ::: newAssumedTconstrs, _)))
+      _ <- Result.sequence(newTconstrs1.map(checkEntailment(newTconstrs2, _)))
     } yield ()
 
     result.isOk

@@ -30,8 +30,7 @@ sealed trait TypeError extends CompilationError {
 }
 
 object TypeError {
-//  implicit val audience: Audience = Audience.External // MATT
-  implicit val audience: Audience = Audience.Internal
+  implicit val audience: Audience = Audience.External
 
   /**
     * Generalization Error.
