@@ -90,7 +90,7 @@ object Scheme {
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
-    val newBase = baseType.map {
+    def visitTvar(t: Type.Var): Type.Var = t match {
       case Type.Var(x, k, rigidity, _) =>
         freshVars.get(x) match {
           case None =>
@@ -105,23 +105,11 @@ object Scheme {
         }
     }
 
-    // MATT dedupe
+    val newBase = baseType.map(visitTvar)
+
     val newConstrs = sc.constraints.map {
       case TypedAst.TypeConstraint(sym, tpe0) =>
-        val tpe = tpe0.map {
-          case Type.Var(x, k, rigidity, _) =>
-            freshVars.get(x) match {
-              case None =>
-                // Determine the rigidity of the free type variable.
-                val newRigidity = mode match {
-                  case InstantiateMode.Flexible => rigidity
-                  case InstantiateMode.Rigid => Rigidity.Rigid
-                  case InstantiateMode.Mixed => Rigidity.Rigid
-                }
-                Type.Var(x, k, newRigidity)
-              case Some(tvar) => tvar
-            }
-        }
+        val tpe = tpe0.map(visitTvar)
         TypedAst.TypeConstraint(sym, tpe)
     }
 
