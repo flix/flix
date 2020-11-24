@@ -27,20 +27,28 @@ object BenchmarkCompiler {
 
     warmup(flix)
 
-    flix.compile() match {
-      case Validation.Success(compilationResult) =>
-        // Check if we are in the last iteration.
-        val currentTime = System.currentTimeMillis() / 1000
-        val totalLines = compilationResult.getTotalLines()
+    val results = List.fill(BenchmarkIterations) {
+      flix.compile() match {
+        case Validation.Success(_) =>
+          flix.phaseTimers.toList
+        case Validation.Failure(errors) =>
+          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
+          System.exit(1)
+          throw new AssertionError("impossible") // inaccessible
+      }
+    }
 
-        for (phase <- flix.phaseTimers) {
-          val name = phase.phase
-          val phaseTimeNanos = phase.time
-          println(s"$name, $currentTime, $phaseTimeNanos")
-        }
-      case Validation.Failure(errors) =>
-        errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
-        System.exit(1)
+    // phase -> list of times
+    val phaseMap = results.flatten.groupMap(_.phase)(_.time)
+
+    // phase -> median time
+    val phaseMedians = phaseMap.map {
+      case (phase, times) => (phase, StatUtils.median(times))
+    }
+
+    for ((phase, time) <- phaseMedians) {
+      val currentTime = System.currentTimeMillis() / 1000
+      println(s"$phase, $currentTime, $time")
     }
   }
 
