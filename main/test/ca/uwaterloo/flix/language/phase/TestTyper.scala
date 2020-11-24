@@ -1132,26 +1132,73 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.MismatchSignatures.03") {
     val input =
       """
-        |    class Show[a] {
-        |        pub def show(x: a): String
-        |    }
+        |class C[a] {
+        |    pub def f(x: a): String
+        |}
         |
-        |    enum Box[a] {
-        |        case Box(a)
-        |    }
+        |enum Box[a] {
+        |    case Box(a)
+        |}
         |
-        |    instance Show[Int] {
-        |        pub def show(x: Int): String = ""
-        |    }
+        |instance C[Int] {
+        |    pub def f(x: Int): String = ""
+        |}
         |
-        |    instance Show[Box[a]] {
-        |        def show[a: Show](x: Box[a]): String = match x {
-        |            case Box(y) => show(y)
-        |        }
+        |instance C[Box[a]] {
+        |    def f[a: C](x: Box[a]): String = match x {
+        |        case Box(y) => f(y)
         |    }
+        |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[CompilationError](result) // TODO should be MismatchedSignature
+  }
+
+  test("Test.MismatchedSignatures.04") {
+    val input =
+      """
+        |class C[a] {
+        |    def f[b : D](x: b): a
+        |}
+        |
+        |class D[a]
+        |
+        |instance C[Bool] {
+        |    def f(x: b): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchedSignatures.05") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a, y: Int): Int
+        |}
+        |
+        |instance C[Bool] {
+        |    def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchedSignatures.06") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a, y: Int): Int & e
+        |}
+        |
+        |instance C[Bool] {
+        |    def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
   }
 
   test("Test.ExtraneousDefinition.01") {
