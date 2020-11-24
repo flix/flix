@@ -218,10 +218,10 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Class.01") {
     val input =
       """
-        |class Show[a] {
-        |  def show(x: a): String
+        |class C[a] {
+        |  def f(x: a): String
         |}
-        |def foo(x: a): String = show(x)
+        |def foo(x: a): String = f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
@@ -230,10 +230,10 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Class.02") {
     val input =
       """
-        |class Show[a] {
-        |  def show(x: a): String
+        |class C[a] {
+        |  def f(x: a): String
         |}
-        |def foo(x: Int): String = show(x)
+        |def foo(x: Int): String = f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
@@ -246,21 +246,78 @@ class TestTyper extends FunSuite with TestUtils {
         |    case Box(a)
         |}
         |
-        |class Show[a] {
-        |    def show(x: a): String
+        |class C[a] {
+        |    def f(x: a): String
         |}
         |
-        |instance Show[Int] {
-        |    def show(x: Int): String = "123"
+        |instance C[Int] {
+        |    def f(x: Int): String = "123"
         |}
         |
-        |instance Show[Box[a]] with [a : Show] {
-        |    def show(x: Box[a]): String = match x {
-        |        case Box(y) => show(y)
+        |instance C[Box[a]] with [a : C] {
+        |    def f(x: Box[a]): String = match x {
+        |        case Box(y) => f(y)
         |    }
         |}
         |
-        |def doShow(x: Box[Float]): String = show(x)
+        |def doF(x: Box[Float]): String = f(x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.04") {
+    val input =
+      """
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |class C[a] {
+        |    def f(x: a): String
+        |}
+        |
+        |instance C[Int] {
+        |    def f(x: Int): String = "123"
+        |}
+        |
+        |instance C[Box[a]] with [a : C] {
+        |    def f(x: Box[a]): String = match x {
+        |        case Box(y) => f(y)
+        |    }
+        |}
+        |
+        |def doF(x: Box[Int]): String = f(f(x))
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.05") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a): Int
+        |}
+        |
+        |instance C[Int] {
+        |    def f(x: Int): Int = x
+        |}
+        |
+        |def foo(x: a, y: Int): String = f(x) + f(y)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.06") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a): Int
+        |}
+        |
+        |def foo[a : C, b](x: a, y: b): String = f(x) + f(y)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
