@@ -25,8 +25,8 @@ import scala.collection.immutable.List
 object NamedAst {
 
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
-                  sigs: Map[Name.NName, Map[String, NamedAst.Sig]],
                   instances: Map[Name.NName, MultiMap[String, NamedAst.Instance]],
+                  sigs: Map[Name.NName, Map[String, NamedAst.Sig]],
                   defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
