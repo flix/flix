@@ -188,11 +188,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Index(e, offset, tpe, loc) =>
       Expression.Index(visitExp(e), offset, tpe, loc)
 
-    case Expression.IndexMut(base, offset, toInsert, tpe, loc) =>
-      val b = visitExp(base)
-      val ti = visitExp(toInsert)
-      Expression.IndexMut(b, offset, ti, tpe, loc)
-
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(visitExp), tpe, loc)
 
@@ -484,7 +479,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Untag(sym, tag, exp, tpe, loc) => freeVars(exp)
     case Expression.Tag(enum, tag, exp, tpe, loc) => freeVars(exp)
     case Expression.Index(base, offset, tpe, loc) => freeVars(base)
-    case Expression.IndexMut(base, _, toInsert, _, _) => freeVars(base) ++ freeVars(toInsert)
     case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
     case Expression.RecordEmpty(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.RecordSelect(exp, field, tpe, loc) => freeVars(exp)
@@ -733,11 +727,6 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.Index(exp, offset, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Index(e, offset, tpe, loc)
-
-      case Expression.IndexMut(base, offset, toInsert, tpe, loc) =>
-        val b = visitExp(base)
-        val ti = visitExp(toInsert)
-        Expression.IndexMut(b, offset, ti, tpe, loc)
 
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visitExp

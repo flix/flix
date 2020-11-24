@@ -19,10 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
-import ca.uwaterloo.flix.util.{Optimization, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.{Optimization, Validation}
 
 /**
   * The Tailrec phase identifies function calls that are in tail recursive position.
@@ -58,10 +60,17 @@ object Tailrec extends Phase[Root, Root] {
     newRoot.toSuccess
   }
 
+  def makeHelper(defn: Def, helperName: DefnSym)(implicit flix: Flix): Def = {
+    val helperFunc = defn.copy(sym = helperName)
+
+
+    helperFunc
+  }
+
   /**
     * Identifies tail recursive calls in the given definition `defn`.
     */
-  private def tailrec(defn: Def): Def = {
+  private def tailrec(defn: Def)(implicit flix: Flix): Def = {
     /**
       * Introduces tail recursive calls in the given expression `exp0`.
       *
@@ -122,20 +131,24 @@ object Tailrec extends Phase[Root, Root] {
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
-      case Expression.Tag(sym, tag, exp, tpe, loc) =>
+      // Match a Cons Tag with 2 elements, the second being a self-recursive call
+      case Expression.Tag(sym, Name.Tag("Cons", _),
+      Expression.Tuple(hd :: Expression.ApplyDef(defn.sym, args, tpeDef, _) :: Nil, tpeTup, locTup), tpeTag, _) =>
         // First check that `exp` is a Tuple
-        if (tag == "Cons") {
-          println(exp.getClass)
-        }
-        if (exp.getClass.getName == Expression.Tuple.getClass.getName) {
-          // Then we need to make sure that the `tag` is Cons
-          if (tag == "Cons") {
-            println(sym)
-            println(tag)
-          }
-        }
 
-        exp0
+        println("Found a cons")
+
+        val funName = defn.sym
+        val helperDefnSym = Symbol.freshDefnSym(funName.namespace, funName.text + "helper")
+
+
+        // Now we call a function that rewrites to two new funtions
+        val helper = makeHelper(defn, helperDefnSym)
+
+        val consArg = Expression.Tag(sym, Name.Tag("Cons", SourceLocation.Generated),
+          Expression.Tuple(hd :: Nil, tpeTup, SourceLocation.Generated)
+          , tpeTag, SourceLocation.Generated)
+        Expression.ApplyDef(helperDefnSym, args ::: List(consArg), tpeDef, SourceLocation.Generated)
       /*
        * Other expression: No calls in tail position.
        */

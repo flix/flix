@@ -1058,11 +1058,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Index(exp, offset, tpe, loc) =>
         SimplifiedAst.Expression.Index(visitExp(exp), offset, tpe, loc)
 
-      case SimplifiedAst.Expression.IndexMut(base, offset, toInsert, tpe, loc) =>
-        val b = visitExp(base)
-        val ti = visitExp(toInsert)
-        SimplifiedAst.Expression.IndexMut(b, offset, ti, tpe, loc)
-
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visitExp), tpe, loc)
 
