@@ -313,6 +313,28 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedClass](result)
   }
 
+  test("UndefinedClass.03") {
+    val input =
+      """
+        |class K[a]
+        |
+        |def f[a : K : U](x: a): a = x
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.04") {
+    val input =
+      """
+        |class K[a]
+        |
+        |instance K[a] with [a : U]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
   test("UndefinedJvmConstructor.01") {
     val input =
       s"""
