@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 
-// MATT maybe change name to ClassUnification or something like that
 object ContextReduction {
 
   /**
@@ -112,17 +111,5 @@ object ContextReduction {
     */
   private def isHeadNormalForm(tpe: Type): Boolean = {
     tpe.typeConstructor.isEmpty
-  }
-
-  /**
-    * Splits a list of type constraints among those which must be dealt with under the scope of free variables (`retained`)
-    * and those which are dealt with in the surrounding scope (`deferred`).
-    */
-  def split(instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance], fixedVars: List[Type.Var], quantifiedVars: List[Type.Var], tconstrs: List[TypedAst.TypeConstraint])(implicit flix: Flix): Result[(List[TypedAst.TypeConstraint], List[TypedAst.TypeConstraint]), UnificationError] = {
-    for {
-      tconstrs1 <- reduce(instances, tconstrs)
-      (deferred, retained) = tconstrs1.partition(_.arg.typeVars.forall(fixedVars.contains))
-      // MATT defaulted predicates here (?)
-    } yield (deferred, retained)
   }
 }

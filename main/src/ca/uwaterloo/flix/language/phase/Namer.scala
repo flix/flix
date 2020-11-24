@@ -1597,7 +1597,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case (id, kind) =>
             val tvar = Type.freshVar(kind, text = Some(id.name)) // use the kind we validated from the parameter context
             NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
-          // MATT may need to be not Nil for type constraints in enums
         }
     }
   }
