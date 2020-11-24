@@ -308,12 +308,19 @@ object NameError {
     def loc: SourceLocation = loc1 min loc2
   }
 
-  case class IllegalSignature(loc: SourceLocation) extends NameError {
+  /**
+    * An error raised to indicate that a signature does not include the class's type parameter.
+    * @param name the name of the signature.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalSignature(name: String, loc: SourceLocation) extends NameError {
     def summary: String = "Illegal signature."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal signature '" << Red(name) << "'." << NewLine
+      vt << NewLine
       vt << Code(loc, "Illegal signature.")
       vt << NewLine
       vt << Underline("Tip:") << " Change the signature to include the class type parameter, or remove the signature."
