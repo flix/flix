@@ -1023,7 +1023,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
     val classOpt = tryLookupClass(qname, ns0, root)
     classOpt match {
-      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
         if (isClassAccessible(clazz, ns0)) {
           clazz.toSuccess
