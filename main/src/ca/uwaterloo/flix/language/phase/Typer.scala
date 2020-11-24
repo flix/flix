@@ -52,7 +52,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           instances =>
             val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
             val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-            TypedAst.Root(classes, sigs, instances, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
+            TypedAst.Root(classes, instances, sigs, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
         }
     }
   }
