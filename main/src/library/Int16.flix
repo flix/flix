@@ -65,7 +65,7 @@ namespace Int16 {
     pub def dist(x: Int16, y: Int16): Int16 = {
         if      (x >= 0i16 and y >= 0i16)                abs(x - y)
         else if (x < 0i16 and y < 0i16)                  abs(x - y)
-        else if (x == minValue() and y == minValue())    -1i16
+        else if (x == minValue() or y == minValue())    -1i16
         else if (minValue() + abs(x) + abs(y) >= 0i16)  -1i16
         else                                            abs(x - y)
     }
@@ -210,7 +210,7 @@ namespace Int16 {
     /// Returns 0 if `position` is outside the range 0-15 inclusive.
     ///
     def bitPositionToInt(position: Int32): Int16 =
-        if (position < 0 and position > size() - 1) 0i16 else 1i16 <<< position
+        if (position < 0 or position > size() - 1) 0i16 else 1i16 <<< position
 
     ///
     /// Returns the number of zero bits preceding the
