@@ -1,0 +1,77 @@
+name: Benchmark on Demand
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  build:
+    if: contains(github.event.comment.body, '!!!benchmark') && github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge request
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: >
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'Running benchmark...'
+              })
+      - name: Set up JDK 1.11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.11
+      - name: Check out feature branch
+        uses: actions/checkout@v2
+      - name: Build
+        run: ./gradlew classes testClasses
+      - name: Benchmark feature phases
+        run: ./gradlew run -q --args="--Xbenchmark-phases" > feature-phases.csv
+      - name: Benchmark feature throughput
+        run: ./gradlew run -q --args="--Xbenchmark-throughput" > feature-throughput.csv
+      - name: Upload feature phases results
+        uses: actions/upload-artifact@v1
+        with:
+          name: feature-phases
+          path: feature-phases.csv
+      - name: Upload feature throughput results
+        uses: actions/upload-artifact@v1
+        with:
+          name: feature-throughput
+          path: feature-throughput.csv
+      - uses: actions/checkout@v2
+        name: Check out master branch
+        with:
+          ref: master
+      - name: Download feature phases results
+        uses: actions/download-artifact@v2
+        with:
+          name: feature-phases
+      - name: Download feature throughput results
+        uses: actions/download-artifact@v2
+        with:
+          name: feature-throughput
+      - name: Build
+        run: ./gradlew classes testClasses
+      - name: Benchmark master phases
+        run: ./gradlew run -q --args="--Xbenchmark-phases" > master-phases.csv
+      - name: Benchmark master throughput
+        run: ./gradlew run -q --args="--Xbenchmark-throughput" > master-throughput.csv
+      - name: Create report
+        run: python3 .github/workflows/compare_branches.py master-throughput.csv master-phases.csv feature-throughput.csv feature-phases.csv > report.txt
+      - name: Store report
+        run: echo "REPORT<<END_REPORT" >> $GITHUB_ENV; cat report.txt >> $GITHUB_ENV; echo "END_REPORT" >> $GITHUB_ENV   
+      - name: Comment phase report
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: >
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body:  process.env.REPORT
+              })
