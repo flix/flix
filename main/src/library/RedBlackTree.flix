@@ -406,7 +406,7 @@ namespace RedBlackTree {
     pub def queryWith(p: k -> Ordering & e, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & e =
         let buffer = MutList.new() as & e;
         queryWithHelper(p, f, buffer, tree) as & e;
-        MutList.foldRight((x, acc) -> x :: acc, Nil, buffer) as & e
+        MutList.toImmutable(buffer) as & e
 
     pub def queryWithHelper(p: k -> Ordering & e, f: (k, v) -> a, buffer: MutList[a], tree: RedBlackTree[k, v]): Unit & Impure = {
         use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};

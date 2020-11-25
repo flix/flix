@@ -605,6 +605,12 @@ namespace MutList {
         }
 
     ///
+    /// Returns `v` as an immutable list.
+    ///
+    pub def toImmutable(v: MutList[a]): List[a] & Impure =
+        foldRight((x, acc) -> x :: acc, Nil, v)
+
+    ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a], v2: MutList[a]): Bool & Impure =
