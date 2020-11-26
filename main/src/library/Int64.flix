@@ -63,9 +63,9 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def dist(x: Int64, y: Int64): Int64 = {
-        if (x >= 0i64 && y >= 0i64)                     abs(x - y)
-        else if (x < 0i64 && y < 0i64)                  abs(x - y)
-        else if (x == minValue() || y == minValue())    -1i64
+        if (x >= 0i64 and y >= 0i64)                     abs(x - y)
+        else if (x < 0i64 and y < 0i64)                  abs(x - y)
+        else if (x == minValue() or y == minValue())    -1i64
         else if (minValue() + abs(x) + abs(y) >= 0i64)  -1i64
         else                                            abs(x - y)
     }
@@ -95,7 +95,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def logicalRightShift(x: Int64, distance: Int32): Int64 =
-        if (x < 0i64 && distance % size() != 0)
+        if (x < 0i64 and distance % size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
             x >>> distance
@@ -205,7 +205,7 @@ namespace Int64 {
     /// Returns 0 if `position` is outside the range 0-63 inclusive.
     ///
     def bitPositionToInt(position: Int32): Int64 =
-        if (position < 0 || position > size() - 1) 0i64 else 1i64 <<< position
+        if (position < 0 or position > size() - 1) 0i64 else 1i64 <<< position
 
     ///
     /// Returns the number of zero bits preceding the
@@ -291,7 +291,7 @@ namespace Int64 {
     pub def tryToInt8(x: Int64): Option[Int8] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.byteValue();
-        if (x < Int8.toInt64(Int8.minValue()) || x > Int8.toInt64(Int8.maxValue()))
+        if (x < Int8.toInt64(Int8.minValue()) or x > Int8.toInt64(Int8.maxValue()))
             None
         else
             Some(valueOf(x).byteValue()) as & Pure
@@ -308,7 +308,7 @@ namespace Int64 {
     pub def tryToInt16(x: Int64): Option[Int16] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.shortValue();
-        if (x < Int16.toInt64(Int16.minValue()) || x > Int16.toInt64(Int16.maxValue()))
+        if (x < Int16.toInt64(Int16.minValue()) or x > Int16.toInt64(Int16.maxValue()))
             None
         else
             Some(valueOf(x).shortValue()) as & Pure
@@ -325,7 +325,7 @@ namespace Int64 {
     pub def tryToInt32(x: Int64): Option[Int32] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.intValue();
-        if (x < Int32.toInt64(Int32.minValue()) || x > Int32.toInt64(Int32.maxValue()))
+        if (x < Int32.toInt64(Int32.minValue()) or x > Int32.toInt64(Int32.maxValue()))
             None
         else
             Some(valueOf(x).intValue()) as & Pure

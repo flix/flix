@@ -44,7 +44,7 @@ def isValue(e0: Expression): Bool = match e0 {
 ///
 /// Returns `true` if the given expression `e0` is not a value.
 ///
-def nonValue(e0: Expression): Bool = !isValue(e0)
+def nonValue(e0: Expression): Bool = not isValue(e0)
 
 ///
 /// Returns a pair of a redex and its evaluation context for the given expression `e0`.
@@ -62,7 +62,7 @@ def redex(e0: Expression): (Expression, EvaluationContext) = match e0 {
         // An abstraction cannot be reduced.
         (Abs(x, e), Hole)
     case App(e1, e2) => {
-        if (isValue(e1) && isValue(e2))
+        if (isValue(e1) and isValue(e2))
             // An application where both arguments are values can be reduced.
             // Return the expression and the hole evaluation context.
             (e0, Hole)

@@ -19,16 +19,16 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad06(): Bool & Impure = let x = [true]; x[0]
 
     @test
-    def testArrayLoad07(): Bool & Impure = let x = [false]; !x[0]
+    def testArrayLoad07(): Bool & Impure = let x = [false]; not x[0]
 
     @test
-    def testArrayLoad08(): Bool & Impure = let x = [true, false]; !x[1]
+    def testArrayLoad08(): Bool & Impure = let x = [true, false]; not x[1]
 
     @test
-    def testArrayLoad9(): Bool & Impure = let x = [false, true, false]; !x[2]
+    def testArrayLoad9(): Bool & Impure = let x = [false, true, false]; not x[2]
 
     @test
-    def testArrayLoad10(): Bool & Impure = let x = [false, false, false, false, true]; !x[3]
+    def testArrayLoad10(): Bool & Impure = let x = [false, false, false, false, true]; not x[3]
 
     @test
     def testArrayLoad11(): Char & Impure = let x = ['c']; x[0]
@@ -115,7 +115,7 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad38(): Bool & Impure = let x = [[true, false, true]]; x[0] [2]
 
     @test
-    def testArrayLoad39(): Bool & Impure = let x = [[true, true], [true, false]]; !x[1] [1]
+    def testArrayLoad39(): Bool & Impure = let x = [[true, true], [true, false]]; not x[1] [1]
 
     @test
     def testArrayLoad40(): Bool & Impure = let x = [[true], [true, false, true, false]]; x[1] [2]

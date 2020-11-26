@@ -6,7 +6,7 @@ namespace Test/Exp/Fixpoint/Project {
         let b1 = (project A f) |= A(1).;
         let b2 = (project A f) |= B(1).;
         let b3 = (project A f) |= C(1).;
-        b1 && !b2 && !b3
+        b1 and not b2 and not b3
 
     @test
     def testProject02(): Bool =
@@ -14,7 +14,7 @@ namespace Test/Exp/Fixpoint/Project {
         let b1 = (project B f) |= A(1).;
         let b2 = (project B f) |= B(1).;
         let b3 = (project B f) |= C(1).;
-        !b1 && b2 && !b3
+        not b1 and b2 and not b3
 
     @test
     def testProject03(): Bool =
@@ -22,7 +22,7 @@ namespace Test/Exp/Fixpoint/Project {
         let b1 = (project C f) |= A(1).;
         let b2 = (project C f) |= B(1).;
         let b3 = (project C f) |= C(1).;
-        !b1 && !b2 && b3
+        not b1 and not b2 and b3
 
     @test
     def testProjectCompose01(): Bool =

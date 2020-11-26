@@ -95,7 +95,7 @@ namespace Nel {
     ///
     @Time(length(xs)) @Space(1)
     pub def memberOf(a: a, xs: Nel[a]): Bool = match xs {
-        case Nel(h, l) => h == a || List.memberOf(a, l)
+        case Nel(h, l) => h == a or List.memberOf(a, l)
     }
 
     ///
@@ -283,7 +283,7 @@ namespace Nel {
     ///
     @Time(time(f) * length(xs)) @Space(space(f))
     pub def exists(f: a -> Bool, xs: Nel[a]): Bool = match xs {
-        case Nel(h, l) => f(h) || List.exists(f, l)
+        case Nel(h, l) => f(h) or List.exists(f, l)
     }
 
     ///
@@ -291,7 +291,7 @@ namespace Nel {
     ///
     @Time(time(f) * length(xs)) @Space(space(f))
     pub def forall(f: a -> Bool, xs: Nel[a]): Bool = match xs {
-        case Nel(h, l) => f(h) && List.forall(f, l)
+        case Nel(h, l) => f(h) and List.forall(f, l)
     }
 
     ///
@@ -361,7 +361,7 @@ namespace Nel {
     /// Returns `true` if and only if `xs` and `ys` and equal.
     ///
     pub def __eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
-        case (Nel(x, l1), Nel(y, l2)) => x == y && l1 == l2
+        case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
     }
 
 }

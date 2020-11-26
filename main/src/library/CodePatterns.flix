@@ -128,7 +128,7 @@ namespace List {
     @lint
     def memberOfReplace(): Bool =
         forall [a] (x: a, y: a, xs: List[a]).
-            !List.memberOf(x, xs) `implies` (List.replace(x, y, xs) == xs)      // TODO: What about negation here?
+            not List.memberOf(x, xs) `implies` (List.replace(x, y, xs) == xs)      // TODO: What about negation here?
 
     @lint
     def toSetFlatten(): Bool =
@@ -138,22 +138,22 @@ namespace List {
     @lint
     def foldConjFalse(): Bool =
         forall [a] (xs: List[a]).
-            List.foldLeft((x, y) -> x && y, false, xs) === false
+            List.foldLeft((x, y) -> x and y, false, xs) === false
 
     @lint
     def foldDisjTrue(): Bool =
         forall [a] (xs: List[a]).
-            List.foldLeft((x, y) -> x || y, true, xs) === true
+            List.foldLeft((x, y) -> x or y, true, xs) === true
 
     @lint
     def foldForall(): Bool =
         forall [a] (f: x -> Bool, xs: List[a]).
-            List.foldLeft((x, y) -> x && y, true, List.map(f, xs)) === List.forall(f, xs)
+            List.foldLeft((x, y) -> x and y, true, List.map(f, xs)) === List.forall(f, xs)
 
     @lint
     def foldExists(): Bool =
         forall [a] (f: x -> Bool, xs: List[a]).
-            List.foldLeft((x, y) -> x || y, false, List.map(f, xs)) === List.exists(f, xs)
+            List.foldLeft((x, y) -> x or y, false, List.map(f, xs)) === List.exists(f, xs)
 
     @lint
     def mapAndToSet(): Bool =
@@ -305,8 +305,8 @@ namespace Vec {
     // TODO: replace, contains
     // TODO: truncate(zero)
     // TODO: new followed by reserve -> newWithCapacity
-    // TODO: head == none -> !exists, etc.
-    // TODO: last = none -> !exists, isEmpty, etc.
+    // TODO: head == none -> not exists, etc.
+    // TODO: last = none -> not exists, isEmpty, etc.
     // TODO: find == some -> nonEmpty
     // TODO: ditty for indexOf
     // TODO: push -> nonEmpty
@@ -337,14 +337,14 @@ pub def impliesWith(x: a, y: b): Bool = ??? // TODO: Add argument
 // TODO: functions to add: List.sum, List.catMaybes , mapMaybe , traverse? sequence?
 /// TODO: Introduce an annotation @unsafe or @unchecked to allow an expression that matches a code pattern.
 /// TODO: It would be nice if we could use |> in patterns.
-/// TODO: Do we want to normalize the AST somehow? For example if (!c) e1 else e2 could become if (c) e2 else e1?
+/// TODO: Do we want to normalize the AST somehow? For example if (not c) e1 else e2 could become if (c) e2 else e1?
 // TODO: Add more arithmetic identities with shift and less commonly used operations.
 
 ///
 /// TODO: Currently not possible to express:
 ///
 
-/// x != 'a' || x != 'b' === false      // Problem: x is universally quantified, so are 'a' and 'b' but they must be distinct.
+/// x != 'a' or x != 'b' === false      // Problem: x is universally quantified, so are 'a' and 'b' but they must be distinct.
 /// x == x or x != x                    // Problem: x is a variable, not a constant.
 /// (x + 1) / (x + 1)                   // Problem: x is a variable, not a constant.
 /// a[x] = 1; a[x] = 1                  // Problem: x is a variable and the array should not be accessed in between. Maybe too hard?

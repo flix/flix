@@ -511,7 +511,7 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def takeWhileLeft(f: Char -> Bool, s: String): String =
-        match findIndexOfLeft(x ->!(f(x)), s) {
+        match findIndexOfLeft(x -> not (f(x)), s) {
             case None => s
             case Some(i) => take(i, s)
         }
@@ -524,7 +524,7 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def takeWhileRight(f: Char -> Bool, s: String): String =
-        match findIndexOfRight(x ->!(f(x)), s) {
+        match findIndexOfRight(x -> not (f(x)), s) {
             case None => s
             case Some(i) => slice(s, i+1, length(s))
         }
@@ -543,7 +543,7 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileLeft(f: Char -> Bool, s: String): String =
-        match findIndexOfLeft(x -> !(f(x)), s) {
+        match findIndexOfLeft(x -> not (f(x)), s) {
             case None => ""
             case Some(i) => sliceRight(s, i)
         }
@@ -556,7 +556,7 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileRight(f: Char -> Bool, s: String): String =
-        match findIndexOfRight(x -> !(f(x)), s) {
+        match findIndexOfRight(x -> not (f(x)), s) {
             case None => ""
             case Some(i) => sliceLeft(s, i + 1)     // must include i
         }
@@ -569,7 +569,7 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileAround(f: Char -> Bool, s: String): String =
-        match (findIndexOfLeft(x -> !(f(x)), s), findIndexOfRight(x -> !(f(x)), s)) {
+        match (findIndexOfLeft(x -> not (f(x)), s), findIndexOfRight(x -> not (f(x)), s)) {
             case (None, None) => ""
             case (Some(l), None) => sliceRight(s, l)
             case (None, Some(r)) => sliceLeft(s, r)
@@ -660,7 +660,7 @@ namespace String {
     /// Helper function for `foldRight2`.
     ///
     def foldRight2Helper(f: (Char, Char, b) -> b & e, x: b, s: String, t: String, i: Int32, j: Int32) : b & e=
-        if (i < 0 || j < 0 )
+        if (i < 0 or j < 0 )
             x
         else {
             let x1 = f(charAt(i, s), charAt(j, t), x);
@@ -772,7 +772,7 @@ namespace String {
     /// Returns `true` if `s` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def forall(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(x -> !(f(x)), s) {
+    pub def forall(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(x -> not (f(x)), s) {
         case None => true
         case Some(_) => false
     }
@@ -897,9 +897,9 @@ namespace String {
     pub def patch(i: Int32, n: Int32, sub: String, s: String): String =
         let sublen = length(sub);
         let f = ix ->
-            if (ix >= i && ix < i + n) {
+            if (ix >= i and ix < i + n) {
                 let offset = ix - i;
-                if (offset < 0 || offset >= sublen) charAt(ix,s) else charAt(offset, sub)
+                if (offset < 0 or offset >= sublen) charAt(ix,s) else charAt(offset, sub)
             } else charAt(ix, s);
         init(f, length(s))
 
@@ -915,7 +915,7 @@ namespace String {
     ///
     @Time(length(s) + n) @Space(length(s) + n)
     pub def indent(n: Int32, s: String): String =
-        if (n <= 0 || length(s) == 0)
+        if (n <= 0 or length(s) == 0)
             s
         else
             indentHelper(n, s) as & Pure
@@ -946,7 +946,7 @@ namespace String {
     ///
     @Time(length(s) + n) @Space(length(s) + n)
     pub def stripIndent(n: Int32, s: String): String =
-        if (n <= 0 || length(s) == 0)
+        if (n <= 0 or length(s) == 0)
             s
         else
             stripIndentHelper(n, s) as & Pure
@@ -973,7 +973,7 @@ namespace String {
         if (ix >= limit)
             sliceRight(s, ix)
         else
-            if (!Char.isWhiteSpace(charAt(ix, s)))
+            if (not Char.isWhiteSpace(charAt(ix, s)))
                 sliceRight(s, ix)
             else
                 stripIndentDropWhiteSpace(s, limit, ix+1)
@@ -1089,7 +1089,7 @@ namespace String {
             true
         else {
             let a = indexOfLeft(sub, s);
-            !Option.isEmpty(a)
+            not Option.isEmpty(a)
         }
 
     ///
@@ -1105,7 +1105,7 @@ namespace String {
     /// Helper function for `commonPrefix`.
     ///
     def commonPrefixHelper(s1: String, s2: String, len1: Int32, len2: Int32, ix: Int32): String =
-        if (ix >= len1 || ix >= len2)
+        if (ix >= len1 or ix >= len2)
             takeLeft(ix, s1)
         else {
             let c1 = charAt(ix, s1);
@@ -1380,7 +1380,7 @@ namespace String {
     ///
     @Time(length(s) - length(sub)) @Space(length(s) - length(sub))
     pub def stripPrefix(sub: String, s: String): Option[String] =
-        if (!startsWith(s, sub))
+        if (not startsWith(s, sub))
             None
         else
             Some(dropLeft(length(sub), s))
@@ -1390,7 +1390,7 @@ namespace String {
     ///
     @Time(length(s) - length(sub)) @Space(length(s) - length(sub))
     pub def stripSuffix(sub: String, s: String): Option[String] =
-        if (!endsWith(s, sub))
+        if (not endsWith(s, sub))
             None
         else
             Some(dropRight(length(sub), s))

@@ -76,7 +76,7 @@ namespace Core/Io/ZipInput {
         let ZipInput(javaZip) = z;
         let e = entries(javaZip);
         let step = () -> {
-            if (!e.hasMoreElements()) {
+            if (not e.hasMoreElements()) {
                 Ok(None)
             } else {
                 let entry = e.nextElement() as ##java.util.zip.ZipEntry;

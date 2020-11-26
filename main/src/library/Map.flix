@@ -205,7 +205,7 @@ namespace Map {
     ///
     @Time(size(m1) + size(m2)) @Space(size(m1) * Int32.log2(size(m2)))
     pub def isProperSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool =
-        size(m1) != size(m2) && isSubmapOf(m1, m2)
+        size(m1) != size(m2) and isSubmapOf(m1, m2)
 
     ///
     /// Alias for `findLeft`.
@@ -489,7 +489,7 @@ namespace Map {
     ///
     @Time(size(f) * size(m2) * Int32.log2(size(m1))) @Space(space(f) * size(m2) * Int32.log2(size(m1)))
     pub def differenceWithKey(f: (k, v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
-        let diff = filterWithKey((k, _) -> !memberOf(k, m2), m1);
+        let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
         let g = (k, v, m) -> if (memberOf(k, m1))
                                 match get(k, m1) {
                                     case Some(v1) => match f(k, v1, v) {

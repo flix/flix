@@ -28,7 +28,7 @@ pub class PartialEq[a] {
     /// Returns `true` if `x` is not equal to `y`.
     ///
     // TODO: Allow implementations in type classes?
-    //def neq(x: a, y: a): Bool = !eq(x, y)
+    //def neq(x: a, y: a): Bool = not eq(x, y)
 
     ///
     /// Symmetry Law: If an element `x` is equal to `y` then `y` must be equal to `x`.
@@ -55,7 +55,7 @@ impl PartialEq[Int32] {
 
 impl PartialEq[(a, b)] <= PartialEq[a], PartialEq[b] {
     def eq(x: (a, b), y: (a, b)): Bool = match (x, y) {
-        case ((x1, x2), (y1, y2)) => eq(x1, y1) && eq(x2, y2)
+        case ((x1, x2), (y1, y2)) => eq(x1, y1) and eq(x2, y2)
     }
 }
 
@@ -70,7 +70,7 @@ impl PartialEq[Option[a]] <= PartialEq[a] {
 impl PartialEq[List[a]] <= PartialEq[a] {
     def eq(x: List[a], y: List[a]): Bool = match (x, y) {
         case (Nil, Nil)             => true
-        case (v1 :: xs, v2 :: ys)   => eq(v1, v2) && eq(xs, ys)
+        case (v1 :: xs, v2 :: ys)   => eq(v1, v2) and eq(xs, ys)
         case _                      => false
     }
 }

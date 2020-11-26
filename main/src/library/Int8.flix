@@ -63,9 +63,9 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def dist(x: Int8, y: Int8): Int8 = {
-        if      (x >= 0i8 && y >= 0i8)                  abs(x - y)
-        else if (x < 0i8 && y < 0i8)                    abs(x - y)
-        else if (x == minValue() || y == minValue())    -1i8
+        if      (x >= 0i8 and y >= 0i8)                  abs(x - y)
+        else if (x < 0i8 and y < 0i8)                    abs(x - y)
+        else if (x == minValue() or y == minValue())    -1i8
         else if (minValue() + abs(x) + abs(y) >= 0i8)   -1i8
         else                                            abs(x - y)
     }
@@ -95,7 +95,7 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def logicalRightShift(x: Int8, distance: Int32): Int8 =
-        if (x < 0i8 && distance % 32 != 0)
+        if (x < 0i8 and distance % 32 != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
             x >>> distance
@@ -210,7 +210,7 @@ namespace Int8 {
     /// Returns 0 if `position` is outside the range 0-7 inclusive.
     ///
     def bitPositionToInt(position: Int32): Int8 =
-        if (position < 0 || position > size() - 1) 0i8 else 1i8 <<< position
+        if (position < 0 or position > size() - 1) 0i8 else 1i8 <<< position
 
     ///
     /// Returns the number of zero bits preceding the

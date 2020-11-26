@@ -490,26 +490,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
-      def Or1: Rule1[String] = rule {
-        optWS ~ capture(atomic("||")) ~ optWS
-      }
-      def Or2: Rule1[String] = rule {
+      def Or: Rule1[String] = rule {
         WS ~ capture(keyword("or")) ~ WS
       }
       rule {
-        LogicalAnd ~ zeroOrMore((Or1 | Or2) ~ LogicalAnd ~ SP ~> ParsedAst.Expression.Binary)
+        LogicalAnd ~ zeroOrMore(Or ~ LogicalAnd ~ SP ~> ParsedAst.Expression.Binary)
       }
     }
 
     def LogicalAnd: Rule1[ParsedAst.Expression] = {
-      def And1: Rule1[String] = rule {
-        optWS ~ capture(atomic("&&")) ~ optWS
-      }
-      def And2: Rule1[String] = rule {
+      def And: Rule1[String] = rule {
         WS ~ capture(keyword("and")) ~ WS
       }
       rule {
-        BitwiseOr ~ zeroOrMore((And1 | And2) ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
+        BitwiseOr ~ zeroOrMore(And ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
       }
     }
 
@@ -597,7 +591,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Unary: Rule1[ParsedAst.Expression] = {
       def UnaryOp1: Rule1[String] = rule {
-        capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~"))
+        capture(atomic("+") | atomic("-") | atomic("~~~"))
       }
       def UnaryOp2: Rule1[String] = rule {
         capture(keyword("not")) ~ WS
@@ -1105,7 +1099,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Atom] = {
         def Not: Rule0 = rule {
-          "!" | (keyword("not") ~ WS)
+          (keyword("not") ~ WS)
         }
 
         rule {

@@ -384,12 +384,12 @@ namespace TestFloat32 {
     @test
     def toFloat6404(): Bool =
         let d = Float32.toFloat64(123456789.10f32);
-        (d >= 123456700.0f64 && d <= 123456800.0f64)       // Allow imprecision
+        (d >= 123456700.0f64 and d <= 123456800.0f64)       // Allow imprecision
 
     @test
     def toFloat6405(): Bool =
         let d = Float32.toFloat64(-123456789.10f32);
-        ( d <= -123456700.0f64 && d >= -123456800.0f64)     // Allow imprecision
+        ( d <= -123456700.0f64 and d >= -123456800.0f64)     // Allow imprecision
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt8                                                             //

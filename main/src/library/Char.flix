@@ -21,7 +21,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isAscii(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0000 && i <= 0x007F => true        // 'NUL'..'DEL'
+        case i if i >= 0x0000 and i <= 0x007F => true        // 'NUL'..'DEL'
         case _ => false
     }
 
@@ -47,7 +47,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isAsciiDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 && i <= 0x0039 => true        // '0'..'9'
+        case i if i >= 0x0030 and i <= 0x0039 => true        // '0'..'9'
         case _ => false
     }
 
@@ -56,7 +56,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isOctDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 && i <= 0x0037 => true        // '0'..'7'
+        case i if i >= 0x0030 and i <= 0x0037 => true        // '0'..'7'
         case _ => false
     }
 
@@ -65,9 +65,9 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isHexDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 && i <= 0x0039 => true        // '0'..'9'
-        case i if i >= 0x0041 && i <= 0x0046 => true        // 'A'..'F'
-        case i if i >= 0x0061 && i <= 0x0066 => true        // 'a'..'f'
+        case i if i >= 0x0030 and i <= 0x0039 => true        // '0'..'9'
+        case i if i >= 0x0041 and i <= 0x0046 => true        // 'A'..'F'
+        case i if i >= 0x0061 and i <= 0x0066 => true        // 'a'..'f'
         case _ => false
     }
 

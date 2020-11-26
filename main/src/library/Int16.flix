@@ -63,9 +63,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def dist(x: Int16, y: Int16): Int16 = {
-        if      (x >= 0i16 && y >= 0i16)                abs(x - y)
-        else if (x < 0i16 && y < 0i16)                  abs(x - y)
-        else if (x == minValue() || y == minValue())    -1i16
+        if      (x >= 0i16 and y >= 0i16)                abs(x - y)
+        else if (x < 0i16 and y < 0i16)                  abs(x - y)
+        else if (x == minValue() or y == minValue())    -1i16
         else if (minValue() + abs(x) + abs(y) >= 0i16)  -1i16
         else                                            abs(x - y)
     }
@@ -95,7 +95,7 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def logicalRightShift(x: Int16, distance: Int32): Int16 =
-        if (x < 0i16 && distance % 32 != 0)
+        if (x < 0i16 and distance % 32 != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
             x >>> distance
@@ -210,7 +210,7 @@ namespace Int16 {
     /// Returns 0 if `position` is outside the range 0-15 inclusive.
     ///
     def bitPositionToInt(position: Int32): Int16 =
-        if (position < 0 || position > size() - 1) 0i16 else 1i16 <<< position
+        if (position < 0 or position > size() - 1) 0i16 else 1i16 <<< position
 
     ///
     /// Returns the number of zero bits preceding the
@@ -296,7 +296,7 @@ namespace Int16 {
     pub def tryToInt8(x: Int16): Option[Int8] =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.byteValue();
-        if (x < Int8.toInt16(Int8.minValue()) || x > Int8.toInt16(Int8.maxValue()))
+        if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
             Some(valueOf(x).byteValue()) as & Pure

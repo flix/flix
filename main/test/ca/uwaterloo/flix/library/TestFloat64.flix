@@ -385,13 +385,13 @@ namespace TestFloat64 {
     @test
     def tryToFloat3204(): Bool = match Float64.tryToFloat32(123456789.10f64) {
         case None => false
-        case Some(d) => d >= 123456700.0f32 && d <= 123456800.0f32       // Allow imprecision
+        case Some(d) => d >= 123456700.0f32 and d <= 123456800.0f32       // Allow imprecision
     }
 
     @test
     def tryToFloat3205(): Bool = match Float64.tryToFloat32(-123456789.10f64) {
         case None => false
-        case Some(d) => d <= -123456700.0f32 && d >= -123456800.0f32     // Allow imprecision
+        case Some(d) => d <= -123456700.0f32 and d >= -123456800.0f32     // Allow imprecision
     }
 
     /////////////////////////////////////////////////////////////////////////////
