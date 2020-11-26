@@ -1099,7 +1099,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Atom] = {
         def Not: Rule0 = rule {
-          "!" | (keyword("not") ~ WS)
+          (keyword("not") ~ WS)
         }
 
         rule {
