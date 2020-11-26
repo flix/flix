@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Core/Cmp.Ordering;
+
 ///
 /// The Mutable Map type.
 ///
@@ -403,6 +405,15 @@ namespace MutMap {
     pub def foreach(f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         Map.foreach(f, deref mm)
+
+    ///
+    /// Extracts a range of key-value pairs from the mutable map `m`.
+    ///
+    /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
+    ///
+    pub def query(p: k -> Ordering, m: MutMap[k, v]): List[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.query(p, deref mm)
 
     ///
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.

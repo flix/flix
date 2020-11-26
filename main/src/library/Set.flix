@@ -15,6 +15,7 @@
  */
 
 use RedBlackTree.RedBlackTree;
+use Core/Cmp.Ordering;
 
 ///
 /// The Set type.
@@ -398,6 +399,15 @@ namespace Set {
         case None => ac
         case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }
+
+    ///
+    /// Extracts a range of elements from the set `xs`.
+    ///
+    /// That is, the result is a list of all elements `x` where `p(x)` returns `Equal`.
+    ///
+    pub def query(p: a -> Ordering & e, xs: Set[a]): List[a] & e =
+        let Set(es) = xs;
+        RedBlackTree.queryWith(p, (k, _) -> k, es)
 
     ///
     /// Helper function for `cmp`.

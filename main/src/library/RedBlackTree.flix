@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Core/Cmp.Ordering;
+
 namespace RedBlackTree {
 
     ///
@@ -394,6 +396,33 @@ namespace RedBlackTree {
             else
                 rotate(Node(c, a, k1, v1, deleteHelper(k, b)))
         case _ => tree
+    }
+
+    ///
+    /// Extracts a range of key-value pairs from `tree`.
+    ///
+    /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
+    ///
+    pub def queryWith(p: k -> Ordering & e, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & e =
+        let buffer = MutList.new() as & e;
+        queryWithHelper(p, f, buffer, tree) as & e;
+        MutList.toImmutable(buffer) as & e
+
+    pub def queryWithHelper(p: k -> Ordering & e, f: (k, v) -> a, buffer: MutList[a], tree: RedBlackTree[k, v]): Unit & Impure = {
+        use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
+        match tree {
+            case Node(_, a, k, v, b) =>
+                match p(k) {
+                    case LessThan => queryWithHelper(p, f, buffer, b)
+                    case Equal => {
+                        queryWithHelper(p, f, buffer, a);
+                        MutList.push!(f(k, v), buffer);
+                        queryWithHelper(p, f, buffer, b)
+                    }
+                    case GreaterThan => queryWithHelper(p, f, buffer, a)
+                }
+            case _ => ()
+        }
     }
 
 }
