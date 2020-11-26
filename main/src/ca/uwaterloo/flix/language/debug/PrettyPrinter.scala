@@ -538,7 +538,7 @@ object PrettyPrinter {
     }
 
     def fmtUnaryOp(op: UnaryOperator, vt: VirtualTerminal): Unit = op match {
-      case UnaryOperator.LogicalNot => vt.text("!")
+      case UnaryOperator.LogicalNot => vt.text("not")
       case UnaryOperator.Plus => vt.text("+")
       case UnaryOperator.Minus => vt.text("-")
       case UnaryOperator.BitwiseNegate => vt.text("~~~")
@@ -558,8 +558,8 @@ object PrettyPrinter {
       case BinaryOperator.Equal => vt.text("==")
       case BinaryOperator.NotEqual => vt.text("!=")
       case BinaryOperator.Spaceship => vt.text("<=>")
-      case BinaryOperator.LogicalAnd => vt.text("&&")
-      case BinaryOperator.LogicalOr => vt.text("||")
+      case BinaryOperator.LogicalAnd => vt.text("and")
+      case BinaryOperator.LogicalOr => vt.text("or")
       case BinaryOperator.BitwiseAnd => vt.text("&&&")
       case BinaryOperator.BitwiseOr => vt.text("|||")
       case BinaryOperator.BitwiseXor => vt.text("^^^")
