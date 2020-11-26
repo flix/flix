@@ -27,7 +27,7 @@ pub class PartialOrd[a] <= PartialEq[a] {
     ///
     /// Anti-Symmetry Law: If `x` < `y` then !(`x` > `y`) and if `x` > `y` then !(`x` < `y`).
     ///
-    law antiSymmetry(): Bool = ∀(x: a, y: a). (lt(x, y) → !gt(x, y)) ∧ (gt(x, y) → !lt(x, y))
+    law antiSymmetry(): Bool = ∀(x: a, y: a). (lt(x, y) → not gt(x, y)) ∧ (gt(x, y) → not lt(x, y))
 
     ///
     /// Transitivity Law: If `x` < `y` and `y` < `z` then `x` < `z`.

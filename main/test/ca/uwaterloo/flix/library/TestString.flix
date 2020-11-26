@@ -177,7 +177,7 @@ def lineSeparator01(): Bool =
 @test
 def lineSeparator02(): Bool =
     let newline = String.lineSeparator();
-    String.length(newline) == 1 || String.length(newline) == 2
+    String.length(newline) == 1 or String.length(newline) == 2
 
 /////////////////////////////////////////////////////////////////////////////
 // toArray                                                                 //

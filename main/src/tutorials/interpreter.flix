@@ -37,10 +37,10 @@ enum BExp {
     // a logical negation expression: !e.
     case Not(BExp),
 
-    // a logical conjunction expression: e1 && e2.
+    // a logical conjunction expression: e1 and e2.
     case Conj(BExp, BExp),
 
-    // a logical disjunction expression: e1 || e2.
+    // a logical disjunction expression: e1 or e2.
     case Disj(BExp, BExp),
 
     // an equality of expression: e1 == e2.
@@ -69,9 +69,9 @@ def evalAExp(e: AExp): Int = match e {
 def evalBExp(e: BExp): Bool = match e {
     case True           => true
     case False          => false
-    case Not(e1)        => !evalBExp(e1)
-    case Conj(e1, e2)   => evalBExp(e1) && evalBExp(e2)
-    case Disj(e1, e2)   => evalBExp(e1) || evalBExp(e2)
+    case Not(e1)        => not evalBExp(e1)
+    case Conj(e1, e2)   => evalBExp(e1) and evalBExp(e2)
+    case Disj(e1, e2)   => evalBExp(e1) or evalBExp(e2)
     case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
     case Neq(e1,e2)     => evalAExp(e1) != evalAExp(e2)
 }
@@ -102,10 +102,10 @@ def testEvalAExp5(): Int = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst
 def testEvalBExp1(): Bool = evalBExp(True)
 
 @test
-def testEvalBExp2(): Bool = !evalBExp(Not(True))
+def testEvalBExp2(): Bool = not evalBExp(Not(True))
 
 @test
-def testEvalBExp3(): Bool = !evalBExp(Conj(True, False))
+def testEvalBExp3(): Bool = not evalBExp(Conj(True, False))
 
 @test
 def testEvalBExp4(): Bool = evalBExp(Disj(True, False))
@@ -252,12 +252,12 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
         else
             evalInst(rs, 0 :: st)
     case (And :: rs, i1 :: i2 :: st) =>
-        if (i1 != 0 && i2 != 0)
+        if (i1 != 0 and i2 != 0)
             evalInst(rs, 1 :: st)
         else
             evalInst(rs, 0 :: st)
     case (Or :: rs, i1 :: i2 :: st) =>
-        if (i1 != 0 || i2 != 0)
+        if (i1 != 0 or i2 != 0)
             evalInst(rs, 1 :: st)
         else
             evalInst(rs, 0 :: st)

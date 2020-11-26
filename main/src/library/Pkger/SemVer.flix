@@ -48,7 +48,7 @@ namespace Pkger/SemVer {
     pub def isCompatible(bound: SemVer, specific: SemVer): Bool = {
         match (bound, specific) {
             case (SemVer(0, boundMinor, boundPatch), SemVer(0, specificMinor, specificPatch)) => {
-                boundMinor == specificMinor && boundPatch == specificPatch
+                boundMinor == specificMinor and boundPatch == specificPatch
             }
             case (SemVer(boundMajor, _, _), SemVer(specificMajor, _, _)) => boundMajor == specificMajor
         }

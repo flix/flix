@@ -26,15 +26,15 @@ namespace TestRedBlackTree {
 
     @test
     def testDelete01(): Bool =
-        !RedBlackTree.memberOf(1, RedBlackTree.delete(1, toTree(List.range(0, 100))))
+        not RedBlackTree.memberOf(1, RedBlackTree.delete(1, toTree(List.range(0, 100))))
 
     @test
     def testDelete02(): Bool =
-        !RedBlackTree.memberOf(50, RedBlackTree.delete(50, toTree(List.range(0, 100))))
+        not RedBlackTree.memberOf(50, RedBlackTree.delete(50, toTree(List.range(0, 100))))
 
     @test
     def testDelete03(): Bool =
-        !RedBlackTree.memberOf(99, RedBlackTree.delete(99, toTree(List.range(0, 100))))
+        not RedBlackTree.memberOf(99, RedBlackTree.delete(99, toTree(List.range(0, 100))))
 
     @test
     def testEmptyAfterDelete01(): Bool =
@@ -149,8 +149,8 @@ namespace TestRedBlackTree {
     ///
     def checkBinarySearchTreeInvariant(tree: RedBlackTree[k, v]): Bool = match tree {
         case Node(_, a, xK, _, b) =>
-        if (RedBlackTree.exists((yK, _) -> yK <=> xK > 0, a) || RedBlackTree.exists((zK, _) -> zK <=> xK < 0, b)) false
-        else checkBinarySearchTreeInvariant(a) && checkBinarySearchTreeInvariant(b)
+        if (RedBlackTree.exists((yK, _) -> yK <=> xK > 0, a) or RedBlackTree.exists((zK, _) -> zK <=> xK < 0, b)) false
+        else checkBinarySearchTreeInvariant(a) and checkBinarySearchTreeInvariant(b)
         case _ => true
     }
 
@@ -159,9 +159,9 @@ namespace TestRedBlackTree {
     ///
     def checkRedParentInvariantHelper(tree: RedBlackTree[k, v], parentColor: RedBlackTree.Color): Bool = match tree {
         case Node(Red, a, _, _, b) =>
-            if (parentColor == Red) false else checkRedParentInvariantHelper(a, Red) &&     checkRedParentInvariantHelper(b, Red)
+            if (parentColor == Red) false else checkRedParentInvariantHelper(a, Red) and     checkRedParentInvariantHelper(b, Red)
         case Node(Black, a, _, _, b) =>
-            checkRedParentInvariantHelper(a, Black) && checkRedParentInvariantHelper(b, Black)
+            checkRedParentInvariantHelper(a, Black) and checkRedParentInvariantHelper(b, Black)
         case _ => true
     }
 

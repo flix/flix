@@ -33,7 +33,7 @@ namespace Test/Exp/Fixpoint/Fold {
     //////////
     def fb(entry: (Bool, Bool), acc: Bool): Bool =
       let (x, y) = entry;
-      acc || x || y
+      acc or x or y
 
     @test
     def testFixpointFold05(): Bool =
@@ -43,7 +43,7 @@ namespace Test/Exp/Fixpoint/Fold {
     @test
     def testFixpointFold06(): Bool =
       let p = #{Fb(false, false). Fb(true, false).};
-      !(fold Fb false ((_entry, acc) -> acc) (solve p))
+      not (fold Fb false ((_entry, acc) -> acc) (solve p))
 
     //////////
     // Int8 //
@@ -269,7 +269,7 @@ namespace Test/Exp/Fixpoint/Fold {
     def testFixpointFold38(): Bool =
       let p = #{Fs("foo", "bar"). Fs("baz", "qux").};
       let res = fold Fs "" adds (solve p);
-      !String.isEmpty(res)
+      not String.isEmpty(res)
 
     ////////////
     // Option //
@@ -288,7 +288,7 @@ namespace Test/Exp/Fixpoint/Fold {
     def testFixpointFold40(): Bool =
       let p = #{Fo(Some(1), Some(3)). Fo(Some(2), None).};
       let res = fold Fo None addo (solve p);
-      !Option.isEmpty(res)
+      not Option.isEmpty(res)
 
     ////////////
     // Result //
@@ -323,11 +323,11 @@ namespace Test/Exp/Fixpoint/Fold {
 
     @test
     def testFixpointFold45(): Bool =
-      fold UnaryB false ((x, acc) -> x || acc) (solve #{UnaryB(true). UnaryB(false).})
+      fold UnaryB false ((x, acc) -> x or acc) (solve #{UnaryB(true). UnaryB(false).})
 
     @test
     def testFixpointFold46(): Bool =
-      fold UnaryS false ((x, acc) -> acc || x == "bar") (solve #{UnaryS("foo"). UnaryS("bar"). UnaryS("baz").})
+      fold UnaryS false ((x, acc) -> acc or x == "bar") (solve #{UnaryS("foo"). UnaryS("bar"). UnaryS("baz").})
 
 
     // Fold over multiple relations

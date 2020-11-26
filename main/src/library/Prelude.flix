@@ -141,7 +141,7 @@ law nonNegative(h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
 ///
 law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool =
     use Bool.{∧, →};
-    ∀(x: e, y: e). (x ⊑ y ∧ !equ(x, y)) → (h(x) > h(y))
+    ∀(x: e, y: e). (x ⊑ y ∧ not equ(x, y)) → (h(x) > h(y))
 
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.
@@ -156,7 +156,7 @@ namespace Tuple2 {
     def __eq(t1: (a, b), t2: (a, b)): Bool =
         let (a1, b1) = t1;
         let (a2, b2) = t2;
-            a1 == a2 && b1 == b2
+            a1 == a2 and b1 == b2
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -179,7 +179,7 @@ namespace Tuple3 {
     def __eq(t1: (a, b, c), t2: (a, b, c)): Bool =
         let (a1, b1, c1) = t1;
         let (a2, b2, c2) = t2;
-            a1 == a2 && b1 == b2 && c1 == c2
+            a1 == a2 and b1 == b2 and c1 == c2
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -206,7 +206,7 @@ namespace Tuple4 {
     def __eq(t1: (a, b, c, d), t2: (a, b, c, d)): Bool =
         let (a1, b1, c1, d1) = t1;
         let (a2, b2, c2, d2) = t2;
-            a1 == a2 && b1 == b2 && c1 == c2 && d1 == d2
+            a1 == a2 and b1 == b2 and c1 == c2 and d1 == d2
 
     ///
     /// Compares `t1` and `t2` lexicographically.

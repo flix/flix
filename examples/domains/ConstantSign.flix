@@ -45,8 +45,8 @@ namespace Domain/ConstantSign {
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => {
             if      (n1 == n2)                  Cst(n1)
-            else if (n1 >= 0ii && n2 >= 0ii)    Pos
-            else if (n1 <= 0ii && n2 <= 0ii)    Neg
+            else if (n1 >= 0ii and n2 >= 0ii)    Pos
+            else if (n1 <= 0ii and n2 <= 0ii)    Neg
             else                                Top
         }
         case (Cst(n), Neg)      => if (n <= 0ii) Neg else Top

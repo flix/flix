@@ -3,28 +3,28 @@ use Pkger/SemVer.SemVer.SemVer;
 use Pkger/SemVer/Parser.fromString;
 
 @test
-def testHigherPatchInSpecificWhenZeroMajor01(): Bool = !isCompatible(SemVer.SemVer(0, 1, 2), SemVer.SemVer(0, 1, 0))
+def testHigherPatchInSpecificWhenZeroMajor01(): Bool = not isCompatible(SemVer.SemVer(0, 1, 2), SemVer.SemVer(0, 1, 0))
 
 @test
-def testHigherPatchInSpecificWhenZeroMajor02(): Bool = !isCompatible(SemVer.SemVer(0, 1, 10), SemVer.SemVer(0, 1, 0))
+def testHigherPatchInSpecificWhenZeroMajor02(): Bool = not isCompatible(SemVer.SemVer(0, 1, 10), SemVer.SemVer(0, 1, 0))
 
 @test
-def testHigherPatchInSpecificWhenZeroMajor03(): Bool = !isCompatible(SemVer.SemVer(0, 1, 256), SemVer.SemVer(0, 1, 27))
+def testHigherPatchInSpecificWhenZeroMajor03(): Bool = not isCompatible(SemVer.SemVer(0, 1, 256), SemVer.SemVer(0, 1, 27))
 
 @test
-def testHigherPatchInSpecificWhenZeroMajor04(): Bool = !isCompatible(SemVer.SemVer(0, 22, 13), SemVer.SemVer(0, 22, 12))
+def testHigherPatchInSpecificWhenZeroMajor04(): Bool = not isCompatible(SemVer.SemVer(0, 22, 13), SemVer.SemVer(0, 22, 12))
 
 @test
-def testHigherPatchInBoundWhenZeroMajor01(): Bool = !isCompatible(SemVer.SemVer(0, 1, 5), SemVer.SemVer(0, 1, 10))
+def testHigherPatchInBoundWhenZeroMajor01(): Bool = not isCompatible(SemVer.SemVer(0, 1, 5), SemVer.SemVer(0, 1, 10))
 
 @test
-def testHigherPatchInBoundWhenZeroMajor02(): Bool = !isCompatible(SemVer.SemVer(0, 1, 71), SemVer.SemVer(0, 1, 72))
+def testHigherPatchInBoundWhenZeroMajor02(): Bool = not isCompatible(SemVer.SemVer(0, 1, 71), SemVer.SemVer(0, 1, 72))
 
 @test
-def testHigherPatchInBoundWhenZeroMajor03(): Bool = !isCompatible(SemVer.SemVer(0, 1, 333), SemVer.SemVer(0, 1, 666))
+def testHigherPatchInBoundWhenZeroMajor03(): Bool = not isCompatible(SemVer.SemVer(0, 1, 333), SemVer.SemVer(0, 1, 666))
 
 @test
-def testHigherPatchInBoundWhenZeroMajor04(): Bool = !isCompatible(SemVer.SemVer(0, 1, 13), SemVer.SemVer(0, 1, 42))
+def testHigherPatchInBoundWhenZeroMajor04(): Bool = not isCompatible(SemVer.SemVer(0, 1, 13), SemVer.SemVer(0, 1, 42))
 
 @test
 def testSamePatchWhenZeroMajor01(): Bool = isCompatible(SemVer.SemVer(0, 1, 10), SemVer.SemVer(0, 1, 10))
@@ -39,40 +39,40 @@ def testSamePatchWhenZeroMajor03(): Bool = isCompatible(SemVer.SemVer(0, 1, 62),
 def testSamePatchWhenZeroMajor04(): Bool = isCompatible(SemVer.SemVer(0, 1, 42), SemVer.SemVer(0, 1, 42))
 
 @test
-def testLargerMinorFailsWhenZeroMajor01(): Bool = !isCompatible(SemVer.SemVer(0, 2, 1), SemVer.SemVer(0, 1, 0))
+def testLargerMinorFailsWhenZeroMajor01(): Bool = not isCompatible(SemVer.SemVer(0, 2, 1), SemVer.SemVer(0, 1, 0))
 
 @test
-def testLargerMinorFailsWhenZeroMajor02(): Bool = !isCompatible(SemVer.SemVer(0, 2, 2), SemVer.SemVer(0, 1, 2))
+def testLargerMinorFailsWhenZeroMajor02(): Bool = not isCompatible(SemVer.SemVer(0, 2, 2), SemVer.SemVer(0, 1, 2))
 
 @test
-def testLargerMinorFailsWhenZeroMajor03(): Bool = !isCompatible(SemVer.SemVer(0, 42, 42), SemVer.SemVer(0, 41, 0))
+def testLargerMinorFailsWhenZeroMajor03(): Bool = not isCompatible(SemVer.SemVer(0, 42, 42), SemVer.SemVer(0, 41, 0))
 
 @test
-def testLargerMinorFailsWhenZeroMajor04(): Bool = !isCompatible(SemVer.SemVer(0, 10, 1), SemVer.SemVer(0, 7, 200))
+def testLargerMinorFailsWhenZeroMajor04(): Bool = not isCompatible(SemVer.SemVer(0, 10, 1), SemVer.SemVer(0, 7, 200))
 
 @test
-def testSmallerMinorFailsWhenZeroMajor01(): Bool = !isCompatible(SemVer.SemVer(0, 1, 1), SemVer.SemVer(0, 2, 0))
+def testSmallerMinorFailsWhenZeroMajor01(): Bool = not isCompatible(SemVer.SemVer(0, 1, 1), SemVer.SemVer(0, 2, 0))
 
 @test
-def testSmallerMinorFailsWhenZeroMajor02(): Bool = !isCompatible(SemVer.SemVer(0, 1, 1), SemVer.SemVer(0, 2, 0))
+def testSmallerMinorFailsWhenZeroMajor02(): Bool = not isCompatible(SemVer.SemVer(0, 1, 1), SemVer.SemVer(0, 2, 0))
 
 @test
-def testSmallerMinorFailsWhenZeroMajor03(): Bool = !isCompatible(SemVer.SemVer(0, 1, 1), SemVer.SemVer(0, 2, 0))
+def testSmallerMinorFailsWhenZeroMajor03(): Bool = not isCompatible(SemVer.SemVer(0, 1, 1), SemVer.SemVer(0, 2, 0))
 
 @test
-def testSmallerMinorFailsWhenZeroMajor04(): Bool = !isCompatible(SemVer.SemVer(0, 1, 1), SemVer.SemVer(0, 2, 0))
+def testSmallerMinorFailsWhenZeroMajor04(): Bool = not isCompatible(SemVer.SemVer(0, 1, 1), SemVer.SemVer(0, 2, 0))
 
 @test
-def testLargerMajorFailsWhenZeroMajor01(): Bool = !isCompatible(SemVer.SemVer(1, 0, 0), SemVer.SemVer(0, 1, 0))
+def testLargerMajorFailsWhenZeroMajor01(): Bool = not isCompatible(SemVer.SemVer(1, 0, 0), SemVer.SemVer(0, 1, 0))
 
 @test
-def testLargerMajorFailsWhenZeroMajor02(): Bool = !isCompatible(SemVer.SemVer(52, 7, 2), SemVer.SemVer(0, 1, 5))
+def testLargerMajorFailsWhenZeroMajor02(): Bool = not isCompatible(SemVer.SemVer(52, 7, 2), SemVer.SemVer(0, 1, 5))
 
 @test
-def testLargerMajorFailsWhenZeroMajor03(): Bool = !isCompatible(SemVer.SemVer(6, 1, 7), SemVer.SemVer(0, 1, 4))
+def testLargerMajorFailsWhenZeroMajor03(): Bool = not isCompatible(SemVer.SemVer(6, 1, 7), SemVer.SemVer(0, 1, 4))
 
 @test
-def testLargerMajorFailsWhenZeroMajor04(): Bool = !isCompatible(SemVer.SemVer(4, 0, 0), SemVer.SemVer(0, 1, 87))
+def testLargerMajorFailsWhenZeroMajor04(): Bool = not isCompatible(SemVer.SemVer(4, 0, 0), SemVer.SemVer(0, 1, 87))
 
 @test
 def testLargerPatchWhenNonZeroMajor01(): Bool = isCompatible(SemVer.SemVer(1, 2, 3), SemVer.SemVer(1, 2, 0))

@@ -63,9 +63,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def dist(x: Int32, y: Int32): Int32 = {
-        if      (x >= 0 && y >= 0)                      abs(x - y)
-        else if (x < 0 && y < 0)                        abs(x - y)
-        else if (x == minValue() || y == minValue())    -1
+        if      (x >= 0 and y >= 0)                      abs(x - y)
+        else if (x < 0 and y < 0)                        abs(x - y)
+        else if (x == minValue() or y == minValue())    -1
         else if (minValue() + abs(x) + abs(y) >= 0)     -1
         else                                            abs(x - y)
     }
@@ -95,7 +95,7 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def logicalRightShift(x: Int32, distance: Int32): Int32 =
-        if (x < 0 && distance % size() != 0)
+        if (x < 0 and distance % size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
             x >>> distance
@@ -208,7 +208,7 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     def bitPositionToInt(position: Int32): Int32 =
-        if (position < 0 || position > size() - 1) 0 else 1 <<< position
+        if (position < 0 or position > size() - 1) 0 else 1 <<< position
 
     ///
     /// Returns the number of zero bits preceding the
@@ -312,7 +312,7 @@ namespace Int32 {
     pub def tryToInt8(x: Int32): Option[Int8] =
         import java.lang.Integer:valueOf(Int32);
         import java.lang.Integer.byteValue();
-        if (x < Int8.toInt32(Int8.minValue()) || x > Int8.toInt32(Int8.maxValue()))
+        if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
             None
         else
             Some(valueOf(x).byteValue()) as & Pure
@@ -329,7 +329,7 @@ namespace Int32 {
     pub def tryToInt16(x: Int32): Option[Int16] =
         import java.lang.Integer:valueOf(Int32);
         import java.lang.Integer.shortValue();
-        if (x < Int16.toInt32(Int16.minValue()) || x > Int16.toInt32(Int16.maxValue()))
+        if (x < Int16.toInt32(Int16.minValue()) or x > Int16.toInt32(Int16.maxValue()))
             None
         else
             Some(valueOf(x).shortValue()) as & Pure

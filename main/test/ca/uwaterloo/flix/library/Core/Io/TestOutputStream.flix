@@ -25,7 +25,7 @@ namespace Core/Io/TestOutputStream {
         let b = testBuffer();
         let _ = writeByte(10 as Int8, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 1 && a[0] == 10 as Int8
+        Array.length(a) == 1 and a[0] == 10 as Int8
     }
 
     @test
@@ -34,7 +34,7 @@ namespace Core/Io/TestOutputStream {
         let _ = writeByte(52 as Int8, b);
         let _ = writeByte(76 as Int8, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 2 && a[0] == 52 as Int8 && a[1] == 76 as Int8
+        Array.length(a) == 2 and (a[0] == 52 as Int8) and a[1] == 76 as Int8
     }
 
     @test
@@ -43,7 +43,7 @@ namespace Core/Io/TestOutputStream {
         let b = testBuffer();
         let _ = Array.map(i -> writeByte(i, b), e);
         let a = readTestBuffer(b);
-        Array.length(a) == 1000 && Array.forall(i -> i == 52 as Int8, a)
+        Array.length(a) == 1000 and Array.forall(i -> i == 52 as Int8, a)
     }
 
     @test
@@ -52,7 +52,7 @@ namespace Core/Io/TestOutputStream {
         let b = testBuffer();
         let _ = writeBuffer(e, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 1 && a[0] == 42 as Int8
+        Array.length(a) == 1 and a[0] == 42 as Int8
     }
 
     @test
@@ -61,7 +61,7 @@ namespace Core/Io/TestOutputStream {
         let b = testBuffer();
         let _ = writeBuffer(e, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 420 && Array.forall(i ->i == 42 as Int8, a)
+        Array.length(a) == 420 and Array.forall(i ->i == 42 as Int8, a)
     }
 
     @test
@@ -79,7 +79,7 @@ namespace Core/Io/TestOutputStream {
         let b = testBuffer();
         let _ = writeBufferWithOffset(e, 1, 2, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 2  && a[0] == 2 as Int8 && a[1] == 3 as Int8
+        Array.length(a) == 2 and (a[0] == 2 as Int8) and a[1] == 3 as Int8
     }
 
     @test
@@ -88,7 +88,7 @@ namespace Core/Io/TestOutputStream {
         let b = testBuffer();
         let r = writeBufferWithOffset(e, 2, 10, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 0 && Result.isErr(r)
+        Array.length(a) == 0 and Result.isErr(r)
     }
 
     @test
@@ -97,7 +97,7 @@ namespace Core/Io/TestOutputStream {
         let b = testBuffer();
         let r = writeBufferWithOffset(e, 10, 1, b);
         let a = readTestBuffer(b);
-        Array.length(a) == 0 && Result.isErr(r)
+        Array.length(a) == 0 and Result.isErr(r)
     }
 
     def testBuffer(): OutputStream & Impure = {

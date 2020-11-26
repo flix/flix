@@ -273,37 +273,37 @@ def flatten03(): Bool = Option.flatten(Some(Some(2))) == Some(2)
 // foldLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldLeft01(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, None) == false
+def foldLeft01(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else false, false, None) == false
 
 @test
-def foldLeft02(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Some(1)) == false
+def foldLeft02(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Some(1)) == false
 
 @test
-def foldLeft03(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, false, Some(2)) == false
+def foldLeft03(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Some(2)) == false
 
 @test
-def foldLeft04(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, true, Some(1)) == false
+def foldLeft04(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Some(1)) == false
 
 @test
-def foldLeft05(): Bool = Option.foldLeft((b, i) -> if (i == 2 && b) true else false, true, Some(2)) == true
+def foldLeft05(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Some(2)) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, None, false) == false
+def foldRight01(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, None, false) == false
 
 @test
-def foldRight02(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(1), false) == false
+def foldRight02(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(1), false) == false
 
 @test
-def foldRight03(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(2), false) == false
+def foldRight03(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(2), false) == false
 
 @test
-def foldRight04(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(1), true) == false
+def foldRight04(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(1), true) == false
 
 @test
-def foldRight05(): Bool = Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(2), true) == true
+def foldRight05(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //

@@ -40,7 +40,7 @@ namespace BenchmarkMap {
     ///
     @benchmark
     pub def benchmark06(): Bool =
-        !Map.memberOf(24, range(0, 24))
+        not Map.memberOf(24, range(0, 24))
 
     ///
     /// create a map of `Int32 -> Int32` and compute its keys.
@@ -82,21 +82,21 @@ namespace BenchmarkMap {
     ///
     @benchmark
     pub def benchmark12(): Bool =
-        Map.exists((k, v) -> k == 12 && v == 12, range(0, 24))
+        Map.exists((k, v) -> k == 12 and v == 12, range(0, 24))
 
     ///
     /// create a map of `Int32 -> Int32` and check if at least one mapping satisfies a predicate.
     ///
     @benchmark
     pub def benchmark13(): Bool =
-        Map.exists((k, v) -> k > 22 && v > 22, range(0, 24))
+        Map.exists((k, v) -> k > 22 and v > 22, range(0, 24))
 
     ///
     /// create a map of `Int32 -> Int32` and check if at least one mapping satisfies a predicate.
     ///
     @benchmark
     pub def benchmark14(): Bool =
-        !Map.exists((k, v) -> k > 23 && v > 23, range(0, 24))
+        not Map.exists((k, v) -> k > 23 and v > 23, range(0, 24))
 
     ///
     /// create a map of `Int32 -> Int32`, filter out the mappings with even keys and compute the size.
@@ -138,7 +138,7 @@ namespace BenchmarkMap {
     ///
     @benchmark
     pub def benchmark20(): Bool =
-        Map.forall((k, v) -> k < 24 && v < 24, range(0, 24))
+        Map.forall((k, v) -> k < 24 and v < 24, range(0, 24))
 
     ///
     /// create two maps of `Int32 -> Int32`, find their intersection and compute the size.

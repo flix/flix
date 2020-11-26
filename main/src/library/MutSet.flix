@@ -305,6 +305,6 @@ namespace MutSet {
     /// Returns `true` if and only if the mutable sets `s1` and `s2` are equal, i.e. they have the same elements.
     ///
     pub def __eq(s1: MutSet[a], s2: MutSet[a]): Bool & Impure =
-        isSubsetOf(s1, s2) && isSubsetOf(s2, s1)
+        isSubsetOf(s1, s2) and isSubsetOf(s2, s1)
 
 }

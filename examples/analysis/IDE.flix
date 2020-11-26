@@ -70,7 +70,7 @@ namespace IDE {
         case (Transformer.BotTrans, _) => t2
         case (_, Transformer.BotTrans) => t1
         case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
-          if (a1 == a2 && b1 == b2)
+          if (a1 == a2 and b1 == b2)
             Transformer.NonBotTrans(a1, b1, lub(c1, c2))
          else if(c1 == c2)
              if(0==(b1-b2)%(a2-a1))

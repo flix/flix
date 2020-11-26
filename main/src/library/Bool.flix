@@ -19,19 +19,19 @@ namespace Bool {
     /// Alias for logical conjunction.
     ///
     @Time(1) @Space(1)
-    pub def ∧(x: Bool, y: Bool): Bool = x && y
+    pub def ∧(x: Bool, y: Bool): Bool = x and y
 
     ///
     /// Alias for logical disjunction.
     ///
     @Time(1) @Space(1)
-    pub def ∨(x: Bool, y: Bool): Bool = x || y
+    pub def ∨(x: Bool, y: Bool): Bool = x or y
 
     ///
     /// Alias for logical implication.
     ///
     @Time(1) @Space(1)
-    pub def →(x: Bool, y: Bool): Bool = !x ∨ y
+    pub def →(x: Bool, y: Bool): Bool = not x ∨ y
 
     ///
     /// Alias for logical bi-implication.
@@ -43,6 +43,6 @@ namespace Bool {
     /// Alias for exclusive or.
     ///
     @Time(1) @Space(1)
-    pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ !(x ∧ y)
+    pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ not (x ∧ y)
 
 }

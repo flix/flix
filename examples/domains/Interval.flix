@@ -40,7 +40,7 @@ namespace Domain/Interval {
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     def leq(x: Interval, y: Interval): Bool = match (x, y) {
         case (Bot, _)                       => true
-        case (Range(b1, e1), Range(b2, e2)) => b2 <= b1 && e1 <= e2
+        case (Range(b1, e1), Range(b2, e2)) => b2 <= b1 and e1 <= e2
         case (_, Top)                       => true
         case _                              => false
     }
@@ -142,8 +142,8 @@ namespace Domain/Interval {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2)) => {
-            if      ((b1 == e1) && ((e1 == b2) && (b2 == e2)))     Belnap/Belnap.True
-            else if ((e1 < b2) || (e2 < b1))                       Belnap/Belnap.False
+            if      ((b1 == e1) and ((e1 == b2) and (b2 == e2)))     Belnap/Belnap.True
+            else if ((e1 < b2) or (e2 < b1))                       Belnap/Belnap.False
             else                                                   Belnap/Belnap.Top
         }
         case _                                                  => Belnap/Belnap.Top

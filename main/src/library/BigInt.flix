@@ -186,7 +186,7 @@ namespace BigInt {
         let d = xd.floatValue() as & Pure;
         let* f32min = Float32.tryToBigInt(Float32.minValue());
         let* f32max = Float32.tryToBigInt(Float32.maxValue());
-        if (x < f32min || x > f32max)
+        if (x < f32min or x > f32max)
             None
         else
             Some(d)
@@ -209,7 +209,7 @@ namespace BigInt {
         let d = xd.doubleValue() as & Pure;
         let* f64min = Float64.tryToBigInt(Float64.minValue());
         let* f64max = Float64.tryToBigInt(Float64.maxValue());
-        if (x < f64min || x > f64max)
+        if (x < f64min or x > f64max)
             None
         else
             Some(d)
