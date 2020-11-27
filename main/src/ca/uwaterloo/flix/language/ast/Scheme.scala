@@ -133,7 +133,7 @@ object Scheme {
   }
 
   /**
-    * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`, under the assumption that `assumedTconstrs` all hold.
+    * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def lessThanEqual(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
 
