@@ -62,7 +62,7 @@ namespace Show {
         def show(x: Float64): String = Float64.toString(x)
     }
 
-    instance Show[List[a]] with [a : Show] { // TODO nested lists are ambiguous (?)
+    instance Show[List[a]] with [a : Show] {
         def show(xs: List[a]): String = {
             let strings = List.map(x -> String.concat(show(x), " :: "), xs);
             let start = String.flatten(strings);
