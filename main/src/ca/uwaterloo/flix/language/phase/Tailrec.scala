@@ -19,11 +19,14 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import ca.uwaterloo.flix.util.{Optimization, Validation}
+
+import scala.collection.mutable
 
 /**
   * The Tailrec phase identifies function calls that are in tail recursive position.
@@ -45,13 +48,17 @@ object Tailrec extends Phase[Root, Root] {
     if (!(flix.options.optimizations contains Optimization.TailCalls))
       return root.toSuccess
 
+    val helperDefsMap: mutable.Map[DefnSym, Def] = mutable.Map.empty
     //
-    // Rewrite tail calls.
+    // Rewrite tail calls and identify TRMC
     //
     val defns = root.defs.map {
-      case (sym, defn) => sym -> tailrec(defn)
+      case (sym, defn) => sym -> tailrec(defn, helperDefsMap)
     }
-    //root.copy(defs = defns).toSuccess
+
+    val helperdefns = helperDefsMap.map {
+      case (sym, defn) => defn.sym -> makeTRMCHelper(defn, sym)
+    }
 
     val newRoot = root.copy(defs = defns)
     println("__________________After TailRec____________________________________")
@@ -59,10 +66,8 @@ object Tailrec extends Phase[Root, Root] {
     newRoot.toSuccess
   }
 
-  def makeHelper(defn: Def)(implicit flix: Flix): Def = {
-    val funDefnSym = defn.sym
-    val helperDefnSym = Symbol.freshDefnSym(funDefnSym.namespace, funDefnSym.text + "helper")
-    val helperFunc = defn.copy(sym = helperDefnSym)
+  def makeTRMCHelper(defn: Def, originalDefnSym: DefnSym)(implicit flix: Flix): Def = {
+    val helperDef = defn //LiftedAstOps.refreshVarNames(defn)
 
     /**
       * Very similar to that of tailrec.
@@ -73,13 +78,17 @@ object Tailrec extends Phase[Root, Root] {
       case _ => exp0
     }
 
-    helperFunc
+    val vt = new VirtualTerminal()
+    PrettyPrinter.Lifted.fmtDef(helperDef, vt)
+    println("__________________Helper____________________________________")
+    println(vt.fmt(TerminalContext.AnsiTerminal))
+    helperDef
   }
 
   /**
     * Identifies tail recursive calls in the given definition `defn`.
     */
-  private def tailrec(defn: Def)(implicit flix: Flix): Def = {
+  private def tailrec(defn: Def, helperMap: mutable.Map[DefnSym, Def])(implicit flix: Flix): Def = {
     /**
       * Introduces tail recursive calls in the given expression `exp0`.
       *
@@ -149,16 +158,20 @@ object Tailrec extends Phase[Root, Root] {
 
         // Now we call a function that rewrites to two new funtions
         // Todo: It would be nice to make the helper after this phase and then insert it into the defs
-        val helper = makeHelper(defn)
-        val vt = new VirtualTerminal()
-        PrettyPrinter.Lifted.fmtDef(helper, vt)
-        println("__________________Helper____________________________________")
-        println(vt.fmt(TerminalContext.AnsiTerminal))
+        val funDefnSym = defn.sym
+        val helperSym = if (helperMap.contains(funDefnSym)) {
+          helperMap(funDefnSym).sym
+        } else {
+          val newSym = Symbol.freshDefnSym(funDefnSym.namespace, funDefnSym.text + "helper")
+          helperMap.addOne(newSym, defn.copy(sym = newSym))
+          newSym
+        }
+
 
         val consArg = Expression.Tag(sym, Name.Tag("Cons", SourceLocation.Generated),
           Expression.Tuple(hd :: Nil, tpeTup, SourceLocation.Generated)
           , tpeTag, SourceLocation.Generated)
-        Expression.ApplyDefTail(helper.sym, args ::: List(consArg), tpeDef, SourceLocation.Generated)
+        Expression.ApplyDefTail(helperSym, args ::: List(consArg), tpeDef, SourceLocation.Generated)
       /*
        * Other expression: No calls in tail position.
        */
