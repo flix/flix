@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -89,12 +89,14 @@ object ContextReduction {
       } yield inst.tconstrs.map(subst(_))
     }
 
-    matchingInstances.map(tryInst).find {
-      case Result.Ok(_) => true
-      case Result.Err(_) => false
-    } match {
-      case Some(Result.Ok(tconstrs)) => tconstrs.toOk
-      case _ => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
+    val tconstrGroups = matchingInstances.map(tryInst).collect {
+      case Result.Ok(tconstrs) => tconstrs
+    }
+
+    tconstrGroups match {
+      case Nil => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
+      case tconstrs :: Nil => tconstrs.toOk
+      case _ :: _ :: _ => throw InternalCompilerException("Multiple matching instances")
     }
   }
 
