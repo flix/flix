@@ -387,7 +387,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     if (freeVars(tpe).exists(_.name == classTparam.name.name)) {
       ().toSuccess
     } else {
-      NameError.IllegalSignature(sigIdent.name, loc).toFailure
+      NameError.IllegalSignature(sigIdent, loc).toFailure
     }
   }
 

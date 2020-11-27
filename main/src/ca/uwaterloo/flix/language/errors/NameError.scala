@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -310,16 +310,17 @@ object NameError {
 
   /**
     * An error raised to indicate that a signature does not include the class's type parameter.
+    *
     * @param name the name of the signature.
-    * @param loc the location where the error occurred.
+    * @param loc  the location where the error occurred.
     */
-  case class IllegalSignature(name: String, loc: SourceLocation) extends NameError {
+  case class IllegalSignature(name: Name.Ident, loc: SourceLocation) extends NameError {
     def summary: String = "Illegal signature."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal signature '" << Red(name) << "'." << NewLine
+      vt << ">> Illegal signature '" << Red(name.name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "Illegal signature.")
       vt << NewLine
