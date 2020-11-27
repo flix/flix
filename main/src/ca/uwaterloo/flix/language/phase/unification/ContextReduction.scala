@@ -32,9 +32,14 @@ object ContextReduction {
     */
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
   def entail(tconstrs0: List[TypedAst.TypeConstraint], tconstr: TypedAst.TypeConstraint, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
-    // tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
-    // or if there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
-    tconstrs0.exists(bySuper(_, instances).contains(tconstr)) || {
+
+    val superClasses = tconstrs0.flatMap(bySuper(_, instances))
+
+    // Case 1: tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
+    if (superClasses.contains(tconstr)) {
+      true
+    } else {
+      // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
       byInst(tconstr, instances) match {
         case Result.Ok(tconstrs) => tconstrs.forall(entail(tconstrs0, _, instances))
         case Result.Err(_) => false
