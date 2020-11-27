@@ -35,7 +35,7 @@ object ContextReduction {
     // tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
     // or if there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
     tconstrs0.exists(bySuper(instances, _).contains(tconstr)) || {
-      byInst(instances, tconstr) match {
+      byInst(tconstr, instances) match {
         case Result.Ok(tconstrs) => tconstrs.forall(entail(instances, tconstrs0, _))
         case Result.Err(_) => false
       }
@@ -73,14 +73,14 @@ object ContextReduction {
     if (isHeadNormalForm(tconstr.arg)) {
       List(tconstr).toOk
     } else {
-      byInst(instances, tconstr)
+      byInst(tconstr, instances)
     }
   }
 
   /**
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
     */
-  private def byInst(instances0: MultiMap[Symbol.ClassSym, ResolvedAst.Instance], tconstr: TypedAst.TypeConstraint)(implicit flix: Flix): Result[List[TypedAst.TypeConstraint], UnificationError] = {
+  private def byInst(tconstr: TypedAst.TypeConstraint, instances0: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Result[List[TypedAst.TypeConstraint], UnificationError] = {
     val matchingInstances = instances0(tconstr.sym).toList
 
     def tryInst(inst: ResolvedAst.Instance): Result[List[TypedAst.TypeConstraint], UnificationError] = {
