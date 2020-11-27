@@ -19,11 +19,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst._
-import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import ca.uwaterloo.flix.util.{Optimization, Validation}
 
 /**
@@ -60,9 +59,19 @@ object Tailrec extends Phase[Root, Root] {
     newRoot.toSuccess
   }
 
-  def makeHelper(defn: Def, helperName: DefnSym)(implicit flix: Flix): Def = {
-    val helperFunc = defn.copy(sym = helperName)
+  def makeHelper(defn: Def)(implicit flix: Flix): Def = {
+    val funDefnSym = defn.sym
+    val helperDefnSym = Symbol.freshDefnSym(funDefnSym.namespace, funDefnSym.text + "helper")
+    val helperFunc = defn.copy(sym = helperDefnSym)
 
+    /**
+      * Very similar to that of tailrec.
+      *
+      * We need to find all tail Nil and tail x :: f
+      */
+    def visit(exp0: Expression): Expression = exp0 match {
+      case _ => exp0
+    }
 
     helperFunc
   }
@@ -138,17 +147,18 @@ object Tailrec extends Phase[Root, Root] {
 
         println("Found a cons")
 
-        val funName = defn.sym
-        val helperDefnSym = Symbol.freshDefnSym(funName.namespace, funName.text + "helper")
-
-
         // Now we call a function that rewrites to two new funtions
-        val helper = makeHelper(defn, helperDefnSym)
+        // Todo: It would be nice to make the helper after this phase and then insert it into the defs
+        val helper = makeHelper(defn)
+        val vt = new VirtualTerminal()
+        PrettyPrinter.Lifted.fmtDef(helper, vt)
+        println("__________________Helper____________________________________")
+        println(vt.fmt(TerminalContext.AnsiTerminal))
 
         val consArg = Expression.Tag(sym, Name.Tag("Cons", SourceLocation.Generated),
           Expression.Tuple(hd :: Nil, tpeTup, SourceLocation.Generated)
           , tpeTag, SourceLocation.Generated)
-        Expression.ApplyDef(helperDefnSym, args ::: List(consArg), tpeDef, SourceLocation.Generated)
+        Expression.ApplyDefTail(helper.sym, args ::: List(consArg), tpeDef, SourceLocation.Generated)
       /*
        * Other expression: No calls in tail position.
        */
