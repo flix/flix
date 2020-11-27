@@ -33,7 +33,7 @@ namespace Test/Dec/Class {
             def g(x: a): Bool
         }
 
-        pub def h[a : C : D](x: a): Bool = f(x) && g(x)
+        pub def h[a : C : D](x: a): Bool = f(x) and g(x)
     }
 
     namespace Test05 {
