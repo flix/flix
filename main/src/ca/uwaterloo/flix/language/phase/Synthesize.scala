@@ -1362,7 +1362,7 @@ object Synthesize extends Phase[Root, Root] {
       // Reassemble the ast with the new definitions.
       root.copy(defs = defs ++ newDefs, specialOps = specialOps).toSuccess
     } catch {
-      case ex: SynthesisError => ex.t.toFailure
+      case ex: SynthesisException => ex.t.toFailure
     }
   }
 
