@@ -21,6 +21,7 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.WeededAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -28,8 +29,9 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.Seq
+import scala.collection.immutable.{AbstractSeq, LinearSeq, Seq}
 import scala.collection.mutable
+import scala.xml.NodeSeq
 
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
@@ -112,14 +114,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given class declaration `c0`.
     */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparams0, sigs0, sp2) =>
+    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparam0, sigs0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
-      val tparams = visitTypeParams(tparams0)
+      val tparam = visitTypeParam(tparam0)
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
         sigs <- traverse(sigs0)(visitSig)
-      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparams, sigs.flatten, loc))
+      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, sigs.flatten, loc))
   }
 
   /**
@@ -147,14 +149,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given instance declaration `i0`.
     */
   private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
-    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, defs0, sp2) =>
+    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, constrs0, defs0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public))
         defs <- traverse(defs0)(visitDef)
-      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, defs.flatten, loc))
+        constrs = visitTypeConstraints(constrs0.getOrElse(Seq.empty))
+      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, loc))
 
   }
 
@@ -1886,17 +1889,31 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitTypeParams(tparams0: ParsedAst.TypeParams): WeededAst.TypeParams = tparams0 match {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided
     case ParsedAst.TypeParams.Explicit(tparams) =>
-      val tparams1 = tparams.map {
-        case ParsedAst.ConstrainedType(sp1, ident, kind, classes, sp2) =>
-          val k = kind.map {
-            case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
-            case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
-            case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
-            case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
-          }
-          WeededAst.ConstrainedType(ident, k, classes.toList)
-      }
+      val tparams1 = tparams.map(visitTypeParam)
       WeededAst.TypeParams.Explicit(tparams1)
+  }
+
+  /**
+    * Weeds the given type param `tparam`.
+    */
+  private def visitTypeParam(tparam: ParsedAst.TypeParam): WeededAst.TypeParam = tparam match {
+    case ParsedAst.TypeParam(sp1, ident, kind, classes, sp2) =>
+      val k = kind.map {
+        case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
+        case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
+        case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
+        case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
+      }
+      WeededAst.TypeParam(ident, k, classes.toList)
+  }
+
+  /**
+    * Weeds the given type constraints `constraints0`.
+    */
+  private def visitTypeConstraints(constraints0: Seq[ParsedAst.ConstrainedType]): List[WeededAst.ConstrainedType] = {
+    constraints0.map {
+      case ParsedAst.ConstrainedType(sp1, tpe, classes, sp2) => WeededAst.ConstrainedType(visitType(tpe), classes.toList)
+    }.toList
   }
 
   /**

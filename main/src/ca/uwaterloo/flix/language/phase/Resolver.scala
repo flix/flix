@@ -20,11 +20,11 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.ResolvedAst.Sig
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.mutable
 
@@ -47,6 +47,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case (ns0, classes) => classes.map {
         case (_, clazz) => resolve(clazz, ns0, root) map {
           case s => s.sym -> s
+        }
+      }
+    }
+
+    val instancesVal = root.instances.flatMap {
+      case (ns0, instances0) => instances0.m.map {
+        case (_, instances) => traverse(instances)(resolve(_, ns0, root)) map {
+          case is => is.head.sym -> is.toSet
         }
       }
     }
@@ -80,13 +88,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
 
     for {
-      classes <- sequence(classesVal).map(_ ++ mkSynthClasses())
+      classes <- sequence(classesVal)
+      instances <- sequence(instancesVal) // MATT add synth instances
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      classes.toMap, definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
+      classes.toMap, MultiMap(instances.toMap), definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
     )
   }
 
@@ -121,6 +130,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigs <- traverse(signatures)(resolve(_, ns0, root))
       } yield ResolvedAst.Class(doc, mod, sym, tparams.head, sigs, loc)
+  }
+
+  /**
+    * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
+    */
+  def resolve(i0: NamedAst.Instance, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
+    case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
+      for {
+        clazz <- lookupClass(clazz0, ns0, root)
+        tpe <- lookupType(tpe0, ns0, root)
+        tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, ns0, root))
+        defs <- traverse(defs0)(resolve(_, ns0, root))
+      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, loc)
   }
 
   /**
@@ -159,29 +181,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
-    val tparamsVal = traverse(e0.tparams)(p => Params.resolve(p, ns0, root))
-    val casesVal = traverse(e0.cases) {
-      case (name, NamedAst.Case(enum, tag, tpe)) =>
-        for {
-          _ <- tparamsVal
-          t <- lookupType(tpe, ns0, root)
-          _ <- checkProperType(t, tag.loc)
-        } yield {
-          val freeVars = e0.tparams.map(_.tpe)
-          val caseType = t
-          val enumType = Type.mkEnum(e0.sym, freeVars)
-          val base = Type.mkTag(e0.sym, tag, caseType, enumType)
-          val sc = Scheme(freeVars, List.empty, base)
-          name -> ResolvedAst.Case(enum, tag, t, sc)
+    traverse(e0.tparams)(p => Params.resolve(p, ns0, root)).flatMap {
+      tparams =>
+        val tconstrs = tparams.flatMap(tparam => tparam.classes.map(clazz => TypedAst.TypeConstraint(clazz, tparam.tpe)))
+        val casesVal = traverse(e0.cases) {
+          case (name, NamedAst.Case(enum, tag, tpe)) =>
+            for {
+              t <- lookupType(tpe, ns0, root)
+              _ <- checkProperType(t, tag.loc)
+            } yield {
+              val freeVars = e0.tparams.map(_.tpe)
+              val caseType = t
+              val enumType = Type.mkEnum(e0.sym, freeVars)
+              val base = Type.mkTag(e0.sym, tag, caseType, enumType)
+              val sc = Scheme(freeVars, tconstrs, base)
+              name -> ResolvedAst.Case(enum, tag, t, sc)
+            }
         }
-    }
-    for {
-      tparams <- tparamsVal
-      cases <- casesVal
-      tpe <- lookupType(e0.tpe, ns0, root)
-    } yield {
-      val sc = Scheme(tparams.map(_.tpe), List.empty, tpe)
-      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
+        for {
+          cases <- casesVal
+          tpe <- lookupType(e0.tpe, ns0, root)
+        } yield {
+          val sc = Scheme(tparams.map(_.tpe), tconstrs, tpe)
+          ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
+        }
     }
   }
 
@@ -337,7 +360,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               flatMapN(lookupClass(qname, ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseDef(qname, _, _) =>
-              flatMapN(lookupDef(qname, ns0, root))(_ => visit(exp, tenv0))
+              flatMapN(lookupDefSig(qname, ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseTyp(qname, _, _) =>
               flatMapN(lookupType(NamedAst.Type.Ambiguous(qname, loc), ns0, root))(_ => visit(exp, tenv0))
@@ -990,7 +1013,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[TypedAst.TypeConstraint, ResolutionError] = {
     for {
       clazz <- lookupClass(tconstr0.clazz, ns0, root)
-    } yield TypedAst.TypeConstraint(clazz.sym, tconstr0.arg)
+      tpe <- lookupType(tconstr0.arg, ns0, root)
+    } yield TypedAst.TypeConstraint(clazz.sym, tpe)
   }
 
   /**
@@ -999,7 +1023,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
     val classOpt = tryLookupClass(qname, ns0, root)
     classOpt match {
-      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
         if (isClassAccessible(clazz, ns0)) {
           clazz.toSuccess
@@ -1860,58 +1884,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   private def mkLattice(ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
     mkPredicate(Ast.Denotation.Latticenal, ts0, loc)
   }
-
-  /**
-   * Creates the synthetic type classes.
-   */
-  private def mkSynthClasses()(implicit flix: Flix): List[(Symbol.ClassSym, ResolvedAst.Class)] = {
-    val classes = List(mkShowClass())
-    // TODO: Eq, Ord, Hash
-
-    classes.map(clazz => clazz.sym -> clazz)
-  }
-
-  /**
-   * Creates the synthetic `Show` type class.
-   * {{{
-   *   trait Show[a] {
-   *     def show(x: a): Str
-   *   }
-   * }}}
-   *
-   */
-  private def mkShowClass()(implicit flix: Flix): ResolvedAst.Class = {
-    val classSym = Symbol.mkClassSym(Name.RootNS, mkSynthIdent("Show"))
-
-    val tparamType = Type.freshVar(Kind.Star)
-    val tparam = ResolvedAst.TypeParam(mkSynthIdent("a"), tparamType, Nil, SourceLocation.Generated)
-    val showSig = Sig(doc = synthDoc,
-      ann = Nil,
-      mod = Ast.Modifiers(List(Ast.Modifier.Synthetic)),
-      sym = Symbol.mkSigSym(classSym, mkSynthIdent("show")),
-      tparams = List(tparam),
-      fparams = List(ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, tparamType, SourceLocation.Generated)),
-      sc = Scheme.generalize(List(TypedAst.TypeConstraint(classSym, tparamType)), Type.mkPureArrow(tparamType, Type.Str)),
-      eff = Type.Pure,
-      loc = SourceLocation.Generated)
-
-    ResolvedAst.Class(doc = synthDoc,
-      mod = Ast.Modifiers(List(Ast.Modifier.Public, Ast.Modifier.Synthetic)),
-      sym = classSym,
-      tparam = tparam,
-      signatures = List(showSig),
-      loc = SourceLocation.Generated)
-  }
-
-  /**
-   * Creates a synthetic Ident.
-   */
-  private def mkSynthIdent(name: String): Name.Ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-
-  /**
-   * Synthetic documentation.
-   */
-  private val synthDoc: Ast.Doc = Ast.Doc(List(), SourceLocation.Generated)
 
   sealed trait NameLookupResult
   object NameLookupResult {

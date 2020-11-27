@@ -431,5 +431,4 @@ object WeederError {
       vt << Code(loc, "undefined annotation.") << NewLine
     }
   }
-
 }

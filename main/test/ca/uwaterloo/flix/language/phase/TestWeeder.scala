@@ -287,5 +287,4 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[WeederError.UndefinedAnnotation](result)
   }
-
 }

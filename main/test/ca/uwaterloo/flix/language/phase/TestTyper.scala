@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -217,10 +218,106 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Class.01") {
     val input =
       """
-        |class Show[a] {
-        |  def show(x: a): String
+        |class C[a] {
+        |  def f(x: a): String
         |}
-        |def foo(x: a): String = show(x)
+        |def foo(x: a): String = f(x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.02") {
+    val input =
+      """
+        |class C[a] {
+        |  def f(x: a): String
+        |}
+        |def foo(x: Int): String = f(x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.03") {
+    val input =
+      """
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |class C[a] {
+        |    def f(x: a): String
+        |}
+        |
+        |instance C[Int] {
+        |    def f(x: Int): String = "123"
+        |}
+        |
+        |instance C[Box[a]] with [a : C] {
+        |    def f(x: Box[a]): String = match x {
+        |        case Box(y) => f(y)
+        |    }
+        |}
+        |
+        |def doF(x: Box[Float]): String = f(x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.04") {
+    val input =
+      """
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |class C[a] {
+        |    def f(x: a): String
+        |}
+        |
+        |instance C[Int] {
+        |    def f(x: Int): String = "123"
+        |}
+        |
+        |instance C[Box[a]] with [a : C] {
+        |    def f(x: Box[a]): String = match x {
+        |        case Box(y) => f(y)
+        |    }
+        |}
+        |
+        |def doF(x: Box[Int]): String = f(f(x))
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.05") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a): Int
+        |}
+        |
+        |instance C[Int] {
+        |    def f(x: Int): Int = x
+        |}
+        |
+        |def foo(x: a, y: Int): String = f(x) + f(y)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.GeneralizationError](result)
+  }
+
+  test("TestLeq.Class.06") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a): Int
+        |}
+        |
+        |def foo[a : C, b](x: a, y: b): String = f(x) + f(y)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
@@ -870,4 +967,250 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("Test.OverlappingInstance.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[Int]
+        |
+        |instance C[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+
+  test("Test.OverlappingInstance.02") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[a]
+        |
+        |instance C[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstance.03") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[(a, Int)]
+        |
+        |instance C[(Bool, b)]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstance.04") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[() -> a]
+        |
+        |instance C[a -> ()]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstance.05") {
+    val input =
+      """
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |class C[a]
+        |
+        |instance C[Box[a]]
+        |
+        |instance C[Box[Int]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstance.06") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[() -> a]
+        |
+        |instance C[a -> ()]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstance.07") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[() -> a & e]
+        |
+        |instance C[a -> () & e]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+
+  test("Test.OverlappingInstance.08") {
+    val input =
+      """
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |class C[a]
+        |
+        |instance C[Box[a] -> b & e]
+        |
+        |instance C[Box[Int] ~> ()]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.OverlappingInstances](result)
+  }
+
+  test("Test.MissingImplementation.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def get(): a
+        |}
+        |
+        |instance C[Bool] {
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MissingImplementation](result)
+  }
+
+  test("Test.MismatchedSignatures.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def get(): a
+        |}
+        |
+        |instance C[Bool] {
+        |    def get(_i: Int): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchedSignatures.02") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a): Bool
+        |}
+        |
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |instance C[Box[a]] {
+        |    def f[a: C](_x: Box[a]): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchSignatures.03") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(x: a): String
+        |}
+        |
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |instance C[Int] {
+        |    pub def f(x: Int): String = ""
+        |}
+        |
+        |instance C[Box[a]] {
+        |    def f[a: C](x: Box[a]): String = match x {
+        |        case Box(y) => f(y)
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[CompilationError](result) // TODO should be MismatchedSignature
+  }
+
+  test("Test.MismatchedSignatures.04") {
+    val input =
+      """
+        |class C[a] {
+        |    def f[b : D](x: b): a
+        |}
+        |
+        |class D[a]
+        |
+        |instance C[Bool] {
+        |    def f(x: b): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchedSignatures.05") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a, y: Int): Int
+        |}
+        |
+        |instance C[Bool] {
+        |    def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchedSignatures.06") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a, y: Int): Int & e
+        |}
+        |
+        |instance C[Bool] {
+        |    def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedSignatures](result)
+  }
+
+  test("Test.ExtraneousDefinition.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[Bool] {
+        |    def get(): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.ExtraneousDefinition](result)
+  }
 }

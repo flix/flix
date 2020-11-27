@@ -25,8 +25,8 @@ import scala.collection.immutable.List
 object NamedAst {
 
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
-                  sigs: Map[Name.NName, Map[String, NamedAst.Sig]],
                   instances: Map[Name.NName, MultiMap[String, NamedAst.Instance]],
+                  sigs: Map[Name.NName, Map[String, NamedAst.Sig]],
                   defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
@@ -37,7 +37,7 @@ object NamedAst {
 
   case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, sigs: List[NamedAst.Sig], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, defs: List[NamedAst.Def], loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
   case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
@@ -373,6 +373,6 @@ object NamedAst {
 
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, classes: List[Name.QName], loc: SourceLocation)
 
-  case class TypeConstraint(clazz: Name.QName, arg: ast.Type)
+  case class TypeConstraint(clazz: Name.QName, arg: NamedAst.Type)
 
 }

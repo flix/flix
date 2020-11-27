@@ -1035,4 +1035,72 @@ class TestNamer extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[NameError.MismatchedTypeParamKinds](result)
   }
+
+  test("IllegalSignature.01") {
+    // The type variable `a` does not appear in the signature of `f`
+    val input =
+      """
+        |class C[a] {
+        |    def f(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.02") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): a
+        |
+        |    def g(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.03") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: {y : a}): {y : Bool}
+        |
+        |    def g(x: {y : Bool}): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.04") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): a
+        |
+        |    def g(): Bool
+        |
+        |    def h(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.05") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): Int
+        |
+        |    def g(): String
+        |
+        |    def h(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.IllegalSignature](result)
+  }
 }

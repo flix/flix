@@ -312,6 +312,26 @@ object ResolutionError {
   }
 
   /**
+    * Undefined Class Error.
+    *
+    * @param qn  the unresolved class.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Undefined class."
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined class '" << Red(qn.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "class not found") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
+    }
+  }
+
+  /**
     * Undefined Tag Error.
     *
     * @param tag the tag.

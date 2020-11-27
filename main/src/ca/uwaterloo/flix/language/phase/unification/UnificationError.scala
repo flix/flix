@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypedAst}
 
 /**
   * A common super-type for unification errors.
@@ -104,4 +104,18 @@ object UnificationError {
     */
   case class MismatchedKinds(kind1: Kind, kind2: Kind) extends UnificationError
 
+  /**
+    * A unification error resulting from a type constraint with no matching instance.
+    *
+    * @param clazz the class of the type constraint
+    * @param tpe the type of the type constraint
+    */
+  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type) extends UnificationError
+
+  /**
+    * A unification error due to an unfulfilled type constraint.
+    *
+    * @param tconstr the type constraint.
+    */
+  case class UnfulfilledConstraint(tconstr: TypedAst.TypeConstraint) extends UnificationError
 }

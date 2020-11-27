@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
+import ca.uwaterloo.flix.language.ast.Scheme
 
 object FormatScheme {
 
@@ -29,7 +29,7 @@ object FormatScheme {
       if (sc.quantifiers.isEmpty)
         ""
       else
-        "∀(" + sc.quantifiers.map(tvar => tvar.text.getOrElse(tvar.id)).mkString(", ") + ")."
+        "∀(" + sc.quantifiers.map(FormatType.formatType).mkString(", ") + ")."
 
     val typePart = FormatType.formatType(sc.base)
 
@@ -37,7 +37,7 @@ object FormatScheme {
       if (sc.constraints.isEmpty)
         ""
       else
-        "with " + sc.constraints.map(tconstr => s"${tconstr.sym.name}[${FormatType.formatType(tconstr.arg)}]").mkString(", ")
+        " with [" + sc.constraints.map(tconstr => s"${FormatType.formatType(tconstr.arg)} : ${tconstr.sym.name}").mkString(", ") + "]"
 
     quantifiersPart + typePart + tconstrPart
   }

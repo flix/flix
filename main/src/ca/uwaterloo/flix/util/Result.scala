@@ -59,7 +59,6 @@ sealed trait Result[T, E] {
     case Result.Ok(t) => Validation.Success(t)
     case Result.Err(e) => Validation.Failure(LazyList(e))
   }
-
 }
 
 object Result {

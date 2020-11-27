@@ -20,10 +20,15 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
+import ca.uwaterloo.flix.util.collection.MultiMap
+
+import scala.collection.immutable.List
 
 object TypedAst {
 
   case class Root(classes: Map[Symbol.ClassSym, TypedAst.Class],
+                  instances: MultiMap[Symbol.ClassSym, TypedAst.Instance],
+                  sigs: Map[Symbol.SigSym, TypedAst.Sig],
                   defs: Map[Symbol.DefnSym, TypedAst.Def],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
                   latticeOps: Map[Type, TypedAst.LatticeOps],
@@ -33,6 +38,8 @@ object TypedAst {
                   sources: Map[Source, SourceLocation])
 
   case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, signatures: List[TypedAst.Sig], loc: SourceLocation)
+
+  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: Type, tconstrs: List[TypeConstraint], defs: List[TypedAst.Def], loc: SourceLocation)
 
   case class Sig(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 

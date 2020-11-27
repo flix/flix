@@ -18,7 +18,10 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
-import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.language.phase.unification.UnificationError.UnfulfilledConstraint
+import ca.uwaterloo.flix.language.phase.unification.{ContextReduction, Substitution, Unification, UnificationError}
+import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
+import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Scheme {
@@ -48,6 +51,20 @@ object Scheme {
   }
 
   /**
+    * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
+    */
+  def partiallyInstantiate(sc: Scheme, quantifier: Type.Var, value: Type)(implicit flix: Flix): Scheme = sc match {
+    case Scheme(quantifiers, constraints, base) =>
+      if (!quantifiers.contains(quantifier)) {
+        throw InternalCompilerException("Quantifier not in scheme.")
+      }
+      val subst = Substitution.singleton(quantifier, value)
+      val newConstraints = constraints.map(subst.apply)
+      val newBase = subst(base)
+      generalize(newConstraints, newBase)
+  }
+
+  /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     *
     * The `mode` control the rigidity of quantified and free variables.
@@ -73,7 +90,7 @@ object Scheme {
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
-    val newBase = baseType.map {
+    def visitTvar(t: Type.Var): Type.Var = t match {
       case Type.Var(x, k, rigidity, _) =>
         freshVars.get(x) match {
           case None =>
@@ -88,20 +105,12 @@ object Scheme {
         }
     }
 
+    val newBase = baseType.map(visitTvar)
+
     val newConstrs = sc.constraints.map {
-      case tconstr@TypedAst.TypeConstraint(_, Type.Var(x, k, rigidity, _)) =>
-        freshVars.get(x) match {
-          case None =>
-            // Determine the rigidity of the free type variable.
-            val newRigidity = mode match {
-              case InstantiateMode.Flexible => rigidity
-              case InstantiateMode.Rigid => Rigidity.Rigid
-              case InstantiateMode.Mixed => Rigidity.Rigid
-            }
-            tconstr.copy(arg = Type.Var(x, k, newRigidity))
-          case Some(tvar) => tconstr.copy(arg = tvar)
-        }
-      case tconstr@TypedAst.TypeConstraint(_, _) => tconstr
+      case TypedAst.TypeConstraint(sym, tpe0) =>
+        val tpe = tpe0.map(visitTvar)
+        TypedAst.TypeConstraint(sym, tpe)
     }
 
     (newConstrs, newBase)
@@ -116,9 +125,30 @@ object Scheme {
   }
 
   /**
+    * Returns `true` if the given schemes are equivalent.
+    */
+  // TODO can optimize?
+  def equal(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
+    lessThanEqual(sc1, sc2, instances) && lessThanEqual(sc2, sc1, instances)
+  }
+
+  /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
+
+
+    /**
+      * Checks that `tconstr` is entailed by `tconstrs`.
+      */
+    def checkEntailment(tconstrs: List[TypedAst.TypeConstraint], tconstr: TypedAst.TypeConstraint): Result[Unit, UnificationError] = {
+      if (ContextReduction.entail(tconstrs, tconstr, instances)) {
+        ().toOk
+      } else {
+        UnificationError.UnfulfilledConstraint(tconstr).toErr
+      }
+    }
+
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
@@ -137,13 +167,15 @@ object Scheme {
     val (tconstrs2, tpe2) = instantiate(sc2, InstantiateMode.Rigid)
 
     // Attempt to unify the two instantiated types.
-    Unification.unifyTypes(tpe1, tpe2) match {
-      case Result.Ok(subst) =>
-        val newTconstrs1 = tconstrs1.map(subst.apply)
-        val newTconstrs2 = tconstrs2.map(subst.apply)
-        // type constraints on tvars in `sc1` must be a subset of those in `sc2`
-        // we ignore type constraints on non-vars for the purposes of the leq check
-        newTconstrs1.filter(_.arg.isInstanceOf[Type.Var]).forall(newTconstrs2.contains)
+    val result = for {
+      subst <- Unification.unifyTypes(tpe1, tpe2)
+      newTconstrs1 = tconstrs1.map(subst.apply)
+      newTconstrs2 = tconstrs2.map(subst.apply)
+      _ <- Result.sequence(newTconstrs1.map(checkEntailment(newTconstrs2, _)))
+    } yield ()
+
+    result match {
+      case Result.Ok(_) => true
       case Result.Err(_) => false
     }
   }
