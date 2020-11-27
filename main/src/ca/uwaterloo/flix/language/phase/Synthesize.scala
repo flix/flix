@@ -21,8 +21,12 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.phase.Synthesize.SynthesisError.{MissingCmp, SynthesisException}
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
@@ -31,6 +35,31 @@ import scala.collection.mutable
   * This phase generates function definitions for equality and toString on enums and tuples.
   */
 object Synthesize extends Phase[Root, Root] {
+
+  // TODO: Ultimately this error should disappear when we have type classes.
+  sealed trait SynthesisError extends CompilationError {
+    def kind: String = "SynthesisError"
+  }
+
+  object SynthesisError {
+
+    case class MissingCmp(tpe: Type, loc: SourceLocation) extends SynthesisError {
+      implicit val audience: Audience = Audience.External
+
+      def summary: String = s"Missing '__cmp' for type ${FormatType.formatType(tpe)}."
+
+      def message: VirtualTerminal = {
+        val vt = new VirtualTerminal()
+        vt << Line(kind, source.format) << NewLine
+        vt << s">> Missing '__cmp' for type ${FormatType.formatType(tpe)}." << NewLine
+        vt << NewLine
+        vt << Code(loc, "missing '__cmp' for type.") << NewLine
+      }
+    }
+
+    case class SynthesisException(ex: SynthesisError) extends Throwable
+
+  }
 
   /**
     * Performs synthesis on the given ast `root`.
@@ -474,7 +503,7 @@ object Synthesize extends Phase[Root, Root] {
         val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String])
         Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
 
-      case tpe => throw InternalCompilerException(s"No comparator function '__cmp' found for the type: '$tpe'.")
+      case _ => throw SynthesisException(MissingCmp(exp1.tpe, loc))
     }
 
     /**
@@ -1292,46 +1321,49 @@ object Synthesize extends Phase[Root, Root] {
     //
     // Generate Special Operators.
     //
+    try {
+      /*
+       * (a) Every type that appears as return type of some definition.
+       */
+      val typesInDefs: Set[Type] = root.defs.collect {
+        case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (isBenchmark(ann) || isTest(ann) || sym.name == "main") => exp.tpe
+      }.toSet
 
-    /*
-     * (a) Every type that appears as return type of some definition.
-     */
-    val typesInDefs: Set[Type] = root.defs.collect {
-      case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (isBenchmark(ann) || isTest(ann) || sym.name == "main") => exp.tpe
-    }.toSet
+      /*
+       * (b) Every type that appears as some lattice type.
+       */
+      val typesInLattices: Set[Type] = root.latticeOps.keySet
 
-    /*
-     * (b) Every type that appears as some lattice type.
-     */
-    val typesInLattices: Set[Type] = root.latticeOps.keySet
+      /*
+       * Introduce ToString special operators.
+       */
+      // TODO: Refactor these
+      typesInDefs.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+        case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
+        case (macc, tpe) => macc
+      }
 
-    /*
-     * Introduce ToString special operators.
-     */
-    // TODO: Refactor these
-    typesInDefs.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
-      case (macc, tpe) => macc
+      /*
+       * Rewrite every equality expression in a definition to explicitly call the equality operator.
+       */
+      val defs = root.defs.map {
+        case (sym, defn) => sym -> visitDef(defn)
+      }
+
+      /*
+       * Construct the map of special operators.
+       */
+      val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
+        SpecialOperator.Equality -> mutEqualityOps.toMap,
+        SpecialOperator.HashCode -> mutHashOps.toMap,
+        SpecialOperator.ToString -> mutToStringOps.toMap
+      )
+
+      // Reassemble the ast with the new definitions.
+      root.copy(defs = defs ++ newDefs, specialOps = specialOps).toSuccess
+    } catch {
+      case ex: SynthesisError => ex.t.toFailure
     }
-
-    /*
-     * Rewrite every equality expression in a definition to explicitly call the equality operator.
-     */
-    val defs = root.defs.map {
-      case (sym, defn) => sym -> visitDef(defn)
-    }
-
-    /*
-     * Construct the map of special operators.
-     */
-    val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
-      SpecialOperator.Equality -> mutEqualityOps.toMap,
-      SpecialOperator.HashCode -> mutHashOps.toMap,
-      SpecialOperator.ToString -> mutToStringOps.toMap
-    )
-
-    // Reassemble the ast with the new definitions.
-    root.copy(defs = defs ++ newDefs, specialOps = specialOps).toSuccess
   }
 
 }
