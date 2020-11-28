@@ -251,6 +251,7 @@ class Flix {
         Namer |>
         Resolver |>
         Typer |>
+        Instances |>
         Stratifier |>
         PatternExhaustiveness |>
         Redundancy |>
