@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 
 object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
@@ -97,8 +97,9 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Reassembles a set of instances of the same class.
       */
-    def checkInstancesOfClass(insts: List[TypedAst.Instance]): Validation[Unit, TypeError] = {
-      // Check each instance against each instance that hasn't been checked yet.
+    def checkInstancesOfClass(insts0: Set[TypedAst.Instance]): Validation[Unit, TypeError] = {
+      val insts = insts0.toList
+      // Check each instance against each instance that hasn't been checked yet
       val checks = insts.tails.toSeq
       checkEach(checks) {
         case inst :: unchecked =>
@@ -110,16 +111,15 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
-    // visit each instance
-    checkEach(root.instances.m.values.toSeq) {
-      instances => checkInstancesOfClass(instances.toList)
-    }
+    // Check the instances of each class in parallel.
+    val results = ParOps.parMap(root.instances.m.values, checkInstancesOfClass)
+    checkEach(results)(identity)
   }
 
   /**
     * Apply a check to each element in the sequence `xs`.
     */
-  private def checkEach[In, Error](xs: Seq[In])(f: In => Validation[Unit, Error]): Validation[Unit, Error] = {
+  private def checkEach[In, Error](xs: Iterable[In])(f: In => Validation[Unit, Error]): Validation[Unit, Error] = {
     Validation.fold(xs, ()) {
       case ((), x) => f(x)
     }
