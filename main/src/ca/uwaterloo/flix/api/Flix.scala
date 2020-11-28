@@ -99,8 +99,8 @@ class Flix {
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
     "Core/Cmp/Ordering.flix" -> LocalResource.get("/src/library/Core/Cmp/Ordering.flix"),
 
-    "Core/Show.flix" -> LocalResource.get("/src/library/Core/Show.flix"),
-    "Core/Read.flix" -> LocalResource.get("/src/library/Core/Read.flix"),
+    "Core/ToString.flix" -> LocalResource.get("/src/library/Core/ToString.flix"),
+    "Core/FromString.flix" -> LocalResource.get("/src/library/Core/FromString.flix"),
 
     "Pkger/SemVer.flix" -> LocalResource.get("/src/library/Pkger/SemVer.flix"),
 
