@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
+import ca.uwaterloo.flix.language.ast.ops.LiftedAstOps
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
@@ -67,7 +68,7 @@ object Tailrec extends Phase[Root, Root] {
   }
 
   def makeTRMCHelper(defn: Def, originalDefnSym: DefnSym)(implicit flix: Flix): Def = {
-    val helperDef = defn //LiftedAstOps.refreshVarNames(defn)
+    val helperDef = LiftedAstOps.refreshVarNames(defn)
 
     /**
       * Very similar to that of tailrec.

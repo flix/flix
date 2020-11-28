@@ -24,10 +24,22 @@ import ca.uwaterloo.flix.language.ast.Symbol
 
 object LiftedAstOps {
 
+
   /**
     * Replaces all parameter variables and in the expression with fresh variables
     */
   def refreshVarNames(defn: Def)(implicit flix: Flix): Def = {
+
+    /**
+      * Replaces the variable in the CatchRule with a fresh one, and propagates that and other VarSym replacements
+      */
+    def visitCatchRule(cr: CatchRule, varMap: Map[Symbol.VarSym, Symbol.VarSym]): CatchRule = {
+      val CatchRule(sym, clazz, exp) = cr
+      val newSym = Symbol.freshVarSym(sym)
+      val newVarMap = varMap + (sym -> newSym)
+      val e = visit(exp, newVarMap)
+      CatchRule(newSym, clazz, e)
+    }
 
     def visitFormalParams(fParam: FormalParam, varMap: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fParam match {
       case FormalParam(sym, mod, tpe, loc) =>
@@ -92,6 +104,7 @@ object LiftedAstOps {
         val e3 = visit(exp3, varMap)
         Expression.IfThenElse(e1, e2, e3, tpe, loc)
 
+      // Todo: Maybe we should refresh the labels before visiting the exps?
       case Expression.Branch(exp, branches, tpe, loc) =>
         val e = visit(exp, varMap)
         val b = branches.map {
@@ -108,6 +121,119 @@ object LiftedAstOps {
         val newVarMap = varMap + (sym -> Symbol.freshVarSym(sym))
         val e2 = visit(exp2, newVarMap)
         Expression.Let(sym, e1, e2, tpe, loc)
+
+      // Todo: Is this a sym I should care about?
+      case Expression.Is(sym, tag, exp, loc) =>
+        val e = visit(exp, varMap)
+        Expression.Is(sym, tag, e, loc)
+
+      case Expression.Tag(sym, tag, exp, tpe, loc) =>
+        val e = visit(exp, varMap)
+        Expression.Tag(sym, tag, e, tpe, loc)
+
+      case Expression.Untag(sym, tag, exp, tpe, loc) =>
+        val e = visit(exp, varMap)
+        Expression.Untag(sym, tag, e, tpe, loc)
+
+      case Expression.Index(base, offset, tpe, loc) =>
+        val b = visit(base, varMap)
+        Expression.Index(b, offset, tpe, loc)
+
+      case Expression.IndexMut(base, offset, toInsert, tpe, loc) =>
+        val b = visit(base, varMap)
+        val ti = visit(toInsert, varMap)
+        Expression.IndexMut(b, offset, ti, tpe, loc)
+
+      case Expression.Tuple(elms, tpe, loc) =>
+        val es = elms.map(e => visit(e, varMap))
+        Expression.Tuple(es, tpe, loc)
+
+      case Expression.RecordEmpty(_, _) => exp0
+
+      case Expression.RecordSelect(exp, field, tpe, loc) =>
+        val e = visit(exp, varMap)
+        Expression.RecordSelect(e, field, tpe, loc)
+
+      // Todo: Could value or rest make a new variable affecting the other?
+      case Expression.RecordExtend(field, value, rest, tpe, loc) =>
+        val v = visit(value, varMap)
+        val r = visit(rest, varMap)
+        Expression.RecordExtend(field, v, r, tpe, loc)
+
+      case Expression.RecordRestrict(field, rest, tpe, loc) =>
+        val r = visit(rest, varMap)
+        Expression.RecordRestrict(field, r, tpe, loc)
+
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        val es = elms.map(e => visit(e, varMap))
+        Expression.ArrayLit(es, tpe, loc)
+
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = visit(elm, varMap)
+        val l = visit(len, varMap)
+        Expression.ArrayNew(e, l, tpe, loc)
+
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        val b = visit(base, varMap)
+        val i = visit(index, varMap)
+        Expression.ArrayLoad(b, i, tpe, loc)
+
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        val b = visit(base, varMap)
+        val i = visit(index, varMap)
+        val e = visit(elm, varMap)
+        Expression.ArrayStore(b, i, e, tpe, loc)
+
+      case Expression.ArrayLength(base, tpe, loc) =>
+        val b = visit(base, varMap)
+        Expression.ArrayLength(b, tpe, loc)
+
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+        val b = visit(base, varMap)
+        val bi = visit(beginIndex, varMap)
+        val ei = visit(endIndex, varMap)
+        Expression.ArraySlice(b, bi, ei, tpe, loc)
+
+      case Expression.Ref(exp, tpe, loc) =>
+        val e = visit(exp, varMap)
+        Expression.Ref(e, tpe, loc)
+
+      case Expression.Deref(exp, tpe, loc) =>
+        val e = visit(exp, varMap)
+        Expression.Deref(e, tpe, loc)
+
+      // Todo: could a let in exp2 affect exp1?
+      case Expression.Assign(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1, varMap)
+        val e2 = visit(exp2, varMap)
+        Expression.Assign(e1, e2, tpe, loc)
+
+      // Todo: Should the map be updated first?
+      case Expression.Existential(fparam, exp, loc) =>
+        val FormalParam(sym, _, _, _) = fparam
+        val newVarSym = Symbol.freshVarSym(sym)
+        val newVarMap = varMap + (sym -> newVarSym)
+        val e = visit(exp, newVarMap)
+        val fp = visitFormalParams(fparam, newVarMap)
+        Expression.Existential(fp, e, loc)
+
+      case Expression.Universal(fparam, exp, loc) =>
+        val FormalParam(sym, _, _, _) = fparam
+        val newVarSym = Symbol.freshVarSym(sym)
+        val newVarMap = varMap + (sym -> newVarSym)
+        val e = visit(exp, newVarMap)
+        val fp = visitFormalParams(fparam, newVarMap)
+        Expression.Universal(fp, e, loc)
+
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = visit(exp, varMap)
+        Expression.Cast(e, tpe, loc)
+
+      // Todo: Should the syms from the rules be added to the map
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
+        val e = visit(exp, varMap)
+        val r = rules.map(cr => visitCatchRule(cr, varMap))
+        Expression.TryCatch(e, r, tpe, loc)
     }
 
     val variablesMap = Map.from(defn.fparams.map {
