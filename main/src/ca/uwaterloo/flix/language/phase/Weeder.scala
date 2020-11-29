@@ -1016,6 +1016,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
+
+      /**
+        * Returns an expression that concatenates the result of the expression `e1` with the expression `e2`.
+        */
+      def mkConcat(e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
+        val op = BinaryOperator.Plus
+        WeededAst.Expression.Binary(op, e1, e2, loc)
+      }
+
+      /**
+        * Returns an expression that applies `toString` to the result of the given expression `e`.
+        */
+      def mkApplyShow(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+        val fqn = "Show.show"
+        mkApplyFqn(fqn, List(e), sp1, sp2)
+      }
+
       val loc = mkSL(sp1, sp2)
 
       parts match {
@@ -1924,14 +1941,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def mkApplyFqn(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
     val lambda = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
-  }
-
-  /**
-    * Returns an apply expression that applies the `show` function from the `Show` type class to the given expression.
-    */
-  private def mkApplyShow(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val fqn = "Show.show"
-    mkApplyFqn(fqn, List(e), sp1, sp2)
   }
 
   /**
