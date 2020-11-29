@@ -1023,13 +1023,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Case 1: Return the empty string if there are no interpolation parts.
           WeededAst.Expression.Str("", loc).toSuccess
 
-        case Seq(ParsedAst.InterpolationPart.ExpPart(e)) =>
+        case Seq(ParsedAst.InterpolationPart.ExpPart(innerSp1, e, innerSp2)) =>
           // Case 2: Return the expression if there is only a single expression.
           mapN(visitExp(e)) {
-            case e2 => mkApplyShow(e2, sp1, sp2)
+            case e2 => mkApplyShow(e2, innerSp1, innerSp2)
           }
 
-        case Seq(ParsedAst.InterpolationPart.StrPart(s)) =>
+        case Seq(ParsedAst.InterpolationPart.StrPart(_, s, _)) =>
           // Case 3: Return the string if there is only a single string.
           WeededAst.Expression.Str(s, loc).toSuccess
 
@@ -1037,14 +1037,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Case 4: Construct a sequence of string append expressions.
           val init = WeededAst.Expression.Str("", loc)
           Validation.fold(ps, init: WeededAst.Expression) {
-            case (acc, ParsedAst.InterpolationPart.ExpPart(e)) =>
+            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, e, innerSp2)) =>
               mapN(visitExp(e)) {
                 case e2 =>
                   val op = BinaryOperator.Plus
-                  WeededAst.Expression.Binary(op, acc, mkApplyShow(e2, sp1, sp2), loc)
+                  WeededAst.Expression.Binary(op, acc, mkApplyShow(e2, innerSp1, innerSp2), loc)
               }
 
-            case (acc, ParsedAst.InterpolationPart.StrPart(s)) =>
+            case (acc, ParsedAst.InterpolationPart.StrPart(_, s, _)) =>
               val op = BinaryOperator.Plus
               val e1 = acc
               val e2 = WeededAst.Expression.Str(s, loc)
