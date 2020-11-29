@@ -1032,7 +1032,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
       val loc = mkSL(sp1, sp2)
-      val init = WeededAst.Expression.Str("", loc)
 
       parts match {
         case Seq(ParsedAst.InterpolationPart.StrPart(sp1, lit, sp2)) =>
@@ -1041,6 +1040,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case _ =>
           // General Case: Fold the interpolator parts together.
+          val init = WeededAst.Expression.Str("", loc)
           Validation.fold(parts, init: WeededAst.Expression) {
             case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, exp, innerSp2)) =>
               mapN(visitExp(exp)) {
