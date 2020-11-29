@@ -1025,7 +1025,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case Seq(ParsedAst.InterpolationPart.ExpPart(e)) =>
           // Case 2: Return the expression if there is only a single expression.
-          visitExp(e)
+          mapN(visitExp(e)) {
+            case e2 => mkApplyShow(e2, sp1, sp2)
+          }
 
         case Seq(ParsedAst.InterpolationPart.StrPart(s)) =>
           // Case 3: Return the string if there is only a single string.
@@ -1039,7 +1041,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               mapN(visitExp(e)) {
                 case e2 =>
                   val op = BinaryOperator.Plus
-                  WeededAst.Expression.Binary(op, acc, e2, loc)
+                  WeededAst.Expression.Binary(op, acc, mkApplyShow(e2, sp1, sp2), loc)
               }
 
             case (acc, ParsedAst.InterpolationPart.StrPart(s)) =>
@@ -1922,6 +1924,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def mkApplyFqn(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
     val lambda = WeededAst.Expression.VarOrDefOrSig(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
+  }
+
+  /**
+    * Returns an apply expression that applies the `show` function from the `Show` type class to the given expression.
+    */
+  private def mkApplyShow(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+    val fqn = "Show.show"
+    mkApplyFqn(fqn, List(e), sp1, sp2)
   }
 
   /**
