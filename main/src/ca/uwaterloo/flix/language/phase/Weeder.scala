@@ -1027,38 +1027,27 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         * Returns an expression that applies `toString` to the result of the given expression `e`.
         */
       def mkApplyShow(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val fqn = "Show.show"
-        mkApplyFqn(fqn, List(e), sp1, sp2)
+        val fqn = "Show.show" // TODO: Should be FromString.
+        mkApplyFqn(fqn, List(e), sp1, sp2) // TODO: Should not be sp1 sp2, but loc
       }
 
       val loc = mkSL(sp1, sp2)
+      val init = WeededAst.Expression.Str("", loc)
 
       parts match {
-        case Seq() =>
-          // Case 1: Return the empty string if there are no interpolation parts.
-          WeededAst.Expression.Str("", loc).toSuccess
+        case Seq(ParsedAst.InterpolationPart.StrPart(sp1, lit, sp2)) =>
+          // Special case: We have a constant string. Simply return it.
+          WeededAst.Expression.Str(lit, mkSL(sp1, sp2)).toSuccess
 
-        case Seq(ParsedAst.InterpolationPart.ExpPart(innerSp1, e, innerSp2)) =>
-          // Case 2: Return the expression if there is only a single expression.
-          mapN(visitExp(e)) {
-            case e2 => mkApplyShow(e2, innerSp1, innerSp2)
-          }
-
-        case Seq(ParsedAst.InterpolationPart.StrPart(_, s, _)) =>
-          // Case 3: Return the string if there is only a single string.
-          WeededAst.Expression.Str(s, loc).toSuccess
-
-        case ps =>
-          // Case 4: Construct a sequence of string append expressions.
-          val init = WeededAst.Expression.Str("", loc)
-          Validation.fold(ps, init: WeededAst.Expression) {
-            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, e, innerSp2)) =>
-              mapN(visitExp(e)) {
-                case e2 =>
-                  val op = BinaryOperator.Plus
-                  mkConcat(acc, mkApplyShow(e2, innerSp1, innerSp2), loc)
+        case _ =>
+          // General Case: Fold the interpolator parts together.
+          Validation.fold(parts, init: WeededAst.Expression) {
+            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, exp, innerSp2)) =>
+              mapN(visitExp(exp)) {
+                case e =>
+                  val e2 = mkApplyShow(e, innerSp1, innerSp2)
+                  mkConcat(acc, e2, loc)
               }
-
             case (acc, ParsedAst.InterpolationPart.StrPart(_, s, _)) =>
               val e2 = WeededAst.Expression.Str(s, loc)
               mkConcat(acc, e2, loc).toSuccess
