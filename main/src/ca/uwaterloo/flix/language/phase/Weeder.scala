@@ -21,7 +21,6 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.WeededAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -29,9 +28,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.{AbstractSeq, LinearSeq, Seq}
+import scala.collection.immutable.Seq
 import scala.collection.mutable
-import scala.xml.NodeSeq
 
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
@@ -1058,14 +1056,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               mapN(visitExp(e)) {
                 case e2 =>
                   val op = BinaryOperator.Plus
-                  WeededAst.Expression.Binary(op, acc, mkApplyShow(e2, innerSp1, innerSp2), loc)
+                  mkConcat(acc, mkApplyShow(e2, innerSp1, innerSp2), loc)
               }
 
             case (acc, ParsedAst.InterpolationPart.StrPart(_, s, _)) =>
-              val op = BinaryOperator.Plus
-              val e1 = acc
               val e2 = WeededAst.Expression.Str(s, loc)
-              WeededAst.Expression.Binary(op, e1, e2, loc).toSuccess
+              mkConcat(acc, e2, loc).toSuccess
           }
 
       }
