@@ -164,7 +164,7 @@ class LangSuite extends Suites(
   //
   // Interpolation.
   //
-  new FlixTest("Test.Exp.Interpolation", "main/test/flix/Test.Exp.Interpolation.flix"),
+  new FlixTest("Test.Exp.Interpolation", "main/test/flix/Test.Exp.Interpolation.flix")(Options.TestWithLibrary),
 
   //
   // JVM.
