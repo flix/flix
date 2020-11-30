@@ -15,7 +15,15 @@
  */
 
 namespace FromString {
+
+    ///
+    /// A type class for types that can be constructed from strings.
+    ///
     class FromString[a] {
+
+       ///
+       /// Optionally returns the value associated with the given string `s`.
+       ///
         pub def fromString(x: String): Option[a]
     }
 
