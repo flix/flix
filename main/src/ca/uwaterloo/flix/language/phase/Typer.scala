@@ -119,11 +119,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     /**
       * Reassembles a set of instances of the same class.
       */
-    def mapOverInstances(insts0: List[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, List[TypedAst.Instance]), TypeError] = {
+    def mapOverInstances(insts0: Set[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, Set[TypedAst.Instance]), TypeError] = {
       val instsVal = Validation.traverse(insts0)(visitInstance)
 
       instsVal.map {
-        insts => (insts.head.sym -> insts)
+        insts => (insts.head.sym -> insts.toSet)
       }
     }
 

@@ -18,32 +18,32 @@ object MultiMap {
 /**
   * Represents a map from keys of type `K` to sets of values of type `V`.
   */
-case class MultiMap[K, V](m: Map[K, List[V]]) {
+case class MultiMap[K, V](m: Map[K, Set[V]]) {
 
   /**
     * Optionally returns the set of values that the key `k` maps to.
     */
-  def get(k: K): Option[List[V]] = m.get(k)
+  def get(k: K): Option[Set[V]] = m.get(k)
 
   /**
     * Returns the set of values that the key `k` maps to.
     */
-  def apply(k: K): List[V] = m.getOrElse(k, Nil)
+  def apply(k: K): Set[V] = m.getOrElse(k, Set.empty)
 
   /**
     * Returns `this` multi map extended with an additional mapping from `k` to `v`.
     */
   def +(k: K, v: V): MultiMap[K, V] = {
-    val s = m.getOrElse(k, Nil)
-    MultiMap(m + (k -> (v :: s)))
+    val s = m.getOrElse(k, Set.empty)
+    MultiMap(m + (k -> (s + v)))
   }
 
   /**
     * Returns `this` multi map extended with additional mappings from `k`to the values in `vs`.
     */
-  def +(k: K, vs: List[V]): MultiMap[K, V] = {
-    val s = m.getOrElse(k, Nil)
-    MultiMap(m + (k -> (vs ++ s)))
+  def +(k: K, vs: Set[V]): MultiMap[K, V] = {
+    val s = m.getOrElse(k, Set.empty)
+    MultiMap(m + (k -> (s ++ vs)))
   }
 
   /**

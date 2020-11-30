@@ -97,7 +97,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Reassembles a set of instances of the same class.
       */
-    def checkInstancesOfClass(insts0: List[TypedAst.Instance]): Validation[Unit, TypeError] = {
+    def checkInstancesOfClass(insts0: Set[TypedAst.Instance]): Validation[Unit, TypeError] = {
       val insts = insts0.toList
       // Check each instance against each instance that hasn't been checked yet
       val checks = insts.tails.toSeq
