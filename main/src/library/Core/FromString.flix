@@ -20,10 +20,9 @@ namespace FromString {
     /// A type class for types that can be constructed from strings.
     ///
     class FromString[a] {
-
-       ///
-       /// Optionally returns the value associated with the given string `s`.
-       ///
+        ///
+        /// Optionally returns the value associated with the given string `s`.
+        ///
         pub def fromString(x: String): Option[a]
     }
 
@@ -75,11 +74,12 @@ namespace FromString {
         def fromString(x: String): Option[Int64] = Result.toOption(Int64.fromString(x))
     }
 
+    instance FromString[BigInt] {
+        def fromString(x: String): Option[BigInt] = Result.toOption(BigInt.fromString(x))
+    }
+
     instance FromString[String] {
         def fromString(x: String): Option[String] = Some(x)
     }
 
-    instance FromString[BigInt] {
-        def fromString(x: String): Option[BigInt] = Result.toOption(BigInt.fromString(x))
-    }
 }

@@ -32,7 +32,7 @@ namespace ToString {
 
     instance ToString[Bool] {
         def toString(x: Bool): String = match x {
-            case true => "true"
+            case true  => "true"
             case false => "false"
         }
     }
@@ -73,6 +73,13 @@ namespace ToString {
         def toString(x: BigInt): String = BigInt.toString(x)
     }
 
+    instance ToString[Option[a]] with [a : ToString] {
+        def toString(x: Option[a]): String = match x {
+            case Some(y) => "Some(${toString(y)})"
+            case None => "None"
+        }
+    }
+
     instance ToString[List[a]] with [a : ToString] {
         def toString(xs: List[a]): String = {
             let strings = List.map(x -> String.concat(toString(x), " :: "), xs);
@@ -81,11 +88,8 @@ namespace ToString {
         }
     }
 
-    instance ToString[Option[a]] with [a : ToString] {
-        def toString(x: Option[a]): String = match x {
-            case Some(y) => "Some(${toString(y)})"
-            case None => "None"
-        }
+    instance ToString[Nel[a]] with [List[a] : ToString] {
+        def toString(x: Nel[a]): String = toString(Nel.toList(x))
     }
 
     instance ToString[Result[a, b]] with [a : ToString, b : ToString] {
@@ -102,7 +106,4 @@ namespace ToString {
         }
     }
 
-    instance ToString[Nel[a]] with [List[a] : ToString] {
-        def toString(x: Nel[a]): String = toString(Nel.toList(x))
-    }
 }
