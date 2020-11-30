@@ -160,6 +160,21 @@ namespace Test/Exp/Interpolation {
         let z = Blue;
         "${x}${y}${z}" == "rgb"
 
+    @test
+    def interpolation30(): Bool =
+        let x = None : Option[Int32];
+        "${x}" == "None"
+
+    @test
+    def interpolation31(): Bool =
+        let x = Some(123);
+        "${x}" == "Some(123)"
+
+    @test
+    def interpolation32(): Bool =
+        let x = Some(Some(123));
+        "${x}" == "Some(Some(123))"
+
     pub enum Color {
         case Red,
         case Green,
@@ -218,6 +233,16 @@ namespace Show {
                 case Red   => "r"
                 case Green => "g"
                 case Blue  => "b"
+            }
+    }
+
+    instance Show[Test/Exp/Interpolation.Option[a]] with [a : Show] {
+        def show(o: Test/Exp/Interpolation.Option[a]): String =
+            use Test/Exp/Interpolation.Option.None;
+            use Test/Exp/Interpolation.Option.Some;
+            match o {
+                case None       => "None"
+                case Some(v)    => "Some(${show(v)})"
             }
     }
 
