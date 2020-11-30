@@ -112,7 +112,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Check the instances of each class in parallel.
-    val results = ParOps.parMap(root.instances.m.values.map(_.toList), checkInstancesOfClass)
+    val results = ParOps.parMap(root.instances.values, checkInstancesOfClass)
     checkEach(results)(identity)
   }
 

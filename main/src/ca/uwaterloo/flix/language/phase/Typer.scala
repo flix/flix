@@ -58,13 +58,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Creates a class environment from a ClassSym-Instance multimap.
     */
-  private def mkClassEnv(instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance]): Map[Symbol.ClassSym, List[Ast.Instance]] = {
-    val classEnvInstances = instances.m.map {
+  private def mkClassEnv(instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]]): Map[Symbol.ClassSym, List[Ast.Instance]] = {
+    val classEnvInstances = instances.map {
       case (classSym, instances) =>
         val envInsts = instances.map {
           case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _) => Ast.Instance(tpe, tconstrs)
         }
-        (classSym, envInsts.toList)
+        (classSym, envInsts)
     }
     classEnvInstances
   }
@@ -104,7 +104,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[MultiMap[Symbol.ClassSym, TypedAst.Instance], TypeError] = {
+  private def visitInstances(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, List[TypedAst.Instance]], TypeError] = {
 
     /**
       * Reassembles a single instance.
@@ -119,17 +119,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     /**
       * Reassembles a set of instances of the same class.
       */
-    def mapOverInstances(insts0: Set[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, Set[TypedAst.Instance]), TypeError] = {
+    def mapOverInstances(insts0: List[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, List[TypedAst.Instance]), TypeError] = {
       val instsVal = Validation.traverse(insts0)(visitInstance)
 
       instsVal.map {
-        insts => (insts.head.sym -> insts.toSet)
+        insts => (insts.head.sym -> insts)
       }
     }
 
     // visit each instance
-    val result = root.instances.m.values.map(mapOverInstances)
-    Validation.sequence(result).map(insts => MultiMap(insts.toMap))
+    val result = root.instances.values.map(mapOverInstances)
+    Validation.sequence(result).map(insts => insts.toMap)
 
   }
 
