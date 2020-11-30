@@ -52,7 +52,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
 
     val instancesVal = root.instances.flatMap {
-      case (ns0, instances0) => instances0.m.map {
+      case (ns0, instances0) => instances0.map {
         case (_, instances) => traverse(instances)(resolve(_, ns0, root)) map {
           case is => is.head.sym -> is
         }
