@@ -120,3 +120,22 @@ namespace Test/Exp/Interpolation {
         s.toUpperCase() as & Pure
 
 }
+
+namespace Show {
+
+    class Show[a] {
+        pub def show(x: a): String
+    }
+
+    instance Show[Bool] {
+        def show(x: Bool): String = match x {
+            case true => "true"
+            case false => "false"
+        }
+    }
+
+    instance Show[String] {
+        def show(x: String): String = x
+    }
+
+}

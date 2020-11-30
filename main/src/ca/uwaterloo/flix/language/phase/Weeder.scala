@@ -1027,7 +1027,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         * Returns an expression that applies `toString` to the result of the given expression `e`.
         */
       def mkApplyShow(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val fqn = "ToString.toString"
+        val fqn = "Show.show"
         mkApplyFqn(fqn, List(e), sp1, sp2)
       }
 
