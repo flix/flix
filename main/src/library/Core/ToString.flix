@@ -20,12 +20,12 @@ namespace ToString {
     /// A type class for types that can be converted to strings.
     ///
     class ToString[a] {
+        ///
+        /// Returns a string representation of the given x.
+        ///
         pub def toString(x: a): String
     }
 
-    ///
-    /// Returns a string representation of the given x.
-    ///
     instance ToString[Unit] {
         def toString(x: Unit): String = "()"
     }
