@@ -1026,7 +1026,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /**
         * Returns an expression that applies `toString` to the result of the given expression `e`.
         */
-      def mkApplyShow(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+      def mkApplyToString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
         val fqn = "ToString.toString"
         mkApplyFqn(fqn, List(e), sp1, sp2)
       }
@@ -1045,7 +1045,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, exp, innerSp2)) =>
               mapN(visitExp(exp)) {
                 case e =>
-                  val e2 = mkApplyShow(e, innerSp1, innerSp2)
+                  val e2 = mkApplyToString(e, innerSp1, innerSp2)
                   mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
               }
             case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, s, innerSp2)) =>
