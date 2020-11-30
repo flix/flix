@@ -1027,16 +1027,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         * Returns an expression that applies `toString` to the result of the given expression `e`.
         */
       def mkApplyShow(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val fqn = "Show.show" // TODO: Should be FromString.
-        mkApplyFqn(fqn, List(e), sp1, sp2) // TODO: Should not be sp1 sp2, but loc
+        val fqn = "ToString.toString"
+        mkApplyFqn(fqn, List(e), sp1, sp2)
       }
 
       val loc = mkSL(sp1, sp2)
 
       parts match {
-        case Seq(ParsedAst.InterpolationPart.StrPart(sp1, lit, sp2)) =>
+        case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, lit, innerSp2)) =>
           // Special case: We have a constant string. Simply return it.
-          WeededAst.Expression.Str(lit, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Expression.Str(lit, mkSL(innerSp1, innerSp2)).toSuccess
 
         case _ =>
           // General Case: Fold the interpolator parts together.
@@ -1046,13 +1046,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               mapN(visitExp(exp)) {
                 case e =>
                   val e2 = mkApplyShow(e, innerSp1, innerSp2)
-                  mkConcat(acc, e2, loc)
+                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
               }
-            case (acc, ParsedAst.InterpolationPart.StrPart(_, s, _)) =>
-              val e2 = WeededAst.Expression.Str(s, loc)
+            case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, s, innerSp2)) =>
+              val e2 = WeededAst.Expression.Str(s, mkSL(innerSp1, innerSp2))
               mkConcat(acc, e2, loc).toSuccess
           }
-
       }
 
     case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
