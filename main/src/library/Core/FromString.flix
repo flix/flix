@@ -16,38 +16,38 @@
 
 namespace FromString {
     class FromString[a] {
-        pub def fromString(x: String): Result[a, String]
+        pub def fromString(x: String): Option[a]
     }
 
     instance FromString[String] {
-        def fromString(x: String): Result[String, String] = Ok(x)
+        def fromString(x: String): Option[String] = Some(x)
     }
 
     instance FromString[Int8] {
-        def fromString(x: String): Result[Int8, String] = Int8.fromString(x)
+        def fromString(x: String): Option[Int8] = Result.toOption(Int8.fromString(x))
     }
 
     instance FromString[Int16] {
-        def fromString(x: String): Result[Int16, String] = Int16.fromString(x)
+        def fromString(x: String): Option[Int16] = Result.toOption(Int16.fromString(x))
     }
 
     instance FromString[Int32] {
-        def fromString(x: String): Result[Int32, String] = Int32.fromString(x)
+        def fromString(x: String): Option[Int32] = Result.toOption(Int32.fromString(x))
     }
 
     instance FromString[Int64] {
-        def fromString(x: String): Result[Int64, String] = Int64.fromString(x)
+        def fromString(x: String): Option[Int64] = Result.toOption(Int64.fromString(x))
     }
 
     instance FromString[BigInt] {
-        def fromString(x: String): Result[BigInt, String] = BigInt.fromString(x)
+        def fromString(x: String): Option[BigInt] = Result.toOption(BigInt.fromString(x))
     }
 
     instance FromString[Float32] {
-        def fromString(x: String): Result[Float32, String] = Float32.fromString(x)
+        def fromString(x: String): Option[Float32] = Result.toOption(Float32.fromString(x))
     }
 
     instance FromString[Float64] {
-        def fromString(x: String): Result[Float64, String] = Float64.fromString(x)
+        def fromString(x: String): Option[Float64] = Result.toOption(Float64.fromString(x))
     }
 }

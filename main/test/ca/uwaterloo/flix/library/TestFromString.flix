@@ -18,23 +18,23 @@ namespace TestFromString {
     use FromString.fromString;
 
     @test
-    def testFromStringString(): Bool = fromString("abcd") == Ok("abcd")
+    def testFromStringString(): Bool = fromString("abcd") == Some("abcd")
 
     @test
-    def testFromStringInt8(): Bool = fromString("123") == Ok(123i8)
+    def testFromStringInt8(): Bool = fromString("123") == Some(123i8)
 
     @test
-    def testFromStringInt16(): Bool = fromString("123") == Ok(123i16)
+    def testFromStringInt16(): Bool = fromString("123") == Some(123i16)
 
     @test
-    def testFromStringInt32(): Bool = fromString("123") == Ok(123i32)
+    def testFromStringInt32(): Bool = fromString("123") == Some(123i32)
 
     @test
-    def testFromStringInt64(): Bool = fromString("123") == Ok(123i64)
+    def testFromStringInt64(): Bool = fromString("123") == Some(123i64)
 
     @test
-    def testFromStringFloat32(): Bool = fromString("123.0") == Ok(123.0f32)
+    def testFromStringFloat32(): Bool = fromString("123.0") == Some(123.0f32)
 
     @test
-    def testFromStringFloat64(): Bool = fromString("123.0") == Ok(123.0f64)
+    def testFromStringFloat64(): Bool = fromString("123.0") == Some(123.0f64)
 }
