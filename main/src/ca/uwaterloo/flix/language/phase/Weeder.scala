@@ -1914,13 +1914,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitTypeParam(tparam: ParsedAst.TypeParam): WeededAst.TypeParam = tparam match {
     case ParsedAst.TypeParam(sp1, ident, kind, classes, sp2) =>
-      val k = kind.map {
-        case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
-        case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
-        case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
-        case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
-      }
+      val k = kind.map(visitKind)
       WeededAst.TypeParam(ident, k, classes.toList)
+  }
+
+  /**
+    * Weeds the given kind `kind`.
+    */
+  private def visitKind(kind: ParsedAst.Kind): Kind = kind match {
+    case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
+    case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
+    case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
+    case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
+    case ParsedAst.Kind.Arrow(sp1, k1, k2, sp2) => Kind.Arrow(visitKind(k1), visitKind(k2))
   }
 
   /**
