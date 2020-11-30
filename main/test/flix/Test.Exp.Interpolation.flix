@@ -111,6 +111,36 @@ namespace Test/Exp/Interpolation {
         let x = "a";
         "$${x}$" == "$a$"
 
+    @test
+    def interpolation21(): Bool =
+        let x = true;
+        "${x}" == "true"
+
+    @test
+    def interpolation22(): Bool =
+        let x = false;
+        "${x}" == "false"
+
+    @test
+    def interpolation23(): Bool =
+        let x = 1;
+        "${x}" == "1"
+
+    @test
+    def interpolation24(): Bool =
+        let x = 123;
+        let y = 456;
+        "${x}${y}" == "123456"
+
+    @test
+    def interpolation25(): Bool =
+        let x = 123;
+        let y = 456;
+        "${y - x}" == "333"
+
+
+
+
     def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
         s.toLowerCase() as & Pure
@@ -132,6 +162,12 @@ namespace Show {
             case true => "true"
             case false => "false"
         }
+    }
+
+    instance Show[Int32] {
+        def show(x: Int32): String =
+            import java.lang.Integer:toString(Int32);
+            x.toString() as & Pure
     }
 
     instance Show[String] {
