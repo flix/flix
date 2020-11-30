@@ -29,18 +29,17 @@ namespace FromString {
     instance FromString[Unit] {
         def fromString(x: String): Option[Unit] = match x {
             case "()" => Some(())
-            case _ => None
+            case _    => None
         }
     }
 
     instance FromString[Bool] {
         def fromString(x: String): Option[Bool] = match x {
-            case "true" => Some(true)
+            case "true"  => Some(true)
             case "false" => Some(false)
-            case _ => None
+            case _       => None
         }
     }
-
 
     instance FromString[Char] {
         def fromString(x: String): Option[Char] =
