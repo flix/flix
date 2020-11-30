@@ -138,8 +138,43 @@ namespace Test/Exp/Interpolation {
         let y = 456;
         "${y - x}" == "333"
 
+    @test
+    def interpolation26(): Bool =
+        let x = Red;
+        "${x}" == "r"
 
+    @test
+    def interpolation27(): Bool =
+        let x = Green;
+        "${x}" == "g"
 
+    @test
+    def interpolation28(): Bool =
+        let x = Blue;
+        "${x}" == "b"
+
+    @test
+    def interpolation29(): Bool =
+        let x = Red;
+        let y = Green;
+        let z = Blue;
+        "${x}${y}${z}" == "rgb"
+
+    pub enum Color {
+        case Red,
+        case Green,
+        case Blue
+    }
+
+    pub enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
+    pub enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
 
     def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
@@ -153,7 +188,7 @@ namespace Test/Exp/Interpolation {
 
 namespace Show {
 
-    class Show[a] {
+    pub class Show[a] {
         pub def show(x: a): String
     }
 
@@ -172,6 +207,18 @@ namespace Show {
 
     instance Show[String] {
         def show(x: String): String = x
+    }
+
+    instance Show[Test/Exp/Interpolation.Color] {
+        def show(c: Test/Exp/Interpolation.Color): String =
+            use Test/Exp/Interpolation.Color.Red;
+            use Test/Exp/Interpolation.Color.Green;
+            use Test/Exp/Interpolation.Color.Blue;
+            match c {
+                case Red   => "r"
+                case Green => "g"
+                case Blue  => "b"
+            }
     }
 
 }
