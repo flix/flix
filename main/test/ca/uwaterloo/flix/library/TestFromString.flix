@@ -18,7 +18,22 @@ namespace TestFromString {
     use FromString.fromString;
 
     @test
-    def testFromStringString(): Bool = fromString("abcd") == Some("abcd")
+    def testFromStringUnit(): Bool = fromString("()") == Some(())
+
+    @test
+    def testFromStringTrue(): Bool = fromString("true") == Some(true)
+
+    @test
+    def testFromStringFalse(): Bool = fromString("false") == Some(false)
+
+    @test
+    def testFromStringChar(): Bool = fromString("Q") == Some('Q')
+
+    @test
+    def testFromStringFloat32(): Bool = fromString("123.0") == Some(123.0f32)
+
+    @test
+    def testFromStringFloat64(): Bool = fromString("123.0") == Some(123.0f64)
 
     @test
     def testFromStringInt8(): Bool = fromString("123") == Some(123i8)
@@ -33,8 +48,8 @@ namespace TestFromString {
     def testFromStringInt64(): Bool = fromString("123") == Some(123i64)
 
     @test
-    def testFromStringFloat32(): Bool = fromString("123.0") == Some(123.0f32)
+    def testFromStringString(): Bool = fromString("abcd") == Some("abcd")
 
     @test
-    def testFromStringFloat64(): Bool = fromString("123.0") == Some(123.0f64)
+    def testFromStringBigInt(): Bool = fromString("123") == Some(123ii)
 }
