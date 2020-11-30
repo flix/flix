@@ -18,38 +18,72 @@ namespace TestFromString {
     use FromString.fromString;
 
     @test
-    def testFromStringUnit(): Bool = fromString("()") == Some(())
+    def testFromStringUnitGood(): Bool = fromString("()") == Some(())
 
     @test
-    def testFromStringTrue(): Bool = fromString("true") == Some(true)
+    def testFromStringUnitBad(): Bool = fromString(")(") == None: Option[Unit]
 
     @test
-    def testFromStringFalse(): Bool = fromString("false") == Some(false)
+    def testFromStringTrueGood(): Bool = fromString("true") == Some(true)
 
     @test
-    def testFromStringChar(): Bool = fromString("Q") == Some('Q')
+    def testFromStringTrueBad(): Bool = fromString("fue") == None: Option[Bool]
 
     @test
-    def testFromStringFloat32(): Bool = fromString("123.0") == Some(123.0f32)
+    def testFromStringFalseGood(): Bool = fromString("false") == Some(false)
 
     @test
-    def testFromStringFloat64(): Bool = fromString("123.0") == Some(123.0f64)
+    def testFromStringFalseBad(): Bool = fromString("tralse") == None: Option[Bool]
 
     @test
-    def testFromStringInt8(): Bool = fromString("123") == Some(123i8)
+    def testFromStringCharGood(): Bool = fromString("Q") == Some('Q')
 
     @test
-    def testFromStringInt16(): Bool = fromString("123") == Some(123i16)
+    def testFromStringCharBad(): Bool = fromString("ABC") == None: Option[Char]
 
     @test
-    def testFromStringInt32(): Bool = fromString("123") == Some(123i32)
+    def testFromStringFloat32Good(): Bool = fromString("123.0") == Some(123.0f32)
 
     @test
-    def testFromStringInt64(): Bool = fromString("123") == Some(123i64)
+    def testFromStringFloat32Bad(): Bool = fromString("ABC") == None: Option[Float32]
 
     @test
-    def testFromStringString(): Bool = fromString("abcd") == Some("abcd")
+    def testFromStringFloat64Good(): Bool = fromString("123.0") == Some(123.0f64)
 
     @test
-    def testFromStringBigInt(): Bool = fromString("123") == Some(123ii)
+    def testFromStringFloat64Bad(): Bool = fromString("ABC") == None: Option[Float64]
+
+    @test
+    def testFromStringInt8Good(): Bool = fromString("123") == Some(123i8)
+
+    @test
+    def testFromStringInt8Bad(): Bool = fromString("ABC") == None: Option[Int8]
+
+    @test
+    def testFromStringInt16Good(): Bool = fromString("123") == Some(123i16)
+
+    @test
+    def testFromStringInt16Bad(): Bool = fromString("ABC") == None: Option[Int16]
+
+    @test
+    def testFromStringInt32Good(): Bool = fromString("123") == Some(123i32)
+
+    @test
+    def testFromStringInt32Bad(): Bool = fromString("ABC") == None: Option[Int32]
+
+    @test
+    def testFromStringInt64Good(): Bool = fromString("123") == Some(123i64)
+
+    @test
+    def testFromStringInt64Bad(): Bool = fromString("ABC") == None: Option[Int64]
+
+    @test
+    def testFromStringStringGood(): Bool = fromString("abcd") == Some("abcd")
+
+    @test
+    def testFromStringBigIntGood(): Bool = fromString("123") == Some(123ii)
+
+    @test
+    def testFromStringBigIntBad(): Bool = fromString("ABC") == None: Option[BigInt]
+
 }
