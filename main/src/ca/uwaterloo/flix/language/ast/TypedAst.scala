@@ -36,7 +36,7 @@ object TypedAst {
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  classEnv: MultiMap[Symbol.ClassSym, Ast.Instance])
+                  classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])
 
   case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, signatures: List[TypedAst.Sig], loc: SourceLocation)
 
