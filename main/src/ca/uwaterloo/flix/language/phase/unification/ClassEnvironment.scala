@@ -87,7 +87,7 @@ object ClassEnvironment {
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
     */
   private def byInst(tconstr: TypedAst.TypeConstraint, instances: MultiMap[Symbol.ClassSym, Ast.Instance])(implicit flix: Flix): Result[List[TypedAst.TypeConstraint], UnificationError] = {
-    val matchingInstances = instances(tconstr.sym)
+    val matchingInstances = instances(tconstr.sym).toList
 
     def tryInst(inst: Ast.Instance): Result[List[TypedAst.TypeConstraint], UnificationError] = {
       for {

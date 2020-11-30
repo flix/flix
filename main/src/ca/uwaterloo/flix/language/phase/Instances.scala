@@ -97,8 +97,8 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Reassembles a set of instances of the same class.
       */
-    def checkInstancesOfClass(insts0: Set[TypedAst.Instance]): Validation[Unit, TypeError] = {
-      val insts = insts0.toList
+    def checkInstancesOfClass(insts0: List[TypedAst.Instance]): Validation[Unit, TypeError] = {
+      val insts = insts0
       // Check each instance against each instance that hasn't been checked yet
       val checks = insts.tails.toSeq
       checkEach(checks) {
@@ -112,7 +112,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Check the instances of each class in parallel.
-    val results = ParOps.parMap(root.instances.m.values, checkInstancesOfClass)
+    val results = ParOps.parMap(root.instances.m.values.map(_.toList), checkInstancesOfClass)
     checkEach(results)(identity)
   }
 
