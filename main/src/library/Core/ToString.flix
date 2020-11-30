@@ -74,28 +74,29 @@ namespace ToString {
     }
 
     instance ToString[Option[a]] with [a : ToString] {
-        def toString(x: Option[a]): String = match x {
+        def toString(o: Option[a]): String = match o {
             case Some(y) => "Some(${toString(y)})"
             case None => "None"
         }
     }
 
     instance ToString[List[a]] with [a : ToString] {
-        def toString(xs: List[a]): String = {
-            let strings = List.map(x -> String.concat(toString(x), " :: "), xs);
-            let start = String.flatten(strings);
-            String.concat(start, "Nil")
+        def toString(l: List[a]): String = {
+            let s = l |> List.map(toString) |> List.intersperse(" :: ") |> String.flatten;
+            String.concat(s, " Nil")
         }
     }
 
-    instance ToString[Nel[a]] with [List[a] : ToString] {
-        def toString(x: Nel[a]): String = toString(Nel.toList(x))
+    instance ToString[Nel[a]] with [a : ToString, List[a] : ToString] {
+        def toString(l: Nel[a]): String = match l {
+            case Nel(x, xs) => "Nel(${x}, ${xs})"
+        }
     }
 
-    instance ToString[Result[a, b]] with [a : ToString, b : ToString] {
-        def toString(x: Result[a, b]): String = match x {
-            case Ok(y) => "Ok(${toString(y)})"
-            case Err(z) => "Err(${toString(z)})"
+    instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
+        def toString(r: Result[t, e]): String = match r {
+            case Ok(v)  => "Ok(#{v})"
+            case Err(v) => "Err(#{v})"
         }
     }
 
