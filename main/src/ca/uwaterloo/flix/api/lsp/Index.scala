@@ -171,52 +171,52 @@ case class Index(m: Map[(String, Int), List[Entity]],
   /**
     * Returns all uses of the given symbol `sym`.
     */
-  def usesOf(sym: Symbol.ClassSym): Set[SourceLocation] = classUses(sym)
+  def usesOf(sym: Symbol.ClassSym): List[SourceLocation] = classUses(sym)
 
   /**
     * Returns all uses of the given symbol `sym`.
     */
-  def usesOf(sym: Symbol.SigSym): Set[SourceLocation] = sigUses(sym)
+  def usesOf(sym: Symbol.SigSym): List[SourceLocation] = sigUses(sym)
 
   /**
     * Returns all uses of the given symbol `sym`.
     */
-  def usesOf(sym: Symbol.DefnSym): Set[SourceLocation] = defUses(sym)
+  def usesOf(sym: Symbol.DefnSym): List[SourceLocation] = defUses(sym)
 
   /**
     * Returns all uses of the given symbol `sym`.
     */
-  def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
+  def usesOf(sym: Symbol.EnumSym): List[SourceLocation] = enumUses(sym)
 
   /**
     * Returns all uses of the given symbol `sym` and `tag`.
     */
-  def usesOf(sym: Symbol.EnumSym, tag: Name.Tag): Set[SourceLocation] = tagUses((sym, tag))
+  def usesOf(sym: Symbol.EnumSym, tag: Name.Tag): List[SourceLocation] = tagUses((sym, tag))
 
   /**
     * Returns all uses of the given symbol `sym`.
     */
-  def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
+  def usesOf(sym: Symbol.VarSym): List[SourceLocation] = varUses(sym)
 
   /**
     * Returns all defs of the given `field`.
     */
-  def defsOf(field: Name.Field): Set[SourceLocation] = fieldDefs(field)
+  def defsOf(field: Name.Field): List[SourceLocation] = fieldDefs(field)
 
   /**
     * Returns all uses of the given `field`.
     */
-  def usesOf(field: Name.Field): Set[SourceLocation] = fieldUses(field)
+  def usesOf(field: Name.Field): List[SourceLocation] = fieldUses(field)
 
   /**
     * Returns all defs of the given predicate `pred`.
     */
-  def defsOf(pred: Name.Pred): Set[SourceLocation] = predDefs(pred)
+  def defsOf(pred: Name.Pred): List[SourceLocation] = predDefs(pred)
 
   /**
     * Returns all uses of the given predicate `pred`.
     */
-  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
+  def usesOf(pred: Name.Pred): List[SourceLocation] = predUses(pred)
 
   /**
     * Adds the given entity `exp0` to `this` index.
