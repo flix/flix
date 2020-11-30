@@ -183,7 +183,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
     traverse(e0.tparams)(p => Params.resolve(p, ns0, root)).flatMap {
       tparams =>
-        val tconstrs = tparams.flatMap(tparam => tparam.classes.map(clazz => TypedAst.TypeConstraint(clazz, tparam.tpe)))
+        val tconstrs = tparams.flatMap(tparam => tparam.classes.map(clazz => Ast.TypeConstraint(clazz, tparam.tpe)))
         val casesVal = traverse(e0.cases) {
           case (name, NamedAst.Case(enum, tag, tpe)) =>
             for {
@@ -1010,11 +1010,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[TypedAst.TypeConstraint, ResolutionError] = {
+  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = {
     for {
       clazz <- lookupClass(tconstr0.clazz, ns0, root)
       tpe <- lookupType(tconstr0.arg, ns0, root)
-    } yield TypedAst.TypeConstraint(clazz.sym, tpe)
+    } yield Ast.TypeConstraint(clazz.sym, tpe)
   }
 
   /**

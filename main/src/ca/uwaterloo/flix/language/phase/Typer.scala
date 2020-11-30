@@ -144,7 +144,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Performs type inference and reassembly on the given instance definition `defn`.
     */
-  private def visitInstanceDefn(defn: ResolvedAst.Def, tconstrs: List[TypedAst.TypeConstraint], root: ResolvedAst.Root, classEnv: MultiMap[Symbol.ClassSym, Ast.Instance])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
+  private def visitInstanceDefn(defn: ResolvedAst.Def, tconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: MultiMap[Symbol.ClassSym, Ast.Instance])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
     typeCheckDef(defn, tconstrs, root, classEnv) map {
       case (defn, _) => defn
     }
@@ -169,7 +169,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[TypedAst.TypeConstraint], root: ResolvedAst.Root, classEnv: MultiMap[Symbol.ClassSym, Ast.Instance])(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
+  private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: MultiMap[Symbol.ClassSym, Ast.Instance])(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
     case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, declaredScheme, declaredEff, loc) =>
 
       ///
@@ -402,12 +402,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: ResolvedAst.Expression, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = {
+  private def inferExp(exp0: ResolvedAst.Expression, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: ResolvedAst.Expression): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = e0 match {
+    def visitExp(e0: ResolvedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
       case ResolvedAst.Expression.Wild(tvar, loc) =>
         liftM(List.empty, tvar, Type.Pure)
@@ -677,8 +677,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of lists of the types and effects of the match expressions.
           */
-        def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
-          def visitMatchExp(exp: ResolvedAst.Expression, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = {
+        def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
+          def visitMatchExp(exp: ResolvedAst.Expression, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
               (constrs, tpe, eff) <- visitExp(exp)
@@ -696,8 +696,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of list of the types and effects of the rule expressions.
           */
-        def visitRuleBodies(rs: List[ResolvedAst.ChoiceRule]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
-          def visitRuleBody(r: ResolvedAst.ChoiceRule): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = r match {
+        def visitRuleBodies(rs: List[ResolvedAst.ChoiceRule]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
+          def visitRuleBody(r: ResolvedAst.ChoiceRule): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = r match {
             case ResolvedAst.ChoiceRule(_, exp0) => visitExp(exp0)
           }
 

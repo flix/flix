@@ -68,7 +68,7 @@ object Scheme {
     *
     * The `mode` control the rigidity of quantified and free variables.
     */
-  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): (List[TypedAst.TypeConstraint], Type) = {
+  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): (List[Ast.TypeConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -107,9 +107,9 @@ object Scheme {
     val newBase = baseType.map(visitTvar)
 
     val newConstrs = sc.constraints.map {
-      case TypedAst.TypeConstraint(sym, tpe0) =>
+      case Ast.TypeConstraint(sym, tpe0) =>
         val tpe = tpe0.map(visitTvar)
-        TypedAst.TypeConstraint(sym, tpe)
+        Ast.TypeConstraint(sym, tpe)
     }
 
     (newConstrs, newBase)
@@ -118,7 +118,7 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[TypedAst.TypeConstraint], tpe0: Type): Scheme = {
+  def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
     val quantifiers = tpe0.typeVars
     Scheme(quantifiers.toList, tconstrs, tpe0)
   }
@@ -140,7 +140,7 @@ object Scheme {
     /**
       * Checks that `tconstr` is entailed by `tconstrs`.
       */
-    def checkEntailment(tconstrs: List[TypedAst.TypeConstraint], tconstr: TypedAst.TypeConstraint): Result[Unit, UnificationError] = {
+    def checkEntailment(tconstrs: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint): Result[Unit, UnificationError] = {
       if (ClassEnvironment.entail(tconstrs, tconstr, classEnv)) {
         ().toOk
       } else {
@@ -184,7 +184,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Type.Var], constraints: List[TypedAst.TypeConstraint], base: Type) {
+case class Scheme(quantifiers: List[Type.Var], constraints: List[Ast.TypeConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.
