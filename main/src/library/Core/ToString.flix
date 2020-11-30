@@ -100,10 +100,10 @@ namespace ToString {
         }
     }
 
-    instance ToString[Validation[a, b]] with [a : ToString, Nel[b] : ToString] {
-        def toString(x: Validation[a, b]): String = match x {
-            case Success(y) => "Success(${toString(y)})"
-            case Failure(z) => "Failure(${toString(z)})"
+    instance ToString[Validation[t, e]] with [t : ToString, Nel[e] : ToString] {
+        def toString(x: Validation[t, e]): String = match x {
+            case Success(v) => "Success(${v})"
+            case Failure(v) => "Failure(${v})"
         }
     }
 
