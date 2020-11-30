@@ -30,8 +30,16 @@ namespace ToString {
         }
     }
 
-    instance ToString[String] {
-        def toString(x: String): String = x
+    instance ToString[Char] {
+        def toString(x: Char): String = Char.toString(x)
+    }
+
+    instance ToString[Float32] {
+        def toString(x: Float32): String = Float32.toString(x)
+    }
+
+    instance ToString[Float64] {
+        def toString(x: Float64): String = Float64.toString(x)
     }
 
     instance ToString[Int8] {
@@ -50,16 +58,12 @@ namespace ToString {
         def toString(x: Int64): String = Int64.toString(x)
     }
 
+    instance ToString[String] {
+        def toString(x: String): String = x
+    }
+
     instance ToString[BigInt] {
         def toString(x: BigInt): String = BigInt.toString(x)
-    }
-
-    instance ToString[Float32] {
-        def toString(x: Float32): String = Float32.toString(x)
-    }
-
-    instance ToString[Float64] {
-        def toString(x: Float64): String = Float64.toString(x)
     }
 
     instance ToString[List[a]] with [a : ToString] {

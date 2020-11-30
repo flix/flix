@@ -27,7 +27,13 @@ namespace TestToString {
     def testToStringFalse(): Bool = toString(false) == "false"
 
     @test
-    def testToStringString(): Bool = toString("abcd") == "abcd"
+    def testToStringChar(): Bool = toString('Q') == "Q"
+
+    @test
+    def testToStringFloat32(): Bool = toString(123.0f32) == "123.0"
+
+    @test
+    def testToStringFloat64(): Bool = toString(123.0f64) == "123.0"
 
     @test
     def testToStringInt8(): Bool = toString(123i8) == "123"
@@ -42,10 +48,10 @@ namespace TestToString {
     def testToStringInt64(): Bool = toString(123i64) == "123"
 
     @test
-    def testToStringFloat32(): Bool = toString(123.0f32) == "123.0"
+    def testToStringString(): Bool = toString("abcd") == "abcd"
 
     @test
-    def testToStringFloat64(): Bool = toString(123.0f64) == "123.0"
+    def testToStringBigInt(): Bool = toString(123ii) == "123"
 
     @test
     def testToStringInt32List(): Bool = toString(1 :: 2 :: 3 :: Nil) == "1 :: 2 :: 3 :: Nil"
