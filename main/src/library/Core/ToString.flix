@@ -81,9 +81,12 @@ namespace ToString {
     }
 
     instance ToString[List[a]] with [a : ToString] {
-        def toString(l: List[a]): String = {
-            let s = l |> List.map(toString) |> List.intersperse(" :: ") |> String.flatten;
-            String.concat(s, " Nil")
+        def toString(l: List[a]): String = match l {
+            // TODO: Replace by foldRight.
+            case Nil => "Nil"
+            case _   =>
+                let s = l |> List.map(toString) |> List.intersperse(" :: ") |> String.flatten;
+                String.concat(s, " :: Nil")
         }
     }
 
@@ -95,8 +98,8 @@ namespace ToString {
 
     instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
         def toString(r: Result[t, e]): String = match r {
-            case Ok(v)  => "Ok(#{v})"
-            case Err(v) => "Err(#{v})"
+            case Ok(v)  => "Ok(${v})"
+            case Err(v) => "Err(${v})"
         }
     }
 
@@ -106,5 +109,10 @@ namespace ToString {
             case Failure(v) => "Failure(${v})"
         }
     }
+
+    // TODO: Move instances to proper namespaces, e.g. to Option, List, etc.
+    // TODO: Move tests from TestToString into proper namespaces/files, e.g. TestOption, TestList, etc.
+    // TODO: Add instances for Array, Map, MutList, MutMap, MutSet, Set
+    // TODO: Write more systematic tests that use different types (?).
 
 }
