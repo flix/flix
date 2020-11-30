@@ -321,7 +321,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
     case WeededAst.Declaration.Class(doc, mod, ident, tparams0, signatures, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
-      val tparam = getProperTypeParam(tparams0)
+      val tparam = getTypeParamDefaultStar(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
       for {
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
@@ -1482,19 +1482,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Gets the type params where their kind must be `*`.
-    */
-  private def getProperTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 match {
-    case TypeParams.Elided => Nil
-    case TypeParams.Explicit(tparams) => tparams.map(getProperTypeParam)
-  }
-
-  /**
-    * Gets the type param where its kind must be `*`.
-    */
-  private def getProperTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
-    case WeededAst.TypeParam(ident, _, classes) =>
-      NamedAst.TypeParam(ident, Type.freshVar(Kind.Star, text = Some(ident.name)), classes, ident.loc)
+    * Performs naming on the given type parameter. Kind is assumed to be `Star` unless otherwise annotated.
+   */
+  private def getTypeParamDefaultStar(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
+    case WeededAst.TypeParam(ident, kind, classes) =>
+      NamedAst.TypeParam(ident, Type.freshVar(kind.getOrElse(Kind.Star), text = Some(ident.name)), classes, ident.loc)
   }
 
   /**
