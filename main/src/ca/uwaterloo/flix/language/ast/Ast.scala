@@ -387,4 +387,10 @@ object Ast {
     */
   case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
+
+  /**
+    * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
+    */
+  case class Instance(tpe: Type, tconstrs: List[TypedAst.TypeConstraint])
+
 }
