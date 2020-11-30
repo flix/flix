@@ -216,31 +216,31 @@ namespace Test/Exp/Interpolation {
 
 }
 
-namespace Show {
+namespace ToString {
 
-    pub class Show[a] {
-        pub def show(x: a): String
+    pub class ToString[a] {
+        pub def toString(x: a): String
     }
 
-    instance Show[Bool] {
-        def show(x: Bool): String = match x {
+    instance ToString[Bool] {
+        def toString(x: Bool): String = match x {
             case true => "true"
             case false => "false"
         }
     }
 
-    instance Show[Int32] {
-        def show(x: Int32): String =
+    instance ToString[Int32] {
+        def toString(x: Int32): String =
             import java.lang.Integer:toString(Int32);
             x.toString() as & Pure
     }
 
-    instance Show[String] {
-        def show(x: String): String = x
+    instance ToString[String] {
+        def toString(x: String): String = x
     }
 
-    instance Show[Test/Exp/Interpolation.Color] {
-        def show(c: Test/Exp/Interpolation.Color): String =
+    instance ToString[Test/Exp/Interpolation.Color] {
+        def toString(c: Test/Exp/Interpolation.Color): String =
             use Test/Exp/Interpolation.Color.Red;
             use Test/Exp/Interpolation.Color.Green;
             use Test/Exp/Interpolation.Color.Blue;
@@ -251,23 +251,23 @@ namespace Show {
             }
     }
 
-    instance Show[Test/Exp/Interpolation.Option[a]] with [a : Show] {
-        def show(o: Test/Exp/Interpolation.Option[a]): String =
+    instance ToString[Test/Exp/Interpolation.Option[a]] with [a : ToString] {
+        def toString(o: Test/Exp/Interpolation.Option[a]): String =
             use Test/Exp/Interpolation.Option.None;
             use Test/Exp/Interpolation.Option.Some;
             match o {
                 case None       => "None"
-                case Some(v)    => "Some(${show(v)})"
+                case Some(v)    => "Some(${toString(v)})"
             }
     }
 
-    instance Show[Test/Exp/Interpolation.Result[t, e]] with [t : Show, e : Show] {
-        def show(r: Test/Exp/Interpolation.Result[t, e]): String =
+    instance ToString[Test/Exp/Interpolation.Result[t, e]] with [t : ToString, e : ToString] {
+        def toString(r: Test/Exp/Interpolation.Result[t, e]): String =
             use Test/Exp/Interpolation.Result.Ok;
             use Test/Exp/Interpolation.Result.Err;
             match r {
-                case Ok(v)  => "Ok(${show(v)})"
-                case Err(v) => "Err(${show(v)})"
+                case Ok(v)  => "Ok(${toString(v)})"
+                case Err(v) => "Err(${toString(v)})"
             }
     }
 
