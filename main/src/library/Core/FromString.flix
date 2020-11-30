@@ -20,28 +20,26 @@ namespace FromString {
     /// A type class for types that can be constructed from strings.
     ///
     class FromString[a] {
-
-       ///
-       /// Optionally returns the value associated with the given string `s`.
-       ///
+        ///
+        /// Optionally returns the value associated with the given string `s`.
+        ///
         pub def fromString(x: String): Option[a]
     }
 
     instance FromString[Unit] {
         def fromString(x: String): Option[Unit] = match x {
             case "()" => Some(())
-            case _ => None
+            case _    => None
         }
     }
 
     instance FromString[Bool] {
         def fromString(x: String): Option[Bool] = match x {
-            case "true" => Some(true)
+            case "true"  => Some(true)
             case "false" => Some(false)
-            case _ => None
+            case _       => None
         }
     }
-
 
     instance FromString[Char] {
         def fromString(x: String): Option[Char] =
@@ -75,11 +73,12 @@ namespace FromString {
         def fromString(x: String): Option[Int64] = Result.toOption(Int64.fromString(x))
     }
 
+    instance FromString[BigInt] {
+        def fromString(x: String): Option[BigInt] = Result.toOption(BigInt.fromString(x))
+    }
+
     instance FromString[String] {
         def fromString(x: String): Option[String] = Some(x)
     }
 
-    instance FromString[BigInt] {
-        def fromString(x: String): Option[BigInt] = Result.toOption(BigInt.fromString(x))
-    }
 }

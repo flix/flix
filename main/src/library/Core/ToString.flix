@@ -20,19 +20,19 @@ namespace ToString {
     /// A type class for types that can be converted to strings.
     ///
     class ToString[a] {
+        ///
+        /// Returns a string representation of the given x.
+        ///
         pub def toString(x: a): String
     }
 
-    ///
-    /// Returns a string representation of the given x.
-    ///
     instance ToString[Unit] {
         def toString(x: Unit): String = "()"
     }
 
     instance ToString[Bool] {
         def toString(x: Bool): String = match x {
-            case true => "true"
+            case true  => "true"
             case false => "false"
         }
     }
@@ -73,36 +73,46 @@ namespace ToString {
         def toString(x: BigInt): String = BigInt.toString(x)
     }
 
-    instance ToString[List[a]] with [a : ToString] {
-        def toString(xs: List[a]): String = {
-            let strings = List.map(x -> String.concat(toString(x), " :: "), xs);
-            let start = String.flatten(strings);
-            String.concat(start, "Nil")
-        }
-    }
-
     instance ToString[Option[a]] with [a : ToString] {
-        def toString(x: Option[a]): String = match x {
+        def toString(o: Option[a]): String = match o {
             case Some(y) => "Some(${toString(y)})"
             case None => "None"
         }
     }
 
-    instance ToString[Result[a, b]] with [a : ToString, b : ToString] {
-        def toString(x: Result[a, b]): String = match x {
-            case Ok(y) => "Ok(${toString(y)})"
-            case Err(z) => "Err(${toString(z)})"
+    instance ToString[List[a]] with [a : ToString] {
+        def toString(l: List[a]): String = match l {
+            // TODO: Replace by foldRight.
+            case Nil => "Nil"
+            case _   =>
+                let s = l |> List.map(toString) |> List.intersperse(" :: ") |> String.flatten;
+                String.concat(s, " :: Nil")
         }
     }
 
-    instance ToString[Validation[a, b]] with [a : ToString, Nel[b] : ToString] {
-        def toString(x: Validation[a, b]): String = match x {
-            case Success(y) => "Success(${toString(y)})"
-            case Failure(z) => "Failure(${toString(z)})"
+    instance ToString[Nel[a]] with [a : ToString, List[a] : ToString] {
+        def toString(l: Nel[a]): String = match l {
+            case Nel(x, xs) => "Nel(${x}, ${xs})"
         }
     }
 
-    instance ToString[Nel[a]] with [List[a] : ToString] {
-        def toString(x: Nel[a]): String = toString(Nel.toList(x))
+    instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
+        def toString(r: Result[t, e]): String = match r {
+            case Ok(v)  => "Ok(${v})"
+            case Err(v) => "Err(${v})"
+        }
     }
+
+    instance ToString[Validation[t, e]] with [t : ToString, Nel[e] : ToString] {
+        def toString(x: Validation[t, e]): String = match x {
+            case Success(v) => "Success(${v})"
+            case Failure(v) => "Failure(${v})"
+        }
+    }
+
+    // TODO: Move instances to proper namespaces, e.g. to Option, List, etc.
+    // TODO: Move tests from TestToString into proper namespaces/files, e.g. TestOption, TestList, etc.
+    // TODO: Add instances for Array, Map, MutList, MutMap, MutSet, Set
+    // TODO: Write more systematic tests that use different types (?).
+
 }

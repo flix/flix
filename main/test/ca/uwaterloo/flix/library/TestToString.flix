@@ -75,7 +75,7 @@ namespace TestToString {
     def testToStringSuccess(): Bool = toString(Success("hooray"): Validation[String, String]) == "Success(hooray)"
 
     @test
-    def testToStringNel(): Bool = toString(Nel("abc", Nil)) == "abc :: Nil"
+    def testToStringNel(): Bool = toString(Nel("abc", Nil)) == "Nel(abc, Nil)"
 
     @test
     def testToStringNest01(): Bool =
@@ -83,7 +83,7 @@ namespace TestToString {
 
     @test
     def testToStringNest02(): Bool =
-        toString(Some(Nil) :: None :: Some(Success(true) :: Failure(Nel("zut", Nil)) :: Nil) :: Nil) == "Some(Nil) :: None :: Some(Success(true) :: Failure(zut :: Nil) :: Nil) :: Nil"
+        toString(Some(Nil) :: None :: Some(Success(true) :: Failure(Nel("zut", Nil)) :: Nil) :: Nil) == "Some(Nil) :: None :: Some(Success(true) :: Failure(Nel(zut, Nil)) :: Nil) :: Nil"
 
     @test
     def testToStringNest03(): Bool =

@@ -21,7 +21,6 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.WeededAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -29,9 +28,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.{AbstractSeq, LinearSeq, Seq}
+import scala.collection.immutable.Seq
 import scala.collection.mutable
-import scala.xml.NodeSeq
 
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
@@ -1016,39 +1014,44 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
+
+      /**
+        * Returns an expression that concatenates the result of the expression `e1` with the expression `e2`.
+        */
+      def mkConcat(e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
+        val op = BinaryOperator.Plus
+        WeededAst.Expression.Binary(op, e1, e2, loc)
+      }
+
+      /**
+        * Returns an expression that applies `toString` to the result of the given expression `e`.
+        */
+      def mkApplyToString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+        val fqn = "ToString.toString"
+        mkApplyFqn(fqn, List(e), sp1, sp2)
+      }
+
       val loc = mkSL(sp1, sp2)
 
       parts match {
-        case Seq() =>
-          // Case 1: Return the empty string if there are no interpolation parts.
-          WeededAst.Expression.Str("", loc).toSuccess
+        case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, lit, innerSp2)) =>
+          // Special case: We have a constant string. Simply return it.
+          WeededAst.Expression.Str(lit, mkSL(innerSp1, innerSp2)).toSuccess
 
-        case Seq(ParsedAst.InterpolationPart.ExpPart(e)) =>
-          // Case 2: Return the expression if there is only a single expression.
-          visitExp(e)
-
-        case Seq(ParsedAst.InterpolationPart.StrPart(s)) =>
-          // Case 3: Return the string if there is only a single string.
-          WeededAst.Expression.Str(s, loc).toSuccess
-
-        case ps =>
-          // Case 4: Construct a sequence of string append expressions.
+        case _ =>
+          // General Case: Fold the interpolator parts together.
           val init = WeededAst.Expression.Str("", loc)
-          Validation.fold(ps, init: WeededAst.Expression) {
-            case (acc, ParsedAst.InterpolationPart.ExpPart(e)) =>
-              mapN(visitExp(e)) {
-                case e2 =>
-                  val op = BinaryOperator.Plus
-                  WeededAst.Expression.Binary(op, acc, e2, loc)
+          Validation.fold(parts, init: WeededAst.Expression) {
+            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, exp, innerSp2)) =>
+              mapN(visitExp(exp)) {
+                case e =>
+                  val e2 = mkApplyToString(e, innerSp1, innerSp2)
+                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
               }
-
-            case (acc, ParsedAst.InterpolationPart.StrPart(s)) =>
-              val op = BinaryOperator.Plus
-              val e1 = acc
-              val e2 = WeededAst.Expression.Str(s, loc)
-              WeededAst.Expression.Binary(op, e1, e2, loc).toSuccess
+            case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, s, innerSp2)) =>
+              val e2 = WeededAst.Expression.Str(s, mkSL(innerSp1, innerSp2))
+              mkConcat(acc, e2, loc).toSuccess
           }
-
       }
 
     case ParsedAst.Expression.Ref(sp1, exp, sp2) =>

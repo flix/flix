@@ -179,13 +179,13 @@ object ParsedAst {
     /**
       * Typeclass Declaration.
       *
-      * @param doc     the optional comment associated with the declaration.
-      * @param mod     the associated modifiers.
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the definition.
-      * @param tparam  the type parameter.
-      * @param sigs    the signatures of the class.
-      * @param sp2     the position of the last character in the declaration.
+      * @param doc    the optional comment associated with the declaration.
+      * @param mod    the associated modifiers.
+      * @param sp1    the position of the first character in the declaration.
+      * @param ident  the name of the definition.
+      * @param tparam the type parameter.
+      * @param sigs   the signatures of the class.
+      * @param sp2    the position of the last character in the declaration.
       */
     case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
 
@@ -1523,13 +1523,21 @@ object ParsedAst {
 
     /**
       * Expression part of a string interpolation.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
       */
-    case class ExpPart(e: ParsedAst.Expression) extends InterpolationPart
+    case class ExpPart(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends InterpolationPart
 
     /**
       * String part of a string interpolation.
+      *
+      * @param sp1 the position of the first character in the string.
+      * @param lit the string literal.
+      * @param sp2 the position of the last character in the string.
       */
-    case class StrPart(s: String) extends InterpolationPart
+    case class StrPart(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends InterpolationPart
 
   }
 
