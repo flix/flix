@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, TypeParam}
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object Indexer {
@@ -54,8 +54,11 @@ object Indexer {
     val idx2 = def0.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    val idx3 = visitScheme(def0.declaredScheme, def0.loc)
-    idx0 ++ idx1 ++ idx2 ++ idx3
+    val idx3 = def0.tparams.foldLeft(Index.empty) {
+      case (acc, tparam) => acc ++ visitTypeParam(tparam)
+    }
+    val idx4 = visitScheme(def0.declaredScheme, def0.loc)
+    idx0 ++ idx1 ++ idx2 ++ idx3 ++ idx4
   }
 
   /**
@@ -390,8 +393,19 @@ object Indexer {
   /**
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
-  private def visitFormalParam(fparam0: FormalParam): Index = {
-    Index.occurrenceOf(fparam0) ++ visitType(fparam0.tpe)
+  private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
+    case FormalParam(_, _, tpe, _) =>
+      Index.occurrenceOf(fparam0) ++ visitType(tpe)
+  }
+
+  /**
+    * Returns a reverse index for the given type parameter `tparam0`.
+    */
+  private def visitTypeParam(tparam0: TypeParam): Index = tparam0 match {
+    case TypeParam(_, _, classes, _) =>
+      tparam0.classes.foldLeft(Index.empty) {
+        case (acc, sym) => acc ++ Index.useOf(sym, tparam0.loc)
+      }
   }
 
   /**
