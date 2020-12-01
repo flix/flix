@@ -15,7 +15,14 @@
  */
 
 namespace Functor {
+
+    ///
+    /// A type class for types that can be mapped over.
+    ///
     class Functor[m :# Type -> Type] {
+        ///
+        /// Maps the function `f` over the contents of `x`.
+        ///
         pub def map(f: a -> b, x: m[a]): m[b]
     }
 
@@ -26,4 +33,6 @@ namespace Functor {
     instance Functor[List] {
         def map(f: a -> b, x: List[a]): List[b] = List.map(f, x)
     }
+
+    // TODO: move instances and tests to proper namespaces
 }
