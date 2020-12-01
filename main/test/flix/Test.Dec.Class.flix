@@ -77,6 +77,10 @@ namespace Test/Dec/Class {
     }
 
     namespace Test08 {
+        use Test/Dec/Class.Option;
+        use Test/Dec/Class.Option.None;
+        use Test/Dec/Class.Option.Some;
+
         class F[m :# Type -> Type] {
             def map(f: a -> b, x: m[a]): m[b]
         }
