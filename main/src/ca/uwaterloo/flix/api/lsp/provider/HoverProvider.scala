@@ -40,6 +40,8 @@ object HoverProvider {
           exp match {
             case Expression.Def(sym, _, loc) => hoverDef(sym, loc)
 
+            case Expression.Sig(sym, _, loc) => hoverSig(sym, loc)
+
             case Expression.FixpointConstraintSet(_, stf, tpe, loc) => hoverFixpoint(tpe, Type.Pure, stf, loc)
 
             case Expression.FixpointCompose(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
@@ -69,11 +71,24 @@ object HoverProvider {
   }
 
   private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
-    val decl = root.defs(sym)
+    val defDecl = root.defs(sym)
     val markup =
-      s"""${FormatSignature.asMarkDown(decl)}
+      s"""${FormatSignature.asMarkDown(defDecl)}
          |
-         |${FormatDoc.asMarkDown(decl.doc)}
+         |${FormatDoc.asMarkDown(defDecl.doc)}
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
+  }
+
+  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+    val sigDecl = root.sigs(sym)
+    val markup =
+      s"""${FormatSignature.asMarkDown(sigDecl)}
+         |
+         |${FormatDoc.asMarkDown(sigDecl.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)

@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, TypeParam}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object Indexer {
 
@@ -31,7 +31,18 @@ object Indexer {
     val idx2 = root.enums.foldLeft(Index.empty) {
       case (acc, (_, enum0)) => acc ++ visitEnum(enum0)
     }
-    idx1 ++ idx2
+    val idx3 = root.classes.foldLeft(Index.empty) {
+      case (acc, (_, class0)) => acc ++ visitClass(class0)
+    }
+    val idx4 = root.instances.foldLeft(Index.empty) {
+      case (acc, (_, instances)) => acc ++ instances.foldLeft(Index.empty) {
+        case (acc1, instance) => acc1 ++ visitInstance(instance)
+      }
+    }
+    val idx5 = root.sigs.foldLeft(Index.empty) {
+      case (acc, (_, sig)) => acc ++ visitSig(sig)
+    }
+    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
   }
 
   /**
@@ -43,8 +54,26 @@ object Indexer {
     val idx2 = def0.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    val idx3 = visitScheme(def0.declaredScheme, def0.loc)
-    idx0 ++ idx1 ++ idx2 ++ idx3
+    val idx3 = def0.tparams.foldLeft(Index.empty) {
+      case (acc, tparam) => acc ++ visitTypeParam(tparam)
+    }
+    val idx4 = visitScheme(def0.declaredScheme, def0.loc)
+    idx0 ++ idx1 ++ idx2 ++ idx3 ++ idx4
+  }
+
+  /**
+    * Returns a reverse index for the given signature `sig0`.
+    */
+  private def visitSig(sig0: Sig): Index = sig0 match {
+    case Sig(_, _, _, _, tparams, fparams, _, _, _) =>
+      val idx1 = Index.occurrenceOf(sig0)
+      val idx2 = fparams.foldLeft(Index.empty) {
+        case (acc, fparam) => acc ++ visitFormalParam(fparam)
+      }
+      val idx3 = tparams.foldLeft(Index.empty) {
+        case (acc, tparam) => acc ++ visitTypeParam(tparam)
+      }
+      idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -56,6 +85,27 @@ object Indexer {
       case (idx, (tag, caze)) => idx ++ Index.occurrenceOf(caze)
     }
     idx0 ++ idx1
+  }
+
+  /**
+    * Returns a reverse index for the given class `class0`.
+    */
+  private def visitClass(class0: TypedAst.Class): Index = class0 match {
+    case TypedAst.Class(doc, mod, sym, tparam, signatures, loc) =>
+      Index.occurrenceOf(class0)
+  }
+
+  /**
+    * Returns a reverse index for the given instance `instance0`.
+    */
+  private def visitInstance(instance0: Instance): Index = instance0 match {
+    case Instance(_, _, sym, tpe, _, defs, loc) =>
+      val idx1 = Index.useOf(sym, loc)
+      val idx2 = visitType(tpe)
+      val idx3 = defs.foldLeft(Index.empty) {
+        case (acc, defn) => visitDef(defn)
+      }
+      idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -114,7 +164,7 @@ object Indexer {
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
 
     case Expression.Sig(sym, _, loc) =>
-      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc) ++ Index.useOf(sym.clazz, loc)
 
     case Expression.Hole(_, _, _, _) =>
       Index.occurrenceOf(exp0)
@@ -351,8 +401,19 @@ object Indexer {
   /**
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
-  private def visitFormalParam(fparam0: FormalParam): Index = {
-    Index.occurrenceOf(fparam0) ++ visitType(fparam0.tpe)
+  private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
+    case FormalParam(_, _, tpe, _) =>
+      Index.occurrenceOf(fparam0) ++ visitType(tpe)
+  }
+
+  /**
+    * Returns a reverse index for the given type parameter `tparam0`.
+    */
+  private def visitTypeParam(tparam0: TypeParam): Index = tparam0 match {
+    case TypeParam(_, _, classes, _) =>
+      tparam0.classes.foldLeft(Index.empty) {
+        case (acc, sym) => acc ++ Index.useOf(sym, tparam0.loc)
+      }
   }
 
   /**
