@@ -18,11 +18,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -41,17 +41,17 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, TypeError] = {
+  private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
     /**
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
-    def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, TypeError] = {
+    def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
       Unification.unifyTypes(inst1.tpe, inst2.tpe) match {
         case Ok(_) =>
           Validation.Failure(LazyList(
-            TypeError.OverlappingInstances(inst1.loc, inst2.loc),
-            TypeError.OverlappingInstances(inst2.loc, inst1.loc)
+            InstanceError.OverlappingInstances(inst1.loc, inst2.loc),
+            InstanceError.OverlappingInstances(inst2.loc, inst1.loc)
           ))
         case Err(_) => ().toSuccess
       }
@@ -60,7 +60,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
       */
-    def checkSigMatch(inst: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, TypeError] = {
+    def checkSigMatch(inst: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
       val clazz = root.classes(inst.sym)
 
       // Step 1: check that each signature has an implementation.
@@ -68,7 +68,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         sig =>
           inst.defs.find(_.sym.name == sig.sym.name) match {
             // Case 1: there is no definition with the same name
-            case None => TypeError.MissingImplementation(sig.sym, inst.loc).toFailure
+            case None => InstanceError.MissingImplementation(sig.sym, inst.loc).toFailure
             case Some(defn) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.sc, clazz.tparam.tpe, inst.tpe)
               if (Scheme.equal(expectedScheme, defn.declaredScheme, root.classEnv)) {
@@ -76,7 +76,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
                 ().toSuccess
               } else {
                 // Case 2.2: the schemes do not match
-                TypeError.MismatchedSignatures(defn.loc, expectedScheme, defn.declaredScheme).toFailure
+                InstanceError.MismatchedSignatures(defn.loc, expectedScheme, defn.declaredScheme).toFailure
               }
           }
       }
@@ -86,7 +86,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
           checkEach(inst.defs) {
             defn =>
               clazz.signatures.find(_.sym.name == defn.sym.name) match {
-                case None => TypeError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
+                case None => InstanceError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
                 case _ => ().toSuccess
               }
           }
@@ -97,7 +97,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Reassembles a set of instances of the same class.
       */
-    def checkInstancesOfClass(insts0: List[TypedAst.Instance]): Validation[Unit, TypeError] = {
+    def checkInstancesOfClass(insts0: List[TypedAst.Instance]): Validation[Unit, InstanceError] = {
       val insts = insts0
       // Check each instance against each instance that hasn't been checked yet
       val checks = insts.tails.toSeq
