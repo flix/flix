@@ -81,7 +81,11 @@ object Indexer {
   /**
     * Returns a reverse index for the given instance `instance0`.
     */
-  private def visitInstance(instance0: Instance): Index = Index.empty // TODO
+  private def visitInstance(instance0: Instance): Index = instance0 match {
+    case Instance(doc, mod, sym, tpe, tconstrs, defs, loc) =>
+
+      Index.empty
+  }
 
   /**
     * Returns a reverse index for the given signature `sig0`.
