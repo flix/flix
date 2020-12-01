@@ -37,6 +37,7 @@ object FindReferencesProvider {
 
         case Entity.Exp(exp) => exp match {
           case Expression.Def(sym, _, _) => findDefUses(sym)
+          case Expression.Sig(sym, _, _) => findSigUses(sym)
           case Expression.Var(sym, _, _) => findVarUses(sym)
           case Expression.Tag(sym, tag, _, _, _, _) => findTagUses(sym, tag)
           case _ => mkNotFound(uri, pos)
@@ -70,6 +71,12 @@ object FindReferencesProvider {
   }
 
   private def findDefUses(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
+    val uses = index.usesOf(sym)
+    val locs = uses.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findSigUses(sym: Symbol.SigSym)(implicit index: Index, root: Root): JObject = {
     val uses = index.usesOf(sym)
     val locs = uses.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
