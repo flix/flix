@@ -74,8 +74,7 @@ object Indexer {
     */
   private def visitClass(class0: TypedAst.Class): Index = class0 match {
     case TypedAst.Class(doc, mod, sym, tparam, signatures, loc) =>
-
-      Index.empty
+      Index.occurrenceOf(class0)
   }
 
   /**
@@ -150,7 +149,7 @@ object Indexer {
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
 
     case Expression.Sig(sym, _, loc) =>
-      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc) ++ Index.useOf(sym.clazz, loc)
 
     case Expression.Hole(_, _, _, _) =>
       Index.occurrenceOf(exp0)
