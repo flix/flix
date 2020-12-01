@@ -36,7 +36,7 @@ object Indexer {
     }
     val idx4 = root.instances.foldLeft(Index.empty) {
       case (acc, (_, instances)) => acc ++ instances.foldLeft(Index.empty) {
-        case (acc1, instance) => acc ++ visitInstance(instance)
+        case (acc1, instance) => acc1 ++ visitInstance(instance)
       }
     }
     val idx5 = root.sigs.foldLeft(Index.empty) {
