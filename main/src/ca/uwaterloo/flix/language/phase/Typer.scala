@@ -23,13 +23,11 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, InferMonad, Substitution, Unification}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, sequence}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, traverse}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, ClassEnvironment, InferMonad, Substitution}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -40,21 +38,35 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Type checks the given AST root.
     */
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
+    val classEnv = mkClassEnv(root.instances)
+
     val classesVal = visitClasses(root)
-    val defsVal = visitDefs(root)
+    val instancesVal = visitInstances(root, classEnv)
+    val defsVal = visitDefs(root, classEnv)
     val enumsVal = visitEnums(root)
     val latticeOpsVal = visitLatticeOps(root)
     val propertiesVal = visitProperties(root)
 
-    Validation.flatMapN(classesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
-      case (classes, defs, enums, latticeOps, properties) =>
-        visitInstances(root, classes).map {
-          instances =>
-            val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-            val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-            TypedAst.Root(classes, instances, sigs, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources)
-        }
+    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
+      case (classes, instances, defs, enums, latticeOps, properties) =>
+        val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
+        val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
+        TypedAst.Root(classes, instances, sigs, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources, classEnv)
     }
+  }
+
+  /**
+    * Creates a class environment from a ClassSym-Instance multimap.
+    */
+  private def mkClassEnv(instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]]): Map[Symbol.ClassSym, List[Ast.Instance]] = {
+    val classEnvInstances = instances.map {
+      case (classSym, instances) =>
+        val envInsts = instances.map {
+          case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _) => Ast.Instance(tpe, tconstrs)
+        }
+        (classSym, envInsts)
+    }
+    classEnvInstances
   }
 
   /**
@@ -92,7 +104,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: ResolvedAst.Root, classes: Map[Symbol.ClassSym, TypedAst.Class])(implicit flix: Flix): Validation[MultiMap[Symbol.ClassSym, TypedAst.Instance], TypeError] = {
+  private def visitInstances(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, List[TypedAst.Instance]], TypeError] = {
 
     /**
       * Reassembles a single instance.
@@ -100,96 +112,40 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     def visitInstance(inst: ResolvedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
       case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, loc) =>
         for {
-          defs <- Validation.traverse(defs0)(visitInstanceDefn(_, tconstrs, root))
+          defs <- Validation.traverse(defs0)(visitInstanceDefn(_, tconstrs, root, classEnv))
         } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, loc)
-    }
-
-    /**
-      * Checks for overlap of instance types, assuming the instances are of the same class.
-      */
-    def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, TypeError] = {
-      Unification.unifyTypes(inst1.tpe, inst2.tpe) match {
-        case Ok(_) =>
-          Validation.Failure(LazyList(
-            TypeError.OverlappingInstances(inst1.loc, inst2.loc),
-            TypeError.OverlappingInstances(inst2.loc, inst1.loc)
-          ))
-        case Err(_) => ().toSuccess
-      }
-    }
-
-    /**
-      * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
-      */
-    def checkSigMatch(inst: TypedAst.Instance)(implicit flix: Flix): Validation[List[Unit], TypeError] = {
-      val clazz = classes(inst.sym)
-
-      // Step 1: check that each signature has an implementation.
-      val sigMatchVal = traverse(clazz.signatures) {
-        sig => inst.defs.find(_.sym.name == sig.sym.name) match {
-          // Case 1: there is no definition with the same name
-          case None => TypeError.MissingImplementation(sig.sym, inst.loc).toFailure
-          case Some(defn) =>
-            val expectedScheme = Scheme.partiallyInstantiate(sig.sc, clazz.tparam.tpe, inst.tpe)
-            if (Scheme.equal(expectedScheme, defn.declaredScheme, root.instances)) {
-              // Case 2.1: the schemes match. Success!
-              ().toSuccess
-            } else {
-              // Case 2.2: the schemes do not match
-              TypeError.MismatchedSignatures(defn.loc, expectedScheme, defn.declaredScheme).toFailure
-            }
-        }
-      }
-      // Step 2: check that there are no extra definitions
-      sigMatchVal.flatMap {
-        _ => traverse(inst.defs) {
-          defn => clazz.signatures.find(_.sym.name == defn.sym.name) match {
-            case None => TypeError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
-            case _ => ().toSuccess
-          }
-        }
-      }
     }
 
     /**
       * Reassembles a set of instances of the same class.
       */
-    def foldOverInstances(insts0: Set[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, Set[TypedAst.Instance]), TypeError] = {
-      val instsVal = Validation.fold(insts0.toSeq, List.empty[TypedAst.Instance]) {
-        case (acc, inst0) =>
-          for {
-            inst <- visitInstance(inst0)
-            _ <- Validation.traverse(acc)(checkOverlap(_, inst))
-            _ <- checkSigMatch(inst)
-          } yield inst :: acc
-
-      }
+    def mapOverInstances(insts0: List[ResolvedAst.Instance]): Validation[(Symbol.ClassSym, List[TypedAst.Instance]), TypeError] = {
+      val instsVal = Validation.traverse(insts0)(visitInstance)
 
       instsVal.map {
-        insts => (insts.head.sym -> insts.toSet)
+        insts => (insts.head.sym -> insts)
       }
     }
 
     // visit each instance
-    val result = root.instances.m.values.map(foldOverInstances)
-
-    Validation.sequence(result).map(insts => MultiMap(insts.toMap))
+    val result = root.instances.values.map(mapOverInstances)
+    Validation.sequence(result).map(insts => insts.toMap)
 
   }
 
   /**
     * Performs type inference and reassembly on the given definition `defn`.
     */
-  private def visitDefn(defn: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
-    typeCheckDef(defn, Nil, root) map {
+  private def visitDefn(defn: ResolvedAst.Def, root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
+    typeCheckDef(defn, Nil, root, classEnv) map {
       case (defn, _) => defn
     }
 
   /**
     * Performs type inference and reassembly on the given instance definition `defn`.
     */
-  private def visitInstanceDefn(defn: ResolvedAst.Def, tconstrs: List[TypedAst.TypeConstraint], root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
-    typeCheckDef(defn, tconstrs, root) map {
+  private def visitInstanceDefn(defn: ResolvedAst.Def, tconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
+    typeCheckDef(defn, tconstrs, root, classEnv) map {
       case (defn, _) => defn
     }
 
@@ -198,9 +154,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitDefs(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
+  private def visitDefs(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
     // Compute the results in parallel.
-    val results = ParOps.parMap(root.defs.values, visitDefn(_, root))
+    val results = ParOps.parMap(root.defs.values, visitDefn(_, root, classEnv))
 
     // Sequence the results.
     Validation.sequence(results) map {
@@ -213,7 +169,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[TypedAst.TypeConstraint], root: ResolvedAst.Root)(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
+  private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
     case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, declaredScheme, declaredEff, loc) =>
 
       ///
@@ -255,7 +211,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
               val sc = Scheme.generalize(inferredConstrs, inferredType)
-              if (!Scheme.lessThanEqual(sc, completeScheme, root.instances)) {
+              if (!Scheme.lessThanEqual(sc, completeScheme, classEnv)) {
                 return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
               }
 
@@ -446,12 +402,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: ResolvedAst.Expression, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = {
+  private def inferExp(exp0: ResolvedAst.Expression, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: ResolvedAst.Expression): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = e0 match {
+    def visitExp(e0: ResolvedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
       case ResolvedAst.Expression.Wild(tvar, loc) =>
         liftM(List.empty, tvar, Type.Pure)
@@ -721,8 +677,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of lists of the types and effects of the match expressions.
           */
-        def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
-          def visitMatchExp(exp: ResolvedAst.Expression, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = {
+        def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
+          def visitMatchExp(exp: ResolvedAst.Expression, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
               (constrs, tpe, eff) <- visitExp(exp)
@@ -740,8 +696,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of list of the types and effects of the rule expressions.
           */
-        def visitRuleBodies(rs: List[ResolvedAst.ChoiceRule]): InferMonad[(List[List[TypedAst.TypeConstraint]], List[Type], List[Type])] = {
-          def visitRuleBody(r: ResolvedAst.ChoiceRule): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] = r match {
+        def visitRuleBodies(rs: List[ResolvedAst.ChoiceRule]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
+          def visitRuleBody(r: ResolvedAst.ChoiceRule): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = r match {
             case ResolvedAst.ChoiceRule(_, exp0) => visitExp(exp0)
           }
 

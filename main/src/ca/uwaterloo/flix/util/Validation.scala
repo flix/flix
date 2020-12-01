@@ -289,7 +289,7 @@ object Validation {
     *
     * Returns a sequence of successful elements wrapped in [[Success]].
     */
-  def fold[In, Out, Error](xs: Seq[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
+  def fold[In, Out, Error](xs: Iterable[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
     xs.foldLeft(Success(zero): Validation[Out, Error]) {
       case (acc, a) => acc flatMap {
         case value => f(value, a)

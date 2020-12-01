@@ -229,7 +229,7 @@ object Unification {
   /**
     * Lifts the given type `tpe` and effect `eff` into the inference monad.
     */
-  def liftM(constraints: List[TypedAst.TypeConstraint], tpe: Type, eff: Type): InferMonad[(List[TypedAst.TypeConstraint], Type, Type)] =
+  def liftM(constraints: List[Ast.TypeConstraint], tpe: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
     InferMonad(s => Ok((s, (constraints.map(s.apply), s(tpe), s(eff)))))
 
   /**
