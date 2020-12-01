@@ -37,6 +37,7 @@ object HighlightProvider {
         case Entity.Exp(exp) => exp match {
           case Expression.Var(sym, _, _) => highlightVar(sym)
           case Expression.Def(sym, _, _) => highlightDef(sym)
+          case Expression.Sig(sym, _, _) => highlightSig(sym)
           case Expression.Tag(sym, tag, _, _, _, _) => highlightTag(sym, tag)
           case _ => mkNotFound(uri, pos)
         }
@@ -78,6 +79,12 @@ object HighlightProvider {
   }
 
   private def highlightDef(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(write :: reads)
+  }
+
+  private def highlightSig(sym: Symbol.SigSym)(implicit index: Index, root: Root): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(write :: reads)
