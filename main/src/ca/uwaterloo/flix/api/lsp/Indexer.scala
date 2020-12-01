@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig}
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object Indexer {
@@ -34,10 +34,15 @@ object Indexer {
     val idx3 = root.classes.foldLeft(Index.empty) {
       case (acc, (_, class0)) => acc ++ visitClass(class0)
     }
-    val idx4 = root.classEnv.foldLeft(Index.empty) {
-      case (acc, (_, instances)) => acc ++ visitInstances(instances)
+    val idx4 = root.instances.foldLeft(Index.empty) {
+      case (acc, (_, instances)) => acc ++ instances.foldLeft(Index.empty) {
+        case (acc1, instance) => acc ++ visitInstance(instance)
+      }
     }
-    idx1 ++ idx2 ++ idx3 ++ idx4
+    val idx5 = root.sigs.foldLeft(Index.empty) {
+      case (acc, (_, sig)) => acc ++ visitSig(sig)
+    }
+    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
   }
 
   /**
@@ -76,7 +81,14 @@ object Indexer {
   /**
     * Returns a reverse index for the given instance `instance0`.
     */
-  private def visitInstances(value: List[Ast.Instance]): Index = Index.empty // TODO
+  private def visitInstance(instance0: Instance): Index = Index.empty // TODO
+
+  /**
+    * Returns a reverse index for the given signature `sig0`.
+    */
+  private def visitSig(sig0: Sig): Index = {
+    Index.empty // TODO
+  }
 
   /**
     * Returns a reverse index for the given expression `exp0`.
