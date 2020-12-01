@@ -32,6 +32,8 @@ object HighlightProvider {
 
         case Entity.Def(defn) => highlightDef(defn.sym)
 
+        case Entity.Sig(sig0) => highlightSig(sig0.sym)
+
         case Entity.Enum(enum) => highlightEnum(enum.sym)
 
         case Entity.Exp(exp) => exp match {
