@@ -76,6 +76,33 @@ namespace Test/Dec/Class {
         pub def g[a: C](x: a): a = x
     }
 
+    namespace Test08 {
+        class F[m :# Type -> Type] {
+            def map(f: a -> b, x: m[a]): m[b]
+        }
+
+        instance F[Option] {
+            def map(f: a -> b, x: Option[a]): Option[b] = match x {
+                case None => None
+                case Some(y) => Some(f(y))
+            }
+        }
+    }
+
+    namespace Test09 {
+        class Eff[e :# Bool] {
+            def isPure(f: a -> b & e): Bool
+        }
+
+        instance Eff[Pure] {
+            def isPure(f: a -> b): Bool = true
+        }
+
+        instance Eff[Impure] {
+            def isPure(f: a ~> b): Bool = false
+        }
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
