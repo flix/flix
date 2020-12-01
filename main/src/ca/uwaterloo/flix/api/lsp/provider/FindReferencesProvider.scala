@@ -35,6 +35,8 @@ object FindReferencesProvider {
 
         case Entity.Def(defn) => findDefUses(defn.sym)
 
+        case Entity.Sig(sig0) => findSigUses(sig0.sym)
+
         case Entity.Enum(enum0) => findEnumUses(enum0.sym)
 
         case Entity.Exp(exp) => exp match {
