@@ -62,6 +62,21 @@ object Indexer {
   }
 
   /**
+    * Returns a reverse index for the given signature `sig0`.
+    */
+  private def visitSig(sig0: Sig): Index = sig0 match {
+    case Sig(_, _, _, _, tparams, fparams, _, _, _) =>
+      val idx1 = Index.occurrenceOf(sig0)
+      val idx2 = fparams.foldLeft(Index.empty) {
+        case (acc, fparam) => acc ++ visitFormalParam(fparam)
+      }
+      val idx3 = tparams.foldLeft(Index.empty) {
+        case (acc, tparam) => acc ++ visitTypeParam(tparam)
+      }
+      idx1 ++ idx2 ++ idx3
+  }
+
+  /**
     * Returns a reverse index for the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum): Index = {
@@ -91,13 +106,6 @@ object Indexer {
         case (acc, defn) => visitDef(defn)
       }
       idx1 ++ idx2 ++ idx3
-  }
-
-  /**
-    * Returns a reverse index for the given signature `sig0`.
-    */
-  private def visitSig(sig0: Sig): Index = {
-    Index.empty // TODO
   }
 
   /**

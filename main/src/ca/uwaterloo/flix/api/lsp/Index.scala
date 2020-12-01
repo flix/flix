@@ -42,6 +42,11 @@ object Index {
   def occurrenceOf(defn0: Def): Index = empty + Entity.Def(defn0)
 
   /**
+    * Returns an index for the given `sig0`.
+    */
+  def occurrenceOf(sig0: Sig): Index = empty + Entity.Sig(sig0)
+
+  /**
     * Returns an index for the given `enum0`.
     */
   def occurrenceOf(enum0: Enum): Index = empty + Entity.Enum(enum0)

@@ -37,6 +37,10 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
+  case class Sig(e: TypedAst.Sig) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
   case class Enum(e: TypedAst.Enum) extends Entity {
     def loc: SourceLocation = e.sym.loc
   }
