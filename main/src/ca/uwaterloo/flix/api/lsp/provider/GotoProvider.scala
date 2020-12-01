@@ -34,27 +34,30 @@ object GotoProvider {
 
         case Entity.Exp(exp) => exp match {
           case Expression.Def(sym, _, loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, root, loc).toJSON)
+            ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(root).toJSON)
+
+          case Expression.Sig(sym, _, loc) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(root).toJSON)
 
           case Expression.Var(sym, _, loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
           case Expression.Tag(sym, tag, _, _, _, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, root, tag.loc).toJSON)
+            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)
         }
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Tag(sym, tag, _, _, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, root, tag.loc).toJSON)
+            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)
         }
 
         case Entity.TypeCon(tc, loc) => tc match {
           case TypeConstructor.Enum(sym, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, root, loc).toJSON)
+            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)
         }
