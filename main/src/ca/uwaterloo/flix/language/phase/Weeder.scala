@@ -427,7 +427,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
           val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-          val lambda = WeededAst.Expression.VarOrDefOrSig(name.ident, loc) // MATT need to handle qualified names
+          val lambda = if (name.isQualified) {
+            WeededAst.Expression.Def(name, loc) // MATT sig?
+          } else {
+            WeededAst.Expression.VarOrDefOrSig(name.ident, loc)
+          }
           WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
       }
 
