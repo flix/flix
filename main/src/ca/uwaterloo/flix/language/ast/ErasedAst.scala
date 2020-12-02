@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 
 object ErasedAst {
 
@@ -326,14 +327,27 @@ object ErasedAst {
   }
 
   sealed trait JType
-  sealed trait JByte8 extends JType
-  sealed trait JShort16 extends JType
-  sealed trait JInt32 extends JType
-  sealed trait JLong64 extends JType
-  sealed trait JChar extends JType
-  sealed trait JFloat32 extends JType
-  sealed trait JDouble64 extends JType
-  sealed trait JBool extends JType
-  sealed trait JObject extends JType
+
+  object JType {
+
+    sealed trait JByte8 extends JType
+
+    sealed trait JShort16 extends JType
+
+    sealed trait JInt32 extends JType
+
+    sealed trait JLong64 extends JType
+
+    sealed trait JChar extends JType
+
+    sealed trait JFloat32 extends JType
+
+    sealed trait JDouble64 extends JType
+
+    sealed trait JBool extends JType
+
+    sealed trait JObject extends JType
+
+  }
 }
 
