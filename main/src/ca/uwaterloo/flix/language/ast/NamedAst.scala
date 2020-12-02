@@ -57,6 +57,8 @@ object NamedAst {
 
     case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
 
+    case class UseSig(qname: Name.QName, sig: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
+
     case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
 
     case class UseTyp(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
@@ -75,7 +77,11 @@ object NamedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
 
-    case class DefOrSig(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class DefOrSig(qual: Name.Ident, name: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Def(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Sig(clazz: Name.QName, sig: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

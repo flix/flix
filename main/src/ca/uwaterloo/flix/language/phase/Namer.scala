@@ -44,7 +44,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
       classes = Map.empty,
-      sigs = Map.empty,
+      sigs = Map.empty, // MATT this is now empty
       instances = Map.empty,
       defs = Map.empty,
       enums = Map.empty,
@@ -96,10 +96,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           // Case 1: The class does not already exist. Update it.
           visitClass(decl, uenv0, Map.empty, ns0) map {
             case clazz@NamedAst.Class(_, _, _, _, sigs0, _) =>
-              prog0.copy(
-                classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))),
-                sigs = prog0.sigs + (ns0 -> (sigs ++ sigs0.map(sig => (sig.sym.name, sig)).toMap))
-              )
+              prog0.copy(classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))))
           }
         case Some(clazz) =>
           // Case 2: Duplicate class.
@@ -444,28 +441,38 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Wild(loc) =>
       NamedAst.Expression.Wild(Type.freshVar(Kind.Star), loc).toSuccess
 
-    case WeededAst.Expression.VarOrDefOrSig(qname, loc) if qname.isUnqualified =>
+    case WeededAst.Expression.Def(qname, loc) =>
+      NamedAst.Expression.Def(qname, Type.freshVar(Kind.Star), loc).toSuccess
+
+    case WeededAst.Expression.Sig(clazz, sig, loc) =>
+      NamedAst.Expression.Sig(clazz, sig, Type.freshVar(Kind.Star), loc).toSuccess
+
+    case WeededAst.Expression.DefOrSig(qual, name, loc) =>
+      NamedAst.Expression.DefOrSig(qual, name, Type.freshVar(Kind.Star), loc).toSuccess
+
+    case WeededAst.Expression.VarOrDefOrSig(ident, loc) =>
       // the ident name.
-      val name = qname.ident.name
+      val name = ident.name
 
       // lookup the name in the var and use environments.
-      (env0.get(name), uenv0.defs.get(name)) match {
-        case (None, None) =>
+      (env0.get(name), uenv0.defs.get(name), uenv0.sigs.get(name)) match {
+        case (None, None, None) =>
           // Case 1: the name is a top-level function.
-          NamedAst.Expression.DefOrSig(qname, Type.freshVar(Kind.Star), loc).toSuccess
-        case (None, Some(actualQName)) =>
-          // Case 2: the name is a use.
-          NamedAst.Expression.DefOrSig(actualQName, Type.freshVar(Kind.Star), loc).toSuccess
-        case (Some(sym), None) =>
-          // Case 3: the name is a variable.
+          NamedAst.Expression.Def(Name.mkQName(ident), Type.freshVar(Kind.Star), loc).toSuccess
+        case (None, Some(actualQName), None) =>
+          // Case 2: the name is a use def.
+          NamedAst.Expression.Def(actualQName, Type.freshVar(Kind.Star), loc).toSuccess
+        case (None, None, Some((className, sigName))) =>
+          // Case 3: the name is a use sig.
+          NamedAst.Expression.Sig(className, sigName, Type.freshVar(Kind.Star), loc).toSuccess
+        case (Some(sym), None, None) =>
+          // Case 4: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
-        case (Some(sym), Some(qname)) =>
+        case (Some(sym), Some(qname), _) =>
           // Case 4: the name is ambiguous.
           NameError.AmbiguousVarOrUse(name, loc, sym.loc, qname.loc).toFailure
+        case _ => throw InternalCompilerException("") // MATT handle other ambiguous cases
       }
-
-    case WeededAst.Expression.VarOrDefOrSig(name, loc) =>
-      NamedAst.Expression.DefOrSig(name, Type.freshVar(Kind.Star), loc).toSuccess
 
     case WeededAst.Expression.Hole(name, loc) =>
       val tpe = Type.freshVar(Kind.Star)
@@ -478,6 +485,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case WeededAst.Use.UseDef(qname, alias, loc) => NamedAst.Use.UseDef(qname, alias, loc)
         case WeededAst.Use.UseTyp(qname, alias, loc) => NamedAst.Use.UseTyp(qname, alias, loc)
         case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
+        case WeededAst.Use.UseSig(qname, sig, alias, loc) => NamedAst.Use.UseSig(qname, sig, alias, loc)
       }
 
       flatMapN(mergeUseEnvs(uses0, uenv0)) {
@@ -1180,7 +1188,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
     case WeededAst.Expression.Wild(loc) => Nil
-    case WeededAst.Expression.VarOrDefOrSig(qname, loc) => List(qname.ident)
+    case WeededAst.Expression.VarOrDefOrSig(ident, loc) => List(ident)
+    case WeededAst.Expression.Def(_, _) => Nil
+    case WeededAst.Expression.Sig(_, _, _) => Nil
+    case WeededAst.Expression.DefOrSig(_, _, _) => Nil
+    case WeededAst.Expression.Sig(_, _, _) => Nil
     case WeededAst.Expression.Hole(name, loc) => Nil
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Unit(loc) => Nil
@@ -1720,6 +1732,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               NameError.DuplicateUseClass(name, loc2, loc1)
             ))
         }
+      case (uenv1, WeededAst.Use.UseSig(qname, sig, alias, _)) =>
+        val name = alias.name
+        uenv1.sigs.get(name) match { // MATT need to lookup in defs as well
+          case None => uenv1.addSig(name, qname, sig).toSuccess
+          case Some((otherQName, otherSig)) =>
+            val loc1 = otherSig.loc
+            val loc2 = sig.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateUseDef(name, loc1, loc2), // MATT need new error for sigs (?)
+              NameError.DuplicateUseDef(name, loc2, loc1)
+            ))
+        }
       case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
         val name = alias.name
         uenv1.defs.get(name) match {
@@ -1765,17 +1790,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Companion object for the [[UseEnv]] class.
     */
   private object UseEnv {
-    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
   }
 
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(classes: Map[String, Name.QName], defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
+  private case class UseEnv(classes: Map[String, Name.QName], sigs: Map[String, (Name.QName, Name.Ident)], defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
     /**
       * Binds the class name `s` to the qualified name `n`.
       */
     def addClass(s: String, n: Name.QName): UseEnv = copy(classes = classes + (s -> n))
+
+    // MATT docs
+    def addSig(s: String, n: Name.QName, i: Name.Ident): UseEnv = copy(sigs = sigs + (s -> (n, i)))
 
     /**
       * Binds the def name `s` to the qualified name `n`.

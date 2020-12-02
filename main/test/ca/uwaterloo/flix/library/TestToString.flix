@@ -15,7 +15,7 @@
  */
 
 namespace TestToString {
-    use ToString.toString;
+    use ToString.ToString.toString;
 
     @test
     def testToStringUnit(): Bool = toString(()) == "()"

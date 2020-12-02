@@ -302,7 +302,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseClass | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
+    keyword("use") ~ WS ~ (Uses.UseClass| Uses.UseOneSig | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany )
   }
 
   object Uses {
@@ -332,6 +332,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
+    }
+
+    def UseOneSig: Rule1[ParsedAst.Use.UseOneSig] = rule {
+      SP ~ Names.QualifiedClass ~ "." ~ Names.Definition ~ SP ~> ParsedAst.Use.UseOneSig
     }
 
     def UseClass: Rule1[ParsedAst.Use] = rule { // MATT improve syntax
@@ -663,7 +667,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
         FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
-        UnaryLambda | QName | Tag | SName | Hole
+        UnaryLambda | SName | SQName | QName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -965,6 +969,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
+    }
+
+    def SQName: Rule1[ParsedAst.Expression.SQName] = rule {
+      SP ~ Names.Class ~ "." ~ Names.Definition ~ SP ~> ParsedAst.Expression.SQName
+    }
+
+    def QSig: Rule1[ParsedAst.Expression.QSig] = rule {
+      SP ~ Names.QualifiedClass ~ "." ~ Names.Definition ~ SP ~> ParsedAst.Expression.QSig
     }
 
     def Hole: Rule1[ParsedAst.Expression.Hole] = {

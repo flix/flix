@@ -257,7 +257,7 @@ namespace ToString {
             use Test/Exp/Interpolation.Option.Some;
             match o {
                 case None       => "None"
-                case Some(v)    => "Some(${toString(v)})"
+                case Some(v)    => "Some(${v})"
             }
     }
 
@@ -266,8 +266,8 @@ namespace ToString {
             use Test/Exp/Interpolation.Result.Ok;
             use Test/Exp/Interpolation.Result.Err;
             match r {
-                case Ok(v)  => "Ok(${toString(v)})"
-                case Err(v) => "Err(${toString(v)})"
+                case Ok(v)  => "Ok(${v})"
+                case Err(v) => "Err(${v})"
             }
     }
 

@@ -254,6 +254,16 @@ object ParsedAst {
     case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
 
     /**
+      * A use of a single signature.
+      *
+      * @param sp1   the position of the first character.
+      * @param qname the name of the class.
+      * @param tag   the name of the signature.
+      * @param sp2   the position of the last character.
+      */
+    case class UseOneSig(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
+
+    /**
       * A use of multiple tags.
       *
       * @param sp1   the position of the first character.
@@ -443,6 +453,21 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class QName(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+
+    // MATT docs
+    // MATT add to parser
+    // simply qualified name: A.b
+    case class SQName(sp1: SourcePosition, qualifier: Name.Ident, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Qualified Sig Expression
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param clazz  the name of the class.
+      * @param sig the name of the signature.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class QSig(sp1: SourcePosition, clazz: Name.QName, sig: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Hole Expression.

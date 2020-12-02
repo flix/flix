@@ -19,7 +19,7 @@ namespace ToString {
     ///
     /// A type class for types that can be converted to strings.
     ///
-    class ToString[a] {
+    pub class ToString[a] {
         ///
         /// Returns a string representation of the given x.
         ///
@@ -75,7 +75,7 @@ namespace ToString {
 
     instance ToString[Option[a]] with [a : ToString] {
         def toString(o: Option[a]): String = match o {
-            case Some(y) => "Some(${toString(y)})"
+            case Some(y) => "Some(${y})"
             case None => "None"
         }
     }
@@ -85,7 +85,7 @@ namespace ToString {
             // TODO: Replace by foldRight.
             case Nil => "Nil"
             case _   =>
-                let s = l |> List.map(toString) |> List.intersperse(" :: ") |> String.flatten;
+                let s = l |> List.map(ToString.toString) |> List.intersperse(" :: ") |> String.flatten;
                 String.concat(s, " :: Nil")
         }
     }
