@@ -1192,7 +1192,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Def(_, _) => Nil
     case WeededAst.Expression.Sig(_, _, _) => Nil
     case WeededAst.Expression.DefOrSig(_, _, _) => Nil
-    case WeededAst.Expression.Sig(_, _, _) => Nil
     case WeededAst.Expression.Hole(name, loc) => Nil
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Unit(loc) => Nil
