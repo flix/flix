@@ -1164,45 +1164,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
   /**
-    * Finds the def or sig with the qualified name `qname` in the namespace `ns0`.
-    */
-  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NameLookupResult, ResolutionError] = {
-    val defOpt = tryLookupDef(qname, ns0, root)
-    val sigOpt = tryLookupSig(qname, ns0, root)
-
-    (defOpt, sigOpt) match {
-      // Case 1: Can't find the name anywhere
-      case (None, None) => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      // Case 2: Can find only a def with the name
-      case (Some(defn), None) =>
-        if (isDefAccessible(defn, ns0)) {
-          NameLookupResult.Def(defn).toSuccess
-        } else {
-          ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
-        }
-      // Case 3: Can find only a sig with the name
-      case (None, Some(sig)) =>
-        if (isSigAccessible(sig, ns0)) {
-          NameLookupResult.Sig(sig).toSuccess
-        } else {
-          ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
-        }
-      // Case 4: Can find both with the name
-      case (Some(defn), Some(sig)) =>
-        (isDefAccessible(defn, ns0), isSigAccessible(sig, ns0)) match {
-          // Case 4.1: Neither is accessible
-          case (false, false) => ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure // MATT need something for if both are inaccessible?
-          // Case 4.2: Only the def is accessible
-          case (true, false) => NameLookupResult.Def(defn).toSuccess
-          // Case 4.3: Only the sig is accessible
-          case (false, true) => NameLookupResult.Sig(sig).toSuccess
-          // Case 4.4: Both are accessible
-          case (true, true) => ResolutionError.AmbiguousName(qname, ns0, List(defn.loc, sig.loc), qname.loc).toFailure
-        }
-    }
-  }
-
-  /**
     * Tries to find a def with the qualified name `qname` in the namespace `ns0`.
     */
   def tryLookupDef(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Def] = {
@@ -1248,6 +1209,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
+  // MATT rename
+  // MATT docs
   def lookupSig2(qnameOpt: Option[Name.QName], sig: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Sig, ResolutionError] = {
 
     def orElseUndefined(sig0: Option[NamedAst.Sig]): Validation[NamedAst.Sig, ResolutionError] = sig0 match {

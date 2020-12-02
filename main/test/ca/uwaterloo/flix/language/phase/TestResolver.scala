@@ -295,7 +295,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("UndefinedName.04") { // MATT
+  test("UndefinedName.04") {
     val input =
       s"""
          |namespace A {
