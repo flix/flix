@@ -455,7 +455,6 @@ object ParsedAst {
     case class QName(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     // MATT docs
-    // MATT add to parser
     // simply qualified name: A.b
     case class SQName(sp1: SourcePosition, qualifier: Name.Ident, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 

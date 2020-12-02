@@ -410,7 +410,41 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star), loc).toSuccess
 
-        case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.DefOrSig(qual, name, _, innerLoc), exps, outerLoc) => // MATT repeat for def and sig individually
+        case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.Def(name, _, innerLoc), exps, outerLoc) => // MATT dedupe
+          flatMapN(lookupDef(name, ns0, root)) {
+            defn =>
+              if (defn.fparams.length == exps.length) {
+                // Case 1: Hooray! We can call the function directly.
+                for {
+                  es <- traverse(exps)(visit(_, tenv0))
+                } yield {
+                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshVar(Kind.Star), innerLoc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
+                }
+              } else {
+                // Case 2: We have to curry. (See below).
+                visitApply(app)
+              }
+          }
+
+        case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.Sig(clazz, name, _, innerLoc), exps, outerLoc) =>
+          flatMapN(lookupSig2(Some(clazz), name, ns0, root)) {
+            sig =>
+              if (sig.fparams.length == exps.length) {
+                // Case 1: Hooray! We can call the function directly.
+                for {
+                  es <- traverse(exps)(visit(_, tenv0))
+                } yield {
+                  val base = ResolvedAst.Expression.Sig(sig.sym, Type.freshVar(Kind.Star), innerLoc)
+                  ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
+                }
+              } else {
+                // Case 2: We have to curry. (See below).
+                visitApply(app)
+              }
+          }
+
+        case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.DefOrSig(qual, name, _, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig2(qual, name, ns0, root)) {
             case NameLookupResult.Def(defn) =>
               if (defn.fparams.length == exps.length) {
