@@ -1120,29 +1120,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     // case 2: `qual` is a class and `name` is a sig
     val classQName = Name.mkQName(qual)
-    val sigOpt = lookupSig(classQName, name, ns0, root)
+    val sigOpt = tryLookupSig(classQName, name, ns0, root)
 
-
-    // MATT wierd to return option for one and validation for other
     (defOpt, sigOpt) match {
       // Case 1: Can't find the name anywhere
-      case (None, Validation.Failure(_)) => ResolutionError.UndefinedName(defQName, ns0, defQName.loc).toFailure // MATT diff err?
+      case (None, None) => ResolutionError.UndefinedName(defQName, ns0, defQName.loc).toFailure // MATT diff err?
       // Case 2: Can find only a def with the name
-      case (Some(defn), Validation.Failure(_)) =>
+      case (Some(defn), None) =>
         if (isDefAccessible(defn, ns0)) {
           NameLookupResult.Def(defn).toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, defQName.loc).toFailure
         }
       // Case 3: Can find only a sig with the name
-      case (None, Validation.Success(sig)) =>
+      case (None, Some(sig)) =>
         if (isSigAccessible(sig, ns0)) {
           NameLookupResult.Sig(sig).toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, sig.loc).toFailure
         }
       // Case 4: Can find both with the name
-      case (Some(defn), Validation.Success(sig)) =>
+      case (Some(defn), Some(sig)) =>
         (isDefAccessible(defn, ns0), isSigAccessible(sig, ns0)) match {
           // Case 4.1: Neither is accessible
           case (false, false) => ResolutionError.InaccessibleDef(defn.sym, ns0, defQName.loc).toFailure // MATT need something for if both are inaccessible?
@@ -1178,7 +1176,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Finds the sig with the qualified class `clazz` and ident `sig` in the namespace `ns0`.
+    */
   def lookupSig(clazz: Name.QName, sig: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Sig, ResolutionError] = {
 
     def orElseUndefined(sig0: Option[NamedAst.Sig]): Validation[NamedAst.Sig, ResolutionError] = sig0 match {
@@ -1186,11 +1186,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case None => ResolutionError.UndefinedName(clazz, ns0, sig.loc).toFailure // MATT undefined signature
     }
 
+    orElseUndefined(tryLookupSig(clazz, sig, ns0, root)) // MATT just inline this
+  }
+
+  /**
+    * Tries to find a sig with the qualified class `clazz` and ident `sig` in the namespace `ns0`.
+    */
+  def tryLookupSig(clazz: Name.QName, sig: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Sig] = {
     for {
-      clazz <- lookupClass(clazz, ns0, root)
-      result <- orElseUndefined(clazz.sigs.find(_.sym.name == sig.name))
+      clazz <- tryLookupClass(clazz, ns0, root)
+      result <- clazz.sigs.find(_.sym.name == sig.name)
     } yield result
   }
+
   /**
     * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
