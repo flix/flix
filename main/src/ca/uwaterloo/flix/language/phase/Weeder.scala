@@ -424,14 +424,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /*
        * Rewrites infix expressions to apply expressions.
        */
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) =>
+      mapN(visitExp(exp1), visitExp(name), visitExp(exp2)) {
+        case (e1, lambda, e2) =>
           val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-          val lambda = if (name.isQualified) {
-            WeededAst.Expression.Def(name, loc) // MATT sig?
-          } else {
-            WeededAst.Expression.VarOrDefOrSig(name.ident, loc)
-          }
           WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
       }
 
