@@ -1527,7 +1527,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ts =>
           // Check if the argument list is empty. If so, invoke the function with the Unit value.
           val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
-          val b = WeededAst.Expression.Def(qname, loc) // MATT allow sig here
+          val b = WeededAst.Expression.Def(qname, loc) // TODO allow signature here
           val e = WeededAst.Expression.Apply(b, as, loc)
           WeededAst.Predicate.Body.Guard(e, loc)
       }
@@ -1684,7 +1684,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
             argsVal map {
               case as =>
-                val lam = WeededAst.Expression.Def(law, loc) // MATT sig too?
+                val lam = WeededAst.Expression.Def(law, loc) // TODO allow signatures?
                 val fun = WeededAst.Expression.VarOrDefOrSig(defn, loc)
                 val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
                 WeededAst.Declaration.Property(law, defn, exp, loc)
@@ -1936,20 +1936,24 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
   private def mkApplyFqn(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.Def(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2)) // MATT sig?
+    val lambda = WeededAst.Expression.Def(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 
-  // MATT docs
+  /**
+    * Returns an apply expression for the given ident `ident` and the given arguments `args`.
+    */
   private def mkApplyIdent(ident: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
     val lambda = WeededAst.Expression.VarOrDefOrSig(Name.Ident(sp1, ident, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
 
   }
 
-  // MATT docs
+  /**
+    * Returns an apply expression for the given sig `sig` of the class `className` and the given arguments `args`.
+    */
   private def mkApplySig(className: String, sig: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.Sig(Name.mkQName(className, sp1, sp2), Name.Ident(sp1, sig, sp2), mkSL(sp1, sp2)) // MATT sig?
+    val lambda = WeededAst.Expression.Sig(Name.mkQName(className, sp1, sp2), Name.Ident(sp1, sig, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 
