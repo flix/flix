@@ -53,6 +53,18 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.AmbiguousVarOrUse](result)
   }
 
+  test("AmbiguousVarOrUse.03") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use Foo.Bar.f;
+         |    let f = _ -> true;
+         |    f(123)
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.AmbiguousVarOrUse](result)
+  }
+
   test("DuplicateDef.01") {
     val input =
       s"""

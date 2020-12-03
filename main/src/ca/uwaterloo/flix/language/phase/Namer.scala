@@ -467,9 +467,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           // Case 4: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
         case (Some(sym), Some(qname), _) =>
-          // Case 4: the name is ambiguous.
+          // Case 5.1: the name is ambiguous: var-def
           NameError.AmbiguousVarOrUse(name, loc, sym.loc, qname.loc).toFailure
-        case _ => throw InternalCompilerException("") // MATT handle other ambiguous cases
+        case (Some(sym), _, Some((_, ident))) =>
+          // Case 5.2: the name is ambiguous: var-sig
+          NameError.AmbiguousVarOrUse(name, loc, sym.loc, ident.loc).toFailure
+        case (_, Some(qname), Some((_, ident))) =>
+          // Case 5.3 the name is ambiguous: def-sig
+          // This is impossible: it should be caught earlier as a duplicate use.
+          throw InternalCompilerException("Unexpected duplicate use.")
       }
 
     case WeededAst.Expression.Hole(name, loc) =>
