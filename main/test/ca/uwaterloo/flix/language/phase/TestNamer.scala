@@ -65,7 +65,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.AmbiguousVarOrUse](result)
   }
 
-  test("DuplicateDef.01") { // MATT add DuplicateSig tests
+  test("DuplicateDef.01") {
     val input =
       s"""
          |def f(): Int = 42
@@ -159,7 +159,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseDef](result)
+    expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
   test("DuplicateUseDef.02") {
@@ -180,7 +180,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseDef](result)
+    expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
   test("DuplicateUseDef.03") {
@@ -201,7 +201,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseDef](result)
+    expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
   test("DuplicateUseDef.04") {
@@ -216,7 +216,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseDef](result)
+    expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
 
@@ -239,7 +239,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseDef](result)
+    expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
   test("DuplicateUseDef.06") {
@@ -262,7 +262,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseDef](result)
+    expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
   test("DuplicateUseDef.07") {
@@ -279,7 +279,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseDef](result)
+    expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
   test("DuplicateUseDef.08") {
@@ -301,7 +301,194 @@ class TestNamer extends FunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseDef](result)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSig.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.C.f;
+         |    use B.C.f;
+         |    f() == f()
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSig.02") {
+    val input =
+      s"""
+         |use A.C.f;
+         |use B.C.f;
+         |
+         |def main(): Bool =
+         |    f() == f()
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSig.03") {
+    val input =
+      s"""
+         |use A.C.f;
+         |
+         |def main(): Bool =
+         |    use B.C.f;
+         |    f() == f()
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSig.04") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.C.{f => g, f => g};
+         |    g() == g()
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+
+  test("DuplicateUseSig.05") {
+    val input =
+      s"""
+         |namespace T {
+         |    def main(): Bool =
+         |        use A.C.f;
+         |        use B.C.f;
+         |        f() == f()
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSig.06") {
+    val input =
+      s"""
+         |use A.C.f;
+         |
+         |namespace T {
+         |    use B.C.f;
+         |    def main(): Bool =
+         |        f() == f()
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSig.07") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.C.{f => g, f => g};
+         |    def main(): Bool =
+         |        g() == g()
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSig.08") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.C.f;
+         |    def main(): Bool =
+         |        use B.C.f;
+         |        f() == f()
+         |}
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSigAndDef.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.C.f;
+         |    use B.f;
+         |    f() == f()
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSigAndDef.02") {
+    val input =
+      s"""
+         |use A.C.f;
+         |use B.f;
+         |
+         |def main(): Bool =
+         |    f() == f()
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSigAndDef.03") {
+    val input =
+      s"""
+         |use A.C.f;
+         |
+         |def main(): Bool =
+         |    use B.f;
+         |    f() == f()
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSigAndDef.04") {
+    val input =
+      s"""
+         |namespace T {
+         |    def main(): Bool =
+         |        use A.C.f;
+         |        use B.f;
+         |        f() == f()
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSigAndDef.05") {
+    val input =
+      s"""
+         |use A.C.f;
+         |
+         |namespace T {
+         |    use B.f;
+         |    def main(): Bool =
+         |        f() == f()
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
+  }
+
+  test("DuplicateUseSigAndDef.08") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.C.f;
+         |    def main(): Bool =
+         |        use B.f;
+         |        f() == f()
+         |}
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
   test("DuplicateUseTyp.01") {

@@ -1720,7 +1720,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Merges the given `uses` into the given use environment `uenv0`.
     */
-  private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] =
+  private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] = {
+
+    def locationOfUseDefOrSig(name: String, uenv: UseEnv): Option[SourceLocation] = {
+      uenv.defs.get(name) match {
+        case None => uenv.sigs.get(name) match {
+          case Some((_clazz, ident)) => Some(ident.loc)
+          case None => None
+        }
+        case Some(defn) => Some(defn.loc)
+      }
+    }
+
     Validation.fold(uses, uenv0) {
       case (uenv1, WeededAst.Use.UseClass(qname, alias, _)) =>
         val name = alias.name
@@ -1737,28 +1748,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
       case (uenv1, WeededAst.Use.UseSig(qname, sig, alias, _)) =>
         val name = alias.name
-        uenv1.sigs.get(name) match { // MATT need to lookup in defs as well
+        locationOfUseDefOrSig(name, uenv1) match {
           case None => uenv1.addSig(name, qname, sig).toSuccess
-          case Some((otherQName, otherSig)) =>
-            val loc1 = otherSig.loc
-            val loc2 = sig.loc
+          case Some(otherLoc) =>
             Failure(LazyList(
               // NB: We report an error at both source locations.
-              NameError.DuplicateUseDef(name, loc1, loc2), // MATT need new error for sigs (?)
-              NameError.DuplicateUseDef(name, loc2, loc1)
+              NameError.DuplicateUseDefOrSig(name, otherLoc, sig.loc),
+              NameError.DuplicateUseDefOrSig(name, sig.loc, otherLoc)
             ))
         }
       case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
         val name = alias.name
-        uenv1.defs.get(name) match {
+        locationOfUseDefOrSig(name, uenv1) match {
           case None => uenv1.addDef(name, qname).toSuccess
-          case Some(otherQName) =>
-            val loc1 = otherQName.loc
-            val loc2 = qname.loc
+          case Some(otherLoc) =>
             Failure(LazyList(
               // NB: We report an error at both source locations.
-              NameError.DuplicateUseDef(name, loc1, loc2),
-              NameError.DuplicateUseDef(name, loc2, loc1)
+              NameError.DuplicateUseDefOrSig(name, otherLoc, qname.loc),
+              NameError.DuplicateUseDefOrSig(name, qname.loc, otherLoc)
             ))
         }
       case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
@@ -1788,6 +1795,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             ))
         }
     }
+  }
 
   /**
     * Companion object for the [[UseEnv]] class.
