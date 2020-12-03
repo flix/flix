@@ -302,7 +302,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseClass| Uses.UseOneSig | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany )
+    keyword("use") ~ WS ~ (Uses.UseClass | Uses.UseOneSig | Uses.UseManySig | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany )
   }
 
   object Uses {
@@ -340,7 +340,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UseManySig: Rule1[ParsedAst.Use.UseManySig] = {
       def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-        SP ~ UseName ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Definition) ~ SP ~> ParsedAst.Use.NameAndAlias
+        SP ~ Names.Definition ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Definition) ~ SP ~> ParsedAst.Use.NameAndAlias
       }
 
       rule {

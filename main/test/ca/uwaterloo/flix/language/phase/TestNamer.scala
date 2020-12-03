@@ -65,7 +65,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.AmbiguousVarOrUse](result)
   }
 
-  test("DuplicateDef.01") {
+  test("DuplicateDef.01") { // MATT add DuplicateSig tests
     val input =
       s"""
          |def f(): Int = 42
