@@ -258,10 +258,10 @@ object ParsedAst {
       *
       * @param sp1   the position of the first character.
       * @param qname the name of the class.
-      * @param tag   the name of the signature.
+      * @param sig   the name of the signature.
       * @param sp2   the position of the last character.
       */
-    case class UseOneSig(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
+    case class UseOneSig(sp1: SourcePosition, qname: Name.QName, sig: Name.Ident, sp2: SourcePosition) extends Use
 
     /**
       * A use of multiple tags.
@@ -272,6 +272,16 @@ object ParsedAst {
       * @param sp2   the position of the last character.
       */
     case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
+
+    /**
+      * A use of multiple signatures.
+      *
+      * @param sp1   the position of the first character.
+      * @param qname the name of the class.
+      * @param sigs  the names of the signatures.
+      * @param sp2   the position of the last character.
+      */
+    case class UseManySig(sp1: SourcePosition, qname: Name.QName, sigs: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
 
     /**
       * A name with an optional alias.

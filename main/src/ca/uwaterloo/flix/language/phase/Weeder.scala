@@ -376,6 +376,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Use.UseOneSig(sp1, qname, sig, sp2) =>
       List(WeededAst.Use.UseSig(qname, sig, sig, mkSL(sp1, sp2))).toSuccess
+
+    case ParsedAst.Use.UseManySig(sp1, qname, sigs, sp2) =>
+      val us = sigs.foldRight(Nil: List[WeededAst.Use]) {
+        case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
+          val alias = aliasOpt.getOrElse(ident)
+          WeededAst.Use.UseSig(qname, ident, alias, mkSL(sp1, sp2)) :: acc
+      }
+      us.toSuccess
   }
 
   /**

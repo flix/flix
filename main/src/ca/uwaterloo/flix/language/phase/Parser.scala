@@ -334,8 +334,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def UseOneSig: Rule1[ParsedAst.Use.UseOneSig] = rule { // MATT add use many sig, use alias sig
+    def UseOneSig: Rule1[ParsedAst.Use.UseOneSig] = rule {
       SP ~ Names.QualifiedClass ~ "." ~ Names.Definition ~ SP ~> ParsedAst.Use.UseOneSig
+    }
+
+    def UseManySig: Rule1[ParsedAst.Use.UseManySig] = {
+      def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
+        SP ~ UseName ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Definition) ~ SP ~> ParsedAst.Use.NameAndAlias
+      }
+
+      rule {
+        SP ~ Names.QualifiedClass ~ "." ~ "{" ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManySig
+      }
     }
 
     def UseClass: Rule1[ParsedAst.Use] = rule { // MATT improve syntax
