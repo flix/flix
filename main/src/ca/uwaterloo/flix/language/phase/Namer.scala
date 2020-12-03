@@ -1724,7 +1724,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     Validation.fold(uses, uenv0) {
       case (uenv1, WeededAst.Use.UseClass(qname, alias, _)) =>
         val name = alias.name
-        uenv1.classes.get(name) match {
+        uenv1.classes.get(name) match { // MATT need to check against types as well once `use class` is changed.
           case None => uenv1.addClass(name, qname).toSuccess
           case Some(otherQName) =>
             val loc1 = otherQName.loc

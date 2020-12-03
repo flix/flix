@@ -334,7 +334,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def UseOneSig: Rule1[ParsedAst.Use.UseOneSig] = rule {
+    def UseOneSig: Rule1[ParsedAst.Use.UseOneSig] = rule { // MATT add use many sig, use alias sig
       SP ~ Names.QualifiedClass ~ "." ~ Names.Definition ~ SP ~> ParsedAst.Use.UseOneSig
     }
 
