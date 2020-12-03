@@ -454,8 +454,14 @@ object ParsedAst {
       */
     case class QName(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
-    // MATT docs
-    // simply qualified name: A.b
+    /**
+      * Simply Qualified Name Expression: The qualifier is either or a class or a top-level namespace.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param qualifier the namespace or class.
+      * @param name the name.
+      * @param sp2 the position of the last character in the expression.
+      */
     case class SQName(sp1: SourcePosition, qualifier: Name.Ident, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**

@@ -1801,7 +1801,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       */
     def addClass(s: String, n: Name.QName): UseEnv = copy(classes = classes + (s -> n))
 
-    // MATT docs
+    /**
+      * Binds the sig name `s` to the qualified class name `q` and sig ident `i`.
+      */
     def addSig(s: String, n: Name.QName, i: Name.Ident): UseEnv = copy(sigs = sigs + (s -> (n, i)))
 
     /**
