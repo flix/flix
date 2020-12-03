@@ -44,7 +44,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
       classes = Map.empty,
-      sigs = Map.empty, // MATT this is now empty
       instances = Map.empty,
       defs = Map.empty,
       enums = Map.empty,
@@ -90,7 +89,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
       // Check if the class already exists.
       val classes = prog0.classes.getOrElse(ns0, Map.empty)
-      val sigs = prog0.sigs.getOrElse(ns0, Map.empty)
       classes.get(ident.name) match {
         case None =>
           // Case 1: The class does not already exist. Update it.
