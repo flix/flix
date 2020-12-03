@@ -1124,7 +1124,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     (defOpt, sigOpt) match {
       // Case 1: Can't find the name anywhere
-      case (None, None) => ResolutionError.UndefinedName(defQName, ns0, defQName.loc).toFailure // MATT diff err?
+      case (None, None) => ResolutionError.UndefinedName(defQName, ns0, defQName.loc).toFailure
       // Case 2: Can find only a def with the name
       case (Some(defn), None) =>
         if (isDefAccessible(defn, ns0)) {
