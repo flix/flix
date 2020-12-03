@@ -1179,14 +1179,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Finds the sig with the qualified class `clazz` and ident `sig` in the namespace `ns0`.
     */
-  def lookupSig(clazz: Name.QName, sig: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Sig, ResolutionError] = {
+  def lookupSig(clazz: Name.QName, sig0: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Sig, ResolutionError] = {
 
-    def orElseUndefined(sig0: Option[NamedAst.Sig]): Validation[NamedAst.Sig, ResolutionError] = sig0 match {
-      case Some(success) => success.toSuccess
-      case None => ResolutionError.UndefinedName(clazz, ns0, sig.loc).toFailure // MATT undefined signature
+    tryLookupSig(clazz, sig0, ns0, root) match {
+      case Some(sig) => sig.toSuccess
+      case None => ResolutionError.UndefinedSig(clazz, sig0, ns0, sig0.loc).toFailure
     }
-
-    orElseUndefined(tryLookupSig(clazz, sig, ns0, root)) // MATT just inline this
   }
 
   /**
