@@ -1501,7 +1501,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /**
     * Reads the keyword and looks ahead to ensure there no legal letters immediately following.
     */
-  def keyword(word: String): Rule0 = rule {
+  def keyword(word: String): Rule0 = namedRule(word) {
     atomic(word) ~ !Names.LegalLetter
   }
 
