@@ -29,7 +29,15 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
+  case class Class(e: TypedAst.Class) extends Entity {
+    def loc: SourceLocation = e.sym.loc
+  }
+
   case class Def(e: TypedAst.Def) extends Entity {
+    def loc: SourceLocation = e.loc
+  }
+
+  case class Sig(e: TypedAst.Sig) extends Entity {
     def loc: SourceLocation = e.loc
   }
 

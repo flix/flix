@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
-import ca.uwaterloo.flix.language.ast.TypedAst.TypeConstraint
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -679,11 +678,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def RBrace: Rule0 = rule("}")
 
       def ExpPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        DollarLBrace ~ optWS ~ Expression ~ optWS ~ RBrace ~> ParsedAst.InterpolationPart.ExpPart
+        SP ~ DollarLBrace ~ optWS ~ Expression ~ optWS ~ RBrace ~ SP ~> ParsedAst.InterpolationPart.ExpPart
       }
 
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        capture(oneOrMore(!(DblQuote | DollarLBrace | EOI) ~ CharPredicate.All)) ~> ParsedAst.InterpolationPart.StrPart
+        SP ~ capture(oneOrMore(!(DblQuote | DollarLBrace | EOI) ~ CharPredicate.All)) ~ SP ~> ParsedAst.InterpolationPart.StrPart
       }
 
       def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
@@ -1502,7 +1501,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /**
     * Reads the keyword and looks ahead to ensure there no legal letters immediately following.
     */
-  def keyword(word: String): Rule0 = rule {
+  def keyword(word: String): Rule0 = namedRule(word) {
     atomic(word) ~ !Names.LegalLetter
   }
 

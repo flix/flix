@@ -160,7 +160,6 @@ object BenchmarkCompiler {
     flix.addInput("Test.Exp.Int16.flix", LocalResource.get("/test/flix/Test.Exp.Int16.flix"))
     flix.addInput("Test.Exp.Int32.flix", LocalResource.get("/test/flix/Test.Exp.Int32.flix"))
     flix.addInput("Test.Exp.Int64.flix", LocalResource.get("/test/flix/Test.Exp.Int64.flix"))
-    flix.addInput("Test.Exp.Interpolation.flix", LocalResource.get("/test/flix/Test.Exp.Interpolation.flix"))
     flix.addInput("Test.Exp.Jvm.GetField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"))
     flix.addInput("Test.Exp.Jvm.GetStaticField.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticField.flix"))
     flix.addInput("Test.Exp.Jvm.InvokeConstructor.flix", LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"))

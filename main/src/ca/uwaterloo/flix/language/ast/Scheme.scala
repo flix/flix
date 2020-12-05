@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
-import ca.uwaterloo.flix.language.phase.unification.UnificationError.UnfulfilledConstraint
-import ca.uwaterloo.flix.language.phase.unification.{ContextReduction, Substitution, Unification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -69,7 +68,7 @@ object Scheme {
     *
     * The `mode` control the rigidity of quantified and free variables.
     */
-  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): (List[TypedAst.TypeConstraint], Type) = {
+  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): (List[Ast.TypeConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -108,9 +107,9 @@ object Scheme {
     val newBase = baseType.map(visitTvar)
 
     val newConstrs = sc.constraints.map {
-      case TypedAst.TypeConstraint(sym, tpe0) =>
+      case Ast.TypeConstraint(sym, tpe0) =>
         val tpe = tpe0.map(visitTvar)
-        TypedAst.TypeConstraint(sym, tpe)
+        Ast.TypeConstraint(sym, tpe)
     }
 
     (newConstrs, newBase)
@@ -119,7 +118,7 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[TypedAst.TypeConstraint], tpe0: Type): Scheme = {
+  def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
     val quantifiers = tpe0.typeVars
     Scheme(quantifiers.toList, tconstrs, tpe0)
   }
@@ -128,21 +127,21 @@ object Scheme {
     * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
-    lessThanEqual(sc1, sc2, instances) && lessThanEqual(sc2, sc1, instances)
+  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
+    lessThanEqual(sc1, sc2, classEnv) && lessThanEqual(sc2, sc1, classEnv)
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, instances: MultiMap[Symbol.ClassSym, ResolvedAst.Instance])(implicit flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
 
 
     /**
       * Checks that `tconstr` is entailed by `tconstrs`.
       */
-    def checkEntailment(tconstrs: List[TypedAst.TypeConstraint], tconstr: TypedAst.TypeConstraint): Result[Unit, UnificationError] = {
-      if (ContextReduction.entail(tconstrs, tconstr, instances)) {
+    def checkEntailment(tconstrs: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint): Result[Unit, UnificationError] = {
+      if (ClassEnvironment.entail(tconstrs, tconstr, classEnv)) {
         ().toOk
       } else {
         UnificationError.UnfulfilledConstraint(tconstr).toErr
@@ -185,7 +184,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Type.Var], constraints: List[TypedAst.TypeConstraint], base: Type) {
+case class Scheme(quantifiers: List[Type.Var], constraints: List[Ast.TypeConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.

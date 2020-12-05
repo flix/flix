@@ -387,4 +387,15 @@ object Ast {
     */
   case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
+
+  /**
+    * Represents that the type `arg` must belong to class `sym`.
+    */
+  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type)
+
+  /**
+    * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
+    */
+  case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
+
 }

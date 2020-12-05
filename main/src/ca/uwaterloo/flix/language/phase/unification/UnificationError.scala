@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Symbol, Type, TypedAst}
 
 /**
   * A common super-type for unification errors.
@@ -117,5 +117,5 @@ object UnificationError {
     *
     * @param tconstr the type constraint.
     */
-  case class UnfulfilledConstraint(tconstr: TypedAst.TypeConstraint) extends UnificationError
+  case class UnfulfilledConstraint(tconstr: Ast.TypeConstraint) extends UnificationError
 }

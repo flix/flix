@@ -28,7 +28,7 @@ object LocationLink {
   /**
     * Returns a location link to the given symbol `sym`.
     */
-  def fromDefSym(sym: Symbol.DefnSym, root: Root, loc: SourceLocation): LocationLink = {
+  def fromDefSym(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
     val defDecl = root.defs(sym)
     val originSelectionRange = Range.from(loc)
     val targetUri = sym.loc.source.name
@@ -40,7 +40,19 @@ object LocationLink {
   /**
     * Returns a location link to the given symbol `sym`.
     */
-  def fromEnumSym(sym: Symbol.EnumSym, root: Root, loc: SourceLocation): LocationLink = {
+  def fromSigSym(sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
+    val sigDecl = root.sigs(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sigDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  def fromEnumSym(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
     val enumDecl = root.enums(sym)
     val originSelectionRange = Range.from(loc)
     val targetUri = sym.loc.source.name
@@ -52,7 +64,7 @@ object LocationLink {
   /**
     * Returns a location link to the given symbol `sym`.
     */
-  def fromEnumAndTag(sym: Symbol.EnumSym, tag: Name.Tag, root: Root, loc: SourceLocation): LocationLink = {
+  def fromEnumAndTag(sym: Symbol.EnumSym, tag: Name.Tag, loc: SourceLocation)(implicit root: Root): LocationLink = {
     val enumDecl = root.enums(sym)
     val caseDecl = enumDecl.cases(tag)
     val originSelectionRange = Range.from(loc)
