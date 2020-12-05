@@ -1707,20 +1707,36 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] = {
 
-    def locationOfUseDefOrSig(name: String, uenv: UseEnv): Option[SourceLocation] = {
-      uenv.defs.get(name) match {
-        case None => uenv.sigs.get(name) match {
-          case Some((_clazz, ident)) => Some(ident.loc)
-          case None => None
-        }
-        case Some(defn) => Some(defn.loc)
-      }
+    sealed trait UseLookupResult
+    object UseLookupResult {
+      case class Def(name: Name.QName) extends UseLookupResult
+      case class Sig(clazz: Name.QName, ident: Name.Ident) extends UseLookupResult
+      case object Undefined extends UseLookupResult
+    }
+
+    /**
+      * Looks up the sig or def `name` in the UseEnv `uenv`.
+      */
+    def lookupUseDefOrSig(name: String, uenv: UseEnv): UseLookupResult = {
+      uenv.defs.get(name).map(UseLookupResult.Def)
+        .orElse(uenv.sigs.get(name).map(UseLookupResult.Sig.tupled))
+        .getOrElse(UseLookupResult.Undefined)
+    }
+
+    /**
+      * Creates a pair of DuplicateUseDefOrSig errors.
+      */
+    def mkDuplicateUseDefOrSigPair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Failure[T, NameError] = {
+      Failure(LazyList(
+        NameError.DuplicateUseDefOrSig(name, loc1, loc2),
+        NameError.DuplicateUseDefOrSig(name, loc2, loc1)
+      ))
     }
 
     Validation.fold(uses, uenv0) {
       case (uenv1, WeededAst.Use.UseClass(qname, alias, _)) =>
         val name = alias.name
-        uenv1.classes.get(name) match { // MATT need to check against types as well once `use class` is changed.
+        uenv1.classes.get(name) match {
           case None => uenv1.addClass(name, qname).toSuccess
           case Some(otherQName) =>
             val loc1 = otherQName.loc
@@ -1731,27 +1747,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               NameError.DuplicateUseClass(name, loc2, loc1)
             ))
         }
-      case (uenv1, WeededAst.Use.UseSig(qname, sig, alias, _)) =>
-        val name = alias.name
-        locationOfUseDefOrSig(name, uenv1) match {
-          case None => uenv1.addSig(name, qname, sig).toSuccess
-          case Some(otherLoc) =>
-            Failure(LazyList(
-              // NB: We report an error at both source locations.
-              NameError.DuplicateUseDefOrSig(name, otherLoc, sig.loc),
-              NameError.DuplicateUseDefOrSig(name, sig.loc, otherLoc)
-            ))
-        }
       case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
         val name = alias.name
-        locationOfUseDefOrSig(name, uenv1) match {
-          case None => uenv1.addDef(name, qname).toSuccess
-          case Some(otherLoc) =>
-            Failure(LazyList(
-              // NB: We report an error at both source locations.
-              NameError.DuplicateUseDefOrSig(name, otherLoc, qname.loc),
-              NameError.DuplicateUseDefOrSig(name, qname.loc, otherLoc)
-            ))
+        lookupUseDefOrSig(name, uenv1) match {
+          case UseLookupResult.Undefined => uenv1.addDef(name, qname).toSuccess
+          // NB: We report an error at both source locations.
+          case UseLookupResult.Def(defn) => mkDuplicateUseDefOrSigPair(name, qname.loc, defn.loc)
+          case UseLookupResult.Sig(_, ident) => mkDuplicateUseDefOrSigPair(name, qname.loc, ident.loc)
+        }
+      case (uenv1, WeededAst.Use.UseSig(qname, sig, alias, _)) =>
+        val name = alias.name
+        lookupUseDefOrSig(name, uenv1) match {
+          case UseLookupResult.Undefined => uenv1.addSig(name, qname, sig).toSuccess
+          // NB: We report an error at both source locations.
+          case UseLookupResult.Def(defn) => mkDuplicateUseDefOrSigPair(name, sig.loc, defn.loc)
+          case UseLookupResult.Sig(_, ident) => mkDuplicateUseDefOrSigPair(name, sig.loc, ident.loc)
         }
       case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
         val name = alias.name
