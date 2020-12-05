@@ -312,6 +312,27 @@ object ResolutionError {
   }
 
   /**
+    * Undefined Sig Error.
+    *
+    * @param clazz  the class.
+    * @param sig    the unresolved sig.
+    * @param ns     the current namespace.
+    * @param loc    the location where the error occurred.
+    */
+  case class UndefinedSig(clazz: Name.QName, sig: Name.Ident, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Undefined signature."
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined signature '" << Red(sig.name) << "' in class '" << Red(clazz.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "signature not found") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent class or signature?" << NewLine
+    }
+  }
+
+  /**
     * Undefined Class Error.
     *
     * @param qn  the unresolved class.

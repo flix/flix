@@ -220,7 +220,7 @@ class TestTyper extends FunSuite with TestUtils {
         |class C[a] {
         |  def f(x: a): String
         |}
-        |def foo(x: a): String = f(x)
+        |def foo(x: a): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
@@ -232,7 +232,7 @@ class TestTyper extends FunSuite with TestUtils {
         |class C[a] {
         |  def f(x: a): String
         |}
-        |def foo(x: Int): String = f(x)
+        |def foo(x: Int): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
@@ -255,11 +255,11 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |instance C[Box[a]] with [a : C] {
         |    def f(x: Box[a]): String = match x {
-        |        case Box(y) => f(y)
+        |        case Box(y) => C.f(y)
         |    }
         |}
         |
-        |def doF(x: Box[Float]): String = f(x)
+        |def doF(x: Box[Float]): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
@@ -282,11 +282,11 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |instance C[Box[a]] with [a : C] {
         |    def f(x: Box[a]): String = match x {
-        |        case Box(y) => f(y)
+        |        case Box(y) => C.f(y)
         |    }
         |}
         |
-        |def doF(x: Box[Int]): String = f(f(x))
+        |def doF(x: Box[Int]): String = C.f(C.f(x))
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
@@ -303,7 +303,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    def f(x: Int): Int = x
         |}
         |
-        |def foo(x: a, y: Int): String = f(x) + f(y)
+        |def foo(x: a, y: Int): String = C.f(x) + C.f(y)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)
@@ -316,7 +316,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    def f(x: a): Int
         |}
         |
-        |def foo[a : C, b](x: a, y: b): String = f(x) + f(y)
+        |def foo[a : C, b](x: a, y: b): String = C.f(x) + C.f(y)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.GeneralizationError](result)

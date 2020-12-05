@@ -302,7 +302,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseClass | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
+    keyword("use") ~ WS ~ (Uses.UseClass | Uses.UseOneSig | Uses.UseManySig | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany )
   }
 
   object Uses {
@@ -331,6 +331,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
+      }
+    }
+
+    def UseOneSig: Rule1[ParsedAst.Use.UseOneSig] = rule {
+      SP ~ Names.QualifiedClass ~ "." ~ Names.Definition ~ SP ~> ParsedAst.Use.UseOneSig
+    }
+
+    def UseManySig: Rule1[ParsedAst.Use.UseManySig] = {
+      def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
+        SP ~ Names.Definition ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Definition) ~ SP ~> ParsedAst.Use.NameAndAlias
+      }
+
+      rule {
+        SP ~ Names.QualifiedClass ~ "." ~ "{" ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManySig
       }
     }
 
@@ -562,7 +576,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Special ~ zeroOrMore(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
+      Special ~ zeroOrMore(optWS ~ "`" ~ FName ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
     }
 
     def Special: Rule1[ParsedAst.Expression] = {
@@ -663,7 +677,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
         FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
-        UnaryLambda | QName | Tag | SName | Hole
+        UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -959,12 +973,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    def FName: Rule1[ParsedAst.Expression] = rule {
+      SName | SQName | QName | QSig
+    }
+
     def SName: Rule1[ParsedAst.Expression.SName] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Expression.SName
     }
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
+    }
+
+    def SQName: Rule1[ParsedAst.Expression.SQName] = rule {
+      SP ~ Names.Class ~ "." ~ Names.Definition ~ SP ~> ParsedAst.Expression.SQName
+    }
+
+    def QSig: Rule1[ParsedAst.Expression.QSig] = rule {
+      SP ~ Names.QualifiedClass ~ "." ~ Names.Definition ~ SP ~> ParsedAst.Expression.QSig
     }
 
     def Hole: Rule1[ParsedAst.Expression.Hole] = {
