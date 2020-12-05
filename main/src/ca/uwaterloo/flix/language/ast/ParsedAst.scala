@@ -1413,7 +1413,7 @@ object ParsedAst {
     /**
       * The Arrow kind.
       */
-    case class Arrow(sp1: SourcePosition, k1: ParsedAst.Kind, k2: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Kind
+    case class Arrow(k1: ParsedAst.Kind, k2: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Kind
 
   }
 

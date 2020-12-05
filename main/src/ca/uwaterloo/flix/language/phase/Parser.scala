@@ -1300,7 +1300,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Kinds                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Kind: Rule1[ParsedAst.Kind] = rule {
-    Kinds.Arrow | Kinds.SimpleKind // MATT remove common head ?
+    Kinds.Arrow | Kinds.SimpleKind
   }
 
   object Kinds {
@@ -1310,7 +1310,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Arrow: Rule1[ParsedAst.Kind] = rule {
-      SP ~ SimpleKind ~ optWS ~ atomic("->") ~ optWS ~ Kind ~ SP ~> ParsedAst.Kind.Arrow
+      SimpleKind ~ optional(optWS ~ atomic("->") ~ optWS ~ Kind ~ SP ~> ParsedAst.Kind.Arrow)
     }
 
     def Star: Rule1[ParsedAst.Kind.Star] = rule {
