@@ -1703,21 +1703,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Builds a nested map of namespace -> name -> signature from the given class namespace map.
-    */
-  private def buildSigLookup(classes: Map[Name.NName, Map[String, NamedAst.Class]]): Map[Name.NName, Map[String, NamedAst.Sig]] = {
-    def flatMapToSigs(classes: Map[String, NamedAst.Class]): Map[String, NamedAst.Sig] = {
-      classes.flatMap {
-        case (_, clazz) => clazz.sigs.map(sig => (sig.sym.name, sig))
-      }
-    }
-
-    classes.foldLeft(Map.empty[Name.NName, Map[String, NamedAst.Sig]]) {
-      case (acc, (namespace, classes1)) => acc + (namespace -> flatMapToSigs(classes1))
-    }
-  }
-
-  /**
     * Merges the given `uses` into the given use environment `uenv0`.
     */
   private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] = {
