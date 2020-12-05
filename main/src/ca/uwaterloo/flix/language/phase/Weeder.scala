@@ -555,7 +555,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       //
       // let* x = exp1; exp2     ==>   flatMap(x -> exp2)(exp1)
       //
-      val ident = Name.Ident(SourcePosition.Unknown, "flatMap", SourcePosition.Unknown)
+      val ident = Name.Ident(sp1, "flatMap", sp2)
       val flatMap = WeededAst.Expression.VarOrDefOrSig(ident, loc)
 
       mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
