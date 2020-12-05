@@ -327,24 +327,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
 
       /**
-        * Resolve the application expression, applying `sig` to `exps`.
-        */
-      def visitApplySig(app: NamedAst.Expression.Apply, sig: NamedAst.Sig, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
-        if (sig.fparams.length == exps.length) {
-          // Case 1: Hooray! We can call the function directly.
-          for {
-            es <- traverse(exps)(visit(_, tenv0))
-          } yield {
-            val base = ResolvedAst.Expression.Sig(sig.sym, Type.freshVar(Kind.Star), innerLoc)
-            ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
-          }
-        } else {
-          // Case 2: We have to curry. (See below).
-          visitApply(app)
-        }
-      }
-
-      /**
         * Resolve the application expression, applying `defn` to `exps`.
         */
       def visitApplyDef(app: NamedAst.Expression.Apply, defn: NamedAst.Def, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
@@ -362,6 +344,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
       }
 
+      /**
+        * Resolve the application expression, applying `sig` to `exps`.
+        */
+      def visitApplySig(app: NamedAst.Expression.Apply, sig: NamedAst.Sig, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        if (sig.fparams.length == exps.length) {
+          // Case 1: Hooray! We can call the function directly.
+          for {
+            es <- traverse(exps)(visit(_, tenv0))
+          } yield {
+            val base = ResolvedAst.Expression.Sig(sig.sym, Type.freshVar(Kind.Star), innerLoc)
+            ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
+          }
+        } else {
+          // Case 2: We have to curry. (See below).
+          visitApply(app)
+        }
+      }
 
       /**
         * Local visitor.
