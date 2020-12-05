@@ -134,7 +134,7 @@ object NameError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of the def or sig '" << Red(name) << "'." << NewLine
+      vt << ">> Duplicate use of '" << Red(name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc1, "the first use was here.") << NewLine
       vt << NewLine
