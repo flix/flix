@@ -199,6 +199,20 @@ namespace Test/Dec/OpaqueType {
         case V(x) => x == Err(123)
     }
 
+    /**
+     * An opaque type for distance, with a phantom type parameter.
+     */
+    opaque type Distance[_unit] = Float64
+
+    pub enum Metres {} // TODO make non-public
+
+    def metres(x: Float64): Distance[Metres] = Distance(x)
+
+    @test
+    def testOpaqueType34(): Bool = match metres(123.4) {
+        case Distance(d1) => d1 == 123.4
+    }
+
     enum Option[t] {
         case None,
         case Some(t)

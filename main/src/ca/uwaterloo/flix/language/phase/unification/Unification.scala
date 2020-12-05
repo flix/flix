@@ -91,7 +91,7 @@ object Unification {
         else
           unifyVar(x, tpe1)
 
-      case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
+      case (Type.Cst(c1, _), Type.Cst(c2, _)) if unifyTypeConstructors(c1, c2) => Result.Ok(Substitution.empty)
 
       case _ if tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool =>
         BoolUnification.unify(tpe1, tpe2)
@@ -214,6 +214,47 @@ object Unification {
     }
 
     visit(rewrittenRow)
+  }
+
+  /**
+    * Unifies the given type constructors `tc1` and `tc2`.
+    */
+  def unifyTypeConstructors(tc1: TypeConstructor, tc2: TypeConstructor): Boolean = (tc1, tc2) match {
+    case (TypeConstructor.Unit, TypeConstructor.Unit) => true
+    case (TypeConstructor.Null, TypeConstructor.Null) => true
+    case (TypeConstructor.Bool, TypeConstructor.Bool) => true
+    case (TypeConstructor.Char, TypeConstructor.Char) => true
+    case (TypeConstructor.Float32, TypeConstructor.Float32) => true
+    case (TypeConstructor.Float64, TypeConstructor.Float64) => true
+    case (TypeConstructor.Int8, TypeConstructor.Int8) => true
+    case (TypeConstructor.Int16, TypeConstructor.Int16) => true
+    case (TypeConstructor.Int32, TypeConstructor.Int32) => true
+    case (TypeConstructor.Int64, TypeConstructor.Int64) => true
+    case (TypeConstructor.BigInt, TypeConstructor.BigInt) => true
+    case (TypeConstructor.Str, TypeConstructor.Str) => true
+    case (TypeConstructor.Arrow(arity1), TypeConstructor.Arrow(arity2)) => arity1 == arity2
+    case (TypeConstructor.RecordEmpty, TypeConstructor.RecordEmpty) => true
+    case (TypeConstructor.RecordExtend(field1), TypeConstructor.RecordExtend(field2)) => field1 == field2
+    case (TypeConstructor.SchemaEmpty, TypeConstructor.SchemaEmpty) => true
+    case (TypeConstructor.SchemaExtend(pred1), TypeConstructor.SchemaExtend(pred2)) => pred1 == pred2
+    case (TypeConstructor.Array, TypeConstructor.Array) => true
+    case (TypeConstructor.Channel, TypeConstructor.Channel) => true
+    case (TypeConstructor.Lazy, TypeConstructor.Lazy) => true
+    case (TypeConstructor.Tag(sym1, tag1), TypeConstructor.Tag(sym2, tag2)) => sym1 == sym2 && tag1 == tag2
+    case (TypeConstructor.Enum(sym1, kind1), TypeConstructor.Enum(sym2, kind2)) =>
+      // Enums unify if their kinds are compatible
+      sym1 == sym2 && (kind1 <:: kind2 || kind2 <:: kind1)
+    case (TypeConstructor.Native(clazz1), TypeConstructor.Native(clazz2)) => clazz1 == clazz2
+    case (TypeConstructor.Ref, TypeConstructor.Ref) => true
+    case (TypeConstructor.Tuple(l1), TypeConstructor.Tuple(l2)) => l1 == l2
+    case (TypeConstructor.Relation, TypeConstructor.Relation) => true
+    case (TypeConstructor.Lattice, TypeConstructor.Lattice) => true
+    case (TypeConstructor.True, TypeConstructor.True) => true
+    case (TypeConstructor.False, TypeConstructor.False) => true
+    case (TypeConstructor.Not, TypeConstructor.Not) => true
+    case (TypeConstructor.And, TypeConstructor.And) => true
+    case (TypeConstructor.Or, TypeConstructor.Or) => true
+    case _ => false
   }
 
   /**

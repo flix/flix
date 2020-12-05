@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, Type, TypeConstructor, Symbol}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
@@ -354,6 +354,20 @@ class TestUnification extends FunSuite with TestUtils {
     val tpe2 = Type.Var(2, Kind.Star, Rigidity.Rigid)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
+  }
+
+  test("Unify.18") {
+    val tpe1 = Type.Cst(TypeConstructor.Enum(Symbol.mkEnumSym("E"), Kind.Var(1) ->: Kind.Star), loc)
+    val tpe2 = Type.Cst(TypeConstructor.Enum(Symbol.mkEnumSym("E"), Kind.Star ->: Kind.Star), loc)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(isOk(result))
+  }
+
+  test("Unify.19") {
+    val tpe2 = Type.Cst(TypeConstructor.Enum(Symbol.mkEnumSym("E"), Kind.Star ->: Kind.Star), loc)
+    val tpe1 = Type.Cst(TypeConstructor.Enum(Symbol.mkEnumSym("E"), Kind.Var(1) ->: Kind.Star), loc)
+    val result = Unification.unifyTypes(tpe1, tpe2)
+    assert(isOk(result))
   }
 
   test("unifyM.01") {
