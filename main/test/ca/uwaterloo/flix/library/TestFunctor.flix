@@ -15,7 +15,7 @@
  */
 
 namespace TestToString {
-    use Functor.map;
+    use Functor.Functor.map;
 
     @test
     def testMapOption(): Bool =
