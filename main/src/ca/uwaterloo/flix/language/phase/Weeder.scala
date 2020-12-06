@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.math.BigInteger
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
@@ -1914,13 +1913,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitTypeParam(tparam: ParsedAst.TypeParam): WeededAst.TypeParam = tparam match {
     case ParsedAst.TypeParam(sp1, ident, kind, classes, sp2) =>
-      val k = kind.map {
-        case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
-        case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
-        case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
-        case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
-      }
+      val k = kind.map(visitKind)
       WeededAst.TypeParam(ident, k, classes.toList)
+  }
+
+  /**
+    * Weeds the given kind `kind`.
+    */
+  private def visitKind(kind: ParsedAst.Kind): Kind = kind match {
+    case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
+    case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
+    case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
+    case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
+    case ParsedAst.Kind.Arrow(k1, k2, sp2) => Kind.Arrow(visitKind(k1), visitKind(k2))
   }
 
   /**
@@ -2155,6 +2160,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Not(eff) => leftMostSourcePosition(eff)
     case ParsedAst.Type.And(tpe1, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(eff1, _) => leftMostSourcePosition(eff1)
+  }
+
+  /**
+    * Returns the left most source position in the sub-tree of the kind `kind`.
+    */
+  @tailrec
+  private def leftMostSourcePosition(kind: ParsedAst.Kind): SourcePosition = kind match {
+    case ParsedAst.Kind.Star(sp1, _) => sp1
+    case ParsedAst.Kind.Bool(sp1, _) => sp1
+    case ParsedAst.Kind.Record(sp1, _) => sp1
+    case ParsedAst.Kind.Schema(sp1, _) => sp1
+    case ParsedAst.Kind.Arrow(k1, _, _) => leftMostSourcePosition(k1)
   }
 
   /**
