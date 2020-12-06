@@ -287,26 +287,6 @@ namespace TestLazyList {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // fold                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def fold01(): Bool =
-        LazyList.fold((acc, x) -> acc + x, 0, LazyList.take(4, LazyList.repeat(1))) == 4
-
-    @test
-    def fold02(): Bool =
-        LazyList.fold((acc, x) -> acc + x, "", LazyList.take(3, LazyList.repeat("z"))) == "zzz"
-
-    @test
-    def fold03(): Bool =
-        LazyList.fold((acc, x) -> acc - x, 0, LazyList.take(3, LazyList.from(10))) == -33
-
-    @test
-    def fold04(): Bool =
-        LazyList.fold((acc, x) -> acc * x, 1, LazyList.take(5, LazyList.from(1))) == 120
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

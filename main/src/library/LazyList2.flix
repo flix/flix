@@ -202,7 +202,7 @@ namespace LazyList2 {
     ///
     /// Returns the result of applying `f` to every element in `xs`.
     ///
-    /// Forces the entire list `xs`.
+    /// Does not force the list `xs`.
     ///
     pub def map(f: a -> b, xs: LazyList2[a]): LazyList2[b] = {
         let LazyList2(ys) = xs;
@@ -212,7 +212,7 @@ namespace LazyList2 {
     ///
     /// Returns a lazy list of every element in `xs` that satisfies the predicate `f`.
     ///
-    /// Forces the entire list `xs`.
+    /// Does not force the list `xs`.
     ///
     pub def filter(f: a -> Bool, xs: LazyList2[a]): LazyList2[a] = {
         let LazyList2(ys) = xs;
@@ -234,7 +234,7 @@ namespace LazyList2 {
     ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
-    /// Forces `Int32.min(length(xs), length(ys))` elements of `xs` and `ys`.
+    /// Does not force the list `xs`.
     ///
     pub def zipWith(f: (a, b) -> c, xs: LazyList2[a], ys: LazyList2[b]): LazyList2[c] = {
         let LazyList2(zs) = xs;
@@ -248,7 +248,7 @@ namespace LazyList2 {
     ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
-    /// Forces `Int32.min(length(xs), length(ys))` elements of `xs` and `ys`.
+    /// Does not force the list `xs`.
     ///
     pub def zip(xs: LazyList2[a], ys: LazyList2[b]): LazyList2[(a, b)] = {
         let LazyList2(zs) = xs;
