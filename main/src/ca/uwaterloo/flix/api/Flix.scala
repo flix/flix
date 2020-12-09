@@ -102,6 +102,7 @@ class Flix {
     "Core/ToString.flix" -> LocalResource.get("/src/library/Core/ToString.flix"),
     "Core/FromString.flix" -> LocalResource.get("/src/library/Core/FromString.flix"),
     "Core/Functor.flix" -> LocalResource.get("/src/library/Core/Functor.flix"),
+    "Core/Hash.flix" -> LocalResource.get("/src/library/Core/Hash.flix"),
 
     "Pkger/SemVer.flix" -> LocalResource.get("/src/library/Pkger/SemVer.flix"),
 
