@@ -17,11 +17,11 @@
 namespace Hash {
 
     ///
-    /// A type class for types that can be converted to strings.
+    /// A type class for types that can be hashed.
     ///
     pub class Hash[a] {
         ///
-        /// Returns a string representation of the given x.
+        /// Returns a hash value for the given x.
         ///
         pub def hash(x: a): Int
     }
