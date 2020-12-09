@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
+import ca.uwaterloo.flix.language.phase.unification.UnificationError.UnfulfilledConstraint
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt._
 
@@ -271,6 +272,27 @@ object TypeError {
       vt << ">> Unexpected non-schema type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unexpected non-schema type.") << NewLine
+    }
+  }
+
+  // MATT docs
+  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"No instance of class '$clazz' for type '${FormatType.formatType(tpe)}'."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> No instance of class '" << Red(clazz.toString) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "no instance found") << NewLine
+    }
+  }
+
+  // MATT docs
+  case class UnfulfilledConstraint(tconstr: Ast.TypeConstraint, loc: SourceLocation) extends TypeError {
+    def summary: String = "" // MATT
+    def message: VirtualTerminal = { // MATT
+      new VirtualTerminal
     }
   }
 

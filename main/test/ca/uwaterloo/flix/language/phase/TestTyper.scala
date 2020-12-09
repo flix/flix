@@ -223,7 +223,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(x: a): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnfulfilledConstraint](result)
   }
 
   test("TestLeq.Class.02") {
@@ -235,7 +235,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(x: Int): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnfulfilledConstraint](result)
   }
 
   test("TestLeq.Class.03") {
@@ -262,7 +262,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def doF(x: Box[Float]): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnfulfilledConstraint](result)
   }
 
   test("TestLeq.Class.04") {
@@ -289,7 +289,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def doF(x: Box[Int]): String = C.f(C.f(x))
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnfulfilledConstraint](result)
   }
 
   test("TestLeq.Class.05") {

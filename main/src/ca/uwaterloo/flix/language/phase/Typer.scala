@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.io.PrintWriter
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
@@ -26,8 +25,9 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, ClassEnvironment, InferMonad, Substitution}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, ClassEnvironment, InferMonad, Substitution, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Validation.ToFailure
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -211,8 +211,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
               val sc = Scheme.generalize(inferredConstrs, inferredType)
-              if (!Scheme.lessThanEqual(sc, completeScheme, classEnv)) {
-                return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
+              Scheme.checkLessThanEqual(sc, completeScheme, classEnv) match {
+                case Result.Ok(_) => // noop
+                case Result.Err(UnificationError.NoMatchingInstance(clazz, tpe)) => return TypeError.NoMatchingInstance(clazz, tpe, loc).toFailure
+                case Result.Err(UnificationError.UnfulfilledConstraint(tconstr)) => return TypeError.UnfulfilledConstraint(tconstr, loc).toFailure
+                case Result.Err(_) => return TypeError.GeneralizationError(declaredScheme, sc, loc).toFailure
               }
 
               ///

@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
-import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Scheme {
@@ -128,14 +127,16 @@ object Scheme {
     */
   // TODO can optimize?
   def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
-    lessThanEqual(sc1, sc2, classEnv) && lessThanEqual(sc2, sc1, classEnv)
+    checkLessThanEqual(sc1, sc2, classEnv).flatMap(_ => checkLessThanEqual(sc2, sc1, classEnv)) match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
+    }
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
-
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Result[Unit, UnificationError] = {
 
     /**
       * Checks that `tconstr` is entailed by `tconstrs`.
@@ -152,7 +153,7 @@ object Scheme {
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
     if (sc1 == sc2) {
-      return true
+      return ().toOk
     }
 
     //
@@ -166,17 +167,12 @@ object Scheme {
     val (tconstrs2, tpe2) = instantiate(sc2, InstantiateMode.Rigid)
 
     // Attempt to unify the two instantiated types.
-    val result = for {
+    for {
       subst <- Unification.unifyTypes(tpe1, tpe2)
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
       _ <- Result.sequence(newTconstrs1.map(checkEntailment(newTconstrs2, _)))
     } yield ()
-
-    result match {
-      case Result.Ok(_) => true
-      case Result.Err(_) => false
-    }
   }
 
 }

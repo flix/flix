@@ -32,6 +32,7 @@ object ClassEnvironment {
     * That is, `tconstr` is true if all of `tconstrs0` are true.
     */
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
+  // MATT return Result instead of boolean
   def entail(tconstrs0: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
 
     val superClasses = tconstrs0.flatMap(bySuper)
