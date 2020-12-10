@@ -234,7 +234,7 @@ namespace LazyList2 {
     ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
-    /// Does not force the list `xs`.
+    /// Does not force the lists `xs` and `ys`.
     ///
     pub def zipWith(f: (a, b) -> c, xs: LazyList2[a], ys: LazyList2[b]): LazyList2[c] = {
         let LazyList2(zs) = xs;
@@ -248,7 +248,7 @@ namespace LazyList2 {
     ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
-    /// Does not force the list `xs`.
+    /// Does not force the lists `xs` and `ys`.
     ///
     pub def zip(xs: LazyList2[a], ys: LazyList2[b]): LazyList2[(a, b)] = {
         let LazyList2(zs) = xs;
