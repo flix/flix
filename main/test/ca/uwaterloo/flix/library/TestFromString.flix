@@ -15,7 +15,7 @@
  */
 
 namespace TestFromString {
-    use FromString.FromString.fromString;
+    use FromString/FromString.fromString;
 
     @test
     def testFromStringUnitGood(): Bool = fromString("()") == Some(())

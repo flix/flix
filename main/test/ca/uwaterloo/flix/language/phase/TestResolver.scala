@@ -313,24 +313,6 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("UndefinedSig.01") {
-    val input =
-      s"""
-         |namespace A {
-         |    class C[a] {
-         |        def f(x: a): a
-         |    }
-         |}
-         |
-         |namespace B {
-         |    use A.C.h;
-         |    def g(): Int = h(1)
-         |}
-         |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ResolutionError.UndefinedSig](result)
-  }
-
   test("UndefinedClass.01") {
     val input =
       """

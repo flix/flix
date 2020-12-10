@@ -350,7 +350,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       if (ident.isUpper)
         List(WeededAst.Use.UseTyp(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
       else
-        List(WeededAst.Use.UseDef(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+        List(WeededAst.Use.UseDefOrSig(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
       val us = names.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
@@ -358,7 +358,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           if (ident.isUpper)
             WeededAst.Use.UseTyp(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
           else
-            WeededAst.Use.UseDef(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+            WeededAst.Use.UseDefOrSig(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
 
@@ -373,16 +373,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
       us.toSuccess
 
-    case ParsedAst.Use.UseOneSig(sp1, qname, sig, sp2) =>
-      List(WeededAst.Use.UseSig(qname, sig, sig, mkSL(sp1, sp2))).toSuccess
-
-    case ParsedAst.Use.UseManySig(sp1, qname, sigs, sp2) =>
-      val us = sigs.foldRight(Nil: List[WeededAst.Use]) {
-        case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
-          val alias = aliasOpt.getOrElse(ident)
-          WeededAst.Use.UseSig(qname, ident, alias, mkSL(sp1, sp2)) :: acc
-      }
-      us.toSuccess
   }
 
   /**
@@ -393,13 +383,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       WeededAst.Expression.VarOrDefOrSig(ident, mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Expression.QName(sp1, qname, sp2) =>
-      WeededAst.Expression.Def(qname, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.SQName(sp1, qual, name, sp2) =>
-      WeededAst.Expression.DefOrSig(qual, name, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.QSig(sp1, name, sig, sp2) =>
-      WeededAst.Expression.Sig(name, sig, mkSL(sp1, sp2)).toSuccess
+      WeededAst.Expression.DefOrSig(qname, mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1038,9 +1022,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         * Returns an expression that applies `toString` to the result of the given expression `e`.
         */
       def mkApplyToString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val clazz = "ToString.ToString"
-        val sig = "toString"
-        mkApplySig(clazz, sig, List(e), sp1, sp2)
+        val fqn = "ToString/ToString.toString"
+        mkApplyFqn(fqn, List(e), sp1, sp2)
       }
 
       val loc = mkSL(sp1, sp2)
@@ -1526,7 +1509,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ts =>
           // Check if the argument list is empty. If so, invoke the function with the Unit value.
           val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
-          val b = WeededAst.Expression.Def(qname, loc) // TODO allow signature here
+          val b = WeededAst.Expression.DefOrSig(qname, loc)
           val e = WeededAst.Expression.Apply(b, as, loc)
           WeededAst.Predicate.Body.Guard(e, loc)
       }
@@ -1683,7 +1666,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
             argsVal map {
               case as =>
-                val lam = WeededAst.Expression.Def(law, loc) // TODO allow signatures?
+                val lam = WeededAst.Expression.DefOrSig(law, loc) // TODO allow signatures?
                 val fun = WeededAst.Expression.VarOrDefOrSig(defn, loc)
                 val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
                 WeededAst.Declaration.Property(law, defn, exp, loc)
@@ -1941,7 +1924,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
   private def mkApplyFqn(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.Def(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
+    val lambda = WeededAst.Expression.DefOrSig(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 
@@ -1952,14 +1935,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val lambda = WeededAst.Expression.VarOrDefOrSig(Name.Ident(sp1, ident, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
 
-  }
-
-  /**
-    * Returns an apply expression for the given sig `sig` of the class `className` and the given arguments `args`.
-    */
-  private def mkApplySig(className: String, sig: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.Sig(Name.mkQName(className, sp1, sp2), Name.Ident(sp1, sig, sp2), mkSL(sp1, sp2))
-    WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 
   /**
@@ -2077,9 +2052,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   @tailrec
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
-    case ParsedAst.Expression.SQName(sp1, _, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
-    case ParsedAst.Expression.QSig(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1

@@ -59,6 +59,11 @@ object Name {
   def mkTag(ident: Ident): Tag = Tag(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
 
   /**
+    * Extends the given namespace `ns` with the given identifier `ident`.
+    */
+  def extendNName(ns: NName, ident: Ident): NName = NName(ident.sp1, ns.idents :+ ident, ident.sp2)
+
+  /**
     * Identifier.
     *
     * @param sp1  the position of the first character in the identifier.

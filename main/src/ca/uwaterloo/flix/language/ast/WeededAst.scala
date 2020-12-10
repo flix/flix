@@ -60,9 +60,7 @@ object WeededAst {
 
     case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
-    case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
-
-    case class UseSig(qname: Name.QName, sig: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
     case class UseTyp(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
@@ -80,11 +78,7 @@ object WeededAst {
 
     case class VarOrDefOrSig(name: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
 
-    case class DefOrSig(qual: Name.Ident, name: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Def(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Sig(clazz: Name.QName, sig: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
+    case class DefOrSig(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 

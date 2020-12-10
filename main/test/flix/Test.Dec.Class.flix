@@ -21,7 +21,7 @@ namespace Test/Dec/Class {
             def f(x: Int): Bool = x == 0
         }
 
-        pub def g(x: Int): Bool = X.f(x)
+        pub def g(x: Int): Bool = Test/Dec/Class/Test03/X.f(x)
     }
 
     namespace Test04 {
@@ -33,7 +33,7 @@ namespace Test/Dec/Class {
             def g(x: a): Bool
         }
 
-        pub def h[a : C : D](x: a): Bool = C.f(x) and D.g(x)
+        pub def h[a : C : D](x: a): Bool = Test/Dec/Class/Test04/C.f(x) and Test/Dec/Class/Test04/D.g(x)
     }
 
     namespace Test05 {
@@ -67,7 +67,7 @@ namespace Test/Dec/Class {
             }
         }
 
-        pub def g(x: List[Int]): Bool = C.f(x)
+        pub def g(x: List[Int]): Bool = Test/Dec/Class/Test06/C.f(x)
     }
 
     namespace Test07 {
