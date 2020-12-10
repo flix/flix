@@ -1,3 +1,4 @@
+// TODO: Deprecated, but some old stuff still depends on it.
 namespace Bounded {
 
     ///
