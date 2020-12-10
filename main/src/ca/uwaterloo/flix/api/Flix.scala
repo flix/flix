@@ -113,11 +113,11 @@ class Flix {
     "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
-    "flix/channel/Channel.flix" -> LocalResource.get("/src/library/flix/channel/Channel.flix"),
-    "flix/channel/Ticker.flix" -> LocalResource.get("/src/library/flix/channel/Ticker.flix"),
-    "flix/channel/Timer.flix" -> LocalResource.get("/src/library/flix/channel/Timer.flix"),
-    "flix/time/Duration.flix" -> LocalResource.get("/src/library/flix/time/Duration.flix"),
-    "flix/time/Instant.flix" -> LocalResource.get("/src/library/flix/time/Instant.flix"),
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
+    "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
+    "Duration.flix" -> LocalResource.get("/src/library/Duration.flix"),
+    "Instant.flix" -> LocalResource.get("/src/library/Instant.flix"),
 
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
