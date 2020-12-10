@@ -86,6 +86,18 @@ namespace LazyList2 {
     }
 
     ///
+    /// Returns `Some(x)` if `x` is the `n`th element of `xs`.
+    ///
+    /// Returns `None` if `xs` is empty or `n` >= `length(xs)`.
+    ///
+    /// Forces the first `n` elements of `xs`.
+    ///
+    pub def nth(n: Int32, xs: LazyList2[a]): Option[a] = {
+        let LazyList2(ys) = xs;
+        LazyList.nth(n, force ys)
+    }
+
+    ///
     /// Returns `ys` appended to `xs`.
     ///
     /// Forces the entire list `xs` (but only the first element of `ys`).
@@ -254,17 +266,6 @@ namespace LazyList2 {
         let LazyList2(zs) = xs;
         let LazyList2(qs) = ys;
         LazyList2(lazy LazyList.zip(force zs, force qs))
-    }
-
-    ///
-    /// Returns `true` if and only if `xs` and `ys` and equal.
-    ///
-    /// Forces `Int32.min(length(xs), length(ys))` elements of `xs` and `ys`.
-    ///
-    pub def __eq(xs: LazyList2[a], ys: LazyList2[a]): Bool = {
-        let LazyList2(zs) = xs;
-        let LazyList2(qs) = ys;
-        LazyList.__eq(force zs, force qs)
     }
 
 }

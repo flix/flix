@@ -49,7 +49,10 @@ namespace LazyList {
     ///
     /// Does not force the tail of the list `xs`.
     ///
-    pub def isEmpty(xs: LazyList[a]): Bool = xs == Empty
+    pub def isEmpty(xs: LazyList[a]): Bool = match xs {
+        case Empty => true
+        case _ => false
+    }
 
     ///
     /// Returns the length of `xs`.
@@ -84,7 +87,22 @@ namespace LazyList {
     ///
     pub def last(xs: LazyList[a]): Option[a] = match xs {
         case Empty => None
-        case LazyCons(h, t) => if (isEmpty(force t)) Some(h) else last(force t)
+        case LazyCons(h, t) => {
+            let tail = force t;
+            if (isEmpty(tail)) Some(h) else last(tail)
+        }
+    }
+
+    ///
+    /// Returns `Some(x)` if `x` is the `n`th element of `xs`.
+    ///
+    /// Returns `None` if `xs` is empty or `n` >= `length(xs)`.
+    ///
+    /// Forces the first `n` elements of `xs`.
+    ///
+    pub def nth(n: Int32, xs: LazyList[a]): Option[a] = match xs {
+        case Empty => None
+        case LazyCons(h, t) => if (n == 0) Some(h) else nth(n - 1, force t)
     }
 
     ///
@@ -260,16 +278,5 @@ namespace LazyList {
     /// Does not force the lists `xs` and `ys`.
     ///
     pub def zip(xs: LazyList[a], ys: LazyList[b]): LazyList[(a, b)] = zipWith((x, y) -> (x, y), xs, ys)
-
-    ///
-    /// Returns `true` if and only if `xs` and `ys` and equal.
-    ///
-    /// Forces `Int32.min(length(xs), length(ys))` elements of `xs` and `ys`.
-    ///
-    pub def __eq(xs: LazyList[a], ys: LazyList[a]): Bool = match (xs, ys) {
-        case (Empty, Empty) => true
-        case (LazyCons(h1, t1), LazyCons(h2, t2)) => (h1 == h2) and __eq(force t1, force t2)
-        case _ => false
-    }
 
 }

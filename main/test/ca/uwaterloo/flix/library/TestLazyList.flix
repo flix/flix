@@ -9,44 +9,54 @@ namespace TestLazyList {
 
     @test
     def repeat01(): Bool =
-        LazyList.take(1, LazyList.repeat(1)) == LazyCons(1, lazy Empty)
+        let xs = LazyList.take(1, LazyList.repeat(1));
+        LazyList.length(xs) == 1 and LazyList.head(xs) == Some(1)
 
     @test
     def repeat02(): Bool =
-        LazyList.take(1, LazyList.repeat('a')) == LazyCons('a', lazy Empty)
+        let xs = LazyList.take(1, LazyList.repeat('a'));
+        LazyList.length(xs) == 1 and LazyList.head(xs) == Some('a')
 
     @test
     def repeat03(): Bool =
-        LazyList.take(1, LazyList.repeat("Hello, World!")) == LazyCons("Hello, World!", lazy Empty)
+        let xs = LazyList.take(1, LazyList.repeat("Hello, World!"));
+        LazyList.length(xs) == 1 and LazyList.head(xs) == Some("Hello, World!")
 
     @test
     def repeat04(): Bool =
-        LazyList.take(2, LazyList.repeat(42)) == LazyCons(42, lazy LazyCons(42, lazy Empty))
+        let xs = LazyList.take(2, LazyList.repeat(42));
+        LazyList.length(xs) == 2 and LazyList.head(xs) == Some(42) and LazyList.last(xs) == Some(42)
 
     @test
-    def repeat05(): Bool =
-        LazyList.take(0, LazyList.repeat(42)) == LazyList.empty()
+    def repeat05(): Bool = {
+        let xs = LazyList.take(0, LazyList.repeat(42));
+        LazyList.isEmpty(xs)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // from                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def from01(): Bool =
-        LazyList.take(0, LazyList.from(0)) == LazyList.empty()
+    def from01(): Bool = {
+        let xs = LazyList.take(0, LazyList.from(0));
+        LazyList.isEmpty(xs)
+    }
 
     @test
     def from02(): Bool =
-        LazyList.take(1, LazyList.from(0)) == LazyCons(0, lazy Empty)
+        let xs = LazyList.take(1, LazyList.from(0));
+        LazyList.length(xs) == 1 and LazyList.head(xs) == Some(0)
 
     @test
     def from03(): Bool =
-        LazyList.take(2, LazyList.from(107)) == LazyCons(107, lazy LazyCons(108, lazy Empty))
+        let xs = LazyList.take(2, LazyList.from(107));
+        LazyList.length(xs) == 2 and LazyList.head(xs) == Some(107) and LazyList.last(xs) == Some(108)
 
     @test
     def from04(): Bool = {
         let xs = LazyList.take(3, LazyList.from(42));
-        xs == LazyCons(42, lazy LazyCons(43, lazy LazyCons(44, lazy Empty)))
+        LazyList.nth(0, xs) == Some(42) and LazyList.nth(1, xs) == Some(43) and LazyList.nth(2, xs) == Some(44)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -134,36 +144,67 @@ namespace TestLazyList {
         LazyList.last(LazyCons('a', lazy LazyCons('b', lazy Empty))) == Some('b')
 
     /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nth01(): Bool = LazyList.nth(0, LazyList.empty()) == None
+
+    @test
+    def nth02(): Bool = LazyList.nth(1, LazyList.empty()) == None
+
+    @test
+    def nth03(): Bool = {
+        let xs = LazyList.take(10, LazyList.from(1));
+        LazyList.nth(0, xs) == Some(1)
+    }
+
+    @test
+    def nth04(): Bool = {
+        let xs = LazyList.take(10, LazyList.from(1));
+        LazyList.nth(5, xs) == Some(6)
+    }
+
+    @test
+    def nth05(): Bool = {
+        let xs = LazyList.take(10, LazyList.from(1));
+        LazyList.nth(9, xs) == Some(10)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def append01(): Bool =
-        LazyList.append(LazyList.empty(), LazyList.empty()) == LazyList.empty()
+        LazyList.isEmpty(LazyList.append(LazyList.empty(), LazyList.empty()))
 
     @test
     def append02(): Bool = {
         let xs = LazyList.take(4, LazyList.from(1));
-        LazyList.append(xs, LazyList.empty()) == xs
+        let ys = LazyList.append(xs, LazyList.empty());
+        LazyList.last(xs) == LazyList.last(ys)
     }
 
     @test
     def append03(): Bool = {
         let xs = LazyList.take(4, LazyList.from(1));
-        LazyList.append(LazyList.empty(), xs) == xs
+        let ys = LazyList.append(LazyList.empty(), xs);
+        LazyList.last(xs) == LazyList.last(ys)
     }
 
     @test
     def append04(): Bool = {
         let xs = LazyList.take(4, LazyList.from(1));
         let ys = LazyList.take(9, LazyList.from(5));
-        LazyList.append(xs, ys) == LazyList.take(13, LazyList.from(1))
+        let zs = LazyList.append(xs, ys);
+        LazyList.head(zs) == Some(1) and LazyList.last(zs) == Some(13)
     }
 
     @test
     def append05(): Bool = {
         let xs = LazyList.append(LazyCons(42, lazy Empty), LazyCons(107, lazy Empty));
-        xs == LazyCons(42, lazy LazyCons(107, lazy Empty))
+        LazyList.foldLeft((acc, x) -> acc + x, 0, xs) == 149
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -172,30 +213,30 @@ namespace TestLazyList {
 
     @test
     def reverse01(): Bool =
-        LazyList.reverse(LazyList.empty()) == LazyList.empty()
+        LazyList.isEmpty(LazyList.reverse(LazyList.empty()))
 
     @test
     def reverse02(): Bool = {
-        let xs = LazyCons(42, lazy Empty);
-        LazyList.reverse(xs) == xs
+        let xs = LazyList.reverse(LazyCons(42, lazy Empty));
+        LazyList.head(xs) == Some(42)
     }
 
     @test
     def reverse03(): Bool = {
-        let xs = LazyCons(1, lazy LazyCons(2, lazy Empty));
-        LazyList.reverse(xs) == LazyCons(2, lazy LazyCons(1, lazy Empty))
+        let xs = LazyList.reverse(LazyCons(1, lazy LazyCons(2, lazy Empty)));
+        LazyList.head(xs) == Some(2) and LazyList.last(xs) == Some(1)
     }
 
     @test
     def reverse04(): Bool = {
-        let xs = LazyList.take(7, LazyList.from(0));
-        LazyList.reverse(xs) == LazyList.unfold(x -> if (x == 0) None else Some((x - 1, x - 1)), 7)
+        let xs = LazyList.reverse(LazyList.take(7, LazyList.from(0)));
+        LazyList.head(xs) == Some(6) and LazyList.last(xs) == Some(0)
     }
 
     @test
     def reverse05(): Bool = {
-        let xs = LazyList.unfold(x -> if (x == 42) None else Some((x - 1, x - 1)), 55);
-        LazyList.reverse(xs) == LazyList.take(13, LazyList.from(42))
+        let xs = LazyList.reverse(LazyList.unfold(x -> if (x == 42) None else Some((x - 1, x - 1)), 55));
+        LazyList.head(xs) == Some(42) and LazyList.last(xs) == Some(54)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -204,19 +245,23 @@ namespace TestLazyList {
 
     @test
     def take01(): Bool =
-        LazyList.take(0, LazyList.take(5, LazyList.from(10))) == LazyList.empty()
+        LazyList.isEmpty(LazyList.take(0, LazyList.take(5, LazyList.from(10))))
 
     @test
     def take02(): Bool =
-        LazyList.take(0, LazyList.repeat(4)) == LazyList.empty()
+        LazyList.isEmpty(LazyList.take(0, LazyList.repeat(4)))
 
     @test
-    def take03(): Bool =
-        LazyList.take(1, LazyList.repeat(7)) == LazyCons(7, lazy Empty)
+    def take03(): Bool = {
+        let xs = LazyList.take(1, LazyList.repeat(7));
+        LazyList.length(xs) == 1 and LazyList.head(xs) == Some(7)
+    }
 
     @test
-    def take04(): Bool =
-        LazyList.take(2, LazyList.from(42)) == LazyCons(42, lazy LazyCons(43, lazy Empty))
+    def take04(): Bool = {
+        let xs = LazyList.take(2, LazyList.from(42));
+        LazyList.length(xs) == 2 and LazyList.last(xs) == Some(43)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
@@ -224,23 +269,27 @@ namespace TestLazyList {
 
     @test
     def drop01(): Bool =
-        LazyList.drop(0, LazyList.empty()) == LazyList.empty()
+        LazyList.isEmpty(LazyList.drop(0, LazyList.empty()))
 
     @test
     def drop02(): Bool =
-        LazyList.drop(42, LazyList.empty()) == LazyList.empty()
+        LazyList.isEmpty(LazyList.drop(42, LazyList.empty()))
 
     @test
     def drop03(): Bool =
         LazyList.length(LazyList.drop(7, LazyList.take(10, LazyList.repeat(3)))) == 3
 
     @test
-    def drop04(): Bool =
-        LazyList.drop(9, LazyList.take(10, LazyList.repeat(3))) == LazyCons(3, lazy Empty)
+    def drop04(): Bool = {
+        let xs = LazyList.drop(9, LazyList.take(10, LazyList.repeat(3)));
+        LazyList.length(xs) == 1 and LazyList.head(xs) == Some(3)
+    }
 
     @test
-    def drop05(): Bool =
-        LazyList.drop(1, LazyList.take(5, LazyList.repeat(3))) == LazyList.take(4, LazyList.repeat(3))
+    def drop05(): Bool = {
+        let xs = LazyList.drop(1, LazyList.take(5, LazyList.repeat(3)));
+        LazyList.length(xs) == 4 and LazyList.head(xs) == Some(3)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // tail                                                                    //
@@ -248,19 +297,23 @@ namespace TestLazyList {
 
     @test
     def tail01(): Bool =
-        LazyList.tail(LazyList.empty()) == LazyList.empty()
+        LazyList.isEmpty(LazyList.tail(LazyList.empty()))
 
     @test
     def tail02(): Bool =
-        LazyList.tail(LazyCons(42, lazy Empty)) == LazyList.empty()
+        LazyList.isEmpty(LazyList.tail(LazyCons(42, lazy Empty)))
 
     @test
-    def tail03(): Bool =
-        LazyList.tail(LazyList.take(4, LazyList.from(10))) == LazyList.take(3, LazyList.from(11))
+    def tail03(): Bool = {
+        let xs = LazyList.tail(LazyList.take(4, LazyList.from(10)));
+        LazyList.length(xs) == 3 and LazyList.head(xs) == Some(11)
+    }
 
     @test
-    def tail04(): Bool =
-        LazyList.tail(LazyList.take(10, LazyList.from(0))) == LazyList.take(9, LazyList.from(1))
+    def tail04(): Bool = {
+        let xs = LazyList.tail(LazyList.take(10, LazyList.from(0)));
+        LazyList.length(xs) == 9 and LazyList.head(xs) == Some(1)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
@@ -377,23 +430,25 @@ namespace TestLazyList {
     @test
     def map01(): Bool = {
         let xs = LazyList.map(x -> x * 2, LazyList.take(10, LazyList.from(0)));
-        xs == LazyList.unfold(x -> if (x == 10) None else Some ((x * 2, x + 1)), 0)
+        LazyList.length(xs) == 10 and LazyList.nth(9, xs) == Some(18)
     }
 
     @test
-    def map02(): Bool =
-        LazyList.map(x -> x + 1, LazyCons(1, lazy Empty)) == LazyCons(2, lazy Empty)
+    def map02(): Bool = {
+        let xs = LazyList.map(x -> x + 1, LazyCons(1, lazy Empty));
+        LazyList.head(xs) == Some(2)
+    }
 
     @test
     def map03(): Bool = {
         let xs = LazyList.take(2, LazyList.map(x -> x + "z", LazyList.repeat("x")));
-        xs == LazyCons("xz", lazy LazyCons("xz", lazy Empty))
+        LazyList.head(xs) == Some("xz")
     }
 
     @test
     def map04(): Bool = {
         let xs = LazyList.map(x -> x + 3, LazyList.take(3, LazyList.from(1)));
-        xs == LazyCons(4, lazy LazyCons(5, lazy LazyCons(6, lazy Empty)))
+        LazyList.last(xs) == Some(6)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -403,39 +458,48 @@ namespace TestLazyList {
     @test
     def filter01(): Bool = {
         let xs = LazyList.filter(x -> x >= 2, LazyList.take(10, LazyList.from(0)));
-        xs == LazyList.take(8, LazyList.from(2))
+        LazyList.head(xs) == Some(2) and LazyList.last(xs) == Some(9)
     }
 
     @test
-    def filter02(): Bool =
+    def filter02(): Bool = {
         let xs = LazyList.take(3, LazyList.filter(x -> x % 2 == 0, LazyList.from(0)));
-        xs == LazyCons(0, lazy LazyCons(2, lazy LazyCons(4, lazy Empty)))
+        LazyList.last(xs) == Some(4)
+    }
 
     @test
-    def filter03(): Bool =
-        LazyList.filter(x -> x == '.', LazyList.take(5, LazyList.repeat(':'))) == LazyList.empty()
+    def filter03(): Bool = {
+        let xs = LazyList.filter(x -> x == '.', LazyList.take(5, LazyList.repeat(':')));
+        LazyList.isEmpty(xs)
+    }
 
     @test
-    def filter04(): Bool =
-        LazyList.filter(x -> x > 14, LazyList.take(5, LazyList.from(10))) == LazyList.empty()
+    def filter04(): Bool = {
+        let xs = LazyList.filter(x -> x > 14, LazyList.take(5, LazyList.from(10)));
+        LazyList.isEmpty(xs)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // unfold                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def unfold01(): Bool =
-        LazyList.unfold(x -> if (x == 5) None else Some((x + 1, x + 1)), 0) == LazyList.take(5, LazyList.from(1))
+    def unfold01(): Bool = {
+        let xs = LazyList.unfold(x -> if (x == 5) None else Some((x + 1, x + 1)), 0);
+        LazyList.last(xs) == Some(5)
+    }
 
     @test
-    def unfold02(): Bool =
+    def unfold02(): Bool = {
         let xs = LazyList.unfold(x -> if (x == 100) None else Some((Char.fromInt32(x), x + 1)), 97);
-        xs == LazyCons('a', lazy LazyCons('b', lazy LazyCons('c', lazy Empty)))
+        LazyList.head(xs) == Some('a') and LazyList.last(xs) == Some('c')
+    }
 
     @test
-    def unfold03(): Bool =
-        let xs = LazyList.reverse(LazyList.take(10, LazyList.from(0)));
-        LazyList.unfold(x -> if (x == 0) None else Some((x - 1, x - 1)), 10) == xs
+    def unfold03(): Bool = {
+        let xs = LazyList.unfold(x -> if (x == 0) None else Some((x - 1, x - 1)), 10);
+        LazyList.head(xs) == Some(9)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWith                                                                 //
@@ -445,27 +509,29 @@ namespace TestLazyList {
     def zipWith01(): Bool = {
         let xs = LazyList.take(3, LazyList.repeat(1));
         let ys = LazyList.zipWith((x, y) -> (x + 1, y + 1), xs, xs);
-        ys == LazyCons((2, 2), lazy LazyCons((2, 2), lazy LazyCons((2, 2), lazy Empty)))
+        LazyList.length(ys) == 3 and LazyList.head(ys) == Some((2, 2))
     }
 
     @test
     def zipWith02(): Bool = {
         let xs = LazyList.take(3, LazyList.repeat(1));
-        LazyList.zipWith((x, y) -> (x + 1, y + 1), xs, LazyList.empty()) == LazyList.empty()
+        let ys = LazyList.zipWith((x, y) -> (x + 1, y + 1), xs, LazyList.empty());
+        LazyList.isEmpty(ys)
     }
 
     @test
     def zipWith03(): Bool = {
         let xs = LazyList.take(3, LazyList.repeat(1));
-        LazyList.zipWith((x, y) -> (x + 1, y + 1), LazyList.empty(), xs) == LazyList.empty()
+        let ys = LazyList.zipWith((x, y) -> (x + 1, y + 1), LazyList.empty(), xs);
+        LazyList.isEmpty(ys)
     }
 
     @test
     def zipWith04(): Bool = {
         let xs = LazyList.take(4, LazyList.from(5));
         let ys = LazyList.take(4, LazyList.from(11));
-        let zs = LazyCons((6, 10), lazy LazyCons((7, 11), lazy LazyCons((8, 12), lazy LazyCons((9, 13), lazy Empty))));
-        LazyList.zipWith((x, y) -> (x + 1, y - 1), xs, ys) == zs
+        let zs = LazyList.zipWith((x, y) -> (x + 1, y - 1), xs, ys);
+        LazyList.head(zs) == Some((6, 10)) and LazyList.last(zs) == Some((9, 13))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -475,25 +541,27 @@ namespace TestLazyList {
     @test
     def zip01(): Bool = {
         let xs = LazyList.take(2, LazyList.zip(LazyList.repeat(4), LazyList.repeat(7)));
-        LazyCons((4, 7), lazy LazyCons((4, 7), lazy Empty)) == xs
+        LazyList.head(xs) == Some((4, 7))
     }
 
     @test
     def zip02(): Bool = {
         let xs = LazyList.take(1, LazyList.zip(LazyList.repeat('a'), LazyList.repeat('b')));
-        LazyCons(('a', 'b'), lazy Empty) == xs
+        LazyList.head(xs) == Some(('a', 'b'))
     }
 
     @test
     def zip03(): Bool = {
         let xs = LazyList.take(3, LazyList.repeat(1));
-        LazyList.zip(xs, LazyList.empty()) == LazyList.empty()
+        let ys = LazyList.zip(xs, LazyList.empty());
+        LazyList.isEmpty(ys)
     }
 
     @test
     def zip04(): Bool = {
         let xs = LazyList.take(3, LazyList.repeat(1));
-        LazyList.zip(LazyList.empty(), xs) == LazyList.empty()
+        let ys = LazyList.zip(LazyList.empty(), xs);
+        LazyList.isEmpty(ys)
     }
 
 }
