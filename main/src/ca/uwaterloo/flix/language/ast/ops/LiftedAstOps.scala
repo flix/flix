@@ -109,7 +109,7 @@ object LiftedAstOps {
         }
         val h = visitPredicateHead(head, newVarMap)
         val b = body.map(bP => visitPredicateBody(bP, newVarMap))
-        Constraint(newCParams, h, b, loc)
+        Constraint(newCParams.reverse, h, b, loc)
     }
 
     def visitOption(op: Option[Expression], varMap: Map[Symbol.VarSym, Symbol.VarSym]): Option[Expression] = op match {
@@ -181,9 +181,11 @@ object LiftedAstOps {
         val a = args.map(ea => visit(ea, varMap))
         Expression.ApplyDefTail(sym, a, tpe, loc)
 
-      // Todo: Not sure what is going on here
+      // Todo: Not sure what is going on here, but I think that the formals and actuals should just be updated
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
-        ???
+        val fs = formals.map(f => visitFormalParams(f, varMap))
+        val as = actuals.map(e => visit(e, varMap))
+        Expression.ApplySelfTail(sym, fs, as, tpe, loc)
 
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visit(exp, varMap)
@@ -200,7 +202,7 @@ object LiftedAstOps {
         val e3 = visit(exp3, varMap)
         Expression.IfThenElse(e1, e2, e3, tpe, loc)
 
-      // Todo: Maybe we should refresh the labels before visiting the exps?
+      // Todo: Maybe we should refresh the labelSyms before visiting the exps?
       case Expression.Branch(exp, branches, tpe, loc) =>
         val e = visit(exp, varMap)
         val b = branches.map {
@@ -419,7 +421,7 @@ object LiftedAstOps {
         Expression.FixpointFold(pred, e1, e2, e3, tpe, loc)
 
       // Todo: not sure how to deal with HoleError
-      case Expression.HoleError(_, _, _) => exp0
+      case Expression.HoleError(_, _, _) => ???
       case Expression.MatchError(_, _) => exp0
 
     }
