@@ -1,6 +1,7 @@
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
 ///
+// TODO: Deprecated, but some old stuff still depends on it.
 namespace PartialOrder {
 
     ///

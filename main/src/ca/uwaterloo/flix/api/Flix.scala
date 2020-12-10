@@ -99,12 +99,10 @@ class Flix {
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
     "Core/Cmp/Ordering.flix" -> LocalResource.get("/src/library/Core/Cmp/Ordering.flix"),
 
-    "Core/ToString.flix" -> LocalResource.get("/src/library/Core/ToString.flix"),
-    "Core/FromString.flix" -> LocalResource.get("/src/library/Core/FromString.flix"),
-    "Core/Functor.flix" -> LocalResource.get("/src/library/Core/Functor.flix"),
-    "Core/Hash.flix" -> LocalResource.get("/src/library/Core/Hash.flix"),
-
-    "Pkger/SemVer.flix" -> LocalResource.get("/src/library/Pkger/SemVer.flix"),
+    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
+    "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
+    "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
+    "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),
@@ -113,11 +111,11 @@ class Flix {
     "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
-    "flix/channel/Channel.flix" -> LocalResource.get("/src/library/flix/channel/Channel.flix"),
-    "flix/channel/Ticker.flix" -> LocalResource.get("/src/library/flix/channel/Ticker.flix"),
-    "flix/channel/Timer.flix" -> LocalResource.get("/src/library/flix/channel/Timer.flix"),
-    "flix/time/Duration.flix" -> LocalResource.get("/src/library/flix/time/Duration.flix"),
-    "flix/time/Instant.flix" -> LocalResource.get("/src/library/flix/time/Instant.flix"),
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
+    "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
+    "Duration.flix" -> LocalResource.get("/src/library/Duration.flix"),
+    "Instant.flix" -> LocalResource.get("/src/library/Instant.flix"),
 
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),

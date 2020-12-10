@@ -1,6 +1,7 @@
 ///
 /// A Total Order is a Partial Order where the function ⊑ satisfies totality.
 ///
+// TODO: Deprecated, but some old stuff still depends on it.
 namespace TotalOrder {
 
     /**
