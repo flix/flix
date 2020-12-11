@@ -1511,7 +1511,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
     //
-    val prefixNs = sig0.sym.namespace
+    val prefixNs = sig0.sym.clazz.namespace :+ sig0.sym.clazz.name
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
       return true

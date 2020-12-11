@@ -152,7 +152,7 @@ object Symbol {
     * Returns the signature symbol for the given name `ident` in the class associated with the given class symbol `classSym`.
     */
   def mkSigSym(classSym: ClassSym, ident: Name.Ident): SigSym = {
-    new SigSym(classSym, classSym.namespace :+ classSym.name, ident.name, ident.loc)
+    new SigSym(classSym, ident.name, ident.loc)
   }
 
   /**
@@ -301,7 +301,7 @@ object Symbol {
   /**
     * Signature Symbol.
     */
-  final class SigSym(val clazz: Symbol.ClassSym, val namespace: List[String], val name: String, val loc: SourceLocation) {
+  final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
