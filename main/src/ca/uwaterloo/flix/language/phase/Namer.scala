@@ -95,7 +95,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           // Case 1: The class does not already exist. Update it.
           visitClass(decl, uenv0, Map.empty, ns0) flatMap {
             case clazz@NamedAst.Class(_, _, _, _, sigs, _) =>
-              // check whether each sig is already in the root
+              // add each signature to the namespace
               val defsAndSigsVal = Validation.fold(sigs, defsAndSigs0) {
                 case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
                   case Some(otherSig) =>
