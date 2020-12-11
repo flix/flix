@@ -1492,9 +1492,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
-          constraintTypes <- seqM(cs.map(visitConstraint))
+          (constrs, constraintTypes) <- seqM(cs.map(visitConstraint)).map(_.unzip)
           resultTyp <- unifyTypeAllowEmptyM(tvar :: constraintTypes, loc)
-        } yield (List.empty, resultTyp, Type.Pure)
+        } yield (constrs.flatten, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
         //
@@ -1578,7 +1578,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     /**
       * Infers the type of the given constraint `con0` inside the inference monad.
       */
-    def visitConstraint(con0: ResolvedAst.Constraint): InferMonad[Type] = {
+    def visitConstraint(con0: ResolvedAst.Constraint): InferMonad[(List[Ast.TypeConstraint], Type)] = {
       val ResolvedAst.Constraint(cparams, head0, body0, loc) = con0
       //
       //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -1590,7 +1590,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, root)))
         bodyPredicateType <- unifyTypeAllowEmptyM(bodyPredicateTypes, loc)
         resultType <- unifyTypeM(headPredicateType, bodyPredicateType, loc)
-      } yield resultType
+      } yield (/* TODO */ Nil, resultType)
     }
 
     visitExp(exp0)
