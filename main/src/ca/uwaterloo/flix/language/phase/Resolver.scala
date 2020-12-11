@@ -1520,7 +1520,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     // The definition is not accessible.
     //
     false
-    true // MATT temp hack
   }
 
   /**

@@ -218,7 +218,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |  def f(x: a): String
+        |  pub def f(x: a): String
         |}
         |def foo(x: a): String = C.f(x)
         |""".stripMargin
@@ -230,7 +230,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |  def f(x: a): String
+        |  pub def f(x: a): String
         |}
         |def foo(x: Int): String = C.f(x)
         |""".stripMargin
@@ -246,7 +246,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |class C[a] {
-        |    def f(x: a): String
+        |    pub def f(x: a): String
         |}
         |
         |instance C[Int] {
@@ -273,7 +273,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |class C[a] {
-        |    def f(x: a): String
+        |    pub def f(x: a): String
         |}
         |
         |instance C[Int] {
@@ -296,7 +296,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a): Int
+        |    pub def f(x: a): Int
         |}
         |
         |instance C[Int] {
@@ -313,7 +313,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a): Int
+        |    pub def f(x: a): Int
         |}
         |
         |def foo[a : C, b](x: a, y: b): String = C.f(x) + C.f(y)

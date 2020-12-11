@@ -1,6 +1,6 @@
 namespace A {
     pub class FClass[a] {
-        def f(): a
+        pub def f(): a
     }
 
     instance FClass[Int] {
@@ -25,7 +25,7 @@ namespace A {
 
 namespace B {
     pub class FClass[a] {
-        def f(): a
+        pub def f(): a
     }
 
     instance FClass[Int] {
@@ -51,7 +51,7 @@ namespace B {
 
 namespace C {
     pub class FClass[a] {
-        def f(): a
+        pub def f(): a
     }
 
     instance FClass[Int] {
@@ -86,7 +86,7 @@ namespace D {
 }
 
 pub class GClass[a] {
-    def g(): a
+    pub def g(): a
 }
 
 instance GClass[Int] {
@@ -95,7 +95,7 @@ instance GClass[Int] {
 
 namespace X {
     pub class GClass[a] {
-        def g(): a
+        pub def g(): a
     }
 
     instance GClass[Int] {
@@ -104,7 +104,7 @@ namespace X {
 
     namespace Y {
         pub class GClass[a] {
-            def g(): a
+            pub def g(): a
         }
 
         instance GClass[Int] {
@@ -113,7 +113,7 @@ namespace X {
 
         namespace Z {
             pub class GClass[a] {
-                def g(): a
+                pub def g(): a
             }
 
             instance GClass[Int] {

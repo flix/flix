@@ -7,14 +7,14 @@ namespace Test/Dec/Class {
     namespace Test02 {
 
         class X[a] {
-            def f(x: a): Bool
+            pub def f(x: a): Bool
         }
 
     }
 
     namespace Test03 {
         class X[a] {
-            def f(x: a): Bool
+            pub def f(x: a): Bool
         }
 
         instance X[Int] {
@@ -26,11 +26,11 @@ namespace Test/Dec/Class {
 
     namespace Test04 {
         class C[a] {
-            def f(x: a): Bool
+            pub def f(x: a): Bool
         }
 
         class D[a] {
-            def g(x: a): Bool
+            pub def g(x: a): Bool
         }
 
         pub def h[a : C : D](x: a): Bool = Test/Dec/Class/Test04/C.f(x) and Test/Dec/Class/Test04/D.g(x)
@@ -51,7 +51,7 @@ namespace Test/Dec/Class {
         use Test/Dec/Class.Option;
 
         pub class C[a] {
-            def f(x: a): Bool
+            pub def f(x: a): Bool
         }
 
         instance C[Int] {
@@ -82,7 +82,7 @@ namespace Test/Dec/Class {
         use Test/Dec/Class.Option.Some;
 
         class F[m :# Type -> Type] {
-            def map(f: a -> b, x: m[a]): m[b]
+            pub def map(f: a -> b, x: m[a]): m[b]
         }
 
         instance F[Option] {
@@ -95,7 +95,7 @@ namespace Test/Dec/Class {
 
     namespace Test09 {
         class Eff[e :# Bool] {
-            def isPure(f: a -> b & e): Bool
+            pub def isPure(f: a -> b & e): Bool
         }
 
         instance Eff[Pure] {

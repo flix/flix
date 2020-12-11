@@ -26,7 +26,7 @@ namespace Test/Exp/Infix {
     }
 
     class Divisible[a] {
-        def div(x: a, y: a): a
+        pub def div(x: a, y: a): a
     }
 
     instance Divisible[Int] {
