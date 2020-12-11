@@ -142,11 +142,7 @@ object Scheme {
       * Checks that `tconstr` is entailed by `tconstrs`.
       */
     def checkEntailment(tconstrs: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint): Result[Unit, UnificationError] = {
-      if (ClassEnvironment.entail(tconstrs, tconstr, classEnv)) {
-        ().toOk
-      } else {
-        UnificationError.UnfulfilledConstraint(tconstr).toErr
-      }
+      ClassEnvironment.entail(tconstrs, tconstr, classEnv)
     }
 
     ///

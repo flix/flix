@@ -32,20 +32,19 @@ object ClassEnvironment {
     * That is, `tconstr` is true if all of `tconstrs0` are true.
     */
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
-  // MATT return Result instead of boolean
-  def entail(tconstrs0: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
+  def entail(tconstrs0: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Result[Unit, UnificationError] = {
 
     val superClasses = tconstrs0.flatMap(bySuper)
 
     // Case 1: tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
     if (superClasses.contains(tconstr)) {
-      true
+      ().toOk
     } else {
       // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
-      byInst(tconstr, instances) match {
-        case Result.Ok(tconstrs) => tconstrs.forall(entail(tconstrs0, _, instances))
-        case Result.Err(_) => false
-      }
+      for {
+        tconstrs <- byInst(tconstr, instances)
+        _ <- Result.sequence(tconstrs.map(entail(tconstrs0, _, instances)))
+      } yield ()
     }
   }
 
@@ -57,7 +56,7 @@ object ClassEnvironment {
     @tailrec
     def loop(tconstrs0: List[Ast.TypeConstraint], acc: List[Ast.TypeConstraint]): List[Ast.TypeConstraint] = tconstrs0 match {
       case Nil => acc
-      case head :: tail if entail(acc ++ tail, head, instances) => loop(tail, acc)
+      case head :: tail if entail(acc ++ tail, head, instances).isInstanceOf[Result.Ok[_, _]] => loop(tail, acc)
       case head :: tail => loop(tail, head :: acc)
     }
 

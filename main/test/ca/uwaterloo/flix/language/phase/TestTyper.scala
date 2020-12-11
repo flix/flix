@@ -223,7 +223,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(x: a): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.UnfulfilledConstraint](result)
+    expectError[TypeError.NoMatchingInstance](result)
   }
 
   test("TestLeq.Class.02") {
@@ -235,7 +235,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(x: Int): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.UnfulfilledConstraint](result)
+    expectError[TypeError.NoMatchingInstance](result)
   }
 
   test("TestLeq.Class.03") {
@@ -262,7 +262,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def doF(x: Box[Float]): String = C.f(x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.UnfulfilledConstraint](result)
+    expectError[TypeError.NoMatchingInstance](result)
   }
 
   test("TestLeq.Class.04") {
@@ -289,7 +289,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def doF(x: Box[Int]): String = C.f(C.f(x))
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.UnfulfilledConstraint](result)
+    expectError[TypeError.NoMatchingInstance](result)
   }
 
   test("TestLeq.Class.05") {
@@ -303,10 +303,10 @@ class TestTyper extends FunSuite with TestUtils {
         |    def f(x: Int): Int = x
         |}
         |
-        |def foo(x: a, y: Int): String = C.f(x) + C.f(y)
+        |def foo(x: a, y: Int): Int = C.f(x) + C.f(y)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.NoMatchingInstance](result)
   }
 
   test("TestLeq.Class.06") {
@@ -316,10 +316,10 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def f(x: a): Int
         |}
         |
-        |def foo[a : C, b](x: a, y: b): String = C.f(x) + C.f(y)
+        |def foo[a : C, b](x: a, y: b): Int = C.f(x) + C.f(y)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.NoMatchingInstance](result)
   }
 
   test("TestChoose.Arity1.01") {

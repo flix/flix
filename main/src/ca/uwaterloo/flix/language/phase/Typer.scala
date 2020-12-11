@@ -214,7 +214,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               Scheme.checkLessThanEqual(sc, completeScheme, classEnv) match {
                 case Result.Ok(_) => // noop
                 case Result.Err(UnificationError.NoMatchingInstance(clazz, tpe)) => return TypeError.NoMatchingInstance(clazz, tpe, loc).toFailure
-                case Result.Err(UnificationError.UnfulfilledConstraint(tconstr)) => return TypeError.UnfulfilledConstraint(tconstr, loc).toFailure
                 case Result.Err(_) => return TypeError.GeneralizationError(declaredScheme, sc, loc).toFailure
               }
 
