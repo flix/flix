@@ -35,6 +35,15 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
   /**
+    * The following classes are assumed to always exist.
+    */
+  // TODO: Maybe this needs to be an argument we pass around.
+  object PredefinedClasses {
+    // TODO: It would be better to use the actual source location.
+    val ToString: Symbol.ClassSym = new Symbol.ClassSym("ToString" :: Nil, "ToString", SourceLocation.Unknown)
+  }
+
+  /**
     * Type checks the given AST root.
     */
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
@@ -1586,11 +1595,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       //  A_0 :- A_1, ..., A_n : tpe
       //
       for {
-        headPredicateType <- inferHeadPredicate(head0, root)
-        bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, root)))
+        (constrs, headPredicateType) <- inferHeadPredicate(head0, root)
+        bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, root))) // TODO: Constr
         bodyPredicateType <- unifyTypeAllowEmptyM(bodyPredicateTypes, loc)
         resultType <- unifyTypeM(headPredicateType, bodyPredicateType, loc)
-      } yield (/* TODO */ Nil, resultType)
+      } yield (constrs, resultType)
     }
 
     visitExp(exp0)
@@ -2142,7 +2151,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given head predicate.
     */
-  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = head match {
+  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
@@ -2154,7 +2163,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(pred, predicateType, restRow)
+        additionalConstraints = termTypes.map(Ast.TypeConstraint(PredefinedClasses.ToString, _))
+      } yield (termConstrs.flatten ++ additionalConstraints, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
@@ -2166,7 +2176,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (tconstrs, typ, eff) <- inferExp(exp, root)
         pureEff <- unifyBoolM(Type.Pure, eff, loc)
         resultType <- unifyTypeM(tvar, typ, loc)
-      } yield resultType
+      } yield (tconstrs, resultType)
   }
 
   /**
