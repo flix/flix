@@ -189,6 +189,23 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDefOrSig](result)
   }
 
+  test("DuplicateDefOrSig.11") {
+    val input =
+      s"""
+         |namespace A/C {
+         |  def f(): Int = 42
+         |}
+         |
+         |namespace A {
+         |  class C[a] {
+         |    def f(x: a): Int
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateDefOrSig](result)
+  }
+
   test("DuplicateUseDef.01") {
     val input =
       s"""
