@@ -53,17 +53,17 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.AmbiguousVarOrUse](result)
   }
 
-  test("DuplicateDef.01") {
+  test("DuplicateDefOrSig.01") {
     val input =
       s"""
          |def f(): Int = 42
          |def f(): Int = 21
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateDef](result)
+    expectError[NameError.DuplicateDefOrSig](result)
   }
 
-  test("DuplicateDef.02") {
+  test("DuplicateDefOrSig.02") {
     val input =
       s"""
          |def f(): Int = 42
@@ -71,10 +71,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(): Int = 11
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateDef](result)
+    expectError[NameError.DuplicateDefOrSig](result)
   }
 
-  test("DuplicateDef.03") {
+  test("DuplicateDefOrSig.03") {
     val input =
       s"""
          |def f(x: Int): Int = 42
@@ -82,10 +82,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Int): Int = 11
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateDef](result)
+    expectError[NameError.DuplicateDefOrSig](result)
   }
 
-  test("DuplicateDef.04") {
+  test("DuplicateDefOrSig.04") {
     val input =
       s"""
          |def f(): Int = 42
@@ -93,10 +93,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateDef](result)
+    expectError[NameError.DuplicateDefOrSig](result)
   }
 
-  test("DuplicateDef.05") {
+  test("DuplicateDefOrSig.05") {
     val input =
       s"""
          |namespace A {
@@ -108,10 +108,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateDef](result)
+    expectError[NameError.DuplicateDefOrSig](result)
   }
 
-  test("DuplicateDef.06") {
+  test("DuplicateDefOrSig.06") {
     val input =
       s"""
          |namespace A/B/C {
@@ -127,7 +127,66 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateDef](result)
+    expectError[NameError.DuplicateDefOrSig](result)
+  }
+
+  test("DuplicateDefOrSig.07") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a): Int
+        |    def f(x: a): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateDefOrSig](result)
+  }
+
+  test("DuplicateDefOrSig.08") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(x: a): Int
+        |    def f(x: a): Bool
+        |    def f(x: Int): a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateDefOrSig](result)
+  }
+
+  test("DuplicateDefOrSig.09") {
+    val input =
+      s"""
+         |class A[a] {
+         |  def f(x: a): Int
+         |}
+         |
+         |namespace A {
+         |  def f(): Int = 21
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateDefOrSig](result)
+  }
+
+  test("DuplicateDefOrSig.10") {
+    val input =
+      s"""
+         |namespace A/B/C {
+         |  def f(): Int = 42
+         |}
+         |
+         |namespace A {
+         |  namespace B {
+         |    class C[a] {
+         |      def f(x: a): Int
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateDefOrSig](result)
   }
 
   test("DuplicateUseDef.01") {

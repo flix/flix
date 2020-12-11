@@ -85,7 +85,7 @@ object NameError {
     * @param loc1 the location of the first definition.
     * @param loc2 the location of the second definition.
     */
-  case class DuplicateDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate definition."
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal

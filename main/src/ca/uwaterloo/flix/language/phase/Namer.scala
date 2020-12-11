@@ -104,8 +104,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                     val loc2 = otherSig.loc
                     Failure(LazyList(
                       // NB: We report an error at both source locations.
-                      NameError.DuplicateDef(name, loc1, loc2), // MATT test
-                      NameError.DuplicateDef(name, loc2, loc1) // MATT rename to DefOrSig
+                      NameError.DuplicateDefOrSig(name, loc1, loc2),
+                      NameError.DuplicateDefOrSig(name, loc2, loc1)
                     ))
                   case None => (defsAndSigs + (sig.sym.name -> sig)).toSuccess
                 }
@@ -157,8 +157,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val loc2 = ident.loc
           Failure(LazyList(
             // NB: We report an error at both source locations.
-            NameError.DuplicateDef(name, loc1, loc2),
-            NameError.DuplicateDef(name, loc2, loc1),
+            NameError.DuplicateDefOrSig(name, loc1, loc2),
+            NameError.DuplicateDefOrSig(name, loc2, loc1),
           ))
       }
 
@@ -209,8 +209,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val loc2 = ident.loc
           Failure(LazyList(
             // NB: We report an error at both source locations.
-            NameError.DuplicateDef(name, loc1, loc2),
-            NameError.DuplicateDef(name, loc2, loc1)
+            NameError.DuplicateDefOrSig(name, loc1, loc2),
+            NameError.DuplicateDefOrSig(name, loc2, loc1)
           ))
       }
 

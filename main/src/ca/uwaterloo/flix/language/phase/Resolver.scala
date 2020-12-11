@@ -1068,7 +1068,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
+    */
   def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
     val defOrSigOpt = tryLookupDefOrSig(qname, ns0, root)
 
@@ -1089,7 +1091,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Attempts to lookup the definition or signature with qualified name `qname` in the namespace `ns0`.
+    */
   def tryLookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.DefOrSig] = {
     if (qname.isUnqualified) {
       // Case 1: Unqualified name. Lookup in the current namespace.
@@ -1462,7 +1466,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
   // MATT update docs
   /**
-    * Determines if the definition is accessible from the namespace.
+    * Determines if the definition or signature is accessible from the namespace.
     *
     * A definition `defn0` is accessible from a namespace `ns0` if:
     *
