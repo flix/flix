@@ -36,6 +36,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
   /**
     * The following classes are assumed to always exist.
+    *
+    * Anything added here must be mentioned in `CoreLibrary` in the Flix class.
     */
   object PredefinedClasses {
 
