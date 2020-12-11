@@ -23,10 +23,6 @@ import scala.collection.immutable.List
 
 object NamedAst {
 
-  sealed trait DefOrSig {
-    val loc: SourceLocation
-  }
-
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
@@ -41,9 +37,13 @@ object NamedAst {
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
-  case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation) extends DefOrSig
+  sealed trait DefOrSig {
+    val loc: SourceLocation
+  }
 
   case class Def(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation) extends DefOrSig
+
+  case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation) extends DefOrSig
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, kind: Kind, loc: SourceLocation)
 
