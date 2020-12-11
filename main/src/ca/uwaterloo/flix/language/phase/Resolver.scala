@@ -1464,40 +1464,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     false
   }
 
-  // MATT update docs
-  /**
-    * Determines if the definition or signature is accessible from the namespace.
-    *
-    * A definition `defn0` is accessible from a namespace `ns0` if:
-    *
-    * (a) the definition is marked public, or
-    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
-    */
-  def isDefOrSigAccessible(defn0: NamedAst.DefOrSig, ns0: Name.NName): Boolean = {
-    val (mod, ns) = defn0 match {
-      case NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc) => (mod, sym.namespace)
-      case NamedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc) => (mod, sym.namespace)
-    }
-
-    //
-    // Check if the definition is marked public.
-    //
-    if (mod.isPublic)
-      return true
-
-    //
-    // Check if the definition is defined in `ns0` or in a parent of `ns0`.
-    //
-    val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(ns))
-      return true
-
-    //
-    // The definition is not accessible.
-    //
-    false
-  }
-
   /**
     * Determines if the definition is accessible from the namespace.
     *
