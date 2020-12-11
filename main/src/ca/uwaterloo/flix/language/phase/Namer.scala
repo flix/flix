@@ -345,7 +345,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tparam = getTypeParamDefaultStar(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
       for {
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam)) // MATT should visit in new ns?
+        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
       } yield NamedAst.Class(doc, mod, sym, tparam, sigs, loc)
   }
 
