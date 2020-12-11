@@ -37,10 +37,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * The following classes are assumed to always exist.
     */
-  // TODO: Maybe this needs to be an argument we pass around.
   object PredefinedClasses {
-    // TODO: It would be better to use the actual source location.
-    val ToString: Symbol.ClassSym = new Symbol.ClassSym("ToString" :: Nil, "ToString", SourceLocation.Unknown)
+
+    /**
+      * Returns the `ToString` class symbol.
+      */
+    def lookupToStringClassSym(root: ResolvedAst.Root): Symbol.ClassSym = {
+      val key = new Symbol.ClassSym("ToString" :: Nil, "ToString", SourceLocation.Unknown)
+      root.classes.get(key) match {
+        case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
+        case Some(clazz) => clazz.sym
+      }
+    }
+
   }
 
   /**
@@ -1595,11 +1604,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       //  A_0 :- A_1, ..., A_n : tpe
       //
       for {
-        (constrs, headPredicateType) <- inferHeadPredicate(head0, root)
-        bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, root))) // TODO: Constr
+        (constrs1, headPredicateType) <- inferHeadPredicate(head0, root)
+        (constrs2, bodyPredicateTypes) <- seqM(body0.map(b => inferBodyPredicate(b, root))).map(_.unzip)
         bodyPredicateType <- unifyTypeAllowEmptyM(bodyPredicateTypes, loc)
         resultType <- unifyTypeM(headPredicateType, bodyPredicateType, loc)
-      } yield (constrs, resultType)
+      } yield (constrs1 ++ constrs2.flatten, resultType)
     }
 
     visitExp(exp0)
@@ -2163,7 +2172,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        additionalConstraints = termTypes.map(Ast.TypeConstraint(PredefinedClasses.ToString, _))
+        additionalConstraints = termTypes.map(Ast.TypeConstraint(PredefinedClasses.lookupToStringClassSym(root), _))
       } yield (termConstrs.flatten ++ additionalConstraints, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -2195,7 +2204,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given body predicate.
     */
-  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = body0 match {
+  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = body0 match {
     //
     //  t_1 : tpe_1, ..., t_n: tpe_n
     //  ------------------------------------------------------------
@@ -2206,7 +2215,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(pred, predicateType, restRow)
+        additionalConstraints = termTypes.map(Ast.TypeConstraint(PredefinedClasses.lookupToStringClassSym(root), _))
+      } yield (additionalConstraints, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     //
     //  exp : Bool
@@ -2219,7 +2229,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (constrs, tpe, eff) <- inferExp(exp, root)
         expEff <- unifyBoolM(Type.Pure, eff, loc)
         expTyp <- unifyTypeM(Type.Bool, tpe, loc)
-      } yield mkAnySchemaType()
+      } yield (constrs, mkAnySchemaType())
   }
 
   /**
