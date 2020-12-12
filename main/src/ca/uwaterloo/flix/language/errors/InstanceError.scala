@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Underline}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -114,6 +114,21 @@ object InstanceError {
       vt << NewLine
       vt << Underline("Tip:") << " Remove this definition from the instance."
     }
+  }
+
+  // MATT docs
+  case class DuplicateTypeParameter(tvar: Type.Var, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "" // MATT
+
+    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+  }
+
+  // MATT docs
+  case class ComplexInstanceType(tpe: Type, loc: SourceLocation) extends InstanceError {
+
+    override def summary: String = "" // MATT
+
+    override def message: VirtualTerminal = new VirtualTerminal() // MATT
   }
 
 }

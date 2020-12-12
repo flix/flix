@@ -58,9 +58,9 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[(a, Int)]
+        |instance C[(a, b)]
         |
-        |instance C[(Bool, b)]
+        |instance C[(x, y)]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.OverlappingInstances](result)
@@ -71,9 +71,9 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[() -> a]
+        |instance C[a -> b & e]
         |
-        |instance C[a -> ()]
+        |instance C[x -> y & e]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.OverlappingInstances](result)
@@ -90,40 +90,73 @@ class TestInstances extends FunSuite with TestUtils {
         |
         |instance C[Box[a]]
         |
-        |instance C[Box[Int]]
+        |instance C[Box[b]]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
-  test("Test.OverlappingInstance.06") {
+  test("Test.ComplexInstanceType.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[(a, Int)]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.ComplexInstanceType](result)
+  }
+
+  test("Test.ComplexInstanceType.02") {
     val input =
       """
         |class C[a]
         |
         |instance C[() -> a]
-        |
-        |instance C[a -> ()]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.OverlappingInstances](result)
+    expectError[InstanceError.ComplexInstanceType](result)
   }
 
-  test("Test.OverlappingInstance.07") {
+  test("Test.ComplexInstanceType.03") {
+    val input =
+      """
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |class C[a]
+        |
+        |instance C[Box[Int]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.ComplexInstanceType](result)
+  }
+
+  test("Test.ComplexInstanceType.04") {
     val input =
       """
         |class C[a]
         |
-        |instance C[() -> a & e]
-        |
-        |instance C[a -> () & e]
+        |instance C[a -> b]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.OverlappingInstances](result)
+    expectError[InstanceError.ComplexInstanceType](result)
+  }
+
+  test("Test.ComplexInstanceType.05") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[Int -> b & e]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.ComplexInstanceType](result)
   }
 
 
-  test("Test.OverlappingInstance.08") {
+  test("Test.ComplexInstanceType.06") {
     val input =
       """
         |enum Box[a] {
@@ -133,11 +166,46 @@ class TestInstances extends FunSuite with TestUtils {
         |class C[a]
         |
         |instance C[Box[a] -> b & e]
-        |
-        |instance C[Box[Int] ~> ()]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.OverlappingInstances](result)
+    expectError[InstanceError.ComplexInstanceType](result)
+  }
+
+  test("Test.DuplicateTypeParameter.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[(a, a)]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.DuplicateTypeParameter](result)
+  }
+
+  test("Test.DuplicateTypeParameter.02") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[a -> a & e]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.DuplicateTypeParameter](result)
+  }
+
+  test("Test.DuplicateTypeParameter.03") {
+    val input =
+      """
+        |enum DoubleBox[a, b] {
+        |    case DoubleBox(a, b)
+        |}
+        |
+        |class C[a]
+        |
+        |instance C[DoubleBox[a, a]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.DuplicateTypeParameter](result)
   }
 
   test("Test.MissingImplementation.01") {

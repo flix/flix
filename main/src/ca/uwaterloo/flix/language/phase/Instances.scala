@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -42,6 +42,19 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns [[Err]] if a definition fails to type check.
     */
   private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
+
+    // MATT docs
+    def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
+      case TypedAst.Instance(_, _, _, tpe, _, _, loc) =>
+        Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
+          case (seen, tvar: Type.Var) =>
+            if (seen.contains(tvar))
+              InstanceError.DuplicateTypeParameter(tvar, loc).toFailure // MATT better loc
+            else
+              (tvar :: seen).toSuccess
+          case (_, _) => InstanceError.ComplexInstanceType(tpe, loc).toFailure // MATT better loc
+        }.map(_ => ())
+    }
 
     /**
       * Checks for overlap of instance types, assuming the instances are of the same class.
@@ -104,6 +117,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       checkEach(checks) {
         case inst :: unchecked =>
           for {
+            _ <- checkSimple(inst)
             _ <- Validation.traverse(unchecked)(checkOverlap(_, inst))
             _ <- checkSigMatch(inst)
           } yield ()
