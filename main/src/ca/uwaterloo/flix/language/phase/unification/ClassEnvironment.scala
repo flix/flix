@@ -17,10 +17,9 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
-import ca.uwaterloo.flix.util.collection.MultiMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.annotation.tailrec
 
@@ -32,18 +31,18 @@ object ClassEnvironment {
     * That is, `tconstr` is true if all of `tconstrs0` are true.
     */
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
-  def entail(tconstrs0: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Result[Unit, UnificationError] = {
+  def entail(tconstrs0: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[Unit, UnificationError] = {
 
     val superClasses = tconstrs0.flatMap(bySuper)
 
     // Case 1: tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
     if (superClasses.contains(tconstr)) {
-      ().toOk
+      ().toSuccess
     } else {
       // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
       for {
         tconstrs <- byInst(tconstr, instances)
-        _ <- Result.sequence(tconstrs.map(entail(tconstrs0, _, instances)))
+        _ <- Validation.sequence(tconstrs.map(entail(tconstrs0, _, instances)))
       } yield ()
     }
   }
@@ -56,7 +55,7 @@ object ClassEnvironment {
     @tailrec
     def loop(tconstrs0: List[Ast.TypeConstraint], acc: List[Ast.TypeConstraint]): List[Ast.TypeConstraint] = tconstrs0 match {
       case Nil => acc
-      case head :: tail if entail(acc ++ tail, head, instances).isInstanceOf[Result.Ok[_, _]] => loop(tail, acc)
+      case head :: tail if entail(acc ++ tail, head, instances).isInstanceOf[Validation.Success[_, _]] => loop(tail, acc)
       case head :: tail => loop(tail, head :: acc)
     }
 
@@ -66,18 +65,18 @@ object ClassEnvironment {
   /**
     * Normalizes a list of type constraints, converting to head-normal form and removing semantic duplicates.
     */
-  private def reduce(tconstrs0: List[Ast.TypeConstraint], instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Result[List[Ast.TypeConstraint], UnificationError] = {
+  private def reduce(tconstrs0: List[Ast.TypeConstraint], instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     for {
-      tconstrs <- Result.sequence(tconstrs0.map(toHeadNormalForm(_, instances)))
+      tconstrs <- Validation.sequence(tconstrs0.map(toHeadNormalForm(_, instances)))
     } yield simplify(tconstrs.flatten, instances)
   }
 
   /**
     * Converts the type constraint to head-normal form, i.e. `a[X1, Xn]`, where `a` is a variable and `n >= 0`.
     */
-  private def toHeadNormalForm(tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Result[List[Ast.TypeConstraint], UnificationError] = {
+  private def toHeadNormalForm(tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     if (isHeadNormalForm(tconstr.arg)) {
-      List(tconstr).toOk
+      List(tconstr).toSuccess
     } else {
       byInst(tconstr, instances)
     }
@@ -86,22 +85,22 @@ object ClassEnvironment {
   /**
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
     */
-  private def byInst(tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Result[List[Ast.TypeConstraint], UnificationError] = {
+  private def byInst(tconstr: Ast.TypeConstraint, instances: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     val matchingInstances = instances.getOrElse(tconstr.sym, Nil)
 
-    def tryInst(inst: Ast.Instance): Result[List[Ast.TypeConstraint], UnificationError] = {
+    def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
       for {
-        subst <- Unification.unifyTypes(tconstr.arg, inst.tpe)
+        subst <- Unification.unifyTypes(tconstr.arg, inst.tpe).toValidation
       } yield inst.tconstrs.map(subst(_))
     }
 
     val tconstrGroups = matchingInstances.map(tryInst).collect {
-      case Result.Ok(tconstrs) => tconstrs
+      case Validation.Success(tconstrs) => tconstrs
     }
 
     tconstrGroups match {
-      case Nil => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toErr
-      case tconstrs :: Nil => tconstrs.toOk
+      case Nil => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toFailure
+      case tconstrs :: Nil => tconstrs.toSuccess
       case _ :: _ :: _ => throw InternalCompilerException("Multiple matching instances")
     }
   }

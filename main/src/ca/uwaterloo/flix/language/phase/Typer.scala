@@ -212,9 +212,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               ///
               val sc = Scheme.generalize(inferredConstrs, inferredType)
               Scheme.checkLessThanEqual(sc, completeScheme, classEnv) match {
-                case Result.Ok(_) => // noop
-                case Result.Err(UnificationError.NoMatchingInstance(clazz, tpe)) => return TypeError.NoMatchingInstance(clazz, tpe, loc).toFailure
-                case Result.Err(_) => return TypeError.GeneralizationError(declaredScheme, sc, loc).toFailure
+                // Case 1: no errors, continue
+                case Validation.Success(_) => // noop
+                case Validation.Failure(errs) =>
+                  val instanceErrs = errs.collect {
+                    case UnificationError.NoMatchingInstance(clazz, tpe) => TypeError.NoMatchingInstance(clazz, tpe, loc)
+                  }
+                  // Case 2: non instance error
+                  if (instanceErrs.isEmpty) {
+                    return TypeError.GeneralizationError(declaredScheme, sc, loc).toFailure
+                  // Case 3: instance error
+                  } else {
+                    return Validation.Failure(instanceErrs)
+                  }
               }
 
               ///
