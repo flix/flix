@@ -27,7 +27,7 @@ object ClassEnvironment {
 
 
   /**
-    * Returns `true` iff type constraints `tconstrs0` entail type constraint `tconstr`, under class environment `instances`.
+    * Returns success iff type constraints `tconstrs0` entail type constraint `tconstr`, under class environment `instances`.
     * That is, `tconstr` is true if all of `tconstrs0` are true.
     */
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
