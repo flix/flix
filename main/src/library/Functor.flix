@@ -14,25 +14,22 @@
  *  limitations under the License.
  */
 
-namespace Functor {
-
+///
+/// A type class for types that can be mapped over.
+///
+class Functor[m :# Type -> Type] {
     ///
-    /// A type class for types that can be mapped over.
+    /// Maps the function `f` over the contents of `x`.
     ///
-    class Functor[m :# Type -> Type] {
-        ///
-        /// Maps the function `f` over the contents of `x`.
-        ///
-        pub def map(f: a -> b, x: m[a]): m[b]
-    }
-
-    instance Functor[Option] {
-        def map(f: a -> b, x: Option[a]): Option[b] = Option.map(f, x)
-    }
-
-    instance Functor[List] {
-        def map(f: a -> b, x: List[a]): List[b] = List.map(f, x)
-    }
-
-    // TODO: move instances and tests to proper namespaces
+    pub def map(f: a -> b, x: m[a]): m[b]
 }
+
+instance Functor[Option] {
+    def map(f: a -> b, x: Option[a]): Option[b] = Option.map(f, x)
+}
+
+instance Functor[List] {
+    def map(f: a -> b, x: List[a]): List[b] = List.map(f, x)
+}
+
+// TODO: move instances and tests to proper namespaces
