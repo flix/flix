@@ -19,9 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
-import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
-import ca.uwaterloo.flix.util.collection.MultiMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Scheme {
 
@@ -128,31 +127,23 @@ object Scheme {
     */
   // TODO can optimize?
   def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
-    lessThanEqual(sc1, sc2, classEnv) && lessThanEqual(sc2, sc1, classEnv)
+    Validation.sequence(List(checkLessThanEqual(sc1, sc2, classEnv), checkLessThanEqual(sc2, sc1, classEnv))) match {
+      case Validation.Success(_) => true
+      case Validation.Failure(_) => false
+
+    }
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
-
-
-    /**
-      * Checks that `tconstr` is entailed by `tconstrs`.
-      */
-    def checkEntailment(tconstrs: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint): Result[Unit, UnificationError] = {
-      if (ClassEnvironment.entail(tconstrs, tconstr, classEnv)) {
-        ().toOk
-      } else {
-        UnificationError.UnfulfilledConstraint(tconstr).toErr
-      }
-    }
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[Unit, UnificationError] = {
 
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
     if (sc1 == sc2) {
-      return true
+      return ().toSuccess
     }
 
     //
@@ -166,17 +157,12 @@ object Scheme {
     val (tconstrs2, tpe2) = instantiate(sc2, InstantiateMode.Rigid)
 
     // Attempt to unify the two instantiated types.
-    val result = for {
-      subst <- Unification.unifyTypes(tpe1, tpe2)
+    for {
+      subst <- Unification.unifyTypes(tpe1, tpe2).toValidation
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
-      _ <- Result.sequence(newTconstrs1.map(checkEntailment(newTconstrs2, _)))
+      _ <- Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
     } yield ()
-
-    result match {
-      case Result.Ok(_) => true
-      case Result.Err(_) => false
-    }
   }
 
 }

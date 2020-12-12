@@ -274,4 +274,24 @@ object TypeError {
     }
   }
 
+  /**
+    * No matching instance error.
+    *
+    * @param clazz the class of the instance.
+    * @param tpe   the type of the instance.
+    * @param loc   the location where the error occurred.
+    */
+  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"No instance of class '$clazz' for type '${FormatType.formatType(tpe)}'."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> No instance of class '" << Red(clazz.toString) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "no instance found") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Add an instance for the type." << NewLine
+    }
+  }
 }

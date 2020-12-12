@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.io.PrintWriter
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
@@ -26,8 +25,9 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, ClassEnvironment, InferMonad, Substitution}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, ClassEnvironment, InferMonad, Substitution, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Validation.ToFailure
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -211,8 +211,20 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
               val sc = Scheme.generalize(inferredConstrs, inferredType)
-              if (!Scheme.lessThanEqual(sc, completeScheme, classEnv)) {
-                return Validation.Failure(LazyList(TypeError.GeneralizationError(declaredScheme, sc, loc)))
+              Scheme.checkLessThanEqual(sc, completeScheme, classEnv) match {
+                // Case 1: no errors, continue
+                case Validation.Success(_) => // noop
+                case Validation.Failure(errs) =>
+                  val instanceErrs = errs.collect {
+                    case UnificationError.NoMatchingInstance(clazz, tpe) => TypeError.NoMatchingInstance(clazz, tpe, loc)
+                  }
+                  // Case 2: non instance error
+                  if (instanceErrs.isEmpty) {
+                    return TypeError.GeneralizationError(declaredScheme, sc, loc).toFailure
+                  // Case 3: instance error
+                  } else {
+                    return Validation.Failure(instanceErrs)
+                  }
               }
 
               ///
