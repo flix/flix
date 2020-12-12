@@ -85,7 +85,7 @@ namespace ToString {
             // TODO: Replace by foldRight.
             case Nil => "Nil"
             case _   =>
-                let s = l |> List.map(ToString.toString) |> List.intersperse(" :: ") |> String.flatten;
+                let s = l |> List.map(ToString/ToString.toString) |> List.intersperse(" :: ") |> String.flatten;
                 String.concat(s, " :: Nil")
         }
     }

@@ -59,11 +59,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    val definitionsVal = root.defs.flatMap {
-      case (ns0, defs) => defs.map {
-        case (_, defn) => resolve(defn, ns0, root) map {
+    val definitionsVal = root.defsAndSigs.flatMap {
+      case (ns0, defsAndSigs) => defsAndSigs.collect {
+        case (_, defn: NamedAst.Def) => resolve(defn, ns0, root) map {
           case d => d.sym -> d
         }
+        // Skip Sigs as they are handled under classes.
       }
     }
 
@@ -375,20 +376,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
         }
 
-        case NamedAst.Expression.DefOrSig(qual, name, tvar, loc) =>
-          mapN(lookupDefOrSig(qual, name, ns0, root)) {
-            case NameLookupResult.Def(defn) => visitDef(defn, tvar, loc)
-            case NameLookupResult.Sig(sig) => visitSig(sig, tvar, loc)
-          }
-
-        case NamedAst.Expression.Def(qname, tvar, loc) =>
-          mapN(lookupDef(qname, ns0, root)) {
-            defn => visitDef(defn, tvar, loc)
-          }
-
-        case NamedAst.Expression.Sig(clazz, sig0, tvar, loc) =>
-          mapN(lookupSig(clazz, sig0, ns0, root)) {
-            sig => visitSig(sig, tvar, loc)
+        case NamedAst.Expression.DefOrSig(qname, tvar, loc) =>
+          mapN(lookupDefOrSig(qname, ns0, root)) {
+            case defn: NamedAst.Def => visitDef(defn, tvar, loc)
+            case sig: NamedAst.Sig => visitSig(sig, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -404,17 +395,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             case NamedAst.Use.UseClass(qname, _, _) =>
               flatMapN(lookupClass(qname, ns0, root))(_ => visit(exp, tenv0))
 
-            case NamedAst.Use.UseDef(qname, _, _) =>
-              flatMapN(lookupDef(qname, ns0, root))(_ => visit(exp, tenv0))
+            case NamedAst.Use.UseDefOrSig(qname, _, _) =>
+              flatMapN(lookupDefOrSig(qname, ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseTyp(qname, _, _) =>
               flatMapN(lookupType(NamedAst.Type.Ambiguous(qname, loc), ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseTag(qname, tag, _, _) =>
               flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root))(_ => visit(exp, tenv0))
-
-            case NamedAst.Use.UseSig(qname, sig, _, _) =>
-              flatMapN(lookupSig(qname, sig, ns0, root))(_ => visit(exp, tenv0))
           }
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
@@ -445,20 +433,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star), loc).toSuccess
 
-        case app@NamedAst.Expression.Apply(NamedAst.Expression.Def(name, _, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupDef(name, ns0, root)) {
-            defn => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
-          }
-
-        case app@NamedAst.Expression.Apply(NamedAst.Expression.Sig(clazz, name, _, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupSig(clazz, name, ns0, root)) {
-            sig => visitApplySig(app, sig, exps, innerLoc, outerLoc)
-          }
-
-        case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qual, name, _, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupDefOrSig(qual, name, ns0, root)) {
-            case NameLookupResult.Def(defn) => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
-            case NameLookupResult.Sig(sig) => visitApplySig(app, sig, exps, innerLoc, outerLoc)
+        case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, _, innerLoc), exps, outerLoc) =>
+          flatMapN(lookupDefOrSig(qname, ns0, root)) {
+            case defn: NamedAst.Def => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
+            case sig: NamedAst.Sig => visitApplySig(app, sig, exps, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app)
@@ -1091,75 +1069,35 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Finds the def with the qualified name `qname` in the namespace `ns0`.
+    * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDef(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Def, ResolutionError] = {
-    val defOpt = tryLookupDef(qname, ns0, root)
+  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
+    val defOrSigOpt = tryLookupDefOrSig(qname, ns0, root)
 
-    defOpt match {
+    defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case Some(defn) =>
+      case Some(defn@NamedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)) =>
         if (isDefAccessible(defn, ns0)) {
           defn.toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-    }
-  }
-
-  /**
-    * Finds the def with the namespace `qual` and name `name` in the namespace `ns0`,
-    * Or the sig with the class name `qual` and name `name` in the namespace `ns0`
-    */
-  def lookupDefOrSig(qual: Name.Ident, name: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NameLookupResult, ResolutionError] = {
-    // case 1: `qual` is a namespace and `name` is a def
-    val defNamespace = Name.NName(qual.sp1, List(qual), qual.sp2)
-    val defQName = Name.QName(defNamespace.sp1, defNamespace, name, name.sp2)
-    val defOpt = tryLookupDef(defQName, ns0, root)
-
-    // case 2: `qual` is a class and `name` is a sig
-    val classQName = Name.mkQName(qual)
-    val sigOpt = tryLookupSig(classQName, name, ns0, root)
-
-    (defOpt, sigOpt) match {
-      // Case 1: Can't find the name anywhere
-      case (None, None) => ResolutionError.UndefinedName(defQName, ns0, defQName.loc).toFailure
-      // Case 2: Can find only a def with the name
-      case (Some(defn), None) =>
-        if (isDefAccessible(defn, ns0)) {
-          NameLookupResult.Def(defn).toSuccess
-        } else {
-          ResolutionError.InaccessibleDef(defn.sym, ns0, defQName.loc).toFailure
-        }
-      // Case 3: Can find only a sig with the name
-      case (None, Some(sig)) =>
+      case Some(sig@NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)) =>
         if (isSigAccessible(sig, ns0)) {
-          NameLookupResult.Sig(sig).toSuccess
+          sig.toSuccess
         } else {
-          ResolutionError.InaccessibleSig(sig.sym, ns0, sig.loc).toFailure
-        }
-      // Case 4: Can find both with the name
-      case (Some(defn), Some(sig)) =>
-        (isDefAccessible(defn, ns0), isSigAccessible(sig, ns0)) match {
-          // Case 4.1: Neither is accessible
-          case (false, false) => ResolutionError.InaccessibleDef(defn.sym, ns0, defQName.loc).toFailure // MATT need something for if both are inaccessible?
-          // Case 4.2: Only the def is accessible
-          case (true, false) => NameLookupResult.Def(defn).toSuccess
-          // Case 4.3: Only the sig is accessible
-          case (false, true) => NameLookupResult.Sig(sig).toSuccess
-          // Case 4.4: Both are accessible
-          case (true, true) => ResolutionError.AmbiguousName(defQName, ns0, List(defn.loc, sig.loc), defQName.loc).toFailure
+          ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
     }
   }
+
   /**
-    * Tries to find a def with the qualified name `qname` in the namespace `ns0`.
+    * Attempts to lookup the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  def tryLookupDef(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Def] = {
-    // Check whether the name is fully-qualified.
+  def tryLookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.DefOrSig] = {
     if (qname.isUnqualified) {
       // Case 1: Unqualified name. Lookup in the current namespace.
-      val defnOpt = root.defs.getOrElse(ns0, Map.empty).get(qname.ident.name)
+      val defnOpt = root.defsAndSigs.getOrElse(ns0, Map.empty).get(qname.ident.name)
 
       defnOpt match {
         case Some(defn) =>
@@ -1167,33 +1105,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           Some(defn)
         case None =>
           // Case 1.1: Try the global namespace.
-          root.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+          root.defsAndSigs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
       }
     } else {
       // Case 2: Qualified. Lookup in the given namespace.
-      root.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      root.defsAndSigs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
-  }
-
-  /**
-    * Finds the sig with the qualified class `clazz` and ident `sig` in the namespace `ns0`.
-    */
-  def lookupSig(clazz: Name.QName, sig0: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Sig, ResolutionError] = {
-
-    tryLookupSig(clazz, sig0, ns0, root) match {
-      case Some(sig) => sig.toSuccess
-      case None => ResolutionError.UndefinedSig(clazz, sig0, ns0, sig0.loc).toFailure
-    }
-  }
-
-  /**
-    * Tries to find a sig with the qualified class `clazz` and ident `sig` in the namespace `ns0`.
-    */
-  def tryLookupSig(clazz: Name.QName, sig: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Sig] = {
-    for {
-      clazz <- tryLookupClass(clazz, ns0, root)
-      result <- clazz.sigs.find(_.sym.name == sig.name)
-    } yield result
   }
 
   /**
@@ -1594,7 +1511,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
     //
-    val prefixNs = sig0.sym.clazz.namespace
+    val prefixNs = sig0.sym.clazz.namespace :+ sig0.sym.clazz.name
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
       return true

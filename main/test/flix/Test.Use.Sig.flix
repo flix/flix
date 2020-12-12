@@ -1,6 +1,6 @@
 namespace A {
     pub class FClass[a] {
-        def f(): a
+        pub def f(): a
     }
 
     instance FClass[Int] {
@@ -9,23 +9,23 @@ namespace A {
 
     @test
     def testNamespace01(): Bool =
-        use A.FClass.f;
+        use A/FClass.f;
         f() == 1
 
     @test
     def testNamespace02(): Bool =
-        use B.FClass.f;
+        use B/FClass.f;
         f() == 2
 
     @test
     def testNamespace03(): Bool =
-        use C.FClass.f;
+        use C/FClass.f;
         f() == 3
 }
 
 namespace B {
     pub class FClass[a] {
-        def f(): a
+        pub def f(): a
     }
 
     instance FClass[Int] {
@@ -34,24 +34,24 @@ namespace B {
 
     @test
     def testNamespace04(): Bool =
-        use A.FClass.{f => fa};
+        use A/FClass.{f => fa};
         fa() == 1
 
     @test
     def testNamespace05(): Bool =
-        use B.FClass.{f => fb};
+        use B/FClass.{f => fb};
         fb() == 2
 
     @test
     def testNamespace06(): Bool =
-        use C.FClass.{f => fc};
+        use C/FClass.{f => fc};
         fc() == 3
 
 }
 
 namespace C {
     pub class FClass[a] {
-        def f(): a
+        pub def f(): a
     }
 
     instance FClass[Int] {
@@ -60,17 +60,17 @@ namespace C {
 
     @test
     def testNamespace07(): Bool =
-        use A.FClass.{f => fa};
-        use B.FClass.{f => fb};
-        use C.FClass.{f => fc};
+        use A/FClass.{f => fa};
+        use B/FClass.{f => fb};
+        use C/FClass.{f => fc};
         (fa() + fb() + fc()) == 6
 }
 
 namespace D {
-    use A.FClass.f;
-    use B.FClass.{f => fb};
-    use X/Y.GClass.g;
-    use X/Y/Z.GClass.{g => gz};
+    use A/FClass.f;
+    use B/FClass.{f => fb};
+    use X/Y/GClass.g;
+    use X/Y/Z/GClass.{g => gz};
 
     @test
     def testNamespace08(): Bool = f() == 1
@@ -86,7 +86,7 @@ namespace D {
 }
 
 pub class GClass[a] {
-    def g(): a
+    pub def g(): a
 }
 
 instance GClass[Int] {
@@ -95,7 +95,7 @@ instance GClass[Int] {
 
 namespace X {
     pub class GClass[a] {
-        def g(): a
+        pub def g(): a
     }
 
     instance GClass[Int] {
@@ -104,7 +104,7 @@ namespace X {
 
     namespace Y {
         pub class GClass[a] {
-            def g(): a
+            pub def g(): a
         }
 
         instance GClass[Int] {
@@ -113,7 +113,7 @@ namespace X {
 
         namespace Z {
             pub class GClass[a] {
-                def g(): a
+                pub def g(): a
             }
 
             instance GClass[Int] {
@@ -125,22 +125,22 @@ namespace X {
 
 @test
 def testNamespace12(): Bool =
-    use X.GClass.g;
+    use X/GClass.g;
     g() == 5
 
 @test
 def testNamespace13(): Bool =
-    use X/Y.GClass.g;
+    use X/Y/GClass.g;
     g() == 6
 
 @test
 def testNamespace14(): Bool =
-    use X/Y/Z.GClass.g;
+    use X/Y/Z/GClass.g;
     g() == 7
 
 @test
 def testNamespace15(): Bool =
-    use X.GClass.{g => gx};
-    use X/Y.GClass.{g => gxy};
-    use X/Y/Z.GClass.{g => gxyz};
+    use X/GClass.{g => gx};
+    use X/Y/GClass.{g => gxy};
+    use X/Y/Z/GClass.{g => gxyz};
     (gx() + gxy() + gxyz()) == 18
