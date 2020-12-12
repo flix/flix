@@ -54,9 +54,14 @@ object ClassEnvironment {
 
     @tailrec
     def loop(tconstrs0: List[Ast.TypeConstraint], acc: List[Ast.TypeConstraint]): List[Ast.TypeConstraint] = tconstrs0 match {
+      // Case 0: no tconstrs left to process, we're done
       case Nil => acc
-      case head :: tail if entail(acc ++ tail, head, instances).isInstanceOf[Validation.Success[_, _]] => loop(tail, acc)
-      case head :: tail => loop(tail, head :: acc)
+      case head :: tail => entail(acc ++ tail, head, instances) match {
+        // Case 1: `head` is entailed by the other type constraints, skip it
+        case Validation.Success(_) => loop(tail, acc)
+        // Case 2: `head` is not entailed, add it to the list
+        case Validation.Failure(_) => loop(tail, head :: acc)
+      }
     }
 
     loop(tconstrs0, Nil)
