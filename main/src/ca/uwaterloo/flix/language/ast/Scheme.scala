@@ -138,13 +138,6 @@ object Scheme {
     */
   def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Result[Unit, UnificationError] = {
 
-    /**
-      * Checks that `tconstr` is entailed by `tconstrs`.
-      */
-    def checkEntailment(tconstrs: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint): Result[Unit, UnificationError] = {
-      ClassEnvironment.entail(tconstrs, tconstr, classEnv)
-    }
-
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
@@ -167,7 +160,7 @@ object Scheme {
       subst <- Unification.unifyTypes(tpe1, tpe2)
       newTconstrs1 = tconstrs1.map(subst.apply)
       newTconstrs2 = tconstrs2.map(subst.apply)
-      _ <- Result.sequence(newTconstrs1.map(checkEntailment(newTconstrs2, _)))
+      _ <- Result.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
     } yield ()
   }
 
