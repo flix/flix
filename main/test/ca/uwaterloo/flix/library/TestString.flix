@@ -1640,7 +1640,7 @@ def unfoldStringWithIter01(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1655,7 +1655,7 @@ def unfoldStringWithIter02(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1670,7 +1670,7 @@ def unfoldStringWithIter03(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1685,7 +1685,7 @@ def unfoldStringWithIter04(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1700,7 +1700,7 @@ def unfoldStringWithIter05(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1715,7 +1715,7 @@ def unfoldStringWithIter06(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.toString(c1 :: c2 :: '.' :: Nil);
+            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 2;
             Some(s)
         };

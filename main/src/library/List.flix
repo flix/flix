@@ -26,8 +26,7 @@ enum List[t] {
 }
 
 instance ToString[List[a]] with [a : ToString] {
-    def toString(l: List[a]): String =
-        List.foldRight((x, acc) -> "${ToString.toString(x)} :: ${acc}", "Nil", l)
+    def toString(xs: List[a]): String = List.formatWith(ToString.toString, ", ", xs)
 }
 
 namespace List {
@@ -905,14 +904,17 @@ namespace List {
         }
     }
 
-
-
     ///
-    /// Returns the list of characters `xs` as a string.
+    /// Render the list `xs` as a String. Elements are rendered with the
+    /// function `f` and separated with the string `sep`.
     ///
-    @Time(length(xs)) @Space(length(xs))
-    pub def toString(xs: List[Char]): String =
-        List.foldLeft((acc, c) -> String.concat(acc, Char.toString(c)), "", xs)
+    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
+    pub def formatWith(f: a -> String, sep: String, xs: List[a]): String =
+        List.foldRight((x, acc) -> {
+            let s = "${f(x)}";
+            if (acc == "") s
+            else "${s}${sep}${acc}"
+        }, "", xs)
 
     ///
     /// Returns `xs` as a mutable list.
