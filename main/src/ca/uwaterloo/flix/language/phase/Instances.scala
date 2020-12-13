@@ -43,16 +43,24 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
-    // MATT docs
+    /**
+      * Checks that the instance type is simple:
+      * * all type variables are unique
+      * * all type arguments are variables
+      */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, tpe, _, _, loc) =>
         Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
+          // Case 1: Type variable
           case (seen, tvar: Type.Var) =>
+            // Case 1.1 We've seen it already. Error.
             if (seen.contains(tvar))
-              InstanceError.DuplicateTypeParameter(tvar, loc).toFailure // MATT better loc
+              InstanceError.DuplicateTypeParameter(tvar, loc).toFailure
+            // Case 1.2 We haven't seen it before. Add it to the list.
             else
               (tvar :: seen).toSuccess
-          case (_, _) => InstanceError.ComplexInstanceType(tpe, loc).toFailure // MATT better loc
+          // Case 2: Non-type variable. Error.
+          case (_, _) => InstanceError.ComplexInstanceType(tpe, loc).toFailure
         }.map(_ => ())
     }
 

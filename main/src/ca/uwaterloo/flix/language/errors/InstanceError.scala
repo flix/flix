@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Underline}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -116,19 +116,43 @@ object InstanceError {
     }
   }
 
-  // MATT docs
+  /**
+    * Error indicating the duplicate use of a type variable in an instance type.
+    *
+    * @param tvar the duplicated type.
+    * @param loc  the location where the error occurred.
+    */
   case class DuplicateTypeParameter(tvar: Type.Var, loc: SourceLocation) extends InstanceError {
-    override def summary: String = "" // MATT
+    override def summary: String = "Duplicate type parameter."
 
-    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << Code(loc, s"Duplicate type parameter '${FormatType.formatType(tvar)}'.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Rename one of the instances of the type parameter."
+    }
   }
 
-  // MATT docs
+  /**
+    * Error indicating a complex instance type.
+    *
+    * @param tpe the complex type.
+    * @param loc the location where the error occurred.
+    */
   case class ComplexInstanceType(tpe: Type, loc: SourceLocation) extends InstanceError {
 
-    override def summary: String = "" // MATT
+    override def summary: String = "Complex instance type."
 
-    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << Code(loc, s"Complex instance type '${FormatType.formatType(tpe)}'.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Instance type parameters must be distinct variables."
+    }
   }
 
 }
