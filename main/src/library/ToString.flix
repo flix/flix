@@ -133,6 +133,3 @@ instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : ToString
             "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)}, ${ToString.toString(x4)}, ${ToString.toString(x5)}, ${ToString.toString(x6)}, ${ToString.toString(x7)}, ${ToString.toString(x8)}, ${ToString.toString(x9)}, ${ToString.toString(x10)})"
     }
 }
-
-// TODO: Move tests from TestToString into proper namespaces/files, e.g. TestOption, TestList, etc.
-// TODO: Write more systematic tests that use different types (?).

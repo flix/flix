@@ -15,77 +15,179 @@
  */
 
 namespace TestToString {
+
     use ToString.toString;
 
-    @test
-    def testToStringUnit(): Bool = toString(()) == "()"
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple2                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testToStringTrue(): Bool = toString(true) == "true"
+    def tuple201(): Bool = toString((1, 1)) == "(1, 1)"
 
     @test
-    def testToStringFalse(): Bool = toString(false) == "false"
+    def tuple202(): Bool = toString((1, Some(2))) == "(1, Some(2))"
 
     @test
-    def testToStringChar(): Bool = toString('Q') == "Q"
+    def tuple203(): Bool = toString((true, 1)) == "(true, 1)"
 
     @test
-    def testToStringFloat32(): Bool = toString(123.0f32) == "123.0"
+    def tuple204(): Bool = toString(((1, 2), 91)) == "((1, 2), 91)"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple3                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testToStringFloat64(): Bool = toString(123.0f64) == "123.0"
+    def tuple301(): Bool = toString((1, 1, 82)) == "(1, 1, 82)"
 
     @test
-    def testToStringInt8(): Bool = toString(123i8) == "123"
+    def tuple302(): Bool = toString((1, Some(2), 3)) == "(1, Some(2), 3)"
 
     @test
-    def testToStringInt16(): Bool = toString(123i16) == "123"
+    def tuple303(): Bool = toString((true, 1, false)) == "(true, 1, false)"
 
     @test
-    def testToStringInt32(): Bool = toString(123i32) == "123"
+    def tuple304(): Bool = toString(((1, 2), 91, true)) == "((1, 2), 91, true)"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple4                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testToStringInt64(): Bool = toString(123i64) == "123"
+    def tuple401(): Bool =
+        toString((1, 1, 2, 3)) == "(1, 1, 2, 3)"
 
     @test
-    def testToStringString(): Bool = toString("abcd") == "abcd"
+    def tuple402(): Bool =
+        toString((1, Some(2), true, false)) == "(1, Some(2), true, false)"
 
     @test
-    def testToStringBigInt(): Bool = toString(123ii) == "123"
+    def tuple403(): Bool =
+        toString((true, 1, 97, 2)) == "(true, 1, 97, 2)"
 
     @test
-    def testToStringInt32List(): Bool = toString(1 :: 2 :: 3 :: Nil) == "1 :: 2 :: 3 :: Nil"
+    def tuple404(): Bool =
+        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4)) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4)"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple5                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testToStringNil(): Bool = toString(Nil: List[Int]) == "Nil"
+    def tuple501(): Bool =
+        toString((1, 1, 2, 3, 9)) == "(1, 1, 2, 3, 9)"
 
     @test
-    def testToStringSomeInt32(): Bool = toString(Some(123)) == "Some(123)"
+    def tuple502(): Bool =
+        toString((1, Some(2), true, false, true)) == "(1, Some(2), true, false, true)"
 
     @test
-    def testToStringNone(): Bool = toString(None: Option[String]) == "None"
+    def tuple503(): Bool =
+        toString((true, 1, 97, 2, 9)) == "(true, 1, 97, 2, 9)"
 
     @test
-    def testToStringErr(): Bool = toString(Err("error"): Result[String, String]) == "Err(error)"
+    def tuple504(): Bool =
+        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5))"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple6                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testToStringOk(): Bool = toString(Ok("all good"): Result[String, String]) == "Ok(all good)"
+    def tuple601(): Bool =
+        toString((1, 1, 2, 3, 9, 42)) == "(1, 1, 2, 3, 9, 42)"
 
     @test
-    def testToStringSuccess(): Bool = toString(Success("hooray"): Validation[String, String]) == "Success(hooray)"
+    def tuple602(): Bool =
+        toString((1, Some(2), true, false, true, 0)) == "(1, Some(2), true, false, true, 0)"
 
     @test
-    def testToStringNel(): Bool = toString(Nel("abc", Nil)) == "Nel(abc, Nil)"
+    def tuple603(): Bool =
+        toString((true, 1, 97, 2, 9, false)) == "(true, 1, 97, 2, 9, false)"
 
     @test
-    def testToStringNest01(): Bool =
-        toString(Some(None) :: None :: Some(Some(Ok(123))) :: Some(Some(Err(false))) :: Nil) == "Some(None) :: None :: Some(Some(Ok(123))) :: Some(Some(Err(false))) :: Nil"
+    def tuple604(): Bool =
+        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9))"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple7                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testToStringNest02(): Bool =
-        toString(Some(Nil) :: None :: Some(Success(true) :: Failure(Nel("zut", Nil)) :: Nil) :: Nil) == "Some(Nil) :: None :: Some(Success(true) :: Failure(Nel(zut, Nil)) :: Nil) :: Nil"
+    def tuple701(): Bool =
+        toString((1, 1, 2, 3, 9, 42, 2)) == "(1, 1, 2, 3, 9, 42, 2)"
 
     @test
-    def testToStringNest03(): Bool =
-        toString(Nil :: (1 :: Nil) :: (1 :: 2 :: Nil) :: Nil) == "Nil :: 1 :: Nil :: 1 :: 2 :: Nil :: Nil"
+    def tuple702(): Bool =
+        toString((1, Some(2), true, false, true, 0, false)) == "(1, Some(2), true, false, true, 0, false)"
+
+    @test
+    def tuple703(): Bool =
+        toString((true, 1, 97, 2, 9, false, Some(42))) == "(true, 1, 97, 2, 9, false, Some(42))"
+
+    @test
+    def tuple704(): Bool =
+        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1))"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple8                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tuple801(): Bool =
+        toString((1, 1, 2, 3, 9, 42, 2, 0)) == "(1, 1, 2, 3, 9, 42, 2, 0)"
+
+    @test
+    def tuple802(): Bool =
+        toString((1, Some(2), true, false, true, 0, false, Some(true))) == "(1, Some(2), true, false, true, 0, false, Some(true))"
+
+    @test
+    def tuple803(): Bool =
+        toString((true, 1, 97, 2, 9, false, Some(42), 1i64)) == "(true, 1, 97, 2, 9, false, Some(42), 1)"
+
+    @test
+    def tuple804(): Bool =
+        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42))"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple9                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tuple901(): Bool =
+        toString((1, 1, 2, 3, 9, 42, 2, 0, 9)) == "(1, 1, 2, 3, 9, 42, 2, 0, 9)"
+
+    @test
+    def tuple902(): Bool =
+        toString((1, Some(2), true, false, true, 0, false, Some(true), 1)) == "(1, Some(2), true, false, true, 0, false, Some(true), 1)"
+
+    @test
+    def tuple903(): Bool =
+        toString((true, 1, 97, 2, 9, false, Some(42), 1i64, 432i32)) == "(true, 1, 97, 2, 9, false, Some(42), 1, 432)"
+
+    @test
+    def tuple904(): Bool =
+        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false))"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tuple10                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tuple1001(): Bool =
+        toString((1, 1, 2, 3, 9, 42, 2, 0, 9, 342)) == "(1, 1, 2, 3, 9, 42, 2, 0, 9, 342)"
+
+    @test
+    def tuple1002(): Bool =
+        toString((1, Some(2), true, false, true, 0, false, Some(true), 1, 1337)) == "(1, Some(2), true, false, true, 0, false, Some(true), 1, 1337)"
+
+    @test
+    def tuple1003(): Bool =
+        toString((true, 1, 97, 2, 9, false, Some(42), 1i64, 432i32, Some(false))) == "(true, 1, 97, 2, 9, false, Some(42), 1, 432, Some(false))"
+
+    @test
+    def tuple1004(): Bool =
+        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))"
+
 }
