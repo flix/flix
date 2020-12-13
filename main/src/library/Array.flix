@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+instance ToString[Array[a]] with [a : ToString] {
+    def toString(a: Array[a]): String =
+    let s = Array.formatWith(x -> ToString.toString(x), ", ", a) as & Pure;
+    "[${s}]" as & Pure
+}
+
 namespace Array {
 
     ///

@@ -25,6 +25,11 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
+instance ToString[List[a]] with [a : ToString] {
+    def toString(l: List[a]): String =
+        List.foldRight((x, acc) -> "${ToString.toString(x)} :: ${acc}", "Nil", l)
+}
+
 namespace List {
 
     ///

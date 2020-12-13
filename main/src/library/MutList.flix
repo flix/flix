@@ -21,6 +21,16 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
+instance ToString[MutList[a]] with [a : ToString] {
+    def toString(v: MutList[a]): String =
+        let s = MutList.foldRight((x, acc) -> {
+            let y = "${ToString.toString(x)}";
+            if (acc == "") y
+            else "${y}, ${acc}"
+        }, "", v) as & Pure;
+        "MutList(${s})"
+}
+
 namespace MutList {
 
     ///

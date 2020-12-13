@@ -71,44 +71,5 @@ instance ToString[BigInt] {
     def toString(x: BigInt): String = BigInt.toString(x)
 }
 
-instance ToString[Option[a]] with [a : ToString] {
-    def toString(o: Option[a]): String = match o {
-        case Some(y) => "Some(${y})"
-        case None => "None"
-    }
-}
-
-instance ToString[List[a]] with [a : ToString] {
-    def toString(l: List[a]): String = match l {
-        // TODO: Replace by foldRight.
-        case Nil => "Nil"
-        case _   =>
-            let s = l |> List.map(ToString.toString) |> List.intersperse(" :: ") |> String.flatten;
-            String.concat(s, " :: Nil")
-    }
-}
-
-instance ToString[Nel[a]] with [a : ToString, List[a] : ToString] {
-    def toString(l: Nel[a]): String = match l {
-        case Nel(x, xs) => "Nel(${x}, ${xs})"
-    }
-}
-
-instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
-    def toString(r: Result[t, e]): String = match r {
-        case Ok(v)  => "Ok(${v})"
-        case Err(v) => "Err(${v})"
-    }
-}
-
-instance ToString[Validation[t, e]] with [t : ToString, Nel[e] : ToString] {
-    def toString(x: Validation[t, e]): String = match x {
-        case Success(v) => "Success(${v})"
-        case Failure(v) => "Failure(${v})"
-    }
-}
-
-// TODO: Move instances to proper namespaces, e.g. to Option, List, etc.
 // TODO: Move tests from TestToString into proper namespaces/files, e.g. TestOption, TestList, etc.
-// TODO: Add instances for Array, Map, MutList, MutMap, MutSet, Set
 // TODO: Write more systematic tests that use different types (?).

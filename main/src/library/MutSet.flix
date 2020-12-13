@@ -21,6 +21,16 @@ use Core/Cmp.Ordering;
 ///
 opaque type MutSet[t] = Ref[Set[t]]
 
+instance ToString[MutSet[a]] with [a : ToString] {
+    def toString(xs: MutSet[a]): String =
+        let s = MutSet.foldRight((x, acc) -> {
+            let y = "${ToString.toString(x)}";
+            if (acc == "") y
+            else "${y}, ${acc}"
+        }, "", xs) as & Pure;
+        "MutSet(${s})"
+}
+
 namespace MutSet {
 
     ///

@@ -26,6 +26,16 @@ enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
+instance ToString[Set[a]] with [a : ToString] {
+    def toString(xs: Set[a]): String =
+        let s = Set.foldRight((x, acc) -> {
+            let y = "${ToString.toString(x)}";
+            if (acc == "") y
+            else "${y}, ${acc}"
+            }, "", xs);
+        "Set(${s})"
+}
+
 namespace Set {
 
     ///
