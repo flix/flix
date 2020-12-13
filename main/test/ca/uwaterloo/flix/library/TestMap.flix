@@ -18,6 +18,8 @@ use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
 
 namespace TestMap {
 
+use ToString.toString;
+
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
 /////////////////////////////////////////////////////////////////////////////
@@ -1763,5 +1765,25 @@ def query17(): Bool =
 def query18(): Bool =
     let m = Map#{(1, 2, 2) -> 0, (1, 2, 3) -> 1, (1, 2, 4) -> 2, (2, 2, 4) -> 3};
     Map.query(x -> if (x <=> (1, 2, 3) > 0) GreaterThan else Equal, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toString01(): Bool =
+    toString(Map#{1 -> 2}) == "Map(1 -> 2)"
+
+@test
+def toString02(): Bool =
+    toString(Map#{1 -> 0, 2 -> 1, 3 -> 2}) == "Map(1 -> 0, 2 -> 1, 3 -> 2)"
+
+@test
+def toString03(): Bool =
+    toString(Map#{1 -> "b", 2 -> "a"}) == "Map(1 -> b, 2 -> a)"
+
+@test
+def toString04(): Bool =
+    toString(Map#{97 -> false, 2 -> true, 3 -> false, 4 -> true, 0 -> true}) == "Map(0 -> true, 2 -> true, 3 -> false, 4 -> true, 97 -> false)"
 
 }
