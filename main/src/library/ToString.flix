@@ -71,5 +71,68 @@ instance ToString[BigInt] {
     def toString(x: BigInt): String = BigInt.toString(x)
 }
 
+instance ToString[(a1, a2)] with [a1 : ToString, a2 : ToString] {
+    def toString(t: (a1, a2)): String = match t {
+        case (x1, x2) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)})"
+    }
+}
+
+instance ToString[(a1, a2, a3)] with [a1 : ToString, a2 : ToString, a3 : ToString] {
+    def toString(t: (a1, a2, a3)): String = match t {
+        case (x1, x2, x3) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString] {
+    def toString(t: (a1, a2, a3, a4)): String = match t {
+        case (x1, x2, x3, x4) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)}, ${ToString.toString(x4)})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5)): String = match t {
+        case (x1, x2, x3, x4, x5) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)}, ${ToString.toString(x4)}, ${ToString.toString(x5)})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5, a6)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6)): String = match t {
+        case (x1, x2, x3, x4, x5, x6) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)}, ${ToString.toString(x4)}, ${ToString.toString(x5)}, ${ToString.toString(x6)})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6, a7)): String = match t {
+        case (x1, x2, x3, x4, x5, x6, x7) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)}, ${ToString.toString(x4)}, ${ToString.toString(x5)}, ${ToString.toString(x6)}, ${ToString.toString(x7)})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8)): String = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)}, ${ToString.toString(x4)}, ${ToString.toString(x5)}, ${ToString.toString(x6)}, ${ToString.toString(x7)}, ${ToString.toString(x8)})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString, a9 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): String = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)}, ${ToString.toString(x4)}, ${ToString.toString(x5)}, ${ToString.toString(x6)}, ${ToString.toString(x7)}, ${ToString.toString(x8)}, ${ToString.toString(x9)})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString, a9 : ToString, a10 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): String = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
+            "(${ToString.toString(x1)}, ${ToString.toString(x2)}, ${ToString.toString(x3)}, ${ToString.toString(x4)}, ${ToString.toString(x5)}, ${ToString.toString(x6)}, ${ToString.toString(x7)}, ${ToString.toString(x8)}, ${ToString.toString(x9)}, ${ToString.toString(x10)})"
+    }
+}
+
 // TODO: Move tests from TestToString into proper namespaces/files, e.g. TestOption, TestList, etc.
 // TODO: Write more systematic tests that use different types (?).
