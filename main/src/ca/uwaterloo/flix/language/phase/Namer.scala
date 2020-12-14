@@ -76,11 +76,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /**
       * Creates a pair of errors reporting a duplicate type declaration at each location.
       */
-    def mkDuplicateTypeDeclPair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
+    def mkDuplicateTypeOrClassPair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
       Failure(LazyList(
         // NB: We report an error at both source locations.
-        NameError.DuplicateTypeDecl(name, loc1, loc2),
-        NameError.DuplicateTypeDecl(name, loc2, loc1)
+        NameError.DuplicateTypeOrClass(name, loc1, loc2),
+        NameError.DuplicateTypeOrClass(name, loc2, loc1)
       ))
     }
 
@@ -100,11 +100,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
         // Check if the class already exists.
-        val classes = prog0.classes.getOrElse(ns0, Map.empty)
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
-        classes.get(ident.name) match {
-          case None =>
+        val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
+        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
+        val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+        (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
+          case (None, None, None) =>
             // Case 1: The class does not already exist. Update it.
             visitClass(decl, uenv0, Map.empty, ns0) flatMap {
               case clazz@NamedAst.Class(_, _, _, _, sigs, _) =>
@@ -126,20 +128,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                 defsAndSigsVal.map {
                   defsAndSigs =>
                     prog0.copy(
-                      classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))),
+                      classes = prog0.classes + (ns0 -> (classes0 + (ident.name -> clazz))),
                       defsAndSigs = prog0.defsAndSigs + (sigNs -> defsAndSigs))
                 }
             }
-          case Some(clazz) =>
-            // Case 2: Duplicate class.
-            val name = ident.name
-            val loc1 = clazz.sym.loc
-            val loc2 = ident.loc
-            Failure(LazyList(
-              // NB: We report an error at both source locations.
-              NameError.DuplicateClass(name, loc1, loc2),
-              NameError.DuplicateClass(name, loc2, loc1)
-            ))
+
+          // Case 2.2: A class with the name already exists.
+          case (Some(clazz), None, None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, clazz.sym.loc)
+          // Case 2.3: An enum with the name already exists.
+          case (None, Some(enum), None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, enum.sym.loc)
+          // Case 2.4: A type alias with the name already exists.
+          case (None, None, Some(typealias)) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, typealias.sym.loc)
+          // Impossible.
+          case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
         }
 
       case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs, loc) =>
@@ -184,10 +185,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * Enum.
      */
       case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>
+        val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
-        (enums0.get(ident.name), typealiases0.get(ident.name)) match {
-          case (None, None) =>
+        (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
+          case (None, None, None) =>
             // Case 2.1: The enum does not exist in the namespace. Update it.
             val sym = Symbol.mkEnumSym(ns0, ident)
 
@@ -216,22 +218,25 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                     prog0.copy(enums = prog0.enums + (ns0 -> enums))
                 }
             }
-          // Case 2.2: An enum with the name already exists.
-          case (Some(enum), None) => mkDuplicateTypeDeclPair(ident.name, ident.loc, enum.sym.loc)
-          // Case 2.3: A type alias with the name already exists.
-          case (None, Some(typealias)) => mkDuplicateTypeDeclPair(ident.name, ident.loc, typealias.sym.loc)
+          // Case 2.2: A class with the name already exists.
+          case (Some(clazz), None, None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, clazz.sym.loc)
+          // Case 2.3: An enum with the name already exists.
+          case (None, Some(enum), None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, enum.sym.loc)
+          // Case 2.4: A type alias with the name already exists.
+          case (None, None, Some(typealias)) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, typealias.sym.loc)
           // Impossible.
-          case (Some(_), Some(_)) => throw InternalCompilerException("Unexpected type alias and enum found.")
+          case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
         }
 
       /*
      * Type Alias.
      */
       case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+        val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
-        (enums0.get(ident.name), typealiases0.get(ident.name)) match {
-          case (None, None) =>
+        (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
+          case (None, None, None) =>
             // Case 1: The type alias does not exist in the namespace. Add it.
             flatMapN(getTypeParamsFromFormalParams(tparams0, List.empty, tpe0, loc, allowElision = false, uenv0, Map.empty)) {
               tparams =>
@@ -244,12 +249,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                     prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
                 }
             }
-          // Case 2.2: An enum with the name already exists.
-          case (Some(enum), None) => mkDuplicateTypeDeclPair(ident.name, ident.loc, enum.sym.loc)
-          // Case 2.3: A type alias with the name already exists.
-          case (None, Some(typealias)) => mkDuplicateTypeDeclPair(ident.name, ident.loc, typealias.sym.loc)
+          // Case 2.2: A class with the name already exists.
+          case (Some(clazz), None, None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, clazz.sym.loc)
+          // Case 2.3: An enum with the name already exists.
+          case (None, Some(enum), None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, enum.sym.loc)
+          // Case 2.4: A type alias with the name already exists.
+          case (None, None, Some(typealias)) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, typealias.sym.loc)
           // Impossible.
-          case (Some(_), Some(_)) => throw InternalCompilerException("Unexpected type alias and enum found.")
+          case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
         }
 
       /*
@@ -481,9 +488,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map {
-        case WeededAst.Use.UseClass(qname, alias, loc) => NamedAst.Use.UseClass(qname, alias, loc)
         case WeededAst.Use.UseDefOrSig(qname, alias, loc) => NamedAst.Use.UseDefOrSig(qname, alias, loc)
-        case WeededAst.Use.UseTyp(qname, alias, loc) => NamedAst.Use.UseTyp(qname, alias, loc)
+        case WeededAst.Use.UseTypeOrClass(qname, alias, loc) => NamedAst.Use.UseTypeOrClass(qname, alias, loc)
         case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
       }
 
@@ -1054,7 +1060,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       if (qname.isUnqualified) {
         val name = qname.ident.name
         // Disambiguate the qname.
-        (tenv0.get(name), uenv0.tpes.get(name)) match {
+        (tenv0.get(name), uenv0.typesAndClasses.get(name)) match {
           case (None, None) =>
             // Case 1: the name is top-level type.
             NamedAst.Type.Ambiguous(qname, loc).toSuccess
@@ -1097,7 +1103,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.SchemaExtendByAlias(qname, targs, rest, loc) =>
       // Disambiguate the qname.
       val name = if (qname.isUnqualified) {
-        uenv0.tpes.getOrElse(qname.ident.name, qname)
+        uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
       } else {
         qname
       }
@@ -1521,7 +1527,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {
       case WeededAst.TypeParam(ident, kindOpt, classes) =>
-        val qualifiedClasses = classes.map(clazz => uenv0.classes.getOrElse(clazz.ident.name, clazz))
+        val qualifiedClasses = classes.map(clazz => uenv0.typesAndClasses.getOrElse(clazz.ident.name, clazz))
         val kind = kindOpt match {
           // Case 1: Get the kind for each type variable from the implicit type params.
           // Use a kind variable if not found; this will be caught later by redundancy checks.
@@ -1674,7 +1680,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         // Case 2: The tag is qualified. Check if it fully-qualified.
         if (qname.isUnqualified) {
           // Case 2.1: The tag is only qualified by one name. Look it up in the use environment.
-          uenv0.tpes.get(qname.ident.name) match {
+          uenv0.typesAndClasses.get(qname.ident.name) match {
             case None =>
               // Case 2.1.1: The qualified name is not in the use environment. Do not touch it.
               (Some(qname), tag0)
@@ -1707,19 +1713,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] = {
 
     Validation.fold(uses, uenv0) {
-      case (uenv1, WeededAst.Use.UseClass(qname, alias, _)) =>
-        val name = alias.name
-        uenv1.classes.get(name) match {
-          case None => uenv1.addClass(name, qname).toSuccess
-          case Some(otherQName) =>
-            val loc1 = otherQName.loc
-            val loc2 = qname.loc
-            Failure(LazyList(
-              // NB: We report an error at both source locations.
-              NameError.DuplicateUseClass(name, loc1, loc2),
-              NameError.DuplicateUseClass(name, loc2, loc1)
-            ))
-        }
       case (uenv1, WeededAst.Use.UseDefOrSig(qname, alias, _)) =>
         val name = alias.name
         uenv1.defsAndSigs.get(name) match {
@@ -1733,17 +1726,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               NameError.DuplicateUseDefOrSig(name, loc2, loc1)
             ))
         }
-      case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
+      case (uenv1, WeededAst.Use.UseTypeOrClass(qname, alias, _)) =>
         val name = alias.name
-        uenv1.tpes.get(name) match {
-          case None => uenv1.addTpe(name, qname).toSuccess
+        uenv1.typesAndClasses.get(name) match {
+          case None => uenv1.addTypeOrClass(name, qname).toSuccess
           case Some(otherQName) =>
             val loc1 = otherQName.loc
             val loc2 = qname.loc
             Failure(LazyList(
               // NB: We report an error at both source locations.
-              NameError.DuplicateUseTyp(name, loc1, loc2),
-              NameError.DuplicateUseTyp(name, loc2, loc1)
+              NameError.DuplicateUseTypeOrClass(name, loc1, loc2),
+              NameError.DuplicateUseTypeOrClass(name, loc2, loc1)
             ))
         }
       case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>
@@ -1766,27 +1759,22 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Companion object for the [[UseEnv]] class.
     */
   private object UseEnv {
-    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty)
   }
 
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(classes: Map[String, Name.QName], defsAndSigs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
-    /**
-      * Binds the class name `s` to the qualified name `n`.
-      */
-    def addClass(s: String, n: Name.QName): UseEnv = copy(classes = classes + (s -> n))
-
+  private case class UseEnv(defsAndSigs: Map[String, Name.QName], typesAndClasses: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
     /**
       * Binds the def or sig name `s` to the qualified name `n`.
       */
     def addDefOrSig(s: String, n: Name.QName): UseEnv = copy(defsAndSigs = defsAndSigs + (s -> n))
 
     /**
-      * Binds the tpe name `s` to the qualified name `n`.
+      * Binds the type or class name `s` to the qualified name `n`.
       */
-    def addTpe(s: String, n: Name.QName): UseEnv = copy(tpes = tpes + (s -> n))
+    def addTypeOrClass(s: String, n: Name.QName): UseEnv = copy(typesAndClasses = typesAndClasses + (s -> n))
 
     /**
       * Binds the tag name `s` to the qualified name `n` and tag `t`.

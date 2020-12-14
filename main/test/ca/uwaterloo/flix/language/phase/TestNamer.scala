@@ -368,7 +368,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseDefOrSig](result)
   }
 
-  test("DuplicateUseTyp.01") {
+  test("DuplicateUseTypeOrClass.01") {
     val input =
       s"""
          |def foo(): Bool =
@@ -389,10 +389,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseTyp](result)
+    expectError[NameError.DuplicateUseTypeOrClass](result)
   }
 
-  test("DuplicateUseTyp.02") {
+  test("DuplicateUseTypeOrClass.02") {
     val input =
       s"""
          |use A.Color;
@@ -414,10 +414,10 @@ class TestNamer extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseTyp](result)
+    expectError[NameError.DuplicateUseTypeOrClass](result)
   }
 
-  test("DuplicateUseTyp.03") {
+  test("DuplicateUseTypeOrClass.03") {
     val input =
       s"""
          |namespace T {
@@ -440,7 +440,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseTyp](result)
+    expectError[NameError.DuplicateUseTypeOrClass](result)
   }
 
   test("DuplicateUseTag.01") {
@@ -612,66 +612,17 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
-  test("DuplicateUseClass.01") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use class A.Show;
-         |    use class B.Show;
-         |    true
-         |
-         |namespace A {
-         |    class Show[a] {
-         |        def show(x: a): String
-         |    }
-         |}
-         |
-         |namespace B {
-         |    class Show[a] {
-         |        def show(x: a): String
-         |    }
-         |}
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseClass](result)
-  }
-
-  test("DuplicateUseClass.02") {
-    val input =
-      s"""
-         |use class A.Show;
-         |use class B.Show;
-         |
-         |def foo(): Bool = true
-         |
-         |namespace A {
-         |    class Show[a] {
-         |        def show(x: a): String
-         |    }
-         |}
-         |
-         |namespace B {
-         |    class Show[a] {
-         |        def show(x: a): String
-         |    }
-         |}
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateUseClass](result)
-  }
-
-  test("DuplicateTypeDecl.01") {
+  test("DuplicateTypeOrClass.01") {
     val input =
       s"""
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
-  test("DuplicateTypeDecl.02") {
+  test("DuplicateTypeOrClass.02") {
     val input =
       s"""
          |type alias USD = Int
@@ -679,10 +630,10 @@ class TestNamer extends FunSuite with TestUtils {
          |type alias USD = Int
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
-  test("DuplicateTypeDecl.03") {
+  test("DuplicateTypeOrClass.03") {
     val input =
       s"""
          |namespace A {
@@ -694,10 +645,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
-  test("DuplicateTypeDecl.04") {
+  test("DuplicateTypeOrClass.04") {
     val input =
       s"""
          |type alias USD = Int
@@ -706,10 +657,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
-  test("DuplicateTypeDecl.05") {
+  test("DuplicateTypeOrClass.05") {
     val input =
       s"""
          |type alias USD = Int
@@ -719,10 +670,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
-  test("DuplicateTypeDecl.06") {
+  test("DuplicateTypeOrClass.06") {
     val input =
       s"""
          |namespace A {
@@ -736,10 +687,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
-  test("DuplicateTypeDecl.07") {
+  test("DuplicateTypeOrClass.07") {
     val input =
       s"""
          |enum USD {
@@ -750,10 +701,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
-  test("DuplicateTypeDecl.08") {
+  test("DuplicateTypeOrClass.08") {
     val input =
       s"""
          |enum USD {
@@ -767,10 +718,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
-  test("DuplicateTypeDecl.09") {
+  test("DuplicateTypeOrClass.09") {
     val input =
       s"""
          |namespace A {
@@ -786,7 +737,123 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeDecl](result)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.10") {
+    val input =
+      s"""
+         |type alias USD = Int
+         |class USD[a]
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.11") {
+    val input =
+      s"""
+         |type alias USD = Int
+         |type alias USD = Int
+         |class USD[a]
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.12") {
+    val input =
+      s"""
+         |namespace A {
+         |  type alias USD = Int
+         |}
+         |
+         |namespace A {
+         |  class USD[a]
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.13") {
+    val input =
+      s"""
+         |enum USD {
+         |  case A
+         |}
+         |class USD[a]
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.14") {
+    val input =
+      s"""
+         |enum USD {
+         |  case A
+         |}
+         |enum USD {
+         |  case B
+         |}
+         |class USD[a]
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.15") {
+    val input =
+      s"""
+         |namespace A {
+         |  enum USD {
+         |    case A
+         |  }
+         |}
+         |
+         |namespace A {
+         |  class USD[a]
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.16") {
+    val input =
+      s"""
+         |class USD[a]
+         |class USD[a]
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.17") {
+    val input =
+      s"""
+         |class USD[a]
+         |class USD[a]
+         |class USD[a]
+         """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
+  }
+
+  test("DuplicateTypeOrClass.18") {
+    val input =
+      s"""
+         |namespace A {
+         |  class USD[a]
+         |}
+         |
+         |namespace A {
+         |  class USD[a]
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeOrClass](result)
   }
 
   test("SuspiciousTypeVarName.01") {

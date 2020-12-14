@@ -56,29 +56,6 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given class `name` is defined multiple times.
-    *
-    * @param name the name.
-    * @param loc1 the location of the first definition.
-    * @param loc2 the location of the second definition.
-    */
-  case class DuplicateClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate class."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate class'" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
-    }
-    def loc: SourceLocation = loc1
-  }
-
-  /**
     * An error raised to indicate that the given def `name` is defined multiple times.
     *
     * @param name the name.
@@ -97,27 +74,6 @@ object NameError {
       vt << Code(loc2, "the second occurrence was here.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
-    }
-    def loc: SourceLocation = loc1
-  }
-
-  /**
-    * An error raised to indicate that the given class `name` is used twice.
-    *
-    * @param name the clashing name.
-    * @param loc1 the location of the first use.
-    * @param loc2 the location of the second use.
-    */
-  case class DuplicateUseClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of the class '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first use was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second use was here.") << NewLine
     }
     def loc: SourceLocation = loc1
   }
@@ -144,18 +100,18 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given type `name` is used twice.
+    * An error raised to indicate that the given type or class `name` is used twice.
     *
     * @param name the clashing name.
     * @param loc1 the location of the first use.
     * @param loc2 the location of the second use.
     */
-  case class DuplicateUseTyp(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateUseTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of the type '" << Red(name) << "'." << NewLine
+      vt << ">> Duplicate use of the type or class '" << Red(name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc1, "the first use was here.") << NewLine
       vt << NewLine
@@ -192,12 +148,13 @@ object NameError {
     * @param loc1 the location of the first definition.
     * @param loc2 the location of the second definition.
     */
-  case class DuplicateTypeDecl(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate type declaration."
+  case class DuplicateTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    def summary: String = s"Duplicate type or class declaration."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate type declaration '" << Red(name) << "'." << NewLine
+      vt << ">> Duplicate type or class declaration '" << Red(name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc1, "the first occurrence was here.") << NewLine
       vt << NewLine
@@ -207,6 +164,7 @@ object NameError {
     }
     def loc: SourceLocation = loc1
   }
+
   /**
     * An error raised to indicate a suspicious type variable name.
     *

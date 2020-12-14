@@ -375,13 +375,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {
-            case NamedAst.Use.UseClass(qname, _, _) =>
-              flatMapN(lookupClass(qname, ns0, root))(_ => visit(exp, tenv0))
-
             case NamedAst.Use.UseDefOrSig(qname, _, _) =>
               flatMapN(lookupDefOrSig(qname, ns0, root))(_ => visit(exp, tenv0))
 
-            case NamedAst.Use.UseTyp(qname, _, _) =>
+            case NamedAst.Use.UseTypeOrClass(qname, _, _) =>
               flatMapN(lookupType(NamedAst.Type.Ambiguous(qname, loc), ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseTag(qname, tag, _, _) =>
