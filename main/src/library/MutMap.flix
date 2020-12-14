@@ -24,9 +24,8 @@ opaque type MutMap[k, v] = Ref[Map[k, v]]
 instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
     def toString(m: MutMap[k, v]): String =
         let s = MutMap.foldRightWithKey((k, v, acc) -> {
-            let kv = "${ToString.toString(k)} -> ${ToString.toString(v)}";
             if (acc == "") kv
-            else "${kv}, ${acc}"
+            else "${k} -> ${v}, ${acc}"
         }, "", m) as & Pure;
         "MutMap#{${s}}"
 }
