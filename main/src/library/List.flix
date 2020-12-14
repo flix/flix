@@ -911,11 +911,8 @@ namespace List {
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
     pub def formatWith(f: a -> String, sep: String, xs: List[a]): String =
-        List.foldRight((x, acc) -> {
-            let s = "${f(x)}";
-            if (acc == "") s
-            else "${s}${sep}${acc}"
-        }, "", xs)
+        let s = foldRight((x, acc) -> "${f(x)}${sep}${acc}", "", xs) as & Pure;
+        String.dropRight(String.length(sep), s)
 
     ///
     /// Returns `xs` as a mutable list.
