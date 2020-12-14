@@ -16,7 +16,7 @@
 
 namespace TestArray {
 
-use ToString.toString;
+    use ToString.toString;
 
 /////////////////////////////////////////////////////////////////////////////
 // new                                                                     //
@@ -4044,24 +4044,28 @@ def sortWith13!(): Bool & Impure =
     Array.sortWith!((x,y) -> if (x > y) -1 else 1, a);
     Array.sameElements(a, [4,3,2,2,1,0])
 
-/////////////////////////////////////////////////////////////////////////////
-// toString                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toString01(): Bool & Impure =
-    toString(Array.range(0, 5)) == "[0, 1, 2, 3, 4]"
+    @test
+    def toString01(): Bool & Impure =
+        toString(Array.range(0, 5)) == "[0, 1, 2, 3, 4]"
 
-@test
-def toString02(): Bool & Impure =
-    toString(Array.range(0, 1)) == "[0]"
+    @test
+    def toString02(): Bool & Impure =
+        toString(Array.range(0, 1)) == "[0]"
 
-@test
-def toString03(): Bool & Impure =
-    toString(Array.new('a', 3)) == "[a, a, a]"
+    @test
+    def toString03(): Bool & Impure =
+        toString(Array.new('a', 3)) == "[a, a, a]"
 
-@test
-def toString04(): Bool & Impure =
-    toString(Array.range(1, 3)) == "[1, 2]"
+    @test
+    def toString04(): Bool & Impure =
+        toString(Array.range(1, 3)) == "[1, 2]"
+
+    @test
+    def toString05(): Bool & Impure =
+        toString(Array.new([1, 2, 3], 3)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
 
 }

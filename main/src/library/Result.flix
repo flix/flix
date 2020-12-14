@@ -28,8 +28,8 @@ enum Result[t, e] {
 
 instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
     def toString(r: Result[t, e]): String = match r {
-        case Ok(v)  => "Ok(${v})"
-        case Err(v) => "Err(${v})"
+        case Ok(t)  => "Ok(${t})"
+        case Err(e) => "Err(${e})"
     }
 }
 

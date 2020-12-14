@@ -18,7 +18,7 @@ use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
 
 namespace TestSet {
 
-use ToString.toString;
+    use ToString.toString;
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
@@ -1171,24 +1171,28 @@ def query06(): Bool =
 def query07(): Bool =
     Set.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else Equal, Set#{42}) == 42 :: Nil
 
-/////////////////////////////////////////////////////////////////////////////
-// toString                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toString01(): Bool =
-    toString(Set#{1}) == "Set(1)"
+    @test
+    def toString01(): Bool =
+        toString(Set#{1}) == "Set#{1}"
 
-@test
-def toString02(): Bool =
-    toString(Set#{1, 2, 3}) == "Set(1, 2, 3)"
+    @test
+    def toString02(): Bool =
+        toString(Set#{1, 2, 3}) == "Set#{1, 2, 3}"
 
-@test
-def toString03(): Bool =
-    toString(Set#{1, 2}) == "Set(1, 2)"
+    @test
+    def toString03(): Bool =
+        toString(Set#{1, 2}) == "Set#{1, 2}"
 
-@test
-def toString04(): Bool =
-    toString(Set#{97, 2, 3, 4, 0}) == "Set(0, 2, 3, 4, 97)"
+    @test
+    def toString04(): Bool =
+        toString(Set#{97, 2, 3, 4, 0}) == "Set#{0, 2, 3, 4, 97}"
+
+    @test
+    def toString05(): Bool =
+        toString(Set#{Set#{1, 2}, Set#{4, 6}}) == "Set#{Set#{1, 2}, Set#{4, 6}}"
 
 }

@@ -33,7 +33,7 @@ instance ToString[Map[k, v]] with [k : ToString, v : ToString] {
             if (acc == "") kv
             else "${kv}, ${acc}"
         }, "", m);
-        "Map(${s})"
+        "Map#{${s}}"
 }
 
 namespace Map {

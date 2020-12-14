@@ -22,13 +22,10 @@ pub enum MutList[a] {
 }
 
 instance ToString[MutList[a]] with [a : ToString] {
-    def toString(v: MutList[a]): String =
-        let s = MutList.foldRight((x, acc) -> {
-            let y = "${ToString.toString(x)}";
-            if (acc == "") y
-            else "${y}, ${acc}"
-        }, "", v) as & Pure;
-        "MutList(${s})"
+    def toString(v: MutList[a]): String = {
+        let s = MutList.formatWith(x -> "${x}", ", ", v) as & Pure;
+        "MutList#{${s}}"
+    }
 }
 
 namespace MutList {

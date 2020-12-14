@@ -1238,14 +1238,14 @@ namespace TestMutList {
     def toString01(): Bool & Impure =
         let v = MutList.new();
         MutList.push!(1, v);
-        toString(v) == "MutList(1)"
+        toString(v) == "MutList#{1}"
 
     @test
     def toString02(): Bool & Impure =
         let v = MutList.new();
         MutList.push!(1, v);
         MutList.push!(97, v);
-        toString(v) == "MutList(1, 97)"
+        toString(v) == "MutList#{1, 97}"
 
     @test
     def toString03(): Bool & Impure =
@@ -1253,7 +1253,7 @@ namespace TestMutList {
         MutList.push!(1, v);
         MutList.push!(97, v);
         MutList.push!(0, v);
-        toString(v) == "MutList(1, 97, 0)"
+        toString(v) == "MutList#{1, 97, 0}"
 
     @test
     def toString04(): Bool & Impure =
@@ -1262,6 +1262,6 @@ namespace TestMutList {
         MutList.push!('b', v);
         MutList.push!('c', v);
         MutList.push!('d', v);
-        toString(v) == "MutList(a, b, c, d)"
+        toString(v) == "MutList#{a, b, c, d}"
 
 }

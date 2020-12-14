@@ -27,7 +27,7 @@ enum List[t] {
 
 instance ToString[List[a]] with [a : ToString] {
     def toString(xs: List[a]): String =
-        List.foldRight((x, acc) -> "${ToString.toString(x)} :: ${acc}", "Nil", xs)
+        List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
 }
 
 namespace List {

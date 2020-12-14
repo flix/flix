@@ -28,7 +28,7 @@ instance ToString[MutSet[a]] with [a : ToString] {
             if (acc == "") y
             else "${y}, ${acc}"
         }, "", xs) as & Pure;
-        "MutSet(${s})"
+        "MutSet#{${s}}"
 }
 
 namespace MutSet {

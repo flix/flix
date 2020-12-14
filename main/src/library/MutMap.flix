@@ -28,7 +28,7 @@ instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
             if (acc == "") kv
             else "${kv}, ${acc}"
         }, "", m) as & Pure;
-        "MutMap(${s})"
+        "MutMap#{${s}}"
 }
 
 namespace MutMap {

@@ -33,7 +33,7 @@ instance ToString[Set[a]] with [a : ToString] {
             if (acc == "") y
             else "${y}, ${acc}"
             }, "", xs);
-        "Set(${s})"
+        "Set#{${s}}"
 }
 
 namespace Set {
