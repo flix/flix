@@ -161,7 +161,7 @@ object LiftedAstOps {
         val s = varMap(sym)
         Expression.Var(s, tpe, loc)
 
-      // Todo: Not sure if the VarSym in freeVars should be refreshed
+      // Todo: lookup
       case Expression.Closure(sym, freeVars, tpe, loc) => ???
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visit(exp, varMap)
@@ -181,7 +181,6 @@ object LiftedAstOps {
         val a = args.map(ea => visit(ea, varMap))
         Expression.ApplyDefTail(sym, a, tpe, loc)
 
-      // Todo: Not sure what is going on here, but I think that the formals and actuals should just be updated
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
         val fs = formals.map(f => visitFormalParams(f, varMap))
         val as = actuals.map(e => visit(e, varMap))
@@ -202,7 +201,7 @@ object LiftedAstOps {
         val e3 = visit(exp3, varMap)
         Expression.IfThenElse(e1, e2, e3, tpe, loc)
 
-      // Todo: Maybe we should refresh the labelSyms before visiting the exps?
+      // Todo: Maybe we should refresh the labelSyms before visiting the exps? Shoulh refresh, make extra map
       case Expression.Branch(exp, branches, tpe, loc) =>
         val e = visit(exp, varMap)
         val b = branches.map {
@@ -210,17 +209,16 @@ object LiftedAstOps {
         }
         Expression.Branch(e, b, tpe, loc)
 
-      // Todo: We might need to refresh the labelSym too
+      // Todo: We might need to refresh the labelSym too. Use labelmap
       case Expression.JumpTo(_, _, _) => exp0
 
-      // Todo: Check that only the second exp should use the new map
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1, varMap)
-        val newVarMap = varMap + (sym -> Symbol.freshVarSym(sym))
+        val newSym = Symbol.freshVarSym(sym)
+        val newVarMap = varMap + (sym -> newSym)
         val e2 = visit(exp2, newVarMap)
-        Expression.Let(sym, e1, e2, tpe, loc)
+        Expression.Let(newSym, e1, e2, tpe, loc)
 
-      // Todo: Is this a sym I should care about?
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visit(exp, varMap)
         Expression.Is(sym, tag, e, loc)
@@ -252,7 +250,6 @@ object LiftedAstOps {
         val e = visit(exp, varMap)
         Expression.RecordSelect(e, field, tpe, loc)
 
-      // Todo: Could value or rest make a new variable affecting the other?
       case Expression.RecordExtend(field, value, rest, tpe, loc) =>
         val v = visit(value, varMap)
         val r = visit(rest, varMap)
@@ -300,13 +297,11 @@ object LiftedAstOps {
         val e = visit(exp, varMap)
         Expression.Deref(e, tpe, loc)
 
-      // Todo: could a let in exp2 affect exp1?
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1, varMap)
         val e2 = visit(exp2, varMap)
         Expression.Assign(e1, e2, tpe, loc)
 
-      // Todo: Should the map be updated first?
       case Expression.Existential(fparam, exp, loc) =>
         val FormalParam(sym, _, _, _) = fparam
         val newVarSym = Symbol.freshVarSym(sym)
@@ -327,7 +322,6 @@ object LiftedAstOps {
         val e = visit(exp, varMap)
         Expression.Cast(e, tpe, loc)
 
-      // Todo: Should the syms from the rules be added to the map, which it is doing right now
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visit(exp, varMap)
         val r = rules.map(cr => visitCatchRule(cr, varMap))
@@ -337,7 +331,6 @@ object LiftedAstOps {
         val as = args.map(a => visit(a, varMap))
         Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-      // Todo: Should the exp or args affect eachother?
       case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
         val e = visit(exp, varMap)
         val as = args.map(a => visit(a, varMap))
@@ -420,8 +413,7 @@ object LiftedAstOps {
         val e3 = visit(exp3, varMap)
         Expression.FixpointFold(pred, e1, e2, e3, tpe, loc)
 
-      // Todo: not sure how to deal with HoleError
-      case Expression.HoleError(_, _, _) => ???
+      case Expression.HoleError(_, _, _) => exp0
       case Expression.MatchError(_, _) => exp0
 
     }
