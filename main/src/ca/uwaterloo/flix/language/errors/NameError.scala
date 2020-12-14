@@ -186,18 +186,18 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given type alias `name` is defined multiple times.
+    * An error raised to indicate that the given type alias or enum `name` is defined multiple times.
     *
     * @param name the name.
     * @param loc1 the location of the first definition.
     * @param loc2 the location of the second definition.
     */
-  case class DuplicateTypeAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate type alias."
+  case class DuplicateTypeDecl(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    def summary: String = s"Duplicate type declaration."
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate type alias '" << Red(name) << "'." << NewLine
+      vt << ">> Duplicate type declaration '" << Red(name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc1, "the first occurrence was here.") << NewLine
       vt << NewLine
@@ -207,7 +207,6 @@ object NameError {
     }
     def loc: SourceLocation = loc1
   }
-
   /**
     * An error raised to indicate a suspicious type variable name.
     *

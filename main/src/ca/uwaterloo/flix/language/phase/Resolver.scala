@@ -17,12 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -1252,11 +1251,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, loc)
 
           // Case 4: Errors.
-          case (x, y) =>
-            val loc1 = x.map(_.loc)
-            val loc2 = y.map(_.loc)
-            val locs = List(loc1, loc2).flatten
-            ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
+          case (x, y) => throw InternalCompilerException("Unexpected ambiguous type.")
         }
     }
 

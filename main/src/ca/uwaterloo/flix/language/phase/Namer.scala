@@ -71,214 +71,222 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
     */
-  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: UseEnv, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = decl0 match {
-    /*
-     * Namespace.
-     */
-    case WeededAst.Declaration.Namespace(ns, uses, decls, loc) =>
-      mergeUseEnvs(uses, uenv0) flatMap {
-        newEnv =>
-          Validation.fold(decls, prog0) {
-            case (pacc, decl) =>
-              val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
-              visitDecl(decl, namespace, newEnv, pacc)
-          }
-      }
+  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: UseEnv, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = {
 
-    case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
-      // Check if the class already exists.
-      val classes = prog0.classes.getOrElse(ns0, Map.empty)
-      val sigNs = Name.extendNName(ns0, ident)
-      val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
-      classes.get(ident.name) match {
-        case None =>
-          // Case 1: The class does not already exist. Update it.
-          visitClass(decl, uenv0, Map.empty, ns0) flatMap {
-            case clazz@NamedAst.Class(_, _, _, _, sigs, _) =>
-              // add each signature to the namespace
-              val defsAndSigsVal = Validation.fold(sigs, defsAndSigs0) {
-                case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
-                  case Some(otherSig) =>
-                    val name = sig.sym.name
-                    val loc1 = sig.loc
-                    val loc2 = otherSig.loc
-                    Failure(LazyList(
-                      // NB: We report an error at both source locations.
-                      NameError.DuplicateDefOrSig(name, loc1, loc2),
-                      NameError.DuplicateDefOrSig(name, loc2, loc1)
-                    ))
-                  case None => (defsAndSigs + (sig.sym.name -> sig)).toSuccess
+    /**
+      * Creates a pair of errors reporting a duplicate type declaration at each location.
+      */
+    def mkDuplicateTypeDeclPair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
+      Failure(LazyList(
+        // NB: We report an error at both source locations.
+        NameError.DuplicateTypeDecl(name, loc1, loc2),
+        NameError.DuplicateTypeDecl(name, loc2, loc1)
+      ))
+    }
+
+    decl0 match {
+      /*
+       * Namespace.
+       */
+      case WeededAst.Declaration.Namespace(ns, uses, decls, loc) =>
+        mergeUseEnvs(uses, uenv0) flatMap {
+          newEnv =>
+            Validation.fold(decls, prog0) {
+              case (pacc, decl) =>
+                val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
+                visitDecl(decl, namespace, newEnv, pacc)
+            }
+        }
+
+      case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
+        // Check if the class already exists.
+        val classes = prog0.classes.getOrElse(ns0, Map.empty)
+        val sigNs = Name.extendNName(ns0, ident)
+        val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
+        classes.get(ident.name) match {
+          case None =>
+            // Case 1: The class does not already exist. Update it.
+            visitClass(decl, uenv0, Map.empty, ns0) flatMap {
+              case clazz@NamedAst.Class(_, _, _, _, sigs, _) =>
+                // add each signature to the namespace
+                val defsAndSigsVal = Validation.fold(sigs, defsAndSigs0) {
+                  case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
+                    case Some(otherSig) =>
+                      val name = sig.sym.name
+                      val loc1 = sig.loc
+                      val loc2 = otherSig.loc
+                      Failure(LazyList(
+                        // NB: We report an error at both source locations.
+                        NameError.DuplicateDefOrSig(name, loc1, loc2),
+                        NameError.DuplicateDefOrSig(name, loc2, loc1)
+                      ))
+                    case None => (defsAndSigs + (sig.sym.name -> sig)).toSuccess
+                  }
                 }
-              }
-              defsAndSigsVal.map {
-                defsAndSigs =>
-                  prog0.copy(
-                    classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))),
-                    defsAndSigs = prog0.defsAndSigs + (sigNs -> defsAndSigs))
-              }
-          }
-        case Some(clazz) =>
-          // Case 2: Duplicate class.
-          val name = ident.name
-          val loc1 = clazz.sym.loc
-          val loc2 = ident.loc
-          Failure(LazyList(
-            // NB: We report an error at both source locations.
-            NameError.DuplicateClass(name, loc1, loc2),
-            NameError.DuplicateClass(name, loc2, loc1)
-          ))
-      }
+                defsAndSigsVal.map {
+                  defsAndSigs =>
+                    prog0.copy(
+                      classes = prog0.classes + (ns0 -> (classes + (ident.name -> clazz))),
+                      defsAndSigs = prog0.defsAndSigs + (sigNs -> defsAndSigs))
+                }
+            }
+          case Some(clazz) =>
+            // Case 2: Duplicate class.
+            val name = ident.name
+            val loc1 = clazz.sym.loc
+            val loc2 = ident.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateClass(name, loc1, loc2),
+              NameError.DuplicateClass(name, loc2, loc1)
+            ))
+        }
 
-    case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs, loc) =>
-      // duplication check must come after name resolution
-      val instances = prog0.instances.getOrElse(ns0, Map.empty)
-      visitInstance(decl, uenv0, Map.empty, ns0) map {
-        instance =>
-          val newInstanceList = instance :: instances.getOrElse(clazz.ident.name, Nil)
-          prog0.copy(instances = prog0.instances + (ns0 -> (instances + (clazz.ident.name -> newInstanceList))))
-      }
+      case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs, loc) =>
+        // duplication check must come after name resolution
+        val instances = prog0.instances.getOrElse(ns0, Map.empty)
+        visitInstance(decl, uenv0, Map.empty, ns0) map {
+          instance =>
+            val newInstanceList = instance :: instances.getOrElse(clazz.ident.name, Nil)
+            prog0.copy(instances = prog0.instances + (ns0 -> (instances + (clazz.ident.name -> newInstanceList))))
+        }
 
-    /*
+      /*
      * Definition.
      */
-    case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      // Check if the definition already exists.
-      val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
-      defsAndSigs.get(ident.name) match {
-        case None =>
-          // Case 1: The definition does not already exist. Update it.
-          visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil) map {
-            defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> defn))))
-          }
-        case Some(defOrSig) =>
-          // Case 2: Duplicate definition.
-          val name = ident.name
-          val loc1 = defOrSig.loc
-          val loc2 = ident.loc
-          Failure(LazyList(
-            // NB: We report an error at both source locations.
-            NameError.DuplicateDefOrSig(name, loc1, loc2),
-            NameError.DuplicateDefOrSig(name, loc2, loc1),
-          ))
-      }
+      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+        // Check if the definition already exists.
+        val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
+        defsAndSigs.get(ident.name) match {
+          case None =>
+            // Case 1: The definition does not already exist. Update it.
+            visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil) map {
+              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> defn))))
+            }
+          case Some(defOrSig) =>
+            // Case 2: Duplicate definition.
+            val name = ident.name
+            val loc1 = defOrSig.loc
+            val loc2 = ident.loc
+            Failure(LazyList(
+              // NB: We report an error at both source locations.
+              NameError.DuplicateDefOrSig(name, loc1, loc2),
+              NameError.DuplicateDefOrSig(name, loc2, loc1),
+            ))
+        }
 
-    /*
+      /*
      * Law.
      */
-    case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) => ??? // TODO
+      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) => ??? // TODO
 
-    /*
+      /*
      * Enum.
      */
-    case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>
-      val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-      enums0.get(ident.name) match {
-        case None =>
-          // Case 2.1: The enum does not exist in the namespace. Update it.
-          val sym = Symbol.mkEnumSym(ns0, ident)
+      case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>
+        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
+        val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+        (enums0.get(ident.name), typealiases0.get(ident.name)) match {
+          case (None, None) =>
+            // Case 2.1: The enum does not exist in the namespace. Update it.
+            val sym = Symbol.mkEnumSym(ns0, ident)
 
-          // Compute the type parameters.
-          flatMapN(getTypeParamsFromCases(tparams0, cases.values.toList, loc, uenv0)) {
-            tparams =>
+            // Compute the type parameters.
+            flatMapN(getTypeParamsFromCases(tparams0, cases.values.toList, loc, uenv0)) {
+              tparams =>
 
-              // Compute the kind of the enum.
-              val kind = Kind.mkArrow(tparams.map(_.tpe.kind))
+                // Compute the kind of the enum.
+                val kind = Kind.mkArrow(tparams.map(_.tpe.kind))
 
-              val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
-              val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
-              val enumType = if (quantifiers.isEmpty)
-                NamedAst.Type.Enum(sym, kind, loc)
-              else {
-                val base = NamedAst.Type.Enum(sym, kind, loc)
-                quantifiers.foldLeft(base: NamedAst.Type) {
-                  case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
+                val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
+                val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
+                val enumType = if (quantifiers.isEmpty)
+                  NamedAst.Type.Enum(sym, kind, loc)
+                else {
+                  val base = NamedAst.Type.Enum(sym, kind, loc)
+                  quantifiers.foldLeft(base: NamedAst.Type) {
+                    case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
+                  }
                 }
-              }
 
-              mapN(casesOf(cases, uenv0, tenv)) {
-                case cases =>
-                  val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, kind, loc)
-                  val enums = enums0 + (ident.name -> enum)
-                  prog0.copy(enums = prog0.enums + (ns0 -> enums))
-              }
-          }
-        case Some(enum) =>
-          // Case 2.2: Duplicate definition.
-          val name = ident.name
-          val loc1 = enum.sym.loc
-          val loc2 = ident.loc
-          Failure(LazyList(
-            // NB: We report an error at both source locations.
-            NameError.DuplicateDefOrSig(name, loc1, loc2),
-            NameError.DuplicateDefOrSig(name, loc2, loc1)
-          ))
-      }
+                mapN(casesOf(cases, uenv0, tenv)) {
+                  case cases =>
+                    val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, kind, loc)
+                    val enums = enums0 + (ident.name -> enum)
+                    prog0.copy(enums = prog0.enums + (ns0 -> enums))
+                }
+            }
+          // Case 2.2: An enum with the name already exists.
+          case (Some(enum), None) => mkDuplicateTypeDeclPair(ident.name, ident.loc, enum.sym.loc)
+          // Case 2.3: A type alias with the name already exists.
+          case (None, Some(typealias)) => mkDuplicateTypeDeclPair(ident.name, ident.loc, typealias.sym.loc)
+          // Impossible.
+          case (Some(_), Some(_)) => throw InternalCompilerException("Unexpected type alias and enum found.")
+        }
 
-    /*
+      /*
      * Type Alias.
      */
-    case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
-      val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
-      typealiases0.get(ident.name) match {
-        case None =>
-          // Case 1: The type alias does not exist in the namespace. Add it.
-          flatMapN(getTypeParamsFromFormalParams(tparams0, List.empty, tpe0, loc, allowElision = false, uenv0, Map.empty)) {
-            tparams =>
-              val tenv = getTypeEnv(tparams)
-              mapN(visitType(tpe0, uenv0, tenv)) {
-                case tpe =>
-                  val sym = Symbol.mkTypeAliasSym(ns0, ident)
-                  val typealias = NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
-                  val typealiases = typealiases0 + (ident.name -> typealias)
-                  prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
-              }
-          }
-        case Some(typealias) =>
-          // Case 2: Duplicate type alias.
-          val name = ident.name
-          val loc1 = typealias.sym.loc
-          val loc2 = ident.loc
-          Failure(LazyList(
-            // NB: We report an error at both source locations.
-            NameError.DuplicateTypeAlias(name, loc1, loc2),
-            NameError.DuplicateTypeAlias(name, loc2, loc1)
-          ))
-      }
+      case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
+        val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+        (enums0.get(ident.name), typealiases0.get(ident.name)) match {
+          case (None, None) =>
+            // Case 1: The type alias does not exist in the namespace. Add it.
+            flatMapN(getTypeParamsFromFormalParams(tparams0, List.empty, tpe0, loc, allowElision = false, uenv0, Map.empty)) {
+              tparams =>
+                val tenv = getTypeEnv(tparams)
+                mapN(visitType(tpe0, uenv0, tenv)) {
+                  case tpe =>
+                    val sym = Symbol.mkTypeAliasSym(ns0, ident)
+                    val typealias = NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+                    val typealiases = typealiases0 + (ident.name -> typealias)
+                    prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
+                }
+            }
+          // Case 2.2: An enum with the name already exists.
+          case (Some(enum), None) => mkDuplicateTypeDeclPair(ident.name, ident.loc, enum.sym.loc)
+          // Case 2.3: A type alias with the name already exists.
+          case (None, Some(typealias)) => mkDuplicateTypeDeclPair(ident.name, ident.loc, typealias.sym.loc)
+          // Impossible.
+          case (Some(_), Some(_)) => throw InternalCompilerException("Unexpected type alias and enum found.")
+        }
 
-    /*
+      /*
      * Property.
      */
-    case WeededAst.Declaration.Property(law, defn, exp0, loc) =>
-      visitExp(exp0, Map.empty, uenv0, Map.empty) map {
-        case exp =>
-          val lawSym = Symbol.mkDefnSym(law.namespace, law.ident)
-          val defnSym = Symbol.mkDefnSym(ns0, defn)
-          val property = NamedAst.Property(lawSym, defnSym, exp, loc)
-          val properties = prog0.properties.getOrElse(ns0, Nil)
-          prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
-      }
+      case WeededAst.Declaration.Property(law, defn, exp0, loc) =>
+        visitExp(exp0, Map.empty, uenv0, Map.empty) map {
+          case exp =>
+            val lawSym = Symbol.mkDefnSym(law.namespace, law.ident)
+            val defnSym = Symbol.mkDefnSym(ns0, defn)
+            val property = NamedAst.Property(lawSym, defnSym, exp, loc)
+            val properties = prog0.properties.getOrElse(ns0, Nil)
+            prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
+        }
 
-    /*
+      /*
      * BoundedLattice (deprecated).
      */
-    case WeededAst.Declaration.LatticeOps(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
-      val botVal = visitExp(bot0, Map.empty, uenv0, Map.empty)
-      val topVal = visitExp(top0, Map.empty, uenv0, Map.empty)
-      val equVal = visitExp(equ0, Map.empty, uenv0, Map.empty)
-      val leqVal = visitExp(leq0, Map.empty, uenv0, Map.empty)
-      val lubVal = visitExp(lub0, Map.empty, uenv0, Map.empty)
-      val glbVal = visitExp(glb0, Map.empty, uenv0, Map.empty)
-      val tpeVal = visitType(tpe0, uenv0, Map.empty)
+      case WeededAst.Declaration.LatticeOps(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+        val botVal = visitExp(bot0, Map.empty, uenv0, Map.empty)
+        val topVal = visitExp(top0, Map.empty, uenv0, Map.empty)
+        val equVal = visitExp(equ0, Map.empty, uenv0, Map.empty)
+        val leqVal = visitExp(leq0, Map.empty, uenv0, Map.empty)
+        val lubVal = visitExp(lub0, Map.empty, uenv0, Map.empty)
+        val glbVal = visitExp(glb0, Map.empty, uenv0, Map.empty)
+        val tpeVal = visitType(tpe0, uenv0, Map.empty)
 
-      mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal, tpeVal) {
-        case (bot, top, equ, leq, lub, glb, tpe) =>
-          val lattice = NamedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
-          prog0.copy(latticesOps = prog0.latticesOps + (tpe -> lattice)) // NB: This just overrides any existing binding.
-      }
+        mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal, tpeVal) {
+          case (bot, top, equ, leq, lub, glb, tpe) =>
+            val lattice = NamedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
+            prog0.copy(latticesOps = prog0.latticesOps + (tpe -> lattice)) // NB: This just overrides any existing binding.
+        }
 
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
-      throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
+      case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
+        throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
 
+    }
   }
 
   /**

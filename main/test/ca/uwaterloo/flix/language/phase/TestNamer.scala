@@ -661,17 +661,17 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseClass](result)
   }
 
-  test("DuplicateTypeAlias.01") {
+  test("DuplicateTypeDecl.01") {
     val input =
       s"""
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeAlias](result)
+    expectError[NameError.DuplicateTypeDecl](result)
   }
 
-  test("DuplicateTypeAlias.02") {
+  test("DuplicateTypeDecl.02") {
     val input =
       s"""
          |type alias USD = Int
@@ -679,10 +679,10 @@ class TestNamer extends FunSuite with TestUtils {
          |type alias USD = Int
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeAlias](result)
+    expectError[NameError.DuplicateTypeDecl](result)
   }
 
-  test("DuplicateTypeAlias.03") {
+  test("DuplicateTypeDecl.03") {
     val input =
       s"""
          |namespace A {
@@ -694,7 +694,99 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[NameError.DuplicateTypeAlias](result)
+    expectError[NameError.DuplicateTypeDecl](result)
+  }
+
+  test("DuplicateTypeDecl.04") {
+    val input =
+      s"""
+         |type alias USD = Int
+         |enum USD {
+         |  case A
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeDecl](result)
+  }
+
+  test("DuplicateTypeDecl.05") {
+    val input =
+      s"""
+         |type alias USD = Int
+         |type alias USD = Int
+         |enum USD {
+         |  case A
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeDecl](result)
+  }
+
+  test("DuplicateTypeDecl.06") {
+    val input =
+      s"""
+         |namespace A {
+         |  type alias USD = Int
+         |}
+         |
+         |namespace A {
+         |  enum USD {
+         |    case B
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeDecl](result)
+  }
+
+  test("DuplicateTypeDecl.07") {
+    val input =
+      s"""
+         |enum USD {
+         |  case A
+         |}
+         |enum USD {
+         |  case B
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeDecl](result)
+  }
+
+  test("DuplicateTypeDecl.08") {
+    val input =
+      s"""
+         |enum USD {
+         |  case A
+         |}
+         |enum  USD {
+         |  case B
+         |}
+         |enum USD {
+         |  case C
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeDecl](result)
+  }
+
+  test("DuplicateTypeDecl.09") {
+    val input =
+      s"""
+         |namespace A {
+         |  enum USD {
+         |    case A
+         |  }
+         |}
+         |
+         |namespace A {
+         |  enum USD {
+         |    case B
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.DuplicateTypeDecl](result)
   }
 
   test("SuspiciousTypeVarName.01") {
