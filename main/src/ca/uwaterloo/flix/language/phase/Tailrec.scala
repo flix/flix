@@ -22,11 +22,11 @@ import ca.uwaterloo.flix.language.ast.Ast.{Modifier, Modifiers}
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.ops.LiftedAstOps
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{Optimization, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 
 import scala.collection.mutable
 
@@ -78,13 +78,14 @@ object Tailrec extends Phase[Root, Root] {
       resultType,
       SourceLocation.Generated)
     val helperParams = refreshedDef.fparams.appended(endParam)
-    // Todo: change type of helper
-    /**
-      * 1. kald defn.tpe.typeconstructor : Option[TypeConstructor] (altid Some(TypeConstructor.Arrow(n))
-      * 2. targs = Kald defn.tpe.typeArguments : List[Type]
-      * 3. Type.mkapply(Type.cst(TypeConstructor.arrow(n + 1)), targs ::: resultType :: Nil) (works because end and result has same type)
-      */
 
+    // Generate the type for the new function
+    val arrowArity = refreshedDef.tpe.typeConstructor match {
+      case Some(TypeConstructor.Arrow(arity)) => arity
+      case t => throw InternalCompilerException(s"Option of function type expected, but got: '$t'.")
+    }
+    val targs = refreshedDef.tpe.typeArguments
+    val newType = Type.mkApply(Type.Cst(TypeConstructor.Arrow(arrowArity + 1), refreshedDef.loc), targs ::: resultType :: Nil)
 
     /**
       * Very similar to that of tailrec.
@@ -153,18 +154,26 @@ object Tailrec extends Phase[Root, Root] {
 
       // Match a Cons Tag with 2 elements, the second being a self-recursive call
       case Expression.Tag(sym, Name.Tag("Cons", _),
-      Expression.Tuple(hd :: Expression.ApplyDef(funSym, args, tpeDef, _) :: Nil, tpeTup, locTup), tpeTag, tpeLoc) =>
+      Expression.Tuple(hd :: Expression.ApplyDef(funSym, args, tpeDef, _) :: Nil, tpeTup, locTup), tagTpe, tagLoc) =>
         // Bail if not the function of the original definition
         if (funSym != originalDefnSym) return exp0
 
         println("Found a cons in helper")
 
+        val consArg = Expression.Tag(sym, Name.Tag("Cons", tagLoc),
+          Expression.Tuple(hd :: Nil, tpeTup, tagLoc)
+          , tagTpe, tagLoc)
 
-        val consArg = Expression.Tag(sym, Name.Tag("Cons", locTup),
-          Expression.Tuple(hd :: Nil, tpeTup, locTup)
-          , tpeTag, tpeLoc)
-        Expression.ApplySelfTail(refreshedDef.sym, helperParams, args ::: List(consArg), tpeTag, tpeLoc)
+        val newTailSym = Symbol.freshVarSym("new_tail")
+        val newTailExp = Expression.Var(newTailSym, tagTpe, tagLoc)
 
+        val endParamExp = Expression.Var(endParam.sym, endParam.tpe, tagLoc)
+        val setNewTail = Expression.IndexMut(endParamExp, 1, newTailExp, Type.Unit, tagLoc)
+
+        val applySelfExp = Expression.ApplySelfTail(refreshedDef.sym, helperParams, args ::: List(newTailExp), tagTpe, tagLoc)
+
+        val letExp = Expression.Let(Symbol.freshVarSym(), setNewTail, applySelfExp, applySelfExp.tpe, tagLoc)
+        Expression.Let(newTailSym, consArg, letExp, letExp.tpe, tagLoc)
 
       /*
        * Other expression: No calls in tail position.
@@ -177,7 +186,7 @@ object Tailrec extends Phase[Root, Root] {
     println("__________________Helper____________________________________")
     println(vt.fmt(TerminalContext.AnsiTerminal))*/
     val newExp = visit(refreshedDef.exp)
-    refreshedDef.copy(fparams = helperParams, exp = newExp)
+    refreshedDef.copy(fparams = helperParams, exp = newExp, tpe = newType)
   }
 
   /**
@@ -250,7 +259,6 @@ object Tailrec extends Phase[Root, Root] {
         // First check that `exp` is a Tuple
 
         println("Found a cons")
-        println(tpeTup)
         // Now we check if the helper already exists in the map, otherwise we insert it
         val funDefnSym = defn.sym
         val helperSym = if (helperMap.contains(funDefnSym)) {
