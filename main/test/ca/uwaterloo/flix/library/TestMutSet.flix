@@ -26,14 +26,14 @@ namespace TestMutSet {
     def toString01(): Bool & Impure =
         let s = MutSet.empty();
         MutSet.add!(1, s);
-        toString(s) == "MutSet(1)"
+        toString(s) == "MutSet#{1}"
 
     @test
     def toString02(): Bool & Impure =
         let s = MutSet.empty();
         MutSet.add!(1, s);
         MutSet.add!(2, s);
-        toString(s) == "MutSet(1, 2)"
+        toString(s) == "MutSet#{1, 2}"
 
     @test
     def toString03(): Bool & Impure =
@@ -42,7 +42,7 @@ namespace TestMutSet {
         MutSet.add!(92, s);
         MutSet.add!(94, s);
         MutSet.add!(97, s);
-        toString(s) == "MutSet(1, 92, 94, 97)"
+        toString(s) == "MutSet#{1, 92, 94, 97}"
 
     @test
     def toString04(): Bool & Impure =
@@ -51,6 +51,6 @@ namespace TestMutSet {
         MutSet.add!('b', s);
         MutSet.add!('c', s);
         MutSet.add!('d', s);
-        toString(s) == "MutSet(a, b, c, d)"
+        toString(s) == "MutSet#{a, b, c, d}"
 
 }

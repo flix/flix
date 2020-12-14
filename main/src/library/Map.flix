@@ -28,11 +28,8 @@ enum Map[k, v] {
 
 instance ToString[Map[k, v]] with [k : ToString, v : ToString] {
     def toString(m: Map[k, v]): String =
-        let s = Map.foldRightWithKey((k, v, acc) -> {
-            if (acc == "") kv
-            else "${k} -> ${v}, ${acc}"
-        }, "", m);
-        "Map#{${s}}"
+        let s = Map.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m);
+        "Map#{${String.dropRight(2, s)}}"
 }
 
 namespace Map {

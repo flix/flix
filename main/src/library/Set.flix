@@ -28,11 +28,8 @@ enum Set[t] {
 
 instance ToString[Set[a]] with [a : ToString] {
     def toString(xs: Set[a]): String =
-        let s = Set.foldRight((x, acc) -> {
-            if (acc == "") y
-            else "${x}, ${acc}"
-            }, "", xs);
-        "Set#{${s}}"
+        let s = Set.foldRight((x, acc) -> "${x}, ${acc}", "", xs);
+        "Set#{${String.dropRight(2, s)}}"
 }
 
 namespace Set {
