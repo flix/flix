@@ -2089,6 +2089,6 @@ def distinctWith09(): Bool =
 
     @test
     def toString06(): Bool =
-        toString((1 :: 2 :: Nil) (2 :: 3 :: Nil) :: (4 :: 7) :: Nil) == "1 :: 2 :: Nil :: 2 :: 3 :: Nil :: 4 :: 7 :: Nil :: Nil"
+        toString((1 :: 2 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: 7 :: Nil) :: Nil) == "1 :: 2 :: Nil :: 2 :: 3 :: Nil :: 4 :: 7 :: Nil :: Nil"
 
 }
