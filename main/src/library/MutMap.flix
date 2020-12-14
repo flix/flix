@@ -21,6 +21,12 @@ use Core/Cmp.Ordering;
 ///
 opaque type MutMap[k, v] = Ref[Map[k, v]]
 
+instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
+    def toString(m: MutMap[k, v]): String =
+        let s = MutMap.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m) as & Pure;
+        "MutMap#{${String.dropRight(2, s)}}"
+}
+
 namespace MutMap {
 
     ///

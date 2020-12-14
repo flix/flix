@@ -26,6 +26,13 @@ enum Option[t] {
     case Some(t)
 }
 
+instance ToString[Option[a]] with [a : ToString] {
+    def toString(o: Option[a]): String = match o {
+        case None => "None"
+        case Some(y) => "Some(${y})"
+    }
+}
+
 namespace Option {
 
     ///

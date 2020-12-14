@@ -22,6 +22,12 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
+instance ToString[Nel[a]] with [a : ToString, List[a] : ToString] {
+    def toString(l: Nel[a]): String = match l {
+        case Nel(x, xs) => "Nel(${x}, ${xs})"
+    }
+}
+
 namespace Nel {
 
     ///

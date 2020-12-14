@@ -21,6 +21,13 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
+instance ToString[MutList[a]] with [a : ToString] {
+    def toString(v: MutList[a]): String = {
+        let s = MutList.formatWith(x -> "${x}", ", ", v) as & Pure;
+        "MutList#{${s}}"
+    }
+}
+
 namespace MutList {
 
     ///

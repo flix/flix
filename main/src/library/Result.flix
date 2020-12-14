@@ -26,6 +26,13 @@ enum Result[t, e] {
     case Err(e)
 }
 
+instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
+    def toString(r: Result[t, e]): String = match r {
+        case Ok(t)  => "Ok(${t})"
+        case Err(e) => "Err(${e})"
+    }
+}
+
 namespace Result {
 
     ///

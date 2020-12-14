@@ -16,6 +16,8 @@
 
 namespace TestList {
 
+    use ToString.toString;
+
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -2060,5 +2062,33 @@ def distinctWith08(): Bool =
 @test
 def distinctWith09(): Bool =
     List.distinctWith((x,y) -> x == y, 4 :: 4 :: 3  :: 4 :: 2 :: 1 :: 1 :: Nil) == 4 :: 3 :: 2 :: 1 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool =
+        toString(1 :: Nil) == "1 :: Nil"
+
+    @test
+    def toString02(): Bool =
+        toString(1 :: 2 :: Nil) == "1 :: 2 :: Nil"
+
+    @test
+    def toString03(): Bool =
+        toString(93 :: 3 :: 4 :: Nil) == "93 :: 3 :: 4 :: Nil"
+
+    @test
+    def toString04(): Bool =
+        toString('a' :: 'b' :: 'c' :: Nil) == "a :: b :: c :: Nil"
+
+    @test
+    def toString05(): Bool =
+        toString(true :: false :: true :: true :: Nil) == "true :: false :: true :: true :: Nil"
+
+    @test
+    def toString06(): Bool =
+        toString((1 :: 2 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: 7 :: Nil) :: Nil) == "1 :: 2 :: Nil :: 2 :: 3 :: Nil :: 4 :: 7 :: Nil :: Nil"
 
 }

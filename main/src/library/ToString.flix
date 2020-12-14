@@ -71,44 +71,65 @@ instance ToString[BigInt] {
     def toString(x: BigInt): String = BigInt.toString(x)
 }
 
-instance ToString[Option[a]] with [a : ToString] {
-    def toString(o: Option[a]): String = match o {
-        case Some(y) => "Some(${y})"
-        case None => "None"
+instance ToString[(a1, a2)] with [a1 : ToString, a2 : ToString] {
+    def toString(t: (a1, a2)): String = match t {
+        case (x1, x2) =>
+            "(${x1}, ${x2})"
     }
 }
 
-instance ToString[List[a]] with [a : ToString] {
-    def toString(l: List[a]): String = match l {
-        // TODO: Replace by foldRight.
-        case Nil => "Nil"
-        case _   =>
-            let s = l |> List.map(ToString.toString) |> List.intersperse(" :: ") |> String.flatten;
-            String.concat(s, " :: Nil")
+instance ToString[(a1, a2, a3)] with [a1 : ToString, a2 : ToString, a3 : ToString] {
+    def toString(t: (a1, a2, a3)): String = match t {
+        case (x1, x2, x3) =>
+            "(${x1}, ${x2}, ${x3})"
     }
 }
 
-instance ToString[Nel[a]] with [a : ToString, List[a] : ToString] {
-    def toString(l: Nel[a]): String = match l {
-        case Nel(x, xs) => "Nel(${x}, ${xs})"
+instance ToString[(a1, a2, a3, a4)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString] {
+    def toString(t: (a1, a2, a3, a4)): String = match t {
+        case (x1, x2, x3, x4) =>
+            "(${x1}, ${x2}, ${x3}, ${x4})"
     }
 }
 
-instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
-    def toString(r: Result[t, e]): String = match r {
-        case Ok(v)  => "Ok(${v})"
-        case Err(v) => "Err(${v})"
+instance ToString[(a1, a2, a3, a4, a5)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5)): String = match t {
+        case (x1, x2, x3, x4, x5) =>
+            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5})"
     }
 }
 
-instance ToString[Validation[t, e]] with [t : ToString, Nel[e] : ToString] {
-    def toString(x: Validation[t, e]): String = match x {
-        case Success(v) => "Success(${v})"
-        case Failure(v) => "Failure(${v})"
+instance ToString[(a1, a2, a3, a4, a5, a6)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6)): String = match t {
+        case (x1, x2, x3, x4, x5, x6) =>
+            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6})"
     }
 }
 
-// TODO: Move instances to proper namespaces, e.g. to Option, List, etc.
-// TODO: Move tests from TestToString into proper namespaces/files, e.g. TestOption, TestList, etc.
-// TODO: Add instances for Array, Map, MutList, MutMap, MutSet, Set
-// TODO: Write more systematic tests that use different types (?).
+instance ToString[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6, a7)): String = match t {
+        case (x1, x2, x3, x4, x5, x6, x7) =>
+            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8)): String = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8) =>
+            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString, a9 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): String = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
+            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9})"
+    }
+}
+
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString, a9 : ToString, a10 : ToString] {
+    def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): String = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
+            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10})"
+    }
+}
