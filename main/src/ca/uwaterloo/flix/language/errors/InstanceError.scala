@@ -119,19 +119,19 @@ object InstanceError {
   /**
     * Error indicating the duplicate use of a type variable in an instance type.
     *
-    * @param tvar the duplicated type.
+    * @param tvar the duplicated type variable.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeParameter(tvar: Type.Var, loc: SourceLocation) extends InstanceError {
-    override def summary: String = "Duplicate type parameter."
+  case class DuplicateTypeVariableOccurrence(tvar: Type.Var, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Duplicate type variable."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << Code(loc, s"Duplicate type parameter '${FormatType.formatType(tvar)}'.")
+      vt << Code(loc, s"Duplicate type variable '${FormatType.formatType(tvar)}'.")
       vt << NewLine
-      vt << Underline("Tip:") << " Rename one of the instances of the type parameter."
+      vt << Underline("Tip:") << " Rename one of the instances of the type variable."
     }
   }
 

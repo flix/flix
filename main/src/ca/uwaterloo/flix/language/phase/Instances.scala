@@ -59,7 +59,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             case (seen, tvar: Type.Var) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
-                InstanceError.DuplicateTypeParameter(tvar, loc).toFailure
+                InstanceError.DuplicateTypeVariableOccurrence(tvar, loc).toFailure
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen).toSuccess

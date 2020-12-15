@@ -189,7 +189,7 @@ class TestInstances extends FunSuite with TestUtils {
         |instance C[(a, a)]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.DuplicateTypeParameter](result)
+    expectError[InstanceError.DuplicateTypeVariableOccurrence](result)
   }
 
   test("Test.DuplicateTypeParameter.02") {
@@ -200,7 +200,7 @@ class TestInstances extends FunSuite with TestUtils {
         |instance C[a -> a & e]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.DuplicateTypeParameter](result)
+    expectError[InstanceError.DuplicateTypeVariableOccurrence](result)
   }
 
   test("Test.DuplicateTypeParameter.03") {
@@ -215,7 +215,7 @@ class TestInstances extends FunSuite with TestUtils {
         |instance C[DoubleBox[a, a]]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.DuplicateTypeParameter](result)
+    expectError[InstanceError.DuplicateTypeVariableOccurrence](result)
   }
 
   test("Test.MissingImplementation.01") {
