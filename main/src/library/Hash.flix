@@ -107,7 +107,7 @@ namespace Hash {
             )
     }
 
-    instance Hash[Nel[a]] with [a : Hash, List[a] : Hash] {
+    instance Hash[Nel[a]] with [a : Hash] {
         def hash(l: Nel[a]): Int = match l {
             case Nel(x, xs) => 31 * Hash/Hash.hash(xs) + Hash/Hash.hash(x)
         }
@@ -120,7 +120,7 @@ namespace Hash {
         }
     }
 
-    instance Hash[Validation[t, e]] with [t : Hash, Nel[e] : Hash] {
+    instance Hash[Validation[t, e]] with [t : Hash, e : Hash] {
         def hash(x: Validation[t, e]): Int = match x {
             case Success(v) => Hash/Hash.hash(v)
             case Failure(v) => Hash/Hash.hash(v)

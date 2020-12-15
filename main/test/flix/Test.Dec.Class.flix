@@ -38,11 +38,10 @@ namespace Test/Dec/Class {
 
     namespace Test05 {
         use Test/Dec/Class.List;
-        use Test/Dec/Class.Option;
 
         class C[a]
 
-        instance C[List[a]] with [a : C, Option[a] : C]
+        instance C[List[a]] with [a : C]
     }
 
     namespace Test06 {
