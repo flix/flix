@@ -402,6 +402,39 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) => lit2exp(lit)
 
+    case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      flatMapN(traverse(exps)(visitExp)) {
+        case es => (op.name, es) match {
+
+          // TODO: Add all other operators.
+
+          case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Add, e1, e2, loc).toSuccess
+
+          case ("INT32_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int32Op.Neg, e1, loc).toSuccess
+          case ("INT32_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int32Op.Not, e1, loc).toSuccess
+          case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Add, e1, e2, loc).toSuccess
+          case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Sub, e1, e2, loc).toSuccess
+          case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Mul, e1, e2, loc).toSuccess
+          case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Div, e1, e2, loc).toSuccess
+          case ("INT32_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Rem, e1, e2, loc).toSuccess
+          case ("INT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Exp, e1, e2, loc).toSuccess
+          case ("INT32_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.And, e1, e2, loc).toSuccess
+          case ("INT32_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Or, e1, e2, loc).toSuccess
+          case ("INT32_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Xor, e1, e2, loc).toSuccess
+          case ("INT32_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Shl, e1, e2, loc).toSuccess
+          case ("INT32_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Shr, e1, e2, loc).toSuccess
+          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Eq, e1, e2, loc).toSuccess
+          case ("INT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Neq, e1, e2, loc).toSuccess
+          case ("INT32_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Lt, e1, e2, loc).toSuccess
+          case ("INT32_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Le, e1, e2, loc).toSuccess
+          case ("INT32_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Gt, e1, e2, loc).toSuccess
+          case ("INT32_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Ge, e1, e2, loc).toSuccess
+
+          case _ => WeederError.IllegalIntrinsic(loc).toFailure
+        }
+      }
+
     case ParsedAst.Expression.Apply(lambda, args, sp2) =>
       val sp1 = leftMostSourcePosition(lambda)
       val loc = mkSL(sp1, sp2)
@@ -465,11 +498,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       visitExp(exp) map {
         case e => op match {
-          case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
-          case "not" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
-          case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
-          case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
-          case "~~~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
+          case "!" => WeededAst.Expression.UnaryDeprecated(UnaryOperator.LogicalNot, e, loc)
+          case "not" => WeededAst.Expression.UnaryDeprecated(UnaryOperator.LogicalNot, e, loc)
+          case "+" => WeededAst.Expression.UnaryDeprecated(UnaryOperator.Plus, e, loc)
+          case "-" => WeededAst.Expression.UnaryDeprecated(UnaryOperator.Minus, e, loc)
+          case "~~~" => WeededAst.Expression.UnaryDeprecated(UnaryOperator.BitwiseNegate, e, loc)
           case _ => mkApplyFqn(op, List(e), sp1, sp2)
         }
       }
@@ -479,28 +512,28 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => op match {
-          case "+" => WeededAst.Expression.Binary(BinaryOperator.Plus, e1, e2, loc)
-          case "-" => WeededAst.Expression.Binary(BinaryOperator.Minus, e1, e2, loc)
-          case "*" => WeededAst.Expression.Binary(BinaryOperator.Times, e1, e2, loc)
-          case "/" => WeededAst.Expression.Binary(BinaryOperator.Divide, e1, e2, loc)
-          case "%" => WeededAst.Expression.Binary(BinaryOperator.Modulo, e1, e2, loc)
-          case "**" => WeededAst.Expression.Binary(BinaryOperator.Exponentiate, e1, e2, loc)
-          case "<" => WeededAst.Expression.Binary(BinaryOperator.Less, e1, e2, loc)
-          case "<=" => WeededAst.Expression.Binary(BinaryOperator.LessEqual, e1, e2, loc)
-          case ">" => WeededAst.Expression.Binary(BinaryOperator.Greater, e1, e2, loc)
-          case ">=" => WeededAst.Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, loc)
-          case "==" => WeededAst.Expression.Binary(BinaryOperator.Equal, e1, e2, loc)
-          case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
-          case "<=>" => WeededAst.Expression.Binary(BinaryOperator.Spaceship, e1, e2, loc)
-          case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
-          case "and" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
-          case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
-          case "or" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
-          case "&&&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
-          case "|||" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
-          case "^^^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
-          case "<<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
-          case ">>>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
+          case "+" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Plus, e1, e2, loc)
+          case "-" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Minus, e1, e2, loc)
+          case "*" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Times, e1, e2, loc)
+          case "/" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Divide, e1, e2, loc)
+          case "%" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Modulo, e1, e2, loc)
+          case "**" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Exponentiate, e1, e2, loc)
+          case "<" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Less, e1, e2, loc)
+          case "<=" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.LessEqual, e1, e2, loc)
+          case ">" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Greater, e1, e2, loc)
+          case ">=" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.GreaterEqual, e1, e2, loc)
+          case "==" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Equal, e1, e2, loc)
+          case "!=" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.NotEqual, e1, e2, loc)
+          case "<=>" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Spaceship, e1, e2, loc)
+          case "&&" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.LogicalAnd, e1, e2, loc)
+          case "and" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.LogicalAnd, e1, e2, loc)
+          case "||" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.LogicalOr, e1, e2, loc)
+          case "or" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.LogicalOr, e1, e2, loc)
+          case "&&&" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.BitwiseAnd, e1, e2, loc)
+          case "|||" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.BitwiseOr, e1, e2, loc)
+          case "^^^" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.BitwiseXor, e1, e2, loc)
+          case "<<<" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
+          case ">>>" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.BitwiseRightShift, e1, e2, loc)
           case _ => mkApplyIdent(op, List(e1, e2), sp1, sp2)
         }
       }
@@ -1015,7 +1048,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         */
       def mkConcat(e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
         val op = BinaryOperator.Plus
-        WeededAst.Expression.Binary(op, e1, e2, loc)
+        WeededAst.Expression.BinaryDeprecated(op, e1, e2, loc)
       }
 
       /**
@@ -2056,6 +2089,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
+    case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)

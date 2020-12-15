@@ -135,14 +135,24 @@ object Stratifier extends Phase[Root, Root] {
         case (e, es) => Expression.Apply(e, es, tpe, eff, loc)
       }
 
-    case Expression.Unary(op, exp, tpe, eff, loc) =>
+    case Expression.UnaryDeprecated(op, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Unary(op, e, tpe, eff, loc)
+        case e => Expression.UnaryDeprecated(op, e, tpe, eff, loc)
       }
 
-    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Unary(sop, e, tpe, eff, loc)
+      }
+
+    case Expression.BinaryDeprecated(op, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Binary(op, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.BinaryDeprecated(op, e1, e2, tpe, eff, loc)
+      }
+
+    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.Binary(sop, e1, e2, tpe, eff, loc)
       }
 
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
@@ -459,8 +469,14 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, exp) => acc + dependencyGraphOfExp(exp)
       }
 
+    case Expression.UnaryDeprecated(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
     case Expression.Unary(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
+
+    case Expression.BinaryDeprecated(_, exp1, exp2, _, _, _) =>
+      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)

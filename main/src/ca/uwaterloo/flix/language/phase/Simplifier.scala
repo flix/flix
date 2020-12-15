@@ -110,7 +110,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = exps.map(visitExp)
         SimplifiedAst.Expression.Apply(e, es, tpe, loc)
 
-      case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
+      case TypedAst.Expression.UnaryDeprecated(op, e, tpe, eff, loc) =>
         /*
          * Special Case 1: Unary Plus.
          */
@@ -150,7 +150,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
         SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, loc)
 
-      case TypedAst.Expression.Binary(op, e1, e2, tpe, eff, loc) =>
+      case TypedAst.Expression.Unary(sop, e, tpe, eff, loc) =>
+        // TODO: See the comment about binary expressions.
+        val op = sop match {
+          case SemanticOperator.Int32Op.Neg => UnaryOperator.Minus
+          case _ => ??? // TODO
+        }
+        SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, loc)
+
+      case TypedAst.Expression.BinaryDeprecated(op, e1, e2, tpe, eff, loc) =>
 
         /*
          * Special Case 1: Unit
@@ -351,6 +359,21 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Some(TypeConstructor.BigInt) => SemanticOperator.BigIntOp.Shr
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
+        }
+
+        SimplifiedAst.Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, loc)
+
+
+      case TypedAst.Expression.Binary(sop, e1, e2, tpe, eff, loc) =>
+
+        // TODO: Until we have the new backend, we have to do a stupid
+        // mapping of sop back to a binary op. Obviously this should be removed in the future.
+        val op = sop match {
+          case SemanticOperator.Int32Op.Add => BinaryOperator.Plus
+          case SemanticOperator.Int32Op.Sub => BinaryOperator.Minus
+          case SemanticOperator.Int32Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Int32Op.Div => BinaryOperator.Divide
+          case _ => ??? // TODO
         }
 
         SimplifiedAst.Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, loc)

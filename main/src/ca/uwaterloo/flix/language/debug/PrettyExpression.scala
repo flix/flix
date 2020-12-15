@@ -51,14 +51,14 @@ object PrettyExpression {
     case Expression.Apply(exp, exps, _, _, _) =>
       s"${pretty(exp)}(${exps.map(pretty).mkString(", ")})"
 
-    case Expression.Unary(op, exp, _, _, _) => op match {
+    case Expression.UnaryDeprecated(op, exp, _, _, _) => op match {
       case UnaryOperator.LogicalNot => s"!${pretty(exp)}"
       case UnaryOperator.Plus => s"+${pretty(exp)}"
       case UnaryOperator.Minus => s"-${pretty(exp)}"
       case UnaryOperator.BitwiseNegate => s"~~~${pretty(exp)}"
     }
 
-    case Expression.Binary(op, exp1, exp2, _, _, _) => op match {
+    case Expression.BinaryDeprecated(op, exp1, exp2, _, _, _) => op match {
       case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
       case BinaryOperator.Minus => s"${pretty(exp1)} - ${pretty(exp2)}"
       case BinaryOperator.Times => s"${pretty(exp1)} * ${pretty(exp2)}"
