@@ -404,34 +404,34 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(traverse(exps)(visitExp)) {
+      flatMapN(traverse(exps)(visitExp)) {
         case es => (op.name, es) match {
 
           // TODO: Add all other operators.
 
-          case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int8Op.Add, e1, e2, loc)
+          case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int8Op.Add, e1, e2, loc).toSuccess
 
-          case ("INT32_NEG", e1 :: Nil) => WeededAst.Expression.SUnary(SemanticOperator.Int32Op.Neg, e1, loc)
-          case ("INT32_NOT", e1 :: Nil) => WeededAst.Expression.SUnary(SemanticOperator.Int32Op.Not, e1, loc)
-          case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Add, e1, e2, loc)
-          case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Sub, e1, e2, loc)
-          case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Mul, e1, e2, loc)
-          case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Div, e1, e2, loc)
-          case ("INT32_REM", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Rem, e1, e2, loc)
-          case ("INT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Exp, e1, e2, loc)
-          case ("INT32_AND", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.And, e1, e2, loc)
-          case ("INT32_OR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Or, e1, e2, loc)
-          case ("INT32_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Xor, e1, e2, loc)
-          case ("INT32_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Shl, e1, e2, loc)
-          case ("INT32_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Shr, e1, e2, loc)
-          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Eq, e1, e2, loc)
-          case ("INT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Neq, e1, e2, loc)
-          case ("INT32_LT", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Lt, e1, e2, loc)
-          case ("INT32_LE", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Le, e1, e2, loc)
-          case ("INT32_GT", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Gt, e1, e2, loc)
-          case ("INT32_GE", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Ge, e1, e2, loc)
+          case ("INT32_NEG", e1 :: Nil) => WeededAst.Expression.SUnary(SemanticOperator.Int32Op.Neg, e1, loc).toSuccess
+          case ("INT32_NOT", e1 :: Nil) => WeededAst.Expression.SUnary(SemanticOperator.Int32Op.Not, e1, loc).toSuccess
+          case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Add, e1, e2, loc).toSuccess
+          case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Sub, e1, e2, loc).toSuccess
+          case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Mul, e1, e2, loc).toSuccess
+          case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Div, e1, e2, loc).toSuccess
+          case ("INT32_REM", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Rem, e1, e2, loc).toSuccess
+          case ("INT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Exp, e1, e2, loc).toSuccess
+          case ("INT32_AND", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.And, e1, e2, loc).toSuccess
+          case ("INT32_OR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Or, e1, e2, loc).toSuccess
+          case ("INT32_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Xor, e1, e2, loc).toSuccess
+          case ("INT32_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Shl, e1, e2, loc).toSuccess
+          case ("INT32_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Shr, e1, e2, loc).toSuccess
+          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Eq, e1, e2, loc).toSuccess
+          case ("INT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Neq, e1, e2, loc).toSuccess
+          case ("INT32_LT", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Lt, e1, e2, loc).toSuccess
+          case ("INT32_LE", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Le, e1, e2, loc).toSuccess
+          case ("INT32_GT", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Gt, e1, e2, loc).toSuccess
+          case ("INT32_GE", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Ge, e1, e2, loc).toSuccess
 
-          case _ => ??? // TODO: Add proper error
+          case _ => WeederError.IllegalIntrinsic(loc).toFailure
         }
       }
 
