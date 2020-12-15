@@ -407,109 +407,29 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(traverse(exps)(visitExp)) {
         case es => (op.name, es) match {
 
-
-//
-//          case object Neg extends Int32Op
-//
-//          /**
-//            * Bitwise Not.
-//            */
-//          case object Not extends Int32Op
-//
-//          /**
-//            * Addition.
-//            */
-//          case object Add extends Int32Op
-//
-//          /**
-//            * Subtraction.
-//            */
-//          case object Sub extends Int32Op
-//
-//          /**
-//            * Multiplication.
-//            */
-//          case object Mul extends Int32Op
-//
-//          /**
-//            * Division.
-//            */
-//          case object Div extends Int32Op
-//
-//          /**
-//            * Remainder.
-//            */
-//          case object Rem extends Int32Op
-//
-//          /**
-//            * Exponentiate.
-//            */
-//          case object Exp extends Int32Op
-//
-//          /**
-//            * Bitwise And.
-//            */
-//          case object And extends Int32Op
-//
-//          /**
-//            * Bitwise Or.
-//            */
-//          case object Or extends Int32Op
-//
-//          /**
-//            * Bitwise Xor.
-//            */
-//          case object Xor extends Int32Op
-//
-//          /**
-//            * Bitwise Left Shift.
-//            */
-//          case object Shl extends Int32Op
-//
-//          /**
-//            * Bitwise Right Shift.
-//            */
-//          case object Shr extends Int32Op
-//
-//          /**
-//            * Equality.
-//            */
-//          case object Eq extends Int32Op
-//
-//          /**
-//            * Inequality.
-//            */
-//          case object Neq extends Int32Op
-//
-//          /**
-//            * Less than.
-//            */
-//          case object Lt extends Int32Op
-//
-//          /**
-//            * Less or equal.
-//            */
-//          case object Le extends Int32Op
-//
-//          /**
-//            * Greater than.
-//            */
-//          case object Gt extends Int32Op
-//
-//          /**
-//            * Greater or equal.
-//            */
-//          case object Ge extends Int32Op
+          // TODO: Add all other operators.
 
           case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int8Op.Add, e1, e2, loc)
 
+          case ("INT32_NEG", e1 :: Nil) => WeededAst.Expression.SUnary(SemanticOperator.Int32Op.Neg, e1, loc)
+          case ("INT32_NOT", e1 :: Nil) => WeededAst.Expression.SUnary(SemanticOperator.Int32Op.Not, e1, loc)
           case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Add, e1, e2, loc)
           case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Sub, e1, e2, loc)
           case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Mul, e1, e2, loc)
           case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Div, e1, e2, loc)
-
+          case ("INT32_REM", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Rem, e1, e2, loc)
+          case ("INT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Exp, e1, e2, loc)
+          case ("INT32_AND", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.And, e1, e2, loc)
+          case ("INT32_OR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Or, e1, e2, loc)
+          case ("INT32_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Xor, e1, e2, loc)
+          case ("INT32_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Shl, e1, e2, loc)
+          case ("INT32_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Shr, e1, e2, loc)
           case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Eq, e1, e2, loc)
-          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Ge, e1, e2, loc)
+          case ("INT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Neq, e1, e2, loc)
+          case ("INT32_LT", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Lt, e1, e2, loc)
+          case ("INT32_LE", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Le, e1, e2, loc)
+          case ("INT32_GT", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Gt, e1, e2, loc)
+          case ("INT32_GE", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Ge, e1, e2, loc)
 
           case _ => ??? // TODO: Add proper error
         }
