@@ -155,7 +155,6 @@ class TestInstances extends FunSuite with TestUtils {
     expectError[InstanceError.ComplexInstanceType](result)
   }
 
-
   test("Test.ComplexInstanceType.06") {
     val input =
       """
@@ -166,6 +165,17 @@ class TestInstances extends FunSuite with TestUtils {
         |class C[a]
         |
         |instance C[Box[a] -> b & e]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.ComplexInstanceType](result)
+  }
+
+  test("Test.ComplexInstanceType.07") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.ComplexInstanceType](result)

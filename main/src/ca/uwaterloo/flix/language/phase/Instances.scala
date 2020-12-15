@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -49,19 +49,24 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * * all type arguments are variables
       */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, tpe, _, _, loc) =>
-        Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
-          // Case 1: Type variable
-          case (seen, tvar: Type.Var) =>
-            // Case 1.1 We've seen it already. Error.
-            if (seen.contains(tvar))
-              InstanceError.DuplicateTypeParameter(tvar, loc).toFailure
-            // Case 1.2 We haven't seen it before. Add it to the list.
-            else
-              (tvar :: seen).toSuccess
-          // Case 2: Non-type variable. Error.
-          case (_, _) => InstanceError.ComplexInstanceType(tpe, loc).toFailure
-        }.map(_ => ())
+      case TypedAst.Instance(_, _, _, tpe, _, _, loc) => tpe match {
+        case _: Type.Cst => ().toSuccess
+        case _: Type.Var => InstanceError.ComplexInstanceType(tpe, loc).toFailure
+        case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
+        case _: Type.Apply =>
+          Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
+            // Case 1: Type variable
+            case (seen, tvar: Type.Var) =>
+              // Case 1.1 We've seen it already. Error.
+              if (seen.contains(tvar))
+                InstanceError.DuplicateTypeParameter(tvar, loc).toFailure
+              // Case 1.2 We haven't seen it before. Add it to the list.
+              else
+                (tvar :: seen).toSuccess
+            // Case 2: Non-type variable. Error.
+            case (_, _) => InstanceError.ComplexInstanceType(tpe, loc).toFailure
+          }.map(_ => ())
+      }
     }
 
     /**
