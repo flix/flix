@@ -743,10 +743,19 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.Unary(op, e, tpe, eff, loc)
 
+      case Expression.SUnary(sop, exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.SUnary(sop, e, tpe, eff, loc)
+
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         Expression.Binary(op, e1, e2, tpe, eff, loc)
+
+      case Expression.SBinary(sop, exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.SBinary(sop, e1, e2, tpe, eff, loc)
 
       case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val newSym = apply(sym)
