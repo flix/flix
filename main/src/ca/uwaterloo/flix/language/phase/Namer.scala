@@ -73,47 +73,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: UseEnv, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = {
 
-    /**
-      * Creates a pair of errors reporting a duplicate type declaration at each location.
-      */
-    def mkDuplicateTypeOrClassPair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
-      Failure(LazyList(
-        // NB: We report an error at both source locations.
-        NameError.DuplicateTypeOrClass(name, loc1, loc2),
-        NameError.DuplicateTypeOrClass(name, loc2, loc1)
-      ))
-    }
-
-    sealed trait LookupResult
-    object LookupResult {
-
-      case object NotDefined extends LookupResult
-
-      case class AlreadyDefined(loc: SourceLocation) extends LookupResult
-
-    }
-
-    /**
-      * Looks up the type or class in the given namespace and root.
-      */
-    def lookupTypeOrClass(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): LookupResult = {
-      val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
-      val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-      val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
-      (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
-        // Case 1: The name is unused.
-        case (None, None, None) => LookupResult.NotDefined
-        // Case 2: A class with the name already exists.
-        case (Some(clazz), None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
-        // Case 3: An enum with the name already exists.
-        case (None, Some(enum), None) => LookupResult.AlreadyDefined(enum.sym.loc)
-        // Case 4: A type alias with the name already exists.
-        case (None, None, Some(typealias)) => LookupResult.AlreadyDefined(typealias.sym.loc)
-        // Impossible.
-        case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
-      }
-    }
-
     decl0 match {
       /*
        * Namespace.
@@ -162,7 +121,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             }
 
           // Case 2: The name is in use.
-          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, otherLoc)
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
       case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs, loc) =>
@@ -239,7 +198,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                 }
             }
           // Case 2: The name is in use.
-          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, otherLoc)
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
       /*
@@ -262,7 +221,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                 }
             }
           // Case 2: The name is in use.
-          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, otherLoc)
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
       /*
@@ -280,6 +239,47 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
       throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
+    }
+  }
+
+  /**
+    * Creates a pair of errors reporting a duplicate type declaration at each location.
+    */
+  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
+    Failure(LazyList(
+      // NB: We report an error at both source locations.
+      NameError.DuplicateTypeOrClass(name, loc1, loc2),
+      NameError.DuplicateTypeOrClass(name, loc2, loc1)
+    ))
+  }
+
+  /**
+    * The result of looking up a type or class name in an ast root.
+    */
+  private sealed trait NameLookupResult
+  private object LookupResult {
+    case object NotDefined extends NameLookupResult
+    case class AlreadyDefined(loc: SourceLocation) extends NameLookupResult
+  }
+
+  /**
+    * Looks up the type or class in the given namespace and root.
+    */
+  private def lookupTypeOrClass(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
+    val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
+    val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
+    val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+    (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
+      // Case 1: The name is unused.
+      case (None, None, None) => LookupResult.NotDefined
+      // Case 2: A class with the name already exists.
+      case (Some(clazz), None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
+      // Case 3: An enum with the name already exists.
+      case (None, Some(enum), None) => LookupResult.AlreadyDefined(enum.sym.loc)
+      // Case 4: A type alias with the name already exists.
+      case (None, None, Some(typealias)) => LookupResult.AlreadyDefined(typealias.sym.loc)
+      // Impossible.
+      case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
     }
   }
 
