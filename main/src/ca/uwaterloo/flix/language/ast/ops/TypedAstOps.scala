@@ -66,7 +66,13 @@ object TypedAstOps {
       case Expression.Unary(op, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
+      case Expression.SUnary(sop, exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.SBinary(sop, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
