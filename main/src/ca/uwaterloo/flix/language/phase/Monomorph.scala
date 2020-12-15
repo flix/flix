@@ -303,6 +303,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           Expression.Binary(op, e1, e2, subst0(tpe), eff, loc)
 
+        case Expression.SBinary(sop, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.SBinary(sop, e1, e2, subst0(tpe), eff, loc)
+
         case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
           // Generate a fresh symbol for the let-bound variable.
           val freshSym = Symbol.freshVarSym(sym)

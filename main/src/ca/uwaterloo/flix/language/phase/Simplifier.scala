@@ -355,6 +355,21 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
         SimplifiedAst.Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, loc)
 
+
+      case TypedAst.Expression.SBinary(sop, e1, e2, tpe, eff, loc) =>
+
+        // TODO: Until we have the new backend, we have to do a stupid
+        // mapping of sop back to a binary op. Obviously this should be removed in the future.
+        val op = sop match {
+          case SemanticOperator.Int32Op.Add => BinaryOperator.Plus
+          case SemanticOperator.Int32Op.Sub => BinaryOperator.Plus
+          case SemanticOperator.Int32Op.Mul => BinaryOperator.Plus
+          case SemanticOperator.Int32Op.Div => BinaryOperator.Plus
+          case _ => ??? // TODO
+        }
+
+        SimplifiedAst.Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, loc)
+
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, loc)
 

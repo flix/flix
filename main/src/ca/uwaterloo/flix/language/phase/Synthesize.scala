@@ -161,6 +161,11 @@ object Synthesize extends Phase[Root, Root] {
           case _ => Expression.Binary(op, e1, e2, tpe, eff, loc)
         }
 
+      case Expression.SBinary(sop, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.SBinary(sop, e1, e2, tpe, eff, loc)
+
       case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)

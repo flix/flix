@@ -252,6 +252,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = visitExp(exp2, env0)
       us1 and us2
 
+    case Expression.SBinary(_, exp1, exp2, _, _, _) =>
+      val us1 = visitExp(exp1, env0)
+      val us2 = visitExp(exp2, env0)
+      us1 and us2
+
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
