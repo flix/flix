@@ -221,7 +221,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
                     return TypeError.GeneralizationError(declaredScheme, sc, loc).toFailure
-                  // Case 3: instance error
+                    // Case 3: instance error
                   } else {
                     return Validation.Failure(instanceErrs)
                   }
@@ -637,6 +637,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             rhsType <- unifyTypeM(tpe2, Type.Int32, loc)
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, lhsType, resultEff)
+      }
+
+      case ResolvedAst.Expression.SBinary(sop, exp1, exp2, tvar, loc) => sop match {
+
+        // TODO: A whole lot of cases more. Implement in the same order as in SemanticOperator.
+
+        case SemanticOperator.Int32Op.Add | SemanticOperator.Int32Op.Sub | SemanticOperator.Int32Op.Mul | SemanticOperator.Int32Op.Div =>
+          for {
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
+            resultTyp <- unifyTypeM(tvar, Type.Int32, tpe1, tpe2, loc)
+            resultEff = Type.mkAnd(eff1, eff2)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+        case _ => ??? // TODO: A lot more cases to handle.
       }
 
       case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -1528,6 +1543,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), eff, loc)
+
+      case ResolvedAst.Expression.SBinary(sop, exp1, exp2, tvar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
+        TypedAst.Expression.SBinary(sop, e1, e2, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)

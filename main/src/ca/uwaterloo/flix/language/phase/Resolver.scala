@@ -453,11 +453,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Unary(op, e, tvar, loc)
 
+        case NamedAst.Expression.SUnary(sop, exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.SUnary(sop, e, tvar, loc)
+
         case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Binary(op, e1, e2, tvar, loc)
+
+        case NamedAst.Expression.SBinary(sop, exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.SBinary(sop, e1, e2, tvar, loc)
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
           for {
