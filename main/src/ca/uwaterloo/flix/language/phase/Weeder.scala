@@ -402,6 +402,119 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) => lit2exp(lit)
 
+    case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      mapN(traverse(exps)(visitExp)) {
+        case es => (op.name, es) match {
+
+
+//
+//          case object Neg extends Int32Op
+//
+//          /**
+//            * Bitwise Not.
+//            */
+//          case object Not extends Int32Op
+//
+//          /**
+//            * Addition.
+//            */
+//          case object Add extends Int32Op
+//
+//          /**
+//            * Subtraction.
+//            */
+//          case object Sub extends Int32Op
+//
+//          /**
+//            * Multiplication.
+//            */
+//          case object Mul extends Int32Op
+//
+//          /**
+//            * Division.
+//            */
+//          case object Div extends Int32Op
+//
+//          /**
+//            * Remainder.
+//            */
+//          case object Rem extends Int32Op
+//
+//          /**
+//            * Exponentiate.
+//            */
+//          case object Exp extends Int32Op
+//
+//          /**
+//            * Bitwise And.
+//            */
+//          case object And extends Int32Op
+//
+//          /**
+//            * Bitwise Or.
+//            */
+//          case object Or extends Int32Op
+//
+//          /**
+//            * Bitwise Xor.
+//            */
+//          case object Xor extends Int32Op
+//
+//          /**
+//            * Bitwise Left Shift.
+//            */
+//          case object Shl extends Int32Op
+//
+//          /**
+//            * Bitwise Right Shift.
+//            */
+//          case object Shr extends Int32Op
+//
+//          /**
+//            * Equality.
+//            */
+//          case object Eq extends Int32Op
+//
+//          /**
+//            * Inequality.
+//            */
+//          case object Neq extends Int32Op
+//
+//          /**
+//            * Less than.
+//            */
+//          case object Lt extends Int32Op
+//
+//          /**
+//            * Less or equal.
+//            */
+//          case object Le extends Int32Op
+//
+//          /**
+//            * Greater than.
+//            */
+//          case object Gt extends Int32Op
+//
+//          /**
+//            * Greater or equal.
+//            */
+//          case object Ge extends Int32Op
+
+          case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int8Op.Add, e1, e2, loc)
+
+          case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Add, e1, e2, loc)
+          case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Sub, e1, e2, loc)
+          case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Mul, e1, e2, loc)
+          case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Div, e1, e2, loc)
+
+          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Eq, e1, e2, loc)
+          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.SBinary(SemanticOperator.Int32Op.Ge, e1, e2, loc)
+
+          case _ => ??? // TODO: Add proper error
+        }
+      }
+
     case ParsedAst.Expression.Apply(lambda, args, sp2) =>
       val sp1 = leftMostSourcePosition(lambda)
       val loc = mkSL(sp1, sp2)
