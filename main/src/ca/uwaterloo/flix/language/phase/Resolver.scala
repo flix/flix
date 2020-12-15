@@ -1247,7 +1247,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, loc)
 
           // Case 4: Errors.
-          case (x, y) => throw InternalCompilerException("Unexpected ambiguous type.")
+          case (_, _) => throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
         }
     }
 
