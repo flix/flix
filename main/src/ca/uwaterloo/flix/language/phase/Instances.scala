@@ -51,7 +51,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, loc) => tpe match {
         case _: Type.Cst => ().toSuccess
-        case _: Type.Var => InstanceError.ComplexInstanceType(tpe, loc).toFailure
+        case _: Type.Var => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
         case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
         case _: Type.Apply =>
           Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
@@ -64,7 +64,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
               else
                 (tvar :: seen).toSuccess
             // Case 2: Non-type variable. Error.
-            case (_, _) => InstanceError.ComplexInstanceType(tpe, loc).toFailure
+            case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
           }.map(_ => ())
       }
     }

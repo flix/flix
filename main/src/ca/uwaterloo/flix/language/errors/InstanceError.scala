@@ -141,19 +141,20 @@ object InstanceError {
     * Error indicating a complex instance type.
     *
     * @param tpe the complex type.
+    * @param sym the class symbol.
     * @param loc the location where the error occurred.
     */
-  case class ComplexInstanceType(tpe: Type, loc: SourceLocation) extends InstanceError {
-
+  case class ComplexInstanceType(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Complex instance type."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
+      vt << ">> Complex instance type '" << Red(FormatType.formatType(tpe)) << "' in '" << Red(sym.name) << "'."
       vt << NewLine
-      vt << Code(loc, s"Complex instance type '${FormatType.formatType(tpe)}'.")
+      vt << Code(loc, s"complex instance type")
       vt << NewLine
-      vt << Underline("Tip:") << " Instance type parameters must be distinct variables."
+      vt << Underline("Tip:") << " An instance type must be a type constructor applied to zero or more distinct type variables."
     }
   }
 
