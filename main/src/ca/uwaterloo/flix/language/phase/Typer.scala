@@ -45,7 +45,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       * Returns the `ToString` class symbol.
       */
     def lookupToStringClassSym(root: ResolvedAst.Root): Symbol.ClassSym = {
-      val key = new Symbol.ClassSym("ToString" :: Nil, "ToString", SourceLocation.Unknown)
+      val key = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
       root.classes.get(key) match {
         case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
         case Some(clazz) => clazz.sym
