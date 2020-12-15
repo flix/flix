@@ -49,7 +49,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * * all type arguments are variables
       */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, tpe, _, _, loc) => tpe match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, loc) => tpe match {
         case _: Type.Cst => ().toSuccess
         case _: Type.Var => InstanceError.ComplexInstanceType(tpe, loc).toFailure
         case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
@@ -59,7 +59,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             case (seen, tvar: Type.Var) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
-                InstanceError.DuplicateTypeVariableOccurrence(tvar, loc).toFailure
+                InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, loc).toFailure
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen).toSuccess

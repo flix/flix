@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Underline}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Red, Underline}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -120,16 +120,18 @@ object InstanceError {
     * Error indicating the duplicate use of a type variable in an instance type.
     *
     * @param tvar the duplicated type variable.
+    * @param sym  the class symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVariableOccurrence(tvar: Type.Var, loc: SourceLocation) extends InstanceError {
+  case class DuplicateTypeVariableOccurrence(tvar: Type.Var, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Duplicate type variable."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
+      vt << ">> Duplicate type variable '" << Red(FormatType.formatType(tvar)) << "' in '" << Red(sym.name) << "'."
       vt << NewLine
-      vt << Code(loc, s"Duplicate type variable '${FormatType.formatType(tvar)}'.")
+      vt << Code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")
       vt << NewLine
       vt << Underline("Tip:") << " Rename one of the instances of the type variable."
     }
