@@ -225,6 +225,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e1 = visitExp(exp, env0)
           Expression.Unary(op, e1, subst0(tpe), eff, loc)
 
+        case Expression.SUnary(sop, exp, tpe, eff, loc) =>
+          val e1 = visitExp(exp, env0)
+          Expression.SUnary(sop, e1, subst0(tpe), eff, loc)
+
         /*
          * Equality / Inequality Check.
          */

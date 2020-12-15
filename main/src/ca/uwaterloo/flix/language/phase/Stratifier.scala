@@ -140,6 +140,11 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Unary(op, e, tpe, eff, loc)
       }
 
+    case Expression.SUnary(sop, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.SUnary(sop, e, tpe, eff, loc)
+      }
+
     case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.Binary(op, e1, e2, tpe, eff, loc)
@@ -465,6 +470,9 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.Unary(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.SUnary(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>

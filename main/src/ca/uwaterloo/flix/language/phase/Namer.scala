@@ -551,6 +551,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.Unary(op, e, Type.freshVar(Kind.Star), loc)
       }
 
+    case WeededAst.Expression.SUnary(sop, exp, loc) =>
+      visitExp(exp, env0, uenv0, tenv0) map {
+        case e => NamedAst.Expression.SUnary(sop, e, Type.freshVar(Kind.Star), loc)
+      }
+
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshVar(Kind.Star), loc)

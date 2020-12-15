@@ -537,6 +537,18 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs, resultTyp, resultEff)
       }
 
+      case ResolvedAst.Expression.SUnary(sop, exp, tvar, loc) => sop match {
+        // TODO: Add more
+        case SemanticOperator.Int32Op.Neg =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Int32, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case _ => ??? // TODO: Add more
+      }
+
       case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) => op match {
         case BinaryOperator.Plus =>
           for {
@@ -1537,6 +1549,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         val eff = e.eff
         TypedAst.Expression.Unary(op, e, subst0(tvar), eff, loc)
+
+      case ResolvedAst.Expression.SUnary(sop, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val eff = e.eff
+        TypedAst.Expression.SUnary(sop, e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)

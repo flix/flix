@@ -144,6 +144,10 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Unary(op, e, tpe, eff, loc)
 
+      case Expression.SUnary(sop, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.SUnary(sop, e, tpe, eff, loc)
+
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
