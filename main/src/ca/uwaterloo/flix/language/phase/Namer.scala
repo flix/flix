@@ -84,6 +84,36 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       ))
     }
 
+    sealed trait LookupResult
+    object LookupResult {
+
+      case object NotDefined extends LookupResult
+
+      case class AlreadyDefined(loc: SourceLocation) extends LookupResult
+
+    }
+
+    /**
+      * Looks up the type or class in the given namespace and root.
+      */
+    def lookupTypeOrClass(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): LookupResult = {
+      val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
+      val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
+      val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+      (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
+        // Case 1: The name is unused.
+        case (None, None, None) => LookupResult.NotDefined
+        // Case 2: A class with the name already exists.
+        case (Some(clazz), None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
+        // Case 3: An enum with the name already exists.
+        case (None, Some(enum), None) => LookupResult.AlreadyDefined(enum.sym.loc)
+        // Case 4: A type alias with the name already exists.
+        case (None, None, Some(typealias)) => LookupResult.AlreadyDefined(typealias.sym.loc)
+        // Impossible.
+        case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
+      }
+    }
+
     decl0 match {
       /*
        * Namespace.
@@ -103,10 +133,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
         val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
-        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-        val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
-        (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
-          case (None, None, None) =>
+        lookupTypeOrClass(ident, ns0, prog0) match {
+          case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
             visitClass(decl, uenv0, Map.empty, ns0) flatMap {
               case clazz@NamedAst.Class(_, _, _, _, sigs, _) =>
@@ -133,14 +161,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                 }
             }
 
-          // Case 2.2: A class with the name already exists.
-          case (Some(clazz), None, None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, clazz.sym.loc)
-          // Case 2.3: An enum with the name already exists.
-          case (None, Some(enum), None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, enum.sym.loc)
-          // Case 2.4: A type alias with the name already exists.
-          case (None, None, Some(typealias)) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, typealias.sym.loc)
-          // Impossible.
-          case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
+          // Case 2: The name is in use.
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, otherLoc)
         }
 
       case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs, loc) =>
@@ -185,12 +207,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * Enum.
      */
       case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>
-        val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-        val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
-        (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
-          case (None, None, None) =>
-            // Case 2.1: The enum does not exist in the namespace. Update it.
+        lookupTypeOrClass(ident, ns0, prog0) match {
+          case LookupResult.NotDefined =>
+            // Case 1: The enum does not exist in the namespace. Update it.
             val sym = Symbol.mkEnumSym(ns0, ident)
 
             // Compute the type parameters.
@@ -218,25 +238,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                     prog0.copy(enums = prog0.enums + (ns0 -> enums))
                 }
             }
-          // Case 2.2: A class with the name already exists.
-          case (Some(clazz), None, None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, clazz.sym.loc)
-          // Case 2.3: An enum with the name already exists.
-          case (None, Some(enum), None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, enum.sym.loc)
-          // Case 2.4: A type alias with the name already exists.
-          case (None, None, Some(typealias)) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, typealias.sym.loc)
-          // Impossible.
-          case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
+          // Case 2: The name is in use.
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, otherLoc)
         }
 
       /*
      * Type Alias.
      */
       case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
-        val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
-        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
-        (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
-          case (None, None, None) =>
+        lookupTypeOrClass(ident, ns0, prog0) match {
+          case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
             flatMapN(getTypeParamsFromFormalParams(tparams0, List.empty, tpe0, loc, allowElision = false, uenv0, Map.empty)) {
               tparams =>
@@ -249,14 +261,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                     prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
                 }
             }
-          // Case 2.2: A class with the name already exists.
-          case (Some(clazz), None, None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, clazz.sym.loc)
-          // Case 2.3: An enum with the name already exists.
-          case (None, Some(enum), None) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, enum.sym.loc)
-          // Case 2.4: A type alias with the name already exists.
-          case (None, None, Some(typealias)) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, typealias.sym.loc)
-          // Impossible.
-          case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
+          // Case 2: The name is in use.
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateTypeOrClassPair(ident.name, ident.loc, otherLoc)
         }
 
       /*
