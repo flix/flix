@@ -556,6 +556,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshVar(Kind.Star), loc)
       }
 
+    case WeededAst.Expression.SBinary(sop, exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+        case (e1, e2) => NamedAst.Expression.SBinary(sop, e1, e2, Type.freshVar(Kind.Star), loc)
+      }
+
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1, env0, uenv0, tenv0)
       val e2 = visitExp(exp2, env0, uenv0, tenv0)
