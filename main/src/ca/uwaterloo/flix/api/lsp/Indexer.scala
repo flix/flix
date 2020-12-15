@@ -175,16 +175,16 @@ object Indexer {
     case Expression.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
 
+    case Expression.UnaryDeprecated(_, exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.SUnary(_, exp, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+    case Expression.BinaryDeprecated(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.SBinary(_, exp1, exp2, _, _, _) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>

@@ -110,7 +110,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = exps.map(visitExp)
         SimplifiedAst.Expression.Apply(e, es, tpe, loc)
 
-      case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
+      case TypedAst.Expression.UnaryDeprecated(op, e, tpe, eff, loc) =>
         /*
          * Special Case 1: Unary Plus.
          */
@@ -150,7 +150,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
         SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, loc)
 
-      case TypedAst.Expression.SUnary(sop, e, tpe, eff, loc) =>
+      case TypedAst.Expression.Unary(sop, e, tpe, eff, loc) =>
         // TODO: See the comment about binary expressions.
         val op = sop match {
           case SemanticOperator.Int32Op.Neg => UnaryOperator.Minus
@@ -158,7 +158,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         }
         SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, loc)
 
-      case TypedAst.Expression.Binary(op, e1, e2, tpe, eff, loc) =>
+      case TypedAst.Expression.BinaryDeprecated(op, e1, e2, tpe, eff, loc) =>
 
         /*
          * Special Case 1: Unit
@@ -364,7 +364,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, loc)
 
 
-      case TypedAst.Expression.SBinary(sop, e1, e2, tpe, eff, loc) =>
+      case TypedAst.Expression.Binary(sop, e1, e2, tpe, eff, loc) =>
 
         // TODO: Until we have the new backend, we have to do a stupid
         // mapping of sop back to a binary op. Obviously this should be removed in the future.

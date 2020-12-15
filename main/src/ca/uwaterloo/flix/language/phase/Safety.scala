@@ -90,13 +90,13 @@ object Safety extends Phase[Root, Root] {
         case (acc, exp) => acc ::: visitExp(exp)
       }
 
-    case Expression.Unary(op, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.UnaryDeprecated(op, exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.SUnary(sop, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Unary(sop, exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.BinaryDeprecated(op, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.SBinary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 

@@ -507,7 +507,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff <- unifyBoolM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Unary(op, exp, tvar, loc) => op match {
+      case ResolvedAst.Expression.UnaryDeprecated(op, exp, tvar, loc) => op match {
         case UnaryOperator.LogicalNot =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
@@ -537,7 +537,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs, resultTyp, resultEff)
       }
 
-      case ResolvedAst.Expression.SUnary(sop, exp, tvar, loc) => sop match {
+      case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
         // TODO: Add more
         case SemanticOperator.Int32Op.Neg =>
           for {
@@ -549,7 +549,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         case _ => ??? // TODO: Add more
       }
 
-      case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) => op match {
+      case ResolvedAst.Expression.BinaryDeprecated(op, exp1, exp2, tvar, loc) => op match {
         case BinaryOperator.Plus =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -651,7 +651,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, lhsType, resultEff)
       }
 
-      case ResolvedAst.Expression.SBinary(sop, exp1, exp2, tvar, loc) => sop match {
+      case ResolvedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) => sop match {
 
         // TODO: A whole lot of cases more. Implement in the same order as in SemanticOperator.
 
@@ -1545,27 +1545,27 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val t = subst0(tvar)
         TypedAst.Expression.Lambda(p, e, t, loc)
 
-      case ResolvedAst.Expression.Unary(op, exp, tvar, loc) =>
+      case ResolvedAst.Expression.UnaryDeprecated(op, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.Unary(op, e, subst0(tvar), eff, loc)
+        TypedAst.Expression.UnaryDeprecated(op, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.SUnary(sop, exp, tvar, loc) =>
+      case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.SUnary(sop, e, subst0(tvar), eff, loc)
+        TypedAst.Expression.Unary(sop, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.BinaryDeprecated(op, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expression.BinaryDeprecated(op, e1, e2, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.SBinary(sop, exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.SBinary(sop, e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expression.Binary(sop, e1, e2, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)
