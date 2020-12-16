@@ -411,6 +411,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Add, e1, e2, loc).toSuccess
 
+          case ("INT8_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Mul, e1, e2, loc).toSuccess
+          case ("INT16_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Mul, e1, e2, loc).toSuccess
+          case ("INT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Mul, e1, e2, loc).toSuccess
+          case ("FLOAT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Mul, e1, e2, loc).toSuccess
+          case ("FLOAT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Mul, e1, e2, loc).toSuccess
+          case ("BIGINT_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Mul, e1, e2, loc).toSuccess
+
           case ("INT32_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int32Op.Neg, e1, loc).toSuccess
           case ("INT32_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int32Op.Not, e1, loc).toSuccess
           case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Add, e1, e2, loc).toSuccess
@@ -514,7 +521,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => op match {
           case "+" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Plus, e1, e2, loc)
           case "-" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Minus, e1, e2, loc)
-          case "*" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Times, e1, e2, loc)
+          case "*" => mkApplyFqn("Mul.mul", List(e1, e2), sp1, sp2)
           case "/" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Divide, e1, e2, loc)
           case "%" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Modulo, e1, e2, loc)
           case "**" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Exponentiate, e1, e2, loc)
