@@ -243,7 +243,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Instance: Rule1[ParsedAst.Declaration] = {
       def TypeConstraint: Rule1[ParsedAst.ConstrainedType] = rule {
-        SP ~ Type ~ oneOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedType
+        SP ~ Types.Var ~ oneOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedType
       }
 
       def Head = rule {

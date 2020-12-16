@@ -355,7 +355,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
     case WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs0, loc) =>
       for {
-        tparams <- getImplicitTypeParamsFromTypes(tpe0 :: tconstrs.map(_.tpe), loc) // MATT use better loc; add loc to WeededAst.Type trait?
+        tparams <- getImplicitTypeParamsFromTypes(List(tpe0), loc) // MATT use better loc; add loc to WeededAst.Type trait?
         tenv = tenv0 ++ getTypeEnv(tparams)
         tpe <- visitType(tpe0, uenv0, tenv)
         tconstrs <- traverse(tconstrs)(visitConstrainedType(_, uenv0, tenv, ns0))

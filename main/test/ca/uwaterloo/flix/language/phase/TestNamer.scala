@@ -764,6 +764,24 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.UndefinedTypeVar](result)
   }
 
+  test("UndefinedTypeVar.Instance.01") {
+    val input = "instance C[a] with [b : C]"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Instance.02") {
+    val input = "instance C[(a, b)] with [c : D]"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Instance.03") {
+    val input = "instance C[(a, b)] with [a : D, b : D, c : D]"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
   test("MismatchedTypeParamKind.Explicit.01") {
     val input = "def f[o](g: Int -> o & o): Int = 123"
     val result = compile(input, DefaultOptions)

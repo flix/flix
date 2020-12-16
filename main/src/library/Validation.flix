@@ -22,7 +22,7 @@ pub enum Validation[t, e] {
     case Failure(Nel[e])
 }
 
-instance ToString[Validation[t, e]] with [t : ToString, Nel[e] : ToString] {
+instance ToString[Validation[t, e]] with [t : ToString, e : ToString] {
     def toString(x: Validation[t, e]): String = match x {
         case Success(t) => "Success(${t})"
         case Failure(e) => "Failure(${e})"
