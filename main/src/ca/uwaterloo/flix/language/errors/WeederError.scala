@@ -260,6 +260,23 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal intrinsic.
+    *
+    * @param loc the location where the illegal intrinsic occurs.
+    */
+  case class IllegalIntrinsic(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal intrinsic"
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal intrinsic." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal intrinsic.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate the presence of a hole in release mode.
     *
     * @param loc the location where the illegal expression occurs.
@@ -431,4 +448,5 @@ object WeederError {
       vt << Code(loc, "undefined annotation.") << NewLine
     }
   }
+
 }

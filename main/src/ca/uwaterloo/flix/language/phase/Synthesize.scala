@@ -140,11 +140,15 @@ object Synthesize extends Phase[Root, Root] {
         val es = exps.map(visitExp)
         Expression.Apply(e, es, tpe, eff, loc)
 
-      case Expression.Unary(op, exp, tpe, eff, loc) =>
+      case Expression.UnaryDeprecated(op, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.Unary(op, e, tpe, eff, loc)
+        Expression.UnaryDeprecated(op, e, tpe, eff, loc)
 
-      case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+      case Expression.Unary(sop, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.Unary(sop, e, tpe, eff, loc)
+
+      case Expression.BinaryDeprecated(op, exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
 
@@ -158,8 +162,13 @@ object Synthesize extends Phase[Root, Root] {
           case BinaryOperator.Equal => mkApplyEq(e1, e2)
           case BinaryOperator.NotEqual => mkApplyNeq(e1, e2)
           case BinaryOperator.Spaceship => mkSpaceship(e1, e2, loc)
-          case _ => Expression.Binary(op, e1, e2, tpe, eff, loc)
+          case _ => Expression.BinaryDeprecated(op, e1, e2, tpe, eff, loc)
         }
+
+      case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
       case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -452,7 +461,7 @@ object Synthesize extends Phase[Root, Root] {
       val e = mkApplyEq(exp1, exp2)
 
       // Negate the result.
-      Expression.Unary(UnaryOperator.LogicalNot, e, Type.Bool, Type.Pure, sl)
+      Expression.UnaryDeprecated(UnaryOperator.LogicalNot, e, Type.Bool, Type.Pure, sl)
     }
 
     /**
@@ -564,7 +573,7 @@ object Synthesize extends Phase[Root, Root] {
        */
       val exp1 = Expression.Var(varX, tpe, sl)
       val exp2 = Expression.Var(varY, tpe, sl)
-      val default = Expression.Binary(BinaryOperator.Equal, exp1, exp2, Type.Bool, Type.Pure, sl)
+      val default = Expression.BinaryDeprecated(BinaryOperator.Equal, exp1, exp2, Type.Bool, Type.Pure, sl)
 
       /*
        * Match on the type to determine what equality expression to generate.
@@ -723,7 +732,7 @@ object Synthesize extends Phase[Root, Root] {
 
                 val e1 = mkApplyEq(expX, expY)
                 val e2 = eacc
-                Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, Type.Pure, sl)
+                Expression.BinaryDeprecated(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, Type.Pure, sl)
             }
 
             // Put the components together.
@@ -896,7 +905,7 @@ object Synthesize extends Phase[Root, Root] {
                 val g = Expression.True(sl)
 
                 // Generate the rule body.
-                val b = Expression.Binary(
+                val b = Expression.BinaryDeprecated(
                   BinaryOperator.Plus,
                   Expression.Int32(index, sl),
                   mkApplyHash(Expression.Var(freshX, caseType, sl)),
@@ -949,7 +958,7 @@ object Synthesize extends Phase[Root, Root] {
 
             // Construct the sum expression e1 + e2 + e3
             val b = inner.foldLeft(Expression.Int32(0, sl): Expression) {
-              case (e1, e2) => Expression.Binary(
+              case (e1, e2) => Expression.BinaryDeprecated(
                 BinaryOperator.Plus,
                 e1,
                 e2,
@@ -1301,7 +1310,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns an expression that computes the string concatenation of `exp1` and `exp2`.
       */
     def concat(exp1: Expression, exp2: Expression): Expression =
-      Expression.Binary(BinaryOperator.Plus, exp1, exp2, Type.Str, Type.Pure, sl)
+      Expression.BinaryDeprecated(BinaryOperator.Plus, exp1, exp2, Type.Str, Type.Pure, sl)
 
     /**
       * Returns an expression that computes the string concatenation of the given expressions `exps`.

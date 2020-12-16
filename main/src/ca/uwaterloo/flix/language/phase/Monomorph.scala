@@ -221,14 +221,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = exps.map(visitExp(_, env0))
           Expression.Apply(e, es, subst0(tpe), eff, loc)
 
-        case Expression.Unary(op, exp, tpe, eff, loc) =>
+        case Expression.UnaryDeprecated(op, exp, tpe, eff, loc) =>
           val e1 = visitExp(exp, env0)
-          Expression.Unary(op, e1, subst0(tpe), eff, loc)
+          Expression.UnaryDeprecated(op, e1, subst0(tpe), eff, loc)
+
+        case Expression.Unary(sop, exp, tpe, eff, loc) =>
+          val e1 = visitExp(exp, env0)
+          Expression.Unary(sop, e1, subst0(tpe), eff, loc)
 
         /*
          * Equality / Inequality Check.
          */
-        case Expression.Binary(op@(BinaryOperator.Equal | BinaryOperator.NotEqual), exp1, exp2, tpe, eff, loc) =>
+        case Expression.BinaryDeprecated(op@(BinaryOperator.Equal | BinaryOperator.NotEqual), exp1, exp2, tpe, eff, loc) =>
           // Perform specialization on the left and right sub-expressions.
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
@@ -245,9 +249,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
-                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Bool, eff, loc)
+                Expression.BinaryDeprecated(BinaryOperator.Equal, e1, e2, Type.Bool, eff, loc)
               } else {
-                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Bool, eff, loc)
+                Expression.BinaryDeprecated(BinaryOperator.NotEqual, e1, e2, Type.Bool, eff, loc)
               }
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
@@ -261,14 +265,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               if (op == BinaryOperator.Equal) {
                 eqExp
               } else {
-                Expression.Unary(UnaryOperator.LogicalNot, eqExp, Type.Bool, eff, loc)
+                Expression.UnaryDeprecated(UnaryOperator.LogicalNot, eqExp, Type.Bool, eff, loc)
               }
           }
 
         /*
          * Spaceship
          */
-        case Expression.Binary(BinaryOperator.Spaceship, exp1, exp2, tpe, eff, loc) =>
+        case Expression.BinaryDeprecated(BinaryOperator.Spaceship, exp1, exp2, tpe, eff, loc) =>
           // Perform specialization on the left and right sub-expressions.
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
@@ -284,7 +288,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           lookupCmp(cmpType) match {
             case None =>
               // No comparator function found. Return the same expression.
-              Expression.Binary(BinaryOperator.Spaceship, e1, e2, Type.Int32, eff, loc)
+              Expression.BinaryDeprecated(BinaryOperator.Spaceship, e1, e2, Type.Int32, eff, loc)
 
             case Some(cmpSym) =>
               // Comparator function found. Specialize and generate a call to it.
@@ -298,10 +302,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         /*
          * Other Binary Expression.
          */
-        case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+        case Expression.BinaryDeprecated(op, exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.Binary(op, e1, e2, subst0(tpe), eff, loc)
+          Expression.BinaryDeprecated(op, e1, e2, subst0(tpe), eff, loc)
+
+        case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.Binary(sop, e1, e2, subst0(tpe), eff, loc)
 
         case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
           // Generate a fresh symbol for the let-bound variable.

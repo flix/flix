@@ -448,16 +448,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             p <- Params.resolve(fparam, ns0, root)
           } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
 
-        case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
+        case NamedAst.Expression.UnaryDeprecated(op, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Unary(op, e, tvar, loc)
+          } yield ResolvedAst.Expression.UnaryDeprecated(op, e, tvar, loc)
 
-        case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.Unary(sop, exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Unary(sop, e, tvar, loc)
+
+        case NamedAst.Expression.BinaryDeprecated(op, exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Binary(op, e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.BinaryDeprecated(op, e1, e2, tvar, loc)
+
+        case NamedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.Binary(sop, e1, e2, tvar, loc)
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
           for {

@@ -660,7 +660,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Lazy | Force | ArrayLit | ArrayNew |
+        GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
         FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
         UnaryLambda | FName | Tag | Hole
@@ -855,6 +855,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Force: Rule1[ParsedAst.Expression.Force] = rule {
       SP ~ keyword("force") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Force
+    }
+
+    def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
+      SP ~ "$"~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {
@@ -1478,6 +1482,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Field: Rule1[Name.Ident] = LowerCaseName
 
     def Hole: Rule1[Name.Ident] = LowerCaseName
+
+    def Intrinsic: Rule1[Name.Ident] = UpperCaseName
 
     def Predicate: Rule1[Name.Ident] = UpperCaseName
 

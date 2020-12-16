@@ -473,6 +473,16 @@ object ParsedAst {
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Intrinsic Operator.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param op   the intrinsic.
+      * @param exps the arguments.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Intrinsic(sp1: SourcePosition, op: Name.Ident, exps: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Apply Expression (function call).
       *
       * @param lambda the lambda expression.
