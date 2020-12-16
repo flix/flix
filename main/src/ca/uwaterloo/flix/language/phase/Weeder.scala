@@ -521,7 +521,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => op match {
           case "+" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Plus, e1, e2, loc)
           case "-" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Minus, e1, e2, loc)
-          case "*" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Times, e1, e2, loc)
+          case "*" => mkApplyFqn("Mul.mul", List(e1, e2), sp1, sp2)
           case "/" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Divide, e1, e2, loc)
           case "%" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Modulo, e1, e2, loc)
           case "**" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Exponentiate, e1, e2, loc)
