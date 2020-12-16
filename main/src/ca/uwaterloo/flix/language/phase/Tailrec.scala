@@ -159,16 +159,17 @@ object Tailrec extends Phase[Root, Root] {
         if (funSym != originalDefnSym) return exp0
 
         println("Found a cons in helper")
-
+        val flixNil = Expression.Tag(sym, Name.Tag("Nil", tagLoc), Expression.Unit, tagTpe, tagLoc)
         val consArg = Expression.Tag(sym, Name.Tag("Cons", tagLoc),
-          Expression.Tuple(hd :: Nil, tpeTup, tagLoc)
+          Expression.Tuple(hd :: flixNil :: Nil, tpeTup, tagLoc)
           , tagTpe, tagLoc)
 
         val newTailSym = Symbol.freshVarSym("new_tail")
         val newTailExp = Expression.Var(newTailSym, tagTpe, tagLoc)
 
         val endParamExp = Expression.Var(endParam.sym, endParam.tpe, tagLoc)
-        val setNewTail = Expression.IndexMut(endParamExp, 1, newTailExp, Type.Unit, tagLoc)
+        val endParamExpUntagged = Expression.Untag(sym, Name.Tag("Cons", tagLoc), endParamExp, tpeTup, tagLoc)
+        val setNewTail = Expression.IndexMut(endParamExpUntagged, 1, newTailExp, Type.Unit, tagLoc)
 
         val applySelfExp = Expression.ApplySelfTail(refreshedDef.sym, helperParams, args ::: List(newTailExp), tagTpe, tagLoc)
 
@@ -273,10 +274,11 @@ object Tailrec extends Phase[Root, Root] {
         }
 
 
-        val consArg = Expression.Tag(sym,
-          Name.Tag("Cons", tagLoc),
-          Expression.Tuple(hd :: Nil, tpeTup, tagLoc)
+        val flixNil = Expression.Tag(sym, Name.Tag("Nil", tagLoc), Expression.Unit, tpeTag, tagLoc)
+        val consArg = Expression.Tag(sym, Name.Tag("Cons", tagLoc),
+          Expression.Tuple(hd :: flixNil :: Nil, tpeTup, tagLoc)
           , tpeTag, tagLoc)
+
 
         Expression.ApplyDefTail(helperSym, args ::: List(consArg), tpeTag, tagLoc)
       /*

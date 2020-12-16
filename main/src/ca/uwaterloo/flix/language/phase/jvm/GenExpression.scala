@@ -473,11 +473,22 @@ object GenExpression {
       // Cast the object to it's type if it's not a primitive
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.IndexMut(base, offset, toInsert, tpe, _) =>
+    case Expression.IndexMut(base, offset, toInsert, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       // We get the JvmType of the class of the tuple
       val classType = JvmOps.getTupleInterfaceType(base.tpe.asInstanceOf[MonoType.Tuple])
-      // evaluate the `toInsert`
-      ???
+      // evaluating the `base`
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
+      // evaluating the toInsert
+      compileExpression(toInsert, visitor, currentClass, lenv0, entryPoint)
+      // Descriptor of the method
+      val methodDescriptor = AsmOps.getMethodDescriptor(JvmOps.getErasedJvmType(toInsert.tpe) :: Nil, JvmType.Void)
+      // Invoking `setField${offset}()` method for fetching the field
+      visitor.visitMethodInsn(INVOKEINTERFACE, classType.name.toInternalName, s"setIndex$offset", methodDescriptor, true)
+      // Push the Unit value onto the stack
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
 
 
