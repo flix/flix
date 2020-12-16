@@ -369,10 +369,16 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         // TODO: Until we have the new backend, we have to do a stupid
         // mapping of sop back to a binary op. Obviously this should be removed in the future.
         val op = sop match {
+          case SemanticOperator.Float32Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Float64Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Int8Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Int16Op.Mul => BinaryOperator.Times
           case SemanticOperator.Int32Op.Add => BinaryOperator.Plus
           case SemanticOperator.Int32Op.Sub => BinaryOperator.Minus
           case SemanticOperator.Int32Op.Mul => BinaryOperator.Times
           case SemanticOperator.Int32Op.Div => BinaryOperator.Divide
+          case SemanticOperator.Int64Op.Mul => BinaryOperator.Times
+          case SemanticOperator.BigIntOp.Mul => BinaryOperator.Times
           case _ => ??? // TODO
         }
 
