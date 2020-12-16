@@ -23,9 +23,7 @@ import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.ops.LiftedAstOps
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 
 import scala.collection.mutable
@@ -42,8 +40,8 @@ object Tailrec extends Phase[Root, Root] {
     * Identifies tail recursive calls in the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Tailrec") {
-    println("__________________Before TailRec____________________________________")
-    println(PrettyPrinter.Lifted.fmtRoot(root).fmt(TerminalContext.AnsiTerminal))
+    //println("__________________Before TailRec____________________________________")
+    //ln(PrettyPrinter.Lifted.fmtRoot(root).fmt(TerminalContext.AnsiTerminal))
     //
     // Check if tail call elimination is enabled.
     //
@@ -63,8 +61,8 @@ object Tailrec extends Phase[Root, Root] {
     }
 
     val newRoot = root.copy(defs = defns.concat(helperdefns))
-    println("__________________After TailRec____________________________________")
-    println(PrettyPrinter.Lifted.fmtRoot(newRoot).fmt(TerminalContext.AnsiTerminal))
+    //println("__________________After TailRec____________________________________")
+    //println(PrettyPrinter.Lifted.fmtRoot(newRoot).fmt(TerminalContext.AnsiTerminal))
     newRoot.toSuccess
   }
 
@@ -131,7 +129,12 @@ object Tailrec extends Phase[Root, Root] {
        */
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         // Check whether this is a self recursive call.
-        if (defn.sym != sym) {
+        if (sym == originalDefnSym) {
+          // We need to make sure that the extra helper parameter is always passed down
+          val endParamExp = Expression.Var(endParam.sym, endParam.tpe, loc)
+          Expression.ApplySelfTail(sym, refreshedDef.fparams, args.appended(endParamExp), tpe, loc)
+        }
+        else if (refreshedDef.sym != sym) {
           // Case 1: Tail recursive call.
           Expression.ApplyDefTail(sym, args, tpe, loc)
         } else {
@@ -159,7 +162,7 @@ object Tailrec extends Phase[Root, Root] {
         // Bail if not the function of the original definition
         if (funSym != originalDefnSym) return exp0
 
-        println("Found a cons in helper")
+        //println("Found a cons in helper")
         val flixNil = Expression.Tag(sym, Name.Tag("Nil", tagLoc), Expression.Unit, tagTpe, tagLoc)
         val consArg = Expression.Tag(sym, Name.Tag("Cons", tagLoc),
           Expression.Tuple(hd :: flixNil :: Nil, tpeTup, tagLoc)
@@ -260,7 +263,7 @@ object Tailrec extends Phase[Root, Root] {
       Expression.Tuple(hd :: Expression.ApplyDef(defn.sym, args, tpeDef, _) :: Nil, tpeTup, locTup), tpeTag, locTag) =>
         // First check that `exp` is a Tuple
 
-        println("Found a cons")
+        //println("Found a cons")
         // Now we check if the helper already exists in the map, otherwise we insert it
         val funDefnSym = defn.sym
         val helperSym = if (helperMap.contains(funDefnSym)) {
