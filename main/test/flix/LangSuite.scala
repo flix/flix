@@ -77,7 +77,7 @@ class LangSuite extends Suites(
   //
   // Binary.
   //
-  new FlixTest("Test.Exp.Binary.Arithmetic", "main/test/flix/Test.Exp.Binary.Arithmetic.flix"),
+  new FlixTest("Test.Exp.Binary.Arithmetic", "main/test/flix/Test.Exp.Binary.Arithmetic.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Binary.Bitwise", "main/test/flix/Test.Exp.Binary.Bitwise.flix"),
   new FlixTest("Test.Exp.Binary.Comparison", "main/test/flix/Test.Exp.Binary.Comparison.flix"),
   new FlixTest("Test.Exp.Binary.Logic", "main/test/flix/Test.Exp.Binary.Logic.flix"),
@@ -151,7 +151,7 @@ class LangSuite extends Suites(
   //
   // Infix.
   //
-  new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
+  new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix")(Options.TestWithLibrary),
 
   //
   // Int.
