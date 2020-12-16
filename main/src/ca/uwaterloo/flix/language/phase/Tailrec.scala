@@ -85,7 +85,7 @@ object Tailrec extends Phase[Root, Root] {
       case t => throw InternalCompilerException(s"Option of function type expected, but got: '$t'.")
     }
     val targs = refreshedDef.tpe.typeArguments
-    val newType = Type.mkApply(Type.Cst(TypeConstructor.Arrow(arrowArity + 1), refreshedDef.loc), targs ::: resultType :: Nil)
+    val newType = Type.mkApply(Type.Cst(TypeConstructor.Arrow(arrowArity + 1), refreshedDef.loc), targs ::: Type.Unit :: Nil)
 
     /**
       * Very similar to that of tailrec.
@@ -150,7 +150,8 @@ object Tailrec extends Phase[Root, Root] {
 
       // Match Nil
       case Expression.Tag(tagSym, Name.Tag("Nil", nilLoc), Expression.Unit, tagTpe, tagLoc) =>
-        Expression.Var(endParam.sym, tagTpe, tagLoc)
+        Expression.Unit
+      //Expression.Var(endParam.sym, tagTpe, tagLoc)
 
       // Match a Cons Tag with 2 elements, the second being a self-recursive call
       case Expression.Tag(sym, Name.Tag("Cons", _),
@@ -171,7 +172,7 @@ object Tailrec extends Phase[Root, Root] {
         val endParamExpUntagged = Expression.Untag(sym, Name.Tag("Cons", tagLoc), endParamExp, tpeTup, tagLoc)
         val setNewTail = Expression.IndexMut(endParamExpUntagged, 1, newTailExp, Type.Unit, tagLoc)
 
-        val applySelfExp = Expression.ApplySelfTail(refreshedDef.sym, helperParams, args ::: List(newTailExp), tagTpe, tagLoc)
+        val applySelfExp = Expression.ApplySelfTail(refreshedDef.sym, helperParams, args ::: List(newTailExp), Type.Unit, tagLoc)
 
         val letExp = Expression.Let(Symbol.freshVarSym(), setNewTail, applySelfExp, applySelfExp.tpe, tagLoc)
         Expression.Let(newTailSym, consArg, letExp, letExp.tpe, tagLoc)
@@ -256,7 +257,7 @@ object Tailrec extends Phase[Root, Root] {
 
       // Match a Cons Tag with 2 elements, the second being a self-recursive call
       case Expression.Tag(sym, Name.Tag("Cons", _),
-      Expression.Tuple(hd :: Expression.ApplyDef(defn.sym, args, tpeDef, _) :: Nil, tpeTup, locTup), tpeTag, tagLoc) =>
+      Expression.Tuple(hd :: Expression.ApplyDef(defn.sym, args, tpeDef, _) :: Nil, tpeTup, locTup), tpeTag, locTag) =>
         // First check that `exp` is a Tuple
 
         println("Found a cons")
@@ -274,13 +275,17 @@ object Tailrec extends Phase[Root, Root] {
         }
 
 
-        val flixNil = Expression.Tag(sym, Name.Tag("Nil", tagLoc), Expression.Unit, tpeTag, tagLoc)
-        val consArg = Expression.Tag(sym, Name.Tag("Cons", tagLoc),
-          Expression.Tuple(hd :: flixNil :: Nil, tpeTup, tagLoc)
-          , tpeTag, tagLoc)
+        val flixNil = Expression.Tag(sym, Name.Tag("Nil", locTag), Expression.Unit, tpeTag, locTag)
+        val retVarSym = Symbol.freshVarSym("ret")
+        val retVarExp = Expression.Var(retVarSym, tpeTag, locTag)
+        val consArg = Expression.Tag(sym, Name.Tag("Cons", locTag),
+          Expression.Tuple(hd :: flixNil :: Nil, tpeTup, locTag)
+          , tpeTag, locTag)
 
 
-        Expression.ApplyDefTail(helperSym, args ::: List(consArg), tpeTag, tagLoc)
+        val applyHelperExp = Expression.ApplyDef(helperSym, args ::: List(retVarExp), Type.Unit, locTag)
+        val retLetExp = Expression.Let(Symbol.freshVarSym(), applyHelperExp, retVarExp, tpeTag, locTag)
+        Expression.Let(retVarSym, consArg, retLetExp, tpeTag, locTag)
       /*
        * Other expression: No calls in tail position.
        */
