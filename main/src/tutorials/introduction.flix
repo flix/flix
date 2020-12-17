@@ -1,3 +1,5 @@
+use Add.add;
+
 //
 // Welcome to the introduction to Flix!
 //

@@ -216,26 +216,26 @@ namespace Test/Exp/Interpolation {
 
 }
 
-pub class ToString[a] {
-    pub def toString(x: a): String
-}
-
-instance ToString[Bool] {
-    def toString(x: Bool): String = match x {
-        case true => "true"
-        case false => "false"
-    }
-}
-
-instance ToString[Int32] {
-    def toString(x: Int32): String =
-        import java.lang.Integer:toString(Int32);
-        x.toString() as & Pure
-}
-
-instance ToString[String] {
-    def toString(x: String): String = x
-}
+///pub class ToString[a] {
+///    pub def toString(x: a): String
+///}
+///
+///instance ToString[Bool] {
+///    def toString(x: Bool): String = match x {
+///        case true => "true"
+///        case false => "false"
+///    }
+///}
+///
+///instance ToString[Int32] {
+///    def toString(x: Int32): String =
+///        import java.lang.Integer:toString(Int32);
+///        x.toString() as & Pure
+///}
+///
+///instance ToString[String] {
+///    def toString(x: String): String = x
+///}
 
 instance ToString[Test/Exp/Interpolation.Color] {
     def toString(c: Test/Exp/Interpolation.Color): String =
