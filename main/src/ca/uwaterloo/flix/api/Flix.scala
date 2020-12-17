@@ -105,7 +105,10 @@ class Flix {
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
+    "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
+    "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
+    "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),

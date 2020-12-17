@@ -15,7 +15,7 @@
  */
 
 ///
-/// A type class for types that can be multiplied.
+/// A type class for multiplication.
 ///
 pub class Mul[a] {
     ///
