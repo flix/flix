@@ -8,7 +8,7 @@ class LangSuite extends Suites(
   //
   // Currying.
   //
-  new FlixTest("Test.Currying", "main/test/flix/Test.Currying.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Currying", "main/test/flix/Test.Currying.flix"),
 
   //
   // Declarations.
@@ -17,7 +17,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
   new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
   new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix"),
-  new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
   // Effects.
@@ -49,7 +49,7 @@ class LangSuite extends Suites(
   //
   // Apply.Tail.
   //
-  new FlixTest("Test.Exp.Apply.Tail", "main/test/flix/Test.Exp.Apply.Tail.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Apply.Tail", "main/test/flix/Test.Exp.Apply.Tail.flix"),
 
   //
   // Array.
@@ -77,7 +77,7 @@ class LangSuite extends Suites(
   //
   // Binary.
   //
-  new FlixTest("Test.Exp.Binary.Arithmetic", "main/test/flix/Test.Exp.Binary.Arithmetic.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Binary.Arithmetic", "main/test/flix/Test.Exp.Binary.Arithmetic.flix"),
   new FlixTest("Test.Exp.Binary.Bitwise", "main/test/flix/Test.Exp.Binary.Bitwise.flix"),
   new FlixTest("Test.Exp.Binary.Comparison", "main/test/flix/Test.Exp.Binary.Comparison.flix"),
   new FlixTest("Test.Exp.Binary.Logic", "main/test/flix/Test.Exp.Binary.Logic.flix"),
@@ -86,7 +86,7 @@ class LangSuite extends Suites(
   //
   // Block.
   //
-  new FlixTest("Test.Exp.Block", "main/test/flix/Test.Exp.Block.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Block", "main/test/flix/Test.Exp.Block.flix"),
 
   //
   // Cast.
@@ -136,7 +136,7 @@ class LangSuite extends Suites(
   //
   // Force.
   //
-  new FlixTest("Test.Exp.Force", "main/test/flix/Test.Exp.Force.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Force", "main/test/flix/Test.Exp.Force.flix"),
 
   //
   // Hole.
@@ -151,7 +151,7 @@ class LangSuite extends Suites(
   //
   // Infix.
   //
-  new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
 
   //
   // Int.
@@ -164,7 +164,7 @@ class LangSuite extends Suites(
   //
   // Interpolation.
   //
-  new FlixTest("Test.Exp.Interpolation", "main/test/flix/Test.Exp.Interpolation.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Interpolation", "main/test/flix/Test.Exp.Interpolation.flix"),
 
   //
   // JVM.
@@ -180,7 +180,7 @@ class LangSuite extends Suites(
   //
   // Lambda.
   //
-  new FlixTest("Test.Exp.Lambda.Match", "main/test/flix/Test.Exp.Lambda.Match.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Lambda.Match", "main/test/flix/Test.Exp.Lambda.Match.flix"),
 
   //
   // Lazy
@@ -190,8 +190,8 @@ class LangSuite extends Suites(
   //
   // Let.
   //
-  new FlixTest("Test.Exp.Let", "main/test/flix/Test.Exp.Let.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Let.Match", "main/test/flix/Test.Exp.Let.Match.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Let", "main/test/flix/Test.Exp.Let.flix"),
+  new FlixTest("Test.Exp.Let.Match", "main/test/flix/Test.Exp.Let.Match.flix"),
   new FlixTest("Test.Exp.Let.MatchStar", "main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibrary),
 
   //
@@ -212,7 +212,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Match.Int16", "main/test/flix/Test.Exp.Match.Int16.flix"),
   new FlixTest("Test.Exp.Match.Int32", "main/test/flix/Test.Exp.Match.Int32.flix"),
   new FlixTest("Test.Exp.Match.Int64", "main/test/flix/Test.Exp.Match.Int64.flix"),
-  new FlixTest("Test.Exp.Match.List", "main/test/flix/Test.Exp.Match.List.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Match.List", "main/test/flix/Test.Exp.Match.List.flix"),
   new FlixTest("Test.Exp.Match.String", "main/test/flix/Test.Exp.Match.String.flix"),
   new FlixTest("Test.Exp.Match.Tag", "main/test/flix/Test.Exp.Match.Tag.flix"),
   new FlixTest("Test.Exp.Match.Unit", "main/test/flix/Test.Exp.Match.Unit.flix"),
@@ -226,7 +226,7 @@ class LangSuite extends Suites(
   //
   // Postfix.
   //
-  new FlixTest("Test.Exp.Postfix", "main/test/flix/Test.Exp.Postfix.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Postfix", "main/test/flix/Test.Exp.Postfix.flix"),
 
   //
   // Record.
@@ -236,7 +236,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Record.Multiple", "main/test/flix/Test.Exp.Record.Multiple.flix"),
   new FlixTest("Test.Exp.Record.Polymorphism", "main/test/flix/Test.Exp.Record.Polymorphism.flix"),
   new FlixTest("Test.Exp.Record.Restrict", "main/test/flix/Test.Exp.Record.Restrict.flix"),
-  new FlixTest("Test.Exp.Record.Select", "main/test/flix/Test.Exp.Record.Select.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Record.Select", "main/test/flix/Test.Exp.Record.Select.flix"),
   new FlixTest("Test.Exp.Record.Update", "main/test/flix/Test.Exp.Record.Update.flix"),
 
   //
@@ -245,7 +245,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Reference.Assign", "main/test/flix/Test.Exp.Reference.Assign.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Reference.Deref", "main/test/flix/Test.Exp.Reference.Deref.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Reference.Ref.flix", "main/test/flix/Test.Exp.Reference.Ref.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Reference.Precedence", "main/test/flix/Test.Exp.Reference.Precedence.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Reference.Precedence", "main/test/flix/Test.Exp.Reference.Precedence.flix"),
 
   //
   // Tag.
@@ -273,7 +273,7 @@ class LangSuite extends Suites(
   //
   // Stm.
   //
-  new FlixTest("Test.Exp.Stm", "main/test/flix/Test.Exp.Stm.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Stm", "main/test/flix/Test.Exp.Stm.flix"),
 
   //
   // String.
@@ -283,10 +283,10 @@ class LangSuite extends Suites(
   //
   // Predicate.
   //
-  new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix"),
+  new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix"),
   new FlixTest("Test.Predicate.Nullary", "main/test/flix/Test.Predicate.Nullary.flix"),
-  new FlixTest("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix"),
 
   //
   // Stratified Negation.
@@ -296,7 +296,7 @@ class LangSuite extends Suites(
   //
   // Term.
   //
-  new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix"),
   new FlixTest("Test.Term.Lit", "main/test/flix/Test.Term.Lit.flix"),
   new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.List.flix"),
   new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.Option.flix"),
@@ -319,8 +319,8 @@ class LangSuite extends Suites(
   //
   // Use.
   //
-  new FlixTest("Test.Use.Def", "main/test/flix/Test.Use.Def.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Use.Sig", "main/test/flix/Test.Use.Sig.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Use.Def", "main/test/flix/Test.Use.Def.flix"),
+  new FlixTest("Test.Use.Sig", "main/test/flix/Test.Use.Sig.flix"),
   new FlixTest("Test.Use.Tag", "main/test/flix/Test.Use.Tag.flix"),
   new FlixTest("Test.Use.Type", "main/test/flix/Test.Use.Type.flix"),
 

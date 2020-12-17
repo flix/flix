@@ -305,7 +305,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo(x: a, y: Int): Int = C.f(x) + C.f(y)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[TypeError.NoMatchingInstance](result)
   }
 
@@ -318,7 +318,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo[a : C, b](x: a, y: b): Int = C.f(x) + C.f(y)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[TypeError.NoMatchingInstance](result)
   }
 
