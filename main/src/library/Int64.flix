@@ -16,6 +16,8 @@
 
 namespace Int64 {
 
+    use ToString.toString;
+
     ///
     /// Returns the number of bits used to represent an `Int64`.
     ///
@@ -262,9 +264,7 @@ namespace Int64 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Int64): String =
-        import java.lang.Long:toString(Int64);
-        x.toString() as & Pure
+    pub def toString(x: Int64): String = toString(x)
 
     ///
     /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.

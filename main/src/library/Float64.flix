@@ -16,6 +16,8 @@
 
 namespace Float64 {
 
+    use ToString.toString;
+
     ///
     /// Returns the number of bits used to represent a `Float64`.
     ///
@@ -104,9 +106,7 @@ namespace Float64 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Float64): String =
-        import java.lang.Double:toString(Float64);
-        x.toString() as & Pure
+    pub def toString(x: Float64): String = toString(x)
 
 // TODO
 //    ///

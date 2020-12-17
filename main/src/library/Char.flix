@@ -16,6 +16,8 @@
 
 namespace Char {
 
+    use ToString.toString;
+
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
     ///
@@ -119,9 +121,7 @@ namespace Char {
     /// Returns the character `c` as a string.
     ///
     @Time(1) @Space(1)
-    pub def toString(c: Char): String =
-        import java.lang.Character:toString(Char);
-        c.toString() as & Pure
+    pub def toString(c: Char): String = toString(c)
 
     ///
     /// Returns the character `c` as an Int32.

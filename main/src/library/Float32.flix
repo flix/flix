@@ -16,6 +16,8 @@
 
 namespace Float32 {
 
+    use ToString.toString;
+
     ///
     /// Returns the number of bits used to represent a `Float32`.
     ///
@@ -104,9 +106,7 @@ namespace Float32 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Float32): String =
-        import java.lang.Float:toString(Float32);
-        x.toString() as & Pure
+    pub def toString(x: Float32): String = toString(x)
 
     ///
     /// Return a decimal representation of `x`.
