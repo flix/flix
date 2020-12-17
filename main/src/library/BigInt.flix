@@ -16,8 +16,6 @@
 
 namespace BigInt {
 
-    use ToString.toString;
-
     ///
     /// Returns the smaller of `x` and `y`.
     ///
@@ -90,7 +88,7 @@ namespace BigInt {
     ///
     /// Return a string representation of `x`.
     ///
-    pub def toString(x: BigInt): String = toString(x)
+    pub def toString(x: BigInt): String = ToString.toString(x)
 
     ///
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.

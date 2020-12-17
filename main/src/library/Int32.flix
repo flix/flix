@@ -16,8 +16,6 @@
 
 namespace Int32 {
 
-    use ToString.toString;
-
     ///
     /// Returns the number of bits used to represent an `Int32`.
     ///
@@ -285,7 +283,7 @@ namespace Int32 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Int32): String = toString(x)
+    pub def toString(x: Int32): String = ToString.toString(x)
 
     ///
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
