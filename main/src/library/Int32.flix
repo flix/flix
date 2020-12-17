@@ -283,9 +283,7 @@ namespace Int32 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Int32): String =
-        import java.lang.Integer:toString(Int32);
-        x.toString() as & Pure
+    pub def toString(x: Int32): String = ToString.toString(x)
 
     ///
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.

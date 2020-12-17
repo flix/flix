@@ -104,9 +104,7 @@ namespace Float32 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Float32): String =
-        import java.lang.Float:toString(Float32);
-        x.toString() as & Pure
+    pub def toString(x: Float32): String = ToString.toString(x)
 
     ///
     /// Return a decimal representation of `x`.

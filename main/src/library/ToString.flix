@@ -36,31 +36,45 @@ instance ToString[Bool] {
 }
 
 instance ToString[Char] {
-    def toString(x: Char): String = Char.toString(x)
+    def toString(x: Char): String =
+        import java.lang.Character:toString(Char);
+        x.toString() as & Pure
 }
 
 instance ToString[Float32] {
-    def toString(x: Float32): String = Float32.toString(x)
+    def toString(x: Float32): String =
+        import java.lang.Float:toString(Float32);
+        x.toString() as & Pure
 }
 
 instance ToString[Float64] {
-    def toString(x: Float64): String = Float64.toString(x)
+    def toString(x: Float64): String =
+        import java.lang.Double:toString(Float64);
+        x.toString() as & Pure
 }
 
 instance ToString[Int8] {
-    def toString(x: Int8): String = Int8.toString(x)
+    def toString(x: Int8): String =
+        import java.lang.Byte:toString(Int8);
+        x.toString() as & Pure
 }
 
 instance ToString[Int16] {
-    def toString(x: Int16): String = Int16.toString(x)
+    def toString(x: Int16): String =
+        import java.lang.Short:toString(Int16);
+        x.toString() as & Pure
 }
 
 instance ToString[Int32] {
-    def toString(x: Int32): String = Int32.toString(x)
+    def toString(x: Int32): String =
+        import java.lang.Integer:toString(Int32);
+        x.toString() as & Pure
 }
 
 instance ToString[Int64] {
-    def toString(x: Int64): String = Int64.toString(x)
+    def toString(x: Int64): String =
+        import java.lang.Long:toString(Int64);
+        x.toString() as & Pure
 }
 
 instance ToString[String] {
@@ -68,7 +82,9 @@ instance ToString[String] {
 }
 
 instance ToString[BigInt] {
-    def toString(x: BigInt): String = BigInt.toString(x)
+    def toString(x: BigInt): String =
+        import java.math.BigInteger.toString();
+        x.toString() as & Pure
 }
 
 instance ToString[(a1, a2)] with [a1 : ToString, a2 : ToString] {

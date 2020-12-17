@@ -88,9 +88,7 @@ namespace BigInt {
     ///
     /// Return a string representation of `x`.
     ///
-    pub def toString(x: BigInt): String =
-        import java.math.BigInteger.toString();
-        x.toString() as & Pure
+    pub def toString(x: BigInt): String = ToString.toString(x)
 
     ///
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.

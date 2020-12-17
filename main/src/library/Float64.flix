@@ -104,9 +104,7 @@ namespace Float64 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Float64): String =
-        import java.lang.Double:toString(Float64);
-        x.toString() as & Pure
+    pub def toString(x: Float64): String = ToString.toString(x)
 
 // TODO
 //    ///
