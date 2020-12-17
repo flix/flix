@@ -350,4 +350,56 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.ExtraneousDefinition](result)
   }
+
+  test("Test.OrphanInstance.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.OrphanInstance](result)
+  }
+
+  test("Test.OrphanInstance.02") {
+    val input =
+      """
+        |namespace N {
+        |    pub class C[a]
+        |}
+        |
+        |instance N.C[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.OrphanInstance](result)
+  }
+
+  test("Test.OrphanInstance.03") {
+    val input =
+      """
+        |namespace N {
+        |    class C[a]
+        |
+        |    instance C[Int]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.OrphanInstance](result)
+  }
+
+  test("Test.OrphanInstance.04") {
+    val input =
+      """
+        |namespace N {
+        |    class C[a]
+        |
+        |    namespace O {
+        |        instance N.C[Int]
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.OrphanInstance](result)
+  }
 }
