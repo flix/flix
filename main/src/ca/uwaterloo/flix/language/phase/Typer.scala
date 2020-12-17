@@ -62,7 +62,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val classEnvInstances = instances.map {
       case (classSym, instances) =>
         val envInsts = instances.map {
-          case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _) => Ast.Instance(tpe, tconstrs)
+          case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
         }
         (classSym, envInsts)
     }
@@ -110,10 +110,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       * Reassembles a single instance.
       */
     def visitInstance(inst: ResolvedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
-      case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, loc) =>
+      case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
         for {
           defs <- Validation.traverse(defs0)(visitInstanceDefn(_, tconstrs, root, classEnv))
-        } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, loc)
+        } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
     }
 
     /**

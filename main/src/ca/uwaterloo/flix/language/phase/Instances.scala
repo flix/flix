@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -43,13 +43,33 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
+    // MATT test
+    /**
+      * Checks that an instance is not an orphan.
+      * It is declared in either:
+      * * The class's companion namespace.
+      * * The same namespace as its type.
+      */
+    def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
+      case TypedAst.Instance(_, _, classSym, tpe, _, _, ns, loc) => tpe.typeConstructor match {
+        // Case 1: Enum type in the same namespace as the instance: not an orphan
+        case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
+        // Case 1.5: Array type in the top-level namespace: not an orphan
+        case Some(TypeConstructor.Array) if  ns.isRoot => ().toSuccess // TODO hack?
+        // Case 2: Any type in the class companion namespace: not an orphan
+        case _ if (classSym.namespace :+ classSym.name) == ns.idents.map(_.name) => ().toSuccess
+        // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
+        case _ => InstanceError.OrphanInstance(tpe, classSym, loc).toFailure
+      }
+    }
+
     /**
       * Checks that the instance type is simple:
       * * all type variables are unique
       * * all type arguments are variables
       */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, loc) => tpe match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) => tpe match {
         case _: Type.Cst => ().toSuccess
         case _: Type.Var => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
         case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
@@ -133,6 +153,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkSimple(inst)
             _ <- Validation.traverse(unchecked)(checkOverlap(_, inst))
             _ <- checkSigMatch(inst)
+            _ <- checkOrphan(inst)
           } yield ()
         case Nil => ().toSuccess
       }

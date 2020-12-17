@@ -3,8 +3,12 @@ namespace A {
         pub def f(): a
     }
 
-    instance FClass[Int] {
-        def f(): Int = 1
+    namespace FClass {
+        use class A.FClass;
+
+        instance FClass[Int] {
+            def f(): Int = 1
+        }
     }
 
     @test
@@ -28,8 +32,12 @@ namespace B {
         pub def f(): a
     }
 
-    instance FClass[Int] {
-        def f(): Int = 2
+    namespace FClass {
+        use class B.FClass;
+
+        instance FClass[Int] {
+            def f(): Int = 2
+        }
     }
 
     @test
@@ -54,8 +62,12 @@ namespace C {
         pub def f(): a
     }
 
-    instance FClass[Int] {
-        def f(): Int = 3
+    namespace FClass {
+        use class C.FClass;
+
+        instance FClass[Int] {
+            def f(): Int = 3
+        }
     }
 
     @test
@@ -88,9 +100,10 @@ namespace D {
 pub class GClass[a] {
     pub def g(): a
 }
-
-instance GClass[Int] {
-    def g(): Int = 4
+namespace GClass {
+    instance GClass[Int] {
+        def g(): Int = 4
+    }
 }
 
 namespace X {
@@ -98,8 +111,12 @@ namespace X {
         pub def g(): a
     }
 
-    instance GClass[Int] {
-        def g(): Int = 5
+    namespace GClass {
+        use class X.GClass;
+
+        instance GClass[Int] {
+            def g(): Int = 5
+        }
     }
 
     namespace Y {
@@ -107,8 +124,12 @@ namespace X {
             pub def g(): a
         }
 
-        instance GClass[Int] {
-            def g(): Int = 6
+        namespace GClass {
+            use class X/Y.GClass;
+
+            instance GClass[Int] {
+                def g(): Int = 6
+            }
         }
 
         namespace Z {
@@ -116,8 +137,12 @@ namespace X {
                 pub def g(): a
             }
 
-            instance GClass[Int] {
-                def g(): Int = 7
+            namespace GClass {
+                use class X/Y/Z.GClass;
+
+                instance GClass[Int] {
+                    def g(): Int = 7
+                }
             }
         }
     }

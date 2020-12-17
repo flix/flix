@@ -24,12 +24,14 @@ class Functor[m :# Type -> Type] {
     pub def map(f: a -> b, x: m[a]): m[b]
 }
 
-instance Functor[Option] {
-    def map(f: a -> b, x: Option[a]): Option[b] = Option.map(f, x)
-}
+namespace Functor {
+    instance Functor[Option] {
+        def map(f: a -> b, x: Option[a]): Option[b] = Option.map(f, x)
+    }
 
-instance Functor[List] {
-    def map(f: a -> b, x: List[a]): List[b] = List.map(f, x)
+    instance Functor[List] {
+        def map(f: a -> b, x: List[a]): List[b] = List.map(f, x)
+    }
 }
 
 // TODO: move instances and tests to proper namespaces

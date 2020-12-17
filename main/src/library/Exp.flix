@@ -24,30 +24,32 @@ pub class Exp[a] {
     pub def exp(b: a, n: a): a
 }
 
-instance Exp[Float32] {
-    def exp(b: Float32, n: Float32): Float32 = $FLOAT32_EXP$(b, n)
-}
+namespace Exp {
+    instance Exp[Float32] {
+        def exp(b: Float32, n: Float32): Float32 = $FLOAT32_EXP$(b, n)
+    }
 
-instance Exp[Float64] {
-    def exp(b: Float64, n: Float64): Float64 = $FLOAT64_EXP$(b, n)
-}
+    instance Exp[Float64] {
+        def exp(b: Float64, n: Float64): Float64 = $FLOAT64_EXP$(b, n)
+    }
 
-instance Exp[Int8] {
-    def exp(b: Int8, n: Int8): Int8 = $INT8_EXP$(b, n)
-}
+    instance Exp[Int8] {
+        def exp(b: Int8, n: Int8): Int8 = $INT8_EXP$(b, n)
+    }
 
-instance Exp[Int16] {
-    def exp(b: Int16, n: Int16): Int16 = $INT16_EXP$(b, n)
-}
+    instance Exp[Int16] {
+        def exp(b: Int16, n: Int16): Int16 = $INT16_EXP$(b, n)
+    }
 
-instance Exp[Int32] {
-    def exp(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
-}
+    instance Exp[Int32] {
+        def exp(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
+    }
 
-instance Exp[Int64] {
-    def exp(b: Int64, n: Int64): Int64 = $INT64_EXP$(b, n)
-}
+    instance Exp[Int64] {
+        def exp(b: Int64, n: Int64): Int64 = $INT64_EXP$(b, n)
+    }
 
-instance Exp[BigInt] {
-    def exp(b: BigInt, n: BigInt): BigInt = $BIGINT_EXP$(b, n)
+    instance Exp[BigInt] {
+        def exp(b: BigInt, n: BigInt): BigInt = $BIGINT_EXP$(b, n)
+    }
 }
