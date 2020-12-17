@@ -68,6 +68,8 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
+    "Rem.flix" -> LocalResource.get("/src/library/Rem.flix"),
+    "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
 
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix")
   )
