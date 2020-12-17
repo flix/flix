@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.api
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
-import java.util.concurrent.{ExecutorService, Executors}
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
@@ -33,7 +32,6 @@ import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext
 
 /**
   * Main programmatic interface for Flix.
@@ -62,8 +60,24 @@ class Flix {
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
+    *
+    * The core library *must* be present for any program to compile.
     */
-  private val library = List(
+  private val coreLibrary = List(
+    "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
+    "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
+    "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
+    "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
+
+    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix")
+  )
+
+  /**
+    * A sequence of internal inputs to be parsed into Flix ASTs.
+    *
+    * The standard library is not required to be present for at least some programs to compile.
+    */
+  private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
@@ -101,14 +115,9 @@ class Flix {
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
     "Core/Cmp/Ordering.flix" -> LocalResource.get("/src/library/Core/Cmp/Ordering.flix"),
 
-    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
-    "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
-    "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
-    "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
-    "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),
@@ -383,7 +392,7 @@ class Flix {
     val si1 = getStringInputs
     val si2 = getPathInputs
     val si3 = inputs.toList
-    val si4 = if (options.core) Nil else getStandardLibraryInputs
+    val si4 = if (options.core) getInputs(coreLibrary) else getInputs(coreLibrary ++ standardLibrary)
     si1 ::: si2 ::: si3 ::: si4
   }
 
@@ -404,9 +413,9 @@ class Flix {
   }
 
   /**
-    * Returns the inputs for the standard library.
+    * Returns the inputs for the given list of (path, text) pairs.
     */
-  private def getStandardLibraryInputs: List[Input] = library.foldLeft(List.empty[Input]) {
+  private def getInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
     case (xs, (name, text)) => Input.Internal(name, text) :: xs
   }
 

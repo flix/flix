@@ -53,5 +53,7 @@ instance Add[BigInt] {
 }
 
 instance Add[String] {
-    def add(x: String, y: String): String = String.concat(x, y)
+    def add(x: String, y: String): String =
+        import java.lang.String.concat(String);
+        x.concat(y) as & Pure
 }
