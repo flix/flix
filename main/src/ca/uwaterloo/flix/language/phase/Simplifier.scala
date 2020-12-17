@@ -369,16 +369,34 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         // TODO: Until we have the new backend, we have to do a stupid
         // mapping of sop back to a binary op. Obviously this should be removed in the future.
         val op = sop match {
+          case SemanticOperator.Float32Op.Add => BinaryOperator.Plus
+          case SemanticOperator.Float32Op.Sub => BinaryOperator.Minus
           case SemanticOperator.Float32Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Float32Op.Div => BinaryOperator.Divide
+          case SemanticOperator.Float64Op.Add => BinaryOperator.Plus
+          case SemanticOperator.Float64Op.Sub => BinaryOperator.Minus
           case SemanticOperator.Float64Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Float64Op.Div => BinaryOperator.Divide
+          case SemanticOperator.Int8Op.Add => BinaryOperator.Plus
+          case SemanticOperator.Int8Op.Sub => BinaryOperator.Minus
           case SemanticOperator.Int8Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Int8Op.Div => BinaryOperator.Divide
+          case SemanticOperator.Int16Op.Add => BinaryOperator.Plus
+          case SemanticOperator.Int16Op.Sub => BinaryOperator.Minus
           case SemanticOperator.Int16Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Int16Op.Div => BinaryOperator.Divide
           case SemanticOperator.Int32Op.Add => BinaryOperator.Plus
           case SemanticOperator.Int32Op.Sub => BinaryOperator.Minus
           case SemanticOperator.Int32Op.Mul => BinaryOperator.Times
           case SemanticOperator.Int32Op.Div => BinaryOperator.Divide
+          case SemanticOperator.Int64Op.Add => BinaryOperator.Plus
+          case SemanticOperator.Int64Op.Sub => BinaryOperator.Minus
           case SemanticOperator.Int64Op.Mul => BinaryOperator.Times
+          case SemanticOperator.Int64Op.Div => BinaryOperator.Divide
+          case SemanticOperator.BigIntOp.Add => BinaryOperator.Plus
+          case SemanticOperator.BigIntOp.Sub => BinaryOperator.Minus
           case SemanticOperator.BigIntOp.Mul => BinaryOperator.Times
+          case SemanticOperator.BigIntOp.Div => BinaryOperator.Divide
           case _ => ??? // TODO
         }
 
