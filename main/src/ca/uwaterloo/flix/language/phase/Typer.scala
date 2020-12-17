@@ -655,7 +655,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
         // TODO: A whole lot of cases more. Implement in the same order as in SemanticOperator.
 
-        case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div =>
+        case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div
+        | SemanticOperator.Float32Op.Rem | SemanticOperator.Float32Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -663,7 +664,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-        case SemanticOperator.Float64Op.Add | SemanticOperator.Float64Op.Sub | SemanticOperator.Float64Op.Mul | SemanticOperator.Float64Op.Div =>
+        case SemanticOperator.Float64Op.Add | SemanticOperator.Float64Op.Sub | SemanticOperator.Float64Op.Mul | SemanticOperator.Float64Op.Div
+             | SemanticOperator.Float64Op.Rem | SemanticOperator.Float64Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -671,7 +673,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-        case SemanticOperator.Int8Op.Add | SemanticOperator.Int8Op.Sub | SemanticOperator.Int8Op.Mul | SemanticOperator.Int8Op.Div =>
+        case SemanticOperator.Int8Op.Add | SemanticOperator.Int8Op.Sub | SemanticOperator.Int8Op.Mul | SemanticOperator.Int8Op.Div
+             | SemanticOperator.Int8Op.Rem | SemanticOperator.Int8Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -679,7 +682,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-        case SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Sub | SemanticOperator.Int16Op.Mul | SemanticOperator.Int16Op.Div =>
+        case SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Sub | SemanticOperator.Int16Op.Mul | SemanticOperator.Int16Op.Div
+             | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -687,7 +691,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-        case SemanticOperator.Int32Op.Add | SemanticOperator.Int32Op.Sub | SemanticOperator.Int32Op.Mul | SemanticOperator.Int32Op.Div =>
+        case SemanticOperator.Int32Op.Add | SemanticOperator.Int32Op.Sub | SemanticOperator.Int32Op.Mul | SemanticOperator.Int32Op.Div
+             | SemanticOperator.Int32Op.Rem | SemanticOperator.Int32Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -695,7 +700,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-        case SemanticOperator.Int64Op.Add | SemanticOperator.Int64Op.Sub | SemanticOperator.Int64Op.Mul | SemanticOperator.Int64Op.Div =>
+        case SemanticOperator.Int64Op.Add | SemanticOperator.Int64Op.Sub | SemanticOperator.Int64Op.Mul | SemanticOperator.Int64Op.Div
+             | SemanticOperator.Int64Op.Rem | SemanticOperator.Int64Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -703,7 +709,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-        case SemanticOperator.BigIntOp.Add | SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div =>
+        case SemanticOperator.BigIntOp.Add | SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
+             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
