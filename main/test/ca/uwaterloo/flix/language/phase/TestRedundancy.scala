@@ -42,7 +42,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    }
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
@@ -141,7 +141,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    f(x)
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -156,7 +156,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    f(123)
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -214,7 +214,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    }
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -229,7 +229,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    }
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -268,7 +268,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    }
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -396,7 +396,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |pub def f(x: Int, y: Int, z: Int): Int = x + z
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
@@ -444,7 +444,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |  f(1, 2, 3)
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
@@ -626,7 +626,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    x + y
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -638,7 +638,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    x + z
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -804,7 +804,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    bar(foo(x + y))
          |
          |""".stripMargin
-    compile(input, Options.TestWithLibrary).get
+    compile(input, DefaultOptions).get
   }
 
   test("UnconditionalRecursion.06") {
@@ -843,7 +843,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    21 + 42;
          |    ()
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UselessExpression](result)
   }
 
@@ -856,7 +856,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    hof(x -> x + 21, 42);
          |    ()
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibrary)
+    val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UselessExpression](result)
   }
 
