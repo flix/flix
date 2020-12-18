@@ -554,6 +554,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultTyp <- unifyTypeM(tvar, tpe, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
+
+        case _ => ???
       }
 
       case ResolvedAst.Expression.BinaryDeprecated(op, exp1, exp2, tvar, loc) => op match {
