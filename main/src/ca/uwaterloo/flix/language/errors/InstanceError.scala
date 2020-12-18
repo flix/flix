@@ -158,4 +158,24 @@ object InstanceError {
     }
   }
 
+  /**
+    * Error indicating an orphan instance.
+    *
+    * @param tpe the instance type.
+    * @param sym the class symbol.
+    * @param loc the location where the error occurred.
+    */
+  case class OrphanInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Orphan instance."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Orphan instance for type '" << Red(FormatType.formatType(tpe)) << "' in '" << Red(sym.name) << "'."
+      vt << NewLine
+      vt << Code(loc, s"orphan instance")
+      vt << NewLine
+      vt << Underline("Tip:") << " An instance must be declared in the class's namespace or in the type's namespace."
+    }
+  }
 }

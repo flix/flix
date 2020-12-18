@@ -90,14 +90,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     for {
       classes <- sequence(classesVal)
-      instances <- sequence(instancesVal) // MATT add synth instances
+      instances <- sequence(instancesVal)
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      classes.toMap, instances.toMap, definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
+      classes.toMap, combine(instances), definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
     )
+  }
+
+  /**
+    * Creates a map from a list of key-(value list) pairs, appending in the case of duplicates.
+    */
+  private def combine[K, V](list: List[(K, List[V])]): Map[K, List[V]] = {
+    list.foldLeft(Map.empty[K, List[V]]) {
+      case (acc, (key, value)) => acc + (key -> (value ++ acc.getOrElse(key, Nil)))
+    }
   }
 
   object Constraints {
@@ -143,7 +152,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tpe <- lookupType(tpe0, ns0, root)
         tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, ns0, root))
         defs <- traverse(defs0)(resolve(_, ns0, root))
-      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, loc)
+      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, ns0, loc)
   }
 
   /**

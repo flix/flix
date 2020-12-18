@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
+import ca.uwaterloo.flix.language.phase.Namer.getClass
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -359,18 +360,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         tenv = tenv0 ++ getTypeEnv(tparams)
         tpe <- visitType(tpe0, uenv0, tenv)
         tconstrs <- traverse(tconstrs)(visitConstrainedType(_, uenv0, tenv, ns0))
-        instTconstr = NamedAst.TypeConstraint(clazz, tpe)
+        qualifiedClass = getClass(clazz, uenv0)
+        instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe)
         defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.map(_.tpe)))
-      } yield NamedAst.Instance(doc, mod, clazz, tpe, tconstrs.flatten, defs, loc)
+      } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs.flatten, defs, loc)
   }
 
   /**
     * Performs naming on the given constrained type `tconstr`.
     */
   private def visitConstrainedType(tconstr: WeededAst.ConstrainedType, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[List[NamedAst.TypeConstraint], NameError] = tconstr match {
-    case WeededAst.ConstrainedType(tpe, classes) =>
+    case WeededAst.ConstrainedType(tpe0, classes0) =>
       for {
-        tpe <- visitType(tpe, uenv0, tenv0)
+        tpe <- visitType(tpe0, uenv0, tenv0)
+        classes = classes0.map(getClass(_, uenv0))
       } yield classes.map(NamedAst.TypeConstraint(_, tpe))
   }
 
@@ -1707,6 +1710,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
     }
   }
+
+  /**
+    * Looks up the class in the given UseEnv.
+    */
+  private def getClass(qname: Name.QName, uenv0: UseEnv): Name.QName = {
+    if (qname.isQualified) {
+      qname
+    } else {
+      uenv0.classes.getOrElse(qname.ident.name, qname)
+    }
+  }
+
 
   /**
     * Merges the given `uses` into the given use environment `uenv0`.
