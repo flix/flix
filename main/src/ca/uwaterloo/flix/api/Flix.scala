@@ -64,17 +64,19 @@ class Flix {
     * The core library *must* be present for any program to compile.
     */
   private val coreLibrary = List(
+    "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
     "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
     "Rem.flix" -> LocalResource.get("/src/library/Rem.flix"),
     "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
-    "And.flix" -> LocalResource.get("/src/library/And.flix"),
-    "Or.flix" -> LocalResource.get("/src/library/Or.flix"),
-    "Xor.flix" -> LocalResource.get("/src/library/Xor.flix"),
-    "Shl.flix" -> LocalResource.get("/src/library/Shl.flix"),
-    "Shr.flix" -> LocalResource.get("/src/library/Shr.flix"),
+    "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
+    "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
+    "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
+    "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
+    "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
+    "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
 
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix")
   )

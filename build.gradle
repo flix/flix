@@ -34,8 +34,9 @@ dependencies {
 
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = [
-            "-language:postfixOps", "-Xfatal-warnings",
-            "-Ypatmat-exhaust-depth", "off" // TODO: Remove once the "stupid mapping" in Simplifier.scala is removed
+            "-language:postfixOps",
+            "-Xfatal-warnings",
+            "-Ypatmat-exhaust-depth", "off"
     ]
     compileScala.sourceCompatibility = 11
     compileScala.targetCompatibility = 11

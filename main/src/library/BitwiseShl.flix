@@ -15,31 +15,31 @@
  */
 
 ///
-/// A type class for bitwise and.
+/// A type class for bitwise left shift.
 ///
-pub class And[a] {
+pub class BitwiseShl[a] {
     ///
-    /// Returns the bitwise AND of `x` and `y`.
+    /// Returns `x` shifted left by `n` bits.
     ///
-    pub def and(x: a, y: a): a
+    pub def shl(x: a, n: Int32): a
 }
 
-instance And[Int8] {
-    def and(x: Int8, y: Int8): Int8 = $INT8_AND$(x, y)
+instance BitwiseShl[Int8] {
+    def shl(x: Int8, n: Int32): Int8 = $INT8_SHL$(x, n)
 }
 
-instance And[Int16] {
-    def and(x: Int16, y: Int16): Int16 = $INT16_AND$(x, y)
+instance BitwiseShl[Int16] {
+    def shl(x: Int16, n: Int32): Int16 = $INT16_SHL$(x, n)
 }
 
-instance And[Int32] {
-    def and(x: Int32, y: Int32): Int32 = $INT32_AND$(x, y)
+instance BitwiseShl[Int32] {
+    def shl(x: Int32, n: Int32): Int32 = $INT32_SHL$(x, n)
 }
 
-instance And[Int64] {
-    def and(x: Int64, y: Int64): Int64 = $INT64_AND$(x, y)
+instance BitwiseShl[Int64] {
+    def shl(x: Int64, n: Int32): Int64 = $INT64_SHL$(x, n)
 }
 
-instance And[BigInt] {
-    def and(x: BigInt, y: BigInt): BigInt = $BIGINT_AND$(x, y)
+instance BitwiseShl[BigInt] {
+    def shl(x: BigInt, n: Int32): BigInt = $BIGINT_SHL$(x, n)
 }

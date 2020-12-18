@@ -15,31 +15,31 @@
  */
 
 ///
-/// A type class for bitwise right shift.
+/// A type class for bitwise or.
 ///
-pub class Shr[a] {
+pub class BitwiseOr[a] {
     ///
-    /// Returns `x` shifted right by `n` bits.
+    /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def shr(x: a, n: Int32): a
+    pub def or(x: a, y: a): a
 }
 
-instance Shr[Int8] {
-    def shr(x: Int8, n: Int32): Int8 = $INT8_SHR$(x, n)
+instance BitwiseOr[Int8] {
+    def or(x: Int8, y: Int8): Int8 = $INT8_OR$(x, y)
 }
 
-instance Shr[Int16] {
-    def shr(x: Int16, n: Int32): Int16 = $INT16_SHR$(x, n)
+instance BitwiseOr[Int16] {
+    def or(x: Int16, y: Int16): Int16 = $INT16_OR$(x, y)
 }
 
-instance Shr[Int32] {
-    def shr(x: Int32, n: Int32): Int32 = $INT32_SHR$(x, n)
+instance BitwiseOr[Int32] {
+    def or(x: Int32, y: Int32): Int32 = $INT32_OR$(x, y)
 }
 
-instance Shr[Int64] {
-    def shr(x: Int64, n: Int32): Int64 = $INT64_SHR$(x, n)
+instance BitwiseOr[Int64] {
+    def or(x: Int64, y: Int64): Int64 = $INT64_OR$(x, y)
 }
 
-instance Shr[BigInt] {
-    def shr(x: BigInt, n: Int32): BigInt = $BIGINT_SHR$(x, n)
+instance BitwiseOr[BigInt] {
+    def or(x: BigInt, y: BigInt): BigInt = $BIGINT_OR$(x, y)
 }

@@ -17,29 +17,29 @@
 ///
 /// A type class for bitwise xor.
 ///
-pub class Xor[a] {
+pub class BitwiseXor[a] {
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
     pub def xor(x: a, y: a): a
 }
 
-instance Xor[Int8] {
+instance BitwiseXor[Int8] {
     def xor(x: Int8, y: Int8): Int8 = $INT8_XOR$(x, y)
 }
 
-instance Xor[Int16] {
+instance BitwiseXor[Int16] {
     def xor(x: Int16, y: Int16): Int16 = $INT16_XOR$(x, y)
 }
 
-instance Xor[Int32] {
+instance BitwiseXor[Int32] {
     def xor(x: Int32, y: Int32): Int32 = $INT32_XOR$(x, y)
 }
 
-instance Xor[Int64] {
+instance BitwiseXor[Int64] {
     def xor(x: Int64, y: Int64): Int64 = $INT64_XOR$(x, y)
 }
 
-instance Xor[BigInt] {
+instance BitwiseXor[BigInt] {
     def xor(x: BigInt, y: BigInt): BigInt = $BIGINT_XOR$(x, y)
 }

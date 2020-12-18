@@ -538,15 +538,22 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       }
 
       case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
-        // TODO: Add more
-        case SemanticOperator.Int32Op.Neg =>
+        case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg
+             | SemanticOperator.Int8Op.Neg | SemanticOperator.Int16Op.Neg | SemanticOperator.Int32Op.Neg |SemanticOperator.Int64Op.Neg
+             | SemanticOperator.BigIntOp.Neg =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int32, loc)
+            resultTyp <- unifyTypeM(tvar, tpe, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case _ => ??? // TODO: Add more
+        case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not |SemanticOperator.Int64Op.Not
+             | SemanticOperator.BigIntOp.Not =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
       }
 
       case ResolvedAst.Expression.BinaryDeprecated(op, exp1, exp2, tvar, loc) => op match {

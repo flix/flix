@@ -153,8 +153,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Unary(sop, e, tpe, eff, loc) =>
         // TODO: See the comment about binary expressions.
         val op = sop match {
-          case SemanticOperator.Int32Op.Neg => UnaryOperator.Minus
-          case _ => ??? // TODO
+          case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg
+               | SemanticOperator.Int8Op.Neg | SemanticOperator.Int16Op.Neg | SemanticOperator.Int32Op.Neg | SemanticOperator.Int64Op.Neg
+               | SemanticOperator.BigIntOp.Neg => UnaryOperator.Minus
+          case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not | SemanticOperator.Int64Op.Not
+               | SemanticOperator.BigIntOp.Not => UnaryOperator.BitwiseNegate
         }
         SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, loc)
 
