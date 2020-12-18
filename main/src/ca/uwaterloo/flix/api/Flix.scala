@@ -78,6 +78,8 @@ class Flix {
     "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
 
+    "LowerBounded.flix" -> LocalResource.get("/src/library/LowerBounded.flix"),
+
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix")
   )
 
