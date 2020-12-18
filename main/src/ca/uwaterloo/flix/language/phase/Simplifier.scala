@@ -420,7 +420,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
           case SemanticOperator.BoolOp.Neq | SemanticOperator.CharOp.Neq
                | SemanticOperator.Float32Op.Neq | SemanticOperator.Float64Op.Neq
-               | SemanticOperator.Int8Op.Neq | SemanticOperator.Int16Op.Shr | SemanticOperator.Int32Op.Neq
+               | SemanticOperator.Int8Op.Neq | SemanticOperator.Int16Op.Neq | SemanticOperator.Int32Op.Neq
                | SemanticOperator.Int64Op.Neq | SemanticOperator.BigIntOp.Neq
                | SemanticOperator.StringOp.Neq => BinaryOperator.NotEqual
 

@@ -38,7 +38,7 @@ instance Eq[Unit] {
 
 instance Eq[Bool] {
     pub def eq(x: Bool, y: Bool): Bool = $BOOL_EQ$(x, y)
-    pub def eq(x: Bool, y: Bool): Bool = $BOOL_EQ$(x, y)
+    pub def neq(x: Bool, y: Bool): Bool = $BOOL_NEQ$(x, y)
 }
 
 instance Eq[Char] {
