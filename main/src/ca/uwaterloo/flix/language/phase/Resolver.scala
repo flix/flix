@@ -96,14 +96,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      classes.toMap, flatGroupToMap(instances), definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
+      classes.toMap, combine(instances), definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
     )
   }
 
   /**
     * Creates a map from a list of key-(value list) pairs, appending in the case of duplicates.
     */
-  private def flatGroupToMap[K, V](list: List[(K, List[V])]): Map[K, List[V]] = {
+  private def combine[K, V](list: List[(K, List[V])]): Map[K, List[V]] = {
     list.foldLeft(Map.empty[K, List[V]]) {
       case (acc, (key, value)) => acc + (key -> (value ++ acc.getOrElse(key, Nil)))
     }
