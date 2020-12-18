@@ -538,20 +538,52 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       }
 
       case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
-        case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg
-             | SemanticOperator.Int8Op.Neg | SemanticOperator.Int16Op.Neg | SemanticOperator.Int32Op.Neg |SemanticOperator.Int64Op.Neg
-             | SemanticOperator.BigIntOp.Neg =>
+        case SemanticOperator.Float32Op.Neg =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, loc)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Float32, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not |SemanticOperator.Int64Op.Not
-             | SemanticOperator.BigIntOp.Not =>
+        case SemanticOperator.Float64Op.Neg =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, loc)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Float64, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.Int8Op.Neg | SemanticOperator.Int8Op.Not =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Int8, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not  =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Int16, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not  =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Int32, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not  =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Int64, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not  =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.BigInt, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
