@@ -31,3 +31,31 @@ instance LowerBounded[(a1, a2)] with [a1 : LowerBounded, a2 : LowerBounded] {
 instance LowerBounded[(a1, a2, a3)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded] {
     def bot(): (a1, a2, a3) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
 }
+
+instance LowerBounded[(a1, a2, a3, a4)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded, a4 : LowerBounded] {
+    def bot(): (a1, a2, a3, a4) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
+}
+
+instance LowerBounded[(a1, a2, a3, a4, a5)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded, a4 : LowerBounded, a5 : LowerBounded] {
+    def bot(): (a1, a2, a3, a4, a5) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
+}
+
+instance LowerBounded[(a1, a2, a3, a4, a5, a6)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded, a4 : LowerBounded, a5 : LowerBounded, a6 : LowerBounded] {
+    def bot(): (a1, a2, a3, a4, a5, a6) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
+}
+
+instance LowerBounded[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded, a4 : LowerBounded, a5 : LowerBounded, a6 : LowerBounded, a7 : LowerBounded] {
+    def bot(): (a1, a2, a3, a4, a5, a6, a7) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
+}
+
+instance LowerBounded[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded, a4 : LowerBounded, a5 : LowerBounded, a6 : LowerBounded, a7 : LowerBounded, a8 : LowerBounded] {
+    def bot(): (a1, a2, a3, a4, a5, a6, a7, a8) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
+}
+
+instance LowerBounded[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded, a4 : LowerBounded, a5 : LowerBounded, a6 : LowerBounded, a7 : LowerBounded, a8 : LowerBounded, a9 : LowerBounded] {
+    def bot(): (a1, a2, a3, a4, a5, a6, a7, a8, a9) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
+}
+
+instance LowerBounded[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded, a4 : LowerBounded, a5 : LowerBounded, a6 : LowerBounded, a7 : LowerBounded, a8 : LowerBounded, a9 : LowerBounded, a10 : LowerBounded] {
+    def bot(): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
+}
