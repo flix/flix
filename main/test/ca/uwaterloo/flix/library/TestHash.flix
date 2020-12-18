@@ -15,7 +15,7 @@
  */
 
 namespace TestHash {
-    use Hash.hash;
+    use Hash/Hash.hash;
 
     @test
     def testHashUnit(): Bool = hash(()) == hash(())

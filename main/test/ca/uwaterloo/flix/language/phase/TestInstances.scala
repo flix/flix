@@ -356,7 +356,9 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[Int]
+        |namespace C {
+        |    instance C[Int]
+        |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.OrphanInstance](result)
@@ -381,7 +383,9 @@ class TestInstances extends FunSuite with TestUtils {
         |namespace N {
         |    class C[a]
         |
-        |    instance C[Int]
+        |    namespace C {
+        |        instance N.C[Int]
+        |    }
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

@@ -14,17 +14,18 @@
  *  limitations under the License.
  */
 
-///
-/// A type class for types that can be hashed.
-///
-pub class Hash[a] {
-    ///
-    /// Returns a hash value for the given x.
-    ///
-    pub def hash(x: a): Int
-}
-
 namespace Hash {
+
+    ///
+    /// A type class for types that can be hashed.
+    ///
+    pub class Hash[a] {
+        ///
+        /// Returns a hash value for the given x.
+        ///
+        pub def hash(x: a): Int
+    }
+
     instance Hash[Unit] {
         def hash(x: Unit): Int = 0
     }
@@ -92,7 +93,7 @@ namespace Hash {
 
     instance Hash[Option[a]] with [a : Hash] {
         def hash(o: Option[a]): Int = match o {
-            case Some(y) => Hash.hash(y)
+            case Some(y) => Hash/Hash.hash(y)
             case None => 0
         }
     }
@@ -100,7 +101,7 @@ namespace Hash {
     instance Hash[List[a]] with [a : Hash] {
         def hash(l: List[a]): Int =
             List.foldLeft(
-                acc -> next -> 31 * acc + Hash.hash(next),
+                acc -> next -> 31 * acc + Hash/Hash.hash(next),
                 1,
                 l
             )
@@ -108,21 +109,21 @@ namespace Hash {
 
     instance Hash[Nel[a]] with [a : Hash] {
         def hash(l: Nel[a]): Int = match l {
-            case Nel(x, xs) => 31 * Hash.hash(xs) + Hash.hash(x)
+            case Nel(x, xs) => 31 * Hash/Hash.hash(xs) + Hash/Hash.hash(x)
         }
     }
 
     instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
         def hash(r: Result[t, e]): Int = match r {
-            case Ok(v)  => Hash.hash(v)
-            case Err(v) => Hash.hash(v)
+            case Ok(v)  => Hash/Hash.hash(v)
+            case Err(v) => Hash/Hash.hash(v)
         }
     }
 
     instance Hash[Validation[t, e]] with [t : Hash, e : Hash] {
         def hash(x: Validation[t, e]): Int = match x {
-            case Success(v) => Hash.hash(v)
-            case Failure(v) => Hash.hash(v)
+            case Success(v) => Hash/Hash.hash(v)
+            case Failure(v) => Hash/Hash.hash(v)
         }
     }
 

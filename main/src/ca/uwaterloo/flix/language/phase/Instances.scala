@@ -54,10 +54,8 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       case TypedAst.Instance(_, _, classSym, tpe, _, _, ns, loc) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
-        // Case 1.5: Array type in the top-level namespace: not an orphan
-        case Some(TypeConstructor.Array) if  ns.isRoot => ().toSuccess // TODO hack?
-        // Case 2: Any type in the class companion namespace: not an orphan
-        case _ if (classSym.namespace :+ classSym.name) == ns.idents.map(_.name) => ().toSuccess
+        // Case 2: Any type in the class namespace: not an orphan
+        case _ if (classSym.namespace) == ns.idents.map(_.name) => ().toSuccess
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
         case _ => InstanceError.OrphanInstance(tpe, classSym, loc).toFailure
       }

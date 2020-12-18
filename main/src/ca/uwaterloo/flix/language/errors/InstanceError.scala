@@ -175,7 +175,7 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"orphan instance")
       vt << NewLine
-      vt << Underline("Tip:") << " An instance must be declared in the class's companion namespace or in the same namespace as its type."
+      vt << Underline("Tip:") << " An instance must be declared in the class's namespace or in the type's namespace."
     }
   }
 }

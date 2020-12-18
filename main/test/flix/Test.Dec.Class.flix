@@ -17,12 +17,8 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        namespace X {
-            use class Test/Dec/Class/Test03.X;
-
-            instance X[Int] {
-                def f(x: Int): Bool = x == 0
-            }
+        instance X[Int] {
+            def f(x: Int): Bool = x == 0
         }
 
         pub def g(x: Int): Bool = Test/Dec/Class/Test03/X.f(x)
@@ -45,11 +41,7 @@ namespace Test/Dec/Class {
 
         class C[a]
 
-        namespace C {
-            use class Test/Dec/Class/Test05.C;
-
-            instance C[List[a]] with [a : C]
-        }
+        instance C[List[a]] with [a : C]
     }
 
     namespace Test06 {
@@ -61,19 +53,15 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        namespace C {
-            use class Test/Dec/Class/Test06.C;
+        instance C[Int] {
+            def f(x: Int): Bool = x == 0
+        }
 
-            instance C[Int] {
-                def f(x: Int): Bool = x == 0
-            }
-
-            instance C[List[a]] with [a: C] {
-                def f(x: List[a]): Bool = {
-                    match x {
-                        case Nil => true
-                        case _ => false
-                    }
+        instance C[List[a]] with [a: C] {
+            def f(x: List[a]): Bool = {
+                match x {
+                    case Nil => true
+                    case _ => false
                 }
             }
         }
@@ -96,14 +84,10 @@ namespace Test/Dec/Class {
             pub def map(f: a -> b, x: m[a]): m[b]
         }
 
-        namespace F {
-            use class Test/Dec/Class/Test08.F;
-
-            instance F[Option] {
-                def map(f: a -> b, x: Option[a]): Option[b] = match x {
-                    case None => None
-                    case Some(y) => Some(f(y))
-                }
+        instance F[Option] {
+            def map(f: a -> b, x: Option[a]): Option[b] = match x {
+                case None => None
+                case Some(y) => Some(f(y))
             }
         }
     }
@@ -113,16 +97,12 @@ namespace Test/Dec/Class {
             pub def isPure(f: a -> b & e): Bool
         }
 
-        namespace Eff {
-            use class Test/Dec/Class/Test09.Eff;
+        instance Eff[Pure] {
+            def isPure(f: a -> b): Bool = true
+        }
 
-            instance Eff[Pure] {
-                def isPure(f: a -> b): Bool = true
-            }
-
-            instance Eff[Impure] {
-                def isPure(f: a ~> b): Bool = false
-            }
+        instance Eff[Impure] {
+            def isPure(f: a ~> b): Bool = false
         }
     }
 

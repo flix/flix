@@ -29,12 +29,8 @@ namespace Test/Exp/Infix {
         pub def div(x: a, y: a): a
     }
 
-    namespace Divisible {
-        use class Test/Exp/Infix.Divisible;
-
-        instance Divisible[Int] {
-            def div(x: Int, y: Int): Int = x / y
-        }
+    instance Divisible[Int] {
+        def div(x: Int, y: Int): Int = x / y
     }
 
 }

@@ -24,32 +24,30 @@ pub class Rem[a] {
     pub def rem(x: a, n: a): a
 }
 
-namespace Rem {
-    instance Rem[Float32] {
-        def rem(x: Float32, n: Float32): Float32 = $FLOAT32_REM$(x, n)
-    }
+instance Rem[Float32] {
+    def rem(x: Float32, n: Float32): Float32 = $FLOAT32_REM$(x, n)
+}
 
-    instance Rem[Float64] {
-        def rem(x: Float64, n: Float64): Float64 = $FLOAT64_REM$(x, n)
-    }
+instance Rem[Float64] {
+    def rem(x: Float64, n: Float64): Float64 = $FLOAT64_REM$(x, n)
+}
 
-    instance Rem[Int8] {
-        def rem(x: Int8, n: Int8): Int8 = $INT8_REM$(x, n)
-    }
+instance Rem[Int8] {
+    def rem(x: Int8, n: Int8): Int8 = $INT8_REM$(x, n)
+}
 
-    instance Rem[Int16] {
-        def rem(x: Int16, n: Int16): Int16 = $INT16_REM$(x, n)
-    }
+instance Rem[Int16] {
+    def rem(x: Int16, n: Int16): Int16 = $INT16_REM$(x, n)
+}
 
-    instance Rem[Int32] {
-        def rem(x: Int32, n: Int32): Int32 = $INT32_REM$(x, n)
-    }
+instance Rem[Int32] {
+    def rem(x: Int32, n: Int32): Int32 = $INT32_REM$(x, n)
+}
 
-    instance Rem[Int64] {
-        def rem(x: Int64, n: Int64): Int64 = $INT64_REM$(x, n)
-    }
+instance Rem[Int64] {
+    def rem(x: Int64, n: Int64): Int64 = $INT64_REM$(x, n)
+}
 
-    instance Rem[BigInt] {
-        def rem(x: BigInt, n: BigInt): BigInt = $BIGINT_REM$(x, n)
-    }
+instance Rem[BigInt] {
+    def rem(x: BigInt, n: BigInt): BigInt = $BIGINT_REM$(x, n)
 }
