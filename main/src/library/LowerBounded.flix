@@ -23,3 +23,11 @@ pub class LowerBounded[a] {
     ///
     pub def bot(): a
 }
+
+instance LowerBounded[(a1, a2)] with [a1 : LowerBounded, a2 : LowerBounded] {
+    def bot(): (a1, a2) = (LowerBounded.bot(), LowerBounded.bot())
+}
+
+instance LowerBounded[(a1, a2, a3)] with [a1 : LowerBounded, a2 : LowerBounded, a3 : LowerBounded] {
+    def bot(): (a1, a2, a3) = (LowerBounded.bot(), LowerBounded.bot(), LowerBounded.bot())
+}
