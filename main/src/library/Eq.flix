@@ -85,3 +85,7 @@ instance Eq[String] {
     def eq(x: String, y: String): Bool = $STRING_EQ$(x, y)
     def neq(x: String, y: String): Bool = $STRING_NEQ$(x, y)
 }
+
+/// TODO: Add instances for tuples
+/// TODO: Add instances for std. library
+/// TODO: Add Eq constraints on functions and tests
