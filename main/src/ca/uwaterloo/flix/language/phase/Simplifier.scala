@@ -158,7 +158,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                | SemanticOperator.BigIntOp.Neg => UnaryOperator.Minus
           case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not | SemanticOperator.Int64Op.Not
                | SemanticOperator.BigIntOp.Not => UnaryOperator.BitwiseNegate
-          case _ => ???
         }
         SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, loc)
 
