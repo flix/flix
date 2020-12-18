@@ -538,15 +538,56 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       }
 
       case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
-        // TODO: Add more
-        case SemanticOperator.Int32Op.Neg =>
+        case SemanticOperator.Float32Op.Neg =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Float32, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.Float64Op.Neg =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Float64, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.Int8Op.Neg | SemanticOperator.Int8Op.Not =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Int8, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not  =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Int16, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not  =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.Int32, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case _ => ??? // TODO: Add more
+        case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not  =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.Int64, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not  =>
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            resultTyp <- unifyTypeM(tvar, tpe, Type.BigInt, loc)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
+
+        case _ => ???
       }
 
       case ResolvedAst.Expression.BinaryDeprecated(op, exp1, exp2, tvar, loc) => op match {
@@ -674,7 +715,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int8Op.Add | SemanticOperator.Int8Op.Sub | SemanticOperator.Int8Op.Mul | SemanticOperator.Int8Op.Div
-             | SemanticOperator.Int8Op.Rem | SemanticOperator.Int8Op.Exp =>
+             | SemanticOperator.Int8Op.Rem | SemanticOperator.Int8Op.Exp
+             | SemanticOperator.Int8Op.And | SemanticOperator.Int8Op.Or | SemanticOperator.Int8Op.Xor =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -683,7 +725,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Sub | SemanticOperator.Int16Op.Mul | SemanticOperator.Int16Op.Div
-             | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Exp =>
+             | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Exp
+             | SemanticOperator.Int16Op.And | SemanticOperator.Int16Op.Or | SemanticOperator.Int16Op.Xor =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -692,7 +735,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int32Op.Add | SemanticOperator.Int32Op.Sub | SemanticOperator.Int32Op.Mul | SemanticOperator.Int32Op.Div
-             | SemanticOperator.Int32Op.Rem | SemanticOperator.Int32Op.Exp =>
+             | SemanticOperator.Int32Op.Rem | SemanticOperator.Int32Op.Exp
+             | SemanticOperator.Int32Op.And | SemanticOperator.Int32Op.Or | SemanticOperator.Int32Op.Xor =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -701,7 +745,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int64Op.Add | SemanticOperator.Int64Op.Sub | SemanticOperator.Int64Op.Mul | SemanticOperator.Int64Op.Div
-             | SemanticOperator.Int64Op.Rem | SemanticOperator.Int64Op.Exp =>
+             | SemanticOperator.Int64Op.Rem | SemanticOperator.Int64Op.Exp
+             | SemanticOperator.Int64Op.And | SemanticOperator.Int64Op.Or | SemanticOperator.Int64Op.Xor =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -710,13 +755,27 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.BigIntOp.Add | SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
-             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.Exp =>
+             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.Exp
+             | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.BigInt, tpe1, tpe2, loc)
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+        case SemanticOperator.Int8Op.Shl | SemanticOperator.Int8Op.Shr
+             | SemanticOperator.Int16Op.Shl | SemanticOperator.Int16Op.Shr
+             | SemanticOperator.Int32Op.Shl | SemanticOperator.Int32Op.Shr
+             | SemanticOperator.Int64Op.Shl | SemanticOperator.Int64Op.Shr
+             | SemanticOperator.BigIntOp.Shl | SemanticOperator.BigIntOp.Shr =>
+          for {
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
+            lhsType <- unifyTypeM(tvar, tpe1, loc)
+            rhsType <- unifyTypeM(tpe2, Type.Int32, loc)
+            resultEff = Type.mkAnd(eff1, eff2)
+          } yield (constrs1 ++ constrs2, lhsType, resultEff)
 
         case _ => ??? // TODO: A lot more cases to handle.
       }

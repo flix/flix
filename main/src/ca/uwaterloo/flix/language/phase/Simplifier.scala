@@ -153,8 +153,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Unary(sop, e, tpe, eff, loc) =>
         // TODO: See the comment about binary expressions.
         val op = sop match {
-          case SemanticOperator.Int32Op.Neg => UnaryOperator.Minus
-          case _ => ??? // TODO
+          case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg
+               | SemanticOperator.Int8Op.Neg | SemanticOperator.Int16Op.Neg | SemanticOperator.Int32Op.Neg | SemanticOperator.Int64Op.Neg
+               | SemanticOperator.BigIntOp.Neg => UnaryOperator.Minus
+          case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not | SemanticOperator.Int64Op.Not
+               | SemanticOperator.BigIntOp.Not => UnaryOperator.BitwiseNegate
+          case _ => ???
         }
         SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, loc)
 
@@ -369,48 +373,45 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         // TODO: Until we have the new backend, we have to do a stupid
         // mapping of sop back to a binary op. Obviously this should be removed in the future.
         val op = sop match {
-          case SemanticOperator.Float32Op.Add => BinaryOperator.Plus
-          case SemanticOperator.Float32Op.Sub => BinaryOperator.Minus
-          case SemanticOperator.Float32Op.Mul => BinaryOperator.Times
-          case SemanticOperator.Float32Op.Div => BinaryOperator.Divide
-          case SemanticOperator.Float32Op.Rem => BinaryOperator.Modulo
-          case SemanticOperator.Float32Op.Exp => BinaryOperator.Exponentiate
-          case SemanticOperator.Float64Op.Add => BinaryOperator.Plus
-          case SemanticOperator.Float64Op.Sub => BinaryOperator.Minus
-          case SemanticOperator.Float64Op.Mul => BinaryOperator.Times
-          case SemanticOperator.Float64Op.Div => BinaryOperator.Divide
-          case SemanticOperator.Float64Op.Rem => BinaryOperator.Modulo
-          case SemanticOperator.Float64Op.Exp => BinaryOperator.Exponentiate
-          case SemanticOperator.Int8Op.Add => BinaryOperator.Plus
-          case SemanticOperator.Int8Op.Sub => BinaryOperator.Minus
-          case SemanticOperator.Int8Op.Mul => BinaryOperator.Times
-          case SemanticOperator.Int8Op.Div => BinaryOperator.Divide
-          case SemanticOperator.Int8Op.Rem => BinaryOperator.Modulo
-          case SemanticOperator.Int8Op.Exp => BinaryOperator.Exponentiate
-          case SemanticOperator.Int16Op.Add => BinaryOperator.Plus
-          case SemanticOperator.Int16Op.Sub => BinaryOperator.Minus
-          case SemanticOperator.Int16Op.Mul => BinaryOperator.Times
-          case SemanticOperator.Int16Op.Div => BinaryOperator.Divide
-          case SemanticOperator.Int16Op.Rem => BinaryOperator.Modulo
-          case SemanticOperator.Int16Op.Exp => BinaryOperator.Exponentiate
-          case SemanticOperator.Int32Op.Add => BinaryOperator.Plus
-          case SemanticOperator.Int32Op.Sub => BinaryOperator.Minus
-          case SemanticOperator.Int32Op.Mul => BinaryOperator.Times
-          case SemanticOperator.Int32Op.Div => BinaryOperator.Divide
-          case SemanticOperator.Int32Op.Rem => BinaryOperator.Modulo
-          case SemanticOperator.Int32Op.Exp => BinaryOperator.Exponentiate
-          case SemanticOperator.Int64Op.Add => BinaryOperator.Plus
-          case SemanticOperator.Int64Op.Sub => BinaryOperator.Minus
-          case SemanticOperator.Int64Op.Mul => BinaryOperator.Times
-          case SemanticOperator.Int64Op.Div => BinaryOperator.Divide
-          case SemanticOperator.Int64Op.Rem => BinaryOperator.Modulo
-          case SemanticOperator.Int64Op.Exp => BinaryOperator.Exponentiate
-          case SemanticOperator.BigIntOp.Add => BinaryOperator.Plus
-          case SemanticOperator.BigIntOp.Sub => BinaryOperator.Minus
-          case SemanticOperator.BigIntOp.Mul => BinaryOperator.Times
-          case SemanticOperator.BigIntOp.Div => BinaryOperator.Divide
-          case SemanticOperator.BigIntOp.Rem => BinaryOperator.Modulo
-          case SemanticOperator.BigIntOp.Exp => BinaryOperator.Exponentiate
+          case SemanticOperator.Float32Op.Add | SemanticOperator.Float64Op.Add | SemanticOperator.Int8Op.Add
+               | SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Add | SemanticOperator.Int32Op.Add
+            | SemanticOperator.Int64Op.Add | SemanticOperator.BigIntOp.Add => BinaryOperator.Plus
+
+          case SemanticOperator.Float32Op.Sub | SemanticOperator.Float64Op.Sub | SemanticOperator.Int8Op.Sub
+               | SemanticOperator.Int16Op.Sub | SemanticOperator.Int16Op.Sub | SemanticOperator.Int32Op.Sub
+               | SemanticOperator.Int64Op.Sub | SemanticOperator.BigIntOp.Sub => BinaryOperator.Minus
+
+          case SemanticOperator.Float32Op.Mul | SemanticOperator.Float64Op.Mul | SemanticOperator.Int8Op.Mul
+               | SemanticOperator.Int16Op.Mul | SemanticOperator.Int16Op.Mul | SemanticOperator.Int32Op.Mul
+               | SemanticOperator.Int64Op.Mul | SemanticOperator.BigIntOp.Mul => BinaryOperator.Times
+
+          case SemanticOperator.Float32Op.Div | SemanticOperator.Float64Op.Div | SemanticOperator.Int8Op.Div
+               | SemanticOperator.Int16Op.Div | SemanticOperator.Int16Op.Div | SemanticOperator.Int32Op.Div
+               | SemanticOperator.Int64Op.Div | SemanticOperator.BigIntOp.Div => BinaryOperator.Divide
+
+          case SemanticOperator.Float32Op.Rem | SemanticOperator.Float64Op.Rem | SemanticOperator.Int8Op.Rem
+               | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Rem | SemanticOperator.Int32Op.Rem
+               | SemanticOperator.Int64Op.Rem | SemanticOperator.BigIntOp.Rem => BinaryOperator.Modulo
+
+          case SemanticOperator.Float32Op.Exp | SemanticOperator.Float64Op.Exp | SemanticOperator.Int8Op.Exp
+               | SemanticOperator.Int16Op.Exp | SemanticOperator.Int16Op.Exp | SemanticOperator.Int32Op.Exp
+               | SemanticOperator.Int64Op.Exp | SemanticOperator.BigIntOp.Exp => BinaryOperator.Exponentiate
+
+          case SemanticOperator.Int8Op.And | SemanticOperator.Int16Op.And | SemanticOperator.Int32Op.And
+            | SemanticOperator.Int64Op.And | SemanticOperator.BigIntOp.And => BinaryOperator.BitwiseAnd
+
+          case SemanticOperator.Int8Op.Or | SemanticOperator.Int16Op.Or | SemanticOperator.Int32Op.Or
+               | SemanticOperator.Int64Op.Or | SemanticOperator.BigIntOp.Or => BinaryOperator.BitwiseOr
+
+          case SemanticOperator.Int8Op.Xor | SemanticOperator.Int16Op.Xor | SemanticOperator.Int32Op.Xor
+               | SemanticOperator.Int64Op.Xor | SemanticOperator.BigIntOp.Xor => BinaryOperator.BitwiseXor
+
+          case SemanticOperator.Int8Op.Shl | SemanticOperator.Int16Op.Shl | SemanticOperator.Int32Op.Shl
+               | SemanticOperator.Int64Op.Shl | SemanticOperator.BigIntOp.Shl => BinaryOperator.BitwiseLeftShift
+
+          case SemanticOperator.Int8Op.Shr | SemanticOperator.Int16Op.Shr | SemanticOperator.Int32Op.Shr
+               | SemanticOperator.Int64Op.Shr | SemanticOperator.BigIntOp.Shr => BinaryOperator.BitwiseRightShift
+
           case _ => ??? // TODO
         }
 
