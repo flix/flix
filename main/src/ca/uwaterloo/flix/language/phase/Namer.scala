@@ -1708,7 +1708,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     if (qname.isQualified) {
       qname
     } else {
-      uenv0.classes.getOrElse(qname.ident.name, qname)
+      uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
     }
   }
 
