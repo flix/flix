@@ -2174,8 +2174,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        toStringConstrs = termTypes.map(Ast.TypeConstraint(PredefinedClasses.lookupToStringClassSym(root), _))
-      } yield (termConstrs.flatten ++ toStringConstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
+        tconstrs = termTypes.map(Ast.TypeConstraint(PredefinedClasses.lookupToStringClassSym(root), _))
+      } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
@@ -2217,8 +2217,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        toStringConstrs = termTypes.map(Ast.TypeConstraint(PredefinedClasses.lookupToStringClassSym(root), _))
-      } yield (toStringConstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
+        tconstrs = Nil // TODO
+      } yield (tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     //
     //  exp : Bool
