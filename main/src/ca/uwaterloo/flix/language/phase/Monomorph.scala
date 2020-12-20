@@ -20,9 +20,10 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -614,6 +615,19 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         */
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
         case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
+
+          den match {
+            case Denotation.Relational => // nop
+            case Denotation.Latticenal =>
+              val sigType = Type.mkPureArrow(Type.Unit, terms.last.tpe)
+              val sp1 = SourcePosition.Unknown
+              val sp2 = SourcePosition.Unknown
+              val clazz = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, "LowerBound", sp2))
+              val minValue = Symbol.mkSigSym(clazz, Name.Ident(sp1, "minValue", sp2))
+              val specializedSym = specializeSigSym(minValue, subst0(sigType))
+              println(specializedSym)
+          }
+
           val ts = terms.map(t => visitExp(t, env0))
           Predicate.Head.Atom(pred, den, ts, subst0(tpe), loc)
 
