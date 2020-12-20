@@ -13,6 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+class MeetLattice[a] {
+
+    ///
+    /// Returns the greatest lower bound of `x` and `y`.
+    ///
+    pub def glb(x: a, y: a): a
+
+}
+
+instance MeetLattice[(a1, a2)] with [a1 : MeetLattice, a2 : MeetLattice] {
+    def glb(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
+        case ((x1, x2), (y1, y2)) => (MeetLattice.glb(x1, y1), MeetLattice.glb(x2, y2))
+    }
+}
+
+// TODO: Add rest for N up to 10.
 
 ///
 /// A Meet Lattice is pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfy two properties:
