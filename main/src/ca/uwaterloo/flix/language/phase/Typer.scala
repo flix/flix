@@ -2164,9 +2164,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
-      val additionalTypeConstraints = den match {
+      // Adds additional type constraints if the denotation is a lattice.
+      def getAdditionalConstraints(tpe: Type): List[Ast.TypeConstraint] = den match {
         case Denotation.Relational => Nil
-        case Denotation.Latticenal => Nil
+        case Denotation.Latticenal => mkLatticeConstraints(tpe, root)
       }
 
       val restRow = Type.freshVar(Kind.Schema)
@@ -2174,7 +2175,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = additionalTypeConstraints // TODO
+        tconstrs = getAdditionalConstraints(termTypes.last)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -2188,6 +2189,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         pureEff <- unifyBoolM(Type.Pure, eff, loc)
         resultType <- unifyTypeM(tvar, typ, loc)
       } yield (tconstrs, resultType)
+  }
+
+  /**
+    * Constraints the given type `tpe` with the lattice type classes.
+    */
+  def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+    val classes = List(
+      PredefinedClasses.lookupClassSym("LowerBound", root)
+      // TODO: Add the remaining lattices.
+    )
+    classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
   }
 
   /**
