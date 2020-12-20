@@ -42,10 +42,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   object PredefinedClasses {
 
     /**
-      * Returns the `ToString` class symbol.
+      * Returns the class symbol with the given `name`.
       */
-    def lookupToStringClassSym(root: ResolvedAst.Root): Symbol.ClassSym = {
-      val key = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
+    def lookupClassSym(name: String, root: ResolvedAst.Root): Symbol.ClassSym = {
+      val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
       root.classes.get(key) match {
         case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
         case Some(clazz) => clazz.sym
@@ -579,28 +579,28 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not  =>
+        case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.Int16, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not  =>
+        case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.Int32, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not  =>
+        case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.Int64, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not  =>
+        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.BigInt, loc)
@@ -717,7 +717,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // TODO: A whole lot of cases more. Implement in the same order as in SemanticOperator.
 
         case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div
-        | SemanticOperator.Float32Op.Rem | SemanticOperator.Float32Op.Exp =>
+             | SemanticOperator.Float32Op.Rem | SemanticOperator.Float32Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -2164,17 +2164,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
-      //
-      //  t_1 : tpe_1, ..., t_n: tpe_n
-      //  ------------------------------------------------------------
-      //  P(t_1, ..., t_n): #{ P = P(tpe_1, ..., tpe_n) | fresh }
-      //
+      val additionalTypeConstraints = den match {
+        case Denotation.Relational => Nil
+        case Denotation.Latticenal => Nil
+      }
+
       val restRow = Type.freshVar(Kind.Schema)
       for {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = termTypes.map(Ast.TypeConstraint(PredefinedClasses.lookupToStringClassSym(root), _))
+        tconstrs = additionalTypeConstraints // TODO
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
