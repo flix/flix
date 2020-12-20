@@ -179,15 +179,17 @@ object ParsedAst {
     /**
       * Typeclass Declaration.
       *
-      * @param doc    the optional comment associated with the declaration.
-      * @param mod    the associated modifiers.
-      * @param sp1    the position of the first character in the declaration.
-      * @param ident  the name of the definition.
-      * @param tparam the type parameter.
-      * @param sigs   the signatures of the class.
-      * @param sp2    the position of the last character in the declaration.
+      * @param doc          the optional comment associated with the declaration.
+      * @param mod          the associated modifiers.
+      * @param sp1          the position of the first character in the declaration.
+      * @param ident        the name of the definition.
+      * @param tparam       the type parameter.
+      * @param superClasses the super classes of the class.
+      * @param sigs         the signatures of the class.
+      * @param laws         the laws of the class.
+      * @param sp2          the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[SuperClass], sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[SuperClass], sigs: Seq[ParsedAst.Declaration.Sig], laws: Seq[ParsedAst.Declaration.Law], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
