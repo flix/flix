@@ -13,6 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+class PartialOrder[a] {
+
+    // TODO: Need to decide on name and on signature.
+    // TODO: Check how Rust does it...
+
+    ///
+    /// Returns `true` if `x` is smaller equal to `y`.
+    ///
+    def partialCompare(x: a, y: a): a
+
+}
+
+// TODO: Add instances for tuples.
 
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
