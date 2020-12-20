@@ -44,10 +44,25 @@
     case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
     case _ => SULattice.Bottom
   }
+
+  // TODO: Replace of this with one instance of Lattice or similiar?
+
   let SULattice<> = (SULattice.Bottom, SULattice.Top, equ, leq, lub, glb)
 
   instance LowerBound[SULattice] {
     def minValue(): SULattice = SULattice.Bottom
+  }
+
+  instance PartialOrder[SULattice] {
+    def partialCompare(x: SULattice, y: SULattice): Bool = leq(x, y)
+  }
+
+  instance JoinLattice[SULattice] {
+    def lub(x: SULattice, y: SULattice): SULattice = lub(x, y)
+  }
+
+  instance MeetLattice[SULattice] {
+    def glb(x: SULattice, y: SULattice): SULattice = glb(x, y)
   }
 
   lat SU(location: String, object: String, target: SULattice)

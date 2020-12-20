@@ -2266,8 +2266,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
-      PredefinedClasses.lookupClassSym("LowerBound", root)
-      // TODO: Add the remaining lattices.
+      PredefinedClasses.lookupClassSym("PartialOrder", root),
+      PredefinedClasses.lookupClassSym("LowerBound", root),
+      PredefinedClasses.lookupClassSym("JoinLattice", root),
+      PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
     classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
   }

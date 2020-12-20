@@ -41,10 +41,24 @@ namespace IDE {
         case _ => Value.Bot
     }
 
+    // TODO: Replace of this with one instance of Lattice or similiar?
+
     let Value<> = (Value.Bot, Value.Top, equ, leq, lub, glb)
 
     instance LowerBound[Value] {
         def minValue(): Value = Value.Bot
+    }
+
+    instance PartialOrder[Value] {
+        def partialCompare(x: Value, y: Value): Bool = leq(x, y)
+    }
+
+    instance JoinLattice[Value] {
+        def lub(x: Value, y: Value): Value = lub(x, y)
+    }
+
+    instance MeetLattice[Value] {
+        def glb(x: Value, y: Value): Value = glb(x, y)
     }
 
     enum Transformer {
@@ -91,10 +105,24 @@ namespace IDE {
 
     def transglb(_: Transformer, _: Transformer): Transformer = ???: Transformer
 
+    // TODO: Replace of this with one instance of Lattice or similiar?
+
     let Transformer<> = (Transformer.BotTrans, ???: Transformer, transequ, transleq, translub, transglb)
 
     instance LowerBound[Transformer] {
         def minValue(): Transformer = Transformer.BotTrans
+    }
+
+    instance PartialOrder[Transformer] {
+        def partialCompare(x: Transformer, y: Transformer): Bool = transleq(x, y)
+    }
+
+    instance JoinLattice[Transformer] {
+        def lub(x: Transformer, y: Transformer): Transformer = translub(x, y)
+    }
+
+    instance MeetLattice[Transformer] {
+        def glb(x: Transformer, y: Transformer): Transformer = transglb(x, y)
     }
 
     // Inputs
