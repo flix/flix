@@ -268,6 +268,11 @@ object Ast {
     case object Public extends Modifier
 
     /**
+      * The sealed modifier.
+      */
+    case object Sealed extends Modifier
+
+    /**
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
