@@ -32,6 +32,20 @@ instance ToString[Map[k, v]] with [k : ToString, v : ToString] {
         "Map#{${String.dropRight(2, s)}}"
 }
 
+instance Eq[Map[k, v]] with[k : Eq, v : Eq] {
+
+    def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
+        let Map(t1) = m1;
+        let Map(t2) = m2;
+        t1 == t2
+
+    def neq(m1: Map[k, v], m2: Map[k, v]): Bool =
+        let Map(t1) = m1;
+        let Map(t2) = m2;
+        t1 != t2
+
+}
+
 namespace Map {
 
     ///
@@ -72,7 +86,7 @@ namespace Map {
     /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(m: Map[k, v]): Bool =
+    pub def isEmpty[k : Eq, v : Eq](m: Map[k, v]): Bool =
         let Map(xs) = m;
         xs == RedBlackTree.empty()
 
@@ -204,13 +218,13 @@ namespace Map {
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
     ///
     @Time(size(m1)) @Space(size(m1) * Int32.log2(size(m2)))
-    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool = forall((k, v) -> get(k, m2) == Some(v), m1)
+    pub def isSubmapOf[k : Eq, v : Eq](m1: Map[k, v], m2: Map[k, v]): Bool = forall((k, v) -> get(k, m2) == Some(v), m1)
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.
     ///
     @Time(size(m1) + size(m2)) @Space(size(m1) * Int32.log2(size(m2)))
-    pub def isProperSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool =
+    pub def isProperSubmapOf[k : Eq, v : Eq](m1: Map[k, v], m2: Map[k, v]): Bool =
         size(m1) != size(m2) and isSubmapOf(m1, m2)
 
     ///
@@ -607,11 +621,6 @@ namespace Map {
     ///
     pub def __cmp(m1: Map[k, v], m2: Map[k, v]): Int32 =
         __cmpHelper(toList(m1), toList(m2))
-
-    ///
-    /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
-    ///
-    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = __cmp(m1, m2) == 0
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //

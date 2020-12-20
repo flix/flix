@@ -33,6 +33,22 @@ instance ToString[Option[a]] with [a : ToString] {
     }
 }
 
+instance Eq[Option[a]] with[a : Eq] {
+
+    def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
+        case (None, None) => true
+        case (Some(v1), Some(v2)) => v1 == v2
+        case _ => false
+    }
+
+    def neq(xs: Option[a], ys: Option[a]): Bool = match (xs, ys)  {
+        case (None, None) => false
+        case (Some(v1), Some(v2)) => v1 != v2
+        case _ => true
+    }
+
+}
+
 namespace Option {
 
     ///
@@ -466,15 +482,6 @@ namespace Option {
     @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] & f =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
-
-    ///
-    /// Returns `true` if and only if `o1` and `o2` and equal.
-    ///
-    def __eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
-        case (None, None)           => true
-        case (Some(v1), Some(v2))   => v1 == v2
-        case _ => false
-    }
 
     ///
     /// Returns the result of a three-way comparison between `o1` and `o2`.

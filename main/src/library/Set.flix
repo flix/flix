@@ -32,6 +32,20 @@ instance ToString[Set[a]] with [a : ToString] {
         "Set#{${String.dropRight(2, s)}}"
 }
 
+instance Eq[Set[a]] with[a : Eq] {
+
+    def eq(xs: Set[a], ys: Set[a]): Bool =
+        let Map(t1) = xs;
+        let Map(t2) = ys;
+        t1 == t2
+
+    def neq(xs: Set[a], ys: Set[a]): Bool =
+        let Map(t1) = xs;
+        let Map(t2) = ys;
+        t1 != t2
+
+}
+
 namespace Set {
 
     ///
@@ -443,8 +457,4 @@ namespace Set {
     def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
         if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
 
-    ///
-    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
-    ///
-    pub def __eq(xs: Set[a], ys: Set[a]): Bool = __cmp(xs, ys) == 0
 }

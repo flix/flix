@@ -14,7 +14,18 @@
  * limitations under the License.
  */
 
+use RedBlackTree.RedBlackTree;
 use Core/Cmp.Ordering;
+
+instance Eq[RedBlackTree[k, v]] with[k : Eq, v : Eq] {
+
+    def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
+        RedBlackTree.forall((k1, v1) -> RedBlackTree.get(k1, t2) == Some(v1), t1)
+
+    def neq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
+        RedBlackTree.exists((k1, v1) -> RedBlackTree.get(k1, t2) != Some(v1), t1)
+
+}
 
 namespace RedBlackTree {
 

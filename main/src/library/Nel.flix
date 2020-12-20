@@ -28,6 +28,18 @@ instance ToString[Nel[a]] with [a : ToString] {
     }
 }
 
+instance Eq[Nel[a]] with[a : Eq] {
+
+    def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
+        case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
+    }
+
+    def neq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys)  {
+        case (Nel(x, l1), Nel(y, l2)) => x != y or l1 != l2
+    }
+
+}
+
 namespace Nel {
 
     ///
@@ -361,13 +373,6 @@ namespace Nel {
     @Time(time(f)) @Space(space(f))
     pub def foreach(f: a ~> Unit, xs: Nel[a]): Unit & Impure = match xs {
         case Nel(h, l) => f(h); List.foreach(f, l)
-    }
-
-    ///
-    /// Returns `true` if and only if `xs` and `ys` and equal.
-    ///
-    pub def __eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
-        case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
     }
 
 }
