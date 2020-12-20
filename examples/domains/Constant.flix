@@ -265,7 +265,25 @@ namespace Domain/Constant {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
+
+    // TODO: Replace of this with one instance of Lattice or similiar?
     let Constant<> = (Bot, Top, equ, leq, lub, glb)
+
+    instance LowerBound[Constant] {
+        def minValue(): Constant = Constant.Bot
+    }
+
+    instance PartialOrder[Constant] {
+        def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
+    }
+
+    instance JoinLattice[Constant] {
+        def lub(x: Constant, y: Constant): Constant = lub(x, y)
+    }
+
+    instance MeetLattice[Constant] {
+        def glb(x: Constant, y: Constant): Constant = glb(x, y)
+    }
 
     //
     // ## Specialized Laws

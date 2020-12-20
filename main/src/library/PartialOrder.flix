@@ -21,7 +21,7 @@ class PartialOrder[a] {
     ///
     /// Returns `true` if `x` is smaller equal to `y`.
     ///
-    def partialCompare(x: a, y: a): a
+    def partialCompare(x: a, y: a): Bool
 
 }
 

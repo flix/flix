@@ -35,6 +35,26 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
   /**
+    * The following classes are assumed to always exist.
+    *
+    * Anything added here must be mentioned in `CoreLibrary` in the Flix class.
+    */
+  object PredefinedClasses {
+
+    /**
+      * Returns the class symbol with the given `name`.
+      */
+    def lookupClassSym(name: String, root: ResolvedAst.Root): Symbol.ClassSym = {
+      val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
+      root.classes.get(key) match {
+        case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
+        case Some(clazz) => clazz.sym
+      }
+    }
+
+  }
+
+  /**
     * Type checks the given AST root.
     */
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
@@ -559,28 +579,28 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not  =>
+        case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.Int16, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not  =>
+        case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.Int32, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not  =>
+        case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.Int64, loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not  =>
+        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- unifyTypeM(tvar, tpe, Type.BigInt, loc)
@@ -697,7 +717,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // TODO: A whole lot of cases more. Implement in the same order as in SemanticOperator.
 
         case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div
-        | SemanticOperator.Float32Op.Rem | SemanticOperator.Float32Op.Exp =>
+             | SemanticOperator.Float32Op.Rem | SemanticOperator.Float32Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1492,9 +1512,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
-          constraintTypes <- seqM(cs.map(visitConstraint))
+          (constrs, constraintTypes) <- seqM(cs.map(visitConstraint)).map(_.unzip)
           resultTyp <- unifyTypeAllowEmptyM(tvar :: constraintTypes, loc)
-        } yield (List.empty, resultTyp, Type.Pure)
+        } yield (constrs.flatten, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
         //
@@ -1578,7 +1598,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     /**
       * Infers the type of the given constraint `con0` inside the inference monad.
       */
-    def visitConstraint(con0: ResolvedAst.Constraint): InferMonad[Type] = {
+    def visitConstraint(con0: ResolvedAst.Constraint): InferMonad[(List[Ast.TypeConstraint], Type)] = {
       val ResolvedAst.Constraint(cparams, head0, body0, loc) = con0
       //
       //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -1586,11 +1606,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       //  A_0 :- A_1, ..., A_n : tpe
       //
       for {
-        headPredicateType <- inferHeadPredicate(head0, root)
-        bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, root)))
+        (constrs1, headPredicateType) <- inferHeadPredicate(head0, root)
+        (constrs2, bodyPredicateTypes) <- seqM(body0.map(b => inferBodyPredicate(b, root))).map(_.unzip)
         bodyPredicateType <- unifyTypeAllowEmptyM(bodyPredicateTypes, loc)
         resultType <- unifyTypeM(headPredicateType, bodyPredicateType, loc)
-      } yield resultType
+      } yield (constrs1 ++ constrs2.flatten, resultType)
     }
 
     visitExp(exp0)
@@ -2142,19 +2162,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given head predicate.
     */
-  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = head match {
+  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
-      //
-      //  t_1 : tpe_1, ..., t_n: tpe_n
-      //  ------------------------------------------------------------
-      //  P(t_1, ..., t_n): #{ P = P(tpe_1, ..., tpe_n) | fresh }
-      //
+      // Adds additional type constraints if the denotation is a lattice.
       val restRow = Type.freshVar(Kind.Schema)
       for {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(pred, predicateType, restRow)
+        tconstrs = getLatticeConstraints(den, termTypes, root)
+      } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
@@ -2166,7 +2183,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (tconstrs, typ, eff) <- inferExp(exp, root)
         pureEff <- unifyBoolM(Type.Pure, eff, loc)
         resultType <- unifyTypeM(tvar, typ, loc)
-      } yield resultType
+      } yield (tconstrs, resultType)
   }
 
   /**
@@ -2185,18 +2202,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given body predicate.
     */
-  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[Type] = body0 match {
-    //
-    //  t_1 : tpe_1, ..., t_n: tpe_n
-    //  ------------------------------------------------------------
-    //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
-    //
+  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = body0 match {
     case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, terms, tvar, loc) =>
       val restRow = Type.freshVar(Kind.Schema)
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-      } yield Type.mkSchemaExtend(pred, predicateType, restRow)
+        tconstrs = getLatticeConstraints(den, termTypes, root)
+      } yield (tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     //
     //  exp : Bool
@@ -2209,7 +2222,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (constrs, tpe, eff) <- inferExp(exp, root)
         expEff <- unifyBoolM(Type.Pure, eff, loc)
         expTyp <- unifyTypeM(Type.Bool, tpe, loc)
-      } yield mkAnySchemaType()
+      } yield (constrs, mkAnySchemaType())
   }
 
   /**
@@ -2231,6 +2244,31 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], root: ResolvedAst.Root)(implicit flix: Flix): Type = den match {
     case Denotation.Relational => Type.mkRelation(ts)
     case Denotation.Latticenal => Type.mkLattice(ts)
+  }
+
+  /**
+    * Returns the type constraints for the given term types `ts` where the last term has the denotation `den`.
+    */
+  private def getLatticeConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
+    case Denotation.Relational => Nil
+    case Denotation.Latticenal =>
+      if (ts.isEmpty)
+        throw InternalCompilerException(s"Unexpected empty list of term types.")
+      else
+        mkLatticeConstraints(ts.last, root)
+  }
+
+  /**
+    * Constraints the given type `tpe` with the lattice type classes.
+    */
+  private def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+    val classes = List(
+      PredefinedClasses.lookupClassSym("PartialOrder", root),
+      PredefinedClasses.lookupClassSym("LowerBound", root),
+      PredefinedClasses.lookupClassSym("JoinLattice", root),
+      PredefinedClasses.lookupClassSym("MeetLattice", root),
+    )
+    classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
   }
 
   /**

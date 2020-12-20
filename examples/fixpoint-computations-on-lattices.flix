@@ -45,7 +45,24 @@ def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
 
 /// Flix does not yet support type classes, so we use this ugly syntax
 /// to tell Flix that these functions define a lattice on Sign.
+// TODO: Replace of this with one instance of Lattice or similiar?
 let Sign<> = (Bot, Top, equ, leq, lub, glb)
+
+instance LowerBound[Sign] {
+    def minValue(): Sign = Sign.Bot
+}
+
+instance PartialOrder[Sign] {
+    def partialCompare(x: Sign, y: Sign): Bool = leq(x, y)
+}
+
+instance JoinLattice[Sign] {
+    def lub(x: Sign, y: Sign): Sign = lub(x, y)
+}
+
+instance MeetLattice[Sign] {
+    def glb(x: Sign, y: Sign): Sign = glb(x, y)
+}
 
 /// We can now declare three map lattices:
 lat A(x: String, s: Sign)

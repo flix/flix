@@ -51,7 +51,24 @@ def glb(e1: Dist, e2: Dist): Dist = match (e1, e2) {
   case _ => Bot
 }
 
+// TODO: Replace of this with one instance of Lattice or similiar?
 let Dist<> = (Bot, Top, equ, leq, lub, glb)
+
+instance LowerBound[Dist] {
+    def minValue(): Dist = Dist.Bot
+}
+
+instance PartialOrder[Dist] {
+    def partialCompare(x: Dist, y: Dist): Bool = leq(x, y)
+}
+
+instance JoinLattice[Dist] {
+    def lub(x: Dist, y: Dist): Dist = lub(x, y)
+}
+
+instance MeetLattice[Dist] {
+    def glb(x: Dist, y: Dist): Dist = glb(x, y)
+}
 
 // Copy input relation into the ShortestDist lattice
 ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).

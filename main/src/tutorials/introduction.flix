@@ -80,8 +80,25 @@ def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
 // This complete the specification of the lattice. We associate the
 // lattice components with the Constant type in the following way:
 //
+// TODO: Replace of this with one instance of Lattice or similiar?
 let Constant<> = (Bot, Top, equ, leq, lub, glb)
 // NB: In the future, this syntax is subject to change.
+
+instance LowerBound[Constant] {
+    def minValue(): Constant = Constant.Bot
+}
+
+instance PartialOrder[Constant] {
+    def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
+}
+
+instance JoinLattice[Constant] {
+    def lub(x: Constant, y: Constant): Constant = lub(x, y)
+}
+
+instance MeetLattice[Constant] {
+    def glb(x: Constant, y: Constant): Constant = glb(x, y)
+}
 
 //
 // Finally it is handy to have a small function to lift an integer into
