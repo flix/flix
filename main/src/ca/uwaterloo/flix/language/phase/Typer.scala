@@ -2192,17 +2192,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Constraints the given type `tpe` with the lattice type classes.
-    */
-  def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
-    val classes = List(
-      PredefinedClasses.lookupClassSym("LowerBound", root)
-      // TODO: Add the remaining lattices.
-    )
-    classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
-  }
-
-  /**
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, root: ResolvedAst.Root, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
@@ -2265,6 +2254,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], root: ResolvedAst.Root)(implicit flix: Flix): Type = den match {
     case Denotation.Relational => Type.mkRelation(ts)
     case Denotation.Latticenal => Type.mkLattice(ts)
+  }
+
+  /**
+    * Constraints the given type `tpe` with the lattice type classes.
+    */
+  def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+    val classes = List(
+      PredefinedClasses.lookupClassSym("LowerBound", root)
+      // TODO: Add the remaining lattices.
+    )
+    classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
   }
 
   /**
