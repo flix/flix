@@ -2166,17 +2166,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
       // Adds additional type constraints if the denotation is a lattice.
       // TODO: Introdce helper and refactor take den and list of terms.
-      def getAdditionalConstraints(tpe: Type): List[Ast.TypeConstraint] = den match {
-        case Denotation.Relational => Nil
-        case Denotation.Latticenal => mkLatticeConstraints(tpe, root)
-      }
+
 
       val restRow = Type.freshVar(Kind.Schema)
       for {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = termTypes.lastOption.map(getAdditionalConstraints).getOrElse(Nil)
+        tconstrs = getLatticeConstraints(den, termTypes, root)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -2209,17 +2206,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Infers the type of the given body predicate.
     */
   private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = body0 match {
-    //
-    //  t_1 : tpe_1, ..., t_n: tpe_n
-    //  ------------------------------------------------------------
-    //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
-    //
     case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, terms, tvar, loc) =>
       val restRow = Type.freshVar(Kind.Schema)
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = Nil // TODO
+        tconstrs = getLatticeConstraints(den, termTypes, root)
       } yield (tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     //
@@ -2258,9 +2250,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * Returns the type constraints for the given term types `ts` where the last term has the denotation `den`.
+    */
+  private def getLatticeConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
+    case Denotation.Relational => Nil
+    case Denotation.Latticenal =>
+      if (ts.isEmpty)
+        throw InternalCompilerException(s"Unexpected empty list of term types.")
+      else
+        mkLatticeConstraints(ts.last, root)
+  }
+
+  /**
     * Constraints the given type `tpe` with the lattice type classes.
     */
-  def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+  private def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
       PredefinedClasses.lookupClassSym("LowerBound", root)
       // TODO: Add the remaining lattices.
