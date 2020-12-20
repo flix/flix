@@ -1,8 +1,11 @@
+
+
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
 ///
-// TODO: Deprecated, but some old stuff still depends on it.
 namespace PartialOrder {
+
+    // TODO: Move these laws somewhere else.
 
     ///
     /// The monotonicity law asserts that a function `f` is order-preserving w.r.t.
@@ -11,8 +14,8 @@ namespace PartialOrder {
     /// NB: This particular law is for unary functions.
     ///
     law monotone1[a, b](f: a -> b, dom: (a, a) -> Bool, codom: (b, b) -> Bool): Bool =
-        use Bool.→;
-        ∀(x: a, y: a). (x `dom` y) → (f(x) `codom` f(y))
+        let implies = (x, y) -> (not x) or y;
+        ∀(x: a, y: a). (x `dom` y) `implies` (f(x) `codom` f(y))
 
     ///
     /// The monotonicity law asserts that a function `f` is order-preserving w.r.t.
@@ -21,8 +24,8 @@ namespace PartialOrder {
     /// NB: This particular law is for binary functions.
     ///
     law monotone2[a, b, c](f: (a, b) -> c, dom1: (a, a) -> Bool, dom2: (b, b) -> Bool, codom: (c, c) -> Bool): Bool =
-        use Bool.{∧, →};
-        ∀(x1: a, x2: a, y1: b, y2: b). ((x1 `dom1` y1) ∧ (x2 `dom2` y2)) → (f(x1, x2) `codom` f(y1, y2))
+        let implies = (x, y) -> (not x) or y;
+        ∀(x1: a, x2: a, y1: b, y2: b). ((x1 `dom1` y1) and (x2 `dom2` y2)) `implies` (f(x1, x2) `codom` f(y1, y2))
 
     ///
     /// The safety law asserts that the abstract function `fa` is an over-approximation of the concrete
