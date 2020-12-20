@@ -267,6 +267,10 @@ namespace Domain/Constant {
 
     let Constant<> = (Bot, Top, equ, leq, lub, glb)
 
+    instance LowerBound[Constant] {
+        def minValue(): Constant = Constant.Bot
+    }
+
     //
     // ## Specialized Laws
     //

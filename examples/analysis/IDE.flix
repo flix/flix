@@ -43,6 +43,10 @@ namespace IDE {
 
     let Value<> = (Value.Bot, Value.Top, equ, leq, lub, glb)
 
+    instance LowerBound[Value] {
+        def minValue(): Value = Value.Bot
+    }
+
     enum Transformer {
         case BotTrans,
         case NonBotTrans(Int,Int,Value)
@@ -88,6 +92,10 @@ namespace IDE {
     def transglb(_: Transformer, _: Transformer): Transformer = ???: Transformer
 
     let Transformer<> = (Transformer.BotTrans, ???: Transformer, transequ, transleq, translub, transglb)
+
+    instance LowerBound[Transformer] {
+        def minValue(): Transformer = Transformer.BotTrans
+    }
 
     // Inputs
     lat EshIntra(node: String, infact: String, outfact: String, transformer: Transformer)

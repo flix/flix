@@ -46,6 +46,10 @@
   }
   let SULattice<> = (SULattice.Bottom, SULattice.Top, equ, leq, lub, glb)
 
+  instance LowerBound[SULattice] {
+    def minValue(): SULattice = SULattice.Bottom
+  }
+
   lat SU(location: String, object: String, target: SULattice)
 
   rel PtH(object: String, target: String)

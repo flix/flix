@@ -83,6 +83,10 @@ def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
 let Constant<> = (Bot, Top, equ, leq, lub, glb)
 // NB: In the future, this syntax is subject to change.
 
+instance LowerBound[Constant] {
+    def minValue(): Constant = Constant.Bot
+}
+
 //
 // Finally it is handy to have a small function to lift an integer into
 // an element of the constant propagation lattice. Strictly speaking,

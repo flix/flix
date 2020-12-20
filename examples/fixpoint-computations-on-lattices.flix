@@ -47,6 +47,10 @@ def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
 /// to tell Flix that these functions define a lattice on Sign.
 let Sign<> = (Bot, Top, equ, leq, lub, glb)
 
+instance LowerBound[Sign] {
+    def minValue(): Sign = Sign.Bot
+}
+
 /// We can now declare three map lattices:
 lat A(x: String, s: Sign)
 lat B(x: String, s: Sign)

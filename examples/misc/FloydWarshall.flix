@@ -53,6 +53,10 @@ def glb(e1: Dist, e2: Dist): Dist = match (e1, e2) {
 
 let Dist<> = (Bot, Top, equ, leq, lub, glb)
 
+instance LowerBound[Dist] {
+    def minValue(): Dist = Dist.Bot
+}
+
 // Copy input relation into the ShortestDist lattice
 ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).
 
