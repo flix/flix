@@ -240,6 +240,11 @@ object Ast {
     def isPublic: Boolean = mod contains Modifier.Public
 
     /**
+      * Returns `true` if these modifiers contain the sealed modifier.
+      */
+    def isSealed: Boolean = mod contains Modifier.Sealed
+
+    /**
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic

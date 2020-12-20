@@ -148,7 +148,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(i0: NamedAst.Instance, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
     case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
       for {
-        clazz <- lookupClass(clazz0, ns0, root)
+        clazz <- lookupClassForImplementation(clazz0, ns0, root)
         tpe <- lookupType(tpe0, ns0, root)
         tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, ns0, root))
         defs <- traverse(defs0)(resolve(_, ns0, root))
@@ -1049,6 +1049,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     } yield Ast.TypeConstraint(clazz.sym, tpe)
   }
 
+  // MATT docs
+  def lookupClassForImplementation(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
+    val classOpt = tryLookupClass(qname, ns0, root)
+    classOpt match {
+      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
+      case Some(clazz) =>
+        getClassAccessibility(clazz, ns0) match {
+          case Accessibility.Accessible => clazz.toSuccess
+          case Accessibility.Sealed => ??? // MATT sealed class
+          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+        }
+    }
+  }
   /**
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
@@ -1057,10 +1070,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     classOpt match {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
-        if (isClassAccessible(clazz, ns0)) {
-          clazz.toSuccess
-        } else {
-          ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+        getClassAccessibility(clazz, ns0) match {
+          case Accessibility.Accessible | Accessibility.Sealed => clazz.toSuccess
+          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
     }
   }
@@ -1458,30 +1470,36 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Determines if the class is accessible from the namespace.
     *
-    * A class `class0` is accessible from a namespace `ns0` if:
+    * Accessibility depends on the modifiers on the class
+    * and the accessing namespace's relation to the class namespace:
     *
-    * (a) the class is marked public, or
-    * (b) the class is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    * |            | same | child | other |
+    * |------------|------|-------|-------|
+    * | (none)     | A    | A     | I     |
+    * | sealed     | A    | S     | I     |
+    * | pub        | A    | A     | A     |
+    * | pub sealed | A    | S     | S     |
+    *
+    * (A: Accessible, S: Sealed, I: Inaccessible)
     */
-  def isClassAccessible(class0: NamedAst.Class, ns0: Name.NName): Boolean = {
-    //
-    // Check if the class is marked public.
-    //
-    if (class0.mod.isPublic)
-      return true
+  private def getClassAccessibility(class0: NamedAst.Class, ns0: Name.NName): Accessibility = {
 
-    //
-    // Check if the class is defined in `ns0` or in a parent of `ns0`.
-    //
-    val prefixNs = class0.sym.namespace
-    val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return true
+    val classNs = class0.sym.namespace
+    val accessingNs = ns0.idents.map(_.name)
 
-    //
-    // The class is not accessible.
-    //
-    false
+    if (classNs == accessingNs) {
+      // Case 1: We're in the same namespace: Accessible
+      Accessibility.Accessible
+    } else if (!class0.mod.isPublic && !accessingNs.startsWith(classNs)) {
+      // Case 2: The class is private and we're in unrelated namespaces: Inaccessible
+      Accessibility.Inaccessible
+    } else if (class0.mod.isSealed) {
+      // Case 3: The class is accessible but sealed
+      Accessibility.Sealed
+    } else {
+      // Case 4: The class is otherwise accessible
+      Accessibility.Accessible
+    }
   }
 
   /**
@@ -1861,9 +1879,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     mkPredicate(Ast.Denotation.Latticenal, ts0, loc)
   }
 
-  sealed trait NameLookupResult
-  object NameLookupResult {
-    case class Sig(sig: NamedAst.Sig) extends NameLookupResult
-    case class Def(defn: NamedAst.Def) extends NameLookupResult
+  /**
+    * Enum describing the extent to which a class is accessible.
+    */
+  private sealed trait Accessibility
+  private object Accessibility {
+    case object Accessible extends Accessibility
+    case object Sealed extends Accessibility
+    case object Inaccessible extends Accessibility
   }
 }
