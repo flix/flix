@@ -2165,6 +2165,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, root: ResolvedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
       // Adds additional type constraints if the denotation is a lattice.
+      // TODO: Introdce helper and refactor take den and list of terms.
       def getAdditionalConstraints(tpe: Type): List[Ast.TypeConstraint] = den match {
         case Denotation.Relational => Nil
         case Denotation.Latticenal => mkLatticeConstraints(tpe, root)
