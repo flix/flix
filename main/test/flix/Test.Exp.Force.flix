@@ -155,10 +155,10 @@ namespace Test/Exp/Force {
             case _ => false
         }
 
-    @test
-    def testOptionForce01(): Bool =
-        let x = lazy None;
-        None == force x
+///    @test
+///    def testOptionForce01(): Bool =
+///        let x = lazy None;
+///        None == force x
 
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades
@@ -178,4 +178,16 @@ namespace Test/Exp/Force {
         case That(b)
         case Both(a, b)
     }
+
+    instance Eq[Poly[a, b]] with [a : Eq, b : Eq] {
+        pub def eq(p1: Poly[a, b], p2: Poly[a, b]): Bool = match (p1, p2) {
+            case (None, None) => true
+            case (This(x1), This(y1)) => x1 == y1
+            case (That(x1), That(y1)) => x1 == y1
+            case (Both(x1, x2), Both(y1, y2)) => x1 == y1 and x2 == y2
+            case _ => false
+        }
+        pub def neq(p1: Poly[a, b], p2: Poly[a, b]): Bool = ???
+    }
+
 }

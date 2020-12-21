@@ -38,11 +38,7 @@ instance Eq[List[a]] with[a : Eq] {
         case _ => false
     }
 
-    def neq(xs: List[a], ys: List[a]): Bool = match (xs, ys)  {
-        case (Nil, Nil) => false
-        case (x :: rs, y :: qs) => if (x == y) false else rs != qs
-        case _ => true
-    }
+    def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
 
 }
 

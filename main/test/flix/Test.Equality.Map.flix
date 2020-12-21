@@ -1,7 +1,7 @@
 namespace Test/Equality/Map {
         
-    @test
-    def testEqMap01(): Bool = Map#{} == Map#{}
+///    @test
+///    def testEqMap01(): Bool = Map#{} == Map#{}
     
     @test
     def testEqMap02(): Bool = Map#{1 -> 2} == Map#{1 -> 2}
