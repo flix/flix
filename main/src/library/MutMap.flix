@@ -27,12 +27,26 @@ instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
         "MutMap#{${String.dropRight(2, s)}}"
 }
 
+instance Eq[MutMap[k, v]] with[k : Eq, v : Eq] {
+
+    def eq(m1: MutMap[k, v], m2: MutMap[k, v]): Bool =
+        let MutMap(rm1) = m1;
+        let MutMap(rm2) = m2;
+        ((deref rm1) == (deref rm2)) as & Pure
+
+    def neq(m1: MutMap[k, v], m2: MutMap[k, v]): Bool =
+        let MutMap(rm1) = m1;
+        let MutMap(rm2) = m2;
+        ((deref rm1) != (deref rm2)) as & Pure
+
+}
+
 namespace MutMap {
 
     ///
     /// Returns `true` if and only if `m` is the empty map.
     ///
-    pub def isEmpty(m: MutMap[k, v]): Bool & Impure =
+    pub def isEmpty[k : Eq, v : Eq](m: MutMap[k, v]): Bool & Impure =
         let MutMap(mm) = m;
         Map.isEmpty(deref mm)
 
@@ -51,7 +65,7 @@ namespace MutMap {
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
     ///
-    pub def memberOf(k: k, m: MutMap[k, v]): Bool & Impure =
+    pub def memberOf[k : Eq, v : Eq](k: k, m: MutMap[k, v]): Bool & Impure =
         let MutMap(mm) = m;
         Map.memberOf(k, deref mm)
 
@@ -202,7 +216,7 @@ namespace MutMap {
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2`.
     ///
-    pub def isSubmapOf(m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
+    pub def isSubmapOf[k : Eq, v : Eq](m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         Map.isSubmapOf(deref mm1, deref mm2)
@@ -210,7 +224,7 @@ namespace MutMap {
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2` and `m1 != m2`.
     ///
-    pub def isProperSubmapOf(m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
+    pub def isProperSubmapOf[k : Eq, v : Eq](m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         Map.isProperSubmapOf(deref mm1, deref mm2)
@@ -420,11 +434,5 @@ namespace MutMap {
     pub def query(p: k -> Ordering, m: MutMap[k, v]): List[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.query(p, deref mm)
-
-    ///
-    /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
-    ///
-    pub def __eq(m1: MutMap[k, v], m2: MutMap[k, v]): Bool =
-        (isSubmapOf(m1, m2) and isSubmapOf(m2, m1)) as & Pure
 
 }

@@ -82,7 +82,7 @@ namespace Option {
     /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
     ///
     @Time(1) @Space(1)
-    pub def replace(x: a, y: a, o: Option[a]): Option[a] = match o {
+    pub def replace[a : Eq](x: a, y: a, o: Option[a]): Option[a] = match o {
         case None => o
         case Some(v) => Some(if (v == x) y else v)
     }

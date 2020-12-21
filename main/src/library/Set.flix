@@ -35,13 +35,13 @@ instance ToString[Set[a]] with [a : ToString] {
 instance Eq[Set[a]] with[a : Eq] {
 
     def eq(xs: Set[a], ys: Set[a]): Bool =
-        let Map(t1) = xs;
-        let Map(t2) = ys;
+        let Set(t1) = xs;
+        let Set(t2) = ys;
         t1 == t2
 
     def neq(xs: Set[a], ys: Set[a]): Bool =
-        let Map(t1) = xs;
-        let Map(t2) = ys;
+        let Set(t1) = xs;
+        let Set(t2) = ys;
         t1 != t2
 
 }
@@ -110,7 +110,7 @@ namespace Set {
     /// Returns true if and only if `xs` is the empty set.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(xs: Set[a]): Bool =
+    pub def isEmpty[a : Eq](xs: Set[a]): Bool =
         let Set(es) = xs;
         es == RedBlackTree.empty()
 
@@ -118,7 +118,7 @@ namespace Set {
     /// Returns true if and only if `x` is a member of `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(1)
-    pub def memberOf(x: a, xs: Set[a]): Bool =
+    pub def memberOf[a : Eq](x: a, xs: Set[a]): Bool =
         let Set(es) = xs;
         RedBlackTree.memberOf(x, es)
 
@@ -126,13 +126,13 @@ namespace Set {
     /// Returns true if and only if every element in `xs` appears in `ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isSubsetOf(xs: Set[a], ys: Set[a]): Bool = forall(x -> memberOf(x, ys), xs)
+    pub def isSubsetOf[a : Eq](xs: Set[a], ys: Set[a]): Bool = forall(x -> memberOf(x, ys), xs)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool = size(xs) != size(ys) and isSubsetOf(xs, ys)
+    pub def isProperSubsetOf[a : Eq](xs: Set[a], ys: Set[a]): Bool = size(xs) != size(ys) and isSubsetOf(xs, ys)
 
     ///
     /// Alias for `findLeft`.
@@ -274,14 +274,14 @@ namespace Set {
     /// Returns the intersection of `xs` and `ys`.
     ///
     @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
-    pub def intersection(xs: Set[a], ys: Set[a]): Set[a] =
+    pub def intersection[a : Eq](xs: Set[a], ys: Set[a]): Set[a] =
         foldLeft((acc, x) -> if (memberOf(x, xs)) insert(x, acc) else acc, empty(), ys)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
     ///
     @Time(size(xs) * Int32.log2(size(ys))) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def difference(xs: Set[a], ys: Set[a]): Set[a] =
+    pub def difference[a : Eq](xs: Set[a], ys: Set[a]): Set[a] =
         foldLeft((acc, x) -> if (not memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
 
     ///
@@ -327,7 +327,7 @@ namespace Set {
     /// Note: The returned set may be smaller than `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def replace(x: a, y: a, xs: Set[a]): Set[a] =
+    pub def replace[a : Eq](x: a, y: a, xs: Set[a]): Set[a] =
         if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
 
     ///

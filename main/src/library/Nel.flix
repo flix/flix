@@ -112,7 +112,7 @@ namespace Nel {
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def memberOf(a: a, xs: Nel[a]): Bool = match xs {
+    pub def memberOf[a : Eq](a: a, xs: Nel[a]): Bool = match xs {
         case Nel(h, l) => h == a or List.memberOf(a, l)
     }
 
@@ -194,7 +194,7 @@ namespace Nel {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace(x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace[a : Eq](x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.

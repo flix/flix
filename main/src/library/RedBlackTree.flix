@@ -21,9 +21,13 @@ instance Eq[RedBlackTree[k, v]] with[k : Eq, v : Eq] {
 
     def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
         RedBlackTree.forall((k1, v1) -> RedBlackTree.get(k1, t2) == Some(v1), t1)
+        and
+        RedBlackTree.forall((k2, v2) -> RedBlackTree.get(k2, t1) == Some(v2), t2)
 
     def neq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
         RedBlackTree.exists((k1, v1) -> RedBlackTree.get(k1, t2) != Some(v1), t1)
+        or
+        RedBlackTree.exists((k2, v2) -> RedBlackTree.get(k2, t1) != Some(v2), t2)
 
 }
 
@@ -151,7 +155,7 @@ namespace RedBlackTree {
     /// Returns `true` if and only if `tree` contains the key `k`.
     ///
     @Time(Int32.log2(size(tree))) @Space(1)
-    pub def memberOf(k: k, tree: RedBlackTree[k, v]): Bool = get(k, tree) != None
+    pub def memberOf[k : Eq, v : Eq](k: k, tree: RedBlackTree[k, v]): Bool = get(k, tree) != None
 
     ///
     /// Optionally returns the first key-value pair in `tree` that satisfies the predicate `f` when searching from left to right.

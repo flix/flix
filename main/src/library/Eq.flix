@@ -42,48 +42,90 @@ instance Eq[Bool] {
 }
 
 instance Eq[Char] {
-    def eq(x: Char, y: Char): Bool = $CHAR_EQ$(x, y)
-    def neq(x: Char, y: Char): Bool = $CHAR_NEQ$(x, y)
+    pub def eq(x: Char, y: Char): Bool = $CHAR_EQ$(x, y)
+    pub def neq(x: Char, y: Char): Bool = $CHAR_NEQ$(x, y)
 }
 
 instance Eq[Float32] {
-    def eq(x: Float32, y: Float32): Bool = $FLOAT32_EQ$(x, y)
-    def neq(x: Float32, y: Float32): Bool = $FLOAT32_NEQ$(x, y)
+    pub def eq(x: Float32, y: Float32): Bool = $FLOAT32_EQ$(x, y)
+    pub def neq(x: Float32, y: Float32): Bool = $FLOAT32_NEQ$(x, y)
 }
 
 instance Eq[Float64] {
-    def eq(x: Float64, y: Float64): Bool = $FLOAT64_EQ$(x, y)
-    def neq(x: Float64, y: Float64): Bool = $FLOAT64_NEQ$(x, y)
+    pub def eq(x: Float64, y: Float64): Bool = $FLOAT64_EQ$(x, y)
+    pub def neq(x: Float64, y: Float64): Bool = $FLOAT64_NEQ$(x, y)
 }
 
 instance Eq[Int8] {
-    def eq(x: Int8, y: Int8): Bool = $INT8_EQ$(x, y)
-    def neq(x: Int8, y: Int8): Bool = $INT8_NEQ$(x, y)
+    pub def eq(x: Int8, y: Int8): Bool = $INT8_EQ$(x, y)
+    pub def neq(x: Int8, y: Int8): Bool = $INT8_NEQ$(x, y)
 }
 
 instance Eq[Int16] {
-    def eq(x: Int16, y: Int16): Bool = $INT16_EQ$(x, y)
-    def neq(x: Int16, y: Int16): Bool = $INT16_NEQ$(x, y)
+    pub def eq(x: Int16, y: Int16): Bool = $INT16_EQ$(x, y)
+    pub def neq(x: Int16, y: Int16): Bool = $INT16_NEQ$(x, y)
 }
 
 instance Eq[Int32] {
-    def eq(x: Int32, y: Int32): Bool = $INT16_EQ$(x, y)
-    def neq(x: Int32, y: Int32): Bool = $INT16_NEQ$(x, y)
+    pub def eq(x: Int32, y: Int32): Bool = $INT16_EQ$(x, y)
+    pub def neq(x: Int32, y: Int32): Bool = $INT16_NEQ$(x, y)
 }
 
 instance Eq[Int64] {
-    def eq(x: Int64, y: Int64): Bool = $INT64_EQ$(x, y)
-    def neq(x: Int64, y: Int64): Bool = $INT64_NEQ$(x, y)
+    pub def eq(x: Int64, y: Int64): Bool = $INT64_EQ$(x, y)
+    pub def neq(x: Int64, y: Int64): Bool = $INT64_NEQ$(x, y)
 }
 
 instance Eq[BigInt] {
-    def eq(x: BigInt, y: BigInt): Bool = $BIGINT_EQ$(x, y)
-    def neq(x: BigInt, y: BigInt): Bool = $BIGINT_NEQ$(x, y)
+    pub def eq(x: BigInt, y: BigInt): Bool = $BIGINT_EQ$(x, y)
+    pub def neq(x: BigInt, y: BigInt): Bool = $BIGINT_NEQ$(x, y)
 }
 
 instance Eq[String] {
-    def eq(x: String, y: String): Bool = $STRING_EQ$(x, y)
-    def neq(x: String, y: String): Bool = $STRING_NEQ$(x, y)
+    pub def eq(x: String, y: String): Bool = $STRING_EQ$(x, y)
+    pub def neq(x: String, y: String): Bool = $STRING_NEQ$(x, y)
+}
+
+instance Eq[(a1, a2)] with [a1 : Eq, a2 : Eq] {
+
+    def eq(t1: (a1, a2), t2: (a1, a2)): Bool =
+        let (x1, x2) = t1;
+        let (y1, y2) = t2;
+            x1 == y1 and x2 == y2
+
+    def neq(t1: (a1, a2), t2: (a1, a2)): Bool =
+        let (x1, x2) = t1;
+        let (y1, y2) = t2;
+            x1 != y1 or x2 != y2
+
+}
+
+instance Eq[(a1, a2, a3)] with [a1 : Eq, a2 : Eq, a3 : Eq] {
+
+    pub def eq(t1: (a1, a2, a3), t2: (a1, a2, a3)): Bool =
+        let (x1, x2, x3) = t1;
+        let (y1, y2, y3) = t2;
+            x1 == y1 and x2 == y2 and x3 == y3
+
+    pub def neq(t1: (a1, a2, a3), t2: (a1, a2, a3)): Bool =
+        let (x1, x2, x3) = t1;
+        let (y1, y2, y3) = t2;
+            x1 != y1 or x2 != y2 or x3 != y3
+
+}
+
+instance Eq[(a1, a2, a3, a4)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq] {
+
+    pub def eq(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Bool =
+        let (x1, x2, x3, x4) = t1;
+        let (y1, y2, y3, y4) = t2;
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4
+
+    pub def neq(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Bool =
+        let (x1, x2, x3, x4) = t1;
+        let (y1, y2, y3, y4) = t2;
+            x1 != y1 or x2 != y2 or x3 != y3 or x4 != y4
+
 }
 
 /// TODO: Add instances for tuples

@@ -91,7 +91,7 @@ namespace Result {
     /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
     ///
     @Time(1) @Space(1)
-    pub def replace(x: t, y: t, r: Result[t, e]): Result[t, e] = match r {
+    pub def replace[t : Eq, e](x: t, y: t, r: Result[t, e]): Result[t, e] = match r {
         case Ok(v) => Ok(if (v == x) y else v)
         case Err(_) => r
     }
