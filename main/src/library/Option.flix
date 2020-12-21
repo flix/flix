@@ -545,39 +545,39 @@ namespace Option {
     // Lints: Use Cases                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @lint
-    def useExists(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            getWithDefault(map(f, o), false) === exists(f, o)
-
-    @lint
-    def useForall(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            getWithDefault(map(f, o), true) === forall(f, o)
-
-    @lint
-    def useFilter(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
-
-    @lint
-    def useReplace(): Bool =
-        forall [a] (x: a, y: a, o: Option[a]).
-            Option.map(z -> if (z == x) y else z, o) === Option.replace(x, y, o)
-
-    @lint
-    def useSequence(): Bool =
-        forall [a] (xs: List[Option[a]]).
-            traverse(x -> x, xs) === sequence(xs)
-
-    @lint
-    def useTraverse(): Bool =
-        forall [a, b, e] (f : a -> Option[b] & e, xs: List[a]).
-            sequence(List.map(f, xs)) === traverse(f, xs)
-
-    @lint
-    def useZip(): Bool =
-        forall [a, b] (o1: Option[a], o2: Option[b]).
-            flatMap(x -> map(y -> (x, y), o2), o1) === zip(o1, o2)
+///    @lint
+///    def useExists(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            getWithDefault(map(f, o), false) === exists(f, o)
+///
+///    @lint
+///    def useForall(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            getWithDefault(map(f, o), true) === forall(f, o)
+///
+///    @lint
+///    def useFilter(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
+///
+///    @lint
+///    def useReplace(): Bool =
+///        forall [a] (x: a, y: a, o: Option[a]).
+///            Option.map(z -> if (z == x) y else z, o) === Option.replace(x, y, o)
+///
+///    @lint
+///    def useSequence(): Bool =
+///        forall [a] (xs: List[Option[a]]).
+///            traverse(x -> x, xs) === sequence(xs)
+///
+///    @lint
+///    def useTraverse(): Bool =
+///        forall [a, b, e] (f : a -> Option[b] & e, xs: List[a]).
+///            sequence(List.map(f, xs)) === traverse(f, xs)
+///
+///    @lint
+///    def useZip(): Bool =
+///        forall [a, b] (o1: Option[a], o2: Option[b]).
+///            flatMap(x -> map(y -> (x, y), o2), o1) === zip(o1, o2)
 
 }
