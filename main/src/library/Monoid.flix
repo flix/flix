@@ -33,6 +33,17 @@ pub class Monoid[a] {
     pub def combine(x: a, y: a): a
 }
 
+namespace Monoid {
+
+    ///
+    /// Returns the result of applying `combine` to all the elements of list `xs`,
+    /// using `empty` as the initial value.
+    ///
+    pub def combineAll[a: Monoid](xs: List[a]): a =
+        List.foldLeft((ac, x) -> combine(ac, x), Monoid.empty(), xs)
+
+}
+
 instance Monoid[Unit] {
     def empty(): Unit = ()
     def combine(_: Unit, _: Unit): Unit = ()
@@ -136,4 +147,12 @@ instance Monoid[List[a]] {
 instance Monoid[Set[a]] {
     def empty(): Set[a] = Set.empty()
     def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x, y)
+}
+
+instance Monoid[Map[k, v]] with [v: Monoid] {
+    def empty(): Map[k, v] = Map.empty()
+    def combine(x: Map[k, v], y: Map[k, v]): Map[k, v] =
+        let ins = (ac, k, v) -> Map.insertWith(Monoid.combine, k, v, ac);
+        Map.foldWithKey(ins, y, x)
+
 }
