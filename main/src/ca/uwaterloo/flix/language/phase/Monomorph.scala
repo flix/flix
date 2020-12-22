@@ -134,7 +134,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * A function-local set of all lattice operations.
       */
-    val latticeOps: mutable.ListBuffer[LatticeOps] = mutable.ListBuffer.empty
+    val latticeOps: mutable.Map[Type, LatticeOps] = mutable.Map.empty
 
     /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
@@ -624,8 +624,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           den match {
             case Denotation.Relational => // nop
             case Denotation.Latticenal =>
-              val ops = mkLatticeOps(subst0(terms.last.tpe))
-              latticeOps.addOne(ops)
+              val tpe = subst0(terms.last.tpe)
+              latticeOps.get(tpe) match {
+                case None =>
+                  val ops = mkLatticeOps(tpe)
+                  latticeOps += tpe -> ops
+                case Some(_) => // nop
+              }
           }
 
           val ts = terms.map(t => visitExp(t, env0))
@@ -671,13 +676,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
       }
 
-      // TODO: DOC
+      /**
+        * Returns the lattice operations for the given `tpe` assembled from the type class instances.
+        */
       def mkLatticeOps(tpe: Type): LatticeOps = {
+        // The types of the lattice ops components.
         val botTpe = Type.mkPureArrow(Type.Unit, tpe)
         val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
         val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
         val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
 
+        // The symbols of the lattice ops components.
         val botSym = getSigSym("LowerBound", "minValue", botTpe)
         val leqSym = getSigSym("PartialOrder", "partialCompare", leqTpe)
         val lubSym = getSigSym("JoinLattice", "lub", lubTpe)
