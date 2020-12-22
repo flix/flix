@@ -36,7 +36,7 @@ namespace IDE {
     }
 
     instance JoinLattice[Value] {
-        def lub(e1: Value, e2: Value): Value = match (e1, e2) {
+        def leastUpperBound(e1: Value, e2: Value): Value = match (e1, e2) {
             case (Value.Bot, x) => x
             case (x, Value.Bot) => x
             case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Top
