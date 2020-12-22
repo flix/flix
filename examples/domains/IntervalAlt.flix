@@ -198,8 +198,6 @@ namespace Domain/IntervalAlt {
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
     pub def lessEqual(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = Belnap.or(x `less` y, x `eq` y)
 
-    let IntervalAlt<> = (Bot, Top, equ, leq, lub, glb)
-
     // ------------------------------------------------------------------------
     // Specialized Laws
     // ------------------------------------------------------------------------

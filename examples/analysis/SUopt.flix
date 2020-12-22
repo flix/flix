@@ -24,49 +24,39 @@
     case Bottom // kill everything
   }
 
-  def equ(e1: SULattice, e2: SULattice): Bool = e1 == e2
-
-  def leq(e1: SULattice, e2: SULattice): Bool = match (e1, e2) {
-    case (SULattice.Bottom, _) => true
-    case (_, SULattice.Top) => true
-    case (SULattice.Single(s1), SULattice.Single(s2)) => s1 == s2
-    case _ => false
-  }
-  def lub(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) {
-    case (SULattice.Bottom, _) => e2
-    case (_, SULattice.Bottom) => e1
-    case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top
-    case _ => SULattice.Top
-  }
-  def glb(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) {
-    case (SULattice.Top, _) => e2
-    case (_, SULattice.Top) => e1
-    case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
-    case _ => SULattice.Bottom
-  }
-
-  // TODO: Replace of this with one instance of Lattice or similiar?
-
-  let SULattice<> = (SULattice.Bottom, SULattice.Top, equ, leq, lub, glb)
-
   instance LowerBound[SULattice] {
     def minValue(): SULattice = SULattice.Bottom
   }
 
   instance PreOrder[SULattice] {
-    def equ(x: SULattice, y: SULattice): Bool = equ(x, y)
+    def equ(x: SULattice, y: SULattice): Bool = x == y
   }
 
   instance PartialOrder[SULattice] {
-    def partialCompare(x: SULattice, y: SULattice): Bool = leq(x, y)
+    def partialCompare(x: SULattice, y: SULattice): Bool = match (x, y) {
+        case (SULattice.Bottom, _) => true
+        case (_, SULattice.Top) => true
+        case (SULattice.Single(s1), SULattice.Single(s2)) => s1 == s2
+        case _ => false
+    }
   }
 
   instance JoinLattice[SULattice] {
-    def lub(x: SULattice, y: SULattice): SULattice = lub(x, y)
+    def lub(x: SULattice, y: SULattice): SULattice = match (x, y) {
+        case (SULattice.Bottom, _) => e2
+        case (_, SULattice.Bottom) => e1
+        case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top
+        case _ => SULattice.Top
+    }
   }
 
   instance MeetLattice[SULattice] {
-    def glb(x: SULattice, y: SULattice): SULattice = glb(x, y)
+    def glb(x: SULattice, y: SULattice): SULattice = match (x, y) {
+        case (SULattice.Top, _) => e2
+        case (_, SULattice.Top) => e1
+        case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
+        case _ => SULattice.Bottom
+    }
   }
 
   lat SU(location: String, object: String, target: SULattice)

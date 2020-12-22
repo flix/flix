@@ -222,8 +222,6 @@ namespace Domain/StrictSign {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let Sign<> = (Bot, Top, equ, leq, lub, glb)
-
     //
     // ## Specialized Laws
     //
