@@ -212,7 +212,7 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Class Error.
+    * Sealed Class Error.
     *
     * @param sym the class symbol.
     * @param ns  the namespace from which the class is sealed.
