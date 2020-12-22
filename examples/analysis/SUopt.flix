@@ -43,8 +43,8 @@
 
   instance JoinLattice[SULattice] {
     def lub(x: SULattice, y: SULattice): SULattice = match (x, y) {
-        case (SULattice.Bottom, _) => e2
-        case (_, SULattice.Bottom) => e1
+        case (SULattice.Bottom, _) => y
+        case (_, SULattice.Bottom) => x
         case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top
         case _ => SULattice.Top
     }
@@ -52,8 +52,8 @@
 
   instance MeetLattice[SULattice] {
     def glb(x: SULattice, y: SULattice): SULattice = match (x, y) {
-        case (SULattice.Top, _) => e2
-        case (_, SULattice.Top) => e1
+        case (SULattice.Top, _) => y
+        case (_, SULattice.Top) => x
         case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
         case _ => SULattice.Bottom
     }
