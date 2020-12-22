@@ -17,13 +17,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.math.BigInteger
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -673,7 +672,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       // TODO: DOC
-      def mkLatticeOps(tpe: Type): TypedAst.LatticeOps = {
+      def mkLatticeOps(tpe: Type): LatticeOps = {
         val botTpe = Type.mkPureArrow(Type.Unit, tpe)
         val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
         val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
@@ -681,21 +680,22 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         val botSym = getSigSym("LowerBound", "minValue", botTpe)
         val leqSym = getSigSym("PartialOrder", "partialCompare", leqTpe)
-        //val lubSym = getSigSym("JoinLattice", "lub", leqTpe)
-       // val glbSym = getSigSym("MeetLattice", "glb", leqTpe)
+        val lubSym = getSigSym("JoinLattice", "lub", lubTpe)
+        val glbSym = getSigSym("MeetLattice", "glb", glbTpe)
 
         println(botSym)
         println(leqSym)
-        //println(lubSym)
-        //println(glbSym)
-        val leq = ???
-        val bot = ???
-        val top = ???
-        val equ = ???
-        val lub = ???
-        val glb = ???
-        val loc = ???
-        TypedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
+        println(lubSym)
+        println(glbSym)
+
+        // TODO: It would be better if this stored symbols.
+        val bot = Expression.Def(botSym, botTpe, SourceLocation.Generated)
+        val top = bot // TODO: This is wrong, but we should remove top completely.
+        val equ = Expression.Def(???, ???, SourceLocation.Generated)
+        val leq = Expression.Def(leqSym, leqTpe, SourceLocation.Generated)
+        val lub = Expression.Def(lubSym, lubTpe, SourceLocation.Generated)
+        val glb = Expression.Def(glbSym, glbTpe, SourceLocation.Generated)
+        LatticeOps(tpe, bot, top, equ, leq, lub, glb, SourceLocation.Generated)
       }
 
       def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
@@ -734,15 +734,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val instances = root.instances(sig.sym.clazz)
 
       val defns = instances.flatMap {
-        inst => inst.defs.find {
-          defn =>
-            defn.sym.name == sig.sym.name && (
-              Unification.unifyTypes(defn.declaredScheme.base, tpe) match {
-                case Result.Ok(_) => true
-                case Result.Err(_) => false
-              }
-            )
-        }
+        inst =>
+          inst.defs.find {
+            defn =>
+              defn.sym.name == sig.sym.name && (
+                Unification.unifyTypes(defn.declaredScheme.base, tpe) match {
+                  case Result.Ok(_) => true
+                  case Result.Err(_) => false
+                }
+                )
+          }
       }
 
       if (defns.size != 1) {
