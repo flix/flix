@@ -133,6 +133,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
+      * A function-local set of all lattice operations.
+      */
+    val latticeOps: mutable.ListBuffer[LatticeOps] = mutable.ListBuffer.empty
+
+    /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
       *
       * Replaces every reference to a parametric function with a reference to its specialized version.
@@ -620,13 +625,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           den match {
             case Denotation.Relational => // nop
             case Denotation.Latticenal =>
-              val sigType = Type.mkPureArrow(Type.Unit, terms.last.tpe)
-              val sp1 = SourcePosition.Unknown
-              val sp2 = SourcePosition.Unknown
-              val clazz = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, "LowerBound", sp2))
-              val minValue = Symbol.mkSigSym(clazz, Name.Ident(sp1, "minValue", sp2))
-              val specializedSym = specializeSigSym(minValue, subst0(sigType))
-              println(specializedSym)
+              val ops = mkLatticeOps(subst0(terms.last.tpe))
+              latticeOps.addOne(ops)
           }
 
           val ts = terms.map(t => visitExp(t, env0))
@@ -670,6 +670,34 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             val e = visitExp(exp, env0)
             Predicate.Body.Guard(e, loc)
         }
+      }
+
+      // TODO: DOC
+      def mkLatticeOps(tpe: Type): TypedAst.LatticeOps = {
+        val botSig = Type.mkPureArrow(Type.Unit, tpe)
+        val leqSig = Type.mkPureCurriedArrow(List(tpe, tpe), Type.Bool)
+
+        val botSym = getSigSym("LowerBound", "minValue", botSig)
+        val leqSym = getSigSym("PartialOrder", "partialCompare", leqSig)
+
+        println(botSym)
+        println(leqSym)
+        val leq = ???
+        val bot = ???
+        val top = ???
+        val equ = ???
+        val lub = ???
+        val glb = ???
+        val loc = ???
+        TypedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
+      }
+
+      def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
+        val sp1 = SourcePosition.Unknown
+        val sp2 = SourcePosition.Unknown
+        val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, className, sp2))
+        val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, sigName, sp2))
+        specializeSigSym(sigSym, tpe)
       }
 
       visitExp(exp0, env0)
