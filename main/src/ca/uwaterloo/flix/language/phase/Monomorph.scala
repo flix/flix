@@ -694,13 +694,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         val lub = getSigSym("JoinLattice", "lub", lubTpe)
         val glb = getSigSym("MeetLattice", "glb", glbTpe)
 
-        // TODO: Remove debugging information.
-        println(bot)
-        println(equ)
-        println(leq)
-        println(lub)
-        println(glb)
-
         LatticeOps(tpe, bot, /* TODO remove */ bot, equ, leq, lub, glb, SourceLocation.Generated)
       }
 
