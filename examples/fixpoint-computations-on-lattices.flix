@@ -52,6 +52,10 @@ instance LowerBound[Sign] {
     def minValue(): Sign = Sign.Bot
 }
 
+instance PreOrder[Sign] {
+    def equ(x: Sign, y: Sign): Bool = equ(x, y)
+}
+
 instance PartialOrder[Sign] {
     def partialCompare(x: Sign, y: Sign): Bool = leq(x, y)
 }

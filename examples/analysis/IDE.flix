@@ -49,6 +49,10 @@ namespace IDE {
         def minValue(): Value = Value.Bot
     }
 
+    instance PreOrder[Value] {
+        def equ(x: Value, y: Value): Bool = equ(x, y)
+    }
+
     instance PartialOrder[Value] {
         def partialCompare(x: Value, y: Value): Bool = leq(x, y)
     }
@@ -111,6 +115,10 @@ namespace IDE {
 
     instance LowerBound[Transformer] {
         def minValue(): Transformer = Transformer.BotTrans
+    }
+
+    instance PreOrder[Transformer] {
+        def equ(x: Transformer, y: Transformer): Bool = transequ(x, y)
     }
 
     instance PartialOrder[Transformer] {

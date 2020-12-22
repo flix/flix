@@ -53,6 +53,10 @@
     def minValue(): SULattice = SULattice.Bottom
   }
 
+  instance PreOrder[SULattice] {
+    def equ(x: SULattice, y: SULattice): Bool = equ(x, y)
+  }
+
   instance PartialOrder[SULattice] {
     def partialCompare(x: SULattice, y: SULattice): Bool = leq(x, y)
   }

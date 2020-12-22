@@ -58,6 +58,10 @@ instance LowerBound[Dist] {
     def minValue(): Dist = Dist.Bot
 }
 
+instance PreOrder[Dist] {
+    def equ(x: Dist, y: Dist): Bool = equ(x, y)
+}
+
 instance PartialOrder[Dist] {
     def partialCompare(x: Dist, y: Dist): Bool = leq(x, y)
 }
