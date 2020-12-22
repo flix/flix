@@ -688,26 +688,19 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
 
         // The symbols of the lattice ops components.
-        val botSym = getSigSym("LowerBound", "minValue", botTpe)
-        val equSym = getSigSym("PreOrder", "equ", leqTpe)
-        val leqSym = getSigSym("PartialOrder", "partialCompare", leqTpe)
-        val lubSym = getSigSym("JoinLattice", "lub", lubTpe)
-        val glbSym = getSigSym("MeetLattice", "glb", glbTpe)
+        val bot = getSigSym("LowerBound", "minValue", botTpe)
+        val equ = getSigSym("PreOrder", "equ", leqTpe)
+        val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
+        val lub = getSigSym("JoinLattice", "lub", lubTpe)
+        val glb = getSigSym("MeetLattice", "glb", glbTpe)
 
-        println(botSym)
-        println(equSym)
-        println(leqSym)
-        println(lubSym)
-        println(glbSym)
+        println(bot)
+        println(equ)
+        println(leq)
+        println(lub)
+        println(glb)
 
-        // TODO: It would be better if this stored symbols.
-        val bot = Expression.Def(botSym, botTpe, SourceLocation.Generated)
-        val top = bot // TODO: This is wrong, but we should remove top completely.
-        val equ = Expression.Def(equSym, equTyp, SourceLocation.Generated)
-        val leq = Expression.Def(leqSym, leqTpe, SourceLocation.Generated)
-        val lub = Expression.Def(lubSym, lubTpe, SourceLocation.Generated)
-        val glb = Expression.Def(glbSym, glbTpe, SourceLocation.Generated)
-        LatticeOps(tpe, bot, top, equ, leq, lub, glb, SourceLocation.Generated)
+        LatticeOps(tpe, bot, /* TODO remove */ bot, equ, leq, lub, glb, SourceLocation.Generated)
       }
 
       def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {

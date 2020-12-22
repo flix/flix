@@ -375,7 +375,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val op = sop match {
           case SemanticOperator.Float32Op.Add | SemanticOperator.Float64Op.Add | SemanticOperator.Int8Op.Add
                | SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Add | SemanticOperator.Int32Op.Add
-            | SemanticOperator.Int64Op.Add | SemanticOperator.BigIntOp.Add => BinaryOperator.Plus
+               | SemanticOperator.Int64Op.Add | SemanticOperator.BigIntOp.Add => BinaryOperator.Plus
 
           case SemanticOperator.Float32Op.Sub | SemanticOperator.Float64Op.Sub | SemanticOperator.Int8Op.Sub
                | SemanticOperator.Int16Op.Sub | SemanticOperator.Int16Op.Sub | SemanticOperator.Int32Op.Sub
@@ -398,7 +398,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                | SemanticOperator.Int64Op.Exp | SemanticOperator.BigIntOp.Exp => BinaryOperator.Exponentiate
 
           case SemanticOperator.Int8Op.And | SemanticOperator.Int16Op.And | SemanticOperator.Int32Op.And
-            | SemanticOperator.Int64Op.And | SemanticOperator.BigIntOp.And => BinaryOperator.BitwiseAnd
+               | SemanticOperator.Int64Op.And | SemanticOperator.BigIntOp.And => BinaryOperator.BitwiseAnd
 
           case SemanticOperator.Int8Op.Or | SemanticOperator.Int16Op.Or | SemanticOperator.Int32Op.Or
                | SemanticOperator.Int64Op.Or | SemanticOperator.BigIntOp.Or => BinaryOperator.BitwiseOr
@@ -721,45 +721,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Translates the given `lattice0` to the SimplifiedAst.
       */
-    def visitLatticeOps(lattice0: TypedAst.LatticeOps): SimplifiedAst.LatticeOps = {
-      // A hack to extract a definition symbol from a curried expression.
-      @tailrec
-      def getSymbolHack(exp0: SimplifiedAst.Expression): Symbol.DefnSym = exp0 match {
-        case SimplifiedAst.Expression.Def(sym, _, _) => sym
-        case SimplifiedAst.Expression.Apply(exp, _, _, _) => getSymbolHack(exp)
-        case SimplifiedAst.Expression.Lambda(_, exp, _, _) => getSymbolHack(exp)
-        case _ => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
-      }
-
-      lattice0 match {
-        case TypedAst.LatticeOps(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
-
-          /**
-            * Introduces a unit function for the given expression `exp0`.
-            */
-          def mkUnitDef(name: String, exp0: TypedAst.Expression): Symbol.DefnSym = {
-            val freshSym = Symbol.freshDefnSym(name)
-            val ann = Ast.Annotations.Empty
-            val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-            val varX = Symbol.freshVarSym()
-            val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
-            val exp = visitExp(exp0)
-            val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkPureArrow(Type.Unit, exp.tpe), loc)
-
-            toplevel += (freshSym -> freshDef)
-            freshSym
-          }
-
-          val bot = mkUnitDef("bot", bot0)
-          val top = mkUnitDef("top", top0)
-
-          // TODO: Use of unsafe hack.
-          val equ = getSymbolHack(visitExp(equ0))
-          val leq = getSymbolHack(visitExp(leq0))
-          val lub = getSymbolHack(visitExp(lub0))
-          val glb = getSymbolHack(visitExp(glb0))
-          SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
-      }
+    def visitLatticeOps(lattice0: TypedAst.LatticeOps): SimplifiedAst.LatticeOps = lattice0 match {
+      case TypedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
+        SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
     }
 
     /**

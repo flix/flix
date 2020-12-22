@@ -43,13 +43,13 @@ enum Constant {
 //
 // We define equality of two lattice elements by structural equality.
 //
-def equ(e1: Constant, e2: Constant): Bool = e1 == e2
+pub def equ(e1: Constant, e2: Constant): Bool = e1 == e2
 
 //
 // The next task is to define the partial order on Constant.
 // This is straightforward with pattern matching on the arguments:
 //
-def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+pub def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
     case (Bot, _)           => true
     case (Cst(n1), Cst(n2)) => n1 == n2
     case (_, Top)           => true
@@ -59,7 +59,7 @@ def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
 //
 // Then it's on to the least upper bound:
 //
-def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
+pub def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
     case (Bot, x)           => x
     case (x, Bot)           => x
     case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
@@ -69,7 +69,7 @@ def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
 //
 // ... and the greatest lower bound:
 //
-def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
+pub def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
     case (Top, x)           => x
     case (x, Top)           => x
     case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot

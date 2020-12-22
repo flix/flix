@@ -20,7 +20,6 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
-import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.immutable.List
 
@@ -50,7 +49,7 @@ object TypedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation)
 
-  case class LatticeOps(tpe: Type, bot: TypedAst.Expression, top: TypedAst.Expression, equ: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation)
+  case class LatticeOps(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: Type
