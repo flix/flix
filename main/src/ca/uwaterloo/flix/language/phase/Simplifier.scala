@@ -722,8 +722,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `lattice0` to the SimplifiedAst.
       */
     def visitLatticeOps(lattice0: TypedAst.LatticeOps): SimplifiedAst.LatticeOps = lattice0 match {
-      case TypedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
-        SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
+      case TypedAst.LatticeOps(tpe, bot, equ, leq, lub, glb, loc) =>
+        SimplifiedAst.LatticeOps(tpe, bot, equ, leq, lub, glb, loc)
     }
 
     /**

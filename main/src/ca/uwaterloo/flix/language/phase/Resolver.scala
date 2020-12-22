@@ -76,14 +76,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    val latticeComponentsVal = root.latticesOps.map {
-      case (tpe0, lattice0) =>
-        for {
-          tpe <- lookupType(tpe0, lattice0.ns, root)
-          lattice <- resolve(lattice0, lattice0.ns, root)
-        } yield (tpe, lattice)
-    }
-
     val propertiesVal = traverse(root.properties) {
       case (ns0, properties) => Properties.resolve(properties, ns0, root)
     }
@@ -93,10 +85,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       instances <- sequence(instancesVal)
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
-      latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Root(
-      classes.toMap, combine(instances), definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
+      classes.toMap, combine(instances), definitions.toMap, enums.toMap, properties.flatten, root.reachable, root.sources
     )
   }
 
@@ -216,22 +207,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
         }
     }
-  }
-
-  /**
-    * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
-    */
-  def resolve(l0: NamedAst.LatticeOps, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.LatticeOps, ResolutionError] = {
-    val tenv0 = Map.empty[Symbol.VarSym, Type]
-    for {
-      tpe <- lookupType(l0.tpe, ns0, root)
-      bot <- Expressions.resolve(l0.bot, tenv0, ns0, root)
-      top <- Expressions.resolve(l0.top, tenv0, ns0, root)
-      equ <- Expressions.resolve(l0.equ, tenv0, ns0, root)
-      leq <- Expressions.resolve(l0.leq, tenv0, ns0, root)
-      lub <- Expressions.resolve(l0.lub, tenv0, ns0, root)
-      glb <- Expressions.resolve(l0.glb, tenv0, ns0, root)
-    } yield ResolvedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
   }
 
   /**

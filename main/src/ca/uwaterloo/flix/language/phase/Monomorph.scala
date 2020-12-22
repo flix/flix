@@ -694,9 +694,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         val lub = getSigSym("JoinLattice", "lub", lubTpe)
         val glb = getSigSym("MeetLattice", "glb", glbTpe)
 
-        LatticeOps(tpe, bot, /* TODO remove */ bot, equ, leq, lub, glb, SourceLocation.Generated)
+        LatticeOps(tpe, bot, equ, leq, lub, glb, SourceLocation.Generated) // TODO: DOC
       }
 
+      // TODO: DOC and LOC
       def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
         val sp1 = SourcePosition.Unknown
         val sp2 = SourcePosition.Unknown
