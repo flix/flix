@@ -66,14 +66,14 @@ namespace IDE {
       case Value.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
     }
     case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-      Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.lub(sum(prod(c2, a1), b1), c1))
+      Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(prod(c2, a1), b1), c1))
   }
 
     // from paper: f = \l. a*l+b meet c; f(Top) = Top
     // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
     def apply(t: Transformer, l: Value): Value = match t {
         case Transformer.BotTrans => Value.Bot
-        case Transformer.NonBotTrans(a, b, c) => if(l==Value.Bot) Value.Bot else JoinLattice.lub(sum(prod(l,a),b),c)
+        case Transformer.NonBotTrans(a, b, c) => if(l==Value.Bot) Value.Bot else JoinLattice.leastUpperBound(sum(prod(l,a),b),c)
     }
 
     instance LowerBound[Transformer] {
@@ -85,20 +85,20 @@ namespace IDE {
     }
 
     instance PartialOrder[Transformer] {
-        def partialCompare(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.lub(e1, e2)
+        def partialCompare(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
     }
 
     instance JoinLattice[Transformer] {
-        def lub(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
+        def leastUpperBound(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
             case (Transformer.BotTrans, _) => t2
             case (_, Transformer.BotTrans) => t1
             case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
                 if (a1 == a2 and b1 == b2)
-                    Transformer.NonBotTrans(a1, b1, JoinLattice.lub(c1, c2))
+                    Transformer.NonBotTrans(a1, b1, JoinLattice.leastUpperBound(c1, c2))
                 else if(c1 == c2)
                     if(0==(b1-b2)%(a2-a1))
                     //                // is divisible
-                    Transformer.NonBotTrans(a1, b2, JoinLattice.lub(Value.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.lub(c1, c2)))
+                    Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(Value.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
                     //                // is not divisible
                     else Transformer.NonBotTrans(1, 0, Value.Top)
                 else ???: Transformer

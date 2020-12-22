@@ -297,9 +297,9 @@ namespace Domain/Parity {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
     law lowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.lowerBound(leq, glb)
 

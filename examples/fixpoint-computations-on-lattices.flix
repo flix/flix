@@ -31,9 +31,9 @@ instance PartialOrder[Sign] {
 
 /// The least upper bound relation on the lattice elements.
 instance JoinLattice[Sign] {
-    def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
-        case (Bot, x)   => x
-        case (x, Bot)   => x
+    def leastUpperBound(x: Sign, y: Sign): Sign = match (x, y) {
+        case (Bot, _)   => y
+        case (_, Bot)   => x
         case (Neg, Neg) => Neg
         case (Zer, Zer) => Zer
         case (Pos, Pos) => Pos

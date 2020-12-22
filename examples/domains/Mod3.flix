@@ -209,9 +209,9 @@ namespace Domain/Mod3 {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
     law lowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.lowerBound(leq, glb)
 

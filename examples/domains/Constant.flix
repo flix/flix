@@ -278,7 +278,7 @@ namespace Domain/Constant {
     }
 
     instance JoinLattice[Constant] {
-        def lub(x: Constant, y: Constant): Constant = lub(x, y)
+        def leastUpperBound(x: Constant, y: Constant): Constant = lub(x, y)
     }
 
     instance MeetLattice[Constant] {
@@ -289,9 +289,9 @@ namespace Domain/Constant {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
     law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.lowerBound(leq, glb)
 

@@ -68,10 +68,10 @@ instance PartialOrder[Constant] {
 // Then it's on to the least upper bound:
 //
 instance JoinLattice[Constant] {
-    def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, x)           => x
-        case (x, Bot)           => x
-        case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
+    def leastUpperBound(x: Constant, y: Constant): Constant = match (x, y) {
+        case (Bot, _)           => y
+        case (_, Bot)           => x
+        case (Cst(n1), Cst(n2)) => if (n1 == n2) x else Top
         case _                  => Top
     }
 }

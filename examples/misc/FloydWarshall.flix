@@ -32,11 +32,11 @@ instance PartialOrder[Dist] {
 }
 
 instance JoinLattice[Dist] {
-    def lub(x: Dist, y: Dist): Dist = match (x, y) {
-        case (Bot, x) => x
-        case (x, Bot) => x
+    def leastUpperBound(x: Dist, y: Dist): Dist = match (x, y) {
+        case (Bot, _)           => y
+        case (_, Bot)           => x
         case (Dst(n1), Dst(n2)) => Dst(Int32.min(n1, n2))
-        case _ => Top
+        case _                  => Top
     }
 }
 
