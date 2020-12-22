@@ -17,7 +17,7 @@ namespace Domain/StrictSign {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: Sign, e2: Sign): Bool = e1 == e2
+    pub def equ(e1: Sign, e2: Sign): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
@@ -36,7 +36,7 @@ namespace Domain/StrictSign {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
+    pub def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Bot, x)   => x
         case (x, Bot)   => x
         case (Neg, Neg) => Neg
@@ -49,7 +49,7 @@ namespace Domain/StrictSign {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
+    pub def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Top, x)   => x
         case (x, Top)   => x
         case (Neg, Neg) => Neg

@@ -17,13 +17,13 @@ namespace Domain/Parity {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: Parity, e2: Parity): Bool = e1 == e2
+    pub def equ(e1: Parity, e2: Parity): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
+    pub def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
         case (Bot, _)       => true
         case (Odd, Odd)     => true
         case (Even, Even)   => true
@@ -35,7 +35,7 @@ namespace Domain/Parity {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #commutative #associative #upperBound #leastUpperBound
-    def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) {
+    pub def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (Bot, x)       => x
         case (x, Bot)       => x
         case (Odd, Odd)     => Odd
@@ -47,7 +47,7 @@ namespace Domain/Parity {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #commutative #associative #lowerBound #greatestLowerBound
-    def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) {
+    pub def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (Top, x)       => x
         case (x, Top)       => x
         case (Odd, Odd)     => Odd
