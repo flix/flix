@@ -674,14 +674,20 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // TODO: DOC
       def mkLatticeOps(tpe: Type): TypedAst.LatticeOps = {
-        val botSig = Type.mkPureArrow(Type.Unit, tpe)
-        val leqSig = Type.mkPureCurriedArrow(List(tpe, tpe), Type.Bool)
+        val botTpe = Type.mkPureArrow(Type.Unit, tpe)
+        val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+        val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+        val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
 
-        val botSym = getSigSym("LowerBound", "minValue", botSig)
-        val leqSym = getSigSym("PartialOrder", "partialCompare", leqSig)
+        val botSym = getSigSym("LowerBound", "minValue", botTpe)
+        val leqSym = getSigSym("PartialOrder", "partialCompare", leqTpe)
+        //val lubSym = getSigSym("JoinLattice", "lub", leqTpe)
+       // val glbSym = getSigSym("MeetLattice", "glb", leqTpe)
 
         println(botSym)
         println(leqSym)
+        //println(lubSym)
+        //println(glbSym)
         val leq = ???
         val bot = ???
         val top = ???
