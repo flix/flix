@@ -19,13 +19,13 @@ namespace Domain/ConstantParity {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: ConstantParity, e2: ConstantParity): Bool = e1 == e2
+    pub def equ(e1: ConstantParity, e2: ConstantParity): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
+    pub def leq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
         case (Cst(n), Odd)      => isOdd(n)
@@ -40,7 +40,7 @@ namespace Domain/ConstantParity {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
+    pub def lub(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
         case (Bot, x)           => x
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => {
@@ -62,7 +62,7 @@ namespace Domain/ConstantParity {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
+    pub def glb(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2)  Cst(n1) else Bot
@@ -235,8 +235,6 @@ namespace Domain/ConstantParity {
     /// Returns `true` iff the given number `n` is even.
     ///
     pub def isEven(n: BigInt): Bool = not isOdd(n)
-
-    let ConstantParity<> = (Bot, Top, equ, leq, lub, glb)
 
     //
     // ## Specialized Laws

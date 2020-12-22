@@ -293,8 +293,6 @@ namespace Domain/Parity {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Parity, e2: Parity): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let Parity<> = (Bot, Top, equ, leq, lub, glb)
-
     //
     // ## Specialized Laws
     //

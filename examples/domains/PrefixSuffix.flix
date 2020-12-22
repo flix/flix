@@ -19,13 +19,13 @@ namespace Domain/PrefixSuffix {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: PrefixSuffix, e2: PrefixSuffix): Bool = e1 == e2
+    pub def equ(e1: PrefixSuffix, e2: PrefixSuffix): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = match (e1, e2) {
+    pub def leq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = match (e1, e2) {
         case (Bot, _)                           => true
         case (PreSuf(p1, s1), PreSuf(p2, s2))   => p1 == p2 and s1 == s2
         case (PreSuf(p1, _), Pre(p2))           => p1 == p2
@@ -40,7 +40,7 @@ namespace Domain/PrefixSuffix {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
+    pub def lub(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
         case (Bot, x)                           => x
         case (x, Bot)                           => x
         case (PreSuf(p1, s1), PreSuf(p2, s2))   => {
@@ -62,7 +62,7 @@ namespace Domain/PrefixSuffix {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
+    pub def glb(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
         case (Top, x)                           => x
         case (x, Top)                           => x
         case (PreSuf(p1, s1), PreSuf(p2, s2))   => if (p1 == p2 and s1 == s2) PreSuf(p1, s1) else Bot
@@ -142,8 +142,6 @@ namespace Domain/PrefixSuffix {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
     pub def neq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = Belnap.not(eq(e1, e2))
-
-    let PrefixSuffix<> = (Bot, Top, equ, leq, lub, glb)
 
     //
     // ## Specialized Laws

@@ -160,8 +160,6 @@ namespace Belnap {
         case _              => Top
     }
 
-    let Belnap<> = (Bot, Top, equ, leq, lub, glb)
-
     //
     // ## Specialized Laws
     //

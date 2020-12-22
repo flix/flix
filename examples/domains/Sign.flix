@@ -23,13 +23,13 @@ namespace Domain/Sign {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: Sign, e2: Sign): Bool = e1 == e2
+    pub def equ(e1: Sign, e2: Sign): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
+    pub def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
         case (Bot, _)   => true
         case (Zer, Zer) => true
         case (Zer, Neg) => true
@@ -44,7 +44,7 @@ namespace Domain/Sign {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
+    pub def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Bot, x)   => x
         case (x, Bot)   => x
         case (Zer, Zer) => Zer
@@ -61,7 +61,7 @@ namespace Domain/Sign {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
+    pub def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Top, x)   => x
         case (x, Top)   => x
         case (Zer, Zer) => Zer
@@ -229,8 +229,6 @@ namespace Domain/Sign {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
-
-    let Sign<> = (Bot, Top, equ, leq, lub, glb)
 
     //
     // ## Specialized Laws

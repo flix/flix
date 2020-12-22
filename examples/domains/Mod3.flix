@@ -19,7 +19,7 @@ namespace Domain/Mod3 {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: Mod3, e2: Mod3): Bool = e1 == e2
+    pub def equ(e1: Mod3, e2: Mod3): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
@@ -204,8 +204,6 @@ namespace Domain/Mod3 {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Mod3, e2: Mod3): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
-
-    let Mod3<> = (Bot, Top, equ, leq, lub, glb)
 
     //
     // ## Specialized Laws

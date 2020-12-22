@@ -123,6 +123,4 @@ namespace Domain/ParitySign {
         case _                                  => Top
     }
 
-    let ParitySign<> = (Bot, Top, equ, leq, lub, glb)
-
 }

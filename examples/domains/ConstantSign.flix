@@ -230,9 +230,6 @@ namespace Domain/ConstantSign {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let ConstantSign<> = (Bot, Top, equ, leq, lub, glb)
-
-
     //
     // ## Specialized Laws
     //
