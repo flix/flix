@@ -88,6 +88,10 @@ instance LowerBound[Constant] {
     def minValue(): Constant = Constant.Bot
 }
 
+instance PreOrder[Constant] {
+    def equ(x: Constant, y: Constant): Bool = equ(x, y)
+}
+
 instance PartialOrder[Constant] {
     def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
 }
