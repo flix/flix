@@ -59,3 +59,39 @@ instance LowerBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : LowerBound,
 instance LowerBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound, a4 : LowerBound, a5 : LowerBound, a6 : LowerBound, a7 : LowerBound, a8 : LowerBound, a9 : LowerBound, a10 : LowerBound] {
     def minValue(): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
+
+instance LowerBound[Unit] {
+    def minValue(): Unit = ()
+}
+
+instance LowerBound[Bool] {
+    def minValue(): Bool = false
+}
+
+instance LowerBound[Int8] {
+    def minValue(): Int8 = Int8.minValue()
+}
+
+instance LowerBound[Int16] {
+    def minValue(): Int16 = Int16.minValue()
+}
+
+instance LowerBound[Int32] {
+    def minValue(): Int32 = Int32.minValue()
+}
+
+instance LowerBound[Int64] {
+    def minValue(): Int64 = Int64.minValue()
+}
+
+instance LowerBound[Float32] {
+    def minValue(): Float32 = Float32.minValue()
+}
+
+instance LowerBound[Float64] {
+    def minValue(): Float64 = Float64.minValue()
+}
+
+instance LowerBound[Char] {
+    def minValue(): Char = '\u0000'
+}
