@@ -43,7 +43,7 @@ instance JoinLattice[Sign] {
 
 /// The greatest lower bound relation on the lattice elements.
 instance MeetLattice[Sign] {
-    def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
+    def greatestLowerBound(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Top, x)   => x
         case (x, Top)   => x
         case (Neg, Neg) => Neg

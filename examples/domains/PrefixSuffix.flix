@@ -151,9 +151,9 @@ namespace Domain/PrefixSuffix {
 
     law leastUpperBound(lub: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (PrefixSuffix, PrefixSuffix) -> Bool, bot: PrefixSuffix): Bool = Bounded.leastElement(bot, leq)
 

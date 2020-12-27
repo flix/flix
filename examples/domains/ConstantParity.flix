@@ -244,9 +244,9 @@ namespace Domain/ConstantParity {
 
     law leastUpperBound(lub: (ConstantParity, ConstantParity) -> ConstantParity): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (ConstantParity, ConstantParity) -> Bool, bot: ConstantParity): Bool = Bounded.leastElement(bot, leq)
 

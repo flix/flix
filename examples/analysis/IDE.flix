@@ -45,7 +45,7 @@ namespace IDE {
     }
 
     instance MeetLattice[Value] {
-        def glb(e1: Value, e2: Value): Value = match (e1, e2) {
+        def greatestLowerBound(e1: Value, e2: Value): Value = match (e1, e2) {
             case (Value.Top, x) => x
             case (x, Value.Top) => x
             case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Bot
@@ -106,7 +106,7 @@ namespace IDE {
     }
 
     instance MeetLattice[Transformer] {
-        def glb(x: Transformer, y: Transformer): Transformer = ???
+        def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
     }
 
     // Inputs
