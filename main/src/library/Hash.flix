@@ -157,6 +157,3 @@ instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Hash, a2 : H
             + 31 * Hash.hash(x9) + 37 * Hash.hash(x10)
     }
 }
-
-/// TODO: Decide whether mutable types should have hash instances
-/// TODO: Add tests for std. library types
