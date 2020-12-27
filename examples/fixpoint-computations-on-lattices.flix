@@ -53,6 +53,16 @@ instance MeetLattice[Sign] {
     }
 }
 
+instance ToString[Sign] {
+    def toString(x: Sign): String = match x {
+        case Top => "Top"
+        case Neg => "Neg"
+        case Zer => "Zer"
+        case Pos => "Pos"
+        case Bot => "Bot"
+    }
+}
+
 /// We can now declare three map lattices:
 lat A(x: String, s: Sign)
 lat B(x: String, s: Sign)
