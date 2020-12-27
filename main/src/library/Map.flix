@@ -34,7 +34,7 @@ instance ToString[Map[k, v]] with [k : ToString, v : ToString] {
 
 instance Hash[Map[k, v]] with [k : Hash, v : Hash] {
     def hash(m: Map[k, v]): Int =
-        Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + Hash.hash(v), 7937, m)
+        Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
 
 namespace Map {
