@@ -33,6 +33,13 @@ instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
     }
 }
 
+instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
+    def hash(r: Result[t, e]): Int = match r {
+        case Ok(v)  => 113 * Hash.hash(v)
+        case Err(v) => 97 * Hash.hash(v)
+    }
+}
+
 namespace Result {
 
     ///
