@@ -213,9 +213,9 @@ namespace Domain/Mod3 {
 
     law leastUpperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Mod3, Mod3) -> Bool, bot: Mod3): Bool = Bounded.leastElement(bot, leq)
 

@@ -80,7 +80,7 @@ instance JoinLattice[Constant] {
 // ... and the greatest lower bound:
 //
 instance MeetLattice[Constant] {
-    def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
+    def greatestLowerBound(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot

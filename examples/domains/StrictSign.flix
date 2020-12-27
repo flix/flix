@@ -230,9 +230,9 @@ namespace Domain/StrictSign {
 
     law leastUpperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Sign, Sign) -> Bool, bot: Sign): Bool = Bounded.leastElement(bot, leq)
 

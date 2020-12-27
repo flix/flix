@@ -168,9 +168,9 @@ namespace Belnap {
 
     law leastUpperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Belnap, Belnap) -> Bool, bot: Belnap): Bool = Bounded.leastElement(bot, leq)
 

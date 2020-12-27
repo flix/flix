@@ -282,7 +282,7 @@ namespace Domain/Constant {
     }
 
     instance MeetLattice[Constant] {
-        def glb(x: Constant, y: Constant): Constant = glb(x, y)
+        def greatestLowerBound(x: Constant, y: Constant): Constant = glb(x, y)
     }
 
     //
@@ -293,9 +293,9 @@ namespace Domain/Constant {
 
     law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Constant, Constant) -> Bool, bot: Constant): Bool = Bounded.leastElement(bot, leq)
 
