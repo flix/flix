@@ -13,6 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
+///
+/// A type class for pre-orders.
+///
 class PreOrder[a] {
 
     // TODO: Decide if this type class is warranted.
