@@ -19,7 +19,7 @@ namespace Domain/Mod3 {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: Mod3, e2: Mod3): Bool = e1 == e2
+    pub def equ(e1: Mod3, e2: Mod3): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
@@ -205,19 +205,17 @@ namespace Domain/Mod3 {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Mod3, e2: Mod3): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let Mod3<> = (Bot, Top, equ, leq, lub, glb)
-
     //
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Mod3, Mod3) -> Bool, bot: Mod3): Bool = Bounded.leastElement(bot, leq)
 

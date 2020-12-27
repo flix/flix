@@ -28,7 +28,6 @@ object NamedAst {
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  latticesOps: Map[NamedAst.Type, NamedAst.LatticeOps],
                   properties: Map[Name.NName, List[NamedAst.Property]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
@@ -50,8 +49,6 @@ object NamedAst {
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
-
-  case class LatticeOps(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation)
 
   sealed trait Use
 

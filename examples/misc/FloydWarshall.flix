@@ -14,60 +14,39 @@ enum Dist {
   case Bot       // Not reachable
 }
 
-// Lattice operations
-
-///
-/// Returns `true` iff `e1` is equal to `e2`.
-///
-def equ(e1: Dist, e2: Dist): Bool = e1 == e2
-
-///
-/// Returns `true` if the distance `e1` is greater than or equal to the distance `e2`.
-///
-def leq(e1: Dist, e2: Dist): Bool = match (e1, e2) {
-  case (_, Top) => true
-  case (Bot, _) => true
-  case (Dst(n1), Dst(n2)) => n1 >= n2
-  case _ => false
-}
-
-///
-/// Returns the shorter distance of `e1` and `e2`.
-///
-def lub(e1: Dist, e2: Dist): Dist = match (e1, e2) {
-  case (Bot, x) => x
-  case (x, Bot) => x
-  case (Dst(n1), Dst(n2)) => Dst(Int32.min(n1, n2))
-  case _ => Top
-}
-
-///
-/// Returns the greater distance of `e1` and `e2`.
-///
-def glb(e1: Dist, e2: Dist): Dist = match (e1, e2) {
-  case (Top, x) => x
-  case (x, Top) => x
-  case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))
-  case _ => Bot
-}
-
-// TODO: Replace of this with one instance of Lattice or similiar?
-let Dist<> = (Bot, Top, equ, leq, lub, glb)
-
 instance LowerBound[Dist] {
     def minValue(): Dist = Dist.Bot
 }
 
+instance PreOrder[Dist] {
+    def equ(x: Dist, y: Dist): Bool = x == y
+}
+
 instance PartialOrder[Dist] {
-    def partialCompare(x: Dist, y: Dist): Bool = leq(x, y)
+    def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
+        case (_, Top) => true
+        case (Bot, _) => true
+        case (Dst(n1), Dst(n2)) => n1 >= n2
+        case _ => false
+    }
 }
 
 instance JoinLattice[Dist] {
-    def lub(x: Dist, y: Dist): Dist = lub(x, y)
+    def leastUpperBound(x: Dist, y: Dist): Dist = match (x, y) {
+        case (Bot, _)           => y
+        case (_, Bot)           => x
+        case (Dst(n1), Dst(n2)) => Dst(Int32.min(n1, n2))
+        case _                  => Top
+    }
 }
 
 instance MeetLattice[Dist] {
-    def glb(x: Dist, y: Dist): Dist = glb(x, y)
+    def greatestLowerBound(x: Dist, y: Dist): Dist = match (x, y) {
+        case (Top, x) => x
+        case (x, Top) => x
+        case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))
+        case _ => Bot
+    }
 }
 
 // Copy input relation into the ShortestDist lattice

@@ -296,30 +296,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal bounded lattice definition.
-    *
-    * @param loc the location where the illegal definition occurs.
-    */
-  case class IllegalLattice(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal lattice."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> A lattice definition must have exactly six components: bot, top, equ, leq, lub and glb." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal definition.") << NewLine
-      vt << NewLine
-      vt << "the 1st component must be the bottom element," << NewLine
-      vt << "the 2nd component must be the top element," << NewLine
-      vt << "the 3rd component must be the equality function," << NewLine
-      vt << "the 4th component must be the partial order function," << NewLine
-      vt << "the 5th component must be the least upper bound function, and" << NewLine
-      vt << "the 6th component must be the greatest upper bound function." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal modifier.
     *
     * @param loc the location where the illegal modifier occurs.

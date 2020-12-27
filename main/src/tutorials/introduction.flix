@@ -40,64 +40,52 @@ enum Constant {
       case Bot
 }
 
+instance LowerBound[Constant] {
+    def minValue(): Constant = Constant.Bot
+}
+
 //
 // We define equality of two lattice elements by structural equality.
 //
-def equ(e1: Constant, e2: Constant): Bool = e1 == e2
+instance PreOrder[Constant] {
+    def equ(x: Constant, y: Constant): Bool = x == y
+}
 
 //
 // The next task is to define the partial order on Constant.
 // This is straightforward with pattern matching on the arguments:
 //
-def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
-    case (Bot, _)           => true
-    case (Cst(n1), Cst(n2)) => n1 == n2
-    case (_, Top)           => true
-    case _                  => false
+instance PartialOrder[Constant] {
+    def partialCompare(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+        case (Bot, _)           => true
+        case (Cst(n1), Cst(n2)) => n1 == n2
+        case (_, Top)           => true
+        case _                  => false
+    }
 }
 
 //
 // Then it's on to the least upper bound:
 //
-def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-    case (Bot, x)           => x
-    case (x, Bot)           => x
-    case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
-    case _                  => Top
+instance JoinLattice[Constant] {
+    def leastUpperBound(x: Constant, y: Constant): Constant = match (x, y) {
+        case (Bot, _)           => y
+        case (_, Bot)           => x
+        case (Cst(n1), Cst(n2)) => if (n1 == n2) x else Top
+        case _                  => Top
+    }
 }
 
 //
 // ... and the greatest lower bound:
 //
-def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-    case (Top, x)           => x
-    case (x, Top)           => x
-    case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
-    case _                  => Bot
-}
-
-//
-// This complete the specification of the lattice. We associate the
-// lattice components with the Constant type in the following way:
-//
-// TODO: Replace of this with one instance of Lattice or similiar?
-let Constant<> = (Bot, Top, equ, leq, lub, glb)
-// NB: In the future, this syntax is subject to change.
-
-instance LowerBound[Constant] {
-    def minValue(): Constant = Constant.Bot
-}
-
-instance PartialOrder[Constant] {
-    def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
-}
-
-instance JoinLattice[Constant] {
-    def lub(x: Constant, y: Constant): Constant = lub(x, y)
-}
-
 instance MeetLattice[Constant] {
-    def glb(x: Constant, y: Constant): Constant = glb(x, y)
+    def greatestLowerBound(e1: Constant, e2: Constant): Constant = match (e1, e2) {
+        case (Top, x)           => x
+        case (x, Top)           => x
+        case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
+        case _                  => Bot
+    }
 }
 
 //

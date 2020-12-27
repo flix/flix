@@ -23,12 +23,12 @@ namespace Domain/Interval {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: Interval, e2: Interval): Bool = norm(e1) == norm(e2)
+    pub def equ(e1: Interval, e2: Interval): Bool = norm(e1) == norm(e2)
 
     ///
     /// Returns the canonical representation of the given interval `e`.
     ///
-    def norm(x: Interval): Interval = match x {
+    pub def norm(x: Interval): Interval = match x {
         case Bot            => Bot
         case Range(b, e)    => if (b <= e) Range(b, e) else Bot
         case Top            => Top
@@ -38,7 +38,7 @@ namespace Domain/Interval {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(x: Interval, y: Interval): Bool = match (x, y) {
+    pub def leq(x: Interval, y: Interval): Bool = match (x, y) {
         case (Bot, _)                       => true
         case (Range(b1, e1), Range(b2, e2)) => b2 <= b1 and e1 <= e2
         case (_, Top)                       => true
@@ -49,7 +49,7 @@ namespace Domain/Interval {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound
-    def lub(x: Interval, y: Interval): Interval = match (x, y) {
+    pub def lub(x: Interval, y: Interval): Interval = match (x, y) {
         case (Bot, _)                       => y
         case (_, Bot)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.min(b1, b2), BigInt.max(e1, e2)))
@@ -60,7 +60,7 @@ namespace Domain/Interval {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound
-    def glb(x: Interval, y: Interval): Interval = match (x, y) {
+    pub def glb(x: Interval, y: Interval): Interval = match (x, y) {
         case (Top, _)                       => y
         case (_, Top)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.max(b1, b2), BigInt.min(e1, e2)))
@@ -182,8 +182,6 @@ namespace Domain/Interval {
     #safeBelnap2((x, y) -> x <= y)
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
     pub def lessEqual(x: Interval, y: Interval): Belnap.Belnap = Belnap.or(x `less` y, x `eq` y)
-
-    let Interval<> = (Bot, Top, leq, equ, lub, glb)
 
     // ------------------------------------------------------------------------
     // Specialized Laws

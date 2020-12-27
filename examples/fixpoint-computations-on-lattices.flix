@@ -8,60 +8,49 @@ enum Sign {
               case Bot
 }
 
-/// Next, we define all the components that constitute the lattice:
-
-/// The equality relation on the lattice elements.
-def equ(e1: Sign, e2: Sign): Bool = e1 == e2
-
-/// The partial order relation on the lattice elements.
-def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
-    case (Bot, _)   => true
-    case (Neg, Neg) => true
-    case (Zer, Zer) => true
-    case (Pos, Pos) => true
-    case (_, Top)   => true
-    case _          => false
-}
-
-/// The least upper bound relation on the lattice elements.
-def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
-    case (Bot, x)   => x
-    case (x, Bot)   => x
-    case (Neg, Neg) => Neg
-    case (Zer, Zer) => Zer
-    case (Pos, Pos) => Pos
-    case _          => Top
-}
-
-/// The greatest lower bound relation on the lattice elements.
-def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
-    case (Top, x)   => x
-    case (x, Top)   => x
-    case (Neg, Neg) => Neg
-    case (Zer, Zer) => Zer
-    case (Pos, Pos) => Pos
-    case _          => Bot
-}
-
-/// Flix does not yet support type classes, so we use this ugly syntax
-/// to tell Flix that these functions define a lattice on Sign.
-// TODO: Replace of this with one instance of Lattice or similiar?
-let Sign<> = (Bot, Top, equ, leq, lub, glb)
-
 instance LowerBound[Sign] {
     def minValue(): Sign = Sign.Bot
 }
 
+/// The equality relation on the lattice elements.
+instance PreOrder[Sign] {
+    def equ(x: Sign, y: Sign): Bool = x == y
+}
+
+/// The partial order relation on the lattice elements.
 instance PartialOrder[Sign] {
-    def partialCompare(x: Sign, y: Sign): Bool = leq(x, y)
+    def partialCompare(x: Sign, y: Sign): Bool = match (x, y) {
+        case (Bot, _)   => true
+        case (Neg, Neg) => true
+        case (Zer, Zer) => true
+        case (Pos, Pos) => true
+        case (_, Top)   => true
+        case _          => false
+    }
 }
 
+/// The least upper bound relation on the lattice elements.
 instance JoinLattice[Sign] {
-    def lub(x: Sign, y: Sign): Sign = lub(x, y)
+    def leastUpperBound(x: Sign, y: Sign): Sign = match (x, y) {
+        case (Bot, _)   => y
+        case (_, Bot)   => x
+        case (Neg, Neg) => Neg
+        case (Zer, Zer) => Zer
+        case (Pos, Pos) => Pos
+        case _          => Top
+    }
 }
 
+/// The greatest lower bound relation on the lattice elements.
 instance MeetLattice[Sign] {
-    def glb(x: Sign, y: Sign): Sign = glb(x, y)
+    def greatestLowerBound(e1: Sign, e2: Sign): Sign = match (e1, e2) {
+        case (Top, x)   => x
+        case (x, Top)   => x
+        case (Neg, Neg) => Neg
+        case (Zer, Zer) => Zer
+        case (Pos, Pos) => Pos
+        case _          => Bot
+    }
 }
 
 /// We can now declare three map lattices:

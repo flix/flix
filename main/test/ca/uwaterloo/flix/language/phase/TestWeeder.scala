@@ -177,18 +177,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalInt](result)
   }
 
-  test("IllegalLattice.01") {
-    val input = "let Foo<> = (1, 2)"
-    val result = compile(input, DefaultOptions)
-    expectError[WeederError.IllegalLattice](result)
-  }
-
-  test("IllegalLattice.02") {
-    val input = "let Foo<> = (1, 2, 3, 4, 5, 6, 7, 8, 9)"
-    val result = compile(input, DefaultOptions)
-    expectError[WeederError.IllegalLattice](result)
-  }
-
   test("IllegalUniversal.01") {
     val input = "def f(): Prop = ∀(). true"
     val result = compile(input, DefaultOptions)
