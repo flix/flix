@@ -351,4 +351,28 @@ namespace TestToString {
     def tuple10ToString04(): Bool =
         toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Array                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def arrayToString01(): Bool & Impure =
+        toString(Array.range(0, 5)) == "[0, 1, 2, 3, 4]"
+
+    @test
+    def arrayToString02(): Bool & Impure =
+        toString(Array.range(0, 1)) == "[0]"
+
+    @test
+    def arrayToString03(): Bool & Impure =
+        toString(Array.new('a', 3)) == "[a, a, a]"
+
+    @test
+    def arrayToString04(): Bool & Impure =
+        toString(Array.range(1, 3)) == "[1, 2]"
+
+    @test
+    def arrayToString05(): Bool & Impure =
+        toString(Array.new([1, 2, 3], 3)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+
 }
