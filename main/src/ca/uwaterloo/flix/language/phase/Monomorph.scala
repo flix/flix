@@ -620,16 +620,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
         case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
 
-          // TODO: Store these into some global map (?) to rebuild latticeOps.
+          // Populate global map of lattice ops.
           den match {
-            case Denotation.Relational => // nop
+            case Denotation.Relational => // nop - no lattice ops.
             case Denotation.Latticenal =>
               val tpe = subst0(terms.last.tpe)
               latticeOps.get(tpe) match {
                 case None =>
                   val ops = mkLatticeOps(tpe)
                   latticeOps += tpe -> ops
-                case Some(_) => // nop
+                case Some(_) => // nop - already added to map.
               }
           }
 
