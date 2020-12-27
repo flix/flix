@@ -285,6 +285,14 @@ namespace Domain/Constant {
         def greatestLowerBound(x: Constant, y: Constant): Constant = glb(x, y)
     }
 
+    instance ToString[Constant] {
+        def toString(x: Constant): String = match x {
+            case Top    => "Top"
+            case Cst(n) => "Cst(${n})"
+            case Bot    => "Bot"
+        }
+    }
+
     //
     // ## Specialized Laws
     //

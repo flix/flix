@@ -89,6 +89,17 @@ instance MeetLattice[Constant] {
 }
 
 //
+// We need an instance of ToString for pretty printing:
+//
+instance ToString[Constant] {
+    def toString(x: Constant): String = match x {
+        case Top    => "Top"
+        case Cst(n) => "Cst(${n})"
+        case Bot    => "Bot"
+    }
+}
+
+//
 // Finally it is handy to have a small function to lift an integer into
 // an element of the constant propagation lattice. Strictly speaking,
 // this is not necessary.
