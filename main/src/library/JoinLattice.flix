@@ -14,9 +14,9 @@
  *  limitations under the License.
  */
 
-//
-// A type class for join semi lattices.
-//
+///
+/// A type class for join semi lattices.
+///
 class JoinLattice[a] {
 
     ///
