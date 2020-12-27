@@ -91,73 +91,72 @@ instance Hash[BigInt] {
 
 instance Hash[(a1, a2)] with [a1 : Hash, a2 : Hash] {
     def hash(t: (a1, a2)): Int = match t {
-        case (x1, x2) => 41 * Hash.hash(x1) + 41 * Hash.hash(x2)
+        case (x1, x2) => 2 * 3 * Hash.hash(x1) + 5 * Hash.hash(x2)
     }
 }
 
 instance Hash[(a1, a2, a3)] with [a1 : Hash, a2 : Hash, a3 : Hash] {
     def hash(t: (a1, a2, a3)): Int = match t {
-        case (x1, x2, x3) => 41 * Hash.hash(x1) + 41 * Hash.hash(x2) + 41 * Hash.hash(x3)
+        case (x1, x2, x3) => 3 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3)
     }
 }
 
 instance Hash[(a1, a2, a3, a4)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash] {
     def hash(t: (a1, a2, a3, a4)): Int = match t {
         case (x1, x2, x3, x4) =>
-            41 * Hash.hash(x1) + 41 * Hash.hash(x2) + 41 * Hash.hash(x3) + 41 * Hash.hash(x4)
+            4 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
     }
 }
 
 instance Hash[(a1, a2, a3, a4, a5)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash] {
     def hash(t: (a1, a2, a3, a4, a5)): Int = match t {
         case (x1, x2, x3, x4, x5) =>
-            41 * Hash.hash(x1) + 41 * Hash.hash(x2) + 41 * Hash.hash(x3) + 41 * Hash.hash(x4)
-            + 41 * Hash.hash(x5)
+            5 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5)
     }
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash] {
     def hash(t: (a1, a2, a3, a4, a5, a6)): Int = match t {
         case (x1, x2, x3, x4, x5, x6) =>
-            41 * Hash.hash(x1) + 41 * Hash.hash(x2) + 41 * Hash.hash(x3) + 41 * Hash.hash(x4)
-            + 41 * Hash.hash(x5) + 41 * Hash.hash(x6)
+            6 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6)
     }
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash] {
     def hash(t: (a1, a2, a3, a4, a5, a6, a7)): Int = match t {
         case (x1, x2, x3, x4, x5, x6, x7) =>
-            41 * Hash.hash(x1) + 41 * Hash.hash(x2) + 41 * Hash.hash(x3) + 41 * Hash.hash(x4)
-            + 41 * Hash.hash(x5) + 41 * Hash.hash(x6) + 41 * Hash.hash(x7)
+            7 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7)
     }
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash] {
     def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8)): Int = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8) =>
-            41 * Hash.hash(x1) + 41 * Hash.hash(x2) + 41 * Hash.hash(x3) + 41 * Hash.hash(x4)
-            + 41 * Hash.hash(x5) + 41 * Hash.hash(x6) + 41 * Hash.hash(x7) + 41 * Hash.hash(x8)
+            8 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)
     }
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash, a9 : Hash] {
     def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Int = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
-            41 * Hash.hash(x1) + 41 * Hash.hash(x2) + 41 * Hash.hash(x3) + 41 * Hash.hash(x4)
-            + 41 * Hash.hash(x5) + 41 * Hash.hash(x6) + 41 * Hash.hash(x7) + 41 * Hash.hash(x8)
-            + 41 * Hash.hash(x9)
+            9 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)
+            + 31 * Hash.hash(x9)
     }
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash, a9 : Hash, a10 : Hash] {
     def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Int = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
-            41 * Hash.hash(x1) + 41 * Hash.hash(x2) + 41 * Hash.hash(x3) + 41 * Hash.hash(x4)
-            + 41 * Hash.hash(x5) + 41 * Hash.hash(x6) + 41 * Hash.hash(x7) + 41 * Hash.hash(x8)
-            + 41 * Hash.hash(x9) + 41 * Hash.hash(x10)
+            10 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)
+            + 31 * Hash.hash(x9) + 37 * Hash.hash(x10)
     }
 }
 
 /// TODO: Decide whether mutable types should have hash instances
 /// TODO: Add tests for std. library types
-/// TODO: Add tests for tuples
