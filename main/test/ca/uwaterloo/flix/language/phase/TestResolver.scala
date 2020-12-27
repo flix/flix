@@ -195,6 +195,51 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleClass](result)
   }
 
+  test("InaccessibleClass.03") {
+    val input =
+      """
+        |namespace N {
+        |    class C[a]
+        |}
+        |
+        |namespace O {
+        |    instance N.C[Int]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
+  test("SealedClass.01") {
+    val input =
+      """
+        |namespace N {
+        |    pub sealed class C[a]
+        |}
+        |
+        |namespace O {
+        |    instance N.C[Int]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SealedClass](result)
+  }
+
+  test("SealedClass.02") {
+    val input =
+      """
+        |namespace N {
+        |    sealed class C[a]
+        |
+        |    namespace O {
+        |        instance N.C[Int]
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SealedClass](result)
+  }
+
   test("RecursionLimit.01") {
     val input =
       s"""

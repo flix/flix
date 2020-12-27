@@ -43,7 +43,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
-    // MATT test
     /**
       * Checks that an instance is not an orphan.
       * It is declared in either:
