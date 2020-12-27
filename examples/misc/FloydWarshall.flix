@@ -41,7 +41,7 @@ instance JoinLattice[Dist] {
 }
 
 instance MeetLattice[Dist] {
-    def glb(x: Dist, y: Dist): Dist = match (x, y) {
+    def greatestLowerBound(x: Dist, y: Dist): Dist = match (x, y) {
         case (Top, x) => x
         case (x, Top) => x
         case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))

@@ -301,9 +301,9 @@ namespace Domain/Parity {
 
     law leastUpperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Parity, Parity) -> Bool, bot: Parity): Bool = Bounded.leastElement(bot, leq)
 

@@ -692,7 +692,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         val equ = getSigSym("PreOrder", "equ", leqTpe)
         val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
         val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
-        val glb = getSigSym("MeetLattice", "glb", glbTpe)
+        val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)
 
         LatticeOps(tpe, bot, equ, leq, lub, glb, SourceLocation.Generated) // TODO: DOC
       }

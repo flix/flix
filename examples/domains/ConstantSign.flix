@@ -238,9 +238,9 @@ namespace Domain/ConstantSign {
 
     law leastUpperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (ConstantSign, ConstantSign) -> Bool, bot: ConstantSign): Bool = Bounded.leastElement(bot, leq)
 
