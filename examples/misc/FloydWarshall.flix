@@ -49,6 +49,14 @@ instance MeetLattice[Dist] {
     }
 }
 
+instance ToString[Dist] {
+    def toString(x: Dist): String = match x {
+        case Top    => "Top"
+        case Dst(n) => "Dst(${n})"
+        case Bot    => "Bot"
+    }
+}
+
 // Copy input relation into the ShortestDist lattice
 ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).
 
