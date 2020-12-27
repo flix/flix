@@ -57,7 +57,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Computes all used symbols in all lattices.
     val usedLats = root.latticeOps.values.foldLeft(Used.empty) {
-      case (acc, LatticeOps(tpe, bot, equ, leq, lub, glb, loc)) =>
+      case (acc, LatticeOps(tpe, bot, equ, leq, lub, glb)) =>
         acc and (Used.of(bot) and Used.of(equ) and Used.of(leq) and Used.of(lub) and Used.of(glb))
     }
 

@@ -694,10 +694,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
         val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)
 
-        LatticeOps(tpe, bot, equ, leq, lub, glb, SourceLocation.Generated) // TODO: DOC
+        LatticeOps(tpe, bot, equ, leq, lub, glb)
       }
 
-      // TODO: DOC and LOC
+      /**
+        * Returns the symbol of the given signature identified by the given `className` and `sigName` specialized to the given type `tpe`.
+        */
       def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
         val sp1 = SourcePosition.Unknown
         val sp2 = SourcePosition.Unknown

@@ -367,7 +367,7 @@ object TreeShaker extends Phase[Root, Root] {
      * (c) A function that appears in a lattice component.
      */
     reachableFunctions ++= root.latticeOps.values.map {
-      case LatticeOps(tpe, bot, equ, leq, lub, glb, loc) =>
+      case LatticeOps(tpe, bot, equ, leq, lub, glb) =>
         Set(bot, equ, leq, lub, glb)
     }.fold(Set())(_ ++ _)
 

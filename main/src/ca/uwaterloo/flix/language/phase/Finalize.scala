@@ -91,9 +91,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
   }
 
   private def visitLatticeOps(lc: LiftedAst.LatticeOps, m: TopLevel)(implicit flix: Flix): FinalAst.LatticeOps = lc match {
-    case LiftedAst.LatticeOps(tpe0, bot, equ, leq, lub, glb, loc) =>
+    case LiftedAst.LatticeOps(tpe0, bot, equ, leq, lub, glb) =>
       val tpe = visitType(tpe0)
-      FinalAst.LatticeOps(tpe, bot, equ, leq, lub, glb, loc)
+      FinalAst.LatticeOps(tpe, bot, equ, leq, lub, glb)
   }
 
   private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {
