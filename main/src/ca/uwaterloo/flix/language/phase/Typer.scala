@@ -2181,29 +2181,28 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns the type class constraints for the given term types `ts` with the given denotation `den`.
     */
   private def getTermTypeClassConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
-    case Denotation.Relational => Nil
+    case Denotation.Relational => ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root))
     case Denotation.Latticenal =>
-      if (ts.isEmpty)
-        throw InternalCompilerException(s"Unexpected empty list of term types.")
-      else
-        ts.init.flatMap(mkTermTypeClassConstraints(_, root)) ::: mkLatticeTermTypeClassConstraints(ts.last, root)
+      val relationalTerms = ts.init
+      val latticeTerm = ts.last
+      relationalTerms.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root)) ::: mkTypeClassConstraintsForLatticeTerm(latticeTerm, root)
   }
 
   /**
-    * Constructs the type class constraints for the given term type `tpe`.
+    * Constructs the type class constraints for the given relational term type `tpe`.
     */
-  private def mkTermTypeClassConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+  private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
       // TODO: Add Eq and Hash
       PredefinedClasses.lookupClassSym("ToString", root),
     )
-    classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
+    classes.map(Ast.TypeConstraint(_, tpe))
   }
 
   /**
-    * Constraints the given type `tpe` with the lattice type classes.
+    * Constructs the type class constraints for the given lattice term type `tpe`.
     */
-  private def mkLatticeTermTypeClassConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+  private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
       // TODO: Add Eq and Hash
       PredefinedClasses.lookupClassSym("ToString", root),
@@ -2213,7 +2212,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       PredefinedClasses.lookupClassSym("JoinLattice", root),
       PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
-    classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
+    classes.map(Ast.TypeConstraint(_, tpe))
   }
 
   /**
