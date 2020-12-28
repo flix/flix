@@ -75,14 +75,14 @@ namespace Test/Exp/Reference/Deref {
         let l = ref Some(42);
         deref l == Some(42)
 
-///    @test
-///    def testDeref16(): Bool & Impure =
-///        let l = ref Ok(42);
-///        deref l == Ok(42)
+    @test
+    def testDeref16(): Bool & Impure =
+        let l = ref Ok(42);
+        deref l: Ref[Result[_, Unit]] == Ok(42)
 
-///    @test
-///    def testDeref17(): Bool & Impure =
-///        let l = ref Err("Goodbye World!");
-///        deref l == Err("Goodbye World!")
+    @test
+    def testDeref17(): Bool & Impure =
+        let l = ref Err("Goodbye World!");
+        deref l: Ref[Result[Unit, _]] == Err("Goodbye World!")
 
 }

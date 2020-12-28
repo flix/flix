@@ -155,10 +155,10 @@ namespace Test/Exp/Force {
             case _ => false
         }
 
-///    @test
-///    def testOptionForce01(): Bool =
-///        let x = lazy None;
-///        None == force x
+    @test
+    def testOptionForce01(): Bool =
+        let x = lazy None;
+        None: Poly[Unit, Unit] == force x
 
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades

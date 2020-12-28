@@ -34,7 +34,7 @@ def isEmpty03(): Bool = List.isEmpty(1 :: 2 :: Nil) == false
 // head                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def head01(): Bool = List.head(Nil) == None
+def head01(): Bool = List.head(Nil: List[Unit]) == None
 
 @test
 def head02(): Bool = List.head(1 :: Nil) == Some(1)
@@ -49,7 +49,7 @@ def head04(): Bool = List.head(3 :: 2 :: 1 :: Nil) == Some(3)
 // last                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def last01(): Bool = List.last(Nil) == None
+def last01(): Bool = List.last(Nil: List[Unit]) == None
 
 @test
 def last02(): Bool = List.last(1 :: Nil) == Some(1)
@@ -79,7 +79,7 @@ def length04(): Bool = List.length(1 :: 2 :: 3 :: Nil) == 3
 // append                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def append01(): Bool = List.append(Nil, Nil) == Nil
+def append01(): Bool = List.append(Nil: List[Unit], Nil: List[Unit]) == Nil
 
 @test
 def append02(): Bool = List.append(Nil, 1 :: Nil) == 1 :: Nil
@@ -400,7 +400,7 @@ def flatMap06(): Bool = List.flatMap(i -> List.repeat(i, i), 2 :: 3 :: Nil) == 2
 // reverse                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reverse01(): Bool = List.reverse(Nil) == Nil
+def reverse01(): Bool = List.reverse(Nil: List[Unit]) == Nil
 
 @test
 def reverse02(): Bool = List.reverse(1 :: Nil) == 1 :: Nil
@@ -421,10 +421,10 @@ def reverse06(): Bool = List.reverse(1 :: 2 :: 3 :: 4 :: Nil) == 4 :: 3 :: 2 :: 
 // rotateLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def rotateLeft01(): Bool = List.rotateLeft(0, Nil) == Nil
+def rotateLeft01(): Bool = List.rotateLeft(0, Nil: List[Unit]) == Nil
 
 @test
-def rotateLeft02(): Bool = List.rotateLeft(1, Nil) == Nil
+def rotateLeft02(): Bool = List.rotateLeft(1, Nil: List[Unit]) == Nil
 
 @test
 def rotateLeft03(): Bool = List.rotateLeft(0, 1 :: Nil) == 1 :: Nil
@@ -457,10 +457,10 @@ def rotateLeft11(): Bool = List.rotateLeft(2, 1 :: 2 :: 3 :: Nil) == 3 :: 1 :: 2
 // rotateRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def rotateRight01(): Bool = List.rotateRight(0, Nil) == Nil
+def rotateRight01(): Bool = List.rotateRight(0, Nil: List[Unit]) == Nil
 
 @test
-def rotateRight02(): Bool = List.rotateRight(1, Nil) == Nil
+def rotateRight02(): Bool = List.rotateRight(1, Nil: List[Unit]) == Nil
 
 @test
 def rotateRight03(): Bool = List.rotateRight(0, 1 :: Nil) == 1 :: Nil
@@ -544,7 +544,7 @@ def replace08(): Bool = List.replace(3, 4, 3 :: 3 :: Nil) == 4 :: 4 :: Nil
 // patch                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def patch01(): Bool = List.patch(0, 0, Nil, Nil) == Nil
+def patch01(): Bool = List.patch(0, 0, Nil: List[Int32], Nil) == Nil
 
 @test
 def patch02(): Bool = List.patch(0, 2, 1 :: 2 :: Nil, Nil) == Nil
@@ -636,7 +636,7 @@ def patch28(): Bool = List.patch(-1, 10, -1 :: -2 :: -3 :: -4 :: -5 :: -6 :: -7 
 // permutations                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def permutations01(): Bool = List.permutations(Nil) == Nil :: Nil
+def permutations01(): Bool = List.permutations(Nil: List[Unit]) == Nil :: Nil
 
 @test
 def permutations02(): Bool = List.permutations(1 :: Nil) == (1 :: Nil) :: Nil
@@ -653,7 +653,7 @@ def permutations04(): Bool = List.permutations(1 :: 2 :: 3 :: Nil) == (1 :: 2 ::
 // subsequences                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def subsequences01(): Bool = List.subsequences(Nil) == Nil :: Nil
+def subsequences01(): Bool = List.subsequences(Nil: List[Unit]) == Nil :: Nil
 
 @test
 def subsequences02(): Bool = List.subsequences(1 :: Nil) == (1 :: Nil) :: Nil :: Nil
@@ -690,16 +690,16 @@ def intersperse05(): Bool = List.intersperse(11, 1 :: 2 :: 3 :: 4 :: Nil) == 1 :
 // transpose                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def transpose01(): Bool = List.transpose(Nil) == Nil
+def transpose01(): Bool = List.transpose(Nil: List[List[Unit]]) == Nil
 
 @test
-def transpose02(): Bool = List.transpose(Nil :: Nil) == Nil :: Nil
+def transpose02(): Bool = List.transpose(Nil :: Nil): List[List[Unit]] == Nil :: Nil
 
 @test
-def transpose03(): Bool = List.transpose(Nil :: Nil :: Nil) == Nil :: Nil :: Nil
+def transpose03(): Bool = List.transpose(Nil :: Nil :: Nil): List[List[Unit]] == Nil :: Nil :: Nil
 
 @test
-def transpose04(): Bool = List.transpose(Nil :: Nil :: Nil :: Nil) == Nil :: Nil :: Nil :: Nil
+def transpose04(): Bool = List.transpose(Nil :: Nil :: Nil :: Nil): List[List[Unit]] == Nil :: Nil :: Nil :: Nil
 
 @test
 def transpose05(): Bool = List.transpose((1 :: Nil) :: Nil) == (1 :: Nil) :: Nil
@@ -774,7 +774,7 @@ def transpose22(): Bool = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 ::
 // isPrefixOf                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isPrefixOf01(): Bool = List.isPrefixOf(Nil, Nil) == true
+def isPrefixOf01(): Bool = List.isPrefixOf(Nil: List[Unit], Nil) == true
 
 @test
 def isPrefixOf02(): Bool = List.isPrefixOf(1 :: Nil, Nil) == false
@@ -816,7 +816,7 @@ def isPrefixOf13(): Bool = List.isPrefixOf(1 :: 2 :: 3 :: Nil, 89 :: 11 :: 1 :: 
 // isInfixOf                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isInfixOf01(): Bool = List.isInfixOf(Nil, Nil) == true
+def isInfixOf01(): Bool = List.isInfixOf(Nil: List[Unit], Nil) == true
 
 @test
 def isInfixOf02(): Bool = List.isInfixOf(1 :: Nil, Nil) == false
@@ -858,7 +858,7 @@ def isInfixOf13(): Bool = List.isInfixOf(1 :: 2 :: 3 :: Nil, 89 :: 11 :: 1 :: 2 
 // isSuffixOf                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isSuffixOf01(): Bool = List.isSuffixOf(Nil, Nil) == true
+def isSuffixOf01(): Bool = List.isSuffixOf(Nil: List[Unit], Nil: List[Unit]) == true
 
 @test
 def isSuffixOf02(): Bool = List.isSuffixOf(1 :: Nil, Nil) == false
@@ -1023,10 +1023,10 @@ def count07(): Bool = List.count(i -> i > 3, 6 :: 7 :: Nil) == 2
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def flatten01(): Bool = List.flatten(Nil) == Nil
+def flatten01(): Bool = List.flatten(Nil: List[List[Unit]]) == Nil
 
 @test
-def flatten02(): Bool = List.flatten(Nil :: Nil) == Nil
+def flatten02(): Bool = List.flatten(Nil :: Nil): List[Unit] == Nil
 
 @test
 def flatten03(): Bool = List.flatten((1 :: Nil) :: Nil) == 1 :: Nil
@@ -1035,7 +1035,7 @@ def flatten03(): Bool = List.flatten((1 :: Nil) :: Nil) == 1 :: Nil
 def flatten04(): Bool = List.flatten((1 :: 2 :: Nil) :: Nil) == 1 :: 2 :: Nil
 
 @test
-def flatten05(): Bool = List.flatten(Nil :: Nil :: Nil) == Nil
+def flatten05(): Bool = List.flatten(Nil :: Nil :: Nil): List[Unit] == Nil
 
 @test
 def flatten06(): Bool = List.flatten((1 :: Nil) :: Nil :: Nil) == 1 :: Nil
@@ -1146,7 +1146,7 @@ def filter08(): Bool = List.filter(i -> i > 3, 1 :: 4 :: 11 :: 2 :: -22 :: 17 ::
 // init                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def init01(): Bool = List.init(Nil) == None
+def init01(): Bool = List.init(Nil: List[Unit]) == None
 
 @test
 def init02(): Bool = List.init(0 :: Nil) == Some(Nil)
@@ -1170,10 +1170,10 @@ def init07(): Bool = List.init(2 :: 1 :: 0 :: -1 :: Nil) == Some(2 :: 1 :: 0 :: 
 // slice                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def slice01(): Bool = List.slice(0, 0, Nil) == Nil
+def slice01(): Bool = List.slice(0, 0, Nil: List[Unit]) == Nil
 
 @test
-def slice02(): Bool = List.slice(-1, 1, Nil) == Nil
+def slice02(): Bool = List.slice(-1, 1, Nil: List[Unit]) == Nil
 
 @test
 def slice03(): Bool = List.slice(0, 0, 1 :: Nil) == Nil
@@ -1271,13 +1271,13 @@ def span08(): Bool = List.span(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 ::
 // drop                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def drop01(): Bool = List.drop(-1, Nil) == Nil
+def drop01(): Bool = List.drop(-1, Nil: List[Unit]) == Nil
 
 @test
-def drop02(): Bool = List.drop(0, Nil) == Nil
+def drop02(): Bool = List.drop(0, Nil: List[Unit]) == Nil
 
 @test
-def drop03(): Bool = List.drop(1, Nil) == Nil
+def drop03(): Bool = List.drop(1, Nil: List[Unit]) == Nil
 
 @test
 def drop04(): Bool = List.drop(-1, 1 :: Nil) == 1 :: Nil
@@ -1338,13 +1338,13 @@ def dropWhile08(): Bool = List.dropWhile(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 ::
 // take                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def take01(): Bool = List.take(-1, Nil) == Nil
+def take01(): Bool = List.take(-1, Nil: List[Unit]) == Nil
 
 @test
-def take02(): Bool = List.take(0, Nil) == Nil
+def take02(): Bool = List.take(0, Nil: List[Unit]) == Nil
 
 @test
-def take03(): Bool = List.take(1, Nil) == Nil
+def take03(): Bool = List.take(1, Nil: List[Unit]) == Nil
 
 @test
 def take04(): Bool = List.take(-1, 1 :: Nil) == Nil
@@ -1377,7 +1377,7 @@ def take12(): Bool = List.take(4, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) == 1 :: 2 :
 // takeWhile                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def takeWhile01(): Bool = List.takeWhile(i -> i > 3, Nil) == Nil
+def takeWhile01(): Bool = List.takeWhile(i -> i > 3, Nil: List[Int32]) == Nil
 
 @test
 def takeWhile02(): Bool = List.takeWhile(i -> i > 3, 1 :: Nil) == Nil
@@ -1405,7 +1405,7 @@ def takeWhile08(): Bool = List.takeWhile(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 ::
 // groupBy                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def groupBy01(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, Nil) == Nil
+def groupBy01(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, Nil: List[Int32]) == Nil
 
 @test
 def groupBy02(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: Nil) == (1 :: Nil) :: Nil
@@ -1432,13 +1432,13 @@ def groupBy07(): Bool = List.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a 
 // zip                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def zip01(): Bool = List.zip(Nil, Nil) == Nil
+def zip01(): Bool = List.zip(Nil: List[Unit], Nil: List[Unit]) == Nil
 
 @test
-def zip02(): Bool = List.zip(1 :: Nil, Nil) == Nil
+def zip02(): Bool = List.zip(1 :: Nil, Nil: List[Unit]) == Nil
 
 @test
-def zip03(): Bool = List.zip(Nil, 2 :: Nil) == Nil
+def zip03(): Bool = List.zip(Nil: List[Unit], 2 :: Nil) == Nil
 
 @test
 def zip04(): Bool = List.zip(1 :: Nil, 2 :: Nil) == (1, 2) :: Nil
@@ -1479,7 +1479,7 @@ def zipWith06(): Bool = List.zipWith((a, b) -> if (b) a+1 else a, 1 :: 2 :: 3 ::
 // unzip                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unzip01(): Bool = List.unzip(Nil) == (Nil, Nil)
+def unzip01(): Bool = List.unzip(Nil: List[(Unit, Unit)]) == (Nil, Nil)
 
 @test
 def unzip02(): Bool = List.unzip((1, true) :: Nil) == (1 :: Nil, true :: Nil)
@@ -1698,7 +1698,7 @@ def findMap08(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 0
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = List.toSet(Nil) == Set#{}
+def toSet01(): Bool = List.toSet(Nil: List[Unit]) == Set#{}
 
 @test
 def toSet02(): Bool = List.toSet(1 :: Nil) == Set#{1}
@@ -1725,7 +1725,7 @@ def toSet08(): Bool = List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 3 :: 3 :: Ni
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toMap01(): Bool = List.toMap(Nil) == Map#{}
+def toMap01(): Bool = List.toMap(Nil: List[(Unit, Unit)]) == Map#{}
 
 @test
 def toMap02(): Bool = List.toMap((1, true) :: Nil) == Map#{1 -> true}
@@ -1957,7 +1957,7 @@ def unfoldWithOkIter01(): Bool & Impure =
         } else {
             Ok(Some(deref x))
         };
-    List.unfoldWithOkIter(step) == Ok(Nil)
+    List.unfoldWithOkIter(step): Result[_, Unit] == Ok(Nil)
 
 @test
 def unfoldWithOkIter02(): Bool & Impure =
@@ -1981,7 +1981,7 @@ def unfoldWithOkIter03(): Bool & Impure =
         } else {
             Ok(None)
         };
-    List.unfoldWithOkIter(step) == Ok(1 :: 2 :: 3 :: 4 :: Nil)
+    List.unfoldWithOkIter(step): Result[_, Unit] == Ok(1 :: 2 :: 3 :: 4 :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // distinct                                                                //
@@ -1989,7 +1989,7 @@ def unfoldWithOkIter03(): Bool & Impure =
 
 @test
 def distinct01(): Bool =
-    List.distinct(Nil) == Nil
+    List.distinct(Nil: List[Unit]) == Nil
 
 @test
 def distinct02(): Bool =
@@ -2029,7 +2029,7 @@ def distinct09(): Bool =
 
 @test
 def distinctWith01(): Bool =
-    List.distinctWith((x,y) -> x == y, Nil) == Nil
+    List.distinctWith((x,y) -> x == y, Nil: List[Unit]) == Nil
 
 @test
 def distinctWith02(): Bool =

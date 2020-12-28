@@ -149,7 +149,7 @@ namespace TestMutList {
         MutList.head(v) == Some(42)
 
     @test
-    def head02(): Bool & Impure = MutList.head(MutList.new()) == None
+    def head02(): Bool & Impure = MutList.head(MutList.new(): MutList[Unit]) == None
 
     @test
     def head03(): Bool & Impure =
@@ -163,7 +163,7 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def last01(): Bool & Impure = MutList.last(MutList.new()) == None
+    def last01(): Bool & Impure = MutList.last(MutList.new(): MutList[Unit]) == None
 
     @test
     def last02(): Bool & Impure = MutList.last(MutList.range(0, 8)) == Some(7)
@@ -323,7 +323,7 @@ namespace TestMutList {
 
     @test
     def map03(): Bool & Impure =
-        let v = MutList.map(identity, MutList.new());
+        let v = MutList.map(identity, MutList.new(): MutList[Unit]);
         MutList.sameElements(v, MutList.new())
 
     @test
@@ -349,7 +349,7 @@ namespace TestMutList {
 
     @test
     def transform!03(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.transform!(identity, v);
         MutList.sameElements(v, MutList.new())
 
@@ -536,7 +536,7 @@ namespace TestMutList {
 
     @test
     def pop02(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.pop!(v) == None
 
     @test
@@ -659,7 +659,7 @@ namespace TestMutList {
 
     @test
     def remove!01(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.remove!(0, v);
         MutList.sameElements(v, MutList.new())
 
@@ -737,8 +737,8 @@ namespace TestMutList {
 
     @test
     def append!04(): Bool & Impure =
-        let v1 = MutList.new();
-        let v2 = MutList.new();
+        let v1: MutList[Unit] = MutList.new();
+        let v2: MutList[Unit] = MutList.new();
         MutList.append!(v1, v2);
         MutList.sameElements(v1, MutList.new())
 
@@ -824,7 +824,7 @@ namespace TestMutList {
 
     @test
     def reverse01!(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.reverse!(v);
         MutList.sameElements(v, MutList.new())
 
@@ -958,7 +958,7 @@ namespace TestMutList {
 
     @test
     def truncate!01(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.truncate!(0, v);
         MutList.sameElements(v, MutList.new())
 
