@@ -149,3 +149,14 @@ instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : ToString
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10})"
     }
 }
+
+instance ToString[Array[a]] with [a : ToString] {
+    def toString(a: Array[a]): String = ToStringOps.arrayToStringHelper(a, 0, "")
+}
+
+namespace ToStringOps {
+    pub def arrayToStringHelper[a : ToString](a: Array[a], i: Int32, acc: String): String =
+        if (i == 0) arrayToStringHelper(a, i + 1, "${a[i]}") as & Pure
+        else if (i < a.length) arrayToStringHelper(a, i + 1, "${acc}, ${a[i]}") as & Pure
+        else "[${acc}]"
+}
