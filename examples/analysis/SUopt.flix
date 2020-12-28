@@ -59,6 +59,14 @@
     }
   }
 
+  instance ToString[SULattice] {
+    def toString(x: SULattice): String = match x {
+        case Top        => "Top"
+        case Single(n)  => "Single(${n})"
+        case Bottom     => "Bottom"
+      }
+  }
+
   lat SU(location: String, object: String, target: SULattice)
 
   rel PtH(object: String, target: String)

@@ -53,6 +53,14 @@ namespace IDE {
         }
     }
 
+    instance ToString[Value] {
+        def toString(x: Value): String = match x {
+            case Top    => "Top"
+            case Cst(n) => "Cst(${n})"
+            case Bot    => "Bot"
+        }
+    }
+
     enum Transformer {
         case BotTrans,
         case NonBotTrans(Int,Int,Value)
@@ -107,6 +115,13 @@ namespace IDE {
 
     instance MeetLattice[Transformer] {
         def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
+    }
+
+    instance ToString[Transformer] {
+        def toString(x: Transformer): String = match x {
+            case BotTrans               => "BotTrans"
+            case NonBotTrans(n, m, v)   => "NonBotTrans(${n}, ${m}, ${v})"
+        }
     }
 
     // Inputs
