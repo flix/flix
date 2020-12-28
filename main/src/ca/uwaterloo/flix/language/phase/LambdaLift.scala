@@ -93,8 +93,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
     * Translates the given simplified lattice op `op0` into a lifted lattice op.
     */
   private def visitLatticeOp(op0: SimplifiedAst.LatticeOps): LiftedAst.LatticeOps = op0 match {
-    case SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
-      LiftedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
+    case SimplifiedAst.LatticeOps(tpe, bot, equ, leq, lub, glb) =>
+      LiftedAst.LatticeOps(tpe, bot, equ, leq, lub, glb)
   }
 
   /**

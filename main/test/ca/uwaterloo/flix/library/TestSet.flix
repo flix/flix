@@ -19,6 +19,7 @@ use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
 namespace TestSet {
 
     use ToString.toString;
+    use Hash.hash;
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
@@ -1194,5 +1195,24 @@ def query07(): Bool =
     @test
     def toString05(): Bool =
         toString(Set#{Set#{1, 2}, Set#{4, 6}}) == "Set#{Set#{1, 2}, Set#{4, 6}}"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(Set#{}: Set[Unit]) == hash(Set#{}: Set[Unit])
+
+    @test
+    def hash02(): Bool = hash(Set#{1, 2}) == hash(Set#{1, 2})
+
+    @test
+    def hash03(): Bool = hash(Set#{'a', 'b', 'c', 'd'}) == hash(Set#{'a', 'b', 'c', 'd'})
+
+    @test
+    def hash04(): Bool = hash(Set#{'a', 'b', 'c', 'e'}) != hash(Set#{'a', 'b', 'c', 'd'})
+
+    @test
+    def hash05(): Bool = hash(Set#{false}) != hash(Set#{true})
 
 }

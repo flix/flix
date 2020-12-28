@@ -17,13 +17,13 @@ namespace Domain/Parity {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: Parity, e2: Parity): Bool = e1 == e2
+    pub def equ(e1: Parity, e2: Parity): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
+    pub def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
         case (Bot, _)       => true
         case (Odd, Odd)     => true
         case (Even, Even)   => true
@@ -35,7 +35,7 @@ namespace Domain/Parity {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #commutative #associative #upperBound #leastUpperBound
-    def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) {
+    pub def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (Bot, x)       => x
         case (x, Bot)       => x
         case (Odd, Odd)     => Odd
@@ -47,7 +47,7 @@ namespace Domain/Parity {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #commutative #associative #lowerBound #greatestLowerBound
-    def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) {
+    pub def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) {
         case (Top, x)       => x
         case (x, Top)       => x
         case (Odd, Odd)     => Odd
@@ -293,19 +293,17 @@ namespace Domain/Parity {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Parity, e2: Parity): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let Parity<> = (Bot, Top, equ, leq, lub, glb)
-
     //
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Parity, Parity) -> Bool, bot: Parity): Bool = Bounded.leastElement(bot, leq)
 

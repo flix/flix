@@ -29,4 +29,8 @@ namespace Test/Term/Lit/Option {
         case Some(t)
     }
 
+    instance ToString[Option[a]] with [a : ToString] {
+        def toString(o: Option[a]): String = ???
+    }
+
 }

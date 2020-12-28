@@ -1,5 +1,7 @@
 namespace Nel {
 
+    use Hash.hash;
+
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -500,5 +502,24 @@ namespace Nel {
 
     @test
     def toList03(): Bool = toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(Nel(1, Nil)) == hash(Nel(1, Nil))
+
+    @test
+    def hash02(): Bool = hash(Nel(1, 2 :: 3 :: Nil)) == hash(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def hash03(): Bool = hash(Nel(1, 3 :: 2 :: Nil)) != hash(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def hash04(): Bool = hash(Nel(1, Nil)) != hash(Nel(2, Nil))
+
+    @test
+    def hash05(): Bool = hash(Nel("c", "b" :: "a" :: Nil)) != hash(Nel("c", "a" :: "b" :: Nil))
 
 }
