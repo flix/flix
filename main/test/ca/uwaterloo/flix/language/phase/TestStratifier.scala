@@ -32,7 +32,7 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.01") {
     val input =
       """
-        |A(c) :- X(c), not A(c).
+        |A(c: String) :- X(c), not A(c).
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
@@ -41,8 +41,8 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.02") {
     val input =
       """
-        |A(c) :- X(c), B(c).
-        |B(c) :- X(c), not A(c).
+        |A(c: String) :- X(c), B(c).
+        |B(c: String) :- X(c), not A(c).
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
@@ -51,8 +51,8 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.03") {
     val input =
       """
-        |A(c) :- X(c), not B(c).
-        |B(c) :- X(c), A(c).
+        |A(c: String) :- X(c), not B(c).
+        |B(c: String) :- X(c), A(c).
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
@@ -61,17 +61,17 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.04") {
     val input =
       """
-        |A(c) :- B(c).
-        |B(c) :- C(c).
-        |C(c) :- D(c).
-        |D(c) :- E(c).
-        |E(c) :- F(c).
-        |F(c) :- G(c).
-        |G(c) :- H(c).
+        |A(c: String) :- B(c).
+        |B(c: String) :- C(c).
+        |C(c: String) :- D(c).
+        |D(c: String) :- E(c).
+        |E(c: String) :- F(c).
+        |F(c: String) :- G(c).
+        |G(c: String) :- H(c).
         |H(c) :- I(c).
-        |I(c) :- J(c).
-        |J(c) :- K(c).
-        |K(c) :- X(c), not A(c).
+        |I(c: String) :- J(c).
+        |J(c: String) :- K(c).
+        |K(c: String) :- X(c), not A(c).
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
@@ -80,8 +80,8 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.05") {
     val input =
       """
-        |C(c) :- X(c), not A(c).
-        |A(c) :- B(c), C(c).
+        |C(c: String) :- X(c), not A(c).
+        |A(c: String) :- B(c), C(c).
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
@@ -90,8 +90,8 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.06") {
     val input =
       """
-        |A(c) :- X(c), not A(c).
-        |B(c) :- X(c), not B(c).
+        |A(c: String) :- X(c), not A(c).
+        |B(c: String) :- X(c), not B(c).
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
@@ -100,11 +100,11 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.07") {
     val input =
       """
-        |A(c) :- X(c), B(c).
-        |B(c) :- X(c), C(c).
-        |C(c) :- X(c), not A(c).
-        |B(c) :- X(c), D(c).
-        |D(c) :- X(c), not A(c).
+        |A(c: String) :- X(c), B(c).
+        |B(c: String) :- X(c), C(c).
+        |C(c: String) :- X(c), not A(c).
+        |B(c: String) :- X(c), D(c).
+        |D(c: String) :- X(c), not A(c).
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)

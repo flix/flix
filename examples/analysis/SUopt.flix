@@ -78,12 +78,12 @@ def main(): #{ Pt(String, String) } = project Pt (solve #{
     SU(l: String, a: String; f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
     //
     PtH(a: String,b: String) :- Store(l,p,q), Pt(p,a), Pt(q,b).
-    PtH(a,b) :- FIStore(p,q,_), Pt(p,a), Pt(q,b).
+    PtH(a,b) :- FIStore(p,q), Pt(p,a), Pt(q,b).
     //
     // Load
     // ---------
     Pt(p,b) :- Load(l,p,q), Pt(q,a), filter(t, b), PtH(a,b), SU(l,a;t).
-    Pt(p,b) :- FILoad(p,q,_), Pt(q,a), PtH(a,b).
+    Pt(p,b) :- FILoad(p,q), Pt(q,a), PtH(a,b).
     //
     // CFlow
     // ---------
