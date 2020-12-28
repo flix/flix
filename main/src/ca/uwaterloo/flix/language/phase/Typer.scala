@@ -25,12 +25,10 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, ClassEnvironment, InferMonad, Substitution, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, InferMonad, Substitution, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.ToFailure
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.MultiMap
-
 
 object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
@@ -64,12 +62,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv)
     val enumsVal = visitEnums(root)
-    val latticeOpsVal = visitLatticeOps(root)
     val propertiesVal = visitProperties(root)
 
-    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, latticeOpsVal, propertiesVal) {
-      case (classes, instances, defs, enums, latticeOps, properties) =>
+    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, propertiesVal) {
+      case (classes, instances, defs, enums, properties) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
+        val latticeOps = Map.empty[Type, TypedAst.LatticeOps]
         val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
         TypedAst.Root(classes, instances, sigs, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources, classEnv)
     }
@@ -302,73 +300,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     // Visit every enum in the ast.
     val result = root.enums.toList.map {
       case (_, enum) => visitEnum(enum)
-    }
-
-    // Sequence the results and convert them back to a map.
-    Validation.sequence(result).map(_.toMap)
-  }
-
-  /**
-    * Performs type inference and reassembly on all lattices in the given AST root.
-    *
-    * Returns [[Err]] if a type error occurs.
-    */
-  private def visitLatticeOps(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Type, TypedAst.LatticeOps], TypeError] = {
-
-    /**
-      * Performs type inference and reassembly on the given `lattice`.
-      */
-    def visitLatticeOps(lattice: ResolvedAst.LatticeOps): Validation[(Type, TypedAst.LatticeOps), TypeError] = lattice match {
-      case ResolvedAst.LatticeOps(tpe, e1, e2, e3, e4, e5, e6, ns, loc) =>
-        // Perform type resolution on the declared type.
-        val declaredType = lattice.tpe
-
-        // Perform type inference on each of the lattice components.
-        val m = for {
-          // Type check each expression:
-          (botConstrs, botType, botEff) <- inferExp(e1, root)
-          (topConstrs, topType, topEff) <- inferExp(e2, root)
-          (equConstrs, equType, equEff) <- inferExp(e3, root)
-          (leqConstrs, leqType, leqEff) <- inferExp(e4, root)
-          (lubConstrs, lubType, lubEff) <- inferExp(e5, root)
-          (glbConstrs, glbType, glbEff) <- inferExp(e6, root)
-          // Enforce that each component is pure:
-          _______ <- unifyBoolM(botEff, Type.Pure, loc)
-          _______ <- unifyBoolM(topEff, Type.Pure, loc)
-          _______ <- unifyBoolM(equEff, Type.Pure, loc)
-          _______ <- unifyBoolM(leqEff, Type.Pure, loc)
-          _______ <- unifyBoolM(lubEff, Type.Pure, loc)
-          _______ <- unifyBoolM(glbEff, Type.Pure, loc)
-          // Check the type of each component:
-          _______ <- unifyTypeM(botType, declaredType, loc)
-          _______ <- unifyTypeM(topType, declaredType, loc)
-          _______ <- unifyTypeM(equType, Type.mkPureCurriedArrow(List(declaredType, declaredType), Type.Bool), loc)
-          _______ <- unifyTypeM(leqType, Type.mkPureCurriedArrow(List(declaredType, declaredType), Type.Bool), loc)
-          _______ <- unifyTypeM(lubType, Type.mkPureCurriedArrow(List(declaredType, declaredType), declaredType), loc)
-          _______ <- unifyTypeM(glbType, Type.mkPureCurriedArrow(List(declaredType, declaredType), declaredType), loc)
-        } yield declaredType
-
-        // Evaluate the type inference monad with the empty substitution
-        m.run(Substitution.empty) match {
-          case Result.Ok((subst, _)) =>
-            // Reassemble the lattice components.
-            val bot = reassembleExp(e1, root, subst)
-            val top = reassembleExp(e2, root, subst)
-            val equ = reassembleExp(e3, root, subst)
-            val leq = reassembleExp(e4, root, subst)
-            val lub = reassembleExp(e5, root, subst)
-            val glb = reassembleExp(e6, root, subst)
-            Validation.Success(declaredType -> TypedAst.LatticeOps(declaredType, bot, top, equ, leq, lub, glb, loc))
-
-          case Result.Err(e) => Validation.Failure(LazyList(e))
-        }
-
-    }
-
-
-    // Visit every lattice in the ast.
-    val result = root.latticeOps.toList.map {
-      case (_, lattice) => visitLatticeOps(lattice)
     }
 
     // Sequence the results and convert them back to a map.
@@ -2170,7 +2101,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = getLatticeConstraints(den, termTypes, root)
+        tconstrs = getTermTypeClassConstraints(den, termTypes, root)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -2208,7 +2139,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = getLatticeConstraints(den, termTypes, root)
+        tconstrs = getTermTypeClassConstraints(den, termTypes, root)
       } yield (tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     //
@@ -2247,28 +2178,44 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Returns the type constraints for the given term types `ts` where the last term has the denotation `den`.
+    * Returns the type class constraints for the given term types `ts` with the given denotation `den`.
     */
-  private def getLatticeConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
-    case Denotation.Relational => Nil
+  private def getTermTypeClassConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
+    case Denotation.Relational =>
+      // TODO
+      // ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root))
+      Nil
     case Denotation.Latticenal =>
-      if (ts.isEmpty)
-        throw InternalCompilerException(s"Unexpected empty list of term types.")
-      else
-        mkLatticeConstraints(ts.last, root)
+      val relationalTerms = ts.init
+      val latticeTerm = ts.last
+      relationalTerms.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root)) ::: mkTypeClassConstraintsForLatticeTerm(latticeTerm, root)
   }
 
   /**
-    * Constraints the given type `tpe` with the lattice type classes.
+    * Constructs the type class constraints for the given relational term type `tpe`.
     */
-  private def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+  private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
+      // TODO: Add Eq and Hash
+      PredefinedClasses.lookupClassSym("ToString", root),
+    )
+    classes.map(Ast.TypeConstraint(_, tpe))
+  }
+
+  /**
+    * Constructs the type class constraints for the given lattice term type `tpe`.
+    */
+  private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+    val classes = List(
+      // TODO: Add Eq and Hash
+      PredefinedClasses.lookupClassSym("ToString", root),
+      PredefinedClasses.lookupClassSym("PreOrder", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),
       PredefinedClasses.lookupClassSym("JoinLattice", root),
       PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
-    classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
+    classes.map(Ast.TypeConstraint(_, tpe))
   }
 
   /**

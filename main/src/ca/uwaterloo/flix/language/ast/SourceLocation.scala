@@ -12,11 +12,13 @@ object SourceLocation {
   /**
     * Represents a generated source location.
     */
+  // TODO: Deprecated. We should always use real source locations.
   val Generated: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
 
   /**
     * Represents an unknown source location.
     */
+  // TODO: Deprecated. We should always use real source locations.
   val Unknown: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
 
   /**
