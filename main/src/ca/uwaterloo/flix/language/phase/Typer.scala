@@ -2101,7 +2101,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = getLatticeConstraints(den, termTypes, root)
+        tconstrs = getTermTypeClassConstraints(den, termTypes, root)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -2139,7 +2139,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = getLatticeConstraints(den, termTypes, root)
+        tconstrs = getTermTypeClassConstraints(den, termTypes, root)
       } yield (tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     //
@@ -2178,29 +2178,44 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Returns the type constraints for the given term types `ts` where the last term has the denotation `den`.
+    * Returns the type class constraints for the given term types `ts` with the given denotation `den`.
     */
-  private def getLatticeConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
-    case Denotation.Relational => Nil
+  private def getTermTypeClassConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
+    case Denotation.Relational =>
+      // TODO
+      // ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root))
+      Nil
     case Denotation.Latticenal =>
-      if (ts.isEmpty)
-        throw InternalCompilerException(s"Unexpected empty list of term types.")
-      else
-        mkLatticeConstraints(ts.last, root)
+      val relationalTerms = ts.init
+      val latticeTerm = ts.last
+      relationalTerms.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root)) ::: mkTypeClassConstraintsForLatticeTerm(latticeTerm, root)
   }
 
   /**
-    * Constraints the given type `tpe` with the lattice type classes.
+    * Constructs the type class constraints for the given relational term type `tpe`.
     */
-  private def mkLatticeConstraints(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+  private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
+      // TODO: Add Eq and Hash
+      PredefinedClasses.lookupClassSym("ToString", root),
+    )
+    classes.map(Ast.TypeConstraint(_, tpe))
+  }
+
+  /**
+    * Constructs the type class constraints for the given lattice term type `tpe`.
+    */
+  private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+    val classes = List(
+      // TODO: Add Eq and Hash
+      PredefinedClasses.lookupClassSym("ToString", root),
       PredefinedClasses.lookupClassSym("PreOrder", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),
       PredefinedClasses.lookupClassSym("JoinLattice", root),
       PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
-    classes.map(clazz => Ast.TypeConstraint(clazz, tpe))
+    classes.map(Ast.TypeConstraint(_, tpe))
   }
 
   /**

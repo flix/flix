@@ -36,4 +36,8 @@ namespace Test/Term/Lit/List {
         case Cons(t, List[t])
     }
 
+    instance ToString[List[a]] with [a : ToString] {
+        def toString(xs: List[a]): String = ???
+    }
+
 }
