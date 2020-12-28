@@ -2181,7 +2181,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns the type class constraints for the given term types `ts` with the given denotation `den`.
     */
   private def getTermTypeClassConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
-    case Denotation.Relational => ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root))
+    case Denotation.Relational =>
+      // TODO
+      // ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root))
+      Nil
     case Denotation.Latticenal =>
       val relationalTerms = ts.init
       val latticeTerm = ts.last
