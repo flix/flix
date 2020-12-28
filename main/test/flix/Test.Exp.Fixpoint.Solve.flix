@@ -151,4 +151,12 @@ namespace Test/Exp/Fixpoint/Solve {
         case Err(e)
     }
 
+    instance ToString[Option[a]] with [a : ToString] {
+        def toString(o: Option[a]): String = ???
+    }
+
+    instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
+        def toString(r: Result[t, e]): String = ???
+    }
+
 }

@@ -43,4 +43,8 @@ namespace Test/Term/Lit/Result {
         case Err(e)
     }
 
+    instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
+        def toString(r: Result[t, e]): String = ???
+    }
+
 }

@@ -30,10 +30,7 @@ namespace Test/Term/Lit/Option {
     }
 
     instance ToString[Option[a]] with [a : ToString] {
-        def toString(o: Option[a]): String = match o {
-            case None    => "None"
-            case Some(y) => "Some(${y})"
-        }
+        def toString(o: Option[a]): String = ???
     }
 
 }
