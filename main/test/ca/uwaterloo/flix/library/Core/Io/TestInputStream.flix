@@ -114,15 +114,15 @@ namespace Core/Io/TestInputStream {
         g and a0 and a1 and a2 and a3
     }
 
-    @test
-    def readBufferWithOffset02(): Bool & Impure = {
-        let b = testBuffer();
-        let a = [-1 as Int8; 4];
-        let r = readBufferWithOffset(a, 1, -1, b);
-        let s = resultSwap(r);
-        let m = Result.map(e -> e == IOError.IncorrectBufferSize, s);
-        Result.isErr(r) and Result.getWithDefault(m, false)
-    }
+///    @test
+///    def readBufferWithOffset02(): Bool & Impure = {
+///        let b = testBuffer();
+///        let a = [-1 as Int8; 4];
+///        let r = readBufferWithOffset(a, 1, -1, b);
+///        let s = resultSwap(r);
+///        let m = Result.map(e -> e == IOError.IncorrectBufferSize, s);
+///        Result.isErr(r) and Result.getWithDefault(m, false)
+///    }
 
     @test
     def readBufferWithOffset03(): Bool & Impure = {
@@ -156,10 +156,10 @@ namespace Core/Io/TestInputStream {
 
     def testBuffer(): InputStream & Impure = fromBuffer([0 as Int8, 1 as Int8, 2 as Int8])
 
-    def resultEq(i: a, r: Result[a, e]): Bool = Result.getWithDefault(Result.map(v -> i == v, r), false)
+    def resultEq[a : Eq, e](i: a, r: Result[a, e]): Bool = Result.getWithDefault(Result.map(v -> i == v, r), false)
 
-    def resultSwap(r: Result[a, b]): Result[b, a] = match r {
-        case Ok(x) => Err(x)
-        case Err(x) => Ok(x)
-    }
+///    def resultSwap(r: Result[a, b]): Result[b, a] = match r {
+///        case Ok(x) => Err(x)
+///        case Err(x) => Ok(x)
+///    }
 }

@@ -34,14 +34,14 @@ def exists02(): Bool & Impure = exists(new("./doc/")) |> Result.isOk
 @test
 def exists03(): Bool & Impure = exists(new("./doc/foo")) |> Result.isOk
 
-@test
-def getName01(): Bool & Impure = getName(new("hello.txt")) == Ok("hello.txt")
-
-@test
-def getName02(): Bool & Impure = getName(new("./doc/")) == Ok("doc")
-
-@test
-def getName03(): Bool & Impure = getName(new("./doc/foo")) == Ok("foo")
+///@test
+///def getName01(): Bool & Impure = getName(new("hello.txt")) == Ok("hello.txt")
+///
+///@test
+///def getName02(): Bool & Impure = getName(new("./doc/")) == Ok("doc")
+///
+///@test
+///def getName03(): Bool & Impure = getName(new("./doc/foo")) == Ok("foo")
 
 @test
 def getParent01(): Bool & Impure = getParent(new("hello.txt")) |> Result.isOk
@@ -118,29 +118,29 @@ def isWritable03(): Bool & Impure = isWritable(new("./doc/foo")) |> Result.isOk
 @test
 def testReadLines01(): Bool & Impure = readLines(new("README.md")) |> Result.isOk
 
-@test
-def testCanonical01(): Bool & Impure = canonical(new("./doc/..")) == canonical(new("."))
-
-@test
-def testCanonical02(): Bool & Impure = canonical(new("./doc/foo/..")) == canonical(new("./doc"))
-
-@test
-def testCanonical03(): Bool & Impure = canonical(new("./doc/foo/bar/../bar")) == canonical(new("./doc/foo/bar"))
-
-@test
-def testNewFromFragments01(): Bool & Impure = newFromFragments(Nel(".", "doc" :: Nil)) == new("./doc/")
-
-@test
-def testNewFromFragments02(): Bool & Impure = newFromFragments(Nel(".",  "doc" :: ".." :: Nil)) == new("./doc/..")
-
-@test
-def testNewFromFragments03(): Bool & Impure = newFromFragments(Nel(".", Nil)) == new(".")
-
-@test
-def testResolve01(): Bool & Impure = resolve(new("./foo"), "bar") == new("./foo/bar")
-
-@test
-def testResolve02(): Bool & Impure = resolve(new("./foo/.."), "foo") == new("./foo/../foo")
-
-@test
-def testResolve03(): Bool & Impure = resolve(new("."), "foo") == new("./foo")
+///@test
+///def testCanonical01(): Bool & Impure = canonical(new("./doc/..")) == canonical(new("."))
+///
+///@test
+///def testCanonical02(): Bool & Impure = canonical(new("./doc/foo/..")) == canonical(new("./doc"))
+///
+///@test
+///def testCanonical03(): Bool & Impure = canonical(new("./doc/foo/bar/../bar")) == canonical(new("./doc/foo/bar"))
+///
+///@test
+///def testNewFromFragments01(): Bool & Impure = newFromFragments(Nel(".", "doc" :: Nil)) == new("./doc/")
+///
+///@test
+///def testNewFromFragments02(): Bool & Impure = newFromFragments(Nel(".",  "doc" :: ".." :: Nil)) == new("./doc/..")
+///
+///@test
+///def testNewFromFragments03(): Bool & Impure = newFromFragments(Nel(".", Nil)) == new(".")
+///
+///@test
+///def testResolve01(): Bool & Impure = resolve(new("./foo"), "bar") == new("./foo/bar")
+///
+///@test
+///def testResolve02(): Bool & Impure = resolve(new("./foo/.."), "foo") == new("./foo/../foo")
+///
+///@test
+///def testResolve03(): Bool & Impure = resolve(new("."), "foo") == new("./foo")
