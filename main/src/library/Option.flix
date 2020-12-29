@@ -33,6 +33,13 @@ instance ToString[Option[a]] with [a : ToString] {
     }
 }
 
+instance Hash[Option[a]] with [a : Hash] {
+    def hash(o: Option[a]): Int = match o {
+        case Some(y) => 919 * Hash.hash(y)
+        case None => 1046527
+    }
+}
+
 namespace Option {
 
     ///

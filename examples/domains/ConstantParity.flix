@@ -19,13 +19,13 @@ namespace Domain/ConstantParity {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: ConstantParity, e2: ConstantParity): Bool = e1 == e2
+    pub def equ(e1: ConstantParity, e2: ConstantParity): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
+    pub def leq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
         case (Cst(n), Odd)      => isOdd(n)
@@ -40,7 +40,7 @@ namespace Domain/ConstantParity {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
+    pub def lub(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
         case (Bot, x)           => x
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => {
@@ -62,7 +62,7 @@ namespace Domain/ConstantParity {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
+    pub def glb(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2)  Cst(n1) else Bot
@@ -236,19 +236,17 @@ namespace Domain/ConstantParity {
     ///
     pub def isEven(n: BigInt): Bool = not isOdd(n)
 
-    let ConstantParity<> = (Bot, Top, equ, leq, lub, glb)
-
     //
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (ConstantParity, ConstantParity) -> ConstantParity): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (ConstantParity, ConstantParity) -> ConstantParity): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (ConstantParity, ConstantParity) -> ConstantParity): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (ConstantParity, ConstantParity) -> ConstantParity): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (ConstantParity, ConstantParity) -> Bool, bot: ConstantParity): Bool = Bounded.leastElement(bot, leq)
 

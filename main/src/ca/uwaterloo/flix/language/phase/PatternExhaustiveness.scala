@@ -120,24 +120,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param tast The expression to check
     * @param root The AST root
     */
-  def checkPats(tast: TypedAst.LatticeOps, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.LatticeOps, CompilationError] = tast match {
-    case TypedAst.LatticeOps(_, bot0, top0, equ0, leq0, lub0, glb0, _) =>
-      for {
-        _ <- Expressions.checkPats(bot0, root)
-        _ <- Expressions.checkPats(top0, root)
-        _ <- Expressions.checkPats(equ0, root)
-        _ <- Expressions.checkPats(leq0, root)
-        _ <- Expressions.checkPats(lub0, root)
-        _ <- Expressions.checkPats(glb0, root)
-      } yield tast
-  }
-
-  /**
-    * Check that all patterns in a Declaration are exhaustive
-    *
-    * @param tast The expression to check
-    * @param root The AST root
-    */
   def checkPats(tast: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, CompilationError] = for {
     _ <- Expressions.checkPats(tast.exp, root)
   } yield tast
