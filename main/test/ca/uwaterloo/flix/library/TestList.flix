@@ -17,6 +17,7 @@
 namespace TestList {
 
     use ToString.toString;
+    use Hash.hash;
 
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
@@ -2090,5 +2091,24 @@ def distinctWith09(): Bool =
     @test
     def toString06(): Bool =
         toString((1 :: 2 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: 7 :: Nil) :: Nil) == "1 :: 2 :: Nil :: 2 :: 3 :: Nil :: 4 :: 7 :: Nil :: Nil"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(Nil: List[Unit]) == hash(Nil: List[Unit])
+
+    @test
+    def hash02(): Bool = hash(1 :: Nil) == hash(1 :: Nil)
+
+    @test
+    def hash03(): Bool = hash(1 :: 2 :: Nil) == hash(1 :: 2 :: Nil)
+
+    @test
+    def hash04(): Bool = hash(2 :: 1 :: Nil) != hash(1 :: 2 :: Nil)
+
+    @test
+    def hash05(): Bool = hash("c" :: "b" :: "a" :: Nil) != hash("c" :: "a" :: "b" :: Nil)
 
 }

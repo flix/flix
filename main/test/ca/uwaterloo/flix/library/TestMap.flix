@@ -19,6 +19,7 @@ use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
 namespace TestMap {
 
     use ToString.toString;
+    use Hash.hash;
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
@@ -1789,5 +1790,24 @@ def query18(): Bool =
     @test
     def toString05(): Bool =
         toString(Map#{2 -> Map#{1 -> 0, 2 -> 1}, 3 -> Map#{3 -> 2, 4 -> 92}}) == "Map#{2 -> Map#{1 -> 0, 2 -> 1}, 3 -> Map#{3 -> 2, 4 -> 92}}"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(Map#{}: Map[Unit, Unit]) == hash(Map#{}: Map[Unit, Unit])
+
+    @test
+    def hash02(): Bool = hash(Map#{1 -> true, 2 -> false, 3 -> false}) == hash(Map#{1 -> true, 2 -> false, 3 -> false})
+
+    @test
+    def hash03(): Bool = hash(Map#{1 -> 2, 1 -> 2}) != hash(Map#{1 -> 1, 2 -> 2})
+
+    @test
+    def hash04(): Bool = hash(Map#{1 -> 'a', 2 -> 'b'}) != hash(Map#{'a' -> 1, 'b' -> 2})
+
+    @test
+    def hash05(): Bool = hash(Map#{1 -> 'a', 2 -> 'b', 3 -> 'z', 4 -> 'x'}) == hash(Map#{1 -> 'a', 2 -> 'b', 3 -> 'z', 4 -> 'x'})
 
 }

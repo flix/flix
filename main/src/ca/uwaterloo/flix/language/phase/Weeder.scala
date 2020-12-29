@@ -97,8 +97,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Constraint => Nil.toSuccess
 
-    case d: ParsedAst.Declaration.LatticeComponents => visitLatticeOps(d)
-
     case d: ParsedAst.Declaration.Class => visitClass(d)
 
     case d: ParsedAst.Declaration.Instance => visitInstance(d)
@@ -116,7 +114,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val tparam = visitTypeParam(tparam0)
       for {
-        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
+        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed))
         sigs <- traverse(sigs0)(visitSig)
       } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, sigs.flatten, loc))
   }
@@ -325,18 +323,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(headVal, bodyVal) {
         case (h, bs) => WeededAst.Constraint(h, bs, mkSL(sp1, sp2))
-      }
-  }
-
-  /**
-    * Performs weeding on the given lattice components `lc0`.
-    */
-  private def visitLatticeOps(lc0: ParsedAst.Declaration.LatticeComponents)(implicit flix: Flix): Validation[List[WeededAst.Declaration.LatticeOps], WeederError] = lc0 match {
-    case ParsedAst.Declaration.LatticeComponents(sp1, tpe, elms, sp2) =>
-      val elmsVal = traverse(elms)(e => visitExp(e))
-      elmsVal flatMap {
-        case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeOps(visitType(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
-        case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
       }
   }
 
@@ -1723,6 +1709,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val modifier = m.name match {
       case "inline" => Ast.Modifier.Inline
       case "pub" => Ast.Modifier.Public
+      case "sealed" => Ast.Modifier.Sealed
       case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
     }
 

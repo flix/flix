@@ -36,7 +36,7 @@ object LiftedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: LiftedAst.Expression)
 
-  case class LatticeOps(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
+  case class LatticeOps(tpe: Type, bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
   sealed trait Expression {
     def tpe: Type

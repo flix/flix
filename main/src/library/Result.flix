@@ -33,6 +33,13 @@ instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
     }
 }
 
+instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
+    def hash(r: Result[t, e]): Int = match r {
+        case Ok(v)  => 5381 + 113 * Hash.hash(v)
+        case Err(v) => 5351 + 97 * Hash.hash(v)
+    }
+}
+
 instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
 
     def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {

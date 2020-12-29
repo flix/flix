@@ -64,6 +64,7 @@ class Flix {
     * The core library *must* be present for any program to compile.
     */
   private val coreLibrary = List(
+    // Operators
     "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
     "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
@@ -79,6 +80,15 @@ class Flix {
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
 
+    // Lattices
+    "PreOrder.flix" -> LocalResource.get("/src/library/PreOrder.flix"),
+    "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
+    "LowerBound.flix" -> LocalResource.get("/src/library/LowerBound.flix"),
+    "UpperBound.flix" -> LocalResource.get("/src/library/UpperBound.flix"),
+    "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),
+    "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
+
+    // String
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix")
   )
 
@@ -128,11 +138,9 @@ class Flix {
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
+    "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
-    "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),
-    "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
-    "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
     "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 

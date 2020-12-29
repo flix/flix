@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.math.BigInteger
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -130,6 +130,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         cmpDefs += defn
       }
     }
+
+    /**
+      * A function-local set of all lattice operations.
+      */
+    val latticeOps: mutable.Map[Type, LatticeOps] = mutable.Map.empty
 
     /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
@@ -614,6 +619,20 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         */
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
         case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
+
+          // Populate global map of lattice ops.
+          den match {
+            case Denotation.Relational => // nop - no lattice ops.
+            case Denotation.Latticenal =>
+              val tpe = subst0(terms.last.tpe)
+              latticeOps.get(tpe) match {
+                case None =>
+                  val ops = mkLatticeOps(tpe)
+                  latticeOps += tpe -> ops
+                case Some(_) => // nop - already added to map.
+              }
+          }
+
           val ts = terms.map(t => visitExp(t, env0))
           Predicate.Head.Atom(pred, den, ts, subst0(tpe), loc)
 
@@ -657,6 +676,38 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
       }
 
+      /**
+        * Returns the lattice operations for the given `tpe` assembled from the type class instances.
+        */
+      def mkLatticeOps(tpe: Type): LatticeOps = {
+        // The types of the lattice ops components.
+        val botTpe = Type.mkPureArrow(Type.Unit, tpe)
+        val equTyp = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+        val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+        val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+        val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+
+        // The symbols of the lattice ops components.
+        val bot = getSigSym("LowerBound", "minValue", botTpe)
+        val equ = getSigSym("PreOrder", "equ", leqTpe)
+        val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
+        val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
+        val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)
+
+        LatticeOps(tpe, bot, equ, leq, lub, glb)
+      }
+
+      /**
+        * Returns the symbol of the given signature identified by the given `className` and `sigName` specialized to the given type `tpe`.
+        */
+      def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
+        val sp1 = SourcePosition.Unknown
+        val sp2 = SourcePosition.Unknown
+        val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, className, sp2))
+        val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, sigName, sp2))
+        specializeSigSym(sigSym, tpe)
+      }
+
       visitExp(exp0, env0)
     }
 
@@ -685,15 +736,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val instances = root.instances(sig.sym.clazz)
 
       val defns = instances.flatMap {
-        inst => inst.defs.find {
-          defn =>
-            defn.sym.name == sig.sym.name && (
-              Unification.unifyTypes(defn.declaredScheme.base, tpe) match {
-                case Result.Ok(_) => true
-                case Result.Err(_) => false
-              }
-            )
-        }
+        inst =>
+          inst.defs.find {
+            defn =>
+              defn.sym.name == sig.sym.name && (
+                Unification.unifyTypes(defn.declaredScheme.base, tpe) match {
+                  case Result.Ok(_) => true
+                  case Result.Err(_) => false
+                }
+                )
+          }
       }
 
       if (defns.size != 1) {
@@ -934,7 +986,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     // Reassemble the AST.
     root.copy(
       defs = specializedDefns.toMap,
-      properties = specializedProperties.toList
+      properties = specializedProperties.toList,
+      latticeOps = latticeOps.toMap
     ).toSuccess
   }
 

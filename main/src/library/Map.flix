@@ -32,6 +32,11 @@ instance ToString[Map[k, v]] with [k : ToString, v : ToString] {
         "Map#{${String.dropRight(2, s)}}"
 }
 
+instance Hash[Map[k, v]] with [k : Hash, v : Hash] {
+    def hash(m: Map[k, v]): Int =
+        Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
+}
+
 instance Eq[Map[k, v]] with[k : Eq, v : Eq] {
 
     def eq(m1: Map[k, v], m2: Map[k, v]): Bool =

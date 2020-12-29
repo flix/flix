@@ -29,6 +29,13 @@ instance ToString[Validation[t, e]] with [t : ToString, e : ToString] {
     }
 }
 
+instance Hash[Validation[t, e]] with [t : Hash, e : Hash] {
+    def hash(x: Validation[t, e]): Int = match x {
+        case Success(v) => 5407 + 197 * Hash.hash(v)
+        case Failure(v) => 5413 + 199 * Hash.hash(v)
+    }
+}
+
 instance Eq[Validation[t, e]] with[t : Eq, e : Eq] {
 
     def eq(v1: Validation[t, e], v2: Validation[t, e]): Bool = match (v1, v2) {

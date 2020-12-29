@@ -212,6 +212,26 @@ object ResolutionError {
   }
 
   /**
+    * Sealed Class Error.
+    *
+    * @param sym the class symbol.
+    * @param ns  the namespace from which the class is sealed.
+    * @param loc the location where the error occurred.
+    */
+  case class SealedClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Sealed."
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Class'" << Red(sym.toString) << s"' is sealed from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "sealed class.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Move the instance to the class's namespace." << NewLine
+    }
+  }
+
+  /**
     * Inaccessible Def Error.
     *
     * @param sym the def symbol.

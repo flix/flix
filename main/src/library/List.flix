@@ -30,6 +30,11 @@ instance ToString[List[a]] with [a : ToString] {
         List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
 }
 
+instance Hash[List[a]] with [a : Hash] {
+    def hash(xs: List[a]): Int =
+        List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
+}
+
 instance Eq[List[a]] with[a : Eq] {
 
     def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {

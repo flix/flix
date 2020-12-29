@@ -28,6 +28,12 @@ instance ToString[Nel[a]] with [a : ToString] {
     }
 }
 
+instance Hash[Nel[a]] with [a : Hash] {
+    def hash(l: Nel[a]): Int = match l {
+        case Nel(x, xs) => 39119 + Hash.hash(xs) + Hash.hash(x)
+    }
+}
+
 instance Eq[Nel[a]] with[a : Eq] {
 
     def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {

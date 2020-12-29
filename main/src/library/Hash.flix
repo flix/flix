@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 Matthew Lutze
+ *  Copyright 2020 Matthew Lutze, Esben Bjerre
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,122 +14,146 @@
  *  limitations under the License.
  */
 
-namespace Hash {
-
+///
+/// A type class for types that can be hashed.
+///
+pub class Hash[a] {
     ///
-    /// A type class for types that can be hashed.
+    /// Returns a hash value for the given x.
     ///
-    pub class Hash[a] {
-        ///
-        /// Returns a hash value for the given x.
-        ///
-        pub def hash(x: a): Int
+    pub def hash(x: a): Int
+}
+
+instance Hash[Unit] {
+    def hash(x: Unit): Int = 0
+}
+
+instance Hash[Bool] {
+    def hash(x: Bool): Int = match x {
+        case true => 1231
+        case false => 1237
     }
+}
 
-    instance Hash[Unit] {
-        def hash(x: Unit): Int = 0
+instance Hash[Char] {
+    def hash(x: Char): Int =
+        import java.lang.Character:hashCode(Char);
+        hashCode(x) as & Pure
+}
+
+instance Hash[Float32] {
+    def hash(x: Float32): Int =
+        import java.lang.Float:hashCode(Float32);
+        hashCode(x) as & Pure
+}
+
+instance Hash[Float64] {
+    def hash(x: Float64): Int =
+        import java.lang.Double:hashCode(Float64);
+        hashCode(x) as & Pure
+}
+
+instance Hash[Int8] {
+    def hash(x: Int8): Int =
+        import java.lang.Byte:hashCode(Int8);
+        hashCode(x) as & Pure
+}
+
+instance Hash[Int16] {
+    def hash(x: Int16): Int =
+        import java.lang.Short:hashCode(Int16);
+        hashCode(x) as & Pure
+}
+
+instance Hash[Int32] {
+    def hash(x: Int32): Int =
+        import java.lang.Integer:hashCode(Int32);
+        hashCode(x) as & Pure
+}
+
+instance Hash[Int64] {
+    def hash(x: Int64): Int =
+        import java.lang.Long:hashCode(Int64);
+        hashCode(x) as & Pure
+}
+
+instance Hash[String] {
+    def hash(x: String): Int =
+        import java.lang.String.hashCode();
+        hashCode(x) as & Pure
+}
+
+instance Hash[BigInt] {
+    def hash(x: BigInt): Int =
+        import java.math.BigInteger.hashCode();
+        hashCode(x) as & Pure
+}
+
+instance Hash[(a1, a2)] with [a1 : Hash, a2 : Hash] {
+    def hash(t: (a1, a2)): Int = match t {
+        case (x1, x2) => 2 * 3 * Hash.hash(x1) + 5 * Hash.hash(x2)
     }
+}
 
-    instance Hash[Bool] {
-        def hash(x: Bool): Int = match x {
-            case true => 1231
-            case false => 1237
-        }
+instance Hash[(a1, a2, a3)] with [a1 : Hash, a2 : Hash, a3 : Hash] {
+    def hash(t: (a1, a2, a3)): Int = match t {
+        case (x1, x2, x3) => 3 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3)
     }
+}
 
-    instance Hash[Char] {
-        def hash(x: Char): Int =
-            import java.lang.Character:hashCode(Char);
-            hashCode(x) as & Pure
+instance Hash[(a1, a2, a3, a4)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash] {
+    def hash(t: (a1, a2, a3, a4)): Int = match t {
+        case (x1, x2, x3, x4) =>
+            4 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
     }
+}
 
-    instance Hash[Float32] {
-        def hash(x: Float32): Int =
-            import java.lang.Float:hashCode(Float32);
-            hashCode(x) as & Pure
+instance Hash[(a1, a2, a3, a4, a5)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash] {
+    def hash(t: (a1, a2, a3, a4, a5)): Int = match t {
+        case (x1, x2, x3, x4, x5) =>
+            5 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5)
     }
+}
 
-    instance Hash[Float64] {
-        def hash(x: Float64): Int =
-            import java.lang.Double:hashCode(Float64);
-            hashCode(x) as & Pure
+instance Hash[(a1, a2, a3, a4, a5, a6)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash] {
+    def hash(t: (a1, a2, a3, a4, a5, a6)): Int = match t {
+        case (x1, x2, x3, x4, x5, x6) =>
+            6 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6)
     }
+}
 
-    instance Hash[Int8] {
-        def hash(x: Int8): Int =
-            import java.lang.Byte:hashCode(Int8);
-            hashCode(x) as & Pure
+instance Hash[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash] {
+    def hash(t: (a1, a2, a3, a4, a5, a6, a7)): Int = match t {
+        case (x1, x2, x3, x4, x5, x6, x7) =>
+            7 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7)
     }
+}
 
-    instance Hash[Int16] {
-        def hash(x: Int16): Int =
-            import java.lang.Short:hashCode(Int16);
-            hashCode(x) as & Pure
+instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash] {
+    def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8)): Int = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8) =>
+            8 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)
     }
+}
 
-    instance Hash[Int32] {
-        def hash(x: Int32): Int =
-            import java.lang.Integer:hashCode(Int32);
-            hashCode(x) as & Pure
+instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash, a9 : Hash] {
+    def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Int = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
+            9 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)
+            + 31 * Hash.hash(x9)
     }
+}
 
-    instance Hash[Int64] {
-        def hash(x: Int64): Int =
-            import java.lang.Long:hashCode(Int64);
-            hashCode(x) as & Pure
+instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash, a9 : Hash, a10 : Hash] {
+    def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Int = match t {
+        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
+            10 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
+            + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)
+            + 31 * Hash.hash(x9) + 37 * Hash.hash(x10)
     }
-
-    instance Hash[String] {
-        def hash(x: String): Int =
-            import java.lang.String.hashCode();
-            hashCode(x) as & Pure
-    }
-
-    instance Hash[BigInt] {
-        def hash(x: BigInt): Int =
-            import java.math.BigInteger.hashCode();
-            hashCode(x) as & Pure
-    }
-
-    instance Hash[Option[a]] with [a : Hash] {
-        def hash(o: Option[a]): Int = match o {
-            case Some(y) => Hash/Hash.hash(y)
-            case None => 0
-        }
-    }
-
-    instance Hash[List[a]] with [a : Hash] {
-        def hash(l: List[a]): Int =
-            List.foldLeft(
-                acc -> next -> 31 * acc + Hash/Hash.hash(next),
-                1,
-                l
-            )
-    }
-
-    instance Hash[Nel[a]] with [a : Hash] {
-        def hash(l: Nel[a]): Int = match l {
-            case Nel(x, xs) => 31 * Hash/Hash.hash(xs) + Hash/Hash.hash(x)
-        }
-    }
-
-    instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
-        def hash(r: Result[t, e]): Int = match r {
-            case Ok(v)  => Hash/Hash.hash(v)
-            case Err(v) => Hash/Hash.hash(v)
-        }
-    }
-
-    instance Hash[Validation[t, e]] with [t : Hash, e : Hash] {
-        def hash(x: Validation[t, e]): Int = match x {
-            case Success(v) => Hash/Hash.hash(v)
-            case Failure(v) => Hash/Hash.hash(v)
-        }
-    }
-
-    // TODO: Move instances to proper namespaces, e.g. to Option, List, etc.
-    // TODO: Move tests from TestHash into proper namespaces/files, e.g. TestOption, TestList, etc.
-    // TODO: Add instances for Array, Map, MutList, MutMap, MutSet, Set
-    // TODO: Write more systematic tests that use different types (?).
-
 }

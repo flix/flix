@@ -116,7 +116,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Enum |
       Declarations.OpaqueType |
       Declarations.TypeAlias |
-      Declarations.LatticeComponents |
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Class |
@@ -210,16 +209,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         optWS ~ SP ~ Head ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
-      }
-    }
-
-    def LatticeComponents: Rule1[ParsedAst.Declaration] = {
-      def Elms: Rule1[Seq[ParsedAst.Expression]] = rule {
-        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      rule {
-        optWS ~ SP ~ keyword("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.LatticeComponents
       }
     }
 
@@ -1350,8 +1339,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("pub")) ~ SP ~> ParsedAst.Modifier
     }
 
+    def Sealed: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(keyword("sealed")) ~ SP ~> ParsedAst.Modifier
+    }
+
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Public
+      Inline | Public | Sealed
     }
 
     rule {

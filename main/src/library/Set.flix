@@ -32,6 +32,11 @@ instance ToString[Set[a]] with [a : ToString] {
         "Set#{${String.dropRight(2, s)}}"
 }
 
+instance Hash[Set[a]] with [a : Hash] {
+    def hash(xs: Set[a]): Int =
+        Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, xs)
+}
+
 instance Eq[Set[a]] with[a : Eq] {
 
     def eq(xs: Set[a], ys: Set[a]): Bool =

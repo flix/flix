@@ -16,6 +16,8 @@
 
 namespace TestOption {
 
+    use Hash.hash;
+
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -744,5 +746,24 @@ def lift1011(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
 
 @test
 def lift1012(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, None, None, None, None, None, None, None, None, None, None: Option[Int32]) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(None: Option[Unit]) == hash(None: Option[Unit])
+
+    @test
+    def hash02(): Bool = hash(Some(1)) == hash(Some(1))
+
+    @test
+    def hash03(): Bool = hash(Some((1, 1))) == hash(Some((1, 1)))
+
+    @test
+    def hash04(): Bool = hash(Some((1, 2))) != hash(Some((2, 1)))
+
+    @test
+    def hash05(): Bool = hash(None: Option[Unit]) != hash(Some((())))
 
 }

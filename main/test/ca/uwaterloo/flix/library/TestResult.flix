@@ -16,6 +16,8 @@
 
 namespace TestResult {
 
+    use Hash.hash;
+
 /////////////////////////////////////////////////////////////////////////////
 // isOk                                                                    //
 /////////////////////////////////////////////////////////////////////////////
@@ -643,5 +645,24 @@ def lift1011(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
 
 @test
 def lift1012(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"), Err("e9"), Err("e10"): Result[Int32, String]) == Err("e1")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(Err(()): Result[Unit, _]) == hash(Err(()): Result[Unit, _])
+
+    @test
+    def hash02(): Bool = hash(Ok(()): Result[_, Unit]) != hash(Err(()): Result[Unit, _])
+
+    @test
+    def hash03(): Bool = hash(Ok("Success"): Result[_, Unit]) == hash(Ok("Success"): Result[_, Unit])
+
+    @test
+    def hash04(): Bool = hash(Ok("Success"): Result[_, String]) != hash(Err("Error"): Result[String, _])
+
+    @test
+    def hash05(): Bool = hash(Err(13i8): Result[Unit, _]) != hash(Err(255i16): Result[Unit, _])
 
 }

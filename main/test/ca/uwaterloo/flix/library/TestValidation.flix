@@ -16,6 +16,8 @@
  
 namespace Validation {
 
+    use Hash.hash;
+
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
@@ -465,5 +467,24 @@ def lift1011(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 
 
 @test
 def lift1012(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)), Failure(Nel("e5", Nil)), Failure(Nel("e6", Nil)), Failure(Nel("e7", Nil)), Failure(Nel("e8", Nil)), Failure(Nel("e9", Nil)), Failure(Nel("e10", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: "e5" :: "e6" :: "e7" :: "e8" :: "e9" :: "e10" :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(Success(()): Validation[_, Unit]) == hash(Success(()): Validation[_, Unit])
+
+    @test
+    def hash02(): Bool = hash(Success(()): Validation[_, Unit]) != hash(Failure(Nel((), () :: Nil)): Validation[Unit, _])
+
+    @test
+    def hash03(): Bool = hash(Success(1, 2): Validation[_, Unit]) == hash(Success(1, 2): Validation[_, Unit])
+
+    @test
+    def hash04(): Bool = hash(Success(1, 2, 3): Validation[_, Unit]) != hash(Success(1, 3, 2): Validation[_, Unit])
+
+    @test
+    def hash05(): Bool = hash(Success(Nel(1, Nil)): Validation[_, Int32]) != hash(Failure(Nel(1, Nil)): Validation[Nel[Int32], _])
 
 }
