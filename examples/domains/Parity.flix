@@ -19,6 +19,15 @@ namespace Domain/Parity {
     ///
     pub def equ(e1: Parity, e2: Parity): Bool = e1 == e2
 
+    instance PreOrder[Parity] {
+        def equ(e1: Parity, e2: Parity): Bool = equ(e1, e2)
+    }
+
+    instance Eq[Parity] {
+        def eq(e1: Parity, e2: Parity): Bool = equ(e1, e2)
+        def neq(e1: Parity, e2: Parity): Bool = not equ(e1, e2)
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///

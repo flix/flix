@@ -16,14 +16,14 @@ namespace Bounded {
     ///
     /// NB: This particular law is for unary functions.
     ///
-    law strict1[a, b : PreOrder](f: a -> b, bot: a, cobot: b): Bool = PreOrder.equ(f(bot), cobot)
+    law strict1[a, b : Eq](f: a -> b, bot: a, cobot: b): Bool = f(bot) == cobot
 
     ///
     /// The strictness law asserts that a function `f` between two orders must preserve bottoms: `bot` and `cobot`.
     ///
     /// NB: This particular law is for binary functions.
     ///
-    law strict2[a, b, c : PreOrder](f: (a, b) -> c, bot1: a, bot2: b, cobot: c): Bool = PreOrder.equ(f(bot1, bot2), cobot)
+    law strict2[a, b, c : Eq](f: (a, b) -> c, bot1: a, bot2: b, cobot: c): Bool = f(bot1, bot2) == cobot
 
 }
 

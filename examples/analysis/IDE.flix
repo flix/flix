@@ -25,10 +25,15 @@ namespace IDE {
     instance PreOrder[Value] {
         def equ(x: Value, y: Value): Bool = match (x, y) {
             case (Top, Top) => true
-            case (Cst(a), Cst(b)) => true
+            case (Cst(a), Cst(b)) => a == b
             case (Bot, Bot) => true
             case _ => false
         }
+    }
+
+    instance Eq[Value] {
+        def eq(x: Value, y: Value): Bool = PreOrder.equ(x, y)
+        def neq(x: Value, y: Value): Bool = not PreOrder.equ(x, y)
     }
 
     instance PartialOrder[Value] {
@@ -99,6 +104,11 @@ namespace IDE {
             case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
             case _ => false
         }
+    }
+
+    instance Eq[Transformer] {
+        def eq(x: Transformer, y: Transformer): Bool = PreOrder.equ(x, y)
+        def neq(x: Transformer, y: Transformer): Bool = not PreOrder.equ(x, y)
     }
 
     instance PartialOrder[Transformer] {

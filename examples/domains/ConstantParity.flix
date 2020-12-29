@@ -21,6 +21,15 @@ namespace Domain/ConstantParity {
     ///
     pub def equ(e1: ConstantParity, e2: ConstantParity): Bool = e1 == e2
 
+    instance PreOrder[ConstantParity] {
+        def equ(e1: ConstantParity, e2: ConstantParity): Bool = equ(e1, e2)
+    }
+
+    instance Eq[ConstantParity] {
+        def eq(e1: ConstantParity, e2: ConstantParity): Bool = equ(e1, e2)
+        def neq(e1: ConstantParity, e2: ConstantParity): Bool = not equ(e1, e2)
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///

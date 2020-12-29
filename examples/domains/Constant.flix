@@ -24,6 +24,11 @@ namespace Domain/Constant {
         case _ => false
     }
 
+    instance Eq[Constant] {
+        def eq(e1: Constant, e2: Constant): Bool = equ(e1, e2)
+        def neq(e1: Constant, e2: Constant): Bool = not equ(e1, e2)
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///

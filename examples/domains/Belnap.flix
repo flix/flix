@@ -31,6 +31,11 @@ namespace Belnap {
         def equ(e1: Belnap, e2: Belnap): Bool = equ(e1, e2)
     }
 
+    instance Eq[Belnap] {
+        def eq(e1: Belnap, e2: Belnap): Bool = equ(e1, e2)
+        def neq(e1: Belnap, e2: Belnap): Bool = not equ(e1, e2)
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
