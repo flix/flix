@@ -13,6 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+instance LowerBound[Bool] {
+    def minValue(): Bool = false
+}
+
+instance UpperBound[Bool] {
+    def maxValue(): Bool = true
+}
+
 namespace Bool {
 
     ///

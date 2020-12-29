@@ -59,3 +59,7 @@ instance UpperBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : UpperBound,
 instance UpperBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : UpperBound, a2 : UpperBound, a3 : UpperBound, a4 : UpperBound, a5 : UpperBound, a6 : UpperBound, a7 : UpperBound, a8 : UpperBound, a9 : UpperBound, a10 : UpperBound] {
     def maxValue(): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = (UpperBound.maxValue(), UpperBound.maxValue(), UpperBound.maxValue(), UpperBound.maxValue(), UpperBound.maxValue(), UpperBound.maxValue(), UpperBound.maxValue(), UpperBound.maxValue(), UpperBound.maxValue(), UpperBound.maxValue())
 }
+
+instance UpperBound[Unit] {
+    def maxValue(): Unit = ()
+}

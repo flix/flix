@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Int32] {
+    def minValue(): Int32 = Int32.minValue()
+}
+
+instance UpperBound[Int32] {
+    def maxValue(): Int32 = Int32.maxValue()
+}
+
 namespace Int32 {
 
     ///

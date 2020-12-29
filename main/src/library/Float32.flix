@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Float32] {
+    def minValue(): Float32 = Float32.minValue()
+}
+
+instance UpperBound[Float32] {
+    def maxValue(): Float32 = Float32.maxValue()
+}
+
 namespace Float32 {
 
     ///

@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Int8] {
+    def minValue(): Int8 = Int8.minValue()
+}
+
+instance UpperBound[Int8] {
+    def maxValue(): Int8 = Int8.maxValue()
+}
+
 namespace Int8 {
 
     ///
