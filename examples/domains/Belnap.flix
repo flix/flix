@@ -19,7 +19,17 @@ namespace Belnap {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    pub def equ(e1: Belnap, e2: Belnap): Bool = e1 == e2
+    pub def equ(e1: Belnap, e2: Belnap): Bool = match (e1, e2) {
+        case (Top, Top) => true
+        case (True, True) => true
+        case (False, False) => true
+        case (Bot, Bot) => true
+        case _ => false
+    }
+
+    instance PreOrder[Belnap] {
+        def equ(e1: Belnap, e2: Belnap): Bool = equ(e1, e2)
+    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.

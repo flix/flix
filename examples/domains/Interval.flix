@@ -20,10 +20,17 @@ namespace Domain/Interval {
                   case Bot
     }
 
-    ///
-    /// Returns `true` iff `e1` is equal to `e2`.
-    ///
-    pub def equ(e1: Interval, e2: Interval): Bool = norm(e1) == norm(e2)
+    instance PreOrder[Interval] {
+        ///
+        /// Returns `true` iff `e1` is equal to `e2`.
+        ///
+        pub def equ(e1: Interval, e2: Interval): Bool = match (norm(e1), norm(e2)) {
+            case (Top, Top) => true
+            case (Range(x1, y1), Range(x2, y2)) => x1 == x2 and y1 == y2
+            case (Bot, Bot) => true
+            case _ => false
+        }
+    }
 
     ///
     /// Returns the canonical representation of the given interval `e`.

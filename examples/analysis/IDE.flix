@@ -23,7 +23,12 @@ namespace IDE {
     }
 
     instance PreOrder[Value] {
-        def equ(x: Value, y: Value): Bool = x == y
+        def equ(x: Value, y: Value): Bool = match (x, y) {
+            case (Top, Top) => true
+            case (Cst(a), Cst(b)) => true
+            case (Bot, Bot) => true
+            case _ => false
+        }
     }
 
     instance PartialOrder[Value] {
@@ -89,7 +94,11 @@ namespace IDE {
     }
 
     instance PreOrder[Transformer] {
-        def equ(x: Transformer, y: Transformer): Bool = x == y
+        def equ(x: Transformer, y: Transformer): Bool = match (x, y) {
+            case (BotTrans, BotTrans) => true
+            case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
+            case _ => false
+        }
     }
 
     instance PartialOrder[Transformer] {

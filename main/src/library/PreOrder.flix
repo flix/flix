@@ -17,13 +17,13 @@
 ///
 /// A type class for pre-orders.
 ///
-class PreOrder[a] {
+pub class PreOrder[a] {
 
     // TODO: Decide if this type class is warranted.
 
     ///
     /// Returns `true` if `x` is equal to `y`.
     ///
-    def equ(x: a, y: a): Bool
+    pub def equ(x: a, y: a): Bool
 
 }

@@ -17,7 +17,12 @@ namespace Domain/Constant {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    pub def equ(e1: Constant, e2: Constant): Bool = e1 == e2
+    pub def equ(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+        case (Top, Top) => true
+        case (Cst(x), Cst(y)) => x == y
+        case (Bot, Bot) => true
+        case _ => false
+    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
