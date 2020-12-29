@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Int16] {
+    def minValue(): Int16 = Int16.minValue()
+}
+
+instance UpperBound[Int16] {
+    def maxValue(): Int16 = Int16.maxValue()
+}
+
 namespace Int16 {
 
     ///

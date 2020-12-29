@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Int64] {
+    def minValue(): Int64 = Int64.minValue()
+}
+
+instance UpperBound[Int64] {
+    def maxValue(): Int64 = Int64.maxValue()
+}
+
 namespace Int64 {
 
     ///
