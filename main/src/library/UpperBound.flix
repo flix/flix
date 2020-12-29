@@ -63,35 +63,3 @@ instance UpperBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : UpperB
 instance UpperBound[Unit] {
     def maxValue(): Unit = ()
 }
-
-instance UpperBound[Bool] {
-    def maxValue(): Bool = true
-}
-
-instance UpperBound[Int8] {
-    def maxValue(): Int8 = Int8.maxValue()
-}
-
-instance UpperBound[Int16] {
-    def maxValue(): Int16 = Int16.maxValue()
-}
-
-instance UpperBound[Int32] {
-    def maxValue(): Int32 = Int32.maxValue()
-}
-
-instance UpperBound[Int64] {
-    def maxValue(): Int64 = Int64.maxValue()
-}
-
-instance UpperBound[Float32] {
-    def maxValue(): Float32 = Float32.maxValue()
-}
-
-instance UpperBound[Float64] {
-    def maxValue(): Float64 = Float64.maxValue()
-}
-
-instance UpperBound[Char] {
-    def maxValue(): Char = '\uffff'
-}

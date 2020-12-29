@@ -64,34 +64,8 @@ instance LowerBound[Unit] {
     def minValue(): Unit = ()
 }
 
-instance LowerBound[Bool] {
-    def minValue(): Bool = false
-}
 
-instance LowerBound[Int8] {
-    def minValue(): Int8 = Int8.minValue()
-}
 
-instance LowerBound[Int16] {
-    def minValue(): Int16 = Int16.minValue()
-}
 
-instance LowerBound[Int32] {
-    def minValue(): Int32 = Int32.minValue()
-}
 
-instance LowerBound[Int64] {
-    def minValue(): Int64 = Int64.minValue()
-}
 
-instance LowerBound[Float32] {
-    def minValue(): Float32 = Float32.minValue()
-}
-
-instance LowerBound[Float64] {
-    def minValue(): Float64 = Float64.minValue()
-}
-
-instance LowerBound[Char] {
-    def minValue(): Char = '\u0000'
-}

@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Char] {
+    def minValue(): Char = '\u0000'
+}
+
+instance UpperBound[Char] {
+    def maxValue(): Char = '\uffff'
+}
+
 namespace Char {
 
     ///
