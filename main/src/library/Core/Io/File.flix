@@ -17,6 +17,20 @@
 use Core/Io/IOError.IOError;
 use Core/Io/InputStream.InputStream;
 use Core/Io/OutputStream.OutputStream;
+use Core/Io/File.File;
+
+instance Eq[File] {
+
+    def eq(x: File, y: File): Bool = {
+        import java.io.File.equals(##java.lang.Object);
+        let File(xJ) = x;
+        let File(yJ) = y;
+        xJ.equals(yJ)
+    }
+
+    def neq(x: File, y: File): Bool = not (x == y)
+
+}
 
 namespace Core/Io/File {
     ///

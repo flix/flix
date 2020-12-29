@@ -40,14 +40,9 @@ instance Hash[Set[a]] with [a : Hash] {
 instance Eq[Set[a]] with[a : Eq] {
 
     def eq(xs: Set[a], ys: Set[a]): Bool =
-        let Set(t1) = xs;
-        let Set(t2) = ys;
-        t1 == t2
+        Set.forall(x -> Set.memberOf(x, ys), xs) and Set.forall(y -> Set.memberOf(y, xs), ys)
 
-    def neq(xs: Set[a], ys: Set[a]): Bool =
-        let Set(t1) = xs;
-        let Set(t2) = ys;
-        t1 != t2
+    def neq(xs: Set[a], ys: Set[a]): Bool = not (xs == ys)
 
 }
 
@@ -115,9 +110,9 @@ namespace Set {
     /// Returns true if and only if `xs` is the empty set.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty[a : Eq](xs: Set[a]): Bool =
+    pub def isEmpty(xs: Set[a]): Bool =
         let Set(es) = xs;
-        es == RedBlackTree.empty()
+        RedBlackTree.isEmpty(es)
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.

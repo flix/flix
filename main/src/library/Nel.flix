@@ -40,9 +40,7 @@ instance Eq[Nel[a]] with[a : Eq] {
         case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
     }
 
-    def neq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys)  {
-        case (Nel(x, l1), Nel(y, l2)) => x != y or l1 != l2
-    }
+    def neq(xs: Nel[a], ys: Nel[a]): Bool = not (xs == ys)
 
 }
 

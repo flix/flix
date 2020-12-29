@@ -40,14 +40,9 @@ instance Hash[Map[k, v]] with [k : Hash, v : Hash] {
 instance Eq[Map[k, v]] with[k : Eq, v : Eq] {
 
     def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
-        let Map(t1) = m1;
-        let Map(t2) = m2;
-        t1 == t2
+        Map.isSubmapOf(m1, m2) and Map.isSubmapOf(m2, m1)
 
-    def neq(m1: Map[k, v], m2: Map[k, v]): Bool =
-        let Map(t1) = m1;
-        let Map(t2) = m2;
-        t1 != t2
+    def neq(m1: Map[k, v], m2: Map[k, v]): Bool = not (m1 == m2)
 
 }
 
@@ -91,9 +86,9 @@ namespace Map {
     /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty[k : Eq, v : Eq](m: Map[k, v]): Bool =
+    pub def isEmpty(m: Map[k, v]): Bool =
         let Map(xs) = m;
-        xs == RedBlackTree.empty()
+        RedBlackTree.isEmpty(xs)
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `m`.
@@ -117,7 +112,7 @@ namespace Map {
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
     @Time(Int32.log2(size(m))) @Space(1)
-    pub def memberOf[k : Eq, v : Eq](k: k, m: Map[k, v]): Bool =
+    pub def memberOf[k, v : Eq](k: k, m: Map[k, v]): Bool =
         let Map(xs) = m;
         RedBlackTree.memberOf(k, xs)
 

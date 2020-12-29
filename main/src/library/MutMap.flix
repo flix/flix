@@ -27,20 +27,6 @@ instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
         "MutMap#{${String.dropRight(2, s)}}"
 }
 
-instance Eq[MutMap[k, v]] with[k : Eq, v : Eq] {
-
-    def eq(m1: MutMap[k, v], m2: MutMap[k, v]): Bool =
-        let MutMap(rm1) = m1;
-        let MutMap(rm2) = m2;
-        ((deref rm1) == (deref rm2)) as & Pure
-
-    def neq(m1: MutMap[k, v], m2: MutMap[k, v]): Bool =
-        let MutMap(rm1) = m1;
-        let MutMap(rm2) = m2;
-        ((deref rm1) != (deref rm2)) as & Pure
-
-}
-
 namespace MutMap {
 
     ///

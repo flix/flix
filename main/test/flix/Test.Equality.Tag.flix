@@ -77,11 +77,7 @@ namespace Test/Equality/Tag {
             case _ => false
         }
 
-        def neq(xs: Option[a], ys: Option[a]): Bool = match (xs, ys)  {
-            case (None, None) => false
-            case (Some(v1), Some(v2)) => v1 != v2
-            case _ => true
-        }
+        def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
 
     }
 
@@ -93,11 +89,7 @@ namespace Test/Equality/Tag {
             case _ => false
         }
 
-        def neq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
-            case (Ok(v1), Ok(v2)) => v1 != v2
-            case (Err(w1), Err(w2)) => w1 != w2
-            case _ => true
-        }
+        def neq(r1: Result[t, e], r2: Result[t, e]): Bool = not (r1 == r2)
 
     }
 

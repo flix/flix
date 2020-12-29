@@ -13,11 +13,7 @@ namespace Test/Equality/Set {
     def testEqSet04(): Bool = Set#{Set#{3, 2}} == Set#{Set#{2, 3}}
     
     @test
-    def testEqSet05(): Bool = {
-        let x = Set#{Set#{Set#{}}};
-        let y: Set[Set[Set[Unit]]] = Set#{Set#{Set#{}}};
-        x == y
-    }
+    def testEqSet05(): Bool = Set#{Set#{Set#{}: Set[Unit]}} == Set#{Set#{Set#{}}}
     
     @test
     def testEqSet06(): Bool = Set#{Set#{Set#{4}}} == Set#{Set#{Set#{4}}}

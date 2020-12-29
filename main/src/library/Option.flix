@@ -48,11 +48,7 @@ instance Eq[Option[a]] with[a : Eq] {
         case _ => false
     }
 
-    def neq(xs: Option[a], ys: Option[a]): Bool = match (xs, ys)  {
-        case (None, None) => false
-        case (Some(v1), Some(v2)) => v1 != v2
-        case _ => true
-    }
+    def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
 
 }
 

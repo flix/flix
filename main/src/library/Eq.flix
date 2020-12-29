@@ -93,10 +93,7 @@ instance Eq[(a1, a2)] with [a1 : Eq, a2 : Eq] {
         let (y1, y2) = t2;
             x1 == y1 and x2 == y2
 
-    def neq(t1: (a1, a2), t2: (a1, a2)): Bool =
-        let (x1, x2) = t1;
-        let (y1, y2) = t2;
-            x1 != y1 or x2 != y2
+    def neq(t1: (a1, a2), t2: (a1, a2)): Bool = not (t1 == t2)
 
 }
 
@@ -107,10 +104,7 @@ instance Eq[(a1, a2, a3)] with [a1 : Eq, a2 : Eq, a3 : Eq] {
         let (y1, y2, y3) = t2;
             x1 == y1 and x2 == y2 and x3 == y3
 
-    def neq(t1: (a1, a2, a3), t2: (a1, a2, a3)): Bool =
-        let (x1, x2, x3) = t1;
-        let (y1, y2, y3) = t2;
-            x1 != y1 or x2 != y2 or x3 != y3
+    def neq(t1: (a1, a2, a3), t2: (a1, a2, a3)): Bool = not (t1 == t2)
 
 }
 
@@ -121,10 +115,7 @@ instance Eq[(a1, a2, a3, a4)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq] {
         let (y1, y2, y3, y4) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4
 
-    def neq(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Bool =
-        let (x1, x2, x3, x4) = t1;
-        let (y1, y2, y3, y4) = t2;
-            x1 != y1 or x2 != y2 or x3 != y3 or x4 != y4
+    def neq(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Bool = not (t1 == t2)
 
 }
 
@@ -135,10 +126,7 @@ instance Eq[(a1, a2, a3, a4, a5)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 :
         let (y1, y2, y3, y4, y5) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5
 
-    def neq(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Bool =
-        let (x1, x2, x3, x4, x5) = t1;
-        let (y1, y2, y3, y4, y5) = t2;
-            x1 != y1 or x2 != y2 or x3 != y3 or x4 != y4 or x5 != y5
+    def neq(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Bool = not (t1 == t2)
 
 }
 
@@ -149,10 +137,7 @@ instance Eq[(a1, a2, a3, a4, a5, a6)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, 
         let (y1, y2, y3, y4, y5, y6) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6
 
-    def neq(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Bool =
-        let (x1, x2, x3, x4, x5, x6) = t1;
-        let (y1, y2, y3, y4, y5, y6) = t2;
-            x1 != y1 or x2 != y2 or x3 != y3 or x4 != y4 or x5 != y5 or x6 != y6
+    def neq(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Bool = not (t1 == t2)
 
 }
 
@@ -163,10 +148,7 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : 
         let (y1, y2, y3, y4, y5, y6, y7) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7
 
-    def neq(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Bool =
-        let (x1, x2, x3, x4, x5, x6, x7) = t1;
-        let (y1, y2, y3, y4, y5, y6, y7) = t2;
-            x1 != y1 or x2 != y2 or x3 != y3 or x4 != y4 or x5 != y5 or x6 != y6 or x7 != y7
+    def neq(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Bool = not (t1 == t2)
 
 }
 
@@ -177,10 +159,7 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Eq, a2 : Eq, a3 : Eq, a
         let (y1, y2, y3, y4, y5, y6, y7, y8) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8
 
-    def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool =
-        let (x1, x2, x3, x4, x5, x6, x7, x8) = t1;
-        let (y1, y2, y3, y4, y5, y6, y7, y8) = t2;
-            x1 != y1 or x2 != y2 or x3 != y3 or x4 != y4 or x5 != y5 or x6 != y6 or x7 != y7 or x8 != y8
+    def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = not (t1 == t2)
 
 }
 
@@ -191,10 +170,7 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Eq, a2 : Eq, a3 : E
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9
 
-    def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool =
-        let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t1;
-        let (y1, y2, y3, y4, y5, y6, y7, y8, y9) = t2;
-            x1 != y1 or x2 != y2 or x3 != y3 or x4 != y4 or x5 != y5 or x6 != y6 or x7 != y7 or x8 != y8 or x9 != y9
+    def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = not (t1 == t2)
 
 }
 
@@ -205,9 +181,6 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Eq, a2 : Eq, a
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10
 
-    def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool =
-        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t1;
-        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10) = t2;
-            x1 != y1 or x2 != y2 or x3 != y3 or x4 != y4 or x5 != y5 or x6 != y6 or x7 != y7 or x8 != y8 or x9 != y9 or x10 != y10
+    def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = not (t1 == t2)
 
 }

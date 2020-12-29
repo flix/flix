@@ -44,11 +44,7 @@ instance Eq[Validation[t, e]] with[t : Eq, e : Eq] {
         case _ => false
     }
 
-    def neq(v1: Validation[t, e], v2: Validation[t, e]): Bool = match (v1, v2) {
-        case (Success(t1), Success(t2)) => t1 != t2
-        case (Failure(e1), Failure(e2)) => e1 != e2
-        case _ => true
-    }
+    def neq(v1: Validation[t, e], v2: Validation[t, e]): Bool = not (v1 == v2)
 
 }
 

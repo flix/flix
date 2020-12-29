@@ -15,6 +15,24 @@
  */
 
 use Core/Io/File.File;
+use Core/Io/IOError.IOError;
+
+instance Eq[IOError] {
+
+    def eq(x: IOError, y: IOError): Bool = match (x, y) {
+        case (ElementNotFound(s1), ElementNotFound(s2)) => s1 == s2
+        case (FileNotFound(f1), FileNotFound(f2)) => f1 == f2
+        case (Generic(s1), Generic(s2)) => s1 == s2
+        case (IllegalState, IllegalState) => true
+        case (IncorrectBufferSize, IncorrectBufferSize) => true
+        case (MalformedZip, MalformedZip) => true
+        case (StreamClosed, StreamClosed) => true
+        case _ => false
+    }
+
+    def neq(x: IOError, y: IOError): Bool = not (x == y)
+
+}
 
 namespace Core/Io/IOError {
     ///

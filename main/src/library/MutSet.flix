@@ -27,20 +27,6 @@ instance ToString[MutSet[a]] with [a : ToString] {
         "MutSet#{${String.dropRight(2, s)}}"
 }
 
-instance Eq[MutSet[a]] with[a : Eq] {
-
-    def eq(xs: MutSet[a], ys: MutSet[a]): Bool =
-        let MutSet(rs1) = xs;
-        let MutSet(rs2) = ys;
-        ((deref rs1) == (deref rs2)) as & Pure
-
-    def neq(xs: MutSet[a], ys: MutSet[a]): Bool =
-        let MutSet(rs1) = xs;
-        let MutSet(rs2) = ys;
-        ((deref rs1) != (deref rs2)) as & Pure
-
-}
-
 namespace MutSet {
 
     ///
