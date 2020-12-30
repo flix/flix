@@ -84,6 +84,15 @@ namespace RedBlackTree {
     pub def empty(): RedBlackTree[k, v] = Leaf
 
     ///
+    /// Returns `true` if and only if `tree` is the empty tree.
+    ///
+    @Time(1) @Space(1)
+    pub def isEmpty(tree: RedBlackTree[k, v]): Bool = match tree {
+        case Leaf => true
+        case _ => false
+    }
+
+    ///
     /// Updates `tree` with `k -> v` if `k -> v1` is in `tree`.
     ///
     /// Otherwise, updates `tree` with `k -> v`.
@@ -140,7 +149,7 @@ namespace RedBlackTree {
     /// Returns `true` if and only if `tree` contains the key `k`.
     ///
     @Time(Int32.log2(size(tree))) @Space(1)
-    pub def memberOf(k: k, tree: RedBlackTree[k, v]): Bool = get(k, tree) != None
+    pub def memberOf[k, v : Eq](k: k, tree: RedBlackTree[k, v]): Bool = get(k, tree) != None
 
     ///
     /// Optionally returns the first key-value pair in `tree` that satisfies the predicate `f` when searching from left to right.

@@ -21,6 +21,15 @@ namespace Domain/Mod3 {
     ///
     pub def equ(e1: Mod3, e2: Mod3): Bool = e1 == e2
 
+    instance PreOrder[Mod3] {
+        pub def equ(e1: Mod3, e2: Mod3): Bool = equ(e1, e2)
+    }
+
+    instance Eq[Mod3] {
+        def eq(e1: Mod3, e2: Mod3): Bool = equ(e1, e2)
+        def neq(e1: Mod3, e2: Mod3): Bool = not equ(e1, e2)
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///

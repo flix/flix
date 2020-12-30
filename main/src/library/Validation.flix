@@ -36,6 +36,18 @@ instance Hash[Validation[t, e]] with [t : Hash, e : Hash] {
     }
 }
 
+instance Eq[Validation[t, e]] with[t : Eq, e : Eq] {
+
+    def eq(v1: Validation[t, e], v2: Validation[t, e]): Bool = match (v1, v2) {
+        case (Success(t1), Success(t2)) => t1 == t2
+        case (Failure(e1), Failure(e2)) => e1 == e2
+        case _ => false
+    }
+
+    def neq(v1: Validation[t, e], v2: Validation[t, e]): Bool = not (v1 == v2)
+
+}
+
 namespace Validation {
 
     ///

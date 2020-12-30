@@ -73,7 +73,7 @@ namespace MutSet {
     ///
     /// Removes all elements in the mutable set `s1` from the mutable set `s2`.
     ///
-    pub def removeAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
+    pub def removeAll![a : Eq](s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.difference(deref ms2, deref ms1)
@@ -81,7 +81,7 @@ namespace MutSet {
     ///
     /// Removes all elements from the mutable set `s2` that are not in the mutable set `s1`.
     ///
-    pub def retainAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
+    pub def retainAll![a : Eq](s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.intersection(deref ms1, deref ms2)
@@ -100,7 +100,7 @@ namespace MutSet {
     ///
     /// The mutable set `s` is unchanged if the element `x` is not in it.
     ///
-    pub def replace!(x: a, y: a, s: mut MutSet[a]): Unit & Impure =
+    pub def replace![a : Eq](x: a, y: a, s: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         ms := Set.replace(x, y, deref ms)
 
@@ -114,14 +114,14 @@ namespace MutSet {
     ///
     /// Returns true if and only if `s` is the empty set.
     ///
-    pub def isEmpty(s: MutSet[a]): Bool & Impure =
+    pub def isEmpty[a : Eq](s: MutSet[a]): Bool & Impure =
         let MutSet(ms) = s;
         Set.isEmpty(deref ms)
 
     ///
     /// Returns true if and only if `x` is a member of the mutable set `s`.
     ///
-    pub def memberOf(x: a, s: MutSet[a]): Bool & Impure =
+    pub def memberOf[a : Eq](x: a, s: MutSet[a]): Bool & Impure =
         let MutSet(ms) = s;
         Set.memberOf(x, deref ms)
 
@@ -135,7 +135,7 @@ namespace MutSet {
     ///
     /// Returns true if and only if every element in the mutable set `s1` appears in the mutable set `s2`.
     ///
-    pub def isSubsetOf(s1: MutSet[a], s2: MutSet[a]): Bool & Impure =
+    pub def isSubsetOf[a : Eq](s1: MutSet[a], s2: MutSet[a]): Bool & Impure =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         Set.isSubsetOf(deref ms1, deref ms2)
@@ -143,7 +143,7 @@ namespace MutSet {
     ///
     /// Returns true if and only if every element in the mutable set `s1` appears in the mutable set `s2` and `s1 != s2`.
     ///
-    pub def isProperSubsetOf(s1: MutSet[a], s2: MutSet[a]): Bool & Impure =
+    pub def isProperSubsetOf[a : Eq](s1: MutSet[a], s2: MutSet[a]): Bool & Impure =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         Set.isProperSubsetOf(deref ms1, deref ms2)
@@ -317,11 +317,5 @@ namespace MutSet {
     pub def query(p: a -> Ordering, s: MutSet[a]): List[a] & Impure =
         let MutSet(ms) = s;
         Set.query(p, deref ms)
-
-    ///
-    /// Returns `true` if and only if the mutable sets `s1` and `s2` are equal, i.e. they have the same elements.
-    ///
-    pub def __eq(s1: MutSet[a], s2: MutSet[a]): Bool & Impure =
-        isSubsetOf(s1, s2) and isSubsetOf(s2, s1)
 
 }

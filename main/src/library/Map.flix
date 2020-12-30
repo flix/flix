@@ -37,6 +37,15 @@ instance Hash[Map[k, v]] with [k : Hash, v : Hash] {
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
 
+instance Eq[Map[k, v]] with[k : Eq, v : Eq] {
+
+    def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
+        Map.isSubmapOf(m1, m2) and Map.isSubmapOf(m2, m1)
+
+    def neq(m1: Map[k, v], m2: Map[k, v]): Bool = not (m1 == m2)
+
+}
+
 namespace Map {
 
     ///
@@ -79,7 +88,7 @@ namespace Map {
     @Time(1) @Space(1)
     pub def isEmpty(m: Map[k, v]): Bool =
         let Map(xs) = m;
-        xs == RedBlackTree.empty()
+        RedBlackTree.isEmpty(xs)
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `m`.
@@ -103,7 +112,7 @@ namespace Map {
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
     @Time(Int32.log2(size(m))) @Space(1)
-    pub def memberOf(k: k, m: Map[k, v]): Bool =
+    pub def memberOf[k, v : Eq](k: k, m: Map[k, v]): Bool =
         let Map(xs) = m;
         RedBlackTree.memberOf(k, xs)
 
@@ -209,13 +218,13 @@ namespace Map {
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
     ///
     @Time(size(m1)) @Space(size(m1) * Int32.log2(size(m2)))
-    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool = forall((k, v) -> get(k, m2) == Some(v), m1)
+    pub def isSubmapOf[k : Eq, v : Eq](m1: Map[k, v], m2: Map[k, v]): Bool = forall((k, v) -> get(k, m2) == Some(v), m1)
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.
     ///
     @Time(size(m1) + size(m2)) @Space(size(m1) * Int32.log2(size(m2)))
-    pub def isProperSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool =
+    pub def isProperSubmapOf[k : Eq, v : Eq](m1: Map[k, v], m2: Map[k, v]): Bool =
         size(m1) != size(m2) and isSubmapOf(m1, m2)
 
     ///
@@ -453,21 +462,21 @@ namespace Map {
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
     @Time(size(m1) * Int32.log2(size(m2))) @Space(size(m1) * Int32.log2(size(m2)))
-    pub def intersection(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+    pub def intersection[k : Eq, v : Eq](m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
         intersectionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
-    pub def intersectionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+    pub def intersectionWith[k : Eq, v : Eq, e](f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
         intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
-    pub def intersectionWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+    pub def intersectionWithKey[k : Eq, v : Eq, e](f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
         let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
         foldRightWithKey((k, v, m) -> adjustWithKey((key, v1) -> f(key, v, v1), k, m), intersect, m1)
 
@@ -477,7 +486,7 @@ namespace Map {
     /// That is, returns the map `m1` with the keys removed that are in `m2`.
     ///
     @Time(size(m2) * Int32.log2(size(m1))) @Space(size(m2) * Int32.log2(size(m1)))
-    pub def difference(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+    pub def difference[k : Eq, v : Eq](m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
         differenceWithKey((_, _, _) -> None, m1, m2)
 
     ///
@@ -488,7 +497,7 @@ namespace Map {
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
     ///
     @Time(size(f) * size(m2) * Int32.log2(size(m1))) @Space(space(f) * size(m2) * Int32.log2(size(m1)))
-    pub def differenceWith(f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+    pub def differenceWith[k : Eq, v : Eq, e](f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
         differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
@@ -499,7 +508,7 @@ namespace Map {
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
     ///
     @Time(size(f) * size(m2) * Int32.log2(size(m1))) @Space(space(f) * size(m2) * Int32.log2(size(m1)))
-    pub def differenceWithKey(f: (k, v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+    pub def differenceWithKey[k : Eq, v : Eq, e](f: (k, v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
         let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
         let g = (k, v, m) -> if (memberOf(k, m1))
                                 match get(k, m1) {
@@ -613,24 +622,19 @@ namespace Map {
     pub def __cmp(m1: Map[k, v], m2: Map[k, v]): Int32 =
         __cmpHelper(toList(m1), toList(m2))
 
-    ///
-    /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
-    ///
-    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = __cmp(m1, m2) == 0
-
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @lint
-    def useGetWithDefault(): Bool =
-        forall [k, v] (k: k, d: v, m: Map[k, v]).
-            Option.getWithDefault(Map.get(k, m), d) === Map.getWithDefault(k, d, m)
-
-    @lint
-    def useIsSubmapOf(): Bool =
-        forall [k, v] (m1: Map[k, v], m2: Map[k, v]).
-            Map.forall((k, v) -> Map.get(k, m1) == Some(v), m2) === Map.isSubmapOf(m1, m2)
+///    @lint
+///    def useGetWithDefault(): Bool =
+///        forall [k, v] (k: k, d: v, m: Map[k, v]).
+///            Option.getWithDefault(Map.get(k, m), d) === Map.getWithDefault(k, d, m)
+///
+///    @lint
+///    def useIsSubmapOf(): Bool =
+///        forall [k, v] (m1: Map[k, v], m2: Map[k, v]).
+///            Map.forall((k, v) -> Map.get(k, m1) == Some(v), m2) === Map.isSubmapOf(m1, m2)
 
 
 }

@@ -19,6 +19,11 @@ namespace Domain/StrictSign {
     ///
     pub def equ(e1: Sign, e2: Sign): Bool = e1 == e2
 
+    instance Eq[Sign] {
+        def eq(e1: Sign, e2: Sign): Bool = equ(e1, e2)
+        def neq(e1: Sign, e2: Sign): Bool = not equ(e1, e2)
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///

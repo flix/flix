@@ -86,7 +86,7 @@ def testSlice03(): Bool & Impure = Array.slice([1, 2, 3], 2, 3)[0] == 3
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testToList01(): Bool & Impure = Array.toList([]) == Nil
+def testToList01(): Bool & Impure = Array.toList([]: Array[Unit]) == Nil
 
 @test
 def testToList02(): Bool & Impure = Array.toList([1]) == 1 :: Nil
@@ -115,7 +115,7 @@ def head04(): Bool & Impure = Array.head([3,2,1]) == Some(3)
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def last01(): Bool & Impure = Array.last([]) == None
+def last01(): Bool & Impure = Array.last([]): Option[Unit] == None
 
 @test
 def last02(): Bool & Impure = Array.last([1]) == Some(1)
@@ -1467,7 +1467,7 @@ def intercalate07(): Bool & Impure =
 def transpose01(): Bool & Impure =
     let a = Array.transpose([]);
     let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil
+    b: List[List[Unit]] == Nil
 
 @test
 def transpose02(): Bool & Impure =
@@ -2880,7 +2880,7 @@ def zipWith06(): Bool & Impure =
 
 @test
 def unzip01(): Bool & Impure =
-    let (a,b) = Array.unzip([]);
+    let (a,b) = Array.unzip([]: Array[(Unit, Unit)]);
     Array.sameElements(a, []) and Array.sameElements(b, [])
 
 @test

@@ -21,6 +21,11 @@ namespace Domain/PrefixSuffix {
     ///
     pub def equ(e1: PrefixSuffix, e2: PrefixSuffix): Bool = e1 == e2
 
+    instance Eq[PrefixSuffix] {
+        def eq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = equ(e1, e2)
+        def neq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = not equ(e1, e2)
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///

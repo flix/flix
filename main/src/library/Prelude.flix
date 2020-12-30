@@ -100,13 +100,13 @@ pub def space(_f: a -> Int32): Int32 = 1
 ///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
 ///
-law commutative(f: (a, a) -> b): Bool =
+law commutative[a, b : Eq](f: (a, a) -> b): Bool =
     ∀(x: a, y: a). f(x, y) == f(y, x)
 
 ///
 /// The associative law asserts that for a binary operator `f` the result of `f(x, f(y, z))` is equal to `f(f(x, y), z)`.
 ///
-law associative(f: (a, a) -> a): Bool =
+law associative[a : Eq](f: (a, a) -> a): Bool =
     ∀(x: a, y: a, z: a). f(x, f(y, z)) == f(f(x, y), z)
 
 ///
@@ -118,7 +118,7 @@ law reflexive(⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
 /// The anti-symmetry law asserts that if `x` is less than or equal to `y` and vice versa then the
 /// two elements must be equal.
 ///
-law antiSymmetric(⊑: (e, e) -> Bool): Bool =
+law antiSymmetric[e : Eq](⊑: (e, e) -> Bool): Bool =
     use Bool.{∧, →};
     ∀(x: e, y: e). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y)
 
@@ -151,14 +151,6 @@ def ===(_x: a, _y: a): Bool = panic("meta-programming construct")
 namespace Tuple2 {
 
     ///
-    /// Returns `true` if and only if `t1` and `t2` and equal.
-    ///
-    def __eq(t1: (a, b), t2: (a, b)): Bool =
-        let (a1, b1) = t1;
-        let (a2, b2) = t2;
-            a1 == a2 and b1 == b2
-
-    ///
     /// Compares `t1` and `t2` lexicographically.
     ///
     def __cmp(t1: (a, b), t2: (a, b)): Int32 =
@@ -172,14 +164,6 @@ namespace Tuple2 {
 }
 
 namespace Tuple3 {
-
-    ///
-    /// Returns `true` if and only if `t1` and `t2` and equal.
-    ///
-    def __eq(t1: (a, b, c), t2: (a, b, c)): Bool =
-        let (a1, b1, c1) = t1;
-        let (a2, b2, c2) = t2;
-            a1 == a2 and b1 == b2 and c1 == c2
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -199,14 +183,6 @@ namespace Tuple3 {
 }
 
 namespace Tuple4 {
-
-    ///
-    /// Returns `true` if and only if `t1` and `t2` and equal.
-    ///
-    def __eq(t1: (a, b, c, d), t2: (a, b, c, d)): Bool =
-        let (a1, b1, c1, d1) = t1;
-        let (a2, b2, c2, d2) = t2;
-            a1 == a2 and b1 == b2 and c1 == c2 and d1 == d2
 
     ///
     /// Compares `t1` and `t2` lexicographically.

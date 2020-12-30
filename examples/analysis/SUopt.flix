@@ -9,7 +9,12 @@
   }
 
   instance PreOrder[SULattice] {
-    def equ(x: SULattice, y: SULattice): Bool = x == y
+    def equ(x: SULattice, y: SULattice): Bool = match (x, y) {
+        case (Top, Top) => true
+        case (Single(a), Single(b)) => a == b
+        case (Bottom, Bottom) => true
+        case _ => false
+    }
   }
 
   instance PartialOrder[SULattice] {

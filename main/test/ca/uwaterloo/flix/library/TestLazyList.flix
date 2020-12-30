@@ -109,7 +109,7 @@ namespace TestLazyList {
 
     @test
     def head01(): Bool =
-        LazyList.head(LazyList.empty()) == None
+        LazyList.head(LazyList.empty(): LazyList[Unit]) == None
 
     @test
     def head02(): Bool =
@@ -129,7 +129,7 @@ namespace TestLazyList {
 
     @test
     def last01(): Bool =
-        LazyList.last(LazyList.empty()) == None
+        LazyList.last(LazyList.empty(): LazyList[Unit]) == None
 
     @test
     def last02(): Bool =
@@ -148,10 +148,10 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def nth01(): Bool = LazyList.nth(0, LazyList.empty()) == None
+    def nth01(): Bool = LazyList.nth(0, LazyList.empty(): LazyList[Unit]) == None
 
     @test
-    def nth02(): Bool = LazyList.nth(1, LazyList.empty()) == None
+    def nth02(): Bool = LazyList.nth(1, LazyList.empty(): LazyList[Unit]) == None
 
     @test
     def nth03(): Bool = {
@@ -321,7 +321,7 @@ namespace TestLazyList {
 
     @test
     def toList01(): Bool =
-        LazyList.toList(LazyList.empty()) == Nil
+        LazyList.toList(LazyList.empty(): LazyList[Unit]) == Nil
 
     @test
     def toList02(): Bool =

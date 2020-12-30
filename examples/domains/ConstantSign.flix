@@ -19,7 +19,23 @@ namespace Domain/ConstantSign {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    pub def equ(e1: ConstantSign, e2: ConstantSign): Bool = e1 == e2
+    pub def equ(e1: ConstantSign, e2: ConstantSign): Bool = match (e1, e2) {
+        case (Top, Top) => true
+        case (Neg, Neg) => true
+        case (Pos, Pos) => true
+        case (Cst(x), Cst(y)) => x == y
+        case (Bot, Bot) => true
+        case _ => false
+    }
+
+    instance PreOrder[ConstantSign] {
+        def equ(e1: ConstantSign, e2: ConstantSign): Bool = equ(e1, e2)
+    }
+
+    instance Eq[ConstantSign] {
+        def eq(e1: ConstantSign, e2: ConstantSign): Bool = equ(e1, e2)
+        def neq(e1: ConstantSign, e2: ConstantSign): Bool = not equ(e1, e2)
+    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.

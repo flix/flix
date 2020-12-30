@@ -40,6 +40,22 @@ instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
     }
 }
 
+instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
+
+    def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
+        case (Ok(v1), Ok(v2)) => v1 == v2
+        case (Err(w1), Err(w2)) => w1 == w2
+        case _ => false
+    }
+
+    def neq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
+        case (Ok(v1), Ok(v2)) => v1 != v2
+        case (Err(w1), Err(w2)) => w1 != w2
+        case _ => true
+    }
+
+}
+
 namespace Result {
 
     ///
@@ -82,7 +98,7 @@ namespace Result {
     /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
     ///
     @Time(1) @Space(1)
-    pub def replace(x: t, y: t, r: Result[t, e]): Result[t, e] = match r {
+    pub def replace[t : Eq, e](x: t, y: t, r: Result[t, e]): Result[t, e] = match r {
         case Ok(v) => Ok(if (v == x) y else v)
         case Err(_) => r
     }
@@ -408,15 +424,6 @@ namespace Result {
     @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e], r9: Result[t9, e], r10: Result[t10, e]): Result[u, e] & f =
         ap(lift9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
-
-    ///
-    /// Returns `true` if and only if `r1` and `r2` and equal.
-    ///
-    def __eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
-        case (Ok(v1), Ok(v2)) => v1 == v2
-        case (Err(w1), Err(w2)) => w1 == w2
-        case _ => false
-    }
 
     ///
     /// Returns the result of a three-way comparison between `r1` and `r2`.

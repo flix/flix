@@ -412,6 +412,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           case SemanticOperator.Int8Op.Shr | SemanticOperator.Int16Op.Shr | SemanticOperator.Int32Op.Shr
                | SemanticOperator.Int64Op.Shr | SemanticOperator.BigIntOp.Shr => BinaryOperator.BitwiseRightShift
 
+          case SemanticOperator.BoolOp.Eq | SemanticOperator.CharOp.Eq
+               | SemanticOperator.Float32Op.Eq | SemanticOperator.Float64Op.Eq
+               | SemanticOperator.Int8Op.Eq | SemanticOperator.Int16Op.Eq | SemanticOperator.Int32Op.Eq
+               | SemanticOperator.Int64Op.Eq | SemanticOperator.BigIntOp.Eq
+               | SemanticOperator.StringOp.Eq => BinaryOperator.Equal
+
+          case SemanticOperator.BoolOp.Neq | SemanticOperator.CharOp.Neq
+               | SemanticOperator.Float32Op.Neq | SemanticOperator.Float64Op.Neq
+               | SemanticOperator.Int8Op.Neq | SemanticOperator.Int16Op.Neq | SemanticOperator.Int32Op.Neq
+               | SemanticOperator.Int64Op.Neq | SemanticOperator.BigIntOp.Neq
+               | SemanticOperator.StringOp.Neq => BinaryOperator.NotEqual
+
           case _ => ??? // TODO
         }
 

@@ -40,6 +40,18 @@ instance Hash[Option[a]] with [a : Hash] {
     }
 }
 
+instance Eq[Option[a]] with[a : Eq] {
+
+    def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
+        case (None, None) => true
+        case (Some(v1), Some(v2)) => v1 == v2
+        case _ => false
+    }
+
+    def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
+
+}
+
 namespace Option {
 
     ///
@@ -73,7 +85,7 @@ namespace Option {
     /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
     ///
     @Time(1) @Space(1)
-    pub def replace(x: a, y: a, o: Option[a]): Option[a] = match o {
+    pub def replace[a : Eq](x: a, y: a, o: Option[a]): Option[a] = match o {
         case None => o
         case Some(v) => Some(if (v == x) y else v)
     }
@@ -475,15 +487,6 @@ namespace Option {
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
     ///
-    /// Returns `true` if and only if `o1` and `o2` and equal.
-    ///
-    def __eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
-        case (None, None)           => true
-        case (Some(v1), Some(v2))   => v1 == v2
-        case _ => false
-    }
-
-    ///
     /// Returns the result of a three-way comparison between `o1` and `o2`.
     ///
     /// Returns n < 0 if `o1` is smaller than `o2`.
@@ -545,39 +548,39 @@ namespace Option {
     // Lints: Use Cases                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @lint
-    def useExists(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            getWithDefault(map(f, o), false) === exists(f, o)
-
-    @lint
-    def useForall(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            getWithDefault(map(f, o), true) === forall(f, o)
-
-    @lint
-    def useFilter(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
-
-    @lint
-    def useReplace(): Bool =
-        forall [a] (x: a, y: a, o: Option[a]).
-            Option.map(z -> if (z == x) y else z, o) === Option.replace(x, y, o)
-
-    @lint
-    def useSequence(): Bool =
-        forall [a] (xs: List[Option[a]]).
-            traverse(x -> x, xs) === sequence(xs)
-
-    @lint
-    def useTraverse(): Bool =
-        forall [a, b, e] (f : a -> Option[b] & e, xs: List[a]).
-            sequence(List.map(f, xs)) === traverse(f, xs)
-
-    @lint
-    def useZip(): Bool =
-        forall [a, b] (o1: Option[a], o2: Option[b]).
-            flatMap(x -> map(y -> (x, y), o2), o1) === zip(o1, o2)
+///    @lint
+///    def useExists(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            getWithDefault(map(f, o), false) === exists(f, o)
+///
+///    @lint
+///    def useForall(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            getWithDefault(map(f, o), true) === forall(f, o)
+///
+///    @lint
+///    def useFilter(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
+///
+///    @lint
+///    def useReplace(): Bool =
+///        forall [a] (x: a, y: a, o: Option[a]).
+///            Option.map(z -> if (z == x) y else z, o) === Option.replace(x, y, o)
+///
+///    @lint
+///    def useSequence(): Bool =
+///        forall [a] (xs: List[Option[a]]).
+///            traverse(x -> x, xs) === sequence(xs)
+///
+///    @lint
+///    def useTraverse(): Bool =
+///        forall [a, b, e] (f : a -> Option[b] & e, xs: List[a]).
+///            sequence(List.map(f, xs)) === traverse(f, xs)
+///
+///    @lint
+///    def useZip(): Bool =
+///        forall [a, b] (o1: Option[a], o2: Option[b]).
+///            flatMap(x -> map(y -> (x, y), o2), o1) === zip(o1, o2)
 
 }
