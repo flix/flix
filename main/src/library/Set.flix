@@ -40,7 +40,7 @@ instance Hash[Set[a]] with [a : Hash] {
 instance Eq[Set[a]] with[a : Eq] {
 
     def eq(xs: Set[a], ys: Set[a]): Bool =
-        Set.forall(x -> Set.memberOf(x, ys), xs) and Set.forall(y -> Set.memberOf(y, xs), ys)
+        Set.isSubsetOf(xs, ys) and Set.isSubsetOf(ys, xs)
 
     def neq(xs: Set[a], ys: Set[a]): Bool = not (xs == ys)
 
