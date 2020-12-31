@@ -578,7 +578,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       visitExp(exp) map {
         case e => op match {
-          case "!" => WeededAst.Expression.Unary(SemanticOperator.BoolOp.Not, e, loc)
           case "not" => WeededAst.Expression.Unary(SemanticOperator.BoolOp.Not, e, loc)
           case "+" => WeededAst.Expression.UnaryDeprecated(UnaryOperator.Plus, e, loc)
           case "-" => mkApplyFqn("Neg.neg", List(e), sp1, sp2)
@@ -605,9 +604,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case "==" => mkApplyFqn("Eq.eq", List(e1, e2), sp1, sp2)
           case "!=" => mkApplyFqn("Eq.neq", List(e1, e2), sp1, sp2)
           case "<=>" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Spaceship, e1, e2, loc)
-          case "&&" => WeededAst.Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, loc)
           case "and" => WeededAst.Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, loc)
-          case "||" => WeededAst.Expression.Binary(SemanticOperator.BoolOp.Or, e1, e2, loc)
           case "or" => WeededAst.Expression.Binary(SemanticOperator.BoolOp.Or, e1, e2, loc)
           case "&&&" => mkApplyFqn("BitwiseAnd.and", List(e1, e2), sp1, sp2)
           case "|||" => mkApplyFqn("BitwiseOr.or", List(e1, e2), sp1, sp2)
