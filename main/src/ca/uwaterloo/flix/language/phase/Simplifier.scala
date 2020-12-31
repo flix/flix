@@ -153,6 +153,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Unary(sop, e, tpe, eff, loc) =>
         // TODO: See the comment about binary expressions.
         val op = sop match {
+          case SemanticOperator.BoolOp.Not => UnaryOperator.LogicalNot
           case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg
                | SemanticOperator.Int8Op.Neg | SemanticOperator.Int16Op.Neg | SemanticOperator.Int32Op.Neg | SemanticOperator.Int64Op.Neg
                | SemanticOperator.BigIntOp.Neg => UnaryOperator.Minus
@@ -373,6 +374,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         // TODO: Until we have the new backend, we have to do a stupid
         // mapping of sop back to a binary op. Obviously this should be removed in the future.
         val op = sop match {
+          case SemanticOperator.BoolOp.And => BinaryOperator.LogicalAnd
+          case SemanticOperator.BoolOp.Or => BinaryOperator.LogicalOr
+
           case SemanticOperator.Float32Op.Add | SemanticOperator.Float64Op.Add | SemanticOperator.Int8Op.Add
                | SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Add | SemanticOperator.Int32Op.Add
                | SemanticOperator.Int64Op.Add | SemanticOperator.BigIntOp.Add => BinaryOperator.Plus
