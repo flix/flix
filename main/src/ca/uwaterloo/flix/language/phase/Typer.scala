@@ -652,8 +652,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) => sop match {
 
-        // TODO: A whole lot of cases more. Implement in the same order as in SemanticOperator.
-
         case SemanticOperator.BoolOp.And | SemanticOperator.BoolOp.Or =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -752,7 +750,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
              | SemanticOperator.Int32Op.Eq | SemanticOperator.Int32Op.Neq
              | SemanticOperator.Int64Op.Eq | SemanticOperator.Int64Op.Neq
              | SemanticOperator.BigIntOp.Eq | SemanticOperator.BigIntOp.Neq
-             | SemanticOperator.StringOp.Eq | SemanticOperator.StringOp.Neq=>
+             | SemanticOperator.StringOp.Eq | SemanticOperator.StringOp.Neq =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -761,7 +759,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-        case _ => ??? // TODO: A lot more cases to handle.
+        case SemanticOperator.CharOp.Lt | SemanticOperator.CharOp.Le | SemanticOperator.CharOp.Gt | SemanticOperator.CharOp.Ge
+          | SemanticOperator.Float32Op.Lt | SemanticOperator.Float32Op.Le | SemanticOperator.Float32Op.Gt | SemanticOperator.Float32Op.Ge
+             | SemanticOperator.Float64Op.Lt | SemanticOperator.Float64Op.Le | SemanticOperator.Float64Op.Gt | SemanticOperator.Float64Op.Ge
+             | SemanticOperator.Int8Op.Lt | SemanticOperator.Int8Op.Le | SemanticOperator.Int8Op.Gt | SemanticOperator.Int8Op.Ge
+             | SemanticOperator.Int16Op.Lt | SemanticOperator.Int16Op.Le | SemanticOperator.Int16Op.Gt | SemanticOperator.Int16Op.Ge
+             | SemanticOperator.Int32Op.Lt | SemanticOperator.Int32Op.Le | SemanticOperator.Int32Op.Gt | SemanticOperator.Int32Op.Ge
+             | SemanticOperator.Int64Op.Lt | SemanticOperator.Int64Op.Le | SemanticOperator.Int64Op.Gt | SemanticOperator.Int64Op.Ge
+             | SemanticOperator.BigIntOp.Lt | SemanticOperator.BigIntOp.Le | SemanticOperator.BigIntOp.Gt | SemanticOperator.BigIntOp.Ge =>
+      for {
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
+            valueType <- unifyTypeM(tpe1, tpe2, loc)
+            resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
+            resultEff = Type.mkAnd(eff1, eff2)
+                } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+        case _ => ???
       }
 
       case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>

@@ -428,6 +428,22 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                | SemanticOperator.Int64Op.Neq | SemanticOperator.BigIntOp.Neq
                | SemanticOperator.StringOp.Neq => BinaryOperator.NotEqual
 
+          case SemanticOperator.CharOp.Lt | SemanticOperator.Float32Op.Lt | SemanticOperator.Float64Op.Lt
+               | SemanticOperator.Int8Op.Lt | SemanticOperator.Int16Op.Lt | SemanticOperator.Int32Op.Lt
+               | SemanticOperator.Int64Op.Lt | SemanticOperator.BigIntOp.Lt => BinaryOperator.Less
+
+          case SemanticOperator.CharOp.Le | SemanticOperator.Float32Op.Le | SemanticOperator.Float64Op.Le
+               | SemanticOperator.Int8Op.Le | SemanticOperator.Int16Op.Le | SemanticOperator.Int32Op.Le
+               | SemanticOperator.Int64Op.Le | SemanticOperator.BigIntOp.Le => BinaryOperator.LessEqual
+
+          case SemanticOperator.CharOp.Gt | SemanticOperator.Float32Op.Gt | SemanticOperator.Float64Op.Gt
+               | SemanticOperator.Int8Op.Gt | SemanticOperator.Int16Op.Gt | SemanticOperator.Int32Op.Gt
+               | SemanticOperator.Int64Op.Gt | SemanticOperator.BigIntOp.Gt => BinaryOperator.Greater
+
+          case SemanticOperator.CharOp.Ge | SemanticOperator.Float32Op.Ge | SemanticOperator.Float64Op.Ge
+               | SemanticOperator.Int8Op.Ge | SemanticOperator.Int16Op.Ge | SemanticOperator.Int32Op.Ge
+               | SemanticOperator.Int64Op.Ge | SemanticOperator.BigIntOp.Ge => BinaryOperator.GreaterEqual
+
           case _ => ??? // TODO
         }
 
