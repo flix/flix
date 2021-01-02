@@ -15,6 +15,7 @@
  */
 
 use Core/Cmp.Ordering;
+use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
 
 namespace RedBlackTree {
 
@@ -98,7 +99,7 @@ namespace RedBlackTree {
     /// Otherwise, updates `tree` with `k -> v`.
     ///
     @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
-    pub def insert(k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] =
+    pub def insert[k : Ord, v](k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] =
         insertWith((_, v1, _) -> v1, k, v, tree)
 
     ///
@@ -107,7 +108,7 @@ namespace RedBlackTree {
     /// Otherwise, updates `tree` with `k -> v`.
     ///
     @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
-    pub def insertWith(f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e =
+    pub def insertWith[k : Ord, v, e](f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e =
         blacken(insertWithHelper(f, k, v, tree))
 
     ///
@@ -116,7 +117,7 @@ namespace RedBlackTree {
     /// Otherwise, returns `tree`.
     ///
     @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
-    pub def updateWith(f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e =
+    pub def updateWith[k : Ord, v, e](f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e =
         blacken(updateWithHelper(f, k, tree))
 
     ///
@@ -125,7 +126,7 @@ namespace RedBlackTree {
     /// Otherwise, returns `tree`.
     ///
     @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
-    pub def delete(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = redden(deleteHelper(k, tree))
+    pub def delete[k : Ord, v](k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = redden(deleteHelper(k, tree))
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `tree`.
@@ -133,15 +134,13 @@ namespace RedBlackTree {
     /// Otherwise returns `None`.
     ///
     @Time(Int32.log2(size(tree))) @Space(1)
-    pub def get(k: k, tree: RedBlackTree[k, v]): Option[v] = match tree {
+    pub def get[k : Ord, v](k: k, tree: RedBlackTree[k, v]): Option[v] = match tree {
         case Node(_, a, k1, v, b) =>
-            let cmp = k <=> k1;
-            if (cmp < 0)
-                get(k, a)
-            else if (cmp == 0)
-                Some(v)
-            else
-                get(k, b)
+            match k <=> k1 {
+                case LessThan => get(k, a)
+                case Equal => Some(v)
+                case GreaterThan => get(k, b)
+            }
         case _ => None
     }
 
@@ -149,7 +148,15 @@ namespace RedBlackTree {
     /// Returns `true` if and only if `tree` contains the key `k`.
     ///
     @Time(Int32.log2(size(tree))) @Space(1)
-    pub def memberOf[k, v : Eq](k: k, tree: RedBlackTree[k, v]): Bool = get(k, tree) != None
+    pub def memberOf[k : Ord, v](k: k, tree: RedBlackTree[k, v]): Bool = match tree {
+        case Node(_, a, k1, _, b) =>
+            match k <=> k1 {
+                case LessThan => memberOf(k, a)
+                case Equal => true
+                case GreaterThan => memberOf(k, b)
+            }
+        case _ => false
+    }
 
     ///
     /// Optionally returns the first key-value pair in `tree` that satisfies the predicate `f` when searching from left to right.
@@ -294,35 +301,31 @@ namespace RedBlackTree {
     ///
     /// Helper function for `insertWith`.
     ///
-    def insertWithHelper(f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e = match tree {
+    def insertWithHelper[k : Ord, v, e](f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e = match tree {
         case Leaf => Node(Red, Leaf, k, v, Leaf)
         case Node(color, a, k1, v1, b) =>
-            let cmp = k <=> k1;
-            if (cmp < 0)
-                balance(Node(color, insertWithHelper(f, k, v, a), k1, v1, b))
-            else if (cmp == 0)
-                Node(color, a, k, f(k, v, v1), b)
-            else
-                balance(Node(color, a, k1, v1, insertWithHelper(f, k, v, b)))
+            match k <=> k1 {
+                case LessThan => balance(Node(color, insertWithHelper(f, k, v, a), k1, v1, b))
+                case Equal => Node(color, a, k, f(k, v, v1), b)
+                case GreaterThan => balance(Node(color, a, k1, v1, insertWithHelper(f, k, v, b)))
+            }
         case _ => tree
     }
 
     ///
     /// Helper function for `updateWith`.
     ///
-    def updateWithHelper(f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e = match tree {
+    def updateWithHelper[k : Ord, v, e](f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e = match tree {
         case Leaf => tree
         case Node(color, a, k1, v1, b) =>
-            let cmp = k <=> k1;
-            if (cmp < 0)
-                balance(Node(color, updateWithHelper(f, k, a), k1, v1, b))
-            else if (cmp == 0)
-                match f(k1, v1) {
+            match k <=> k1 {
+                case LessThan => balance(Node(color, updateWithHelper(f, k, a), k1, v1, b))
+                case Equal => match f(k1, v1) {
                     case None => tree
                     case Some(v) => Node(color, a, k, v, b)
                 }
-            else
-                balance(Node(color, a, k1, v1, updateWithHelper(f, k, b)))
+                case GreaterThan => balance(Node(color, a, k1, v1, updateWithHelper(f, k, b)))
+            }
         case _ => tree
     }
 
@@ -384,26 +387,23 @@ namespace RedBlackTree {
     ///
     /// Helper function for `delete`.
     ///
-    def deleteHelper(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
-        case Node(Red, Leaf, k1, _, Leaf) => if (k <=> k1 == 0) Leaf else tree
-        case Node(Black, Leaf, k1, _, Leaf) => if (k <=> k1 == 0) DoubleBlackLeaf else tree
+    def deleteHelper[k : Ord, v](k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
+        case Node(Red, Leaf, k1, _, Leaf) => if (k <=> k1 == Equal) Leaf else tree
+        case Node(Black, Leaf, k1, _, Leaf) => if (k <=> k1 == Equal) DoubleBlackLeaf else tree
         case Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
-            let cmp = k <=> k2;
-            if (cmp < 0)
-                Node(Black, deleteHelper(k, Node(Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
-            else if
-                (cmp == 0) Node(Black, Leaf, k1, v1, Leaf)
-            else
-                Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf)
+            match k <=> k2 {
+                case LessThan => Node(Black, deleteHelper(k, Node(Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
+                case Equal => Node(Black, Leaf, k1, v1, Leaf)
+                case GreaterThan => Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf)
+            }
         case Node(c, a, k1, v1, b) =>
-            let cmp = k <=> k1;
-            if (cmp < 0)
-                rotate(Node(c, deleteHelper(k, a), k1, v1, b))
-            else if (cmp == 0)
-                let (k2, v2, e) = minDelete(b);
-                rotate(Node(c, a, k2, v2, e))
-            else
-                rotate(Node(c, a, k1, v1, deleteHelper(k, b)))
+            match k <=> k1 {
+                case LessThan => rotate(Node(c, deleteHelper(k, a), k1, v1, b))
+                case Equal =>
+                    let (k2, v2, e) = minDelete(b);
+                    rotate(Node(c, a, k2, v2, e))
+                case GreaterThan => rotate(Node(c, a, k1, v1, deleteHelper(k, b)))
+            }
         case _ => tree
     }
 
@@ -418,7 +418,6 @@ namespace RedBlackTree {
         MutList.toImmutable(buffer) as & e
 
     pub def queryWithHelper(p: k -> Ordering & e, f: (k, v) -> a, buffer: MutList[a], tree: RedBlackTree[k, v]): Unit & Impure = {
-        use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
         match tree {
             case Node(_, a, k, v, b) =>
                 match p(k) {

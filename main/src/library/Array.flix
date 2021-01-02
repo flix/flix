@@ -1209,7 +1209,7 @@ namespace Array {
     /// Returns the array `a` as a set.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toSet(a: Array[a]): Set[a] & Impure = foldRight(Set.insert, Set.empty(), a)
+    pub def toSet[a : Ord](a: Array[a]): Set[a] & Impure = foldRight(Set.insert, Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1218,7 +1218,7 @@ namespace Array {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toMap(a: Array[(a, b)]): Map[a, b] & Impure =
+    pub def toMap[a : Ord, b](a: Array[(a, b)]): Map[a, b] & Impure =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///

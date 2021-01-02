@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+use Core/Cmp.Ordering;
+use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
+
 ///
 /// The Option type.
 ///
@@ -49,6 +52,43 @@ instance Eq[Option[a]] with[a : Eq] {
     }
 
     def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
+
+}
+
+instance Ord[Option[a]] with [a : Ord] {
+
+    def less(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    def lessEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case Equal => true
+        case _ => false
+    }
+    def greater(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    def greaterEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case Equal => true
+        case _ => false
+    }
+
+    ///
+    /// Returns the result of a three-way comparison between `o1` and `o2`.
+    ///
+    /// Returns LessThan if `o1` is smaller than `o2`.
+    /// Returns Equal if `o1` is equal to `o2`.
+    /// Returns GreaterThan if `o1` is greater than `o2`.
+    ///
+    def compare(o1: Option[a], o2: Option[a]): Ordering = match (o1, o2) {
+        case (None, None)           => Equal
+        case (None, _)              => LessThan
+        case (Some(v1), Some(v2))   => v1 <=> v2
+        case _                      => GreaterThan
+    }
 
 }
 
@@ -313,7 +353,7 @@ namespace Option {
     /// Returns a one-element set of the value `v` if `o` is `Some(v)`. Otherwise returns the empty set.
     ///
     @Time(1) @Space(1)
-    pub def toSet(o: Option[a]): Set[a] = match o {
+    pub def toSet[a : Ord](o: Option[a]): Set[a] = match o {
         case None       => Set.empty()
         case Some(v)    => Set.singleton(v)
     }
@@ -322,7 +362,7 @@ namespace Option {
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Some((k, v))`. Otherwise returns the empty map.
     ///
     @Time(1) @Space(1)
-    pub def toMap(o: Option[(k, v)]): Map[k, v] = match o {
+    pub def toMap[k : Ord, v](o: Option[(k, v)]): Map[k, v] = match o {
         case None           => Map.empty()
         case Some((k, v))   => Map.singleton(k, v)
     }
@@ -485,20 +525,6 @@ namespace Option {
     @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] & f =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
-
-    ///
-    /// Returns the result of a three-way comparison between `o1` and `o2`.
-    ///
-    /// Returns n < 0 if `o1` is smaller than `o2`.
-    /// Returns n = 0 if `o1` is equal to `o2`.
-    /// Returns n > 0 if `o1` is greater than `o2`.
-    ///
-    def __cmp(o1: Option[a], o2: Option[a]): Int32 = match (o1, o2) {
-        case (None, None)           =>  0
-        case (None, _)              => -1
-        case (Some(v1), Some(v2))   => v1 <=> v2
-        case _                      => +1
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //

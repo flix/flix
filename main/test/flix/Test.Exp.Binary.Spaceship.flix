@@ -1,231 +1,256 @@
 namespace Test/Exp/Binary/Spaceship {
 
-    @test
-    def testBinarySpaceship01(): Bool = () <=> () == 0
-
-    @test
-    def testBinarySpaceship02(): Bool = true <=> true == 0
+    use Core/Cmp.Ordering;
+    use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
 
     @test
-    def testBinarySpaceship03(): Bool = true <=> false > 0
+    def testBinarySpaceship01(): Bool = () <=> () == Equal
 
     @test
-    def testBinarySpaceship04(): Bool = false <=> true < 0
+    def testBinarySpaceship02(): Bool = true <=> true == Equal
 
     @test
-    def testBinarySpaceship05(): Bool = true <=> true == 0
+    def testBinarySpaceship03(): Bool = true <=> false == GreaterThan
 
     @test
-    def testBinarySpaceship06(): Bool = 'a' <=> 'a' == 0
+    def testBinarySpaceship04(): Bool = false <=> true == LessThan
 
     @test
-    def testBinarySpaceship07(): Bool = 'a' <=> 'z' < 0
+    def testBinarySpaceship05(): Bool = true <=> true == Equal
 
     @test
-    def testBinarySpaceship08(): Bool = 'z' <=> 'a' > 0
+    def testBinarySpaceship06(): Bool = 'a' <=> 'a' == Equal
 
     @test
-    def testBinarySpaceship09(): Bool = 21.42f32 <=> 21.42f32 == 0
+    def testBinarySpaceship07(): Bool = 'a' <=> 'z' == LessThan
 
     @test
-    def testBinarySpaceship10(): Bool = 123.456f32 <=> 456.789f32 < 0
+    def testBinarySpaceship08(): Bool = 'z' <=> 'a' == GreaterThan
 
     @test
-    def testBinarySpaceship11(): Bool = 456.789f32 <=> 123.456f32 > 0
+    def testBinarySpaceship09(): Bool = 21.42f32 <=> 21.42f32 == Equal
 
     @test
-    def testBinarySpaceship12(): Bool = 21.42f64 <=> 21.42f64 == 0
+    def testBinarySpaceship10(): Bool = 123.456f32 <=> 456.789f32 == LessThan
 
     @test
-    def testBinarySpaceship13(): Bool = 123.456f64 <=> 456.789f64 < 0
+    def testBinarySpaceship11(): Bool = 456.789f32 <=> 123.456f32 == GreaterThan
 
     @test
-    def testBinarySpaceship14(): Bool = 456.789f64 <=> 123.456f64 > 0
+    def testBinarySpaceship12(): Bool = 21.42f64 <=> 21.42f64 == Equal
 
     @test
-    def testBinarySpaceship15(): Bool = 123i8 <=> 123i8 == 0
+    def testBinarySpaceship13(): Bool = 123.456f64 <=> 456.789f64 == LessThan
 
     @test
-    def testBinarySpaceship16(): Bool = 123i8 <=> 127i8 < 0
+    def testBinarySpaceship14(): Bool = 456.789f64 <=> 123.456f64 == GreaterThan
 
     @test
-    def testBinarySpaceship17(): Bool = 127i8 <=> 123i8 > 0
+    def testBinarySpaceship15(): Bool = 123i8 <=> 123i8 == Equal
 
     @test
-    def testBinarySpaceship18(): Bool = 21i16 <=> 21i16 == 0
+    def testBinarySpaceship16(): Bool = 123i8 <=> 127i8 == LessThan
 
     @test
-    def testBinarySpaceship19(): Bool = 21i16 <=> 42i16 < 0
+    def testBinarySpaceship17(): Bool = 127i8 <=> 123i8 == GreaterThan
 
     @test
-    def testBinarySpaceship20(): Bool = 42i16 <=> 21i16 > 0
+    def testBinarySpaceship18(): Bool = 21i16 <=> 21i16 == Equal
 
     @test
-    def testBinarySpaceship21(): Bool = 21i32 <=> 21i32 == 0
+    def testBinarySpaceship19(): Bool = 21i16 <=> 42i16 == LessThan
 
     @test
-    def testBinarySpaceship22(): Bool = 21i32 <=> 42i32 < 0
+    def testBinarySpaceship20(): Bool = 42i16 <=> 21i16 == GreaterThan
 
     @test
-    def testBinarySpaceship23(): Bool = 42i32 <=> 21i32 > 0
+    def testBinarySpaceship21(): Bool = 21i32 <=> 21i32 == Equal
 
     @test
-    def testBinarySpaceship24(): Bool = 21i64 <=> 21i64 == 0
+    def testBinarySpaceship22(): Bool = 21i32 <=> 42i32 == LessThan
 
     @test
-    def testBinarySpaceship25(): Bool = 21i64 <=> 42i64 < 0
+    def testBinarySpaceship23(): Bool = 42i32 <=> 21i32 == GreaterThan
 
     @test
-    def testBinarySpaceship26(): Bool = 42i64 <=> 21i64 > 0
+    def testBinarySpaceship24(): Bool = 21i64 <=> 21i64 == Equal
 
     @test
-    def testBinarySpaceship27(): Bool = 21ii <=> 21ii == 0
+    def testBinarySpaceship25(): Bool = 21i64 <=> 42i64 == LessThan
 
     @test
-    def testBinarySpaceship28(): Bool = 21ii <=> 42ii < 0
+    def testBinarySpaceship26(): Bool = 42i64 <=> 21i64 == GreaterThan
 
     @test
-    def testBinarySpaceship29(): Bool = 42ii <=> 21ii > 0
+    def testBinarySpaceship27(): Bool = 21ii <=> 21ii == Equal
 
     @test
-    def testBinarySpaceship30(): Bool = "hello" <=> "hello" == 0
+    def testBinarySpaceship28(): Bool = 21ii <=> 42ii == LessThan
 
     @test
-    def testBinarySpaceship31(): Bool = "hello" <=> "world" < 0
+    def testBinarySpaceship29(): Bool = 42ii <=> 21ii == GreaterThan
 
-    @test
-    def testBinarySpaceship32(): Bool = "world" <=> "hello" > 0
+///    @test
+///    def testBinarySpaceship30(): Bool = "hello" <=> "hello" == Equal
+///
+///    @test
+///    def testBinarySpaceship31(): Bool = "hello" <=> "world" == LessThan
+///
+///    @test
+///    def testBinarySpaceship32(): Bool = "world" <=> "hello" == GreaterThan
 
     @test
-    def testBinarySpaceship33(): Bool = None <=> None == 0
+    def testBinarySpaceship33(): Bool = (None: Option[Unit]) <=> None == Equal
 
     @test
-    def testBinarySpaceship34(): Bool = Some(123) <=> Some(123) == 0
+    def testBinarySpaceship34(): Bool = Some(123) <=> Some(123) == Equal
 
     @test
-    def testBinarySpaceship35(): Bool = None <=> Some(123) < 0
+    def testBinarySpaceship35(): Bool = (None: Option[Int32]) <=> Some(123) == LessThan
 
     @test
-    def testBinarySpaceship36(): Bool = Some(123) <=> None > 0
+    def testBinarySpaceship36(): Bool = Some(123) <=> None == GreaterThan
 
     @test
-    def testBinarySpaceship37(): Bool = Ok(123) <=> Ok(123) == 0
+    def testBinarySpaceship37(): Bool = (Ok(123): Result[_, Unit]) <=> Ok(123) == Equal
 
     @test
-    def testBinarySpaceship38(): Bool = Ok(123) <=> Ok(456) < 0
+    def testBinarySpaceship38(): Bool = (Ok(123): Result[_, Unit]) <=> Ok(456) == LessThan
 
     @test
-    def testBinarySpaceship39(): Bool = Ok(456) <=> Ok(123) > 0
+    def testBinarySpaceship39(): Bool = (Ok(456): Result[_, Unit]) <=> Ok(123) == GreaterThan
 
     @test
-    def testBinarySpaceship40(): Bool = Err(123) <=> Err(123) == 0
+    def testBinarySpaceship40(): Bool = (Err(123): Result[Unit, _]) <=> Err(123) == Equal
 
     @test
-    def testBinarySpaceship41(): Bool = Err(123) <=> Err(456) < 0
+    def testBinarySpaceship41(): Bool = (Err(123): Result[Unit, _]) <=> Err(456) == LessThan
 
     @test
-    def testBinarySpaceship42(): Bool = Err(456) <=> Err(123) > 0
+    def testBinarySpaceship42(): Bool = (Err(456): Result[Unit, _]) <=> Err(123) == GreaterThan
 
     @test
-    def testBinarySpaceship43(): Bool = Ok(123) <=> Err(123) < 0
+    def testBinarySpaceship43(): Bool = Ok(123) <=> Err(123) == LessThan
 
     @test
-    def testBinarySpaceship44(): Bool = Err(123) <=> Ok(123) > 0
+    def testBinarySpaceship44(): Bool = Err(123) <=> Ok(123) == GreaterThan
 
     @test
-    def testBinarySpaceship45(): Bool = None <=> Some(Ok(123)) < 0
+    def testBinarySpaceship45(): Bool = (None: Option[Result[_, Unit]]) <=> Some(Ok(123)) == LessThan
 
     @test
-    def testBinarySpaceship46(): Bool = Some(Ok(123)) <=> None > 0
+    def testBinarySpaceship46(): Bool = (Some(Ok(123)): Option[Result[_, Unit]]) <=> None == GreaterThan
 
     @test
-    def testBinarySpaceship47(): Bool = Some(Ok(123)) <=> Some(Ok(123)) == 0
+    def testBinarySpaceship47(): Bool = (Some(Ok(123)): Option[Result[_, Unit]]) <=> Some(Ok(123)) == Equal
 
     @test
-    def testBinarySpaceship48(): Bool = Some(Ok(123)) <=> Some(Ok(456)) < 0
+    def testBinarySpaceship48(): Bool = (Some(Ok(123)): Option[Result[_, Unit]]) <=> Some(Ok(456)) == LessThan
 
     @test
-    def testBinarySpaceship49(): Bool = Some(Ok(456)) <=> Some(Ok(123)) > 0
+    def testBinarySpaceship49(): Bool = (Some(Ok(456)): Option[Result[_, Unit]]) <=> Some(Ok(123)) == GreaterThan
 
-    @test
-    def testBinarySpaceship50(): Bool = Some(Ok(123)) <=> Some(Err("hello")) < 0
+///    @test
+///    def testBinarySpaceship50(): Bool = Some(Ok(123)) <=> Some(Err("hello")) == LessThan
 
-    @test
-    def testBinarySpaceship51(): Bool = Some(Err("hello")) <=> Some(Ok(123)) > 0
+///    @test
+///    def testBinarySpaceship51(): Bool = Some(Err("hello")) <=> Some(Ok(123)) == GreaterThan
 
     @test
-    def testBinarySpaceship52(): Bool = Some(Ok(None)) <=> Some(Ok(None)) == 0
+    def testBinarySpaceship52(): Bool = (Some(Ok(None)): Option[Result[Option[Unit], Unit]]) <=> Some(Ok(None)) == Equal
 
     @test
-    def testBinarySpaceship53(): Bool = Some(Ok(None)) <=> Some(Ok(Some(123))) < 0
+    def testBinarySpaceship53(): Bool = (Some(Ok(None)): Option[Result[Option[Int32], Unit]]) <=> Some(Ok(Some(123))) == LessThan
 
     @test
-    def testBinarySpaceship54(): Bool = Some(Ok(Some(123))) <=> Some(Ok(None)) > 0
+    def testBinarySpaceship54(): Bool = (Some(Ok(Some(123))): Option[Result[Option[Int32], Unit]]) <=> Some(Ok(None)) == GreaterThan
 
     @test
-    def testBinarySpaceship55(): Bool = (111, 222) <=> (111, 222) == 0
+    def testBinarySpaceship55(): Bool = (111, 222) <=> (111, 222) == Equal
 
     @test
-    def testBinarySpaceship56(): Bool = (111, 111) <=> (111, 222) < 0
+    def testBinarySpaceship56(): Bool = (111, 111) <=> (111, 222) == LessThan
 
     @test
-    def testBinarySpaceship57(): Bool = (111, 222) <=> (111, 111) > 0
+    def testBinarySpaceship57(): Bool = (111, 222) <=> (111, 111) == GreaterThan
 
     @test
-    def testBinarySpaceship58(): Bool = (111, 111) <=> (222, 111) < 0
+    def testBinarySpaceship58(): Bool = (111, 111) <=> (222, 111) == LessThan
 
     @test
-    def testBinarySpaceship59(): Bool = (222, 111) <=> (111, 111) > 0
+    def testBinarySpaceship59(): Bool = (222, 111) <=> (111, 111) == GreaterThan
 
     @test
-    def testBinarySpaceship60(): Bool = (1, 2, 3) <=> (1, 2, 3) == 0
+    def testBinarySpaceship60(): Bool = (1, 2, 3) <=> (1, 2, 3) == Equal
 
     @test
-    def testBinarySpaceship61(): Bool = (1, 2, 3) <=> (1, 2, 4) < 0
+    def testBinarySpaceship61(): Bool = (1, 2, 3) <=> (1, 2, 4) == LessThan
 
     @test
-    def testBinarySpaceship62(): Bool = (1, 2, 4) <=> (1, 2, 3) > 0
+    def testBinarySpaceship62(): Bool = (1, 2, 4) <=> (1, 2, 3) == GreaterThan
 
     @test
-    def testBinarySpaceship63(): Bool = (1, 0, 3) <=> (1, 2, 3) < 0
+    def testBinarySpaceship63(): Bool = (1, 0, 3) <=> (1, 2, 3) == LessThan
 
     @test
-    def testBinarySpaceship64(): Bool = (1, 2, 3) <=> (1, 0, 3) > 0
+    def testBinarySpaceship64(): Bool = (1, 2, 3) <=> (1, 0, 3) == GreaterThan
 
     @test
-    def testBinarySpaceship65(): Bool = (1, 2, 3) <=> (4, 2, 3) < 0
+    def testBinarySpaceship65(): Bool = (1, 2, 3) <=> (4, 2, 3) == LessThan
 
     @test
-    def testBinarySpaceship66(): Bool = (4, 2, 3) <=> (1, 2, 3) > 0
+    def testBinarySpaceship66(): Bool = (4, 2, 3) <=> (1, 2, 3) == GreaterThan
 
     @test
-    def testBinarySpaceship67(): Bool = Red <=> Red == 0
+    def testBinarySpaceship67(): Bool = Red <=> Red == Equal
 
     @test
-    def testBinarySpaceship68(): Bool = Blu <=> Blu == 0
+    def testBinarySpaceship68(): Bool = Blu <=> Blu == Equal
 
     @test
-    def testBinarySpaceship69(): Bool = Red <=> Blu < 0
+    def testBinarySpaceship69(): Bool = Red <=> Blu == LessThan
 
     @test
-    def testBinarySpaceship70(): Bool = Blu <=> Red > 0
+    def testBinarySpaceship70(): Bool = Blu <=> Red == GreaterThan
 
     @test
-    def testBinarySpaceship71(): Bool = Some(Red) <=> Some(Blu) < 0
+    def testBinarySpaceship71(): Bool = Some(Red) <=> Some(Blu) == LessThan
 
     @test
-    def testBinarySpaceship72(): Bool = Some(Blu) <=> Some(Red) > 0
+    def testBinarySpaceship72(): Bool = Some(Blu) <=> Some(Red) == GreaterThan
 
     enum Color {
         case Red,
         case Blu
     }
 
-    def __cmp(c1: Color, c2: Color): Int32 = match (c1, c2) {
-        case (Red, Red) =>  0
-        case (Blu, Blu) =>  0
-        case (Red, Blu) => -1
-        case (Blu, Red) => +1
+    instance Ord[Color] {
+
+        def less(x: Color, y: Color): Bool = match (x <=> y) {
+            case LessThan => true
+            case _ => false
+        }
+        def lessEqual(x: Color, y: Color): Bool = match (x <=> y) {
+            case LessThan => true
+            case Equal => true
+            case _ => false
+        }
+        def greater(x: Color, y: Color): Bool = match (x <=> y) {
+            case GreaterThan => true
+            case _ => false
+        }
+        def greaterEqual(x: Color, y: Color): Bool = match (x <=> y) {
+            case GreaterThan => true
+            case Equal => true
+            case _ => false
+        }
+        def compare(c1: Color, c2: Color): Ordering = match (c1, c2) {
+            case (Red, Red) => Equal
+            case (Blu, Blu) => Equal
+            case (Red, Blu) => LessThan
+            case (Blu, Red) => GreaterThan
+        }
+
     }
 
 }

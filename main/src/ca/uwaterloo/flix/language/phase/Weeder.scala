@@ -628,7 +628,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ">=" => mkApplyFqn("Ord.greaterEqual", List(e1, e2), sp1, sp2)
           case "==" => mkApplyFqn("Eq.eq", List(e1, e2), sp1, sp2)
           case "!=" => mkApplyFqn("Eq.neq", List(e1, e2), sp1, sp2)
-          case "<=>" => WeededAst.Expression.BinaryDeprecated(BinaryOperator.Spaceship, e1, e2, loc)
+          case "<=>" => mkApplyFqn("Ord.compare", List(e1, e2), sp1, sp2)
           case "and" => WeededAst.Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, loc)
           case "or" => WeededAst.Expression.Binary(SemanticOperator.BoolOp.Or, e1, e2, loc)
           case "&&&" => mkApplyFqn("BitwiseAnd.and", List(e1, e2), sp1, sp2)

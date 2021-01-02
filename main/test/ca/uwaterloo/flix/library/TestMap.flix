@@ -1750,22 +1750,50 @@ def query14(): Bool =
 @test
 def query15(): Bool =
     let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
-    Map.query(x -> if (x <=> (2, 2) > 0) GreaterThan else Equal, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
+    let f = x -> {
+        let cmp = x <=> (2, 2);
+        if (cmp == GreaterThan)
+            cmp
+        else
+            Equal
+        };
+    Map.query(f, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
 
 @test
 def query16(): Bool =
     let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
-    Map.query(x -> if (x <=> (2, 2) < 0) LessThan else Equal, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+    let f = x -> {
+        let cmp = x <=> (2, 2);
+        if (cmp == LessThan)
+            cmp
+        else
+            Equal
+        };
+    Map.query(f, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
 @test
 def query17(): Bool =
     let m = Map#{(1, 2, 2) -> 0, (1, 2, 3) -> 1, (1, 2, 4) -> 2, (2, 2, 4) -> 3};
-    Map.query(x -> if (x <=> (1, 2, 3) < 0) LessThan else Equal, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
+    let f = x -> {
+        let cmp = x <=> (1, 2, 3);
+        if (cmp == LessThan)
+            cmp
+        else
+            Equal
+        };
+    Map.query(f, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
 
 @test
 def query18(): Bool =
     let m = Map#{(1, 2, 2) -> 0, (1, 2, 3) -> 1, (1, 2, 4) -> 2, (2, 2, 4) -> 3};
-    Map.query(x -> if (x <=> (1, 2, 3) > 0) GreaterThan else Equal, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
+    let f = x -> {
+        let cmp = x <=> (1, 2, 3);
+        if (cmp == GreaterThan)
+            cmp
+        else
+            Equal
+        };
+    Map.query(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
