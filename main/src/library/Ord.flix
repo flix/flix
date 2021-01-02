@@ -47,11 +47,7 @@ instance Ord[Unit] {
     def lessEqual(x: Unit, y: Unit): Bool = true
     def greater(x: Unit, y: Unit): Bool = false
     def greaterEqual(x: Unit, y: Unit): Bool = true
-    pub def compare(x: Unit, y: Unit): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
-        case (true, false) => LessThan
-        case (false, true) => GreaterThan
-    }
+    pub def compare(x: Unit, y: Unit): Ordering = Equal
 
 }
 
@@ -64,8 +60,8 @@ instance Ord[Bool] {
     pub def compare(x: Bool, y: Bool): Ordering = match (x, y) {
         case (true, true) => Equal
         case (false, false) => Equal
-        case (true, false) => GreaterThan
         case (false, true) => LessThan
+        case (true, false) => GreaterThan
     }
 
 }
