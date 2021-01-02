@@ -79,6 +79,7 @@ class Flix {
     "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
+    "Ord.flix" -> LocalResource.get("/src/library/Ord.flix"),
 
     // Lattices
     "PreOrder.flix" -> LocalResource.get("/src/library/PreOrder.flix"),
