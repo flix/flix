@@ -64,6 +64,9 @@ class Flix {
     * The core library *must* be present for any program to compile.
     */
   private val coreLibrary = List(
+    // Ordering
+    "Core/Cmp.flix" -> LocalResource.get("/src/library/Core/Cmp/Ordering.flix"),
+
     // Operators
     "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
     "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
