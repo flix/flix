@@ -159,7 +159,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                | SemanticOperator.BigIntOp.Neg => UnaryOperator.Minus
           case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not | SemanticOperator.Int64Op.Not
                | SemanticOperator.BigIntOp.Not => UnaryOperator.BitwiseNegate
-          case _ => ???
+          case _ => throw InternalCompilerException(s"Unexpected unary operator: '$op' near ${loc.format}.")
         }
         SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, loc)
 
@@ -444,7 +444,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                | SemanticOperator.Int8Op.Ge | SemanticOperator.Int16Op.Ge | SemanticOperator.Int32Op.Ge
                | SemanticOperator.Int64Op.Ge | SemanticOperator.BigIntOp.Ge => BinaryOperator.GreaterEqual
 
-          case _ => ??? // TODO
+          case _ => throw InternalCompilerException(s"Unexpected binary operator: '$op' near ${loc.format}.")
         }
 
         SimplifiedAst.Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, loc)
