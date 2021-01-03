@@ -1,13 +1,10 @@
 namespace Test/Exp/Binary/Spaceship {
 
-    use Core/Cmp.Ordering;
-    use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
+    @test
+    def testBinarySpaceship01(): Bool = () <=> () == EqualTo
 
     @test
-    def testBinarySpaceship01(): Bool = () <=> () == Equal
-
-    @test
-    def testBinarySpaceship02(): Bool = true <=> true == Equal
+    def testBinarySpaceship02(): Bool = true <=> true == EqualTo
 
     @test
     def testBinarySpaceship03(): Bool = true <=> false == GreaterThan
@@ -16,10 +13,10 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship04(): Bool = false <=> true == LessThan
 
     @test
-    def testBinarySpaceship05(): Bool = true <=> true == Equal
+    def testBinarySpaceship05(): Bool = true <=> true == EqualTo
 
     @test
-    def testBinarySpaceship06(): Bool = 'a' <=> 'a' == Equal
+    def testBinarySpaceship06(): Bool = 'a' <=> 'a' == EqualTo
 
     @test
     def testBinarySpaceship07(): Bool = 'a' <=> 'z' == LessThan
@@ -28,7 +25,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship08(): Bool = 'z' <=> 'a' == GreaterThan
 
     @test
-    def testBinarySpaceship09(): Bool = 21.42f32 <=> 21.42f32 == Equal
+    def testBinarySpaceship09(): Bool = 21.42f32 <=> 21.42f32 == EqualTo
 
     @test
     def testBinarySpaceship10(): Bool = 123.456f32 <=> 456.789f32 == LessThan
@@ -37,7 +34,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship11(): Bool = 456.789f32 <=> 123.456f32 == GreaterThan
 
     @test
-    def testBinarySpaceship12(): Bool = 21.42f64 <=> 21.42f64 == Equal
+    def testBinarySpaceship12(): Bool = 21.42f64 <=> 21.42f64 == EqualTo
 
     @test
     def testBinarySpaceship13(): Bool = 123.456f64 <=> 456.789f64 == LessThan
@@ -46,7 +43,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship14(): Bool = 456.789f64 <=> 123.456f64 == GreaterThan
 
     @test
-    def testBinarySpaceship15(): Bool = 123i8 <=> 123i8 == Equal
+    def testBinarySpaceship15(): Bool = 123i8 <=> 123i8 == EqualTo
 
     @test
     def testBinarySpaceship16(): Bool = 123i8 <=> 127i8 == LessThan
@@ -55,7 +52,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship17(): Bool = 127i8 <=> 123i8 == GreaterThan
 
     @test
-    def testBinarySpaceship18(): Bool = 21i16 <=> 21i16 == Equal
+    def testBinarySpaceship18(): Bool = 21i16 <=> 21i16 == EqualTo
 
     @test
     def testBinarySpaceship19(): Bool = 21i16 <=> 42i16 == LessThan
@@ -64,7 +61,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship20(): Bool = 42i16 <=> 21i16 == GreaterThan
 
     @test
-    def testBinarySpaceship21(): Bool = 21i32 <=> 21i32 == Equal
+    def testBinarySpaceship21(): Bool = 21i32 <=> 21i32 == EqualTo
 
     @test
     def testBinarySpaceship22(): Bool = 21i32 <=> 42i32 == LessThan
@@ -73,7 +70,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship23(): Bool = 42i32 <=> 21i32 == GreaterThan
 
     @test
-    def testBinarySpaceship24(): Bool = 21i64 <=> 21i64 == Equal
+    def testBinarySpaceship24(): Bool = 21i64 <=> 21i64 == EqualTo
 
     @test
     def testBinarySpaceship25(): Bool = 21i64 <=> 42i64 == LessThan
@@ -82,7 +79,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship26(): Bool = 42i64 <=> 21i64 == GreaterThan
 
     @test
-    def testBinarySpaceship27(): Bool = 21ii <=> 21ii == Equal
+    def testBinarySpaceship27(): Bool = 21ii <=> 21ii == EqualTo
 
     @test
     def testBinarySpaceship28(): Bool = 21ii <=> 42ii == LessThan
@@ -90,20 +87,20 @@ namespace Test/Exp/Binary/Spaceship {
     @test
     def testBinarySpaceship29(): Bool = 42ii <=> 21ii == GreaterThan
 
-///    @test
-///    def testBinarySpaceship30(): Bool = "hello" <=> "hello" == Equal
-///
-///    @test
-///    def testBinarySpaceship31(): Bool = "hello" <=> "world" == LessThan
-///
-///    @test
-///    def testBinarySpaceship32(): Bool = "world" <=> "hello" == GreaterThan
+    @test
+    def testBinarySpaceship30(): Bool = "hello" <=> "hello" == EqualTo
 
     @test
-    def testBinarySpaceship33(): Bool = (None: Option[Unit]) <=> None == Equal
+    def testBinarySpaceship31(): Bool = "hello" <=> "world" == LessThan
 
     @test
-    def testBinarySpaceship34(): Bool = Some(123) <=> Some(123) == Equal
+    def testBinarySpaceship32(): Bool = "world" <=> "hello" == GreaterThan
+
+    @test
+    def testBinarySpaceship33(): Bool = (None: Option[Unit]) <=> None == EqualTo
+
+    @test
+    def testBinarySpaceship34(): Bool = Some(123) <=> Some(123) == EqualTo
 
     @test
     def testBinarySpaceship35(): Bool = (None: Option[Int32]) <=> Some(123) == LessThan
@@ -112,7 +109,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship36(): Bool = Some(123) <=> None == GreaterThan
 
     @test
-    def testBinarySpaceship37(): Bool = (Ok(123): Result[_, Unit]) <=> Ok(123) == Equal
+    def testBinarySpaceship37(): Bool = (Ok(123): Result[_, Unit]) <=> Ok(123) == EqualTo
 
     @test
     def testBinarySpaceship38(): Bool = (Ok(123): Result[_, Unit]) <=> Ok(456) == LessThan
@@ -121,7 +118,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship39(): Bool = (Ok(456): Result[_, Unit]) <=> Ok(123) == GreaterThan
 
     @test
-    def testBinarySpaceship40(): Bool = (Err(123): Result[Unit, _]) <=> Err(123) == Equal
+    def testBinarySpaceship40(): Bool = (Err(123): Result[Unit, _]) <=> Err(123) == EqualTo
 
     @test
     def testBinarySpaceship41(): Bool = (Err(123): Result[Unit, _]) <=> Err(456) == LessThan
@@ -142,7 +139,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship46(): Bool = (Some(Ok(123)): Option[Result[_, Unit]]) <=> None == GreaterThan
 
     @test
-    def testBinarySpaceship47(): Bool = (Some(Ok(123)): Option[Result[_, Unit]]) <=> Some(Ok(123)) == Equal
+    def testBinarySpaceship47(): Bool = (Some(Ok(123)): Option[Result[_, Unit]]) <=> Some(Ok(123)) == EqualTo
 
     @test
     def testBinarySpaceship48(): Bool = (Some(Ok(123)): Option[Result[_, Unit]]) <=> Some(Ok(456)) == LessThan
@@ -150,14 +147,14 @@ namespace Test/Exp/Binary/Spaceship {
     @test
     def testBinarySpaceship49(): Bool = (Some(Ok(456)): Option[Result[_, Unit]]) <=> Some(Ok(123)) == GreaterThan
 
-///    @test
-///    def testBinarySpaceship50(): Bool = Some(Ok(123)) <=> Some(Err("hello")) == LessThan
-
-///    @test
-///    def testBinarySpaceship51(): Bool = Some(Err("hello")) <=> Some(Ok(123)) == GreaterThan
+    @test
+    def testBinarySpaceship50(): Bool = Some(Ok(123)) <=> Some(Err("hello")) == LessThan
 
     @test
-    def testBinarySpaceship52(): Bool = (Some(Ok(None)): Option[Result[Option[Unit], Unit]]) <=> Some(Ok(None)) == Equal
+    def testBinarySpaceship51(): Bool = Some(Err("hello")) <=> Some(Ok(123)) == GreaterThan
+
+    @test
+    def testBinarySpaceship52(): Bool = (Some(Ok(None)): Option[Result[Option[Unit], Unit]]) <=> Some(Ok(None)) == EqualTo
 
     @test
     def testBinarySpaceship53(): Bool = (Some(Ok(None)): Option[Result[Option[Int32], Unit]]) <=> Some(Ok(Some(123))) == LessThan
@@ -166,7 +163,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship54(): Bool = (Some(Ok(Some(123))): Option[Result[Option[Int32], Unit]]) <=> Some(Ok(None)) == GreaterThan
 
     @test
-    def testBinarySpaceship55(): Bool = (111, 222) <=> (111, 222) == Equal
+    def testBinarySpaceship55(): Bool = (111, 222) <=> (111, 222) == EqualTo
 
     @test
     def testBinarySpaceship56(): Bool = (111, 111) <=> (111, 222) == LessThan
@@ -181,7 +178,7 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship59(): Bool = (222, 111) <=> (111, 111) == GreaterThan
 
     @test
-    def testBinarySpaceship60(): Bool = (1, 2, 3) <=> (1, 2, 3) == Equal
+    def testBinarySpaceship60(): Bool = (1, 2, 3) <=> (1, 2, 3) == EqualTo
 
     @test
     def testBinarySpaceship61(): Bool = (1, 2, 3) <=> (1, 2, 4) == LessThan
@@ -202,10 +199,10 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship66(): Bool = (4, 2, 3) <=> (1, 2, 3) == GreaterThan
 
     @test
-    def testBinarySpaceship67(): Bool = Red <=> Red == Equal
+    def testBinarySpaceship67(): Bool = Red <=> Red == EqualTo
 
     @test
-    def testBinarySpaceship68(): Bool = Blu <=> Blu == Equal
+    def testBinarySpaceship68(): Bool = Blu <=> Blu == EqualTo
 
     @test
     def testBinarySpaceship69(): Bool = Red <=> Blu == LessThan
@@ -224,7 +221,7 @@ namespace Test/Exp/Binary/Spaceship {
         case Blu
     }
 
-    instance Ord[Color] {
+    instance Order[Color] {
 
         def less(x: Color, y: Color): Bool = match (x <=> y) {
             case LessThan => true
@@ -232,7 +229,7 @@ namespace Test/Exp/Binary/Spaceship {
         }
         def lessEqual(x: Color, y: Color): Bool = match (x <=> y) {
             case LessThan => true
-            case Equal => true
+            case EqualTo => true
             case _ => false
         }
         def greater(x: Color, y: Color): Bool = match (x <=> y) {
@@ -241,12 +238,12 @@ namespace Test/Exp/Binary/Spaceship {
         }
         def greaterEqual(x: Color, y: Color): Bool = match (x <=> y) {
             case GreaterThan => true
-            case Equal => true
+            case EqualTo => true
             case _ => false
         }
-        def compare(c1: Color, c2: Color): Ordering = match (c1, c2) {
-            case (Red, Red) => Equal
-            case (Blu, Blu) => Equal
+        def compare(c1: Color, c2: Color): Comparison = match (c1, c2) {
+            case (Red, Red) => EqualTo
+            case (Blu, Blu) => EqualTo
             case (Red, Blu) => LessThan
             case (Blu, Red) => GreaterThan
         }

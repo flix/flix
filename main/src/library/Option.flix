@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-use Core/Cmp.Ordering;
-use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
-
 ///
 /// The Option type.
 ///
@@ -55,7 +52,7 @@ instance Eq[Option[a]] with[a : Eq] {
 
 }
 
-instance Ord[Option[a]] with [a : Ord] {
+instance Order[Option[a]] with [a : Order] {
 
     def less(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
         case LessThan => true
@@ -63,7 +60,7 @@ instance Ord[Option[a]] with [a : Ord] {
     }
     def lessEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
@@ -72,7 +69,7 @@ instance Ord[Option[a]] with [a : Ord] {
     }
     def greaterEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
@@ -80,11 +77,11 @@ instance Ord[Option[a]] with [a : Ord] {
     /// Returns the result of a three-way comparison between `o1` and `o2`.
     ///
     /// Returns LessThan if `o1` is smaller than `o2`.
-    /// Returns Equal if `o1` is equal to `o2`.
+    /// Returns EqualTo if `o1` is equal to `o2`.
     /// Returns GreaterThan if `o1` is greater than `o2`.
     ///
-    def compare(o1: Option[a], o2: Option[a]): Ordering = match (o1, o2) {
-        case (None, None)           => Equal
+    def compare(o1: Option[a], o2: Option[a]): Comparison = match (o1, o2) {
+        case (None, None)           => EqualTo
         case (None, _)              => LessThan
         case (Some(v1), Some(v2))   => v1 <=> v2
         case _                      => GreaterThan
@@ -353,7 +350,7 @@ namespace Option {
     /// Returns a one-element set of the value `v` if `o` is `Some(v)`. Otherwise returns the empty set.
     ///
     @Time(1) @Space(1)
-    pub def toSet[a : Ord](o: Option[a]): Set[a] = match o {
+    pub def toSet[a : Order](o: Option[a]): Set[a] = match o {
         case None       => Set.empty()
         case Some(v)    => Set.singleton(v)
     }
@@ -362,7 +359,7 @@ namespace Option {
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Some((k, v))`. Otherwise returns the empty map.
     ///
     @Time(1) @Space(1)
-    pub def toMap[k : Ord, v](o: Option[(k, v)]): Map[k, v] = match o {
+    pub def toMap[k : Order, v](o: Option[(k, v)]): Map[k, v] = match o {
         case None           => Map.empty()
         case Some((k, v))   => Map.singleton(k, v)
     }

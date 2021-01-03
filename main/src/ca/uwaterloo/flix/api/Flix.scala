@@ -64,8 +64,8 @@ class Flix {
     * The core library *must* be present for any program to compile.
     */
   private val coreLibrary = List(
-    // Ordering
-    "Core/Cmp.flix" -> LocalResource.get("/src/library/Core/Cmp/Ordering.flix"),
+    // Comparison
+    "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
 
     // Operators
     "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
@@ -82,7 +82,7 @@ class Flix {
     "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
-    "Ord.flix" -> LocalResource.get("/src/library/Ord.flix"),
+    "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
 
     // Lattices
     "PreOrder.flix" -> LocalResource.get("/src/library/PreOrder.flix"),

@@ -14,171 +14,254 @@
  * limitations under the License.
  */
 
-use Core/Cmp.Ordering;
-use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
-
 ///
 /// A type class for types with a total order.
 ///
-pub class Ord[a] {
+pub class Order[a] {
 
-    /// Returns `true` if and only if `x` < `y`.
+    /// Returns `true` if and only if `x < y`.
     pub def less(x: a, y: a): Bool
 
-    /// Returns `true` if and only if `x` <= `y`.
+    /// Returns `true` if and only if `x <= y`.
     pub def lessEqual(x: a, y: a): Bool
 
-    /// Returns `true` if and only if `x` > `y`.
+    /// Returns `true` if and only if `x > y`.
     pub def greater(x: a, y: a): Bool
 
-    /// Returns `true` if and only if `x` >= `y`.
+    /// Returns `true` if and only if `x >= y`.
     pub def greaterEqual(x: a, y: a): Bool
 
     ///
     /// Returns `LessThan` if `x` < `y`, `Equal` if `x` == `y` or `GreaterThan` `if `x` > `y`.
     ///
-    pub def compare(x: a, y: a): Ordering
+    pub def compare(x: a, y: a): Comparison
 
 }
 
-instance Ord[Unit] {
+namespace Order {
+
+    ///
+    /// Converts a `Comparison` value to an integer.
+    /// The return value is:
+    /// `-1` if `c` is `LessThan`.
+    /// `0` if `c` is `EqualTo`.
+    /// `+1` if `c` is `GreaterThan`.
+    ///
+    pub def toInt(c: Comparison): Int32 = match c {
+        case LessThan => -1
+        case EqualTo => 0
+        case GreaterThan => +1
+    }
+
+    ///
+    /// Converts an integer to a `Comparison` value.
+    /// The return value is:
+    /// `LessThan` if `i < 0`.
+    /// `EqualTo` if `i == 0`.
+    /// `GreaterThan` if `i > 0`.
+    ///
+    pub def fromInt(i: Int32): Comparison =
+        if (i < 0) LessThan
+        else if (i == 0) EqualTo
+        else GreaterThan
+
+    ///
+    /// Returns the minimum of `x` and `y`.
+    ///
+    pub def min[a : Order](x: a, y: a): a = match (x <=> y) {
+        case GreaterThan => y
+        case _ => x
+    }
+
+    ///
+    /// Returns the maximum of `x` and `y`.
+    ///
+    pub def max[a : Order](x: a, y: a): a = match (x <=> y) {
+        case LessThan => y
+        case _ => x
+    }
+
+}
+
+instance Order[Unit] {
 
     def less(x: Unit, y: Unit): Bool = false
     def lessEqual(x: Unit, y: Unit): Bool = true
     def greater(x: Unit, y: Unit): Bool = false
     def greaterEqual(x: Unit, y: Unit): Bool = true
-    pub def compare(x: Unit, y: Unit): Ordering = Equal
+    pub def compare(x: Unit, y: Unit): Comparison = EqualTo
 
 }
 
-instance Ord[Bool] {
+instance Order[Bool] {
 
-    def less(x: Bool, y: Bool): Bool = false
-    def lessEqual(x: Bool, y: Bool): Bool = true
-    def greater(x: Bool, y: Bool): Bool = false
-    def greaterEqual(x: Bool, y: Bool): Bool = true
-    pub def compare(x: Bool, y: Bool): Ordering = match (x, y) {
-        case (true, true) => Equal
-        case (false, false) => Equal
+    def less(x: Bool, y: Bool): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    def lessEqual(x: Bool, y: Bool): Bool = match (x <=> y) {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    def greater(x: Bool, y: Bool): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    def greaterEqual(x: Bool, y: Bool): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    def compare(x: Bool, y: Bool): Comparison = match (x, y) {
+        case (true, true) => EqualTo
+        case (false, false) => EqualTo
         case (false, true) => LessThan
         case (true, false) => GreaterThan
     }
 
 }
 
-instance Ord[Char] {
+instance Order[Char] {
 
     def less(x: Char, y: Char): Bool = $CHAR_LT$(x, y)
     def lessEqual(x: Char, y: Char): Bool = $CHAR_LE$(x, y)
     def greater(x: Char, y: Char): Bool = $CHAR_GT$(x, y)
     def greaterEqual(x: Char, y: Char): Bool = $CHAR_GE$(x, y)
-    pub def compare(x: Char, y: Char): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
+    def compare(x: Char, y: Char): Comparison = match (x <= y, y <= x) {
+        case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
     }
 
 }
 
-instance Ord[Float32] {
+instance Order[Float32] {
 
     def less(x: Float32, y: Float32): Bool = $FLOAT32_LT$(x, y)
     def lessEqual(x: Float32, y: Float32): Bool = $FLOAT32_LE$(x, y)
     def greater(x: Float32, y: Float32): Bool = $FLOAT32_GT$(x, y)
     def greaterEqual(x: Float32, y: Float32): Bool = $FLOAT32_GE$(x, y)
-    pub def compare(x: Float32, y: Float32): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
+    def compare(x: Float32, y: Float32): Comparison = match (x <= y, y <= x) {
+        case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
     }
 
 }
 
-instance Ord[Float64] {
+instance Order[Float64] {
 
     def less(x: Float64, y: Float64): Bool = $FLOAT64_LT$(x, y)
     def lessEqual(x: Float64, y: Float64): Bool = $FLOAT64_LE$(x, y)
     def greater(x: Float64, y: Float64): Bool = $FLOAT64_GT$(x, y)
     def greaterEqual(x: Float64, y: Float64): Bool = $FLOAT64_GE$(x, y)
-    pub def compare(x: Float64, y: Float64): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
+    def compare(x: Float64, y: Float64): Comparison = match (x <= y, y <= x) {
+        case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
     }
 
 }
 
-instance Ord[Int8] {
+instance Order[Int8] {
 
     def less(x: Int8, y: Int8): Bool = $INT8_LT$(x, y)
     def lessEqual(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
     def greater(x: Int8, y: Int8): Bool = $INT8_GT$(x, y)
     def greaterEqual(x: Int8, y: Int8): Bool = $INT8_GE$(x, y)
-    pub def compare(x: Int8, y: Int8): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
+    def compare(x: Int8, y: Int8): Comparison = match (x <= y, y <= x) {
+        case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
     }
 
 }
 
-instance Ord[Int16] {
+instance Order[Int16] {
 
     def less(x: Int16, y: Int16): Bool = $INT16_LT$(x, y)
     def lessEqual(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
     def greater(x: Int16, y: Int16): Bool = $INT16_GT$(x, y)
     def greaterEqual(x: Int16, y: Int16): Bool = $INT16_GE$(x, y)
-    pub def compare(x: Int16, y: Int16): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
+    def compare(x: Int16, y: Int16): Comparison = match (x <= y, y <= x) {
+        case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
     }
 
 }
 
-instance Ord[Int32] {
+instance Order[Int32] {
 
     def less(x: Int32, y: Int32): Bool = $INT32_LT$(x, y)
     def lessEqual(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
     def greater(x: Int32, y: Int32): Bool = $INT32_GT$(x, y)
     def greaterEqual(x: Int32, y: Int32): Bool = $INT32_GE$(x, y)
-    pub def compare(x: Int32, y: Int32): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
+    def compare(x: Int32, y: Int32): Comparison = match (x <= y, y <= x) {
+        case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
     }
 
 }
 
-instance Ord[Int64] {
+instance Order[Int64] {
 
     def less(x: Int64, y: Int64): Bool = $INT64_LT$(x, y)
     def lessEqual(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
     def greater(x: Int64, y: Int64): Bool = $INT64_GT$(x, y)
     def greaterEqual(x: Int64, y: Int64): Bool = $INT64_GE$(x, y)
-    pub def compare(x: Int64, y: Int64): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
+    def compare(x: Int64, y: Int64): Comparison = match (x <= y, y <= x) {
+        case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
     }
 
 }
 
-instance Ord[BigInt] {
+instance Order[BigInt] {
 
     def less(x: BigInt, y: BigInt): Bool = $BIGINT_LT$(x, y)
     def lessEqual(x: BigInt, y: BigInt): Bool = $BIGINT_LE$(x, y)
     def greater(x: BigInt, y: BigInt): Bool = $BIGINT_GT$(x, y)
     def greaterEqual(x: BigInt, y: BigInt): Bool = $BIGINT_GE$(x, y)
-    pub def compare(x: BigInt, y: BigInt): Ordering = match (x <= y, y <= x) {
-        case (true, true) => Equal
+    def compare(x: BigInt, y: BigInt): Comparison = match (x <= y, y <= x) {
+        case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
     }
 
 }
 
-instance Ord[(a1, a2)] with [a1 : Ord, a2: Ord] {
+instance Order[String] {
+
+    def less(x: String, y: String): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    def lessEqual(x: String, y: String): Bool = match (x <=> y) {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    def greater(x: String, y: String): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    def greaterEqual(x: String, y: String): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+
+    def compare(x: String, y: String): Comparison =
+        import java.lang.String.compareTo(String);
+        Order.fromInt(x.compareTo(y) as & Pure)
+
+}
+
+instance Order[(a1, a2)] with [a1 : Order, a2: Order] {
 
     def less(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
         case LessThan => true
@@ -186,7 +269,7 @@ instance Ord[(a1, a2)] with [a1 : Ord, a2: Ord] {
     }
     def lessEqual(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
@@ -195,25 +278,25 @@ instance Ord[(a1, a2)] with [a1 : Ord, a2: Ord] {
     }
     def greaterEqual(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2), t2: (a1, a2)): Ordering =
+    def compare(t1: (a1, a2), t2: (a1, a2)): Comparison =
         let (x1, x2) = t1;
         let (y1, y2) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 x2 <=> y2
 
 }
 
-instance Ord[(a1, a2, a3)] with [a1 : Ord, a2: Ord, a3 : Ord] {
+instance Order[(a1, a2, a3)] with [a1 : Order, a2: Order, a3 : Order] {
 
     def less(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
         case LessThan => true
@@ -221,7 +304,7 @@ instance Ord[(a1, a2, a3)] with [a1 : Ord, a2: Ord, a3 : Ord] {
     }
     def lessEqual(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
@@ -230,29 +313,29 @@ instance Ord[(a1, a2, a3)] with [a1 : Ord, a2: Ord, a3 : Ord] {
     }
     def greaterEqual(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3), t2: (a1, a2, a3)): Ordering =
+    def compare(t1: (a1, a2, a3), t2: (a1, a2, a3)): Comparison =
         let (x1, x2, x3) = t1;
         let (y1, y2, y3) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 let cmp2 = x2 <=> y2;
-                if (cmp2 != Equal)
+                if (cmp2 != EqualTo)
                     cmp2
                 else
                     x3 <=> y3
 
 }
 
-instance Ord[(a1, a2, a3, a4)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord] {
+instance Order[(a1, a2, a3, a4)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order] {
 
     def less(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
         case LessThan => true
@@ -260,7 +343,7 @@ instance Ord[(a1, a2, a3, a4)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord] {
     }
     def lessEqual(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
@@ -269,33 +352,33 @@ instance Ord[(a1, a2, a3, a4)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord] {
     }
     def greaterEqual(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Ordering =
+    def compare(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Comparison =
         let (x1, x2, x3, x4) = t1;
         let (y1, y2, y3, y4) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 let cmp2 = x2 <=> y2;
-                if (cmp2 != Equal)
+                if (cmp2 != EqualTo)
                     cmp2
                 else
                     let cmp3 = x3 <=> y3;
-                    if (cmp3 != Equal)
+                    if (cmp3 != EqualTo)
                         cmp3
                     else
                         x4 <=> y4
 
 }
 
-instance Ord[(a1, a2, a3, a4, a5)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord, a5 : Ord] {
+instance Order[(a1, a2, a3, a4, a5)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order] {
 
     def less(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
         case LessThan => true
@@ -303,7 +386,7 @@ instance Ord[(a1, a2, a3, a4, a5)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord, 
     }
     def lessEqual(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
@@ -312,41 +395,41 @@ instance Ord[(a1, a2, a3, a4, a5)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord, 
     }
     def greaterEqual(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Ordering =
+    def compare(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Comparison =
         let (x1, x2, x3, x4, x5) = t1;
         let (y1, y2, y3, y4, y5) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 let cmp2 = x2 <=> y2;
-                if (cmp2 != Equal)
+                if (cmp2 != EqualTo)
                     cmp2
                 else
                     let cmp3 = x3 <=> y3;
-                    if (cmp3 != Equal)
+                    if (cmp3 != EqualTo)
                         cmp3
                     else
                         let cmp4 = x4 <=> y4;
-                        if (cmp4 != Equal)
+                        if (cmp4 != EqualTo)
                             cmp4
                         else
                             let cmp4 = x4 <=> y4;
-                            if (cmp4 != Equal)
+                            if (cmp4 != EqualTo)
                                 cmp4
                             else
                                 x5 <=> y5
 
 }
 
-instance Ord[(a1, a2, a3, a4, a5, a6)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord, a5 : Ord, a6 : Ord] {
+instance Order[(a1, a2, a3, a4, a5, a6)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order] {
 
     def less(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
         case LessThan => true
@@ -354,7 +437,7 @@ instance Ord[(a1, a2, a3, a4, a5, a6)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : O
     }
     def lessEqual(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
@@ -363,45 +446,45 @@ instance Ord[(a1, a2, a3, a4, a5, a6)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : O
     }
     def greaterEqual(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Ordering =
+    def compare(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Comparison =
         let (x1, x2, x3, x4, x5, x6) = t1;
         let (y1, y2, y3, y4, y5, y6) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 let cmp2 = x2 <=> y2;
-                if (cmp2 != Equal)
+                if (cmp2 != EqualTo)
                     cmp2
                 else
                     let cmp3 = x3 <=> y3;
-                    if (cmp3 != Equal)
+                    if (cmp3 != EqualTo)
                         cmp3
                     else
                         let cmp4 = x4 <=> y4;
-                        if (cmp4 != Equal)
+                        if (cmp4 != EqualTo)
                             cmp4
                         else
                             let cmp4 = x4 <=> y4;
-                            if (cmp4 != Equal)
+                            if (cmp4 != EqualTo)
                                 cmp4
                             else
                                 let cmp5 = x5 <=> y5;
-                                if (cmp5 != Equal)
+                                if (cmp5 != EqualTo)
                                     cmp5
                                 else
                                     x6 <=> y6
 
 }
 
-instance Ord[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord, a5 : Ord, a6 : Ord, a7 : Ord] {
+instance Order[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order] {
 
     def less(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
         case LessThan => true
@@ -409,7 +492,7 @@ instance Ord[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Ord, a2: Ord, a3 : Ord, a4
     }
     def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
@@ -418,49 +501,49 @@ instance Ord[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Ord, a2: Ord, a3 : Ord, a4
     }
     def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Ordering =
+    def compare(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Comparison =
         let (x1, x2, x3, x4, x5, x6, x7) = t1;
         let (y1, y2, y3, y4, y5, y6, y7) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 let cmp2 = x2 <=> y2;
-                if (cmp2 != Equal)
+                if (cmp2 != EqualTo)
                     cmp2
                 else
                     let cmp3 = x3 <=> y3;
-                    if (cmp3 != Equal)
+                    if (cmp3 != EqualTo)
                         cmp3
                     else
                         let cmp4 = x4 <=> y4;
-                        if (cmp4 != Equal)
+                        if (cmp4 != EqualTo)
                             cmp4
                         else
                             let cmp4 = x4 <=> y4;
-                            if (cmp4 != Equal)
+                            if (cmp4 != EqualTo)
                                 cmp4
                             else
                                 let cmp5 = x5 <=> y5;
-                                if (cmp5 != Equal)
+                                if (cmp5 != EqualTo)
                                     cmp5
                                 else
                                     let cmp6 = x6 <=> y6;
-                                    if (cmp6 != Equal)
+                                    if (cmp6 != EqualTo)
                                         cmp6
                                     else
                                         x7 <=> y7
 
 }
 
-instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord, a5 : Ord, a6 : Ord, a7 : Ord, a8 : Ord] {
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order] {
 
     def less(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
         case LessThan => true
@@ -468,7 +551,7 @@ instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Ord, a2: Ord, a3 : Ord
     }
     def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
@@ -477,53 +560,53 @@ instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Ord, a2: Ord, a3 : Ord
     }
     def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Ordering =
+    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Comparison =
         let (x1, x2, x3, x4, x5, x6, x7, x8) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 let cmp2 = x2 <=> y2;
-                if (cmp2 != Equal)
+                if (cmp2 != EqualTo)
                     cmp2
                 else
                     let cmp3 = x3 <=> y3;
-                    if (cmp3 != Equal)
+                    if (cmp3 != EqualTo)
                         cmp3
                     else
                         let cmp4 = x4 <=> y4;
-                        if (cmp4 != Equal)
+                        if (cmp4 != EqualTo)
                             cmp4
                         else
                             let cmp4 = x4 <=> y4;
-                            if (cmp4 != Equal)
+                            if (cmp4 != EqualTo)
                                 cmp4
                             else
                                 let cmp5 = x5 <=> y5;
-                                if (cmp5 != Equal)
+                                if (cmp5 != EqualTo)
                                     cmp5
                                 else
                                     let cmp6 = x6 <=> y6;
-                                    if (cmp6 != Equal)
+                                    if (cmp6 != EqualTo)
                                         cmp6
                                     else
                                         let cmp7 = x7 <=> y7;
-                                        if (cmp7 != Equal)
+                                        if (cmp7 != EqualTo)
                                             cmp7
                                         else
                                             x8 <=> y8
 
 }
 
-instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord, a5 : Ord, a6 : Ord, a7 : Ord, a8 : Ord, a9: Ord] {
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order, a9: Order] {
 
     def less(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
         case LessThan => true
@@ -531,7 +614,7 @@ instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Ord, a2: Ord, a3 :
     }
     def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
@@ -540,57 +623,57 @@ instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Ord, a2: Ord, a3 :
     }
     def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Ordering =
+    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Comparison =
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 let cmp2 = x2 <=> y2;
-                if (cmp2 != Equal)
+                if (cmp2 != EqualTo)
                     cmp2
                 else
                     let cmp3 = x3 <=> y3;
-                    if (cmp3 != Equal)
+                    if (cmp3 != EqualTo)
                         cmp3
                     else
                         let cmp4 = x4 <=> y4;
-                        if (cmp4 != Equal)
+                        if (cmp4 != EqualTo)
                             cmp4
                         else
                             let cmp4 = x4 <=> y4;
-                            if (cmp4 != Equal)
+                            if (cmp4 != EqualTo)
                                 cmp4
                             else
                                 let cmp5 = x5 <=> y5;
-                                if (cmp5 != Equal)
+                                if (cmp5 != EqualTo)
                                     cmp5
                                 else
                                     let cmp6 = x6 <=> y6;
-                                    if (cmp6 != Equal)
+                                    if (cmp6 != EqualTo)
                                         cmp6
                                     else
                                         let cmp7 = x7 <=> y7;
-                                        if (cmp7 != Equal)
+                                        if (cmp7 != EqualTo)
                                             cmp7
                                         else
                                             let cmp8 = x8 <=> y8;
-                                            if (cmp8 != Equal)
+                                            if (cmp8 != EqualTo)
                                                 cmp8
                                             else
                                                 x9 <=> y9
 
 }
 
-instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Ord, a2: Ord, a3 : Ord, a4 : Ord, a5 : Ord, a6 : Ord, a7 : Ord, a8 : Ord, a9 : Ord, a10 : Ord] {
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order, a9 : Order, a10 : Order] {
 
     def less(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
         case LessThan => true
@@ -598,7 +681,7 @@ instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Ord, a2: Ord,
     }
     def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
@@ -607,54 +690,54 @@ instance Ord[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Ord, a2: Ord,
     }
     def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Ordering =
+    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Comparison =
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10) = t2;
             let cmp1 = x1 <=> y1;
-            if (cmp1 != Equal)
+            if (cmp1 != EqualTo)
                 cmp1
             else
                 let cmp2 = x2 <=> y2;
-                if (cmp2 != Equal)
+                if (cmp2 != EqualTo)
                     cmp2
                 else
                     let cmp3 = x3 <=> y3;
-                    if (cmp3 != Equal)
+                    if (cmp3 != EqualTo)
                         cmp3
                     else
                         let cmp4 = x4 <=> y4;
-                        if (cmp4 != Equal)
+                        if (cmp4 != EqualTo)
                             cmp4
                         else
                             let cmp4 = x4 <=> y4;
-                            if (cmp4 != Equal)
+                            if (cmp4 != EqualTo)
                                 cmp4
                             else
                                 let cmp5 = x5 <=> y5;
-                                if (cmp5 != Equal)
+                                if (cmp5 != EqualTo)
                                     cmp5
                                 else
                                     let cmp6 = x6 <=> y6;
-                                    if (cmp6 != Equal)
+                                    if (cmp6 != EqualTo)
                                         cmp6
                                     else
                                         let cmp7 = x7 <=> y7;
-                                        if (cmp7 != Equal)
+                                        if (cmp7 != EqualTo)
                                             cmp7
                                         else
                                             let cmp8 = x8 <=> y8;
-                                            if (cmp8 != Equal)
+                                            if (cmp8 != EqualTo)
                                                 cmp8
                                             else
                                                 let cmp9 = x9 <=> y9;
-                                                if (cmp9 != Equal)
+                                                if (cmp9 != EqualTo)
                                                     cmp9
                                                 else
                                                     x10 <=> y10

@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-use Core/Cmp.Ordering;
-use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
-
 ///
 /// The List type.
 ///
@@ -50,7 +47,7 @@ instance Eq[List[a]] with[a : Eq] {
 
 }
 
-instance Ord[List[a]] with [a : Ord] {
+instance Order[List[a]] with [a : Order] {
 
     def less(x: List[a], y: List[a]): Bool = match (x <=> y) {
         case LessThan => true
@@ -58,7 +55,7 @@ instance Ord[List[a]] with [a : Ord] {
     }
     def lessEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
         case LessThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
     def greater(x: List[a], y: List[a]): Bool = match (x <=> y) {
@@ -67,20 +64,20 @@ instance Ord[List[a]] with [a : Ord] {
     }
     def greaterEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
         case GreaterThan => true
-        case Equal => true
+        case EqualTo => true
         case _ => false
     }
 
     ///
     /// Compares `xs` and `ys` lexicographically.
     ///
-    def compare(xs: List[a], ys: List[a]): Ordering = match (xs, ys) {
+    def compare(xs: List[a], ys: List[a]): Comparison = match (xs, ys) {
         case (_ :: _, Nil) => GreaterThan
-        case (Nil, Nil) => Equal
+        case (Nil, Nil) => EqualTo
         case (Nil, _ :: _) => LessThan
         case (z :: zs, w :: ws) =>
             let cmp = z <=> w;
-            if (cmp == Equal) zs <=> ws else cmp
+            if (cmp == EqualTo) zs <=> ws else cmp
     }
 
 }
@@ -979,7 +976,7 @@ namespace List {
     /// Returns the list `xs` as a set.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def toSet[a : Ord](xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
+    pub def toSet[a : Order](xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -988,7 +985,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def toMap[a : Ord, b](xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
+    pub def toMap[a : Order, b](xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
     ///
     /// Applies `f` to every element of `xs`.
