@@ -65,10 +65,11 @@ instance Order[Set[a]] with [a : Order] {
         case EqualTo => true
         case _ => false
     }
-    pub def compare(xs: Set[a], ys: Set[a]): Comparison =
-        if (Set.isSubsetOf(xs, ys)) LessThan
-        else if (Set.isSubsetOf(ys, xs)) GreaterThan
-        else EqualTo
+    pub def compare(xs: Set[a], ys: Set[a]): Comparison = match (Set.isSubsetOf(xs, ys), Set.isSubsetOf(ys, xs)) {
+        case (true, true) => EqualTo
+        case (false, true) => LessThan
+        case _ => GreaterThan
+    }
 
 }
 

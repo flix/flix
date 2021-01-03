@@ -65,10 +65,11 @@ instance Order[Map[k, v]] with [k : Order, v : Eq, v : Order] {
         case EqualTo => true
         case _ => false
     }
-    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
-        if (Map.isSubmapOf(x, y)) LessThan
-        else if (Map.isSubmapOf(y, x)) GreaterThan
-        else EqualTo
+    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison = match (Map.isSubmapOf(x, y), Map.isSubmapOf(y, x)) {
+        case (true, true) => EqualTo
+        case (false, true) => LessThan
+        case _ => GreaterThan
+    }
 
 }
 
