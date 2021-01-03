@@ -45,7 +45,7 @@ instance Eq[Map[k, v]] with[k : Eq, k : Order, v : Eq] {
 
 }
 
-instance Order[Map[k, v]] with [k : Order, v : Order] {
+instance Order[Map[k, v]] with [k : Order, v : Eq, v : Order] {
 
     def less(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
         case LessThan => true
@@ -65,7 +65,10 @@ instance Order[Map[k, v]] with [k : Order, v : Order] {
         case EqualTo => true
         case _ => false
     }
-    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison = Map.toList(x) <=> Map.toList(y)
+    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
+        if (Map.isSubmapOf(x, y)) LessThan
+        else if (Map.isSubmapOf(y, x)) GreaterThan
+        else EqualTo
 
 }
 
