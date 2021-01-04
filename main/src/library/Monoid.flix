@@ -144,12 +144,12 @@ instance Monoid[List[a]] {
 ///
 /// `combine` is set union.
 ///
-instance Monoid[Set[a]] {
+instance Monoid[Set[a]] with [a : Order] {
     def empty(): Set[a] = Set.empty()
     def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x, y)
 }
 
-instance Monoid[Map[k, v]] with [v: Monoid] {
+instance Monoid[Map[k, v]] with [k : Order, v: Monoid] {
     def empty(): Map[k, v] = Map.empty()
     def combine(x: Map[k, v], y: Map[k, v]): Map[k, v] =
         let ins = (ac, k, v) -> Map.insertWith(Monoid.combine, k, v, ac);

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
-
 namespace TestMap {
 
     use ToString.toString;
@@ -1687,85 +1685,113 @@ def unfoldWithIter06(): Bool & Impure =
 
 @test
 def query01(): Bool =
-    Map.query(_ -> Equal, Map#{}: Map[Unit, Unit]) == Nil
+    Map.query(_ -> EqualTo, Map#{}: Map[Unit, Unit]) == Nil
 
 @test
 def query02(): Bool =
-    Map.query(_ -> Equal, Map#{1 -> 101, 2 -> 42}) == (1, 101) :: (2, 42) :: Nil
+    Map.query(_ -> EqualTo, Map#{1 -> 101, 2 -> 42}) == (1, 101) :: (2, 42) :: Nil
 
 @test
 def query03(): Bool =
-    Map.query(x -> if (x < 2) LessThan else if (x > 2) GreaterThan else Equal, Map#{1 -> 1, 2 -> 2, 3 -> 3}) == (2, 2) :: Nil
+    Map.query(x -> if (x < 2) LessThan else if (x > 2) GreaterThan else EqualTo, Map#{1 -> 1, 2 -> 2, 3 -> 3}) == (2, 2) :: Nil
 
 @test
 def query04(): Bool =
-    Map.query(x -> if (x < 'b') LessThan else if (x > 'c') GreaterThan else Equal, Map#{'a' -> 0, 'b' -> 1, 'c' -> 2, 'd' -> 3, 'e' -> 4}) == ('b', 1) :: ('c', 2) :: Nil
+    Map.query(x -> if (x < 'b') LessThan else if (x > 'c') GreaterThan else EqualTo, Map#{'a' -> 0, 'b' -> 1, 'c' -> 2, 'd' -> 3, 'e' -> 4}) == ('b', 1) :: ('c', 2) :: Nil
 
 @test
 def query05(): Bool =
     let m = Map.unfold(s -> if (s > 10) None else Some(s, s, s + 1), 5);
-    Map.query(x -> if (x < 5) LessThan else if (x >= 10) GreaterThan else Equal, m) == List.map(x -> (x, x), List.range(5, 10))
+    Map.query(x -> if (x < 5) LessThan else if (x >= 10) GreaterThan else EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
 
 @test
 def query06(): Bool =
     let m = Map.unfold(s -> if (s > 75) None else Some(s, Char.fromInt32(s + 48), s + 1), 25);
-    Map.query(x -> if (x < 25) LessThan else if (x >= 75) GreaterThan else Equal, m) == List.map(x -> (x, Char.fromInt32(x + 48)), List.range(25, 75))
+    Map.query(x -> if (x < 25) LessThan else if (x >= 75) GreaterThan else EqualTo, m) == List.map(x -> (x, Char.fromInt32(x + 48)), List.range(25, 75))
 
 @test
 def query07(): Bool =
-    Map.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else Equal, Map#{42 -> true}) == (42, true) :: Nil
+    Map.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else EqualTo, Map#{42 -> true}) == (42, true) :: Nil
 
 @test
 def query08(): Bool =
-    Map.query(x -> if (x < 1) LessThan else if (x > 1) GreaterThan else Equal, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (1, 2) :: Nil
+    Map.query(x -> if (x < 1) LessThan else if (x > 1) GreaterThan else EqualTo, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (1, 2) :: Nil
 
 @test
 def query09(): Bool =
-    Map.query(x -> if (x < 2) LessThan else if (x > 3) GreaterThan else Equal, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (2, 3) :: (3, 4) :: Nil
+    Map.query(x -> if (x < 2) LessThan else if (x > 3) GreaterThan else EqualTo, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (2, 3) :: (3, 4) :: Nil
 
 @test
 def query10(): Bool =
-    Map.query(x -> if (x < 4) LessThan else if (x > 4) GreaterThan else Equal, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (4, 5) :: Nil
+    Map.query(x -> if (x < 4) LessThan else if (x > 4) GreaterThan else EqualTo, Map#{1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5}) == (4, 5) :: Nil
 
 @test
 def query11(): Bool =
     let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
-    Map.query(x -> if (fst(x) < 1) LessThan else if (fst(x) > 1) GreaterThan else Equal, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
+    Map.query(x -> if (fst(x) < 1) LessThan else if (fst(x) > 1) GreaterThan else EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
 
 @test
 def query12(): Bool =
     let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
-    Map.query(x -> if (fst(x) < 3) LessThan else if (fst(x) > 3) GreaterThan else Equal, m) == ((3, 1), 5) :: Nil
+    Map.query(x -> if (fst(x) < 3) LessThan else if (fst(x) > 3) GreaterThan else EqualTo, m) == ((3, 1), 5) :: Nil
 
 @test
 def query13(): Bool =
     let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
-    Map.query(x -> if (fst(x) > 2) GreaterThan else Equal, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
+    Map.query(x -> if (fst(x) > 2) GreaterThan else EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
 
 @test
 def query14(): Bool =
     let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
-    Map.query(x -> if (fst(x) < 2) LessThan else Equal, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+    Map.query(x -> if (fst(x) < 2) LessThan else EqualTo, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
 @test
 def query15(): Bool =
     let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
-    Map.query(x -> if (x <=> (2, 2) > 0) GreaterThan else Equal, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
+    let f = x -> {
+        let cmp = x <=> (2, 2);
+        if (cmp == GreaterThan)
+            cmp
+        else
+            EqualTo
+        };
+    Map.query(f, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
 
 @test
 def query16(): Bool =
     let m = Map#{(1, 2) -> 0, (1, 3) -> 1, (2, 1) -> 2, (2, 2) -> 3, (2, 3) -> 4, (3, 1) -> 5};
-    Map.query(x -> if (x <=> (2, 2) < 0) LessThan else Equal, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+    let f = x -> {
+        let cmp = x <=> (2, 2);
+        if (cmp == LessThan)
+            cmp
+        else
+            EqualTo
+        };
+    Map.query(f, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
 @test
 def query17(): Bool =
     let m = Map#{(1, 2, 2) -> 0, (1, 2, 3) -> 1, (1, 2, 4) -> 2, (2, 2, 4) -> 3};
-    Map.query(x -> if (x <=> (1, 2, 3) < 0) LessThan else Equal, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
+    let f = x -> {
+        let cmp = x <=> (1, 2, 3);
+        if (cmp == LessThan)
+            cmp
+        else
+            EqualTo
+        };
+    Map.query(f, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
 
 @test
 def query18(): Bool =
     let m = Map#{(1, 2, 2) -> 0, (1, 2, 3) -> 1, (1, 2, 4) -> 2, (2, 2, 4) -> 3};
-    Map.query(x -> if (x <=> (1, 2, 3) > 0) GreaterThan else Equal, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
+    let f = x -> {
+        let cmp = x <=> (1, 2, 3);
+        if (cmp == GreaterThan)
+            cmp
+        else
+            EqualTo
+        };
+    Map.query(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

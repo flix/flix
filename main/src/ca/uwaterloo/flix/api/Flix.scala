@@ -64,6 +64,9 @@ class Flix {
     * The core library *must* be present for any program to compile.
     */
   private val coreLibrary = List(
+    // Comparison
+    "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
+
     // Operators
     "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
     "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
@@ -79,7 +82,7 @@ class Flix {
     "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
-    "Ord.flix" -> LocalResource.get("/src/library/Ord.flix"),
+    "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
 
     // Lattices
     "PreOrder.flix" -> LocalResource.get("/src/library/PreOrder.flix"),
@@ -134,7 +137,6 @@ class Flix {
     "Core/Io/OutputStream.flix" -> LocalResource.get("/src/library/Core/Io/OutputStream.flix"),
     "Core/Io/ZipInput.flix" -> LocalResource.get("/src/library/Core/Io/ZipInput.flix"),
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
-    "Core/Cmp/Ordering.flix" -> LocalResource.get("/src/library/Core/Cmp/Ordering.flix"),
 
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),

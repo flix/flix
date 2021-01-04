@@ -56,6 +56,43 @@ instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
 
 }
 
+instance Order[Result[t, e]] with [t : Order, e : Order] {
+
+    def less(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    def lessEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    def greater(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    def greaterEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+
+    ///
+    /// Returns the result of a three-way comparison between `r1` and `r2`.
+    ///
+    /// Returns LessThan if `r1` is smaller than `r2`.
+    /// Returns EqualTo if `r1` is equal to `r2`.
+    /// Returns GreaterThan if `r1` is greater than `r2`.
+    ///
+    def compare(r1: Result[t, e], r2: Result[t, e]): Comparison = match (r1, r2) {
+        case (Ok(v1), Ok(v2))   =>  v1 <=> v2
+        case (Err(v1), Err(v2)) =>  v1 <=> v2
+        case (Ok(_), Err(_))    =>  LessThan
+        case (Err(_), Ok(_))    =>  GreaterThan
+    }
+
+}
+
 namespace Result {
 
     ///
@@ -298,7 +335,7 @@ namespace Result {
     /// Returns a one-element set of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty set.
     ///
     @Time(1) @Space(1)
-    pub def toSet(r: Result[t, e]): Set[t] = match r {
+    pub def toSet[t : Order, e](r: Result[t, e]): Set[t] = match r {
         case Ok(v)  => Set.singleton(v)
         case Err(_) => Set.empty()
     }
@@ -307,7 +344,7 @@ namespace Result {
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Ok((k, v))`. Otherwise returns the empty map.
     ///
     @Time(1) @Space(1)
-    pub def toMap(r: Result[(k, v), e]): Map[k, v] = match r {
+    pub def toMap[k : Order, v, e](r: Result[(k, v), e]): Map[k, v] = match r {
         case Ok((k, v)) => Map.singleton(k, v)
         case Err(_)     => Map.empty()
     }
@@ -424,20 +461,6 @@ namespace Result {
     @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e], r9: Result[t9, e], r10: Result[t10, e]): Result[u, e] & f =
         ap(lift9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
-
-    ///
-    /// Returns the result of a three-way comparison between `r1` and `r2`.
-    ///
-    /// Returns n < 0 if `r1` is smaller than `r2`.
-    /// Returns n = 0 if `r1` is equal to `r2`.
-    /// Returns n > 0 if `r1` is greater than `r2`.
-    ///
-    def __cmp(r1: Result[t, e], r2: Result[t, e]): Int32 = match (r1, r2) {
-        case (Ok(v1), Ok(v2))   =>  v1 <=> v2
-        case (Err(v1), Err(v2)) =>  v1 <=> v2
-        case (Ok(_), Err(_))    =>  -1
-        case (Err(_), Ok(_))    =>  +1
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////

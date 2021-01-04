@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-use Core/Cmp.Ordering.{LessThan, Equal, GreaterThan};
-
 namespace TestSet {
 
     use ToString.toString;
@@ -1146,31 +1144,31 @@ def unfoldWithIter06(): Bool & Impure =
 
 @test
 def query01(): Bool =
-    Set.query(x -> if (x < 3) LessThan else if (x > 7) GreaterThan else Equal, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == 3 :: 4 :: 5 :: 6 :: 7 :: Nil
+    Set.query(x -> if (x < 3) LessThan else if (x > 7) GreaterThan else EqualTo, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == 3 :: 4 :: 5 :: 6 :: 7 :: Nil
 
 @test
 def query02(): Bool =
-    Set.query(x -> if (x < 3) LessThan else if (x > 7) GreaterThan else Equal, Set#{}) == Nil
+    Set.query(x -> if (x < 3) LessThan else if (x > 7) GreaterThan else EqualTo, Set#{}) == Nil
 
 @test
 def query03(): Bool =
-    Set.query(_ -> Equal, Set#{}: Set[Unit]) == Nil
+    Set.query(_ -> EqualTo, Set#{}: Set[Unit]) == Nil
 
 @test
 def query04(): Bool =
-    Set.query(_ -> Equal, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil
+    Set.query(_ -> EqualTo, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil
 
 @test
 def query05(): Bool =
-    Set.query(x -> if (x < 2) LessThan else if (x > 2) GreaterThan else Equal, Set#{0, 1, 3, 4}) == Nil
+    Set.query(x -> if (x < 2) LessThan else if (x > 2) GreaterThan else EqualTo, Set#{0, 1, 3, 4}) == Nil
 
 @test
 def query06(): Bool =
-    Set.query(_ -> Equal, Set#{42}) == 42 :: Nil
+    Set.query(_ -> EqualTo, Set#{42}) == 42 :: Nil
 
 @test
 def query07(): Bool =
-    Set.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else Equal, Set#{42}) == 42 :: Nil
+    Set.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else EqualTo, Set#{42}) == 42 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

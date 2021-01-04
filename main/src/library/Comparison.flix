@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-///
-/// An ordering type.
-///
+pub enum Comparison {
+    case LessThan
+    case EqualTo
+    case GreaterThan
+}
 
-namespace Core/Cmp {
+instance Eq[Comparison] {
 
-    pub enum Ordering {
-        case LessThan
-        case Equal
-        case GreaterThan
+    def eq(x: Comparison, y: Comparison): Bool = match (x, y) {
+        case (LessThan, LessThan) => true
+        case (EqualTo, EqualTo) => true
+        case (GreaterThan, GreaterThan) => true
+        case _ => false
     }
+
+    def neq(x: Comparison, y: Comparison): Bool = not (x == y)
 
 }
