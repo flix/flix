@@ -45,31 +45,31 @@ object SimplifiedAstOps {
       * Checks invariants of the given expression `exp0` with the local variables in `env0` defined and the labels in `ienv0` defined.
       */
     def checkExp(exp0: Expression, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = exp0 match {
-      case Expression.Unit => // nop
+      case Expression.Unit(_) => // nop
 
-      case Expression.Null(tpe) => checkType(tpe)
+      case Expression.Null(tpe, _) => checkType(tpe)
 
-      case Expression.True => // nop
+      case Expression.True(_) => // nop
 
-      case Expression.False => // nop
+      case Expression.False(_) => // nop
 
-      case Expression.Char(lit) => // nop
+      case Expression.Char(lit, _) => // nop
 
-      case Expression.Float32(lit) => // nop
+      case Expression.Float32(lit, _) => // nop
 
-      case Expression.Float64(lit) => // nop
+      case Expression.Float64(lit, _) => // nop
 
-      case Expression.Int8(lit) => // nop
+      case Expression.Int8(lit, _) => // nop
 
-      case Expression.Int16(lit) => // nop
+      case Expression.Int16(lit, _) => // nop
 
-      case Expression.Int32(lit) => // nop
+      case Expression.Int32(lit, _) => // nop
 
-      case Expression.Int64(lit) => // nop
+      case Expression.Int64(lit, _) => // nop
 
-      case Expression.BigInt(lit) => // nop
+      case Expression.BigInt(lit, _) => // nop
 
-      case Expression.Str(lit) => // nop
+      case Expression.Str(lit, _) => // nop
 
       case Expression.Var(sym, tpe, loc) =>
         assert(env0 contains sym, s"Undefined local variable symbol: '$sym'.")

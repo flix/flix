@@ -60,31 +60,31 @@ object VarNumbering extends Phase[Root, Root] {
       * @param i0 the current stack offset.
       */
     def visitExp(e0: Expression, i0: Int): Int = e0 match {
-      case Expression.Unit => i0
+      case Expression.Unit(_) => i0
 
-      case Expression.Null(_) => i0
+      case Expression.Null(_, _) => i0
 
-      case Expression.True => i0
+      case Expression.True(_) => i0
 
-      case Expression.False => i0
+      case Expression.False(_) => i0
 
-      case Expression.Char(lit) => i0
+      case Expression.Char(_, _) => i0
 
-      case Expression.Float32(lit) => i0
+      case Expression.Float32(_, _) => i0
 
-      case Expression.Float64(lit) => i0
+      case Expression.Float64(_, _) => i0
 
-      case Expression.Int8(lit) => i0
+      case Expression.Int8(_, _) => i0
 
-      case Expression.Int16(lit) => i0
+      case Expression.Int16(_, _) => i0
 
-      case Expression.Int32(lit) => i0
+      case Expression.Int32(_, _) => i0
 
-      case Expression.Int64(lit) => i0
+      case Expression.Int64(_, _) => i0
 
-      case Expression.BigInt(lit) => i0
+      case Expression.BigInt(_, _) => i0
 
-      case Expression.Str(lit) => i0
+      case Expression.Str(_, _) => i0
 
       case Expression.Var(sym, tpe, loc) => i0
 

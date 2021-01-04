@@ -64,43 +64,43 @@ object TreeShaker extends Phase[Root, Root] {
       * Returns the function symbols reachable from the given Expression `e0`.
       */
     def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
-      case Expression.Unit =>
+      case Expression.Unit(_) =>
         Set.empty
 
-      case Expression.Null(_) =>
+      case Expression.Null(_, _) =>
         Set.empty
 
-      case Expression.True =>
+      case Expression.True(_) =>
         Set.empty
 
-      case Expression.False =>
+      case Expression.False(_) =>
         Set.empty
 
-      case Expression.Char(_) =>
+      case Expression.Char(_, _) =>
         Set.empty
 
-      case Expression.Float32(_) =>
+      case Expression.Float32(_, _) =>
         Set.empty
 
-      case Expression.Float64(_) =>
+      case Expression.Float64(_, _) =>
         Set.empty
 
-      case Expression.Int8(_) =>
+      case Expression.Int8(_, _) =>
         Set.empty
 
-      case Expression.Int16(_) =>
+      case Expression.Int16(_, _) =>
         Set.empty
 
-      case Expression.Int32(_) =>
+      case Expression.Int32(_, _) =>
         Set.empty
 
-      case Expression.Int64(_) =>
+      case Expression.Int64(_, _) =>
         Set.empty
 
-      case Expression.BigInt(_) =>
+      case Expression.BigInt(_, _) =>
         Set.empty
 
-      case Expression.Str(_) =>
+      case Expression.Str(_, _) =>
         Set.empty
 
       case Expression.Var(_, _, _) =>

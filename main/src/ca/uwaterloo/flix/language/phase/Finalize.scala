@@ -99,43 +99,43 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
   private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {
 
     def visit(e0: LiftedAst.Expression): FinalAst.Expression = e0 match {
-      case LiftedAst.Expression.Unit =>
+      case LiftedAst.Expression.Unit(_) =>
         FinalAst.Expression.Unit
 
-      case LiftedAst.Expression.Null(tpe) =>
+      case LiftedAst.Expression.Null(tpe, _) =>
         FinalAst.Expression.Null(visitType(tpe))
 
-      case LiftedAst.Expression.True =>
+      case LiftedAst.Expression.True(_) =>
         FinalAst.Expression.True
 
-      case LiftedAst.Expression.False =>
+      case LiftedAst.Expression.False(_) =>
         FinalAst.Expression.False
 
-      case LiftedAst.Expression.Char(lit) =>
+      case LiftedAst.Expression.Char(lit, _) =>
         FinalAst.Expression.Char(lit)
 
-      case LiftedAst.Expression.Float32(lit) =>
+      case LiftedAst.Expression.Float32(lit, _) =>
         FinalAst.Expression.Float32(lit)
 
-      case LiftedAst.Expression.Float64(lit) =>
+      case LiftedAst.Expression.Float64(lit, _) =>
         FinalAst.Expression.Float64(lit)
 
-      case LiftedAst.Expression.Int8(lit) =>
+      case LiftedAst.Expression.Int8(lit, _) =>
         FinalAst.Expression.Int8(lit)
 
-      case LiftedAst.Expression.Int16(lit) =>
+      case LiftedAst.Expression.Int16(lit, _) =>
         FinalAst.Expression.Int16(lit)
 
-      case LiftedAst.Expression.Int32(lit) =>
+      case LiftedAst.Expression.Int32(lit, _) =>
         FinalAst.Expression.Int32(lit)
 
-      case LiftedAst.Expression.Int64(lit) =>
+      case LiftedAst.Expression.Int64(lit, _) =>
         FinalAst.Expression.Int64(lit)
 
-      case LiftedAst.Expression.BigInt(lit) =>
+      case LiftedAst.Expression.BigInt(lit, _) =>
         FinalAst.Expression.BigInt(lit)
 
-      case LiftedAst.Expression.Str(lit) =>
+      case LiftedAst.Expression.Str(lit, _) =>
         FinalAst.Expression.Str(lit)
 
       case LiftedAst.Expression.Var(sym, tpe, loc) =>
