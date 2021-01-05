@@ -130,7 +130,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
       val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt)
+      val effVal = visitEff(effOpt, loc)
 
       mapN(annVal, modVal, formalsVal, effVal) {
         case (as, mod, fparams, eff) =>
@@ -168,7 +168,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val expVal = visitExp(exp0)
       val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt)
+      val effVal = visitEff(effOpt, loc)
 
       mapN(annVal, modVal, formalsVal, expVal, effVal) {
         case (as, mod, fparams, exp, eff) =>
@@ -1961,8 +1961,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
-  private def visitEff(effOpt: Option[ParsedAst.Type])(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
-    case None => WeededAst.Type.True(SourceLocation.Unknown).toSuccess
+  private def visitEff(effOpt: Option[ParsedAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
+    case None => WeededAst.Type.True(loc).toSuccess
     case Some(tpe) => visitType(tpe).toSuccess
   }
 
@@ -2365,7 +2365,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, castedToStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
-    WeededAst.Root(Nil, List(decl), SourceLocation.Unknown)
+    WeededAst.Root(Nil, List(decl), loc)
   }
 
 }
