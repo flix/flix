@@ -99,44 +99,44 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
   private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {
 
     def visit(e0: LiftedAst.Expression): FinalAst.Expression = e0 match {
-      case LiftedAst.Expression.Unit =>
-        FinalAst.Expression.Unit
+      case LiftedAst.Expression.Unit(loc) =>
+        FinalAst.Expression.Unit(loc)
 
-      case LiftedAst.Expression.Null(tpe) =>
-        FinalAst.Expression.Null(visitType(tpe))
+      case LiftedAst.Expression.Null(tpe, loc) =>
+        FinalAst.Expression.Null(visitType(tpe), loc)
 
-      case LiftedAst.Expression.True =>
-        FinalAst.Expression.True
+      case LiftedAst.Expression.True(loc) =>
+        FinalAst.Expression.True(loc)
 
-      case LiftedAst.Expression.False =>
-        FinalAst.Expression.False
+      case LiftedAst.Expression.False(loc) =>
+        FinalAst.Expression.False(loc)
 
-      case LiftedAst.Expression.Char(lit) =>
-        FinalAst.Expression.Char(lit)
+      case LiftedAst.Expression.Char(lit, loc) =>
+        FinalAst.Expression.Char(lit, loc)
 
-      case LiftedAst.Expression.Float32(lit) =>
-        FinalAst.Expression.Float32(lit)
+      case LiftedAst.Expression.Float32(lit, loc) =>
+        FinalAst.Expression.Float32(lit, loc)
 
-      case LiftedAst.Expression.Float64(lit) =>
-        FinalAst.Expression.Float64(lit)
+      case LiftedAst.Expression.Float64(lit, loc) =>
+        FinalAst.Expression.Float64(lit, loc)
 
-      case LiftedAst.Expression.Int8(lit) =>
-        FinalAst.Expression.Int8(lit)
+      case LiftedAst.Expression.Int8(lit, loc) =>
+        FinalAst.Expression.Int8(lit, loc)
 
-      case LiftedAst.Expression.Int16(lit) =>
-        FinalAst.Expression.Int16(lit)
+      case LiftedAst.Expression.Int16(lit, loc) =>
+        FinalAst.Expression.Int16(lit, loc)
 
-      case LiftedAst.Expression.Int32(lit) =>
-        FinalAst.Expression.Int32(lit)
+      case LiftedAst.Expression.Int32(lit, loc) =>
+        FinalAst.Expression.Int32(lit, loc)
 
-      case LiftedAst.Expression.Int64(lit) =>
-        FinalAst.Expression.Int64(lit)
+      case LiftedAst.Expression.Int64(lit, loc) =>
+        FinalAst.Expression.Int64(lit, loc)
 
-      case LiftedAst.Expression.BigInt(lit) =>
-        FinalAst.Expression.BigInt(lit)
+      case LiftedAst.Expression.BigInt(lit, loc) =>
+        FinalAst.Expression.BigInt(lit, loc)
 
-      case LiftedAst.Expression.Str(lit) =>
-        FinalAst.Expression.Str(lit)
+      case LiftedAst.Expression.Str(lit, loc) =>
+        FinalAst.Expression.Str(lit, loc)
 
       case LiftedAst.Expression.Var(sym, tpe, loc) =>
         val t = visitType(tpe)
@@ -491,7 +491,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
     case LiftedAst.Term.Head.Lit(lit, tpe, loc) =>
       val t = visitType(tpe)
-      FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, m), t, loc)
+      FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, loc, m), t, loc)
 
     case LiftedAst.Term.Head.App(exp, args, tpe, loc) =>
       val e = visitExp(exp, m)
@@ -514,7 +514,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
     case LiftedAst.Term.Body.Lit(lit, tpe, loc) =>
       val t = visitType(tpe)
-      FinalAst.Term.Body.Lit(lit2symTemporaryToBeRemoved(lit, m), t, loc)
+      FinalAst.Term.Body.Lit(lit2symTemporaryToBeRemoved(lit, loc, m), t, loc)
   }
 
   private def visitAttribute(a0: LiftedAst.Attribute): FinalAst.Attribute = {
@@ -625,13 +625,13 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
   // TODO: Deprecated
   // TODO: This should be done in a prior phase, perhaps during lambda lifting, or not done at all...
-  private def lit2symTemporaryToBeRemoved(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
+  private def lit2symTemporaryToBeRemoved(exp0: LiftedAst.Expression, loc: SourceLocation, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
     // Generate a top-level function for the constant.
-    val sym = Symbol.freshDefnSym("lit")
+    val sym = Symbol.freshDefnSym("lit", loc)
     val lit = visitExp(exp0, m)
     val ann = Ast.Annotations.Empty
     val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-    val varX = Symbol.freshVarSym("_unit")
+    val varX = Symbol.freshVarSym("_unit", loc)
     varX.setStackOffset(0)
     val fparam = FinalAst.FormalParam(varX, MonoType.Unit)
     val fs = List(fparam)

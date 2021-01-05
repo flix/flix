@@ -240,7 +240,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def mkFreshFparams(arity: Int, loc: SourceLocation): List[ResolvedAst.FormalParam] = {
         // Introduce a fresh variable symbol for each argument of the function definition.
-        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
+        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
         varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
@@ -515,7 +515,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
 
                   // Construct a fresh symbol for the formal parameter.
-                  val freshVar = Symbol.freshVarSym("x")
+                  val freshVar = Symbol.freshVarSym("x", loc)
 
                   // Construct the formal parameter for the fresh symbol.
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshVar(Kind.Star), loc)

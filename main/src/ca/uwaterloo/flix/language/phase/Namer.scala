@@ -905,7 +905,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
         case None =>
-          val sym = Symbol.freshVarSym("_")
+          val sym = Symbol.freshVarSym("_", loc)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshVar(Kind.Star), loc)
         case Some(id) =>
           val sym = Symbol.freshVarSym(id)
@@ -914,7 +914,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
         case None =>
-          val sym = Symbol.freshVarSym("_")
+          val sym = Symbol.freshVarSym("_", loc)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshVar(Kind.Star), loc)
         case Some(id) =>
           val sym = Symbol.freshVarSym(id)
@@ -958,13 +958,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshVar(Kind.Star), loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
-        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_"), Type.freshVar(Kind.Star), loc)
+        case None =>
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_", loc), Type.freshVar(Kind.Star), loc)
         case Some(value) =>
           val sym = env0(value.name)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshVar(Kind.Star), loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
-        case None => NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_"), elms map visit, Type.freshVar(Kind.Star), loc)
+        case None =>
+          NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_", loc), elms map visit, Type.freshVar(Kind.Star), loc)
         case Some(value) =>
           val sym = env0(value.name)
           NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshVar(Kind.Star), loc)
@@ -1418,7 +1420,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = if (ident.name == "_")
-        Symbol.freshVarSym("_")
+        Symbol.freshVarSym("_", fparam.loc)
       else
         Symbol.freshVarSym(ident)
 

@@ -130,7 +130,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
       val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt)
+      val effVal = visitEff(effOpt, loc)
 
       mapN(annVal, modVal, formalsVal, effVal) {
         case (as, mod, fparams, eff) =>
@@ -168,7 +168,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val expVal = visitExp(exp0)
       val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt)
+      val effVal = visitEff(effOpt, loc)
 
       mapN(annVal, modVal, formalsVal, expVal, effVal) {
         case (as, mod, fparams, exp, eff) =>
@@ -685,7 +685,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Apply(inner, List(value), loc)
         case (pat, value, body) =>
           // Full-blown pattern match.
-          val lambdaIdent = Name.Ident(SourcePosition.Unknown, "pat$0", SourcePosition.Unknown)
+          val lambdaIdent = Name.Ident(sp1, "pat$0", sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
 
           val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
@@ -1508,7 +1508,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         o match {
           case None =>
             val loc = mkSL(sp1, sp2)
-            val lit = WeededAst.Pattern.Unit(SourceLocation.Generated)
+            val lit = WeededAst.Pattern.Unit(loc)
             WeededAst.Pattern.Tag(enum, Name.mkTag(tag), lit, loc).toSuccess
           case Some(pat) => visit(pat) map {
             case p => WeededAst.Pattern.Tag(enum, Name.mkTag(tag), p, mkSL(sp1, sp2))
@@ -1569,7 +1569,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          */
         val loc = mkSL(sp1, sp2)
         val tag = Name.Tag("Nil", loc)
-        val pat = WeededAst.Pattern.Unit(SourceLocation.Generated)
+        val pat = WeededAst.Pattern.Unit(loc)
         WeededAst.Pattern.Tag(None, tag, pat, loc).toSuccess
 
       case ParsedAst.Pattern.FCons(pat1, sp1, sp2, pat2) =>
@@ -1923,19 +1923,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.False(sp1, sp2) =>
       WeededAst.Type.False(mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Not(eff) =>
-      val t = visitType(eff)
-      WeededAst.Type.Not(t, SourceLocation.Unknown)
+    case ParsedAst.Type.Not(sp1, tpe, sp2) =>
+      val t = visitType(tpe)
+      WeededAst.Type.Not(t, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.And(eff1, eff2) =>
-      val t1 = visitType(eff1)
-      val t2 = visitType(eff2)
-      WeededAst.Type.And(t1, t2, SourceLocation.Unknown)
+    case ParsedAst.Type.And(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      WeededAst.Type.And(t1, t2, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Or(eff1, eff2) =>
-      val t1 = visitType(eff1)
-      val t2 = visitType(eff2)
-      WeededAst.Type.Or(t1, t2, SourceLocation.Unknown)
+    case ParsedAst.Type.Or(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
   }
 
   /**
@@ -1959,8 +1961,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
-  private def visitEff(effOpt: Option[ParsedAst.Type])(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
-    case None => WeededAst.Type.True(SourceLocation.Unknown).toSuccess
+  private def visitEff(effOpt: Option[ParsedAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
+    case None => WeededAst.Type.True(loc).toSuccess
     case Some(tpe) => visitType(tpe).toSuccess
   }
 
@@ -2267,9 +2269,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.True(sp1, _) => sp1
     case ParsedAst.Type.False(sp1, _) => sp1
-    case ParsedAst.Type.Not(eff) => leftMostSourcePosition(eff)
-    case ParsedAst.Type.And(tpe1, _) => leftMostSourcePosition(tpe1)
-    case ParsedAst.Type.Or(eff1, _) => leftMostSourcePosition(eff1)
+    case ParsedAst.Type.Not(sp1, _, _) => sp1
+    case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
   }
 
   /**
@@ -2363,7 +2365,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, castedToStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
-    WeededAst.Root(Nil, List(decl), SourceLocation.Unknown)
+    WeededAst.Root(Nil, List(decl), loc)
   }
 
 }

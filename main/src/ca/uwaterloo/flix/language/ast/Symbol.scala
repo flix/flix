@@ -23,22 +23,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object Symbol {
 
   /**
-    * Returns a fresh def symbol with the given text.
-    */
-  def freshDefnSym(text: String)(implicit flix: Flix): DefnSym = {
-    val id = Some(flix.genSym.freshId())
-    new DefnSym(id, Nil, text, SourceLocation.Unknown)
-  }
-
-  /**
-    * Returns a fresh def symbol with the given text in the given namespace.
-    */
-  def freshDefnSym(ns: List[String], text: String)(implicit flix: Flix): DefnSym = {
-    val id = Some(flix.genSym.freshId())
-    new DefnSym(id, ns, text, SourceLocation.Unknown)
-  }
-
-  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {
@@ -47,18 +31,27 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh def symbol with the given text.
+    */
+  def freshDefnSym(text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
+    val id = Some(flix.genSym.freshId())
+    new DefnSym(id, Nil, text, loc)
+  }
+
+  /**
+    * Returns a fresh def symbol with the given text in the given namespace.
+    */
+  def freshDefnSym(ns: List[String], text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
+    val id = Some(flix.genSym.freshId())
+    new DefnSym(id, ns, text, loc)
+  }
+
+  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
     val id = flix.genSym.freshId()
     new HoleSym(Nil, "h" + id, loc)
-  }
-
-  /**
-    * Returns a fresh variable symbol with no additional information.
-    */
-  def freshVarSym()(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), "tmp", Type.freshVar(Kind.Star), SourceLocation.Unknown)
   }
 
   /**
@@ -78,8 +71,8 @@ object Symbol {
   /**
     * Returns a fresh variable symbol with the given text.
     */
-  def freshVarSym(text: String)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star), SourceLocation.Unknown)
+  def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star), loc)
   }
 
   /**
