@@ -685,7 +685,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Apply(inner, List(value), loc)
         case (pat, value, body) =>
           // Full-blown pattern match.
-          val lambdaIdent = Name.Ident(SourcePosition.Unknown, "pat$0", SourcePosition.Unknown)
+          val lambdaIdent = Name.Ident(sp1, "pat$0", sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
 
           val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
