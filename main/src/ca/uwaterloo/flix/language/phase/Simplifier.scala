@@ -74,31 +74,31 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
-      case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
+      case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit(loc)
 
-      case TypedAst.Expression.Null(tpe, loc) => SimplifiedAst.Expression.Null(tpe)
+      case TypedAst.Expression.Null(tpe, loc) => SimplifiedAst.Expression.Null(tpe, loc)
 
-      case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
+      case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True(loc)
 
-      case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False
+      case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False(loc)
 
-      case TypedAst.Expression.Char(lit, loc) => SimplifiedAst.Expression.Char(lit)
+      case TypedAst.Expression.Char(lit, loc) => SimplifiedAst.Expression.Char(lit, loc)
 
-      case TypedAst.Expression.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit)
+      case TypedAst.Expression.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit, loc)
 
-      case TypedAst.Expression.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit)
+      case TypedAst.Expression.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit, loc)
 
-      case TypedAst.Expression.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit)
+      case TypedAst.Expression.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit, loc)
 
-      case TypedAst.Expression.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit)
+      case TypedAst.Expression.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit, loc)
 
-      case TypedAst.Expression.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit)
+      case TypedAst.Expression.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit, loc)
 
-      case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
+      case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit, loc)
 
-      case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
+      case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit, loc)
 
-      case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
+      case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit, loc)
 
       case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
         val p = visitFormalParam(fparam)
@@ -171,10 +171,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         (op, e1.tpe.typeConstructor, e2.tpe.typeConstructor) match {
           case (BinaryOperator.Equal, Some(TypeConstructor.Unit), Some(TypeConstructor.Unit)) =>
             // Unit is always equal to itself.
-            return SimplifiedAst.Expression.True
+            return SimplifiedAst.Expression.True(loc)
           case (BinaryOperator.NotEqual, Some(TypeConstructor.Unit), Some(TypeConstructor.Unit)) =>
             // Unit is never not equal to itself.
-            return SimplifiedAst.Expression.False
+            return SimplifiedAst.Expression.False(loc)
           case _ => // fallthrough
         }
 
@@ -453,7 +453,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, loc)
 
       case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Let(Symbol.freshVarSym(), visitExp(e1), visitExp(e2), tpe, loc)
+        SimplifiedAst.Expression.Let(Symbol.freshVarSym("_", loc), visitExp(e1), visitExp(e2), tpe, loc)
 
       case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
@@ -648,11 +648,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
       case TypedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-        val var1 = Symbol.freshVarSym()
+        val var1 = Symbol.freshVarSym("_v1", loc)
         val e1 = visitExp(exp1)
-        val var2 = Symbol.freshVarSym()
+        val var2 = Symbol.freshVarSym("_v2", loc)
         val e2 = visitExp(exp2)
-        val var3 = Symbol.freshVarSym()
+        val var3 = Symbol.freshVarSym("_v3", loc)
         val e3 = visitExp(exp3)
         // Simplifies a fold expression, which in the general case has this form:
         // fold F exp1 exp2 exp3
@@ -811,18 +811,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Returns the given pattern `pat0` as an expression.
       */
     def pat2exp(pat0: TypedAst.Pattern): SimplifiedAst.Expression = pat0 match {
-      case TypedAst.Pattern.Unit(loc) => SimplifiedAst.Expression.Unit
-      case TypedAst.Pattern.True(loc) => SimplifiedAst.Expression.True
-      case TypedAst.Pattern.False(loc) => SimplifiedAst.Expression.False
-      case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Expression.Char(lit)
-      case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit)
-      case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit)
-      case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit)
-      case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit)
-      case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit)
-      case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
-      case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
-      case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
+      case TypedAst.Pattern.Unit(loc) => SimplifiedAst.Expression.Unit(loc)
+      case TypedAst.Pattern.True(loc) => SimplifiedAst.Expression.True(loc)
+      case TypedAst.Pattern.False(loc) => SimplifiedAst.Expression.False(loc)
+      case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Expression.Char(lit, loc)
+      case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit, loc)
+      case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit, loc)
+      case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit, loc)
+      case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit, loc)
+      case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit, loc)
+      case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit, loc)
+      case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit, loc)
+      case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Expression.Str(lit, loc)
       case TypedAst.Pattern.Tag(sym, tag, p, tpe, loc) => SimplifiedAst.Expression.Tag(sym, tag, pat2exp(p), tpe, loc)
       case TypedAst.Pattern.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms map pat2exp, tpe, loc)
       case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.")
@@ -878,7 +878,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       (e1.tpe.typeConstructor, e2.tpe.typeConstructor) match {
         case (Some(TypeConstructor.Unit), Some(TypeConstructor.Unit)) =>
           // Unit is always equal to itself.
-          return SimplifiedAst.Expression.True
+          return SimplifiedAst.Expression.True(loc)
         case _ => // fallthrough
       }
 
@@ -951,7 +951,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
 
       // Generate a fresh variable to hold the result of the match expression.
-      val matchVar = Symbol.freshVarSym("matchVar")
+      val matchVar = Symbol.freshVarSym("matchVar", loc)
 
       // Translate the match expression.
       val matchExp = visitExp(exp0)
@@ -1062,7 +1062,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         case (TypedAst.Pattern.Tag(sym, tag, pat, tpe, loc) :: ps, v :: vs) =>
           val cond = SimplifiedAst.Expression.Is(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), loc)
-          val freshVar = Symbol.freshVarSym("innerTag")
+          val freshVar = Symbol.freshVarSym("innerTag", loc)
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
           SimplifiedAst.Expression.IfThenElse(cond, consequent, fail, succ.tpe, loc)
@@ -1075,7 +1075,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           * variables.
           */
         case (TypedAst.Pattern.Tuple(elms, tpe, loc) :: ps, v :: vs) =>
-          val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm"))
+          val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm", loc))
           val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
           elms.zip(freshVars).zipWithIndex.foldRight(zero) {
             case (((pat, name), idx), exp) =>
@@ -1092,19 +1092,19 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         case (TypedAst.Pattern.Array(elms, tpe, loc) :: ps, v :: vs) =>
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
             val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = SimplifiedAst.Expression.Int32(idx)
+                val index = SimplifiedAst.Expression.Int32(idx, loc)
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
                   , exp, succ.tpe, loc)
             }
           }
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
@@ -1121,9 +1121,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         case (TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             val zero = sym.text match {
               case "_" => inner
@@ -1137,7 +1137,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = SimplifiedAst.Expression.Int32(idx)
+                val index = SimplifiedAst.Expression.Int32(idx, loc)
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
                   , exp, succ.tpe, loc)
@@ -1160,24 +1160,24 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val offset = mkSub(actualArrayLengthExp, expectedArrayLengthExp, loc)
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             val zero = sym.text match {
               case "_" => inner
               case _ => SimplifiedAst.Expression.Let(sym,
                 SimplifiedAst.Expression.ArraySlice(
                   SimplifiedAst.Expression.Var(v, tpe, loc),
-                  SimplifiedAst.Expression.Int32(0),
+                  SimplifiedAst.Expression.Int32(0, loc),
                   expectedArrayLengthExp, tpe, loc),
                 inner, tpe, loc)
             }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = mkAdd(SimplifiedAst.Expression.Int32(idx), offset, loc)
+                val index = mkAdd(SimplifiedAst.Expression.Int32(idx, loc), offset, loc)
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
                   , exp, succ.tpe, loc)
@@ -1240,7 +1240,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
       // Introduce a fresh variable for each match expression.
       //
-      val freshMatchVars = exps.map(_ => Symbol.freshVarSym("matchVar"))
+      val freshMatchVars = exps.map(_ => Symbol.freshVarSym("matchVar", loc))
 
       //
       // The default unmatched error expression.
@@ -1252,17 +1252,17 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
       val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
         case (TypedAst.ChoiceRule(pat, body), acc) =>
-          val init = SimplifiedAst.Expression.True: SimplifiedAst.Expression
+          val init = SimplifiedAst.Expression.True(loc): SimplifiedAst.Expression
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val tag = Name.Tag("Absent", SourceLocation.Generated)
+              val tag = Name.Tag("Absent", loc)
               val isAbsent = SimplifiedAst.Expression.Is(sym, tag, varExp, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isAbsent, acc, Type.Bool, loc)
             case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val tag = Name.Tag("Present", SourceLocation.Generated)
+              val tag = Name.Tag("Present", loc)
               val isPresent = SimplifiedAst.Expression.Is(sym, tag, varExp, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isPresent, acc, Type.Bool, loc)
           }
@@ -1272,7 +1272,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, tpe, _)), matchExp), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
-              val tag = Name.Tag("Present", SourceLocation.Generated)
+              val tag = Name.Tag("Present", loc)
               val untagExp = SimplifiedAst.Expression.Untag(sym, tag, varExp, tpe, loc)
               SimplifiedAst.Expression.Let(matchVar, untagExp, acc, acc.tpe, loc)
           }
@@ -1313,31 +1313,31 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
   def substitute(exp0: SimplifiedAst.Expression, m: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Expression = {
 
     def visitExp(e: SimplifiedAst.Expression): SimplifiedAst.Expression = e match {
-      case SimplifiedAst.Expression.Unit => e
+      case SimplifiedAst.Expression.Unit(_) => e
 
-      case SimplifiedAst.Expression.Null(tpe) => e
+      case SimplifiedAst.Expression.Null(_, _) => e
 
-      case SimplifiedAst.Expression.True => e
+      case SimplifiedAst.Expression.True(_) => e
 
-      case SimplifiedAst.Expression.False => e
+      case SimplifiedAst.Expression.False(_) => e
 
-      case SimplifiedAst.Expression.Char(lit) => e
+      case SimplifiedAst.Expression.Char(_, _) => e
 
-      case SimplifiedAst.Expression.Float32(lit) => e
+      case SimplifiedAst.Expression.Float32(_, _) => e
 
-      case SimplifiedAst.Expression.Float64(lit) => e
+      case SimplifiedAst.Expression.Float64(_, _) => e
 
-      case SimplifiedAst.Expression.Int8(lit) => e
+      case SimplifiedAst.Expression.Int8(_, _) => e
 
-      case SimplifiedAst.Expression.Int16(lit) => e
+      case SimplifiedAst.Expression.Int16(_, _) => e
 
-      case SimplifiedAst.Expression.Int32(lit) => e
+      case SimplifiedAst.Expression.Int32(_, _) => e
 
-      case SimplifiedAst.Expression.Int64(lit) => e
+      case SimplifiedAst.Expression.Int64(_, _) => e
 
-      case SimplifiedAst.Expression.BigInt(lit) => e
+      case SimplifiedAst.Expression.BigInt(_, _) => e
 
-      case SimplifiedAst.Expression.Str(lit) => e
+      case SimplifiedAst.Expression.Str(_, _) => e
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => m.get(sym) match {
         case None => SimplifiedAst.Expression.Var(sym, tpe, loc)

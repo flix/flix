@@ -68,31 +68,31 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given expression `exp0`.
     */
   private def visitExp(exp0: Expression)(implicit flix: Flix): Expression = exp0 match {
-    case Expression.Unit => exp0
+    case Expression.Unit(_) => exp0
 
-    case Expression.Null(tpe) => exp0
+    case Expression.Null(_, _) => exp0
 
-    case Expression.True => exp0
+    case Expression.True(_) => exp0
 
-    case Expression.False => exp0
+    case Expression.False(_) => exp0
 
-    case Expression.Char(lit) => exp0
+    case Expression.Char(lit, _) => exp0
 
-    case Expression.Float32(lit) => exp0
+    case Expression.Float32(lit, _) => exp0
 
-    case Expression.Float64(lit) => exp0
+    case Expression.Float64(lit, _) => exp0
 
-    case Expression.Int8(lit) => exp0
+    case Expression.Int8(lit, _) => exp0
 
-    case Expression.Int16(lit) => exp0
+    case Expression.Int16(lit, _) => exp0
 
-    case Expression.Int32(lit) => exp0
+    case Expression.Int32(lit, _) => exp0
 
-    case Expression.Int64(lit) => exp0
+    case Expression.Int64(lit, _) => exp0
 
-    case Expression.BigInt(lit) => exp0
+    case Expression.BigInt(lit, _) => exp0
 
-    case Expression.Str(lit) => exp0
+    case Expression.Str(lit, _) => exp0
 
     case Expression.Var(sym, tpe, loc) => exp0
 
@@ -121,7 +121,7 @@ object ClosureConv extends Phase[Root, Root] {
         case (oldSym, ptype) =>
           val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
-          FormalParam(newSym, Ast.Modifiers.Empty, ptype, SourceLocation.Unknown)
+          FormalParam(newSym, Ast.Modifiers.Empty, ptype, loc)
       } ++ args
 
       // Update the lambda type.
@@ -442,19 +442,19 @@ object ClosureConv extends Phase[Root, Root] {
     */
   // TODO: Use immutable, but sorted data structure?
   private def freeVars(exp0: Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
-    case Expression.Unit => mutable.LinkedHashSet.empty
-    case Expression.Null(tpe) => mutable.LinkedHashSet.empty
-    case Expression.True => mutable.LinkedHashSet.empty
-    case Expression.False => mutable.LinkedHashSet.empty
-    case Expression.Char(lit) => mutable.LinkedHashSet.empty
-    case Expression.Float32(lit) => mutable.LinkedHashSet.empty
-    case Expression.Float64(lit) => mutable.LinkedHashSet.empty
-    case Expression.Int8(lit) => mutable.LinkedHashSet.empty
-    case Expression.Int16(lit) => mutable.LinkedHashSet.empty
-    case Expression.Int32(lit) => mutable.LinkedHashSet.empty
-    case Expression.Int64(lit) => mutable.LinkedHashSet.empty
-    case Expression.BigInt(lit) => mutable.LinkedHashSet.empty
-    case Expression.Str(lit) => mutable.LinkedHashSet.empty
+    case Expression.Unit(_) => mutable.LinkedHashSet.empty
+    case Expression.Null(_, _) => mutable.LinkedHashSet.empty
+    case Expression.True(_) => mutable.LinkedHashSet.empty
+    case Expression.False(_) => mutable.LinkedHashSet.empty
+    case Expression.Char(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Float32(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Float64(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Int8(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Int16(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Int32(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Int64(_, _) => mutable.LinkedHashSet.empty
+    case Expression.BigInt(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Str(_, _) => mutable.LinkedHashSet.empty
     case Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
     case Expression.Def(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Lambda(args, body, tpe, loc) =>
@@ -621,31 +621,31 @@ object ClosureConv extends Phase[Root, Root] {
   private def replace(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): Expression = {
 
     def visitExp(e: Expression): Expression = e match {
-      case Expression.Unit => e
+      case Expression.Unit(_) => e
 
-      case Expression.Null(tpe) => e
+      case Expression.Null(_, _) => e
 
-      case Expression.True => e
+      case Expression.True(_) => e
 
-      case Expression.False => e
+      case Expression.False(_) => e
 
-      case Expression.Char(lit) => e
+      case Expression.Char(_, _) => e
 
-      case Expression.Float32(lit) => e
+      case Expression.Float32(_, _) => e
 
-      case Expression.Float64(lit) => e
+      case Expression.Float64(_, _) => e
 
-      case Expression.Int8(lit) => e
+      case Expression.Int8(_, _) => e
 
-      case Expression.Int16(lit) => e
+      case Expression.Int16(_, _) => e
 
-      case Expression.Int32(lit) => e
+      case Expression.Int32(_, _) => e
 
-      case Expression.Int64(lit) => e
+      case Expression.Int64(_, _) => e
 
-      case Expression.BigInt(lit) => e
+      case Expression.BigInt(_, _) => e
 
-      case Expression.Str(lit) => e
+      case Expression.Str(_, _) => e
 
       case Expression.Var(sym, tpe, loc) => subst.get(sym) match {
         case None => Expression.Var(sym, tpe, loc)

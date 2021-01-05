@@ -535,31 +535,31 @@ object JvmOps {
       * Returns the set of closures in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[ClosureInfo] = exp0 match {
-      case Expression.Unit => Set.empty
+      case Expression.Unit(_) => Set.empty
 
-      case Expression.Null(tpe) => Set.empty
+      case Expression.Null(tpe, _) => Set.empty
 
-      case Expression.True => Set.empty
+      case Expression.True(_) => Set.empty
 
-      case Expression.False => Set.empty
+      case Expression.False(_) => Set.empty
 
-      case Expression.Char(lit) => Set.empty
+      case Expression.Char(lit, _) => Set.empty
 
-      case Expression.Float32(lit) => Set.empty
+      case Expression.Float32(lit, _) => Set.empty
 
-      case Expression.Float64(lit) => Set.empty
+      case Expression.Float64(lit, _) => Set.empty
 
-      case Expression.Int8(lit) => Set.empty
+      case Expression.Int8(lit, _) => Set.empty
 
-      case Expression.Int16(lit) => Set.empty
+      case Expression.Int16(lit, _) => Set.empty
 
-      case Expression.Int32(lit) => Set.empty
+      case Expression.Int32(lit, _) => Set.empty
 
-      case Expression.Int64(lit) => Set.empty
+      case Expression.Int64(lit, _) => Set.empty
 
-      case Expression.BigInt(lit) => Set.empty
+      case Expression.BigInt(lit, _) => Set.empty
 
-      case Expression.Str(lit) => Set.empty
+      case Expression.Str(lit, _) => Set.empty
 
       case Expression.Var(sym, tpe, loc) => Set.empty
 
@@ -890,31 +890,31 @@ object JvmOps {
       * Returns the set of types which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[MonoType] = exp0 match {
-      case Expression.Unit => Set(MonoType.Unit)
+      case Expression.Unit(_) => Set(MonoType.Unit)
 
-      case Expression.Null(tpe) => Set(tpe)
+      case Expression.Null(tpe, _) => Set(tpe)
 
-      case Expression.True => Set(MonoType.Bool)
+      case Expression.True(_) => Set(MonoType.Bool)
 
-      case Expression.False => Set(MonoType.Bool)
+      case Expression.False(_) => Set(MonoType.Bool)
 
-      case Expression.Char(lit) => Set(MonoType.Char)
+      case Expression.Char(lit, _) => Set(MonoType.Char)
 
-      case Expression.Float32(lit) => Set(MonoType.Float32)
+      case Expression.Float32(lit, _) => Set(MonoType.Float32)
 
-      case Expression.Float64(lit) => Set(MonoType.Float64)
+      case Expression.Float64(lit, _) => Set(MonoType.Float64)
 
-      case Expression.Int8(lit) => Set(MonoType.Int8)
+      case Expression.Int8(lit, _) => Set(MonoType.Int8)
 
-      case Expression.Int16(lit) => Set(MonoType.Int16)
+      case Expression.Int16(lit, _) => Set(MonoType.Int16)
 
-      case Expression.Int32(lit) => Set(MonoType.Int32)
+      case Expression.Int32(lit, _) => Set(MonoType.Int32)
 
-      case Expression.Int64(lit) => Set(MonoType.Int64)
+      case Expression.Int64(lit, _) => Set(MonoType.Int64)
 
-      case Expression.BigInt(lit) => Set(MonoType.BigInt)
+      case Expression.BigInt(lit, _) => Set(MonoType.BigInt)
 
-      case Expression.Str(lit) => Set(MonoType.Str)
+      case Expression.Str(lit, _) => Set(MonoType.Str)
 
       case Expression.Var(sym, tpe, loc) => Set(tpe)
 

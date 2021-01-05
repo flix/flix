@@ -88,67 +88,67 @@ object SymbolicEvaluator {
       /**
         * Unit.
         */
-      case Expression.Unit => lift(pc0, qua0, SymVal.Unit)
+      case Expression.Unit(_) => lift(pc0, qua0, SymVal.Unit)
 
       /**
         * Null.
         */
-      case Expression.Null(tpe) => throw InternalCompilerException(s"Unsupported expression '$exp0'.'")
+      case Expression.Null(tpe, _) => throw InternalCompilerException(s"Unsupported expression '$exp0'.'")
 
       /**
         * True.
         */
-      case Expression.True => lift(pc0, qua0, SymVal.True)
+      case Expression.True(_) => lift(pc0, qua0, SymVal.True)
 
       /**
         * False.
         */
-      case Expression.False => lift(pc0, qua0, SymVal.False)
+      case Expression.False(_) => lift(pc0, qua0, SymVal.False)
 
       /**
         * Char.
         */
-      case Expression.Char(lit) => lift(pc0, qua0, SymVal.Char(lit))
+      case Expression.Char(lit, _) => lift(pc0, qua0, SymVal.Char(lit))
 
       /**
         * Float32.
         */
-      case Expression.Float32(lit) => lift(pc0, qua0, SymVal.Float32(lit))
+      case Expression.Float32(lit, _) => lift(pc0, qua0, SymVal.Float32(lit))
 
       /**
         * Float64.
         */
-      case Expression.Float64(lit) => lift(pc0, qua0, SymVal.Float64(lit))
+      case Expression.Float64(lit, _) => lift(pc0, qua0, SymVal.Float64(lit))
 
       /**
         * Int8.
         */
-      case Expression.Int8(lit) => lift(pc0, qua0, SymVal.Int8(lit))
+      case Expression.Int8(lit, _) => lift(pc0, qua0, SymVal.Int8(lit))
 
       /**
         * Int16.
         */
-      case Expression.Int16(lit) => lift(pc0, qua0, SymVal.Int16(lit))
+      case Expression.Int16(lit, _) => lift(pc0, qua0, SymVal.Int16(lit))
 
       /**
         * Int32.
         */
-      case Expression.Int32(lit) => lift(pc0, qua0, SymVal.Int32(lit))
+      case Expression.Int32(lit, _) => lift(pc0, qua0, SymVal.Int32(lit))
 
       /**
         * Int64.
         */
-      case Expression.Int64(lit) => lift(pc0, qua0, SymVal.Int64(lit))
+      case Expression.Int64(lit, _) => lift(pc0, qua0, SymVal.Int64(lit))
 
       /**
         * BigInt.
         */
-      case Expression.BigInt(lit) => lift(pc0, qua0, SymVal.BigInt(lit))
+      case Expression.BigInt(lit, _) => lift(pc0, qua0, SymVal.BigInt(lit))
 
       /**
         * Str.
         */
-      case Expression.Str(lit) => lift(pc0, qua0, SymVal.Str(lit))
+      case Expression.Str(lit, _) => lift(pc0, qua0, SymVal.Str(lit))
 
       /**
         * Local Variable.
@@ -203,7 +203,7 @@ object SymbolicEvaluator {
       /**
         * Unary.
         */
-      case Expression.Unary(sop, op, exp, _, _) =>
+      case Expression.Unary(sop, op, exp, _, loc) =>
         eval(pc0, exp, env0, lenv0, qua0) flatMap {
           case (pc, qua, v) => op match {
             /**
@@ -241,7 +241,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case SymVal.AtomicVar(id, tpe) =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(zeroOf(exp.tpe), SmtExpr.Var(id, exp.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, tpe))
 
@@ -270,7 +270,7 @@ object SymbolicEvaluator {
                   case MonoType.BigInt => SmtExpr.BigInt(BigInteger.ONE)
                   case _ => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
                 }
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(SmtExpr.BitwiseNegate(SmtExpr.Var(id, exp.tpe)), one)) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, tpe))
 
@@ -283,7 +283,7 @@ object SymbolicEvaluator {
       /**
         * Binary.
         */
-      case Expression.Binary(sop, op, exp1, exp2, _, _) =>
+      case Expression.Binary(sop, op, exp1, exp2, _, loc) =>
         eval2(pc0, exp1, exp2, env0, lenv0, qua0) flatMap {
           case (pc, qua, (v1, v2)) => op match {
 
@@ -300,7 +300,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Plus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -318,7 +318,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -336,7 +336,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Times(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -354,7 +354,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Divide(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -372,7 +372,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Modulo(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -390,7 +390,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Exponentiate(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -408,7 +408,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, MonoType.Bool), SmtExpr.Less(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -426,7 +426,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, MonoType.Bool), SmtExpr.LessEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -444,7 +444,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, MonoType.Bool), SmtExpr.Greater(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -462,7 +462,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, MonoType.Bool), SmtExpr.GreaterEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -558,7 +558,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseAnd(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -576,7 +576,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseOr(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -594,7 +594,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseXor(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -612,7 +612,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseLeftShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -630,7 +630,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = Symbol.freshVarSym()
+                val newVar = Symbol.freshVarSym("v", loc)
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseRightShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }

@@ -49,31 +49,31 @@ object PrettyPrinter {
 
     def fmtExp(exp0: Expression, vt: VirtualTerminal): Unit = {
       def visitExp(e0: Expression): Unit = e0 match {
-        case Expression.Unit => vt.text("Unit")
+        case Expression.Unit(_) => vt.text("Unit")
 
-        case Expression.Null(tpe) => vt.text("null")
+        case Expression.Null(tpe, _) => vt.text("null")
 
-        case Expression.True => vt.text("true")
+        case Expression.True(_) => vt.text("true")
 
-        case Expression.False => vt.text("false")
+        case Expression.False(_) => vt.text("false")
 
-        case Expression.Char(lit) => vt.text("'").text(lit.toString).text("'")
+        case Expression.Char(lit, _) => vt.text("'").text(lit.toString).text("'")
 
-        case Expression.Float32(lit) => vt.text(lit.toString).text("f32")
+        case Expression.Float32(lit, _) => vt.text(lit.toString).text("f32")
 
-        case Expression.Float64(lit) => vt.text(lit.toString).text("f32")
+        case Expression.Float64(lit, _) => vt.text(lit.toString).text("f32")
 
-        case Expression.Int8(lit) => vt.text(lit.toString).text("i8")
+        case Expression.Int8(lit, _) => vt.text(lit.toString).text("i8")
 
-        case Expression.Int16(lit) => vt.text(lit.toString).text("i16")
+        case Expression.Int16(lit, _) => vt.text(lit.toString).text("i16")
 
-        case Expression.Int32(lit) => vt.text(lit.toString).text("i32")
+        case Expression.Int32(lit, _) => vt.text(lit.toString).text("i32")
 
-        case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
+        case Expression.Int64(lit, _) => vt.text(lit.toString).text("i64")
 
-        case Expression.BigInt(lit) => vt.text(lit.toString()).text("ii")
+        case Expression.BigInt(lit, _) => vt.text(lit.toString()).text("ii")
 
-        case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
+        case Expression.Str(lit, _) => vt.text("\"").text(lit).text("\"")
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
 
@@ -190,7 +190,7 @@ object PrettyPrinter {
           vt.text(tag.name)
 
         case Expression.Tag(sym, tag, exp, tpe, loc) => exp match {
-          case Expression.Unit => vt.text(tag.name)
+          case Expression.Unit(_) => vt.text(tag.name)
           case _ =>
             vt.text(tag.name).text("(")
             visitExp(exp)
