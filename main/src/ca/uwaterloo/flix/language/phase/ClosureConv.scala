@@ -121,7 +121,7 @@ object ClosureConv extends Phase[Root, Root] {
         case (oldSym, ptype) =>
           val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
-          FormalParam(newSym, Ast.Modifiers.Empty, ptype, SourceLocation.Unknown)
+          FormalParam(newSym, Ast.Modifiers.Empty, ptype, loc)
       } ++ args
 
       // Update the lambda type.
