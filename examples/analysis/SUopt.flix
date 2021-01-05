@@ -21,7 +21,7 @@
     def hash(x: SULattice): Int32 = match x {
         case Top       => 1
         case Bottom    => 2
-        case Single(s) => hash(s)
+        case Single(s) => Hash.hash(s)
     }
   }
 
