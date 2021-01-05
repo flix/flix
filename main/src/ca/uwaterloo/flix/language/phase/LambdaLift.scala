@@ -147,7 +147,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val liftedExp = visitExp(exp)
 
         // Generate a fresh symbol for the new lifted definition.
-        val freshSymbol = Symbol.freshDefnSym(ns, name)
+        val freshSymbol = Symbol.freshDefnSym(ns, name, loc)
 
         // Construct annotations and modifiers for the fresh definition.
         val ann = Ast.Annotations.Empty

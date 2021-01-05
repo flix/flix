@@ -404,9 +404,9 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
-          getOrMkEq(term.tpe)
-          getOrMkHash(term.tpe)
-          getOrMkToString(term.tpe)
+          getOrMkEq(term.tpe, term.loc)
+          getOrMkHash(term.tpe, term.loc)
+          getOrMkToString(term.tpe, term.loc)
         }
         val ts = terms.map(visitExp)
         Predicate.Head.Atom(pred, den, ts, tpe, loc)
@@ -423,9 +423,9 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
-          getOrMkEq(term.tpe)
-          getOrMkHash(term.tpe)
-          getOrMkToString(term.tpe)
+          getOrMkEq(term.tpe, term.loc)
+          getOrMkHash(term.tpe, term.loc)
+          getOrMkToString(term.tpe, term.loc)
         }
         Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc)
 
@@ -444,7 +444,7 @@ object Synthesize extends Phase[Root, Root] {
       val tpe = if (exp1.tpe == exp2.tpe) exp1.tpe else throw InternalCompilerException(s"Unexpected non-equal types: '${exp1.tpe}' and '${exp2.tpe}'.")
 
       // Construct the symbol of the equality operator.
-      val sym = getOrMkEq(tpe)
+      val sym = getOrMkEq(tpe, exp1.loc)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
       val base = Expression.Def(sym, Type.mkPureCurriedArrow(List(tpe, tpe), Type.Bool), sl)
@@ -520,12 +520,12 @@ object Synthesize extends Phase[Root, Root] {
       *
       * If no such definition exists, it is created.
       */
-    def getOrMkEq(tpe: Type): Symbol.DefnSym = mutEqualityOps.getOrElse(tpe, {
+    def getOrMkEq(tpe: Type, loc: SourceLocation): Symbol.DefnSym = mutEqualityOps.getOrElse(tpe, {
 
       // TODO: [Equality]: We need to lookup the existence of any eq operator here. This may require monomorphization.
 
       // Introduce a fresh symbol for the equality operator.
-      val sym = Symbol.freshDefnSym("__eq")
+      val sym = Symbol.freshDefnSym("__eq", loc)
 
       // Immediately add the symbol to the equality map.
       // This is necessary to support recursive data types.
@@ -754,7 +754,7 @@ object Synthesize extends Phase[Root, Root] {
       val tpe = exp2.tpe
 
       // Construct the symbol of the toString operator.
-      val sym = getOrMkHash(tpe)
+      val sym = getOrMkHash(tpe, exp2.loc)
 
       // Construct an expression to call the symbol with the argument `exp0`.
       val exp1 = Expression.Def(sym, Type.mkPureArrow(tpe, Type.Int32), sl)
@@ -766,9 +766,9 @@ object Synthesize extends Phase[Root, Root] {
       *
       * If no such definition exists, it is created.
       */
-    def getOrMkHash(tpe: Type): Symbol.DefnSym = mutHashOps.getOrElse(tpe, {
+    def getOrMkHash(tpe: Type, loc: SourceLocation): Symbol.DefnSym = mutHashOps.getOrElse(tpe, {
       // Introduce a fresh symbol for the hash operator.
-      val sym = Symbol.freshDefnSym("hash")
+      val sym = Symbol.freshDefnSym("hash", loc)
 
       // Immediately add the symbol to the hash map.
       // This is necessary to support recursive data types.
@@ -987,7 +987,7 @@ object Synthesize extends Phase[Root, Root] {
       val tpe = exp2.tpe
 
       // Construct the symbol of the toString operator.
-      val sym = getOrMkToString(tpe)
+      val sym = getOrMkToString(tpe, exp2.loc)
 
       // Construct an expression to call the symbol with the argument `exp0`.
       val exp1 = Expression.Def(sym, Type.mkPureArrow(tpe, Type.Str), sl)
@@ -999,9 +999,9 @@ object Synthesize extends Phase[Root, Root] {
       *
       * If no such definition exists, it is created.
       */
-    def getOrMkToString(tpe: Type): Symbol.DefnSym = mutToStringOps.getOrElse(tpe, {
+    def getOrMkToString(tpe: Type, loc: SourceLocation): Symbol.DefnSym = mutToStringOps.getOrElse(tpe, {
       // Introduce a fresh symbol for the toString operator.
-      val sym = Symbol.freshDefnSym("toString")
+      val sym = Symbol.freshDefnSym("toString", loc)
 
       // Immediately add the symbol to the toString map.
       // This is necessary to support recursive data types.
@@ -1348,7 +1348,7 @@ object Synthesize extends Phase[Root, Root] {
        */
       // TODO: Refactor these
       typesInDefs.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-        case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
+        case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe, sl))
         case (macc, tpe) => macc
       }
 

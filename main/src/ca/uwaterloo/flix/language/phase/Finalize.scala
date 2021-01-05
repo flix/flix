@@ -491,7 +491,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
     case LiftedAst.Term.Head.Lit(lit, tpe, loc) =>
       val t = visitType(tpe)
-      FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, m), t, loc)
+      FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, loc, m), t, loc)
 
     case LiftedAst.Term.Head.App(exp, args, tpe, loc) =>
       val e = visitExp(exp, m)
@@ -514,7 +514,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
     case LiftedAst.Term.Body.Lit(lit, tpe, loc) =>
       val t = visitType(tpe)
-      FinalAst.Term.Body.Lit(lit2symTemporaryToBeRemoved(lit, m), t, loc)
+      FinalAst.Term.Body.Lit(lit2symTemporaryToBeRemoved(lit, loc, m), t, loc)
   }
 
   private def visitAttribute(a0: LiftedAst.Attribute): FinalAst.Attribute = {
@@ -625,9 +625,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
   // TODO: Deprecated
   // TODO: This should be done in a prior phase, perhaps during lambda lifting, or not done at all...
-  private def lit2symTemporaryToBeRemoved(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
+  private def lit2symTemporaryToBeRemoved(exp0: LiftedAst.Expression, loc: SourceLocation, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
     // Generate a top-level function for the constant.
-    val sym = Symbol.freshDefnSym("lit")
+    val sym = Symbol.freshDefnSym("lit", loc)
     val lit = visitExp(exp0, m)
     val ann = Ast.Annotations.Empty
     val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))

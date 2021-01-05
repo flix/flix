@@ -25,17 +25,17 @@ object Symbol {
   /**
     * Returns a fresh def symbol with the given text.
     */
-  def freshDefnSym(text: String)(implicit flix: Flix): DefnSym = {
+  def freshDefnSym(text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
     val id = Some(flix.genSym.freshId())
-    new DefnSym(id, Nil, text, SourceLocation.Unknown)
+    new DefnSym(id, Nil, text, loc)
   }
 
   /**
     * Returns a fresh def symbol with the given text in the given namespace.
     */
-  def freshDefnSym(ns: List[String], text: String)(implicit flix: Flix): DefnSym = {
+  def freshDefnSym(ns: List[String], text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
     val id = Some(flix.genSym.freshId())
-    new DefnSym(id, ns, text, SourceLocation.Unknown)
+    new DefnSym(id, ns, text, loc)
   }
 
   /**
