@@ -54,7 +54,7 @@ object PrettyExpression {
     case Expression.Unary(sop, exp, _, _, _) =>
       val op = SemanticOperatorOps.toUnaryOp(sop)
       op match {
-        case UnaryOperator.LogicalNot => s"!${pretty(exp)}"
+        case UnaryOperator.LogicalNot => s"not ${pretty(exp)}"
         case UnaryOperator.Plus => s"+${pretty(exp)}"
         case UnaryOperator.Minus => s"-${pretty(exp)}"
         case UnaryOperator.BitwiseNegate => s"~~~${pretty(exp)}"
@@ -67,9 +67,22 @@ object PrettyExpression {
         case BinaryOperator.Minus => s"${pretty(exp1)} - ${pretty(exp2)}"
         case BinaryOperator.Times => s"${pretty(exp1)} * ${pretty(exp2)}"
         case BinaryOperator.Divide => s"${pretty(exp1)} / ${pretty(exp2)}"
-        case BinaryOperator.LogicalAnd => s"${pretty(exp1)} && ${pretty(exp2)}"
-        case BinaryOperator.LogicalOr => s"${pretty(exp1)} || ${pretty(exp2)}"
-        // TODO: Rest
+        case BinaryOperator.Modulo => s"${pretty(exp1)} % ${pretty(exp2)}"
+        case BinaryOperator.Exponentiate => s"${pretty(exp1)} ** ${pretty(exp2)}"
+        case BinaryOperator.Less => s"${pretty(exp1)} < ${pretty(exp2)}"
+        case BinaryOperator.LessEqual => s"${pretty(exp1)} <= ${pretty(exp2)}"
+        case BinaryOperator.Greater => s"${pretty(exp1)} > ${pretty(exp2)}"
+        case BinaryOperator.GreaterEqual => s"${pretty(exp1)} >= ${pretty(exp2)}"
+        case BinaryOperator.Equal => s"${pretty(exp1)} == ${pretty(exp2)}"
+        case BinaryOperator.NotEqual => s"${pretty(exp1)} != ${pretty(exp2)}"
+        case BinaryOperator.Spaceship => s"${pretty(exp1)} <=> ${pretty(exp2)}"
+        case BinaryOperator.LogicalAnd => s"${pretty(exp1)} and ${pretty(exp2)}"
+        case BinaryOperator.LogicalOr => s"${pretty(exp1)} or ${pretty(exp2)}"
+        case BinaryOperator.BitwiseAnd => s"${pretty(exp1)} &&& ${pretty(exp2)}"
+        case BinaryOperator.BitwiseOr => s"${pretty(exp1)} ||| ${pretty(exp2)}"
+        case BinaryOperator.BitwiseXor => s"${pretty(exp1)} ^^^ ${pretty(exp2)}"
+        case BinaryOperator.BitwiseLeftShift => s"${pretty(exp1)} <<< ${pretty(exp2)}"
+        case BinaryOperator.BitwiseRightShift => s"${pretty(exp1)} >>> ${pretty(exp2)}"
       case _ => e0.toString
     }
 

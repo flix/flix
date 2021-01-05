@@ -762,48 +762,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Optionally returns the symbol of a function with the `__eq` name whose declared types unifies with the given type `tpe`.
-      *
-      * Returns `None` if no such function exists or more than one such function exist.
-      */
-    def lookupEq(tpe: Type): Option[Symbol.DefnSym] = tpe.typeConstructor match {
-      // Equality cannot be overriden for primitive types.
-      case Some(TypeConstructor.Unit) => None
-      case Some(TypeConstructor.Bool) => None
-      case Some(TypeConstructor.Char) => None
-      case Some(TypeConstructor.Float32) => None
-      case Some(TypeConstructor.Float64) => None
-      case Some(TypeConstructor.Int8) => None
-      case Some(TypeConstructor.Int16) => None
-      case Some(TypeConstructor.Int32) => None
-      case Some(TypeConstructor.Int64) => None
-      case Some(TypeConstructor.BigInt) => None
-      case Some(TypeConstructor.Str) => None
-      case _ => lookupIn("__eq", tpe, eqDefs)
-    }
-
-    /**
-      * Optionally returns the symbol of a function with the `__cmp` name whose declared types unifies with the given type `tpe`.
-      *
-      * Returns `None` if no such function exists or more than one such function exist.
-      */
-    def lookupCmp(tpe: Type): Option[Symbol.DefnSym] = tpe.typeConstructor match {
-      // Ordering cannot be overriden for primitive types.
-      case Some(TypeConstructor.Unit) => None
-      case Some(TypeConstructor.Bool) => None
-      case Some(TypeConstructor.Char) => None
-      case Some(TypeConstructor.Float32) => None
-      case Some(TypeConstructor.Float64) => None
-      case Some(TypeConstructor.Int8) => None
-      case Some(TypeConstructor.Int16) => None
-      case Some(TypeConstructor.Int32) => None
-      case Some(TypeConstructor.Int64) => None
-      case Some(TypeConstructor.BigInt) => None
-      case Some(TypeConstructor.Str) => None
-      case _ => lookupIn("__cmp", tpe, cmpDefs)
-    }
-
-    /**
       * Optionally returns the symbol of the function with `name` whose declared types unifies with the given type `tpe` and appears in `defns`.
       */
     def lookupIn(name: String, tpe: Type, defns: mutable.Iterable[Def]): Option[Symbol.DefnSym] = {

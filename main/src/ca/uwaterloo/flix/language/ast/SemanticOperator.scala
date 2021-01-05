@@ -810,6 +810,11 @@ object SemanticOperator {
 
 object SemanticOperatorOps {
 
+  /**
+   * Maps a semantic operator to a unary operator.
+   * @param sop The semantic operator.
+   * @return The appropriate unary operator.
+   */
   def toUnaryOp(sop: SemanticOperator): UnaryOperator = sop match {
     case SemanticOperator.BoolOp.Not => UnaryOperator.LogicalNot
     case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg
@@ -820,6 +825,11 @@ object SemanticOperatorOps {
     case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.")
   }
 
+  /**
+   * Maps a semantic operator to a binary operator.
+   * @param sop The semantic operator.
+   * @return The appropriate binary operator.
+   */
   def toBinaryOp(sop: SemanticOperator): BinaryOperator = sop match {
     case SemanticOperator.BoolOp.And => BinaryOperator.LogicalAnd
     case SemanticOperator.BoolOp.Or => BinaryOperator.LogicalOr
