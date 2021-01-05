@@ -82,6 +82,7 @@ class Flix {
     "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
+    "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
 
     // Lattices
@@ -140,7 +141,6 @@ class Flix {
 
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
-    "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
