@@ -35,38 +35,72 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
-    case Expression.Unit =>
+    case Expression.Unit(loc) =>
+      addSourceLine(visitor, loc)
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
-    case Expression.Null(tpe) =>
+
+    case Expression.Null(tpe, loc) =>
+      addSourceLine(visitor, loc)
       visitor.visitInsn(ACONST_NULL)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.True => visitor.visitInsn(ICONST_1)
-    case Expression.False => visitor.visitInsn(ICONST_0)
-    case Expression.Char(c) => compileInt(visitor, c)
-    case Expression.Float32(f) => f match {
-      case 0f => visitor.visitInsn(FCONST_0)
-      case 1f => visitor.visitInsn(FCONST_1)
-      case 2f => visitor.visitInsn(FCONST_2)
-      case _ => visitor.visitLdcInsn(f)
-    }
-    case Expression.Float64(d) => d match {
-      case 0d => visitor.visitInsn(DCONST_0)
-      case 1d => visitor.visitInsn(DCONST_1)
-      case _ => visitor.visitLdcInsn(d)
-    }
-    case Expression.Int8(b) => compileInt(visitor, b)
-    case Expression.Int16(s) => compileInt(visitor, s)
-    case Expression.Int32(i) => compileInt(visitor, i)
-    case Expression.Int64(l) => compileInt(visitor, l, isLong = true)
-    case Expression.BigInt(ii) =>
+    case Expression.True(loc) =>
+      addSourceLine(visitor, loc)
+      visitor.visitInsn(ICONST_1)
+
+    case Expression.False(loc) =>
+      addSourceLine(visitor, loc)
+      visitor.visitInsn(ICONST_0)
+
+    case Expression.Char(c, loc) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, c)
+
+    case Expression.Float32(f, loc) =>
+      addSourceLine(visitor, loc)
+      f match {
+        case 0f => visitor.visitInsn(FCONST_0)
+        case 1f => visitor.visitInsn(FCONST_1)
+        case 2f => visitor.visitInsn(FCONST_2)
+        case _ => visitor.visitLdcInsn(f)
+      }
+
+    case Expression.Float64(d, loc) =>
+      addSourceLine(visitor, loc)
+      d match {
+        case 0d => visitor.visitInsn(DCONST_0)
+        case 1d => visitor.visitInsn(DCONST_1)
+        case _ => visitor.visitLdcInsn(d)
+      }
+
+    case Expression.Int8(b, loc) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, b)
+
+    case Expression.Int16(s, loc) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, s)
+
+    case Expression.Int32(i, loc) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, i)
+
+    case Expression.Int64(l, loc) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, l, isLong = true)
+
+    case Expression.BigInt(ii, loc) =>
+      addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, JvmName.BigInteger.toInternalName)
       visitor.visitInsn(DUP)
       visitor.visitLdcInsn(ii.toString)
       visitor.visitMethodInsn(INVOKESPECIAL, JvmName.BigInteger.toInternalName, "<init>",
         AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-    case Expression.Str(s) => visitor.visitLdcInsn(s)
+
+    case Expression.Str(s, loc) =>
+      addSourceLine(visitor, loc)
+      visitor.visitLdcInsn(s)
 
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)

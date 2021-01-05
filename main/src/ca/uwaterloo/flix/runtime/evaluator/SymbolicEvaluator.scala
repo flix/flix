@@ -88,67 +88,67 @@ object SymbolicEvaluator {
       /**
         * Unit.
         */
-      case Expression.Unit => lift(pc0, qua0, SymVal.Unit)
+      case Expression.Unit(_) => lift(pc0, qua0, SymVal.Unit)
 
       /**
         * Null.
         */
-      case Expression.Null(tpe) => throw InternalCompilerException(s"Unsupported expression '$exp0'.'")
+      case Expression.Null(tpe, _) => throw InternalCompilerException(s"Unsupported expression '$exp0'.'")
 
       /**
         * True.
         */
-      case Expression.True => lift(pc0, qua0, SymVal.True)
+      case Expression.True(_) => lift(pc0, qua0, SymVal.True)
 
       /**
         * False.
         */
-      case Expression.False => lift(pc0, qua0, SymVal.False)
+      case Expression.False(_) => lift(pc0, qua0, SymVal.False)
 
       /**
         * Char.
         */
-      case Expression.Char(lit) => lift(pc0, qua0, SymVal.Char(lit))
+      case Expression.Char(lit, _) => lift(pc0, qua0, SymVal.Char(lit))
 
       /**
         * Float32.
         */
-      case Expression.Float32(lit) => lift(pc0, qua0, SymVal.Float32(lit))
+      case Expression.Float32(lit, _) => lift(pc0, qua0, SymVal.Float32(lit))
 
       /**
         * Float64.
         */
-      case Expression.Float64(lit) => lift(pc0, qua0, SymVal.Float64(lit))
+      case Expression.Float64(lit, _) => lift(pc0, qua0, SymVal.Float64(lit))
 
       /**
         * Int8.
         */
-      case Expression.Int8(lit) => lift(pc0, qua0, SymVal.Int8(lit))
+      case Expression.Int8(lit, _) => lift(pc0, qua0, SymVal.Int8(lit))
 
       /**
         * Int16.
         */
-      case Expression.Int16(lit) => lift(pc0, qua0, SymVal.Int16(lit))
+      case Expression.Int16(lit, _) => lift(pc0, qua0, SymVal.Int16(lit))
 
       /**
         * Int32.
         */
-      case Expression.Int32(lit) => lift(pc0, qua0, SymVal.Int32(lit))
+      case Expression.Int32(lit, _) => lift(pc0, qua0, SymVal.Int32(lit))
 
       /**
         * Int64.
         */
-      case Expression.Int64(lit) => lift(pc0, qua0, SymVal.Int64(lit))
+      case Expression.Int64(lit, _) => lift(pc0, qua0, SymVal.Int64(lit))
 
       /**
         * BigInt.
         */
-      case Expression.BigInt(lit) => lift(pc0, qua0, SymVal.BigInt(lit))
+      case Expression.BigInt(lit, _) => lift(pc0, qua0, SymVal.BigInt(lit))
 
       /**
         * Str.
         */
-      case Expression.Str(lit) => lift(pc0, qua0, SymVal.Str(lit))
+      case Expression.Str(lit, _) => lift(pc0, qua0, SymVal.Str(lit))
 
       /**
         * Local Variable.
