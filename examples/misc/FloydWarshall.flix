@@ -27,6 +27,25 @@ instance PreOrder[Dist] {
     }
 }
 
+instance Eq[Dist] {
+    def eq(x: Dist, y: Dist): Bool = match (x, y) {
+        case (Top, Top) => true
+        case (Dst(a), Dst(b)) => a == b
+        case (Bot, Bot) => true
+        case _ => false
+    }
+
+    def neq(x: Dist, y: Dist): Bool = not (x == y)
+}
+
+instance Hash[Dist] {
+    def hash(x: Dist): Int32 = match x {
+        case Top    => 0
+        case Bot    => 1
+        case Dst(n) => n + 2
+    }
+}
+
 instance PartialOrder[Dist] {
     def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
         case (_, Top) => true
