@@ -532,8 +532,8 @@ object Synthesize extends Phase[Root, Root] {
       mutEqualityOps += (tpe -> sym)
 
       // Construct two fresh variable symbols for the formal parameters.
-      val freshX = Symbol.freshVarSym("x")
-      val freshY = Symbol.freshVarSym("y")
+      val freshX = Symbol.freshVarSym("x", loc)
+      val freshY = Symbol.freshVarSym("y", loc)
 
       // Construct the two formal parameters.
       val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
@@ -656,8 +656,8 @@ object Synthesize extends Phase[Root, Root] {
                 // (Tag(freshX), Tag(freshY)) => recurse(freshX, freshY)
 
                 // Generate two fresh variable symbols.
-                val freshX = Symbol.freshVarSym("x")
-                val freshY = Symbol.freshVarSym("y")
+                val freshX = Symbol.freshVarSym("x", sl)
+                val freshY = Symbol.freshVarSym("y", sl)
 
                 // Generate the two tag patterns: Tag(freshX) and Tag(freshY).
                 val patX = Pattern.Tag(enumSym, tag, Pattern.Var(freshX, caseType, sl), tpe, sl)
@@ -707,10 +707,10 @@ object Synthesize extends Phase[Root, Root] {
             val matchValue = Expression.Tuple(List(exp1, exp2), mkTupleType(tpe, tpe), Type.Pure, sl)
 
             // Introduce fresh variables for each component of the first tuple.
-            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x")).toList
+            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x", sl)).toList
 
             // Introduce fresh variables for each component of the second tuple.
-            val freshVarsY = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("y")).toList
+            val freshVarsY = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("y", sl)).toList
 
             // The pattern of the rule.
             val xs = Pattern.Tuple((freshVarsX zip elementTypes).map {
@@ -775,7 +775,7 @@ object Synthesize extends Phase[Root, Root] {
       mutHashOps += (tpe -> sym)
 
       // Construct one fresh variable symbols for the formal parameter.
-      val freshX = Symbol.freshVarSym("x")
+      val freshX = Symbol.freshVarSym("x", sl)
 
       // Construct the formal parameter.
       val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
@@ -896,7 +896,7 @@ object Synthesize extends Phase[Root, Root] {
                 // (Tag(freshX)) => index + recurse(freshX)
 
                 // Generate a fresh variable symbols.
-                val freshX = Symbol.freshVarSym("x")
+                val freshX = Symbol.freshVarSym("x", sl)
 
                 // Generate the tag pattern: Tag(freshX).
                 val p = Pattern.Tag(enumSym, tag, Pattern.Var(freshX, caseType, sl), tpe, sl)
@@ -941,7 +941,7 @@ object Synthesize extends Phase[Root, Root] {
             val matchValue = exp0
 
             // Introduce fresh variables for each component of the tuple.
-            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x")).toList
+            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x", sl)).toList
 
             // The pattern of the rule.
             val p = Pattern.Tuple((freshVarsX zip elementTypes).map {
@@ -1008,7 +1008,7 @@ object Synthesize extends Phase[Root, Root] {
       mutToStringOps += (tpe -> sym)
 
       // Construct one fresh variable symbols for the formal parameter.
-      val freshX = Symbol.freshVarSym("x")
+      val freshX = Symbol.freshVarSym("x", sl)
 
       // Construct the formal parameter.
       val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
@@ -1147,7 +1147,7 @@ object Synthesize extends Phase[Root, Root] {
             val matchValue = exp0
 
             // Introduce fresh variables for each component of the tuple.
-            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x")).toList
+            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x", sl)).toList
 
             // The pattern of the rule.
             val p = Pattern.Tuple((freshVarsX zip elementTypes).map {
@@ -1210,7 +1210,7 @@ object Synthesize extends Phase[Root, Root] {
                 // (Tag(freshX)) => "Tag(" + recurse(freshX) + ")"
 
                 // Generate a fresh variable symbols.
-                val freshX = Symbol.freshVarSym("x")
+                val freshX = Symbol.freshVarSym("x", sl)
 
                 // Generate the tag pattern: Tag(freshX).
                 val p = Pattern.Tag(enumSym, tag, Pattern.Var(freshX, caseType, sl), tpe, sl)

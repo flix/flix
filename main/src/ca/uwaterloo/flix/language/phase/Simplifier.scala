@@ -453,7 +453,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, loc)
 
       case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Let(Symbol.freshVarSym("_"), visitExp(e1), visitExp(e2), tpe, loc)
+        SimplifiedAst.Expression.Let(Symbol.freshVarSym("_", loc), visitExp(e1), visitExp(e2), tpe, loc)
 
       case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
@@ -648,11 +648,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
       case TypedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-        val var1 = Symbol.freshVarSym("_v1")
+        val var1 = Symbol.freshVarSym("_v1", loc)
         val e1 = visitExp(exp1)
-        val var2 = Symbol.freshVarSym("_v2")
+        val var2 = Symbol.freshVarSym("_v2", loc)
         val e2 = visitExp(exp2)
-        val var3 = Symbol.freshVarSym("_v3")
+        val var3 = Symbol.freshVarSym("_v3", loc)
         val e3 = visitExp(exp3)
         // Simplifies a fold expression, which in the general case has this form:
         // fold F exp1 exp2 exp3
@@ -951,7 +951,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
 
       // Generate a fresh variable to hold the result of the match expression.
-      val matchVar = Symbol.freshVarSym("matchVar")
+      val matchVar = Symbol.freshVarSym("matchVar", loc)
 
       // Translate the match expression.
       val matchExp = visitExp(exp0)
@@ -1062,7 +1062,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         case (TypedAst.Pattern.Tag(sym, tag, pat, tpe, loc) :: ps, v :: vs) =>
           val cond = SimplifiedAst.Expression.Is(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), loc)
-          val freshVar = Symbol.freshVarSym("innerTag")
+          val freshVar = Symbol.freshVarSym("innerTag", loc)
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
           SimplifiedAst.Expression.IfThenElse(cond, consequent, fail, succ.tpe, loc)
@@ -1075,7 +1075,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           * variables.
           */
         case (TypedAst.Pattern.Tuple(elms, tpe, loc) :: ps, v :: vs) =>
-          val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm"))
+          val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm", loc))
           val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
           elms.zip(freshVars).zipWithIndex.foldRight(zero) {
             case (((pat, name), idx), exp) =>
@@ -1092,7 +1092,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         case (TypedAst.Pattern.Array(elms, tpe, loc) :: ps, v :: vs) =>
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
             val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
@@ -1123,7 +1123,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             val zero = sym.text match {
               case "_" => inner
@@ -1163,7 +1163,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val offset = mkSub(actualArrayLengthExp, expectedArrayLengthExp, loc)
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             val zero = sym.text match {
               case "_" => inner
@@ -1240,7 +1240,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
       // Introduce a fresh variable for each match expression.
       //
-      val freshMatchVars = exps.map(_ => Symbol.freshVarSym("matchVar"))
+      val freshMatchVars = exps.map(_ => Symbol.freshVarSym("matchVar", loc))
 
       //
       // The default unmatched error expression.

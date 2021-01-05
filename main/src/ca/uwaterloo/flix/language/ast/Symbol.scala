@@ -71,8 +71,8 @@ object Symbol {
   /**
     * Returns a fresh variable symbol with the given text.
     */
-  def freshVarSym(text: String)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star), SourceLocation.Unknown)
+  def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star), loc)
   }
 
   /**

@@ -631,7 +631,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
     val lit = visitExp(exp0, m)
     val ann = Ast.Annotations.Empty
     val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-    val varX = Symbol.freshVarSym("_unit")
+    val varX = Symbol.freshVarSym("_unit", loc)
     varX.setStackOffset(0)
     val fparam = FinalAst.FormalParam(varX, MonoType.Unit)
     val fs = List(fparam)
