@@ -453,7 +453,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, loc)
 
       case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Let(Symbol.freshVarSym(), visitExp(e1), visitExp(e2), tpe, loc)
+        SimplifiedAst.Expression.Let(Symbol.freshVarSym("_"), visitExp(e1), visitExp(e2), tpe, loc)
 
       case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
@@ -648,11 +648,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
       case TypedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-        val var1 = Symbol.freshVarSym()
+        val var1 = Symbol.freshVarSym("_v1")
         val e1 = visitExp(exp1)
-        val var2 = Symbol.freshVarSym()
+        val var2 = Symbol.freshVarSym("_v2")
         val e2 = visitExp(exp2)
-        val var3 = Symbol.freshVarSym()
+        val var3 = Symbol.freshVarSym("_v3")
         val e3 = visitExp(exp3)
         // Simplifies a fold expression, which in the general case has this form:
         // fold F exp1 exp2 exp3
