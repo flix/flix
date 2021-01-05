@@ -761,27 +761,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         (ConstraintParam.RuleParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
     }
 
-    /**
-      * Optionally returns the symbol of the function with `name` whose declared types unifies with the given type `tpe` and appears in `defns`.
-      */
-    def lookupIn(name: String, tpe: Type, defns: mutable.Iterable[Def]): Option[Symbol.DefnSym] = {
-      // A set of matching symbols.
-      val matches = mutable.Set.empty[Symbol.DefnSym]
-
-      // Iterate through each definition and collect the matching symbols.
-      for (defn <- defns) {
-        val sym = defn.sym
-        if (name == sym.name) {
-          val (_, declaredType) = Scheme.instantiate(defn.inferredScheme, InstantiateMode.Flexible)
-          if (Unification.unifyTypes(declaredType, tpe).isInstanceOf[Result.Ok[_, _]]) {
-            matches += sym
-          }
-        }
-      }
-
-      if (matches.size != 1) None else Some(matches.head)
-    }
-
     /*
      * We can now use these helper functions to perform specialization of the whole program.
      */
