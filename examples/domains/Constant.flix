@@ -29,6 +29,14 @@ namespace Domain/Constant {
         def neq(e1: Constant, e2: Constant): Bool = not equ(e1, e2)
     }
 
+    instance Hash[Constant] {
+        def hash(x: Constant): Int32 = match x {
+            case Top    => 1
+            case Bot    => 2
+            case Cst(n) => n
+        }
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
