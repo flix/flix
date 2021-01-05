@@ -12,8 +12,9 @@ object SourceLocation {
 
   /**
     * Represents an unknown source location.
+    *
+    * Must only be used if *absolutely necessary*.
     */
-  // TODO: Deprecated. We should always use real source locations.
   val Unknown: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
 
   /**
