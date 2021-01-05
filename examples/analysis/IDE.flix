@@ -31,6 +31,14 @@ namespace IDE {
         }
     }
 
+    instance Hash[Value] {
+        def hash(x: Value): Int32 = match x {
+            case Top    => 1
+            case Bot    => 2
+            case Cst(n) => n
+        }
+    }
+
     instance Eq[Value] {
         def eq(x: Value, y: Value): Bool = PreOrder.equ(x, y)
         def neq(x: Value, y: Value): Bool = not PreOrder.equ(x, y)
@@ -109,6 +117,13 @@ namespace IDE {
     instance Eq[Transformer] {
         def eq(x: Transformer, y: Transformer): Bool = PreOrder.equ(x, y)
         def neq(x: Transformer, y: Transformer): Bool = not PreOrder.equ(x, y)
+    }
+
+    instance Hash[Transformer] {
+        def hash(x: Transformer): Int32 = match x {
+            case BotTrans               => 1
+            case NonBotTrans(x, y, v)   => 3 * x + 7 * y + Hash.hash(v)
+        }
     }
 
     instance PartialOrder[Transformer] {
