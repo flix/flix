@@ -47,7 +47,12 @@ namespace Test/Term/Lit/List {
 
     instance Hash[List[a]] with [a : Hash] {
         def hash(xs: List[a]): Int =
-            List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
+            foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
+    }
+
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = match xs {
+        case Nil => s
+        case x :: rs => foldLeft(f, f(s, x), rs)
     }
 
     instance ToString[List[a]] with [a : ToString] {
@@ -56,11 +61,3 @@ namespace Test/Term/Lit/List {
 
 }
 
-namespace List {
-
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = match xs {
-        case Nil => s
-        case x :: rs => foldLeft(f, f(s, x), rs)
-    }
-
-}
