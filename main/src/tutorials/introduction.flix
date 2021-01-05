@@ -57,6 +57,17 @@ instance PreOrder[Constant] {
 }
 
 //
+// We define a simple hash function for lattice elements:
+//
+instance Hash[Constant] {
+    def hash(x: Constant): Int32 = match x {
+        case Top    => 1
+        case Bot    => 2
+        case Cst(n) => n
+    }
+}
+
+//
 // The next task is to define the partial order on Constant.
 // This is straightforward with pattern matching on the arguments:
 //
