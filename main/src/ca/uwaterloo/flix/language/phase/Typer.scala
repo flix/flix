@@ -458,36 +458,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff <- unifyBoolM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.UnaryDeprecated(op, exp, tvar, loc) => op match {
-        case UnaryOperator.LogicalNot =>
-          for {
-            (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Bool, loc)
-            resultEff = eff
-          } yield (constrs, resultTyp, resultEff)
-
-        case UnaryOperator.Plus =>
-          for {
-            (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, loc)
-            resultEff = eff
-          } yield (constrs, resultTyp, resultEff)
-
-        case UnaryOperator.Minus =>
-          for {
-            (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, loc)
-            resultEff = eff
-          } yield (constrs, resultTyp, resultEff)
-
-        case UnaryOperator.BitwiseNegate =>
-          for {
-            (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, loc)
-            resultEff = eff
-          } yield (constrs, resultTyp, resultEff)
-      }
-
       case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
         case SemanticOperator.BoolOp.Not =>
           for {
@@ -545,109 +515,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
-        case _ => ???
-      }
-
-      case ResolvedAst.Expression.BinaryDeprecated(op, exp1, exp2, tvar, loc) => op match {
-        case BinaryOperator.Plus =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.Minus =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.Times =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.Divide =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.Modulo =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.Exponentiate =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.Equal | BinaryOperator.NotEqual => // TODO add Eq constraint when that typeclass comes
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            valueType <- unifyTypeM(tpe1, tpe2, loc)
-            resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
-          for { // TODO add Ord constraint when that typeclass comes
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            valueType <- unifyTypeM(tpe1, tpe2, loc)
-            resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-                } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.Spaceship =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            valueType <- unifyTypeM(tpe1, tpe2, loc)
-            resultTyp <- unifyTypeM(tvar, Type.Int32, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultType <- unifyTypeM(tvar, tpe1, tpe2, Type.Bool, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultType, resultEff)
-
-        case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
-          for {
-            (constrs1, tpe1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, eff2) <- visitExp(exp2)
-            lhsType <- unifyTypeM(tvar, tpe1, loc)
-            rhsType <- unifyTypeM(tpe2, Type.Int32, loc)
-            resultEff = Type.mkAnd(eff1, eff2)
-          } yield (constrs1 ++ constrs2, lhsType, resultEff)
+        case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop' near ${loc.format}.")
       }
 
       case ResolvedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -767,7 +635,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
              | SemanticOperator.Int32Op.Lt | SemanticOperator.Int32Op.Le | SemanticOperator.Int32Op.Gt | SemanticOperator.Int32Op.Ge
              | SemanticOperator.Int64Op.Lt | SemanticOperator.Int64Op.Le | SemanticOperator.Int64Op.Gt | SemanticOperator.Int64Op.Ge
              | SemanticOperator.BigIntOp.Lt | SemanticOperator.BigIntOp.Le | SemanticOperator.BigIntOp.Gt | SemanticOperator.BigIntOp.Ge =>
-      for {
+          for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypeM(tpe1, tpe2, loc)
@@ -775,7 +643,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             resultEff = Type.mkAnd(eff1, eff2)
                 } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-        case _ => ???
+        case SemanticOperator.StringOp.Concat =>
+          for {
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
+            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
+            resultEff = Type.mkAnd(eff1, eff2)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+        case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop' near ${loc.format}.")
       }
 
       case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -1657,21 +1533,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val t = subst0(tvar)
         TypedAst.Expression.Lambda(p, e, t, loc)
 
-      case ResolvedAst.Expression.UnaryDeprecated(op, exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        val eff = e.eff
-        TypedAst.Expression.UnaryDeprecated(op, e, subst0(tvar), eff, loc)
-
       case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
         TypedAst.Expression.Unary(sop, e, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.BinaryDeprecated(op, exp1, exp2, tvar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.BinaryDeprecated(op, e1, e2, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)

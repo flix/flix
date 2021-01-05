@@ -63,14 +63,8 @@ object TypedAstOps {
           case (acc, exp) => acc ++ visitExp(exp, env0)
         }
 
-      case Expression.UnaryDeprecated(op, exp, tpe, eff, loc) =>
-        visitExp(exp, env0)
-
       case Expression.Unary(sop, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
-
-      case Expression.BinaryDeprecated(op, exp1, exp2, tpe, eff, loc) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)

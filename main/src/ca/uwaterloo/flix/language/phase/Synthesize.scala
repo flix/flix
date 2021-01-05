@@ -140,30 +140,9 @@ object Synthesize extends Phase[Root, Root] {
         val es = exps.map(visitExp)
         Expression.Apply(e, es, tpe, eff, loc)
 
-      case Expression.UnaryDeprecated(op, exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.UnaryDeprecated(op, e, tpe, eff, loc)
-
       case Expression.Unary(sop, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Unary(sop, e, tpe, eff, loc)
-
-      case Expression.BinaryDeprecated(op, exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-
-        // Check whether to synthesize an equality definition.
-        // Note: Synthesis takes place after monomorphization.
-        //       Hence all types are fully known and usages of
-        //       the equality operator have already been specialized
-        //       where applicable.
-
-        op match {
-          case BinaryOperator.Equal => mkApplyEq(e1, e2)
-          case BinaryOperator.NotEqual => mkApplyNeq(e1, e2)
-          case BinaryOperator.Spaceship => mkSpaceship(e1, e2, loc)
-          case _ => Expression.BinaryDeprecated(op, e1, e2, tpe, eff, loc)
-        }
 
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -461,7 +440,7 @@ object Synthesize extends Phase[Root, Root] {
       val e = mkApplyEq(exp1, exp2)
 
       // Negate the result.
-      Expression.UnaryDeprecated(UnaryOperator.LogicalNot, e, Type.Bool, Type.Pure, sl)
+      Expression.Unary(SemanticOperator.BoolOp.Not, e, Type.Bool, Type.Pure, sl)
     }
 
     /**
@@ -573,7 +552,6 @@ object Synthesize extends Phase[Root, Root] {
        */
       val exp1 = Expression.Var(varX, tpe, sl)
       val exp2 = Expression.Var(varY, tpe, sl)
-      val default = Expression.BinaryDeprecated(BinaryOperator.Equal, exp1, exp2, Type.Bool, Type.Pure, sl)
 
       /*
        * Match on the type to determine what equality expression to generate.
@@ -583,27 +561,27 @@ object Synthesize extends Phase[Root, Root] {
           throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
 
         case Some(tc) => tc match {
-          case TypeConstructor.Unit => default
+          case TypeConstructor.Unit => Expression.True(sl)
 
-          case TypeConstructor.Bool => default
+          case TypeConstructor.Bool => Expression.Binary(SemanticOperator.BoolOp.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Char => default
+          case TypeConstructor.Char => Expression.Binary(SemanticOperator.CharOp.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Float32 => default
+          case TypeConstructor.Float32 => Expression.Binary(SemanticOperator.Float32Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Float64 => default
+          case TypeConstructor.Float64 => Expression.Binary(SemanticOperator.Float64Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Int8 => default
+          case TypeConstructor.Int8 => Expression.Binary(SemanticOperator.Int8Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Int16 => default
+          case TypeConstructor.Int16 => Expression.Binary(SemanticOperator.Int16Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Int32 => default
+          case TypeConstructor.Int32 => Expression.Binary(SemanticOperator.Int32Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Int64 => default
+          case TypeConstructor.Int64 => Expression.Binary(SemanticOperator.Int64Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.BigInt => default
+          case TypeConstructor.BigInt => Expression.Binary(SemanticOperator.BigIntOp.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
-          case TypeConstructor.Str => default
+          case TypeConstructor.Str => Expression.Binary(SemanticOperator.StringOp.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
 
           case TypeConstructor.Arrow(_) =>
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
@@ -732,7 +710,7 @@ object Synthesize extends Phase[Root, Root] {
 
                 val e1 = mkApplyEq(expX, expY)
                 val e2 = eacc
-                Expression.BinaryDeprecated(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, Type.Pure, sl)
+                Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, Type.Bool, Type.Pure, sl)
             }
 
             // Put the components together.
@@ -905,8 +883,8 @@ object Synthesize extends Phase[Root, Root] {
                 val g = Expression.True(sl)
 
                 // Generate the rule body.
-                val b = Expression.BinaryDeprecated(
-                  BinaryOperator.Plus,
+                val b = Expression.Binary(
+                  SemanticOperator.Int32Op.Add,
                   Expression.Int32(index, sl),
                   mkApplyHash(Expression.Var(freshX, caseType, sl)),
                   Type.Int32,
@@ -958,8 +936,8 @@ object Synthesize extends Phase[Root, Root] {
 
             // Construct the sum expression e1 + e2 + e3
             val b = inner.foldLeft(Expression.Int32(0, sl): Expression) {
-              case (e1, e2) => Expression.BinaryDeprecated(
-                BinaryOperator.Plus,
+              case (e1, e2) => Expression.Binary(
+                SemanticOperator.Int32Op.Add,
                 e1,
                 e2,
                 Type.Int32,
@@ -1310,7 +1288,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns an expression that computes the string concatenation of `exp1` and `exp2`.
       */
     def concat(exp1: Expression, exp2: Expression): Expression =
-      Expression.BinaryDeprecated(BinaryOperator.Plus, exp1, exp2, Type.Str, Type.Pure, sl)
+      Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, Type.Str, Type.Pure, sl)
 
     /**
       * Returns an expression that computes the string concatenation of the given expressions `exps`.

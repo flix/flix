@@ -226,92 +226,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = exps.map(visitExp(_, env0))
           Expression.Apply(e, es, subst0(tpe), eff, loc)
 
-        case Expression.UnaryDeprecated(op, exp, tpe, eff, loc) =>
-          val e1 = visitExp(exp, env0)
-          Expression.UnaryDeprecated(op, e1, subst0(tpe), eff, loc)
-
         case Expression.Unary(sop, exp, tpe, eff, loc) =>
           val e1 = visitExp(exp, env0)
           Expression.Unary(sop, e1, subst0(tpe), eff, loc)
 
         /*
-         * Equality / Inequality Check.
-         */
-        case Expression.BinaryDeprecated(op@(BinaryOperator.Equal | BinaryOperator.NotEqual), exp1, exp2, tpe, eff, loc) =>
-          // Perform specialization on the left and right sub-expressions.
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-
-          // The type of the values of exp1 and exp2. NB: The typer guarantees that exp1 and exp2 have the same type.
-          val valueType = subst0(exp1.tpe)
-
-          // The expected type of an equality function: a -> a -> bool.
-          val eqType = Type.mkPureUncurriedArrow(List(valueType, valueType), Type.Bool)
-
-          // Look for an equality function with the expected type.
-          // Returns `Some(sym)` if there is exactly one such function.
-          lookupEq(eqType) match {
-            case None =>
-              // No equality function found. Use a regular equality / inequality expression.
-              if (op == BinaryOperator.Equal) {
-                Expression.BinaryDeprecated(BinaryOperator.Equal, e1, e2, Type.Bool, eff, loc)
-              } else {
-                Expression.BinaryDeprecated(BinaryOperator.NotEqual, e1, e2, Type.Bool, eff, loc)
-              }
-            case Some(eqSym) =>
-              // Equality function found. Specialize and generate a call to it.
-              val newSym = specializeDefSym(eqSym, eqType)
-              val base = Expression.Def(newSym, eqType, loc)
-
-              // Call the equality function.
-              val eqExp = Expression.Apply(base, List(e1, e2), Type.Bool, eff, loc)
-
-              // Check whether the whether the operator is equality or inequality.
-              if (op == BinaryOperator.Equal) {
-                eqExp
-              } else {
-                Expression.UnaryDeprecated(UnaryOperator.LogicalNot, eqExp, Type.Bool, eff, loc)
-              }
-          }
-
-        /*
-         * Spaceship
-         */
-        case Expression.BinaryDeprecated(BinaryOperator.Spaceship, exp1, exp2, tpe, eff, loc) =>
-          // Perform specialization on the left and right sub-expressions.
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-
-          // The type of the values of exp1 and exp2. NB: The typer guarantees that exp1 and exp2 have the same type.
-          val valueType = subst0(exp1.tpe)
-
-          // The expected type of a comparator function: a -> a -> int.
-          val cmpType = Type.mkPureUncurriedArrow(List(valueType, valueType), Type.Int32)
-
-          // Look for a comparator function with the expected type.
-          // Returns `Some(sym)` if there is exactly one such function.
-          lookupCmp(cmpType) match {
-            case None =>
-              // No comparator function found. Return the same expression.
-              Expression.BinaryDeprecated(BinaryOperator.Spaceship, e1, e2, Type.Int32, eff, loc)
-
-            case Some(cmpSym) =>
-              // Comparator function found. Specialize and generate a call to it.
-              val newSym = specializeDefSym(cmpSym, cmpType)
-              val base = Expression.Def(newSym, cmpType, loc)
-
-              // Call the equality function.
-              Expression.Apply(base, List(e1, e2), Type.Int32, eff, loc)
-          }
-
-        /*
          * Other Binary Expression.
          */
-        case Expression.BinaryDeprecated(op, exp1, exp2, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          Expression.BinaryDeprecated(op, e1, e2, subst0(tpe), eff, loc)
-
         case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
