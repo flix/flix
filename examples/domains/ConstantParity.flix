@@ -16,18 +16,16 @@ namespace Domain/ConstantParity {
                   case Bot
     }
 
-    ///
-    /// Returns `true` iff `e1` is equal to `e2`.
-    ///
-    pub def equ(e1: ConstantParity, e2: ConstantParity): Bool = e1 == e2
-
-    instance PreOrder[ConstantParity] {
-        def equ(e1: ConstantParity, e2: ConstantParity): Bool = equ(e1, e2)
-    }
-
     instance Eq[ConstantParity] {
-        def eq(e1: ConstantParity, e2: ConstantParity): Bool = equ(e1, e2)
-        def neq(e1: ConstantParity, e2: ConstantParity): Bool = not equ(e1, e2)
+        def eq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
+            case (Top, Top)         => true
+            case (Odd, Odd)         => true
+            case (Even, Even)       => true
+            case (Cst(n1), Cst(n2)) => n1 == n2
+            case (Bot, Bot)         => true
+            case _                  => false
+        }
+        def neq(e1: ConstantParity, e2: ConstantParity): Bool = not (e1 == e2)
     }
 
     ///
