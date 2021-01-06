@@ -244,16 +244,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = visitExps(exps, env0)
       us1 and us2
 
-    case Expression.UnaryDeprecated(_, exp, _, _, _) =>
-      visitExp(exp, env0)
-
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0)
-
-    case Expression.BinaryDeprecated(_, exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0)
-      val us2 = visitExp(exp2, env0)
-      us1 and us2
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)

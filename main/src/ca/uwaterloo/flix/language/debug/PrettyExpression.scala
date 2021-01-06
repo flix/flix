@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, SemanticOperator, SemanticOperatorOps, Type, TypeConstructor, TypedAst, UnaryOperator}
 
 /**
   * Pretty printing of expressions.
@@ -51,21 +51,38 @@ object PrettyExpression {
     case Expression.Apply(exp, exps, _, _, _) =>
       s"${pretty(exp)}(${exps.map(pretty).mkString(", ")})"
 
-    case Expression.UnaryDeprecated(op, exp, _, _, _) => op match {
-      case UnaryOperator.LogicalNot => s"!${pretty(exp)}"
-      case UnaryOperator.Plus => s"+${pretty(exp)}"
-      case UnaryOperator.Minus => s"-${pretty(exp)}"
-      case UnaryOperator.BitwiseNegate => s"~~~${pretty(exp)}"
+    case Expression.Unary(sop, exp, _, _, _) =>
+      val op = SemanticOperatorOps.toUnaryOp(sop)
+      op match {
+        case UnaryOperator.LogicalNot => s"not ${pretty(exp)}"
+        case UnaryOperator.Plus => s"+${pretty(exp)}"
+        case UnaryOperator.Minus => s"-${pretty(exp)}"
+        case UnaryOperator.BitwiseNegate => s"~~~${pretty(exp)}"
     }
 
-    case Expression.BinaryDeprecated(op, exp1, exp2, _, _, _) => op match {
-      case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
-      case BinaryOperator.Minus => s"${pretty(exp1)} - ${pretty(exp2)}"
-      case BinaryOperator.Times => s"${pretty(exp1)} * ${pretty(exp2)}"
-      case BinaryOperator.Divide => s"${pretty(exp1)} / ${pretty(exp2)}"
-      case BinaryOperator.LogicalAnd => s"${pretty(exp1)} && ${pretty(exp2)}"
-      case BinaryOperator.LogicalOr => s"${pretty(exp1)} || ${pretty(exp2)}"
-      // TODO: Rest
+    case Expression.Binary(sop, exp1, exp2, _, _, _) =>
+      val op = SemanticOperatorOps.toBinaryOp(sop)
+      op match {
+        case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
+        case BinaryOperator.Minus => s"${pretty(exp1)} - ${pretty(exp2)}"
+        case BinaryOperator.Times => s"${pretty(exp1)} * ${pretty(exp2)}"
+        case BinaryOperator.Divide => s"${pretty(exp1)} / ${pretty(exp2)}"
+        case BinaryOperator.Modulo => s"${pretty(exp1)} % ${pretty(exp2)}"
+        case BinaryOperator.Exponentiate => s"${pretty(exp1)} ** ${pretty(exp2)}"
+        case BinaryOperator.Less => s"${pretty(exp1)} < ${pretty(exp2)}"
+        case BinaryOperator.LessEqual => s"${pretty(exp1)} <= ${pretty(exp2)}"
+        case BinaryOperator.Greater => s"${pretty(exp1)} > ${pretty(exp2)}"
+        case BinaryOperator.GreaterEqual => s"${pretty(exp1)} >= ${pretty(exp2)}"
+        case BinaryOperator.Equal => s"${pretty(exp1)} == ${pretty(exp2)}"
+        case BinaryOperator.NotEqual => s"${pretty(exp1)} != ${pretty(exp2)}"
+        case BinaryOperator.Spaceship => s"${pretty(exp1)} <=> ${pretty(exp2)}"
+        case BinaryOperator.LogicalAnd => s"${pretty(exp1)} and ${pretty(exp2)}"
+        case BinaryOperator.LogicalOr => s"${pretty(exp1)} or ${pretty(exp2)}"
+        case BinaryOperator.BitwiseAnd => s"${pretty(exp1)} &&& ${pretty(exp2)}"
+        case BinaryOperator.BitwiseOr => s"${pretty(exp1)} ||| ${pretty(exp2)}"
+        case BinaryOperator.BitwiseXor => s"${pretty(exp1)} ^^^ ${pretty(exp2)}"
+        case BinaryOperator.BitwiseLeftShift => s"${pretty(exp1)} <<< ${pretty(exp2)}"
+        case BinaryOperator.BitwiseRightShift => s"${pretty(exp1)} >>> ${pretty(exp2)}"
       case _ => e0.toString
     }
 

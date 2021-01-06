@@ -604,7 +604,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       visitExp(exp) map {
         case e => op match {
           case "not" => WeededAst.Expression.Unary(SemanticOperator.BoolOp.Not, e, loc)
-          case "+" => WeededAst.Expression.UnaryDeprecated(UnaryOperator.Plus, e, loc)
+          case "+" => e
           case "-" => mkApplyFqn("Neg.neg", List(e), sp1, sp2)
           case "~~~" => mkApplyFqn("BitwiseNot.not", List(e), sp1, sp2)
           case _ => mkApplyFqn(op, List(e), sp1, sp2)
@@ -1149,8 +1149,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         * Returns an expression that concatenates the result of the expression `e1` with the expression `e2`.
         */
       def mkConcat(e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
-        val op = BinaryOperator.Plus
-        WeededAst.Expression.BinaryDeprecated(op, e1, e2, loc)
+        val sop = SemanticOperator.StringOp.Concat
+        WeededAst.Expression.Binary(sop, e1, e2, loc)
       }
 
       /**

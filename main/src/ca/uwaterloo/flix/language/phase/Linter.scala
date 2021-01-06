@@ -126,9 +126,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Apply(exp, exps, _, _, _) => visitExp(exp, lint0) ::: exps.flatMap(visitExp(_, lint0))
 
-      case Expression.UnaryDeprecated(_, exp, _, _, _) => visitExp(exp, lint0)
+      case Expression.Unary(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.BinaryDeprecated(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
+      case Expression.Binary(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.Let(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
@@ -375,10 +375,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         s2 <- unifyExps(exps1, exps2, metaVars)
       } yield s2 @@ s1
 
-    case (Expression.UnaryDeprecated(op1, exp1, _, _, _), Expression.UnaryDeprecated(op2, exp2, _, _, _)) if op1 == op2 =>
+      // TODO: Not sure if we need to take the type of the semantic operator into account, e.g. Int32.Neg is the same as Int16.Neg?
+    case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
       unifyExp(exp1, exp2, metaVars)
 
-    case (Expression.BinaryDeprecated(op1, exp11, exp12, _, _, _), Expression.BinaryDeprecated(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
+    case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.Let(sym1, exp11, exp12, _, _, _), Expression.Let(sym2, exp21, exp22, _, _, _)) =>
@@ -739,18 +740,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val es = exps.map(apply)
         Expression.Apply(e, es, tpe, eff, loc)
 
-      case Expression.UnaryDeprecated(op, exp, tpe, eff, loc) =>
-        val e = apply(exp)
-        Expression.UnaryDeprecated(op, e, tpe, eff, loc)
-
       case Expression.Unary(sop, exp, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.Unary(sop, e, tpe, eff, loc)
-
-      case Expression.BinaryDeprecated(op, exp1, exp2, tpe, eff, loc) =>
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        Expression.BinaryDeprecated(op, e1, e2, tpe, eff, loc)
 
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)

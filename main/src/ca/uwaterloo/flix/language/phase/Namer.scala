@@ -530,19 +530,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
 
-    case WeededAst.Expression.UnaryDeprecated(op, exp, loc) =>
-      visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.UnaryDeprecated(op, e, Type.freshVar(Kind.Star), loc)
-      }
-
     case WeededAst.Expression.Unary(sop, exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
         case e => NamedAst.Expression.Unary(sop, e, Type.freshVar(Kind.Star), loc)
-      }
-
-    case WeededAst.Expression.BinaryDeprecated(op, exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.BinaryDeprecated(op, e1, e2, Type.freshVar(Kind.Star), loc)
       }
 
     case WeededAst.Expression.Binary(sop, exp1, exp2, loc) =>
@@ -1212,9 +1202,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Default(loc) => Nil
     case WeededAst.Expression.Apply(exp, exps, loc) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
-    case WeededAst.Expression.UnaryDeprecated(op, exp, loc) => freeVars(exp)
     case WeededAst.Expression.Unary(sop, exp, loc) => freeVars(exp)
-    case WeededAst.Expression.BinaryDeprecated(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

@@ -157,12 +157,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp, root)
           _ <- sequence(exps.map(checkPats(_, root)))
         } yield tast
-        case Expression.UnaryDeprecated(_, exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Unary(_, exp, _, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.BinaryDeprecated(_, exp1, exp2, _, _, _) => for {
-          _ <- checkPats(exp1, root)
-          _ <- checkPats(exp2, root)
-        } yield tast
         case Expression.Binary(_, exp1, exp2, _, _, _) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)

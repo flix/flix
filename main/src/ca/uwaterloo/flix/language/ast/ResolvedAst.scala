@@ -94,11 +94,7 @@ object ResolvedAst {
 
     case class Lambda(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class UnaryDeprecated(op: UnaryOperator, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class Unary(sop: SemanticOperator, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class BinaryDeprecated(op: BinaryOperator, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Binary(sop: SemanticOperator, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
