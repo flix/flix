@@ -883,7 +883,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     // Construct the `ToString.toString` special operator for the main function.
     //
-    root.defs.get(Symbol.mkDefnSym("main")) match {
+    root.defs.get(Symbol.Main) match {
       case None => // nop - no main.
       case Some(defn) =>
         val typeArguments = defn.inferredScheme.base.typeArguments

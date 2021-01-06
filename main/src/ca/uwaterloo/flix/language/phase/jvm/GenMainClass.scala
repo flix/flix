@@ -85,7 +85,7 @@ object GenMainClass {
     main.visitCode()
 
     //Get the root namespace in order to get the class type when invoking m_main
-    val ns = JvmOps.getNamespace(Symbol.mkDefnSym("main"))
+    val ns = JvmOps.getNamespace(Symbol.Main)
 
     //Call Ns.m_main((Object)null)
 

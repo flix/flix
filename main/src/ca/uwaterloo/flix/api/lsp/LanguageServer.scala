@@ -290,7 +290,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         return Nil
       }
 
-      val main = Symbol.mkDefnSym("main")
+      val main = Symbol.Main
       root.defs.get(main) match {
         case Some(defn) if matchesUri(uri, defn.loc) =>
           val loc = defn.sym.loc
