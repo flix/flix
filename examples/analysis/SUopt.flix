@@ -8,12 +8,21 @@
     def minValue(): SULattice = SULattice.Bottom
   }
 
-  instance PreOrder[SULattice] {
-    def equ(x: SULattice, y: SULattice): Bool = match (x, y) {
-        case (Top, Top) => true
+  instance Eq[SULattice] {
+    def eq(x: SULattice, y: SULattice): Bool = match (x, y) {
+        case (Top, Top)             => true
         case (Single(a), Single(b)) => a == b
-        case (Bottom, Bottom) => true
-        case _ => false
+        case (Bottom, Bottom)       => true
+        case _                      => false
+    }
+    def neq(x: SULattice, y: SULattice): Bool = not (x == y)
+  }
+
+  instance Hash[SULattice] {
+    def hash(x: SULattice): Int32 = match x {
+        case Top       => 1
+        case Bottom    => 2
+        case Single(s) => Hash.hash(s)
     }
   }
 
