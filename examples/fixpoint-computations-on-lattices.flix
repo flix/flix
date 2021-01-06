@@ -14,15 +14,16 @@ instance LowerBound[Sign] {
 }
 
 /// The equality relation on the lattice elements.
-instance PreOrder[Sign] {
-    def equ(x: Sign, y: Sign): Bool = match (x, y) {
+instance Eq[Sign] {
+    def eq(x: Sign, y: Sign): Bool = match (x, y) {
         case (Top, Top) => true
         case (Neg, Neg) => true
         case (Zer, Zer) => true
         case (Pos, Pos) => true
         case (Bot, Bot) => true
-        case _ => false
+        case _          => false
     }
+    def neq(x: Sign, y: Sign): Bool = not (x == y)
 }
 
 /// The hash on lattice elements.
