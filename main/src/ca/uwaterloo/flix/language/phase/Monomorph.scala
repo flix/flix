@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, SpecialOperator, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -557,7 +557,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // Populate global map of eq, hash, and toString ops.
           for (term <- terms) {
             val tpe = subst0(term.tpe)
+            eqOps += tpe -> mkEqOp(tpe)
             hashOps += tpe -> mkHashOp(tpe)
+            toStringOps += tpe -> mkToStringOp(tpe)
           }
 
           // Populate global map of lattice ops.
@@ -607,6 +609,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         b0 match {
           case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
+
+            // Populate global map of eq, hash, and toString ops.
+            for (term <- terms) {
+              val tpe = subst0(term.tpe)
+              eqOps += tpe -> mkEqOp(tpe)
+              hashOps += tpe -> mkHashOp(tpe)
+              toStringOps += tpe -> mkToStringOp(tpe)
+            }
+
             val ts = terms map visitPatTemporaryToBeRemoved
             Predicate.Body.Atom(pred, den, polarity, ts, subst0(tpe), loc)
 
@@ -620,7 +631,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Returns the symbol of the `Eq.eq` implementation for the given type `tpe`.
         */
       def mkEqOp(tpe: Type): Symbol.DefnSym = {
-        val sigType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Int32)
+        val sigType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
         getSigSym("Eq", "eq", sigType)
       }
 
@@ -636,7 +647,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Returns the symbol of the `ToString.toString` implementation for the given type `tpe`.
         */
       def mkToStringOp(tpe: Type): Symbol.DefnSym = {
-        val sigType = Type.mkPureArrow(tpe, Type.Int32)
+        val sigType = Type.mkPureArrow(tpe, Type.Str)
         getSigSym("ToString", "toString", sigType)
       }
 
@@ -713,7 +724,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       if (defns.size != 1) {
-        throw InternalCompilerException(s"Expected exactly 1 matching signature, found ${defns.size}")
+        throw InternalCompilerException(s"Expected exactly matching signature for '$sym', but found ${defns.size} signatures.")
       }
 
       specializeDef(defns.head, tpe)
@@ -813,7 +824,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      */
     val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
     val specializedProperties: mutable.ListBuffer[TypedAst.Property] = mutable.ListBuffer.empty
-    // TODO: Specialize expressions occurring in other places, e.g facts/rules/properties.
 
     /*
      * Collect all non-parametric function definitions.
@@ -884,10 +894,20 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
     }
 
+    //
+    // Construct the map of special operations.
+    //
+    val specialOps = Map(
+      SpecialOperator.Equality -> eqOps.toMap,
+      SpecialOperator.HashCode -> hashOps.toMap,
+      SpecialOperator.ToString -> toStringOps.toMap
+    )
+
     // Reassemble the AST.
     root.copy(
       defs = specializedDefns.toMap,
       properties = specializedProperties.toList,
+      specialOps = specialOps.toMap,
       latticeOps = latticeOps.toMap
     ).toSuccess
   }
