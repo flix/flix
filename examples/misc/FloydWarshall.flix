@@ -18,15 +18,6 @@ instance LowerBound[Dist] {
     def minValue(): Dist = Dist.Bot
 }
 
-instance PreOrder[Dist] {
-    def equ(x: Dist, y: Dist): Bool = match (x, y) {
-        case (Top, Top) => true
-        case (Dst(a), Dst(b)) => a == b
-        case (Bot, Bot) => true
-        case _ => false
-    }
-}
-
 instance Eq[Dist] {
     def eq(x: Dist, y: Dist): Bool = match (x, y) {
         case (Top, Top) => true

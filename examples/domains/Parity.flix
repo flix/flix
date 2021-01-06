@@ -14,18 +14,15 @@ namespace Domain/Parity {
                   case Bot
     }
 
-    ///
-    /// Returns `true` iff `e1` is equal to `e2`.
-    ///
-    pub def equ(e1: Parity, e2: Parity): Bool = e1 == e2
-
-    instance PreOrder[Parity] {
-        def equ(e1: Parity, e2: Parity): Bool = equ(e1, e2)
-    }
-
     instance Eq[Parity] {
-        def eq(e1: Parity, e2: Parity): Bool = equ(e1, e2)
-        def neq(e1: Parity, e2: Parity): Bool = not equ(e1, e2)
+        def eq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
+            case (Top, Top)     => true
+            case (Odd, Odd)     => true
+            case (Even, Even)   => true
+            case (Bot, Bot)     => true
+            case _              => false
+        }
+        def neq(e1: Parity, e2: Parity): Bool = not (e1 == e2)
     }
 
     ///

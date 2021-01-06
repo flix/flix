@@ -86,7 +86,6 @@ class Flix {
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
 
     // Lattices
-    "PreOrder.flix" -> LocalResource.get("/src/library/PreOrder.flix"),
     "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
     "LowerBound.flix" -> LocalResource.get("/src/library/LowerBound.flix"),
     "UpperBound.flix" -> LocalResource.get("/src/library/UpperBound.flix"),

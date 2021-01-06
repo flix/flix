@@ -16,18 +16,16 @@ namespace Domain/Mod3 {
                    case Bot
     }
 
-    ///
-    /// Returns `true` iff `e1` is equal to `e2`.
-    ///
-    pub def equ(e1: Mod3, e2: Mod3): Bool = e1 == e2
-
-    instance PreOrder[Mod3] {
-        pub def equ(e1: Mod3, e2: Mod3): Bool = equ(e1, e2)
-    }
-
     instance Eq[Mod3] {
-        def eq(e1: Mod3, e2: Mod3): Bool = equ(e1, e2)
-        def neq(e1: Mod3, e2: Mod3): Bool = not equ(e1, e2)
+        def eq(e1: Mod3, e2: Mod3): Bool = match (e1, e2) {
+            case (Top, Top) => true
+            case (Zer, Zer) => true
+            case (One, One) => true
+            case (Two, Two) => true
+            case (Bot, Bot) => true
+            case _          => false
+        }
+        def neq(e1: Mod3, e2: Mod3): Bool = not (e1 == e2)
     }
 
     ///
@@ -72,7 +70,7 @@ namespace Domain/Mod3 {
     ///
     /// The lattice height function.
     ///
-    #nonNegative #decreasing(equ, leq)
+    #nonNegative
     pub def height(e: Mod3): BigInt = match e {
         case Top    => 0ii
         case Zer    => 1ii

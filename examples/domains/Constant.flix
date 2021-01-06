@@ -14,19 +14,14 @@ namespace Domain/Constant {
           case Bot
     }
 
-    ///
-    /// Returns `true` iff `e1` is equal to `e2`.
-    ///
-    pub def equ(e1: Constant, e2: Constant): Bool = match (e1, e2) {
-        case (Top, Top) => true
-        case (Cst(x), Cst(y)) => x == y
-        case (Bot, Bot) => true
-        case _ => false
-    }
-
     instance Eq[Constant] {
-        def eq(e1: Constant, e2: Constant): Bool = equ(e1, e2)
-        def neq(e1: Constant, e2: Constant): Bool = not equ(e1, e2)
+        def eq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+            case (Top, Top) => true
+            case (Cst(x), Cst(y)) => x == y
+            case (Bot, Bot) => true
+            case _
+        }
+        def neq(e1: Constant, e2: Constant): Bool = not (e1 == e2)
     }
 
     instance Hash[Constant] {
@@ -73,7 +68,7 @@ namespace Domain/Constant {
     ///
     /// The lattice height function.
     ///
-    #nonNegative #decreasing(equ, leq)
+    #nonNegative
     pub def height(e: Constant): BigInt = match e {
         case Top    => 0ii
         case Cst(_) => 1ii

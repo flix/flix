@@ -47,13 +47,14 @@ instance LowerBound[Constant] {
 //
 // We define equality of two lattice elements by structural equality.
 //
-instance PreOrder[Constant] {
-    def equ(x: Constant, y: Constant): Bool = match (x, y) {
+instance Eq[Constant] {
+    def eq(x: Constant, y: Constant): Bool = match (x, y) {
         case (Top, Top) => true
         case (Cst(a), Cst(b)) => a == b
         case (Bot, Bot) => true
         case _ => false
     }
+    def neq(x: Constant, y: Constant): Bool = not (x == y)
 }
 
 //
