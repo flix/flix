@@ -16,10 +16,10 @@ namespace Domain/Constant {
 
     instance Eq[Constant] {
         def eq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
-            case (Top, Top) => true
-            case (Cst(x), Cst(y)) => x == y
-            case (Bot, Bot) => true
-            case _
+            case (Top, Top)         => true
+            case (Cst(x), Cst(y))   => x == y
+            case (Bot, Bot)         => true
+            case _                  => false
         }
         def neq(e1: Constant, e2: Constant): Bool = not (e1 == e2)
     }
@@ -280,10 +280,6 @@ namespace Domain/Constant {
 
     instance LowerBound[Constant] {
         def minValue(): Constant = Constant.Bot
-    }
-
-    instance PreOrder[Constant] {
-        def equ(x: Constant, y: Constant): Bool = equ(x, y)
     }
 
     instance PartialOrder[Constant] {

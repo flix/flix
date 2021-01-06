@@ -85,7 +85,7 @@ namespace Domain/ConstantParity {
     ///
     /// The lattice height function.
     ///
-    #nonNegative #decreasing(equ, leq)
+    #nonNegative
     pub def height(e: ConstantParity): BigInt = match e {
         case Top    => 0ii
         case Odd    => 1ii
