@@ -537,9 +537,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // Populate global map of eq, hash, and toString ops.
           for (term <- terms) {
             val tpe = subst0(term.tpe)
-            eqOps += tpe -> mkEqOp(tpe)
-            hashOps += tpe -> mkHashOp(tpe)
-            toStringOps += tpe -> mkToStringOp(tpe)
+            mkEqOp(tpe)
+            mkHashOp(tpe)
+            mkToStringOp(tpe)
           }
 
           // Populate global map of lattice ops.
@@ -547,12 +547,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case Denotation.Relational => // nop - no lattice ops.
             case Denotation.Latticenal =>
               val tpe = subst0(terms.last.tpe)
-              latticeOps.get(tpe) match {
-                case None =>
-                  val ops = mkLatticeOps(tpe)
-                  latticeOps += tpe -> ops
-                case Some(_) => // nop - already added to map.
-              }
+              mkLatticeOps(tpe)
           }
 
           val ts = terms.map(t => visitExp(t, env0))
@@ -593,9 +588,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             // Populate global map of eq, hash, and toString ops.
             for (term <- terms) {
               val tpe = subst0(term.tpe)
-              eqOps += tpe -> mkEqOp(tpe)
-              hashOps += tpe -> mkHashOp(tpe)
-              toStringOps += tpe -> mkToStringOp(tpe)
+              mkEqOp(tpe)
+              mkHashOp(tpe)
+              mkToStringOp(tpe)
             }
 
             val ts = terms map visitPatTemporaryToBeRemoved
@@ -741,47 +736,58 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
     /**
       * Returns the symbol of the `Eq.eq` implementation for the given type `tpe`.
-      */ // TODO: Side effect and return unit
-    def mkEqOp(tpe: Type): Symbol.DefnSym = {
-      val sigType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-      getSigSym("Eq", "eq", sigType)
+      */
+    def mkEqOp(tpe: Type): Unit = {
+      if (!eqOps.contains(tpe)) {
+        val sigType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+        val sym = getSigSym("Eq", "eq", sigType)
+        eqOps += tpe -> sym
+      }
     }
 
     /**
       * Returns the symbol of the `Hash.hash` implementation for the given type `tpe`.
-      */// TODO: Side effect and return unit
-    def mkHashOp(tpe: Type): Symbol.DefnSym = {
-      val sigType = Type.mkPureArrow(tpe, Type.Int32)
-      getSigSym("Hash", "hash", sigType)
+      */
+    def mkHashOp(tpe: Type): Unit = {
+      if (!hashOps.contains(tpe)) {
+        val sigType = Type.mkPureArrow(tpe, Type.Int32)
+        val sym = getSigSym("Hash", "hash", sigType)
+        hashOps += tpe -> sym
+      }
     }
 
     /**
       * Returns the symbol of the `ToString.toString` implementation for the given type `tpe`.
-      */// TODO: Side effect and return unit
-    def mkToStringOp(tpe: Type): Symbol.DefnSym = {
-      val sigType = Type.mkPureArrow(tpe, Type.Str)
-      getSigSym("ToString", "toString", sigType)
+      */
+    def mkToStringOp(tpe: Type): Unit = {
+      if (!toStringOps.contains(tpe)) {
+        val sigType = Type.mkPureArrow(tpe, Type.Str)
+        val sym = getSigSym("ToString", "toString", sigType)
+        toStringOps += tpe -> sym
+      }
     }
 
     /**
       * Returns the lattice operations for the given `tpe` assembled from the type class instances.
-      */// TODO: Side effect and return unit
-    def mkLatticeOps(tpe: Type): LatticeOps = {
-      // The types of the lattice ops components.
-      val botTpe = Type.mkPureArrow(Type.Unit, tpe)
-      val equTyp = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-      val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-      val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
-      val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+      */
+    def mkLatticeOps(tpe: Type): Unit = {
+      if (!latticeOps.contains(tpe)) {
+        // The types of the lattice ops components.
+        val botTpe = Type.mkPureArrow(Type.Unit, tpe)
+        val equTyp = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+        val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+        val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+        val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
 
-      // The symbols of the lattice ops components.
-      val bot = getSigSym("LowerBound", "minValue", botTpe)
-      val equ = getSigSym("Eq", "eq", equTyp)
-      val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
-      val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
-      val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)
+        // The symbols of the lattice ops components.
+        val bot = getSigSym("LowerBound", "minValue", botTpe)
+        val equ = getSigSym("Eq", "eq", equTyp)
+        val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
+        val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
+        val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)
 
-      LatticeOps(tpe, bot, equ, leq, lub, glb)
+        latticeOps += tpe -> LatticeOps(tpe, bot, equ, leq, lub, glb)
+      }
     }
 
     /**
@@ -882,7 +888,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       case Some(defn) =>
         val typeArguments = defn.inferredScheme.base.typeArguments
         val resultType = typeArguments.last
-        toStringOps += resultType -> mkToStringOp(resultType)
+      // TODO: Need toString instance on constraint systems etc.
+      // mkToStringOp(resultType)
     }
 
     //
