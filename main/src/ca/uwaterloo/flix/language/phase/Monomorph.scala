@@ -16,18 +16,16 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.math.BigInteger
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
+import java.math.BigInteger
 import scala.collection.mutable
 
 /**
@@ -114,12 +112,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * A function-local set of all equality functions (all functions named `__eq`).
       */
-    val eqDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty
+    val eqDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty // TODO: Remove
 
     /**
       * A function-local set of all comparator functions (all functions named `__cmp`).
       */
-    val cmpDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty
+    val cmpDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty // TODO: Remove
 
     // Populate eqDefs and cmpDefs.
     for ((sym, defn) <- root.defs) {
@@ -130,6 +128,21 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         cmpDefs += defn
       }
     }
+
+    /**
+      * A function-local set of all eq operations.
+      */
+    val eqOps: mutable.Map[Type, Symbol.DefnSym] = mutable.Map.empty
+
+    /**
+      * A function-local set of all hash operations.
+      */
+    val hashOps: mutable.Map[Type, Symbol.DefnSym] = mutable.Map.empty
+
+    /**
+      * A function-local set of all toString operations.
+      */
+    val toStringOps: mutable.Map[Type, Symbol.DefnSym] = mutable.Map.empty
 
     /**
       * A function-local set of all lattice operations.
@@ -541,6 +554,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
         case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
 
+          // Populate global map of eq, hash, and toString ops.
+          for (term <- terms) {
+            val tpe = subst0(term.tpe)
+            hashOps += tpe -> mkHashOp(tpe)
+          }
+
           // Populate global map of lattice ops.
           den match {
             case Denotation.Relational => // nop - no lattice ops.
@@ -595,6 +614,30 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             val e = visitExp(exp, env0)
             Predicate.Body.Guard(e, loc)
         }
+      }
+
+      /**
+        * Returns the symbol of the `Eq.eq` implementation for the given type `tpe`.
+        */
+      def mkEqOp(tpe: Type): Symbol.DefnSym = {
+        val sigType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Int32)
+        getSigSym("Eq", "eq", sigType)
+      }
+
+      /**
+        * Returns the symbol of the `Hash.hash` implementation for the given type `tpe`.
+        */
+      def mkHashOp(tpe: Type): Symbol.DefnSym = {
+        val sigType = Type.mkPureArrow(tpe, Type.Int32)
+        getSigSym("Hash", "hash", sigType)
+      }
+
+      /**
+        * Returns the symbol of the `ToString.toString` implementation for the given type `tpe`.
+        */
+      def mkToStringOp(tpe: Type): Symbol.DefnSym = {
+        val sigType = Type.mkPureArrow(tpe, Type.Int32)
+        getSigSym("ToString", "toString", sigType)
       }
 
       /**
