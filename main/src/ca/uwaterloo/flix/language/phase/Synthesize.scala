@@ -444,57 +444,6 @@ object Synthesize extends Phase[Root, Root] {
     }
 
     /**
-      * Returns an expression that performs a three-way comparison between `e1` and `e2`.
-      */
-    def mkSpaceship(exp1: Expression, exp2: Expression, loc: SourceLocation): Expression = exp1.tpe.typeConstructor match {
-      case Some(TypeConstructor.Unit) =>
-        // There Unit value is equal to itself.
-        Expression.Int32(0, loc)
-
-      case Some(TypeConstructor.Bool) =>
-        val method = classOf[java.lang.Boolean].getMethod("compare", classOf[Boolean], classOf[Boolean])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.Char) =>
-        val method = classOf[java.lang.Character].getMethod("compare", classOf[Char], classOf[Char])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.Float32) =>
-        val method = classOf[java.lang.Float].getMethod("compare", classOf[Float], classOf[Float])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.Float64) =>
-        val method = classOf[java.lang.Double].getMethod("compare", classOf[Double], classOf[Double])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.Int8) =>
-        val method = classOf[java.lang.Byte].getMethod("compare", classOf[Byte], classOf[Byte])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.Int16) =>
-        val method = classOf[java.lang.Short].getMethod("compare", classOf[Short], classOf[Short])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.Int32) =>
-        val method = classOf[java.lang.Integer].getMethod("compare", classOf[Int], classOf[Int])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.Int64) =>
-        val method = classOf[java.lang.Long].getMethod("compare", classOf[Long], classOf[Long])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.BigInt) =>
-        val method = classOf[java.math.BigInteger].getMethod("compareTo", classOf[java.math.BigInteger])
-        Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
-
-      case Some(TypeConstructor.Str) =>
-        val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String])
-        Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
-
-      case _ => throw SynthesisException(MissingCmp(exp1.tpe, loc))
-    }
-
-    /**
       * Returns the symbol of the equality operator associated with the given type `tpe`.
       *
       * If no such definition exists, it is created.
@@ -1232,21 +1181,6 @@ object Synthesize extends Phase[Root, Root] {
       * Returns the element types of the given tuple type `tpe`.
       */
     def getElementTypes(tpe: Type): List[Type] = tpe.typeArguments
-
-    /**
-      * Returns `true` if the given type `tpe` is a primitive type.
-      */
-    def isPrimitive(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Some(TypeConstructor.Bool) => true
-      case Some(TypeConstructor.Char) => true
-      case Some(TypeConstructor.Float32) => true
-      case Some(TypeConstructor.Float64) => true
-      case Some(TypeConstructor.Int8) => true
-      case Some(TypeConstructor.Int16) => true
-      case Some(TypeConstructor.Int32) => true
-      case Some(TypeConstructor.Int64) => true
-      case _ => false
-    }
 
     /**
       * Returns `true` if `tpe` is a type variable.
