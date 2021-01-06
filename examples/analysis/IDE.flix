@@ -22,18 +22,22 @@ namespace IDE {
         def minValue(): Value = Value.Bot
     }
 
-    instance PreOrder[Value] {
-        def equ(x: Value, y: Value): Bool = match (x, y) {
+    instance Eq[Value] {
+        def eq(x: Value, y: Value): Bool = match (x, y) {
             case (Top, Top) => true
             case (Cst(a), Cst(b)) => a == b
             case (Bot, Bot) => true
             case _ => false
         }
+        def neq(x: Value, y: Value): Bool = not (x == y)
     }
 
-    instance Eq[Value] {
-        def eq(x: Value, y: Value): Bool = PreOrder.equ(x, y)
-        def neq(x: Value, y: Value): Bool = not PreOrder.equ(x, y)
+    instance Hash[Value] {
+        def hash(x: Value): Int32 = match x {
+            case Top    => 1
+            case Bot    => 2
+            case Cst(n) => n
+        }
     }
 
     instance PartialOrder[Value] {
@@ -98,17 +102,20 @@ namespace IDE {
         def minValue(): Transformer = Transformer.BotTrans
     }
 
-    instance PreOrder[Transformer] {
-        def equ(x: Transformer, y: Transformer): Bool = match (x, y) {
+    instance Eq[Transformer] {
+        def eq(x: Transformer, y: Transformer): Bool = match (x, y) {
             case (BotTrans, BotTrans) => true
             case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
             case _ => false
         }
+        def neq(x: Transformer, y: Transformer): Bool = not (x == y)
     }
 
-    instance Eq[Transformer] {
-        def eq(x: Transformer, y: Transformer): Bool = PreOrder.equ(x, y)
-        def neq(x: Transformer, y: Transformer): Bool = not PreOrder.equ(x, y)
+    instance Hash[Transformer] {
+        def hash(x: Transformer): Int32 = match x {
+            case BotTrans               => 1
+            case NonBotTrans(x, y, v)   => 3 * x + 7 * y + Hash.hash(v)
+        }
     }
 
     instance PartialOrder[Transformer] {

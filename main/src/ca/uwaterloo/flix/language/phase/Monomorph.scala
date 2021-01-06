@@ -610,7 +610,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         // The symbols of the lattice ops components.
         val bot = getSigSym("LowerBound", "minValue", botTpe)
-        val equ = getSigSym("PreOrder", "equ", leqTpe)
+        val equ = getSigSym("Eq", "eq", equTyp)
         val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
         val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
         val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)

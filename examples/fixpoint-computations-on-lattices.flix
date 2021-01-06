@@ -8,19 +8,32 @@ enum Sign {
               case Bot
 }
 
+/// The smallest lattice element.
 instance LowerBound[Sign] {
     def minValue(): Sign = Sign.Bot
 }
 
 /// The equality relation on the lattice elements.
-instance PreOrder[Sign] {
-    def equ(x: Sign, y: Sign): Bool = match (x, y) {
+instance Eq[Sign] {
+    def eq(x: Sign, y: Sign): Bool = match (x, y) {
         case (Top, Top) => true
         case (Neg, Neg) => true
         case (Zer, Zer) => true
         case (Pos, Pos) => true
         case (Bot, Bot) => true
-        case _ => false
+        case _          => false
+    }
+    def neq(x: Sign, y: Sign): Bool = not (x == y)
+}
+
+/// The hash on lattice elements.
+instance Hash[Sign] {
+    def hash(x: Sign): Int32 = match x {
+        case Top => 1
+        case Neg => 2
+        case Zer => 3
+        case Pos => 4
+        case Bot => 5
     }
 }
 

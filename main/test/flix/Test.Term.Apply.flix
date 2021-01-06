@@ -178,7 +178,7 @@ namespace Test/Term/Apply {
         R(f(x, y)) :- A(x), A(y).
     }
 
-    pub def ho3(f: Int -> a): #{A(Int), P(a)} = #{
+    pub def ho3[a : Eq : Hash : ToString](f: Int -> a): #{A(Int), P(a)} = #{
         A(1). A(2). A(3).
         P(f(x)) :- A(x).
     }

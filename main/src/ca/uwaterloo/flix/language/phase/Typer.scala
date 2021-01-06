@@ -2094,13 +2094,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def getTermTypeClassConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
     case Denotation.Relational =>
-      // TODO
-      // ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root))
-      Nil
+      ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root))
     case Denotation.Latticenal =>
-      val relationalTerms = ts.init
-      val latticeTerm = ts.last
-      relationalTerms.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root)) ::: mkTypeClassConstraintsForLatticeTerm(latticeTerm, root)
+      ts.init.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root)) ::: mkTypeClassConstraintsForLatticeTerm(ts.last, root)
   }
 
   /**
@@ -2108,7 +2104,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
-      // TODO: Add Eq and Hash
+      PredefinedClasses.lookupClassSym("Eq", root),
+      PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
     )
     classes.map(Ast.TypeConstraint(_, tpe))
@@ -2119,9 +2116,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
-      // TODO: Add Eq and Hash
+      PredefinedClasses.lookupClassSym("Eq", root),
+      PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
-      PredefinedClasses.lookupClassSym("PreOrder", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),
       PredefinedClasses.lookupClassSym("JoinLattice", root),
