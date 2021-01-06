@@ -21,12 +21,8 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.language.phase.Synthesize.SynthesisError.{MissingCmp, SynthesisException}
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
@@ -36,30 +32,7 @@ import scala.collection.mutable
   */
 object Synthesize extends Phase[Root, Root] {
 
-  // TODO: Ultimately this error should disappear when we have type classes.
-  sealed trait SynthesisError extends CompilationError {
-    def kind: String = "SynthesisError"
-  }
-
-  object SynthesisError {
-
-    case class MissingCmp(tpe: Type, loc: SourceLocation) extends SynthesisError {
-      implicit val audience: Audience = Audience.External
-
-      def summary: String = s"Missing '__cmp' for type ${FormatType.formatType(tpe)}."
-
-      def message: VirtualTerminal = {
-        val vt = new VirtualTerminal()
-        vt << Line(kind, source.format) << NewLine
-        vt << s">> Missing '__cmp' for type ${FormatType.formatType(tpe)}." << NewLine
-        vt << NewLine
-        vt << Code(loc, "missing '__cmp' for type.") << NewLine
-      }
-    }
-
-    case class SynthesisException(ex: SynthesisError) extends Throwable
-
-  }
+  // TODO: Remove this class completely once the ToString business is resolved.
 
   /**
     * Performs synthesis on the given ast `root`.
@@ -67,12 +40,6 @@ object Synthesize extends Phase[Root, Root] {
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Synthesize") {
     // A mutable map from symbols to definitions. Populated during traversal.
     val newDefs = mutable.Map.empty[Symbol.DefnSym, Def]
-
-    // A mutable map from types to their equality operator. Populated during traversal.
-    val mutEqualityOps = mutable.Map.empty[Type, Symbol.DefnSym]
-
-    // A mutable map from types to their hash operator. Populated during traversal.
-    val mutHashOps = mutable.Map.empty[Type, Symbol.DefnSym]
 
     // A mutable map from types to their toString operator. Populated during traversal.
     val mutToStringOps = mutable.Map.empty[Type, Symbol.DefnSym]
@@ -383,8 +350,6 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
-          getOrMkEq(term.tpe, term.loc)
-          getOrMkHash(term.tpe, term.loc)
           getOrMkToString(term.tpe, term.loc)
         }
         val ts = terms.map(visitExp)
@@ -402,8 +367,6 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
-          getOrMkEq(term.tpe, term.loc)
-          getOrMkHash(term.tpe, term.loc)
           getOrMkToString(term.tpe, term.loc)
         }
         Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc)
@@ -411,499 +374,6 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
         Predicate.Body.Guard(e, loc)
-    }
-
-    /**
-      * Returns an expression that compares `e1` and `e2` for equality.
-      *
-      * Generates or re-uses the special equality operator associated with the type of `e1` and `e2`.
-      */
-    def mkApplyEq(exp1: Expression, exp2: Expression): Expression = {
-      // Compute the type of the two expressions (which must be the same).
-      val tpe = if (exp1.tpe == exp2.tpe) exp1.tpe else throw InternalCompilerException(s"Unexpected non-equal types: '${exp1.tpe}' and '${exp2.tpe}'.")
-
-      // Construct the symbol of the equality operator.
-      val sym = getOrMkEq(tpe, exp1.loc)
-
-      // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val base = Expression.Def(sym, Type.mkPureCurriedArrow(List(tpe, tpe), Type.Bool), sl)
-      Expression.Apply(base, List(exp1, exp2), Type.Bool, Type.Pure, sl)
-    }
-
-    /**
-      * Returns an expression that compares `e1` and `e2` for in-equality.
-      *
-      * Conceptually similar to `mkApplyEq`.
-      */
-    def mkApplyNeq(exp1: Expression, exp2: Expression): Expression = {
-      // Compute the equality of `exp1` and `exp2.
-      val e = mkApplyEq(exp1, exp2)
-
-      // Negate the result.
-      Expression.Unary(SemanticOperator.BoolOp.Not, e, Type.Bool, Type.Pure, sl)
-    }
-
-    /**
-      * Returns the symbol of the equality operator associated with the given type `tpe`.
-      *
-      * If no such definition exists, it is created.
-      */
-    def getOrMkEq(tpe: Type, loc: SourceLocation): Symbol.DefnSym = mutEqualityOps.getOrElse(tpe, {
-
-      // TODO: [Equality]: We need to lookup the existence of any eq operator here. This may require monomorphization.
-
-      // Introduce a fresh symbol for the equality operator.
-      val sym = Symbol.freshDefnSym("__eq", loc)
-
-      // Immediately add the symbol to the equality map.
-      // This is necessary to support recursive data types.
-      mutEqualityOps += (tpe -> sym)
-
-      // Construct two fresh variable symbols for the formal parameters.
-      val freshX = Symbol.freshVarSym("x", loc)
-      val freshY = Symbol.freshVarSym("y", loc)
-
-      // Construct the two formal parameters.
-      val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
-      val paramY = FormalParam(freshY, Ast.Modifiers.Empty, tpe, sl)
-
-      // Annotations and modifiers.
-      val ann = Nil
-      val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
-
-      // Type and formal parameters.
-      val tparams = Nil
-      val fparams = paramX :: paramY :: Nil
-
-      // The body expression.
-      val exp = mkEqExp(tpe, freshX, freshY)
-
-      // The definition type.
-      val defType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-
-      // Assemble the definition.
-      val sc = Scheme(Nil, List.empty, defType)
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, sc, sc, Type.Pure, sl)
-
-      // Add it to the map of new definitions.
-      newDefs += (defn.sym -> defn)
-
-      // And return its symbol.
-      defn.sym
-    })
-
-    /**
-      * Returns an expression that compares `varX` and `varY` of type `tpe` for equality.
-      */
-    def mkEqExp(tpe: Type, varX: Symbol.VarSym, varY: Symbol.VarSym): Expression = {
-      /*
-       * An ordinary binary equality test to be used for primitive types.
-       */
-      val exp1 = Expression.Var(varX, tpe, sl)
-      val exp2 = Expression.Var(varY, tpe, sl)
-
-      /*
-       * Match on the type to determine what equality expression to generate.
-       */
-      tpe.typeConstructor match {
-        case None =>
-          throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
-
-        case Some(tc) => tc match {
-          case TypeConstructor.Unit => Expression.True(sl)
-
-          case TypeConstructor.Bool => Expression.Binary(SemanticOperator.BoolOp.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Char => Expression.Binary(SemanticOperator.CharOp.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Float32 => Expression.Binary(SemanticOperator.Float32Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Float64 => Expression.Binary(SemanticOperator.Float64Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Int8 => Expression.Binary(SemanticOperator.Int8Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Int16 => Expression.Binary(SemanticOperator.Int16Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Int32 => Expression.Binary(SemanticOperator.Int32Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Int64 => Expression.Binary(SemanticOperator.Int64Op.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.BigInt => Expression.Binary(SemanticOperator.BigIntOp.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Str => Expression.Binary(SemanticOperator.StringOp.Eq, exp1, exp2, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Arrow(_) =>
-            val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Channel =>
-            val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Lazy => throw InternalCompilerException("Synthesize Error: Equality on lazy values unsupported")
-
-          case TypeConstructor.Native(_) =>
-            val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Enum(_, _) =>
-            //
-            // Assume we have an enum:
-            //
-            //   enum Option[Int] {
-            //     case None,
-            //     case Some(Int)
-            //    }
-            //
-            // then we generate the expression:
-            //
-            //   match (e1, e2) {
-            //     case (None(freshX), None(freshY)) => recurse(tpe, freshX, freshY)
-            //     case (Some(freshX), Some(freshY)) => recurse(tpe, freshX, freshY)
-            //     case _                            => false
-            //   }
-            //
-            // where recurse is a recursive call to this procedure.
-            //
-
-            // Retrieve the enum symbol and enum declaration.
-            val enumSym = getEnumSym(tpe)
-            val enumDecl = root.enums(enumSym)
-
-            // Construct the pair (e1, e2) to match against.
-            val matchValue = Expression.Tuple(List(exp1, exp2), mkTupleType(tpe, tpe), Type.Pure, sl)
-
-            // Compute the cases specialized to the current type.
-            val cases = casesOf(enumDecl, tpe)
-
-            // Generate a match rule for each tag.
-            val rs = cases map {
-              case (tag, caseType) =>
-                // Generate a case of the form:
-                // (Tag(freshX), Tag(freshY)) => recurse(freshX, freshY)
-
-                // Generate two fresh variable symbols.
-                val freshX = Symbol.freshVarSym("x", sl)
-                val freshY = Symbol.freshVarSym("y", sl)
-
-                // Generate the two tag patterns: Tag(freshX) and Tag(freshY).
-                val patX = Pattern.Tag(enumSym, tag, Pattern.Var(freshX, caseType, sl), tpe, sl)
-                val patY = Pattern.Tag(enumSym, tag, Pattern.Var(freshY, caseType, sl), tpe, sl)
-
-                // Generate the pattern: (Tag(freshX) and Tag(freshY)).
-                val p = Pattern.Tuple(List(patX, patY), mkTupleType(tpe, tpe), sl)
-
-                // Generate the guard (simply true).
-                val g = Expression.True(sl)
-
-                // Generate the rule body: freshX == freshY.
-                val expX = Expression.Var(freshX, caseType, sl)
-                val expY = Expression.Var(freshY, caseType, sl)
-                val b = mkApplyEq(expX, expY)
-
-                // Put the components together.
-                MatchRule(p, g, b)
-            }
-
-            // Generate a default rule to return false, if the tags are mismatched.
-            val p = Pattern.Wild(tpe, sl)
-            val g = Expression.True(sl)
-            val b = Expression.False(sl)
-            val default = MatchRule(p, g, b)
-
-            // Assemble the entire match expression.
-            Expression.Match(matchValue, rs ::: default :: Nil, Type.Bool, Type.Pure, sl)
-
-          case TypeConstructor.Tuple(_) =>
-            //
-            // Assume we have a tuple (a, b, c)
-            //
-            // then we generate the expression:
-            //
-            //   match (e1, e2) {
-            //     case ((x1, x2, x3), (y1, y2, y3)) => recurse(x1, y1) && recurse(x2, y2) && recurse(x2, y2)
-            //   }
-            //
-            // where recurse is a recursive call to this procedure.
-            //
-
-            // The types of the tuple elements.
-            val elementTypes = getElementTypes(tpe)
-
-            // Construct the pair (e1, e2) to match against.
-            val matchValue = Expression.Tuple(List(exp1, exp2), mkTupleType(tpe, tpe), Type.Pure, sl)
-
-            // Introduce fresh variables for each component of the first tuple.
-            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x", sl)).toList
-
-            // Introduce fresh variables for each component of the second tuple.
-            val freshVarsY = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("y", sl)).toList
-
-            // The pattern of the rule.
-            val xs = Pattern.Tuple((freshVarsX zip elementTypes).map {
-              case (freshVar, elmType) => Pattern.Var(freshVar, elmType, sl)
-            }, tpe, sl)
-            val ys = Pattern.Tuple((freshVarsY zip elementTypes).map {
-              case (freshVar, elmType) => Pattern.Var(freshVar, elmType, sl)
-            }, tpe, sl)
-            val p = Pattern.Tuple(List(xs, ys), mkTupleType(tpe, tpe), sl)
-
-            // The guard of the rule (simply true).
-            val g = Expression.True(sl)
-
-            // The body of the rule.
-            val b = (freshVarsX zip freshVarsY zip elementTypes).foldRight(Expression.True(sl): Expression) {
-              case (((freshX, freshY), elementType), eacc) =>
-                val expX = Expression.Var(freshX, elementType, sl)
-                val expY = Expression.Var(freshY, elementType, sl)
-
-                val e1 = mkApplyEq(expX, expY)
-                val e2 = eacc
-                Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, Type.Bool, Type.Pure, sl)
-            }
-
-            // Put the components together.
-            val rule = MatchRule(p, g, b)
-
-            // Assemble the entire match expression.
-            Expression.Match(matchValue, rule :: Nil, Type.Bool, Type.Pure, sl)
-
-          case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-        }
-      }
-    }
-
-    /**
-      * Returns an expression that computes the hashCode of the value of the given expression `exp0`.
-      */
-    def mkApplyHash(exp2: Expression): Expression = {
-      // The type of the expression.
-      val tpe = exp2.tpe
-
-      // Construct the symbol of the toString operator.
-      val sym = getOrMkHash(tpe, exp2.loc)
-
-      // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkPureArrow(tpe, Type.Int32), sl)
-      Expression.Apply(exp1, List(exp2), Type.Int32, Type.Pure, sl)
-    }
-
-    /**
-      * Returns the symbol of the hash operator associated with the given type `tpe`.
-      *
-      * If no such definition exists, it is created.
-      */
-    def getOrMkHash(tpe: Type, loc: SourceLocation): Symbol.DefnSym = mutHashOps.getOrElse(tpe, {
-      // Introduce a fresh symbol for the hash operator.
-      val sym = Symbol.freshDefnSym("hash", loc)
-
-      // Immediately add the symbol to the hash map.
-      // This is necessary to support recursive data types.
-      mutHashOps += (tpe -> sym)
-
-      // Construct one fresh variable symbols for the formal parameter.
-      val freshX = Symbol.freshVarSym("x", sl)
-
-      // Construct the formal parameter.
-      val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
-
-      // Annotations and modifiers.
-      val ann = Nil
-      val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
-
-      // Type and formal parameters.
-      val tparams = Nil
-      val fparams = paramX :: Nil
-
-      // The body expression.
-      val exp = mkHashExp(tpe, freshX)
-
-      // The definition type.
-      val lambdaType = Type.mkPureArrow(tpe, Type.Int32)
-
-      // Assemble the definition.
-      val sc = Scheme(Nil, List.empty, lambdaType)
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, sc, sc, Type.Pure, sl)
-
-      // Add it to the map of new definitions.
-      newDefs += (defn.sym -> defn)
-
-      // And return its symbol.
-      defn.sym
-    })
-
-    /**
-      * Returns an expression that computes the hashCode of the value of the given expression `exp0` of type `tpe`.
-      */
-    def mkHashExp(tpe: Type, varX: Symbol.VarSym): Expression = {
-      // An expression that evaluates to the value of varX.
-      val exp0 = Expression.Var(varX, tpe, sl)
-
-      // TODO: The quality of the generated hash function is not very good.
-
-      // TODO: Improve by adding coercion operator.
-
-      // Determine the hash code based on the type `tpe`.
-      tpe.typeConstructor match {
-        case None =>
-          throw InternalCompilerException(s"Unknown type constructor '$tpe'.")
-
-        case Some(tc) => tc match {
-
-          case TypeConstructor.Unit => Expression.Int32(123, sl)
-
-          case TypeConstructor.Bool => Expression.Int32(123, sl)
-
-          case TypeConstructor.Char => Expression.Int32(123, sl)
-
-          case TypeConstructor.Float32 => Expression.Int32(123, sl)
-
-          case TypeConstructor.Float64 => Expression.Int32(123, sl)
-
-          case TypeConstructor.Int8 => Expression.Int32(123, sl)
-
-          case TypeConstructor.Int16 => Expression.Int32(123, sl)
-
-          case TypeConstructor.Int32 => exp0
-
-          case TypeConstructor.Int64 => Expression.Int32(123, sl)
-
-          case TypeConstructor.BigInt =>
-            val method = classOf[java.math.BigInteger].getMethod("hashCode")
-            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
-
-          case TypeConstructor.Str =>
-            val method = classOf[java.lang.String].getMethod("hashCode")
-            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
-
-          case TypeConstructor.Arrow(l) =>
-            val method = classOf[java.lang.Object].getMethod("hashCode")
-            Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
-
-          case TypeConstructor.Channel =>
-            val method = classOf[java.lang.Object].getMethod("hashCode")
-            Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
-
-          case TypeConstructor.Native(clazz) =>
-            val method = classOf[java.lang.Object].getMethod("hashCode")
-            Expression.InvokeMethod(method, exp0, Nil, Type.Str, Type.Pure, sl)
-
-          case TypeConstructor.Enum(sym, kind) =>
-            //
-            // Assume we have an enum:
-            //
-            //   enum Option[Int] {
-            //     case None,
-            //     case Some(Int)
-            //    }
-            //
-            // then we generate the expression:
-            //
-            //   match e {
-            //     case (None(freshX)) => 1 + recurse(freshX)
-            //     case (Some(freshX)) => 2 + recurse(freshX)
-            //   }
-            //
-            // where recurse is a recursive call to this procedure.
-            //
-            // Retrieve the enum symbol and enum declaration.
-            val enumSym = getEnumSym(tpe)
-            val enumDecl = root.enums(enumSym)
-
-            // The expression `exp0` to match against, simply `exp0`.
-            val matchValue = exp0
-
-            // Compute the cases specialized to the current type.
-            val cases = casesOf(enumDecl, tpe)
-
-            // Generate a match rule for each tag.
-            val rs = cases.zipWithIndex.map {
-              case ((tag, caseType), index) =>
-                // Generate a case of the form:
-                // (Tag(freshX)) => index + recurse(freshX)
-
-                // Generate a fresh variable symbols.
-                val freshX = Symbol.freshVarSym("x", sl)
-
-                // Generate the tag pattern: Tag(freshX).
-                val p = Pattern.Tag(enumSym, tag, Pattern.Var(freshX, caseType, sl), tpe, sl)
-
-                // Generate the guard (simply true).
-                val g = Expression.True(sl)
-
-                // Generate the rule body.
-                val b = Expression.Binary(
-                  SemanticOperator.Int32Op.Add,
-                  Expression.Int32(index, sl),
-                  mkApplyHash(Expression.Var(freshX, caseType, sl)),
-                  Type.Int32,
-                  Type.Pure,
-                  sl
-                )
-
-                // Put the components together.
-                MatchRule(p, g, b)
-            }
-
-            // Assemble the entire match expression.
-            Expression.Match(matchValue, rs, Type.Int32, Type.Pure, sl)
-
-          case TypeConstructor.Tuple(_) =>
-            //
-            // Assume we have a tuple (a, b, c)
-            //
-            // then we generate the expression:
-            //
-            //   match exp0 {
-            //     case (x1, x2, x3) => recurse(x1) + recurse(x2) + recurse(x3)
-            //   }
-            //
-            // where recurse is a recursive call to this procedure.
-            //
-
-            // The types of the tuple elements.
-            val elementTypes = getElementTypes(tpe)
-
-            // The expression `exp0` to match against, simply `exp0`.
-            val matchValue = exp0
-
-            // Introduce fresh variables for each component of the tuple.
-            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x", sl)).toList
-
-            // The pattern of the rule.
-            val p = Pattern.Tuple((freshVarsX zip elementTypes).map {
-              case (freshVar, elmType) => Pattern.Var(freshVar, elmType, sl)
-            }, tpe, sl)
-
-            // The guard of the rule (simply true).
-            val g = Expression.True(sl)
-
-            // The elements of the tuple.
-            val inner = (freshVarsX zip elementTypes).map {
-              case (freshX, elementType) => mkApplyHash(Expression.Var(freshX, elementType, sl))
-            }
-
-            // Construct the sum expression e1 + e2 + e3
-            val b = inner.foldLeft(Expression.Int32(0, sl): Expression) {
-              case (e1, e2) => Expression.Binary(
-                SemanticOperator.Int32Op.Add,
-                e1,
-                e2,
-                Type.Int32,
-                Type.Pure,
-                sl
-              )
-            }
-
-            // Put the components together.
-            val rule = MatchRule(p, g, b)
-
-            // Assemble the entire match expression.
-            Expression.Match(matchValue, rule :: Nil, Type.Int32, Type.Pure, sl)
-
-          case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tc'.")
-        }
-      }
     }
 
     /**
@@ -1242,49 +712,46 @@ object Synthesize extends Phase[Root, Root] {
     //
     // Generate Special Operators.
     //
-    try {
-      /*
-       * (a) Every type that appears as return type of some definition.
-       */
-      val typesInDefs: Set[Type] = root.defs.collect {
-        case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (isBenchmark(ann) || isTest(ann) || sym.name == "main") => exp.tpe
-      }.toSet
+    /*
+     * (a) Every type that appears as return type of some definition.
+     */
+    val typesInDefs: Set[Type] = root.defs.collect {
+      case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (isBenchmark(ann) || isTest(ann) || sym.name == "main") => exp.tpe
+    }.toSet
 
-      /*
-       * (b) Every type that appears as some lattice type.
-       */
-      val typesInLattices: Set[Type] = root.latticeOps.keySet
+    /*
+     * (b) Every type that appears as some lattice type.
+     */
+    val typesInLattices: Set[Type] = root.latticeOps.keySet
 
-      /*
-       * Introduce ToString special operators.
-       */
-      // TODO: Refactor these
-      typesInDefs.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-        case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe, sl))
-        case (macc, tpe) => macc
-      }
-
-      /*
-       * Rewrite every equality expression in a definition to explicitly call the equality operator.
-       */
-      val defs = root.defs.map {
-        case (sym, defn) => sym -> visitDef(defn)
-      }
-
-      /*
-       * Construct the map of special operators.
-       */
-      val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
-        SpecialOperator.Equality -> root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty),
-        SpecialOperator.HashCode -> root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty),
-        SpecialOperator.ToString -> (mutToStringOps.toMap ++ root.specialOps.getOrElse(SpecialOperator.ToString, Map.empty))
-      )
-
-      // Reassemble the ast with the new definitions.
-      root.copy(defs = defs ++ newDefs, specialOps = specialOps).toSuccess
-    } catch {
-      case ex: SynthesisException => ex.ex.toFailure
+    /*
+     * Introduce ToString special operators.
+     */
+    // TODO: Refactor these
+    typesInDefs.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe, sl))
+      case (macc, tpe) => macc
     }
+
+    /*
+     * Rewrite every equality expression in a definition to explicitly call the equality operator.
+     */
+    val defs = root.defs.map {
+      case (sym, defn) => sym -> visitDef(defn)
+    }
+
+    /*
+     * Construct the map of special operators.
+     */
+    val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
+      SpecialOperator.Equality -> root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty),
+      SpecialOperator.HashCode -> root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty),
+      SpecialOperator.ToString -> (mutToStringOps.toMap ++ root.specialOps.getOrElse(SpecialOperator.ToString, Map.empty))
+    )
+
+    // Reassemble the ast with the new definitions.
+    root.copy(defs = defs ++ newDefs, specialOps = specialOps).toSuccess
+
   }
 
 }
