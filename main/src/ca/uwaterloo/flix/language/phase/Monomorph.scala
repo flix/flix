@@ -110,26 +110,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
     /**
-      * A function-local set of all equality functions (all functions named `__eq`).
-      */
-    val eqDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty // TODO: Remove
-
-    /**
-      * A function-local set of all comparator functions (all functions named `__cmp`).
-      */
-    val cmpDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty // TODO: Remove
-
-    // Populate eqDefs and cmpDefs.
-    for ((sym, defn) <- root.defs) {
-      if (sym.name == "__eq") {
-        eqDefs += defn
-      }
-      if (sym.name == "__cmp") {
-        cmpDefs += defn
-      }
-    }
-
-    /**
       * A function-local set of all eq operations.
       */
     val eqOps: mutable.Map[Type, Symbol.DefnSym] = mutable.Map.empty
@@ -627,62 +607,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
       }
 
-      /**
-        * Returns the symbol of the `Eq.eq` implementation for the given type `tpe`.
-        */
-      def mkEqOp(tpe: Type): Symbol.DefnSym = {
-        val sigType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-        getSigSym("Eq", "eq", sigType)
-      }
-
-      /**
-        * Returns the symbol of the `Hash.hash` implementation for the given type `tpe`.
-        */
-      def mkHashOp(tpe: Type): Symbol.DefnSym = {
-        val sigType = Type.mkPureArrow(tpe, Type.Int32)
-        getSigSym("Hash", "hash", sigType)
-      }
-
-      /**
-        * Returns the symbol of the `ToString.toString` implementation for the given type `tpe`.
-        */
-      def mkToStringOp(tpe: Type): Symbol.DefnSym = {
-        val sigType = Type.mkPureArrow(tpe, Type.Str)
-        getSigSym("ToString", "toString", sigType)
-      }
-
-      /**
-        * Returns the lattice operations for the given `tpe` assembled from the type class instances.
-        */
-      def mkLatticeOps(tpe: Type): LatticeOps = {
-        // The types of the lattice ops components.
-        val botTpe = Type.mkPureArrow(Type.Unit, tpe)
-        val equTyp = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-        val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-        val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
-        val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
-
-        // The symbols of the lattice ops components.
-        val bot = getSigSym("LowerBound", "minValue", botTpe)
-        val equ = getSigSym("Eq", "eq", equTyp)
-        val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
-        val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
-        val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)
-
-        LatticeOps(tpe, bot, equ, leq, lub, glb)
-      }
-
-      /**
-        * Returns the symbol of the given signature identified by the given `className` and `sigName` specialized to the given type `tpe`.
-        */
-      def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
-        val sp1 = SourcePosition.Unknown
-        val sp2 = SourcePosition.Unknown
-        val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, className, sp2))
-        val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, sigName, sp2))
-        specializeSigSym(sigSym, tpe)
-      }
-
       visitExp(exp0, env0)
     }
 
@@ -815,6 +739,62 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         (ConstraintParam.RuleParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
     }
 
+    /**
+      * Returns the symbol of the `Eq.eq` implementation for the given type `tpe`.
+      */ // TODO: Side effect and return unit
+    def mkEqOp(tpe: Type): Symbol.DefnSym = {
+      val sigType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+      getSigSym("Eq", "eq", sigType)
+    }
+
+    /**
+      * Returns the symbol of the `Hash.hash` implementation for the given type `tpe`.
+      */// TODO: Side effect and return unit
+    def mkHashOp(tpe: Type): Symbol.DefnSym = {
+      val sigType = Type.mkPureArrow(tpe, Type.Int32)
+      getSigSym("Hash", "hash", sigType)
+    }
+
+    /**
+      * Returns the symbol of the `ToString.toString` implementation for the given type `tpe`.
+      */// TODO: Side effect and return unit
+    def mkToStringOp(tpe: Type): Symbol.DefnSym = {
+      val sigType = Type.mkPureArrow(tpe, Type.Str)
+      getSigSym("ToString", "toString", sigType)
+    }
+
+    /**
+      * Returns the lattice operations for the given `tpe` assembled from the type class instances.
+      */// TODO: Side effect and return unit
+    def mkLatticeOps(tpe: Type): LatticeOps = {
+      // The types of the lattice ops components.
+      val botTpe = Type.mkPureArrow(Type.Unit, tpe)
+      val equTyp = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+      val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+      val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+      val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+
+      // The symbols of the lattice ops components.
+      val bot = getSigSym("LowerBound", "minValue", botTpe)
+      val equ = getSigSym("Eq", "eq", equTyp)
+      val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
+      val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
+      val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)
+
+      LatticeOps(tpe, bot, equ, leq, lub, glb)
+    }
+
+    /**
+      * Returns the symbol of the given signature identified by the given `className` and `sigName` specialized to the given type `tpe`.
+      */
+    def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
+      val sp1 = SourcePosition.Unknown
+      val sp2 = SourcePosition.Unknown
+      val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, className, sp2))
+      val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, sigName, sp2))
+      specializeSigSym(sigSym, tpe)
+    }
+
     /*
      * We can now use these helper functions to perform specialization of the whole program.
      */
@@ -892,6 +872,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         specializedDefns.put(freshSym, specializedDefn)
       }
 
+    }
+
+    //
+    // Construct the `ToString.toString` special operator for the main function.
+    //
+    root.defs.get(Symbol.mkDefnSym("main")) match {
+      case None => // nop - no main.
+      case Some(defn) =>
+        val typeArguments = defn.inferredScheme.base.typeArguments
+        val resultType = typeArguments.last
+        toStringOps += resultType -> mkToStringOp(resultType)
     }
 
     //
