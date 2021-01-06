@@ -1275,8 +1275,8 @@ object Synthesize extends Phase[Root, Root] {
        * Construct the map of special operators.
        */
       val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
-        SpecialOperator.Equality -> (mutEqualityOps.toMap ++ root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty)),
-        SpecialOperator.HashCode -> (mutHashOps.toMap ++ root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty)),
+        SpecialOperator.Equality -> root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty),
+        SpecialOperator.HashCode -> root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty),
         SpecialOperator.ToString -> (mutToStringOps.toMap ++ root.specialOps.getOrElse(SpecialOperator.ToString, Map.empty))
       )
 
