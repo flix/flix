@@ -735,7 +735,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Returns the symbol of the `Eq.eq` implementation for the given type `tpe`.
+      * Adds the symbol of the `Eq.eq` implementation for the given type `tpe` to the local mutable map (if it does not yet exist).
       */
     def mkEqOp(tpe: Type): Unit = {
       if (!eqOps.contains(tpe)) {
@@ -746,7 +746,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Returns the symbol of the `Hash.hash` implementation for the given type `tpe`.
+      * Adds the symbol of the `Hash.hash` implementation for the given type `tpe` to the local mutable map (if it does not yet exist).
       */
     def mkHashOp(tpe: Type): Unit = {
       if (!hashOps.contains(tpe)) {
@@ -757,7 +757,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Returns the symbol of the `ToString.toString` implementation for the given type `tpe`.
+      * Adds the symbol of the `ToString.toString` implementation for the given type `tpe` to the local mutable map (if it does not yet exist).
       */
     def mkToStringOp(tpe: Type): Unit = {
       if (!toStringOps.contains(tpe)) {
@@ -768,7 +768,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Returns the lattice operations for the given `tpe` assembled from the type class instances.
+      * Adds the lattice operations for the given `tpe` to the local mutable map (if it does not yet exist).
       */
     def mkLatticeOps(tpe: Type): Unit = {
       if (!latticeOps.contains(tpe)) {
