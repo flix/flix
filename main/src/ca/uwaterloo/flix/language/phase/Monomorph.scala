@@ -643,7 +643,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       if (defns.size != 1) {
-        throw InternalCompilerException(s"Expected exactly matching signature for '$sym', but found ${defns.size} signatures.")
+        throw InternalCompilerException(s"Expected exactly one matching signature for '$sym', but found ${defns.size} signatures.")
       }
 
       specializeDef(defns.head, tpe)
