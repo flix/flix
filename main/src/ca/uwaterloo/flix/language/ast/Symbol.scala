@@ -226,7 +226,7 @@ object Symbol {
     /**
       * Returns `true` if `this` symbol is the main symbol.
       */
-    def isMain: Boolean = this eq Symbol.Main
+    def isMain: Boolean = this == Symbol.Main
 
     /**
       * Returns the name of `this` symbol.
