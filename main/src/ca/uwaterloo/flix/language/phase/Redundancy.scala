@@ -675,7 +675,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     !isTest(decl.ann) &&
       !isLint(decl.ann) &&
       !decl.mod.isPublic &&
-      !decl.sym.name.equals("main") &&
+      !decl.sym.isMain &&
       !decl.sym.name.startsWith("_") &&
       !used.defSyms.contains(decl.sym) &&
       !root.reachable.contains(decl.sym)

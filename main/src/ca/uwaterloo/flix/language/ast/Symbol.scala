@@ -224,6 +224,11 @@ object Symbol {
   final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
 
     /**
+      * Returns `true` if `this` symbol is the main symbol.
+      */
+    def isMain: Boolean = this eq Symbol.Main
+
+    /**
       * Returns the name of `this` symbol.
       */
     def name: String = id match {

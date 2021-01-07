@@ -108,7 +108,7 @@ object GenMainClass {
     */
   private def getMain(root: Root): Option[Def] = {
     // The main function must be called `main` and occur in the root namespace.
-    val sym = Symbol.mkDefnSym("main")
+    val sym = Symbol.Main
 
     // Check if the main function exists.
     root.defs.get(sym) flatMap {

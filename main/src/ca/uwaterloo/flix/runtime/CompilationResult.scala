@@ -37,7 +37,7 @@ class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject]
   /**
     * Optionally returns the main function.
     */
-  def getMain: Option[() => AnyRef] = defs.get(Symbol.mkDefnSym("main"))
+  def getMain: Option[() => AnyRef] = defs.get(Symbol.Main)
 
   /**
     * Returns all the benchmark functions in the program.
