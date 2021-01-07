@@ -188,7 +188,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     execReload()
 
     // Evaluate the main function and get the result.
-    val main = Symbol.mkDefnSym("main")
+    val main = Symbol.Main
     val result = this.compilationResult.evalToString(main.toString)
 
     // Write the result to the terminal.

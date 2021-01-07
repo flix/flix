@@ -349,7 +349,7 @@ object TreeShaker extends Phase[Root, Root] {
     /*
      * (a) The main function is always reachable.
      */
-    reachableFunctions.add(Symbol.mkDefnSym("main"))
+    reachableFunctions.add(Symbol.Main)
 
     /*
      * (b) A function marked with @benchmark, @test or as an entry point is reachable.

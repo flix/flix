@@ -85,7 +85,7 @@ object GenMainClass {
     main.visitCode()
 
     //Get the root namespace in order to get the class type when invoking m_main
-    val ns = JvmOps.getNamespace(Symbol.mkDefnSym("main"))
+    val ns = JvmOps.getNamespace(Symbol.Main)
 
     //Call Ns.m_main((Object)null)
 
@@ -108,7 +108,7 @@ object GenMainClass {
     */
   private def getMain(root: Root): Option[Def] = {
     // The main function must be called `main` and occur in the root namespace.
-    val sym = Symbol.mkDefnSym("main")
+    val sym = Symbol.Main
 
     // Check if the main function exists.
     root.defs.get(sym) flatMap {

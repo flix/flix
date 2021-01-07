@@ -23,6 +23,11 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object Symbol {
 
   /**
+    * The main symbol.
+    */
+  val Main: Symbol.DefnSym = Symbol.mkDefnSym("main")
+
+  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {
@@ -217,6 +222,13 @@ object Symbol {
     * Definition Symbol.
     */
   final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
+
+    /**
+      * Returns `true` if `this` symbol is equal to the main symbol.
+      *
+      * NB: Must use equality because there could be more than once instance of the main symbol.
+      */
+    def isMain: Boolean = this == Symbol.Main
 
     /**
       * Returns the name of `this` symbol.

@@ -82,6 +82,13 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 
 ///
+/// Unsafely converts `x` to a string using Java's built-in toString.
+///
+pub def unsafeToString(x: a): String =
+    import java.util.Objects:toString(##java.lang.Object);
+    toString(x as ##java.lang.Object) as & Pure
+
+///
 /// Panics (crashes) the current process with the given message `m`.
 ///
 @Time(1) @Space(1)
