@@ -13,7 +13,7 @@ def printAndInc(x: Int): Int & Impure =
 def twice(f: Int -> Int, x: Int): Int = f(f(x))
 
 /// We can pass a pure function to twice.
-def main(): Int = twice(inc, 42)
+pub def f(): Int = twice(inc, 42)
 
 /// But we *cannot* pass an impure function.
-// def main2(): Int = twice(printAndInc, 42)
+// pub def g(): Int = twice(printAndInc, 42)
