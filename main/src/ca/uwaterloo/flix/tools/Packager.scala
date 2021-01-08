@@ -99,13 +99,15 @@ object Packager {
 
     newFile(mainSourceFile) {
       """// The main entry point.
-        |def main(): Unit & Impure = Console.printLine("Hello World!")
+        |def main(_args: Array[String]): Int32 & Impure =
+        |  Console.printLine("Hello World!");
+        |  0 // exit code
         |""".stripMargin
     }
 
     newFile(mainTestFile) {
       """@test
-        |def testMain01(): Bool & Impure = main() == ()
+        |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
   }
