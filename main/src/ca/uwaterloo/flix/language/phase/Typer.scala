@@ -201,10 +201,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       /// Add assumptions to the declared scheme.
       ///
       val completeScheme = if (sym.isMain) {
-        // Case 1: The type signature of main is fixed.
+        // Case 1: This is the main function. Its type signature is fixed.
         Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
-      } else
+      } else {
+        // Case 2: Use the declared type.
         declaredScheme.copy(constraints = declaredScheme.constraints ++ assumedTconstrs)
+      }
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
