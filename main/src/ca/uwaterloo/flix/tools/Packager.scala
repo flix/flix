@@ -268,11 +268,12 @@ object Packager {
     * Runs the main function in flix package for the given project path `p`.
     */
   def run(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
-    build(p, o) match {
-      case None => // nop
-      case Some(compilationResult) =>
-        val result = compilationResult.evalToStringDeprecated("main")
-        Console.println(result)
+    for {
+      compilationResult <- build(p, o)
+      main <- compilationResult.getMain
+    } yield {
+      val exitCode = main(Array.empty)
+      println(s"Main exited with status code $exitCode.")
     }
   }
 
