@@ -26,13 +26,12 @@ class TestStratifier extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Patterns                                                                //
-  /////////////////////////////////////////////////////////////////////////////
   test("Stratification.01") {
     val input =
       """
-        |A(c: String) :- X(c), not A(c).
+        |pub def f(): #{A(String), X(String)} = #{
+        |  A(c: String) :- X(c), not A(c).
+        |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
@@ -41,8 +40,10 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.02") {
     val input =
       """
-        |A(c: String) :- X(c), B(c).
-        |B(c: String) :- X(c), not A(c).
+        |pub def f(): #{A(String), B(String), X(String)} = #{
+        |  A(c: String) :- X(c), B(c).
+        |  B(c: String) :- X(c), not A(c).
+        |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[StratificationError](result)
