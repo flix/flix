@@ -75,7 +75,7 @@ def filter(e: SULattice, p: String): Bool = match e {
   case SULattice.Top => true
 }
 
-def main(): #{ Pt(String, String) } = project Pt (solve #{
+def main(_: Array[String]): Int32 & Impure = (project Pt (solve #{
     // Rules
     // =========
     //
@@ -119,5 +119,5 @@ def main(): #{ Pt(String, String) } = project Pt (solve #{
     // ---------
     Kill(l: String; f(b)) :- Store(l,p,q), Pt(p,b).
     Kill(l;Top) :- Phi(l).
-})
-
+})) |> unsafeToString |> println;
+    0 // exit code
