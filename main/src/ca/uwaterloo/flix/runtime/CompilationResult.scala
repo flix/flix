@@ -74,26 +74,6 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
   }
 
   /**
-    * Immediately evaluates the given fully-qualified name `fqn`.
-    *
-    * Returns a string representation of the result.
-    */
-  def evalToStringDeprecated(fqn: String): String = {
-    // Construct the definition symbol.
-    val sym = Symbol.mkDefnSym(fqn)
-
-    // Retrieve the definition.
-    root.defs.get(sym) match {
-      case None => throw new IllegalArgumentException(s"Undefined fully-qualified name: '$fqn'.")
-      case Some(defn) =>
-        // Retrieve the function and call it.
-        val resultValue = defs(sym)()
-
-        resultValue.toString
-    }
-  }
-
-  /**
     * Returns the total number of lines of compiled code.
     */
   def getTotalLines(): Int = getRoot.sources.foldLeft(0) {

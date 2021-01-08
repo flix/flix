@@ -188,11 +188,10 @@ class Shell(initialPaths: List[Path], options: Options) {
     execReload()
 
     // Evaluate the main function and get the result.
-    val main = Symbol.Main
-    val result = this.compilationResult.evalToStringDeprecated(main.toString)
-
-    // Write the result to the terminal.
-    terminal.writer().println(result)
+    this.compilationResult.getMain match {
+      case None => terminal.writer().println("No main function to run.")
+      case Some(main) => main(Array.empty)
+    }
   }
 
   /**

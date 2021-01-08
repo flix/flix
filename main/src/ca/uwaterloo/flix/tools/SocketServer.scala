@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result, Timer}
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result, SafeExec, Timer}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -189,9 +189,12 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
             case None =>
               // The main function was not present. Just report successful compilation.
               Ok("Compilation was successful. No main function to run.", compilationResult.getTotalTime(), 0L)
-            case Some(_) =>
+            case Some(main) =>
               // Evaluate the main function and get the result as a string.
-              val timer = new Timer(compilationResult.evalToStringDeprecated("main"))
+              val timer = new Timer({
+                val (result, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
+                stdOut + stdErr
+              })
               Ok(timer.getResult, compilationResult.getTotalTime(), timer.getElapsed)
           }
 
