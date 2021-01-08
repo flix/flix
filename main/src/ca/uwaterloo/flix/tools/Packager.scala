@@ -269,7 +269,7 @@ object Packager {
     build(p, o) match {
       case None => // nop
       case Some(compilationResult) =>
-        val result = compilationResult.evalToString("main")
+        val result = compilationResult.evalToStringDeprecated("main")
         Console.println(result)
     }
   }

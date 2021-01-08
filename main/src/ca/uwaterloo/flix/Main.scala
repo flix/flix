@@ -177,7 +177,7 @@ object Main {
       flix.addPath(file.toPath)
     }
 
-    // compute the least model.
+    // evaluate main.
     try {
       val timer = new Timer(flix.compile())
       timer.getResult match {
@@ -186,7 +186,8 @@ object Main {
           compilationResult.getMain match {
             case None => // nop
             case Some(m) =>
-              val evalTimer = new Timer(compilationResult.evalToString("main"))
+              val args: Array[String] = argv // TODO: Pass actual arguments...
+              val evalTimer = new Timer(m(args))
               options.verbosity match {
                 case Verbosity.Normal => Console.println(evalTimer.getResult)
                 case Verbosity.Verbose => Console.println(evalTimer.getResult)

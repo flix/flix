@@ -27,7 +27,7 @@ import flix.runtime.ProxyObject
   * @param root the abstract syntax tree of the program.
   * @param defs the definitions in the program.
   */
-class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject])(implicit flix: Flix) {
+class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Map[Symbol.DefnSym, () => ProxyObject])(implicit flix: Flix) {
 
   /**
     * Returns the root AST.
@@ -37,7 +37,7 @@ class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject]
   /**
     * Optionally returns the main function.
     */
-  def getMain: Option[() => AnyRef] = defs.get(Symbol.Main)
+  def getMain: Option[Array[String] => Int] = main
 
   /**
     * Returns all the benchmark functions in the program.
@@ -78,7 +78,7 @@ class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject]
     *
     * Returns a string representation of the result.
     */
-  def evalToString(fqn: String): String = {
+  def evalToStringDeprecated(fqn: String): String = {
     // Construct the definition symbol.
     val sym = Symbol.mkDefnSym(fqn)
 

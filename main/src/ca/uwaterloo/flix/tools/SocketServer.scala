@@ -191,7 +191,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
               Ok("Compilation was successful. No main function to run.", compilationResult.getTotalTime(), 0L)
             case Some(_) =>
               // Evaluate the main function and get the result as a string.
-              val timer = new Timer(compilationResult.evalToString("main"))
+              val timer = new Timer(compilationResult.evalToStringDeprecated("main"))
               Ok(timer.getResult, compilationResult.getTotalTime(), timer.getElapsed)
           }
 

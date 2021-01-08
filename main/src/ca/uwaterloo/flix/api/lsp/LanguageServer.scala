@@ -351,7 +351,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case None =>
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "Compilation successful. No main to run.")
         case Some(main) =>
-          val result = main()
+          val result = main(Array.empty) // TODO: Supply arguments to main.
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toString)
       }
       case Failure(errors) =>

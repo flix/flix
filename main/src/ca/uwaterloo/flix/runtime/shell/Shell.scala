@@ -189,7 +189,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Evaluate the main function and get the result.
     val main = Symbol.Main
-    val result = this.compilationResult.evalToString(main.toString)
+    val result = this.compilationResult.evalToStringDeprecated(main.toString)
 
     // Write the result to the terminal.
     terminal.writer().println(result)

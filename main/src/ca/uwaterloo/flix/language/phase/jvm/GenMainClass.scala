@@ -91,7 +91,7 @@ object GenMainClass {
 
     // TODO: We should actually pass the arguments.
     //push null onto the stack as it is the argument for m_main
-    main.visitInsn(ACONST_NULL)
+    main.visitVarInsn(ALOAD, 0)
 
     //Invoke m_main
     // TODO: This incorrectly assumes that main returns an object.
