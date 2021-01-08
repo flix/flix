@@ -29,7 +29,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.01") {
     val input =
       """
-        |def main(): #{ A(Int), B(Int) } = solve {
+        |pub def f(): #{ A(Int), B(Int) } = solve {
         |    A(x) :- not B(x).
         |}
       """.stripMargin
@@ -40,7 +40,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.02") {
     val input =
       """
-        |def main(): #{ A(Int), B(Int), R(Int) } = solve {
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(x) :- A(x), not B(y).
         |}
       """.stripMargin
@@ -51,7 +51,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.03") {
     val input =
       """
-        |def main(): #{ A(Int), B(Int), R(Int) } = solve {
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(x) :- not A(x), not B(x).
         |}
       """.stripMargin
@@ -62,7 +62,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.04") {
     val input =
       """
-        |def main(): #{ A(Int), B(Int), R(Int) } = solve {
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(1) :- not A(x), not B(y).
         |}
       """.stripMargin

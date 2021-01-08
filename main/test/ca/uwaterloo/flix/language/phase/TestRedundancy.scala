@@ -12,7 +12,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Let.01") {
     val input =
       s"""
-         |pub def f(): Int =
+         |def f(): Int =
          |    let _x = 123;
          |    _x
          |
@@ -24,7 +24,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Lambda.01") {
     val input =
       s"""
-         |pub def f(): Int =
+         |def f(): Int =
          |    let f = _x -> _x;
          |    f(123)
          |
@@ -36,7 +36,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Match.01") {
     val input =
       s"""
-         |pub def f(): Int =
+         |def f(): Int =
          |    match (123, 456) {
          |        case (_x, _y) => _x + _y
          |    }
@@ -49,7 +49,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Select.01") {
     val input =
       s"""
-         |def main(): Int & Impure =
+         |def f(): Int & Impure =
          |    let c = chan Int 1;
          |    select {
          |        case _x <- c => _x
@@ -63,7 +63,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Existential.01") {
     val input =
       s"""
-         |def main(): Bool = exists (_x: Int). _x == 123
+         |def f(): Bool = exists (_x: Int). _x == 123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -73,7 +73,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Universal.01") {
     val input =
       s"""
-         |def main(): Bool = forall (_x: Int). _x == 123
+         |def f(): Bool = forall (_x: Int). _x == 123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -108,7 +108,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Let.01") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let x = 123;
         |    let x = 456;
         |    x
@@ -121,7 +121,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Let.02") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let x = 123;
         |    let y = 456;
         |    let x = 789;
@@ -135,7 +135,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Lambda.01") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let x = 123;
         |    let f = x -> x + 1;
         |    f(x)
@@ -148,7 +148,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Lambda.02") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let f = x -> {
         |        let x = 456;
         |        x + 1
@@ -163,7 +163,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Lambda.03") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let f = x -> {
         |        let g = x -> 123;
         |        g(456)
@@ -178,7 +178,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Match.01") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let x = 123;
         |    match (456, 789) {
         |        case (x, _) => x
@@ -192,7 +192,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Match.02") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let x = 123;
         |    match (456, 789) {
         |        case (_, x) => x
@@ -206,7 +206,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Match.03") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let x = 123;
         |    match (456, 789) {
         |        case (u, v) => u + v
@@ -221,7 +221,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Match.04") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let x = 123;
         |    match (456, 789) {
         |        case (u, v) => u + v
@@ -236,7 +236,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Existential.01") {
     val input =
       """
-        |def main(): Bool =
+        |def f(): Bool =
         |    let x = 123;
         |    exists (x: Int). x == 0
         |
@@ -248,7 +248,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Universal.01") {
     val input =
       """
-        |def main(): Bool =
+        |def f(): Bool =
         |    let x = 123;
         |    forall (x: Int). x == 0
         |
@@ -260,7 +260,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Select.01") {
     val input =
       """
-        |def main(): Int =
+        |def f(): Int =
         |    let x = 123;
         |    match (456, 789) {
         |        case (u, v) => u + v
@@ -275,7 +275,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Select.02") {
     val input =
       """
-        |def main(): Int & Impure =
+        |def f(): Int & Impure =
         |    let x = 123;
         |    let c = chan Int 1;
         |    c <- 456;
@@ -337,7 +337,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |  case Blue
          |}
          |
-         |def main(): Color = Red
+         |def f(): Color = Red
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -353,7 +353,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |  case Blue
          |}
          |
-         |def main(): Color = Green
+         |def f(): Color = Green
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -701,7 +701,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.01") {
     val input =
       s"""
-         |def main(): Int & Impure =
+         |def f(): Int & Impure =
          |    let c = chan Int 0;
          |    select {
          |        case x <- c => 123
@@ -715,7 +715,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.02") {
     val input =
       s"""
-         |def main(): Int & Impure =
+         |def f(): Int & Impure =
          |    let c = chan Int 0;
          |    select {
          |        case x <- c => x
@@ -828,7 +828,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UselessExpression.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def f(): Unit =
          |    123;
          |    ()
          |""".stripMargin
@@ -839,7 +839,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UselessExpression.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def f(): Unit =
          |    21 + 42;
          |    ()
          |""".stripMargin
@@ -852,7 +852,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       s"""
          |def hof(f: a -> b & e, x: a): b & e = f(x)
          |
-         |def main(): Unit =
+         |def f(): Unit =
          |    hof(x -> x + 21, 42);
          |    ()
          |""".stripMargin
