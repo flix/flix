@@ -5,18 +5,21 @@ def inc(x: Int): Int = x + 1
 def sum(x: Int, y: Int): Int = x + y
 
 /// We can call these functions in the standard way:
-def main(): Int =
+def main(_: Array[String]): Int32 & Impure =
     let i = inc(123);
     let s = sum(123, 456);
-        i + s
+    println(i + s);
+    0 // exit code
 
 /// Or with uniform function call syntax:
-def main2(): Int =
+def main2(_: Array[String]): Int32 & Impure =
     let i = 123.inc();
     let s = 123.sum(456);
-        i + s
+    println(i + s);
+    0 // exit code
 
 /// Or even using an infix notation for sum:
-def main3(): Int =
+def main3(_: Array[String]): Int32 & Impure =
     let s = 123 `sum` 456;
-        s
+    println(s);
+    0 // exit code
