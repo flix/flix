@@ -58,22 +58,6 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
   }
 
   /**
-    * Immediately evaluates the given fully-qualified name `fqn`.
-    *
-    * Returns the raw result.
-    */
-  def eval(fqn: String): AnyRef = {
-    // Construct the definition symbol.
-    val sym = Symbol.mkDefnSym(fqn)
-
-    // Retrieve the function and call it.
-    defs.get(sym) match {
-      case None => throw new IllegalArgumentException(s"Undefined fully-qualified name: '$fqn'.")
-      case Some(fn) => fn().getValue
-    }
-  }
-
-  /**
     * Returns the total number of lines of compiled code.
     */
   def getTotalLines(): Int = getRoot.sources.foldLeft(0) {
