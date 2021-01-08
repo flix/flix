@@ -46,11 +46,12 @@ def typeCheck(e: Exp[{}]): Exp[{tpe: Type}] = match e {
 }
 
 /// We can now type check a simple expression:
-def main(): Type =
+def main(_: Array[String]): Int32 & Impure =
     let e = Ite({exp1 = True,
                  exp2 = Cst({value = 123}),
                  exp3 = Cst({value = 456})});
-    typeOf(typeCheck(e))
+    typeOf(typeCheck(e));
+    0 as & Impure // exit code
 
 /// We can extend the function above to be one that is polymorphic
 /// in whatever other fields an expression may be decorated with:

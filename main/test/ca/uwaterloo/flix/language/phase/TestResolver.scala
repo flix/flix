@@ -334,7 +334,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedName.03") {
     val input =
       s"""
-         |def main(): #{ R } = #{}
+         |def foo(): #{ R } = #{}
        """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedName](result)
@@ -401,7 +401,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmConstructor.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new java.io.File() as _;
          |    ()
        """.stripMargin
@@ -412,7 +412,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmConstructor.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new java.io.File(Int32) as _;
          |    ()
        """.stripMargin
@@ -423,7 +423,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmConstructor.03") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new java.lang.String(Bool) as _;
          |    ()
        """.stripMargin
@@ -434,7 +434,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmConstructor.04") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new java.lang.String(Bool, Char, String) as _;
          |    ()
        """.stripMargin
@@ -445,7 +445,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new foo.bar.Baz() as newObject;
          |    ()
        """.stripMargin
@@ -456,7 +456,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import foo.bar.Baz.f();
          |    ()
        """.stripMargin
@@ -467,7 +467,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.03") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import foo.bar.Baz:f();
          |    ()
        """.stripMargin
@@ -478,7 +478,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.04") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import get foo.bar.Baz.f as getF;
          |    ()
        """.stripMargin
@@ -489,7 +489,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.05") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import set foo.bar.Baz.f as setF;
          |    ()
        """.stripMargin
@@ -500,7 +500,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.06") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import get foo.bar.Baz:f as getF;
          |    ()
        """.stripMargin
@@ -511,7 +511,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.07") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import set foo.bar.Baz:f as setF;
          |    ()
        """.stripMargin
@@ -522,7 +522,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.getFoo();
          |    ()
        """.stripMargin
@@ -533,7 +533,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.charAt();
          |    ()
        """.stripMargin
@@ -544,7 +544,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.03") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.charAt(Int32, Int32);
          |    ()
        """.stripMargin
@@ -555,7 +555,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.04") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.isEmpty(Bool);
          |    ()
        """.stripMargin
@@ -566,7 +566,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.05") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String:isEmpty();
          |    ()
        """.stripMargin
@@ -577,7 +577,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.06") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.valueOf(Bool);
          |    ()
        """.stripMargin
@@ -588,7 +588,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmField.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import get java.lang.Character.foo as getFoo;
          |    ()
          |
@@ -600,7 +600,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmField.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import set java.lang.Character.foo as setFoo;
          |    ()
        """.stripMargin
@@ -611,7 +611,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmField.03") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import get java.lang.Character:foo as getFoo;
          |    ()
        """.stripMargin
@@ -622,7 +622,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmField.04") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import set java.lang.Character:foo as setFoo;
          |    ()
        """.stripMargin
