@@ -76,6 +76,7 @@ def evalBExp(e: BExp): Bool = match e {
 
 
 // We can now run it!
-def main(): Int = evalAExp(
-    IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))
-)
+def main(_: Array[String]): Int32 =
+    let r = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)));
+    r |> println;
+    0 // exit code
