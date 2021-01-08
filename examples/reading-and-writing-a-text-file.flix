@@ -17,6 +17,7 @@ def readData(file: File): Result[List[String], IOError] & Impure =
     Result.map(getSurname, readLines(file))
 
 /// Writes the text file and then reads it back in again.
-def main(): Result[List[String], IOError] & Impure =
+def main(_: Array[String]): Int32 & Impure =
     let path = newFile("members.txt");
-    Result.flatMap(_ -> readData(path), writeData(path))
+    Result.flatMap(_ -> readData(path), writeData(path));
+    0 // exit code
