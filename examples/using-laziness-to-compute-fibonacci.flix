@@ -8,5 +8,7 @@ def fibs(): LazyList[Int32] =
             lazy LazyList.zipWith(
                 (x, y) -> x + y, fibs(), LazyList.tail(fibs()))))
 
-/// Returns the first 10 Fibonacci numbers
-def main(): LazyList[Int32] = LazyList.take(10, fibs())
+/// Prints the first 10 Fibonacci numbers
+def main(_: Array[String]): Int32 & Impure =
+    LazyList.take(10, fibs()) |> LazyList.toList |> println;
+    0
