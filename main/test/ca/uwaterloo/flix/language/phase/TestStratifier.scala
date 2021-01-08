@@ -86,8 +86,8 @@ class TestStratifier extends FunSuite with TestUtils {
     val input =
       """
         |pub def f[t: Eq : Hash : ToString](): #{A(t), B(t), C(t), X(t)} = #{
-        |  C(c: String) :- X(c), not A(c).
-        |  A(c: String) :- B(c), C(c).
+        |  C(c) :- X(c), not A(c).
+        |  A(c) :- B(c), C(c).
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
