@@ -11,4 +11,6 @@ def twice(f: Int -> Int): Int -> Int = x -> f(f(x))
 def two(x: Int): Int = twice(inc)(x)
 
 /// Returns 123 plus 4 = 127.
-def main(): Int = twice(two)(123)
+def main(_: Array[String]): Int32 & Impure =
+    twice(two)(123) |> println;
+    0 // exit code

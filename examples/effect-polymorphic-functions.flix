@@ -10,4 +10,6 @@ def twice2(f: Int -> Int & Impure, x: Int): Int & Impure = f(f(x))
 def twice3(f: Int -> Int & e, x: Int): Int & e = f(f(x))
 
 /// We can use `twice3` with both pure and impure functions:
-def main(): Int & Impure = twice3(inc1, 0) + twice3(inc2, 0)
+def main(_: Array[String]): Int32 & Impure =
+    (twice3(inc1, 0) + twice3(inc2, 0)) |> println;
+    0 // exit code
