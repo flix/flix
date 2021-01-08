@@ -198,7 +198,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalJvmFieldOrMethodName.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def f(): Unit =
          |    import foo() as bar;
          |    ()
          |""".stripMargin
