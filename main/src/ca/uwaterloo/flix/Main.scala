@@ -186,13 +186,16 @@ object Main {
           compilationResult.getMain match {
             case None => // nop
             case Some(m) =>
-              val args: Array[String] = argv // TODO: Pass actual arguments...
-              val evalTimer = new Timer(m(args))
-              options.verbosity match {
-                case Verbosity.Normal => Console.println(evalTimer.getResult)
-                case Verbosity.Verbose => Console.println(evalTimer.getResult)
-                case Verbosity.Silent => // nop
+              // Compute the arguments to be passed to main.
+              val args: Array[String] = cmdOpts.args match {
+                case None => Array.empty
+                case Some(a) => a.split(" ")
               }
+              // Invoke main with the supplied arguments.
+              val exitCode = m(args)
+
+              // Exit with the returned exit code.
+              System.exit(exitCode)
           }
 
           if (cmdOpts.benchmark) {
@@ -221,6 +224,7 @@ object Main {
     * A case class representing the parsed command line options.
     */
   case class CmdOpts(command: Command = Command.None,
+                     args: Option[String] = None,
                      benchmark: Boolean = false,
                      documentor: Boolean = false,
                      interactive: Boolean = false,
@@ -301,6 +305,11 @@ object Main {
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  run tests for the current project.")
 
       note("")
+
+      // Listen.
+      opt[String]("args").action((s, c) => c.copy(args = Some(s))).
+        valueName("<a1, a2, ...>").
+        text("arguments passed to main. Must be a single quoted string.")
 
       // Benchmark.
       opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
