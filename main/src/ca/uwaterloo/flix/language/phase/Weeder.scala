@@ -2334,6 +2334,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val loc = SourceLocation.mk(sp1, sp2)
 
     // Useful types.
+    val ArrayType = WeededAst.Type.Ambiguous(Name.mkQName("Array"), loc)
+    val Int32Type = WeededAst.Type.Ambiguous(Name.mkQName("Int32"), loc)
     val StringType = WeededAst.Type.Ambiguous(Name.mkQName("String"), loc)
 
     // Documentation, annotations, and modifiers for the generated main.
@@ -2344,28 +2346,43 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     // Type and formal parameters for the generated main.
     val tparams = WeededAst.TypeParams.Explicit(Nil)
-    val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
+    val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_args", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
     // Collect all the constraints into a single constraint set.
     val innerExp = WeededAst.Expression.FixpointConstraintSet(cs, loc)
 
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
-    val castedExp = WeededAst.Expression.Cast(outerExp, Some(WeededAst.Type.Native("java.lang.Object", loc)), None, loc)
-    val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", castedExp, Nil, Nil, loc)
-    val castedToStringExp = WeededAst.Expression.Cast(toStringExp, None, Some(WeededAst.Type.True(loc)), loc)
+
+    // Convert to string, print, and return 0.
+    val exp = mkStmReturn(mkApplyPrintln(mkApplyUnsafeToString(outerExp, sp1, sp2), sp1, sp2), 0, loc)
 
     // The type and effect of the generated main.
-    val argType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
-    val resultType = StringType
-    val tpe = mkArrow(argType, WeededAst.Type.True(loc), resultType, loc)
-    val eff = WeededAst.Type.True(loc)
+    val argType = WeededAst.Type.Apply(ArrayType, StringType, loc)
+    val resultType = Int32Type
+    val resultEff = WeededAst.Type.False(loc)
+    val tpe = mkArrow(argType, resultEff, Int32Type, loc)
 
     // Construct the declaration.
-    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, castedToStringExp, tpe, eff, loc)
+    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, resultEff, loc)
 
     // Construct an AST root that contains the main declaration.
     WeededAst.Root(Nil, List(decl), loc)
   }
+
+  private def mkApplyUnsafeToString(exp: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+    val ident = Name.Ident(sp1, "unsafeToString", sp2)
+    val target = WeededAst.Expression.VarOrDefOrSig(ident, mkSL(sp1, sp2))
+    WeededAst.Expression.Apply(target, List(exp), mkSL(sp1, sp2))
+  }
+
+  private def mkApplyPrintln(exp: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+    val ident = Name.Ident(sp1, "println", sp2)
+    val target = WeededAst.Expression.VarOrDefOrSig(ident, mkSL(sp1, sp2))
+    WeededAst.Expression.Apply(target, List(exp), mkSL(sp1, sp2))
+  }
+
+  private def mkStmReturn(exp: WeededAst.Expression, value: Int, loc: SourceLocation): WeededAst.Expression =
+    WeededAst.Expression.Stm(exp, WeededAst.Expression.Int32(value, loc), loc)
 
 }
