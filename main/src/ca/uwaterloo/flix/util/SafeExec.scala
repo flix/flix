@@ -18,12 +18,15 @@ package ca.uwaterloo.flix.util
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
 
-// TODO: Name
-object WrappedExecution {
+object SafeExec {
 
   private val UTF8: String = StandardCharsets.UTF_8.name()
 
-  // TODO: DOC
+  /**
+    * Executes the given function `f` capturing its standard output and error output.
+    *
+    * Returns a triple of its result, standard out, and standard err.
+    */
   def execute[T](f: () => T): (T, String, String) = {
     // Capture the original out and err streams.
     val originalOut = System.out
