@@ -200,7 +200,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       ///
       /// Add assumptions to the declared scheme.
       ///
-      val completeScheme = declaredScheme.copy(constraints = declaredScheme.constraints ++ assumedTconstrs)
+      val completeScheme = if (sym.isMain) {
+        // Case 1: The type signature of main is fixed.
+        Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
+      } else
+        declaredScheme.copy(constraints = declaredScheme.constraints ++ assumedTconstrs)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -238,7 +242,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
-                    return TypeError.GeneralizationError(declaredScheme, sc, loc).toFailure
+                    return TypeError.GeneralizationError(sc, completeScheme, loc).toFailure
                     // Case 3: instance error
                   } else {
                     return Validation.Failure(instanceErrs)
@@ -628,7 +632,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.CharOp.Lt | SemanticOperator.CharOp.Le | SemanticOperator.CharOp.Gt | SemanticOperator.CharOp.Ge
-          | SemanticOperator.Float32Op.Lt | SemanticOperator.Float32Op.Le | SemanticOperator.Float32Op.Gt | SemanticOperator.Float32Op.Ge
+             | SemanticOperator.Float32Op.Lt | SemanticOperator.Float32Op.Le | SemanticOperator.Float32Op.Gt | SemanticOperator.Float32Op.Ge
              | SemanticOperator.Float64Op.Lt | SemanticOperator.Float64Op.Le | SemanticOperator.Float64Op.Gt | SemanticOperator.Float64Op.Ge
              | SemanticOperator.Int8Op.Lt | SemanticOperator.Int8Op.Le | SemanticOperator.Int8Op.Gt | SemanticOperator.Int8Op.Ge
              | SemanticOperator.Int16Op.Lt | SemanticOperator.Int16Op.Le | SemanticOperator.Int16Op.Gt | SemanticOperator.Int16Op.Ge
@@ -641,7 +645,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             valueType <- unifyTypeM(tpe1, tpe2, loc)
             resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
             resultEff = Type.mkAnd(eff1, eff2)
-                } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.StringOp.Concat =>
           for {
