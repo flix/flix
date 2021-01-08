@@ -12,7 +12,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Let.01") {
     val input =
       s"""
-         |def main(): Int =
+         |pub def f(): Int =
          |    let _x = 123;
          |    _x
          |
@@ -24,7 +24,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Lambda.01") {
     val input =
       s"""
-         |def main(): Int =
+         |pub def f(): Int =
          |    let f = _x -> _x;
          |    f(123)
          |
@@ -36,7 +36,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Match.01") {
     val input =
       s"""
-         |def main(): Int =
+         |pub def f(): Int =
          |    match (123, 456) {
          |        case (_x, _y) => _x + _y
          |    }
