@@ -653,7 +653,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, tpe1, tpe2, loc)
+            resultTyp <- unifyTypeM(tvar, Type.Str, tpe1, tpe2, loc)
             resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
