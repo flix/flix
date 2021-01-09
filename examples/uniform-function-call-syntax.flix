@@ -5,7 +5,7 @@ def inc(x: Int): Int = x + 1
 def sum(x: Int, y: Int): Int = x + y
 
 /// We can call these functions in the standard way:
-def main(_: Array[String]): Int32 & Impure =
+def main(_args: Array[String]): Int32 & Impure =
     let i = inc(123);
     let s = sum(123, 456);
     println(i + s);

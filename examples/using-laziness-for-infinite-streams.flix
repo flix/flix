@@ -22,6 +22,6 @@ def sieve(ps: LazyList[Int32]): LazyList[Int32] = match ps {
 }
 
 /// Returns the first 10 prime numbers
-def main(_: Array[String]): Int32 & Impure =
+def main(_args: Array[String]): Int32 & Impure =
     LazyList.take(10, primes()) |> LazyList.toList |> println;
     0 // exit code

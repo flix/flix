@@ -1,4 +1,4 @@
-def main(_: Array[String]): Int32 & Impure =
+def main(_args: Array[String]): Int32 & Impure =
     // Introduce some facts for colored paths.
     let f1 = #{
         ColorEdge(1, "blue", 2).

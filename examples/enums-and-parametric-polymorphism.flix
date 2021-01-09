@@ -25,6 +25,6 @@ def map[a, b](f: a -> b, t: Tree[a]): Tree[b] =
 def tree(): Tree[Int] = Node(Leaf(1), Leaf(2))
 
 /// Squares all elements in the simple tree.
-def main(_: Array[String]): Int32 =
+def main(_args: Array[String]): Int32 =
     map(x -> x * x, tree()) |> println;
     0 // exit code

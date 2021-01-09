@@ -16,7 +16,7 @@ def main(_: Array[String]): Int32 & Impure =
     0 // exit code
 
 /// Constructs a record, extends it with an age, and restricts it.
-def main2(_: Array[String]): Int32 & Impure =
+def main2(_args: Array[String]): Int32 & Impure =
     let r1 = {fstName = "Julius", lstName = "Caesar"};
     let r2 = withAge(r1, 55);
     let r3 = withoutAge(r2);

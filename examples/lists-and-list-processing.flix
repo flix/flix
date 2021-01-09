@@ -14,7 +14,7 @@ def length[a](l: List[a]): Int = match l {
 }
 
 /// The Flix library has extensive support for lists:
-def main(_: Array[String]): Int32 & Impure =
+def main(_args: Array[String]): Int32 & Impure =
     let l1 = List.range(0, 10);
     let l2 = List.intersperse(42, l1);
     let l3 = List.map(x -> x :: x :: Nil, l2);

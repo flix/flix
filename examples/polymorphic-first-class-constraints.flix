@@ -33,7 +33,7 @@ def getRules[l : Eq : Hash : ToString](): #{ LabelEdge[l], LabelPath[l] } = #{
 /// Computes the fixpoint of the two sets of facts with the rules.
 /// Note that polymorphism allow us to use `getRules`
 /// with both types of facts.
-def main(_: Array[String]): Int32 & Impure =
+def main(_args: Array[String]): Int32 & Impure =
     let r1 = solve getEdgesWithColor() <+> getRules();
     let r2 = solve getEdgesWithNumbers() <+> getRules();
     r1 |> unsafeToString |> println;
