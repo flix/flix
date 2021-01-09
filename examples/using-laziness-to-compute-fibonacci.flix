@@ -11,4 +11,4 @@ def fibs(): LazyList[Int32] =
 /// Prints the first 10 Fibonacci numbers
 def main(_args: Array[String]): Int32 & Impure =
     LazyList.take(10, fibs()) |> LazyList.toList |> println;
-    0
+    0 // exit code

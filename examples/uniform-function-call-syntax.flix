@@ -12,14 +12,14 @@ def main(_args: Array[String]): Int32 & Impure =
     0 // exit code
 
 /// Or with uniform function call syntax:
-def main2(_: Array[String]): Int32 & Impure =
+def main2(_args: Array[String]): Int32 & Impure =
     let i = 123.inc();
     let s = 123.sum(456);
     println(i + s);
     0 // exit code
 
 /// Or even using an infix notation for sum:
-def main3(_: Array[String]): Int32 & Impure =
+def main3(_args: Array[String]): Int32 & Impure =
     let s = 123 `sum` 456;
     println(s);
     0 // exit code
