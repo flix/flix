@@ -188,7 +188,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
-    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, declaredScheme, declaredEff, loc) =>
+    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, declaredEff, loc) =>
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -200,12 +200,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       ///
       /// Add assumptions to the declared scheme.
       ///
-      val completeScheme = if (sym.isMain) {
+      val declaredScheme = if (sym.isMain) {
         // Case 1: This is the main function. Its type signature is fixed.
         Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
       } else {
         // Case 2: Use the declared type.
-        declaredScheme.copy(constraints = declaredScheme.constraints ++ assumedTconstrs)
+        sc.copy(constraints = sc.constraints ++ assumedTconstrs)
       }
 
       ///
@@ -234,8 +234,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               ///
               /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
               ///
-              val sc = Scheme.generalize(inferredConstrs, inferredType)
-              Scheme.checkLessThanEqual(sc, completeScheme, classEnv) match {
+              val inferredSc = Scheme.generalize(inferredConstrs, inferredType)
+              Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv) match {
                 // Case 1: no errors, continue
                 case Validation.Success(_) => // noop
                 case Validation.Failure(errs) =>
@@ -244,7 +244,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
-                    return TypeError.GeneralizationError(sc, completeScheme, loc).toFailure
+                    return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
                     // Case 3: instance error
                   } else {
                     return Validation.Failure(instanceErrs)
@@ -277,7 +277,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               ///
               Validation.mapN(annVal) {
                 case as =>
-                  (TypedAst.Def(doc, as, mod, sym, tparams, fparams, exp, declaredScheme, inferredScheme, declaredEff, loc), subst)
+                  (TypedAst.Def(doc, as, mod, sym, tparams, fparams, exp, sc, inferredScheme, declaredEff, loc), subst)
               }
 
             case Err(e) => Validation.Failure(LazyList(e))
