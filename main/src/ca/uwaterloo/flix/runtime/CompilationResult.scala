@@ -27,7 +27,7 @@ import flix.runtime.ProxyObject
   * @param root the abstract syntax tree of the program.
   * @param defs the definitions in the program.
   */
-class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject])(implicit flix: Flix) {
+class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Map[Symbol.DefnSym, () => ProxyObject])(implicit flix: Flix) {
 
   /**
     * Returns the root AST.
@@ -37,7 +37,7 @@ class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject]
   /**
     * Optionally returns the main function.
     */
-  def getMain: Option[() => AnyRef] = defs.get(Symbol.Main)
+  def getMain: Option[Array[String] => Int] = main
 
   /**
     * Returns all the benchmark functions in the program.
@@ -54,42 +54,6 @@ class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject]
   def getTests: Map[Symbol.DefnSym, () => AnyRef] = {
     defs filter {
       case (sym, _) => root.defs(sym).ann.isTest
-    }
-  }
-
-  /**
-    * Immediately evaluates the given fully-qualified name `fqn`.
-    *
-    * Returns the raw result.
-    */
-  def eval(fqn: String): AnyRef = {
-    // Construct the definition symbol.
-    val sym = Symbol.mkDefnSym(fqn)
-
-    // Retrieve the function and call it.
-    defs.get(sym) match {
-      case None => throw new IllegalArgumentException(s"Undefined fully-qualified name: '$fqn'.")
-      case Some(fn) => fn().getValue
-    }
-  }
-
-  /**
-    * Immediately evaluates the given fully-qualified name `fqn`.
-    *
-    * Returns a string representation of the result.
-    */
-  def evalToString(fqn: String): String = {
-    // Construct the definition symbol.
-    val sym = Symbol.mkDefnSym(fqn)
-
-    // Retrieve the definition.
-    root.defs.get(sym) match {
-      case None => throw new IllegalArgumentException(s"Undefined fully-qualified name: '$fqn'.")
-      case Some(defn) =>
-        // Retrieve the function and call it.
-        val resultValue = defs(sym)()
-
-        resultValue.toString
     }
   }
 

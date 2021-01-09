@@ -313,7 +313,6 @@ class Flix {
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
       Monomorph |>
-      Synthesize |>
       Simplifier |>
       ClosureConv |>
       LambdaLift |>

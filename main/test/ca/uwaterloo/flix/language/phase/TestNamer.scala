@@ -28,7 +28,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("AmbiguousVarOrUse.01") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use Foo.f;
          |    let f = _ -> true;
          |    f(123)
@@ -41,7 +41,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("AmbiguousVarOrUse.02") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use Foo.f;
          |    let f = _ -> true;
          |    use Foo.g;
@@ -209,7 +209,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseDef.01") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use A.f;
          |    use B.f;
          |    f() == f()
@@ -232,7 +232,7 @@ class TestNamer extends FunSuite with TestUtils {
          |use A.f;
          |use B.f;
          |
-         |def main(): Bool =
+         |def foo(): Bool =
          |    f() == f()
          |
          |namespace A {
@@ -252,7 +252,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |use A.f;
          |
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use B.f;
          |    f() == f()
          |
@@ -271,7 +271,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseDef.04") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use A.{f => g, f => g};
          |    g() == g()
          |
@@ -288,7 +288,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace T {
-         |    def main(): Bool =
+         |    def foo(): Bool =
          |        use A.f;
          |        use B.f;
          |        f() == f()
@@ -313,7 +313,7 @@ class TestNamer extends FunSuite with TestUtils {
          |
          |namespace T {
          |    use B.f;
-         |    def main(): Bool =
+         |    def foo(): Bool =
          |        f() == f()
          |}
          |
@@ -334,7 +334,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |namespace T {
          |    use A.{f => g, f => g};
-         |    def main(): Bool =
+         |    def foo(): Bool =
          |        g() == g()
          |}
          |
@@ -351,7 +351,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |namespace T {
          |    use A.f;
-         |    def main(): Bool =
+         |    def foo(): Bool =
          |        use B.f;
          |        f() == f()
          |}
@@ -371,7 +371,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseTyp.01") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use A.Color;
          |    use B.Color;
          |    true
@@ -398,7 +398,7 @@ class TestNamer extends FunSuite with TestUtils {
          |use A.Color;
          |use B.Color;
          |
-         |def main(): Bool = true
+         |def foo(): Bool = true
          |
          |namespace A {
          |    enum Color {
@@ -423,7 +423,7 @@ class TestNamer extends FunSuite with TestUtils {
          |namespace T {
          |    use A.Color;
          |    use B.Color;
-         |    def main(): Bool =
+         |    def foo(): Bool =
          |        true
          |}
          |
@@ -446,7 +446,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseTag.01") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use A.Color.Red;
          |    use B.Color.Red;
          |    Red == Red
@@ -472,7 +472,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |use A.Color.Red;
          |use B.Color.Red;
-         |def main(): Bool =
+         |def foo(): Bool =
          |    Red == Red
          |
          |namespace A {
@@ -496,7 +496,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |
          |use A.Color.Red;
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use B.Color.Red;
          |    Red == Red
          |
@@ -519,7 +519,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseTag.04") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use B.Color.{Red => R};
          |    use B.Color.{Blu => R};
          |    R == R
@@ -541,11 +541,11 @@ class TestNamer extends FunSuite with TestUtils {
          |namespace T {
          |    use A.Color.Red;
          |    use B.Color.Red;
-         |    def main(): Bool =
+         |    def foo(): Bool =
          |        Red == Red
          |}
          |
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use A.Color.Red;
          |    use B.Color.Red;
          |    Red == Red
@@ -571,7 +571,7 @@ class TestNamer extends FunSuite with TestUtils {
       s"""
          |namespace T {
          |    use A.Color.Red;
-         |    def main(): Bool =
+         |    def foo(): Bool =
          |        use B.Color.Red;
          |        Red == Red
          |}
@@ -598,7 +598,7 @@ class TestNamer extends FunSuite with TestUtils {
          |namespace T {
          |    use B.Color.{Red => R};
          |    use B.Color.{Blu => R};
-         |    def main(): Bool =
+         |    def foo(): Bool =
          |        R == R
          |}
          |namespace A {
@@ -615,7 +615,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseClass.01") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    use class A.Show;
          |    use class B.Show;
          |    true
@@ -642,7 +642,7 @@ class TestNamer extends FunSuite with TestUtils {
          |use class A.Show;
          |use class B.Show;
          |
-         |def main(): Bool = true
+         |def foo(): Bool = true
          |
          |namespace A {
          |    class Show[a] {

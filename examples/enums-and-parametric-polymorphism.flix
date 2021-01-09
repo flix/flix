@@ -5,6 +5,14 @@ enum Tree[a] {
     case Node(Tree[a], Tree[a])
 }
 
+/// An instance of ToString.
+instance ToString[Tree[a]] with [a: ToString] {
+    def toString(t: Tree[a]): String = match t {
+        case Leaf(v)    => "Leaf(${v})"
+        case Node(l, r) => "Node(${l}, ${r})"
+    }
+}
+
 /// A higher-order function that transforms a tree with
 /// elements of type a to a tree with elements of type b.
 def map[a, b](f: a -> b, t: Tree[a]): Tree[b] =
@@ -17,4 +25,6 @@ def map[a, b](f: a -> b, t: Tree[a]): Tree[b] =
 def tree(): Tree[Int] = Node(Leaf(1), Leaf(2))
 
 /// Squares all elements in the simple tree.
-def main(): Tree[Int] = map(x -> x * x, tree())
+def main(_args: Array[String]): Int32 =
+    map(x -> x * x, tree()) |> println;
+    0 // exit code

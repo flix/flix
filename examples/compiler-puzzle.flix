@@ -1,7 +1,7 @@
 /// We can use first-class Datalog constraints to solve the following
 /// complex reachability problem: Given a collection of compilers and
 /// interpreters, what source languages can be compiled to what targets?
-def main(): #{Interpreter(String), Compiler(String, String, String)} =
+def main(_args: Array[String]): Int32 & Impure =
     let p = #{
     /// We have the following interpreters and compilers:
     Interpreter("x86").
@@ -27,4 +27,5 @@ def main(): #{Interpreter(String), Compiler(String, String, String)} =
         Compiler(intermediate, dst, lang),
         Interpreter(lang).
     };
-    solve p
+    (solve p) |> unsafeToString |> println;
+    0 // exit code

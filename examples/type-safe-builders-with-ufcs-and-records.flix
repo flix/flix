@@ -3,13 +3,14 @@
 
 /// Here main constructs a connection "object" with both required and
 /// optional parameters in type-safe, statically-checked manner.
-def main(): Unit =
+def main(_args: Array[String]): Int32 & Impure =
     connection()
         .host("localhost")  // required, omitting is a type error.
         .port(8080)         // required, omitting is a type error.
         .user("root")       // required, omitting is a type error.
         .pass("1234")       // optional, may be omitted.
-        .connect()
+        .connect() as & Impure;
+    0 // exit code
 
 /// Repeating any of the required options is a type-error.
 

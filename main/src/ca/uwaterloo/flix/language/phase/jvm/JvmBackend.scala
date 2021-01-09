@@ -53,7 +53,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       // Immediately return if in verification mode.
       //
       if (flix.options.verifier) {
-        return new CompilationResult(root, Map.empty).toSuccess
+        return new CompilationResult(root, None, Map.empty).toSuccess
       }
 
       //
@@ -199,7 +199,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, Map.empty).toSuccess
+      new CompilationResult(root, None, Map.empty).toSuccess
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -209,9 +209,22 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, getCompiledDefs(root)).toSuccess
+      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root)).toSuccess
     }
   }
+
+  /**
+    * Optionally returns a reference to main.
+    */
+  private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Int] =
+    root.defs.get(Symbol.Main) map {
+      case defn =>
+        (actualArgs: Array[String]) => {
+        val args: Array[AnyRef] = Array(actualArgs)
+          val result = link(defn.sym, root).apply(args).getValue
+          result.asInstanceOf[Integer].intValue()
+        }
+    }
 
   /**
     * Returns a map from definition symbols to executable functions (backed by JVM backend).

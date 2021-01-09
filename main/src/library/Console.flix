@@ -13,6 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+///
+/// Converts `x` to a string and prints it to standard out.
+///
+pub def println[a: ToString](x: a): Unit & Impure = x |> ToString.toString |> Console.printLine
+
 namespace Console {
 
     ///

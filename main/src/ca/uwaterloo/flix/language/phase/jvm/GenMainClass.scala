@@ -87,16 +87,14 @@ object GenMainClass {
     //Get the root namespace in order to get the class type when invoking m_main
     val ns = JvmOps.getNamespace(Symbol.Main)
 
-    //Call Ns.m_main((Object)null)
+    // Call Ns.m_main(args)
 
-    // TODO: We should actually pass the arguments.
-    //push null onto the stack as it is the argument for m_main
-    main.visitInsn(ACONST_NULL)
+    // Push the args array on the stack.
+    main.visitVarInsn(ALOAD, 0)
 
     //Invoke m_main
-    // TODO: This incorrectly assumes that main returns an object.
     main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
-      AsmOps.getMethodDescriptor(List(JvmType.Object), retJvmType), false)
+      AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
 
     main.visitInsn(RETURN)
     main.visitMaxs(1,1)

@@ -18,4 +18,7 @@ def sum(x: USD, y: USD): USD =
   USD(u + v)
 
 /// Adds two dollar amounts.
-def main(): USD = sum(USD(1), USD(5))
+def main(_args: Array[String]): Int32 & Impure =
+    let USD(result) = sum(USD(1), USD(5));
+    println(result);
+    0 // exit code

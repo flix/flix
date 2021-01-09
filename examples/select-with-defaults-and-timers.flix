@@ -22,10 +22,11 @@ def recvWithTimeout(c: Channel[Int]): Int & Impure = select {
 /// Creates two channels `c1` and `c2`.
 /// Sends values on both after one minute.
 /// Receives from both using defaults and timeouts.
-def main(): Int & Impure = {
+def main(_args: Array[String]): Int32 & Impure = {
   let c1 = chan Int 1;
   let c2 = chan Int 1;
   spawn slow(123, c1);
   spawn slow(456, c2);
-  recvWithDefault(c1) + recvWithTimeout(c2)
+  (recvWithDefault(c1) + recvWithTimeout(c2)) |> println;
+  0 // exit code
 }
