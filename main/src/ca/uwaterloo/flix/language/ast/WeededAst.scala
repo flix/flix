@@ -56,11 +56,9 @@ object WeededAst {
 
   object Use {
 
-    case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
-
     case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
-    case class UseTyp(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
     case class UseTag(qname: Name.QName, tag: Name.Tag, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 

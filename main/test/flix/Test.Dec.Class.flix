@@ -70,7 +70,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test07 {
-        use class Test/Dec/Class/Test06.C;
+        use Test/Dec/Class/Test06.C;
 
         pub def g[a: C](x: a): a = x
     }

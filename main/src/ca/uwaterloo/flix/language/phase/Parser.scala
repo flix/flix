@@ -291,7 +291,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseClass | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany )
+    keyword("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany )
   }
 
   object Uses {
@@ -321,10 +321,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
-    }
-
-    def UseClass: Rule1[ParsedAst.Use] = rule { // MATT improve syntax
-      keyword("class") ~ WS ~ SP ~ Names.Namespace ~ "." ~ UseName ~ SP ~> ParsedAst.Use.UseClass
     }
 
     def UseName: Rule1[Name.Ident] = rule {

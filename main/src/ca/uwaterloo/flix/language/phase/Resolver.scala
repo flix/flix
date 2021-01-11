@@ -17,12 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -376,13 +375,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {
-            case NamedAst.Use.UseClass(qname, _, _) =>
-              flatMapN(lookupClass(qname, ns0, root))(_ => visit(exp, tenv0))
-
             case NamedAst.Use.UseDefOrSig(qname, _, _) =>
               flatMapN(lookupDefOrSig(qname, ns0, root))(_ => visit(exp, tenv0))
 
-            case NamedAst.Use.UseTyp(qname, _, _) =>
+            case NamedAst.Use.UseTypeOrClass(qname, _, _) =>
               flatMapN(lookupType(NamedAst.Type.Ambiguous(qname, loc), ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseTag(qname, tag, _, _) =>
@@ -1251,11 +1247,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, loc)
 
           // Case 4: Errors.
-          case (x, y) =>
-            val loc1 = x.map(_.loc)
-            val loc2 = y.map(_.loc)
-            val locs = List(loc1, loc2).flatten
-            ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
+          case (_, _) => throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
         }
     }
 

@@ -212,16 +212,6 @@ object ParsedAst {
   object Use {
 
     /**
-      * A use of a single class from a namespace.
-      *
-      * @param sp1   the position of the first character.
-      * @param nname the namespace.
-      * @param ident the name.
-      * @param sp2   the position of the last character.
-      */
-    case class UseClass(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends Use
-
-    /**
       * A use of a single name from a namespace.
       *
       * @param sp1   the position of the first character.
