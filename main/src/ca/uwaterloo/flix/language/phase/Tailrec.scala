@@ -70,10 +70,10 @@ object Tailrec extends Phase[Root, Root] {
     val refreshedDef = LiftedAstOps.refreshVarNames(defn)
 
     // Todo: would this ever result in an error? Only when there is trmc in a function without parameters
-    def resultType = defn.tpe.arrowResultType
+    def endType = defn.tpe.arrowResultType
 
     val endParam = FormalParam(Symbol.freshVarSym("end"), Modifiers(List(Modifier.Synthetic)),
-      resultType,
+      endType,
       SourceLocation.Generated)
     val helperParams = refreshedDef.fparams.appended(endParam)
 
@@ -92,13 +92,14 @@ object Tailrec extends Phase[Root, Root] {
       * Also replaces every `ApplyRef`, which calls the same function and occurs in tail position, with `ApplyTail`.
       */
     def visit(exp0: Expression): Expression = exp0 match {
+      // TODO: For all tails that don't go deeper: They should be set as the tail of end.
       /*
       * Let: The body expression is in tail position.
       * (The value expression is *not* in tail position).
       */
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val e2 = visit(exp2)
-        Expression.Let(sym, exp1, e2, tpe, loc)
+        Expression.Let(sym, exp1, e2, Type.Unit, loc)
 
       /*
        * If-Then-Else: Consequent and alternative are both in tail position.
@@ -107,7 +108,7 @@ object Tailrec extends Phase[Root, Root] {
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val e2 = visit(exp2)
         val e3 = visit(exp3)
-        Expression.IfThenElse(exp1, e2, e3, tpe, loc)
+        Expression.IfThenElse(exp1, e2, e3, Type.Unit, loc)
 
       /*
        * Branch: Each branch is in tail position.
@@ -116,7 +117,7 @@ object Tailrec extends Phase[Root, Root] {
         val br = br0 map {
           case (sym, exp) => sym -> visit(exp)
         }
-        Expression.Branch(e0, br, tpe, loc)
+        Expression.Branch(e0, br, Type.Unit, loc)
 
       /*
        * ApplyClo.
@@ -129,17 +130,14 @@ object Tailrec extends Phase[Root, Root] {
        */
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         // Check whether this is a self recursive call.
-        if (sym == originalDefnSym) {
-          // We need to make sure that the extra helper parameter is always passed down
-          val endParamExp = Expression.Var(endParam.sym, endParam.tpe, loc)
-          Expression.ApplySelfTail(sym, refreshedDef.fparams, args.appended(endParamExp), tpe, loc)
-        }
-        else if (refreshedDef.sym != sym) {
+        if (originalDefnSym != sym) {
           // Case 1: Tail recursive call.
           Expression.ApplyDefTail(sym, args, tpe, loc)
         } else {
           // Case 2: Self recursive call.
-          Expression.ApplySelfTail(sym, defn.fparams, args, tpe, loc)
+          // We need to make sure that the extra helper parameter is always passed down
+          val endParamExp = Expression.Var(endParam.sym, endParam.tpe, loc)
+          Expression.ApplySelfTail(sym, refreshedDef.fparams, args.appended(endParamExp), Type.Unit, loc)
         }
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
@@ -177,8 +175,8 @@ object Tailrec extends Phase[Root, Root] {
 
         val applySelfExp = Expression.ApplySelfTail(refreshedDef.sym, helperParams, args ::: List(newTailExp), Type.Unit, tagLoc)
 
-        val letExp = Expression.Let(Symbol.freshVarSym(), setNewTail, applySelfExp, applySelfExp.tpe, tagLoc)
-        Expression.Let(newTailSym, consArg, letExp, letExp.tpe, tagLoc)
+        val letExp = Expression.Let(Symbol.freshVarSym(), setNewTail, applySelfExp, Type.Unit, tagLoc)
+        Expression.Let(newTailSym, consArg, letExp, Type.Unit, tagLoc)
 
       /*
        * Other expression: No calls in tail position.
