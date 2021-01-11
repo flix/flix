@@ -70,7 +70,7 @@ object Tailrec extends Phase[Root, Root] {
     val refreshedDef = LiftedAstOps.refreshVarNames(defn)
 
     // Todo: would this ever result in an error? Only when there is trmc in a function without parameters
-    def endType = defn.tpe.arrowResultType
+    val endType = defn.tpe.arrowResultType
 
     val endParam = FormalParam(Symbol.freshVarSym("end"), Modifiers(List(Modifier.Synthetic)),
       endType,
@@ -97,7 +97,7 @@ object Tailrec extends Phase[Root, Root] {
       * Let: The body expression is in tail position.
       * (The value expression is *not* in tail position).
       */
-      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      case Expression.Let(sym, exp1, exp2, _, loc) =>
         val e2 = visit(exp2)
         Expression.Let(sym, exp1, e2, Type.Unit, loc)
 
@@ -105,7 +105,7 @@ object Tailrec extends Phase[Root, Root] {
        * If-Then-Else: Consequent and alternative are both in tail position.
        * (The condition is *not* in tail position).
        */
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
         val e2 = visit(exp2)
         val e3 = visit(exp3)
         Expression.IfThenElse(exp1, e2, e3, Type.Unit, loc)
@@ -113,7 +113,7 @@ object Tailrec extends Phase[Root, Root] {
       /*
        * Branch: Each branch is in tail position.
        */
-      case Expression.Branch(e0, br0, tpe, loc) =>
+      case Expression.Branch(e0, br0, _, loc) =>
         val br = br0 map {
           case (sym, exp) => sym -> visit(exp)
         }
@@ -150,13 +150,12 @@ object Tailrec extends Phase[Root, Root] {
         Expression.SelectChannel(rs, d, tpe, loc)
 
       // Match Nil
-      case Expression.Tag(tagSym, Name.Tag("Nil", nilLoc), Expression.Unit, tagTpe, tagLoc) =>
+      case Expression.Tag(_, Name.Tag("Nil", _), Expression.Unit, _, _) =>
         Expression.Unit
-      //Expression.Var(endParam.sym, tagTpe, tagLoc)
 
       // Match a Cons Tag with 2 elements, the second being a self-recursive call
       case Expression.Tag(sym, Name.Tag("Cons", _),
-      Expression.Tuple(hd :: Expression.ApplyDef(funSym, args, tpeDef, _) :: Nil, tpeTup, locTup), tagTpe, tagLoc) =>
+      Expression.Tuple(hd :: Expression.ApplyDef(funSym, args, _, _) :: Nil, tpeTup, _), tagTpe, tagLoc) =>
         // Bail if not the function of the original definition
         if (funSym != originalDefnSym) return exp0
 
