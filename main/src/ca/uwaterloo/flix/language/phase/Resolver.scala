@@ -125,11 +125,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
     */
   def resolve(c0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
-    case NamedAst.Class(doc, mod, sym, tparam0, superClasses, signatures, loc) => // MATT handle superclasses
+    case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, loc) =>
       for {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigs <- traverse(signatures)(resolve(_, ns0, root))
-      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, sigs, loc)
+        superClasses <- traverse(superClasses0)(lookupClassForExtension(_, ns0, root))
+      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses.map(_.sym), sigs, loc)
   }
 
   /**
@@ -1020,6 +1021,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         getClassAccessibility(clazz, ns0) match {
           case Accessibility.Accessible => clazz.toSuccess
           case Accessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
+          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+        }
+    }
+  }
+
+  // MATT docs
+  def lookupClassForExtension(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
+    val classOpt = tryLookupClass(qname, ns0, root)
+    classOpt match {
+      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
+      case Some(clazz) =>
+        getClassAccessibility(clazz, ns0) match {
+          case Accessibility.Accessible => clazz.toSuccess
+          case Accessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure // MATT different error
           case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
     }
