@@ -109,7 +109,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given class declaration `c0`.
     */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparam0, sigs0, sp2) =>
+    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparam0, superClasses0, sigs0, sp2) => // MATT visit superClasses
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val tparam = visitTypeParam(tparam0)
