@@ -125,7 +125,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
     */
   def resolve(c0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
-    case NamedAst.Class(doc, mod, sym, tparam0, signatures, loc) =>
+    case NamedAst.Class(doc, mod, sym, tparam0, superClasses, signatures, loc) => // MATT handle superclasses
       for {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigs <- traverse(signatures)(resolve(_, ns0, root))
