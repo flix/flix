@@ -87,7 +87,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             }
         }
 
-      case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, sigs, loc) =>
+      case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, superClasses, sigs, loc) => // MATT handle superClasses
         // Check if the class already exists.
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
@@ -342,7 +342,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, mod, ident, tparams0, signatures, loc) =>
+    case WeededAst.Declaration.Class(doc, mod, ident, tparams0, superClasses0, signatures, loc) => // MATT visit superClasses0
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparam = getTypeParamDefaultStar(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
