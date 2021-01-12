@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Modifier, Modifiers}
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.ops.LiftedAstOps
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 
@@ -72,9 +72,9 @@ object Tailrec extends Phase[Root, Root] {
     // Todo: would this ever result in an error? Only when there is trmc in a function without parameters
     val endType = defn.tpe.arrowResultType
 
-    val endParam = FormalParam(Symbol.freshVarSym("end"), Modifiers(List(Modifier.Synthetic)),
+    val endParam = FormalParam(Symbol.freshVarSym("end", defn.loc), Modifiers(List(Modifier.Synthetic)),
       endType,
-      SourceLocation.Generated)
+      defn.loc)
     val helperParams = refreshedDef.fparams.appended(endParam)
 
     // Generate the type for the new function
@@ -150,8 +150,8 @@ object Tailrec extends Phase[Root, Root] {
         Expression.SelectChannel(rs, d, tpe, loc)
 
       // Match Nil
-      case Expression.Tag(_, Name.Tag("Nil", _), Expression.Unit, _, _) =>
-        Expression.Unit
+      case Expression.Tag(_, Name.Tag("Nil", _), Expression.Unit(unitLoc), _, _) =>
+        Expression.Unit(unitLoc)
 
       // Match a Cons Tag with 2 elements, the second being a self-recursive call
       case Expression.Tag(sym, Name.Tag("Cons", _),
@@ -160,12 +160,12 @@ object Tailrec extends Phase[Root, Root] {
         if (funSym != originalDefnSym) return exp0
 
         //println("Found a cons in helper")
-        val flixNil = Expression.Tag(sym, Name.Tag("Nil", tagLoc), Expression.Unit, tagTpe, tagLoc)
+        val flixNil = Expression.Tag(sym, Name.Tag("Nil", tagLoc), Expression.Unit(tagLoc), tagTpe, tagLoc)
         val consArg = Expression.Tag(sym, Name.Tag("Cons", tagLoc),
           Expression.Tuple(hd :: flixNil :: Nil, tpeTup, tagLoc)
           , tagTpe, tagLoc)
 
-        val newTailSym = Symbol.freshVarSym("new_tail")
+        val newTailSym = Symbol.freshVarSym("new_tail", tagLoc)
         val newTailExp = Expression.Var(newTailSym, tagTpe, tagLoc)
 
         val endParamExp = Expression.Var(endParam.sym, endParam.tpe, tagLoc)
@@ -174,7 +174,7 @@ object Tailrec extends Phase[Root, Root] {
 
         val applySelfExp = Expression.ApplySelfTail(refreshedDef.sym, helperParams, args ::: List(newTailExp), Type.Unit, tagLoc)
 
-        val letExp = Expression.Let(Symbol.freshVarSym(), setNewTail, applySelfExp, Type.Unit, tagLoc)
+        val letExp = Expression.Let(Symbol.freshVarSym("tmp", tagLoc), setNewTail, applySelfExp, Type.Unit, tagLoc)
         Expression.Let(newTailSym, consArg, letExp, Type.Unit, tagLoc)
 
       /*
@@ -268,15 +268,15 @@ object Tailrec extends Phase[Root, Root] {
           helperMap(funDefnSym).sym
         } else {
           // Add the new helper to the map
-          val newSym = Symbol.freshDefnSym(funDefnSym.namespace, funDefnSym.text + "helper")
+          val newSym = Symbol.freshDefnSym(funDefnSym.namespace, funDefnSym.text + "helper", funDefnSym.loc)
           helperMap.addOne(defn.sym, defn.copy(sym = newSym))
 
           newSym
         }
 
 
-        val flixNil = Expression.Tag(sym, Name.Tag("Nil", locTag), Expression.Unit, tpeTag, locTag)
-        val retVarSym = Symbol.freshVarSym("ret")
+        val flixNil = Expression.Tag(sym, Name.Tag("Nil", locTag), Expression.Unit(locTag), tpeTag, locTag)
+        val retVarSym = Symbol.freshVarSym("ret", locTag)
         val retVarExp = Expression.Var(retVarSym, tpeTag, locTag)
         val consArg = Expression.Tag(sym, Name.Tag("Cons", locTag),
           Expression.Tuple(hd :: flixNil :: Nil, tpeTup, locTag)
@@ -284,7 +284,7 @@ object Tailrec extends Phase[Root, Root] {
 
 
         val applyHelperExp = Expression.ApplyDef(helperSym, args ::: List(retVarExp), Type.Unit, locTag)
-        val retLetExp = Expression.Let(Symbol.freshVarSym(), applyHelperExp, retVarExp, tpeTag, locTag)
+        val retLetExp = Expression.Let(Symbol.freshVarSym("tmp", locTag), applyHelperExp, retVarExp, tpeTag, locTag)
         Expression.Let(retVarSym, consArg, retLetExp, tpeTag, locTag)
       /*
        * Other expression: No calls in tail position.
