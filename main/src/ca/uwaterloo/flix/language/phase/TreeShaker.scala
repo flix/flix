@@ -31,10 +31,9 @@ import ca.uwaterloo.flix.util.Validation._
   *
   * (a) The main function is always reachable.
   * (b) A function marked with @benchmark or @test is reachable.
-  * (c) A function that appears in a lattice component.
-  * (d) A function that appears in a property.
-  * (e) A function that appears as a special operator.
-  * (f) Appear in a function which itself is reachable.
+  * (c) A function that appears as a lattice operator.
+  * (d) A function that appears as a special operator.
+  * (e) Appear in a function which itself is reachable.
   *
   */
 object TreeShaker extends Phase[Root, Root] {
@@ -43,63 +42,59 @@ object TreeShaker extends Phase[Root, Root] {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("TreeShaker") {
-    // Compute all functions that are immediately reachable.
+    // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
-    // Compute all reachable symbols.
+    // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReachable(initReach, visitSym(_, root))
 
-    // Compute the live defs.
-    val liveDefs = root.defs.filter {
+    // Filter the reachable definitions.
+    val newDefs = root.defs.filter {
       case (sym, _) => allReachable.contains(sym)
     }
 
     // Reassemble the AST.
-    root.copy(defs = liveDefs).toSuccess
+    root.copy(defs = newDefs).toSuccess
   }
 
   /**
-    * Returns all symbols that are always reachable.
+    * Returns the symbols that are always reachable.
     */
   private def initReachable(root: Root): Set[Symbol.DefnSym] = {
+    // A set used to collect the symbols of reachable functions.
+    var reachable: Set[Symbol.DefnSym] = root.reachable
 
-    /**
-      * A set used to collect the definition symbols of reachable functions.
-      */
-    var reachableFunctions: Set[Symbol.DefnSym] = root.reachable
+    //
+    // (a) The main function is always reachable.
+    //
+    reachable = reachable + Symbol.Main
 
-    /*
-     * (a) The main function is always reachable.
-     */
-    reachableFunctions = reachableFunctions + Symbol.Main
-
-    /*
-     * (b) A function marked with @benchmark, @test or as an entry point is reachable.
-     */
+    //
+    // (b) A function annotated with @benchmark or @test is always reachable.
+    //
     for ((sym, defn) <- root.defs) {
-      val isEntryPoint = defn.mod.isEntryPoint
       val isBenchmark = defn.ann.isBenchmark
       val isTest = defn.ann.isTest
-      if (isEntryPoint || isBenchmark || isTest) {
-        reachableFunctions = reachableFunctions + sym
+      if (isBenchmark || isTest) {
+        reachable = reachable + sym
       }
     }
 
-    /*
-     * (c) A function that appears in a lattice component.
-     */
-    reachableFunctions = reachableFunctions ++ root.latticeOps.values.map {
-      case LatticeOps(tpe, bot, equ, leq, lub, glb) =>
-        Set(bot, equ, leq, lub, glb)
-    }.fold(Set())(_ ++ _)
+    //
+    // (c) A function that appears as a lattice operator.
+    //
+    for (LatticeOps(_, bot, equ, leq, lub, glb) <- root.latticeOps.values) {
+      reachable = reachable + bot + equ + leq + lub + glb
+    }
 
-    /*
-     * (e) A function that appears as a special operator.
-     */
-    reachableFunctions = reachableFunctions ++ root.specialOps.values.flatMap(_.values)
+    //
+    // (d) A function that appears as a special operator.
+    //
+    for (syms <- root.specialOps.values) {
+      reachable = reachable ++ syms.values
+    }
 
-    // Return the result.
-    reachableFunctions
+    reachable
   }
 
   /**
