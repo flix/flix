@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.util
 
+import java.util
 import java.util.concurrent.{Callable, Executors}
+
 import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
-
 import ca.uwaterloo.flix.api.Flix
 
 object ParOps {
@@ -60,7 +61,12 @@ object ParOps {
   /**
     * Computes the set of reachables Ts starting from `init` and using the `next` function.
     */
-  def parReachable[T](init: Set[T], next: T => Callable[Set[T]])(implicit flix: Flix): Set[T] = {
+  def parReachable[T](init: Set[T], next: T => Set[T])(implicit flix: Flix): Set[T] = {
+    // A wrapper for the next function.
+    class NextCallable(t: T) extends Callable[Set[T]] {
+      override def call(): Set[T] = next(t)
+    }
+
     // Initialize a new executor service.
     val executorService = Executors.newFixedThreadPool(6) // TODO: Threads
 
@@ -73,8 +79,14 @@ object ParOps {
     // Iterate until the fixpoint is reached.
     while (delta.nonEmpty) {
 
-      // Invoke `next` in parallel.
-      val futures = executorService.invokeAll(delta.map(next).asJavaCollection)
+      // Construct a collection of callables.
+      val callables = new util.ArrayList[NextCallable]
+      for (sym <- delta) {
+        callables.add(new NextCallable(sym))
+      }
+
+      // Invoke all callables in parallel.
+      val futures = executorService.invokeAll(callables)
 
       // Compute the set of all inferred Ts in this iteration.
       // May include Ts discovered in previous iterations.
