@@ -33,7 +33,7 @@ object ClassEnvironment {
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
   def entail(tconstrs0: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Validation[Unit, UnificationError] = {
 
-    val superClasses = tconstrs0.flatMap(bySuper)
+    val superClasses = tconstrs0.flatMap(bySuper(_, classEnv))
 
     // Case 1: tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
     if (superClasses.contains(tconstr)) {
@@ -111,11 +111,17 @@ object ClassEnvironment {
   }
 
   /**
-    * Returns the list of constraints that hold if the given constraint `tconstr` hold, using the superclasses of the constraint.
-    * (Currently only returns the given constraint since superclasses are not yet implemented.)
+    * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the superclasses of the constraint.
     */
-  private def bySuper(tconstr: Ast.TypeConstraint)(implicit flix: Flix): List[Ast.TypeConstraint] = {
-    List(tconstr)
+  private def bySuper(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): List[Ast.TypeConstraint] = {
+
+    val directSupers = classEnv.getOrElse(tconstr.sym, (Nil, Nil))._1
+
+    // Walk the superclass tree.
+    // There may be duplicates, but this will terminate since superclasses must be acyclic.
+    tconstr :: directSupers.flatMap {
+      superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg), classEnv)
+    }
   }
 
   /**
