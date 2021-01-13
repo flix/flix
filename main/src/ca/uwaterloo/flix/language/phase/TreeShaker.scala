@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
-import scala.collection.mutable
-
 /**
   * The Tree Shaking phase removes all unused function definitions.
   *
@@ -45,16 +43,35 @@ object TreeShaker extends Phase[Root, Root] {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("TreeShaker") {
+    // Compute all functions that are immediately reachable.
+    val initReach = initReachable(root)
+
+    // Compute all reachable symbols.
+    val allReachable = ParOps.parReachable(initReach, visitSym(_, root))
+
+    // Compute the live defs.
+    val liveDefs = root.defs.filter {
+      case (sym, _) => allReachable.contains(sym)
+    }
+
+    // Reassemble the AST.
+    root.copy(defs = liveDefs).toSuccess
+  }
+
+  /**
+    * Returns all symbols that are always reachable.
+    */
+  private def initReachable(root: Root): Set[Symbol.DefnSym] = {
 
     /**
       * A set used to collect the definition symbols of reachable functions.
       */
-    val reachableFunctions: mutable.Set[Symbol.DefnSym] = mutable.Set.empty ++ root.reachable
+    var reachableFunctions: Set[Symbol.DefnSym] = root.reachable
 
     /*
-     * (a) The main function is always reachable (if it exists).
+     * (a) The main function is always reachable.
      */
-    reachableFunctions.add(Symbol.Main)
+    reachableFunctions = reachableFunctions + Symbol.Main
 
     /*
      * (b) A function marked with @benchmark, @test or as an entry point is reachable.
@@ -64,14 +81,14 @@ object TreeShaker extends Phase[Root, Root] {
       val isBenchmark = defn.ann.isBenchmark
       val isTest = defn.ann.isTest
       if (isEntryPoint || isBenchmark || isTest) {
-        reachableFunctions.add(sym)
+        reachableFunctions = reachableFunctions + sym
       }
     }
 
     /*
      * (c) A function that appears in a lattice component.
      */
-    reachableFunctions ++= root.latticeOps.values.map {
+    reachableFunctions = reachableFunctions ++ root.latticeOps.values.map {
       case LatticeOps(tpe, bot, equ, leq, lub, glb) =>
         Set(bot, equ, leq, lub, glb)
     }.fold(Set())(_ ++ _)
@@ -79,18 +96,10 @@ object TreeShaker extends Phase[Root, Root] {
     /*
      * (e) A function that appears as a special operator.
      */
-    reachableFunctions ++= root.specialOps.values.flatMap(_.values)
+    reachableFunctions = reachableFunctions ++ root.specialOps.values.flatMap(_.values)
 
-    // Compute all reachable symbols.
-    val reach = ParOps.parReachable(reachableFunctions.toSet, visitSym(_, root))
-
-    // Compute the live defs.
-    val liveDefs = root.defs.filter {
-      case (sym, _) => reach.contains(sym)
-    }
-
-    // Reassemble the AST.
-    root.copy(defs = liveDefs).toSuccess
+    // Return the result.
+    reachableFunctions
   }
 
   /**
