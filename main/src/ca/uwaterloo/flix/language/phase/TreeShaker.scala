@@ -16,13 +16,15 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.util.concurrent.{Callable, Executors}
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -44,21 +46,6 @@ object TreeShaker extends Phase[Root, Root] {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("TreeShaker") {
-    /**
-      * A set used to collect the definition symbols of reachable functions.
-      */
-    val reachableFunctions: mutable.Set[Symbol.DefnSym] = mutable.Set.empty ++ root.reachable
-
-    /**
-      * A queue of function definitions to be processed recursively.
-      *
-      * For example, if the queue contains the entry:
-      *
-      * -   f
-      *
-      * it means that the function definition f should be considered to determine new reachable functions.
-      */
-    val queue: mutable.Queue[Def] = mutable.Queue.empty
 
     /**
       * Returns the function symbols reachable from the given Expression `e0`.
@@ -330,24 +317,22 @@ object TreeShaker extends Phase[Root, Root] {
       }
     }
 
-    /**
-      * Adds the function `sym` to the set of reachable functions.
-      */
-    def newReachableDefinitionSymbol(sym: Symbol.DefnSym): Unit = {
-      // If `sym` has not already been determined reachable, look up its definition in `root`.
-      if (!reachableFunctions.contains(sym)) {
+    class CallMeMaybe(sym: Symbol.DefnSym) extends Callable[Set[Symbol.DefnSym]] {
+      override def call(): Set[Symbol.DefnSym] = {
         root.defs.get(sym) match {
-          case Some(defn) =>
-            reachableFunctions.add(sym)
-            queue.enqueue(defn)
-          // If `sym` is not defined in `root`, leave this for error checking later.
-          case None =>
+          case None => Set.empty
+          case Some(defn) =>       visitExp(defn.exp)
         }
       }
     }
 
+    /**
+      * A set used to collect the definition symbols of reachable functions.
+      */
+    val reachableFunctions: mutable.Set[Symbol.DefnSym] = mutable.Set.empty ++ root.reachable
+
     /*
-     * (a) The main function is always reachable.
+     * (a) The main function is always reachable (if it exists).
      */
     reachableFunctions.add(Symbol.Main)
 
@@ -383,30 +368,36 @@ object TreeShaker extends Phase[Root, Root] {
      */
     reachableFunctions ++= root.specialOps.values.flatMap(_.values)
 
-    /*
-     * (f) Appear in a function which itself is reachable.
-     */
-    reachableFunctions.foreach {
-      root.defs.get(_) match {
-        case None => // nop
-        case Some(defn) => queue.enqueue(defn)
+    val executorService = Executors.newFixedThreadPool(6) // TODO: Threads
+
+    var reach = Set.empty[Symbol.DefnSym]
+    var delta = Set.empty[Symbol.DefnSym]
+
+    reach = reachableFunctions.toSet
+    delta = reachableFunctions.toSet
+    while (delta.nonEmpty) {
+      import scala.jdk.CollectionConverters._
+      val futures = executorService.invokeAll(delta.map(sym => new CallMeMaybe(sym)).asJavaCollection)
+
+      val newReach = futures.asScala.foldLeft(Set.empty[Symbol.DefnSym]) {
+        case (acc, future) => acc ++ future.get()
       }
+
+      delta = newReach -- reach
+      reach = reach ++ delta
+
     }
 
-    // Compute transitively reachable function.
-    while (queue.nonEmpty) {
-      // Extract a function body from the queue and search for other reachable functions.
-      for (sym <- visitExp(queue.dequeue().exp)) {
-        newReachableDefinitionSymbol(sym)
-      }
-    }
+    executorService.shutdown()
 
     // Compute the live defs.
     val liveDefs = root.defs.filter {
-      case (sym, _) => reachableFunctions.contains(sym)
+      case (sym, _) => reach.contains(sym)
     }
 
     // Reassemble the AST.
     root.copy(defs = liveDefs).toSuccess
   }
+
+
 }
