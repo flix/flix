@@ -104,7 +104,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
 
     def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-      case ResolvedAst.Class(doc, mod, sym, tparam, signatures, loc) =>
+      case ResolvedAst.Class(doc, mod, sym, tparam, superClasses0, signatures, loc) => // MATT handle superclasses
         val tparams = getTypeParams(List(tparam))
         for {
           sigs <- Validation.traverse(signatures)(visitSig)
