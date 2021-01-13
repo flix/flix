@@ -68,7 +68,7 @@ object ParOps {
     }
 
     // Initialize a new executor service.
-    val executorService = Executors.newFixedThreadPool(6) // TODO: Threads
+    val executorService = Executors.newFixedThreadPool(flix.options.threads)
 
     // A mutable variable that holds the currently reachable Ts.
     var reach = init

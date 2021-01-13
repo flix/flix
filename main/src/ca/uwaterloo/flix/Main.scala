@@ -91,7 +91,7 @@ object Main {
       optimizations = optimizations,
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       quickchecker = cmdOpts.quickchecker,
-      threads = cmdOpts.threads,
+      threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
