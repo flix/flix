@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -42,15 +42,98 @@ import scala.collection.mutable
   *
   */
 object TreeShaker extends Phase[Root, Root] {
+
   /**
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("TreeShaker") {
 
     /**
-      * Returns the function symbols reachable from the given Expression `e0`.
+      * A set used to collect the definition symbols of reachable functions.
       */
-    def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
+    val reachableFunctions: mutable.Set[Symbol.DefnSym] = mutable.Set.empty ++ root.reachable
+
+    /*
+     * (a) The main function is always reachable (if it exists).
+     */
+    reachableFunctions.add(Symbol.Main)
+
+    /*
+     * (b) A function marked with @benchmark, @test or as an entry point is reachable.
+     */
+    for ((sym, defn) <- root.defs) {
+      val isEntryPoint = defn.mod.isEntryPoint
+      val isBenchmark = defn.ann.isBenchmark
+      val isTest = defn.ann.isTest
+      if (isEntryPoint || isBenchmark || isTest) {
+        reachableFunctions.add(sym)
+      }
+    }
+
+    /*
+     * (c) A function that appears in a lattice component.
+     */
+    reachableFunctions ++= root.latticeOps.values.map {
+      case LatticeOps(tpe, bot, equ, leq, lub, glb) =>
+        Set(bot, equ, leq, lub, glb)
+    }.fold(Set())(_ ++ _)
+
+    /*
+     * (e) A function that appears as a special operator.
+     */
+    reachableFunctions ++= root.specialOps.values.flatMap(_.values)
+
+    val executorService = Executors.newFixedThreadPool(6) // TODO: Threads
+
+    var reach = Set.empty[Symbol.DefnSym]
+    var delta = Set.empty[Symbol.DefnSym]
+
+    reach = reachableFunctions.toSet
+    delta = reachableFunctions.toSet
+    while (delta.nonEmpty) {
+      import scala.jdk.CollectionConverters._
+      val futures = executorService.invokeAll(delta.map(sym => new ComputeReachable(sym)(root)).asJavaCollection)
+
+      val newReach = futures.asScala.foldLeft(Set.empty[Symbol.DefnSym]) {
+        case (acc, future) => acc ++ future.get()
+      }
+
+      delta = newReach -- reach
+      reach = reach ++ delta
+
+    }
+
+    executorService.shutdown()
+
+    // Compute the live defs.
+    val liveDefs = root.defs.filter {
+      case (sym, _) => reach.contains(sym)
+    }
+
+    // Reassemble the AST.
+    root.copy(defs = liveDefs).toSuccess
+  }
+
+
+
+  /**
+    * A callable that returns the symbols reachable from the given symbol `sym`.
+    */
+  private class ComputeReachable(sym: Symbol.DefnSym)(implicit root: Root) extends Callable[Set[Symbol.DefnSym]] {
+    /**
+      * Returns the symbols reachable from the given symbol `sym`.
+      */
+    override def call(): Set[Symbol.DefnSym] = {
+      root.defs.get(sym) match {
+        case None => Set.empty
+        case Some(defn) => visitExp(defn.exp)
+      }
+    }
+
+    /**
+      * Returns the function symbols reachable from the given expression `e0`.
+      */
+    private def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
       case Expression.Unit(_) =>
         Set.empty
 
@@ -268,12 +351,12 @@ object TreeShaker extends Phase[Root, Root] {
     /**
       * Returns the function symbols reachable from `es`.
       */
-    def visitExps(es: List[Expression]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
+    private def visitExps(es: List[Expression]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
 
     /**
       * Returns the function symbols reachable from the given constraint `c0`.
       */
-    def visitConstraint(c0: Constraint): Set[Symbol.DefnSym] = {
+    private def visitConstraint(c0: Constraint): Set[Symbol.DefnSym] = {
       val headSymbols = c0.head match {
         case Predicate.Head.Atom(_, _, terms, tpe, loc) =>
           terms.map(visitHeadTerm).fold(Set.empty)(_ ++ _)
@@ -296,7 +379,7 @@ object TreeShaker extends Phase[Root, Root] {
     /**
       * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `head`.
       */
-    def visitHeadTerm(h0: Term.Head): Set[Symbol.DefnSym] = {
+    private def visitHeadTerm(h0: Term.Head): Set[Symbol.DefnSym] = {
       h0 match {
         case Term.Head.QuantVar(sym, tpe, loc) => Set.empty
         case Term.Head.CapturedVar(sym, tpe, loc) => Set.empty
@@ -308,7 +391,7 @@ object TreeShaker extends Phase[Root, Root] {
     /**
       * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `body`.
       */
-    def visitBodyTerm(b0: Term.Body): Set[Symbol.DefnSym] = {
+    private def visitBodyTerm(b0: Term.Body): Set[Symbol.DefnSym] = {
       b0 match {
         case Term.Body.Wild(tpe, loc) => Set.empty
         case Term.Body.QuantVar(sym, tpe, loc) => Set.empty
@@ -317,87 +400,6 @@ object TreeShaker extends Phase[Root, Root] {
       }
     }
 
-    class CallMeMaybe(sym: Symbol.DefnSym) extends Callable[Set[Symbol.DefnSym]] {
-      override def call(): Set[Symbol.DefnSym] = {
-        root.defs.get(sym) match {
-          case None => Set.empty
-          case Some(defn) =>       visitExp(defn.exp)
-        }
-      }
-    }
-
-    /**
-      * A set used to collect the definition symbols of reachable functions.
-      */
-    val reachableFunctions: mutable.Set[Symbol.DefnSym] = mutable.Set.empty ++ root.reachable
-
-    /*
-     * (a) The main function is always reachable (if it exists).
-     */
-    reachableFunctions.add(Symbol.Main)
-
-    /*
-     * (b) A function marked with @benchmark, @test or as an entry point is reachable.
-     */
-    for ((sym, defn) <- root.defs) {
-      val isEntryPoint = defn.mod.isEntryPoint
-      val isBenchmark = defn.ann.isBenchmark
-      val isTest = defn.ann.isTest
-      if (isEntryPoint || isBenchmark || isTest) {
-        reachableFunctions.add(sym)
-      }
-    }
-
-    /*
-     * (c) A function that appears in a lattice component.
-     */
-    reachableFunctions ++= root.latticeOps.values.map {
-      case LatticeOps(tpe, bot, equ, leq, lub, glb) =>
-        Set(bot, equ, leq, lub, glb)
-    }.fold(Set())(_ ++ _)
-
-    /*
-     * (d) A function that appears in a property.
-     */
-    reachableFunctions ++= root.properties.map {
-      case Property(law, defn, exp) => visitExp(exp) + law + defn
-    }.fold(Set())(_ ++ _)
-
-    /*
-     * (e) A function that appears as a special operator.
-     */
-    reachableFunctions ++= root.specialOps.values.flatMap(_.values)
-
-    val executorService = Executors.newFixedThreadPool(6) // TODO: Threads
-
-    var reach = Set.empty[Symbol.DefnSym]
-    var delta = Set.empty[Symbol.DefnSym]
-
-    reach = reachableFunctions.toSet
-    delta = reachableFunctions.toSet
-    while (delta.nonEmpty) {
-      import scala.jdk.CollectionConverters._
-      val futures = executorService.invokeAll(delta.map(sym => new CallMeMaybe(sym)).asJavaCollection)
-
-      val newReach = futures.asScala.foldLeft(Set.empty[Symbol.DefnSym]) {
-        case (acc, future) => acc ++ future.get()
-      }
-
-      delta = newReach -- reach
-      reach = reach ++ delta
-
-    }
-
-    executorService.shutdown()
-
-    // Compute the live defs.
-    val liveDefs = root.defs.filter {
-      case (sym, _) => reach.contains(sym)
-    }
-
-    // Reassemble the AST.
-    root.copy(defs = liveDefs).toSuccess
   }
-
 
 }
