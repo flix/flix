@@ -83,27 +83,7 @@ object TreeShaker extends Phase[Root, Root] {
      */
     reachableFunctions ++= root.specialOps.values.flatMap(_.values)
 
-    val executorService = Executors.newFixedThreadPool(6) // TODO: Threads
-
-    var reach = Set.empty[Symbol.DefnSym]
-    var delta = Set.empty[Symbol.DefnSym]
-
-    reach = reachableFunctions.toSet
-    delta = reachableFunctions.toSet
-    while (delta.nonEmpty) {
-      import scala.jdk.CollectionConverters._
-      val futures = executorService.invokeAll(delta.map(sym => new ComputeReachable(sym)(root)).asJavaCollection)
-
-      val newReach = futures.asScala.foldLeft(Set.empty[Symbol.DefnSym]) {
-        case (acc, future) => acc ++ future.get()
-      }
-
-      delta = newReach -- reach
-      reach = reach ++ delta
-
-    }
-
-    executorService.shutdown()
+    val reach  = foo(reachableFunctions.toSet, sym => new ComputeReachable(sym, root))
 
     // Compute the live defs.
     val liveDefs = root.defs.filter {
@@ -115,11 +95,36 @@ object TreeShaker extends Phase[Root, Root] {
   }
 
 
+  private def foo(init: Set[Symbol.DefnSym], next: Symbol.DefnSym => Callable[Set[Symbol.DefnSym]])(implicit flix: Flix): Set[Symbol.DefnSym] = {
+
+    import scala.jdk.CollectionConverters._
+
+    val executorService = Executors.newFixedThreadPool(6) // TODO: Threads
+
+    var reach = init
+    var delta = init
+    while (delta.nonEmpty) {
+
+      val futures = executorService.invokeAll(delta.map(next).asJavaCollection)
+
+      val newReach = futures.asScala.foldLeft(Set.empty[Symbol.DefnSym]) {
+        case (acc, future) => acc ++ future.get()
+      }
+
+      delta = newReach -- reach
+      reach = reach ++ delta
+
+    }
+
+    executorService.shutdown()
+    reach
+  }
+
 
   /**
     * A callable that returns the symbols reachable from the given symbol `sym`.
     */
-  private class ComputeReachable(sym: Symbol.DefnSym)(implicit root: Root) extends Callable[Set[Symbol.DefnSym]] {
+  private class ComputeReachable(sym: Symbol.DefnSym, root: Root) extends Callable[Set[Symbol.DefnSym]] {
     /**
       * Returns the symbols reachable from the given symbol `sym`.
       */
