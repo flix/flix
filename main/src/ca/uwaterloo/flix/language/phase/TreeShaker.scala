@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -83,7 +83,8 @@ object TreeShaker extends Phase[Root, Root] {
      */
     reachableFunctions ++= root.specialOps.values.flatMap(_.values)
 
-    val reach  = foo(reachableFunctions.toSet, sym => new ComputeReachable(sym, root))
+    // Compute all reachable symbols.
+    val reach  = ParOps.parReachable(reachableFunctions.toSet, (sym: Symbol.DefnSym) => new ComputeReachable(sym, root))
 
     // Compute the live defs.
     val liveDefs = root.defs.filter {
@@ -93,33 +94,6 @@ object TreeShaker extends Phase[Root, Root] {
     // Reassemble the AST.
     root.copy(defs = liveDefs).toSuccess
   }
-
-
-  private def foo(init: Set[Symbol.DefnSym], next: Symbol.DefnSym => Callable[Set[Symbol.DefnSym]])(implicit flix: Flix): Set[Symbol.DefnSym] = {
-
-    import scala.jdk.CollectionConverters._
-
-    val executorService = Executors.newFixedThreadPool(6) // TODO: Threads
-
-    var reach = init
-    var delta = init
-    while (delta.nonEmpty) {
-
-      val futures = executorService.invokeAll(delta.map(next).asJavaCollection)
-
-      val newReach = futures.asScala.foldLeft(Set.empty[Symbol.DefnSym]) {
-        case (acc, future) => acc ++ future.get()
-      }
-
-      delta = newReach -- reach
-      reach = reach ++ delta
-
-    }
-
-    executorService.shutdown()
-    reach
-  }
-
 
   /**
     * A callable that returns the symbols reachable from the given symbol `sym`.
