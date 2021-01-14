@@ -16,13 +16,13 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatKind, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
+
+import java.lang.reflect.{Constructor, Field, Method}
 
 /**
   * A common super-type for resolution errors.
@@ -525,6 +525,28 @@ object ResolutionError {
       vt << "Available fields:" << NewLine
       for (field <- fields) {
         vt << "  " << stripAccessModifier(field.toString) << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
+    * An error raise to indicate a superclass cycle.
+    *
+    * @param path the superclass path from a class to itself.
+    * @param loc  the location where the error occurred.
+    */
+  case class SuperclassCycle(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
+    override def summary: String = "Superclass cycle"
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << Code(loc, "Superclass cycle.") << NewLine
+      vt << NewLine
+      for (List(superclass, subclass) <- path.sliding(2)) {
+        vt << s"$subclass extends $superclass" << NewLine
       }
       vt
     }

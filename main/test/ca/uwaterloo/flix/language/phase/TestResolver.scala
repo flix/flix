@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -932,5 +932,53 @@ class TestResolver extends FunSuite with TestUtils {
     val input = "def f(a: (Int, true)): Int = 1"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("SuperclassCycle.01") {
+    val input = "class A[a] extends [A]"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SuperclassCycle](result)
+  }
+
+  test("SuperclassCycle.02") {
+    val input =
+      """
+        |class A[a] extends [B]
+        |class B[a] extends [A]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SuperclassCycle](result)
+  }
+
+  test("SuperclassCycle.03") {
+    val input =
+      """
+        |class A[a] extends [B]
+        |class B[a] extends [C]
+        |class C[a] extends [A]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SuperclassCycle](result)
+  }
+
+  test("SuperclassCycle.04") {
+    val input =
+      """
+        |class A[a] extends [A, B]
+        |class B[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SuperclassCycle](result)
+  }
+
+  test("SuperclassCycle.05") {
+    val input =
+      """
+        |class A[a] extends [B]
+        |class B[a] extends [A, C]
+        |class C[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SuperclassCycle](result)
   }
 }

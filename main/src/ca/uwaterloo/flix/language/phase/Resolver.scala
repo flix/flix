@@ -16,15 +16,14 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.collection.mutable
 
 /**
@@ -85,6 +84,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
       properties <- propertiesVal
+      _ <- checkSuperclassDag(classes.toMap)
     } yield ResolvedAst.Root(
       classes.toMap, combine(instances), definitions.toMap, enums.toMap, properties.flatten, root.reachable, root.sources
     )
@@ -97,6 +97,47 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     list.foldLeft(Map.empty[K, List[V]]) {
       case (acc, (key, value)) => acc + (key -> (value ++ acc.getOrElse(key, Nil)))
     }
+  }
+
+  /**
+    * Checks that the superclasses form a DAG (no cycles).
+    */
+  // TODO improve this algo
+  private def checkSuperclassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Class]): Validation[Unit, ResolutionError] = {
+
+    /**
+      * Performs a depth-first search on superclasses, starting from `clazz`, returning a list of acyclic classes.
+      */
+    def dfs(clazz: ResolvedAst.Class, path: List[Symbol.ClassSym]): Validation[List[Symbol.ClassSym], ResolutionError] = {
+      if (path.contains(clazz.sym)) {
+        // Case 1: We already saw this class. Create the cycle and report an error for each class in the cycle.
+        val cycle = clazz.sym :: path.takeWhile(_ != clazz.sym) ++ List(clazz.sym)
+        val errors = cycle.map {
+          sym => ResolutionError.SuperclassCycle(cycle, sym.loc)
+        }
+        Validation.Failure(LazyList.from(errors))
+      } else {
+        // Case 2: We haven't seen this class. Add it to the path and the list of checked nodes and recurse on the super classes.
+        fold(clazz.superClasses, List(clazz.sym)) {
+          (acc, superClass) => dfs(classes(superClass), clazz.sym :: path).map(acc.concat)
+        }
+      }
+    }
+
+    // Check each class for cycles
+    val checked = fold(classes.values, Set.empty[Symbol.ClassSym]) {
+      case (visited, clazz) =>
+        if (visited.contains(clazz.sym)) {
+          // Case 1: We already checked this class while exploring from another node. Skip it.
+          visited.toSuccess
+        } else {
+          // Case 2: We haven't checked this class. Run the check and add it to the checked list.
+          dfs(clazz, List.empty).map(visited ++ _)
+        }
+    }
+
+    // Ignore the checked list.
+    checked.map(_ => ())
   }
 
   object Constraints {
