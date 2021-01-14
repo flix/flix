@@ -1067,7 +1067,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of extension.
+    */
   // MATT test
   def lookupClassForExtension(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
     val classOpt = tryLookupClass(qname, ns0, root)
@@ -1076,7 +1078,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case Accessibility.Accessible => clazz.toSuccess
-          case Accessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure // MATT different error
+          case Accessibility.Sealed => ResolutionError.ExtendSealedClass(clazz.sym, qname.loc).toFailure
           case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
     }
