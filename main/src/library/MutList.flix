@@ -28,6 +28,10 @@ instance ToString[MutList[a]] with [a : ToString] {
     }
 }
 
+instance Functor[MutList] {
+    def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
+}
+
 namespace MutList {
 
     ///

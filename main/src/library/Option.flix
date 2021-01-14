@@ -89,6 +89,10 @@ instance Order[Option[a]] with [a : Order] {
 
 }
 
+instance Functor[Option] {
+    def map(f: a -> b & e, o: Option[a]): Option[b] & e = Option.map(f, o)
+}
+
 namespace Option {
 
     ///
@@ -547,25 +551,25 @@ namespace Option {
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
             find(g, find(f, o)) === find(x -> f(x) and g(x), o)
 
-    @lint
-    def mapIdentity(): Bool =
-        forall [a] (o: Option[a]).
-            map(x -> x, o) === o
-
-    @lint
-    def mapMap1(): Bool =
-        forall [a, b, c] (f: a -> b, g: b -> c, o: Option[a]).
-            map(g, map(f, o)) === map(f >> g, o)
-
-    @lint
-    def mapMap2(): Bool =
-        forall [a, b, c] (f: a ~> b, g: b -> c, o: Option[a]).
-            map(g, map(f, o)) === map(f >> g, o)
-
-    @lint
-    def mapMap3(): Bool =
-        forall [a, b, c] (f: a -> b, g: b ~> c, o: Option[a]).
-            map(g, map(f, o)) === map(f >> g, o)
+///    @lint
+///    def mapIdentity(): Bool =
+///        forall [a] (o: Option[a]).
+///            map(x -> x, o) === o
+///
+///    @lint
+///    def mapMap1(): Bool =
+///        forall [a, b, c] (f: a -> b, g: b -> c, o: Option[a]).
+///            map(g, map(f, o)) === map(f >> g, o)
+///
+///    @lint
+///    def mapMap2(): Bool =
+///        forall [a, b, c] (f: a ~> b, g: b -> c, o: Option[a]).
+///            map(g, map(f, o)) === map(f >> g, o)
+///
+///    @lint
+///    def mapMap3(): Bool =
+///        forall [a, b, c] (f: a -> b, g: b ~> c, o: Option[a]).
+///            map(g, map(f, o)) === map(f >> g, o)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 Matthew Lutze
+ *  Copyright 2020 Matthew Lutze, Esben Bjerre
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,15 +21,5 @@ class Functor[m :# Type -> Type] {
     ///
     /// Maps the function `f` over the contents of `x`.
     ///
-    pub def map(f: a -> b, x: m[a]): m[b]
+    pub def map(f: a -> b & e, x: m[a]): m[b] & e
 }
-
-instance Functor[Option] {
-    def map(f: a -> b, x: Option[a]): Option[b] = Option.map(f, x)
-}
-
-instance Functor[List] {
-    def map(f: a -> b, x: List[a]): List[b] = List.map(f, x)
-}
-
-// TODO: move instances and tests to proper namespaces

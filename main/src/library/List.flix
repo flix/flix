@@ -82,6 +82,23 @@ instance Order[List[a]] with [a : Order] {
 
 }
 
+instance Functor[List] {
+    def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
+}
+
+namespace Functor {
+    ///
+    /// Helper function for `map`.
+    ///
+    pub def mapHelper(f: a -> b, xs: List[a], k: List[b] -> List[b]): List[b] = match xs {
+        case Nil => k(Nil)
+        case x :: rs => {
+            let a = f(x);
+            mapHelper(f, rs, ys -> k(a :: ys))
+        }
+    }
+}
+
 namespace List {
 
     ///
@@ -1249,30 +1266,30 @@ namespace List {
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
             Option.find(g, List.find(f, xs)) === find(x -> f(x) and g(x), xs)
 
-    @lint
-    def mapIdentity(): Bool =
-        forall [a] (xs: List[a]).
-            map(x -> x, xs) === xs
-
-    @lint
-    def mapMap1(): Bool =
-        forall [a, b, c] (f: a -> b, g: b -> c, xs: List[a]).
-            map(g, map(f, xs)) === map(f >> g, xs)
-
-    @lint
-    def mapMap2(): Bool =
-        forall [a, b, c] (f: a ~> b, g: b -> c, xs: List[a]).
-            map(g, map(f, xs)) === map(f >> g, xs)
-
-    @lint
-    def mapMap3(): Bool =
-        forall [a, b, c] (f: a -> b, g: b ~> c, xs: List[a]).
-            map(g, map(f, xs)) === map(f >> g, xs)
-
-    @lint
-    def mapZip(): Bool =
-      forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
-        List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === List.map2(f, xs, ys)
+///    @lint
+///    def mapIdentity(): Bool =
+///        forall [a] (xs: List[a]).
+///            map(x -> x, xs) === xs
+///
+///    @lint
+///    def mapMap1(): Bool =
+///        forall [a, b, c] (f: a -> b, g: b -> c, xs: List[a]).
+///            map(g, map(f, xs)) === map(f >> g, xs)
+///
+///    @lint
+///    def mapMap2(): Bool =
+///        forall [a, b, c] (f: a ~> b, g: b -> c, xs: List[a]).
+///            map(g, map(f, xs)) === map(f >> g, xs)
+///
+///    @lint
+///    def mapMap3(): Bool =
+///        forall [a, b, c] (f: a -> b, g: b ~> c, xs: List[a]).
+///            map(g, map(f, xs)) === map(f >> g, xs)
+///
+///    @lint
+///    def mapZip(): Bool =
+///      forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
+///        map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === map2(f, xs, ys)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //
