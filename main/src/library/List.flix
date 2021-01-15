@@ -150,6 +150,40 @@ namespace List {
     }
 
     ///
+    /// Finds the smallest element of `xs` according to the `Order` instance of `a`.
+    ///
+    pub def minimum[a : Order](xs: List[a]): Option[a] = minimumBy((x, y) -> x <=> y, xs)
+
+    ///
+    /// Finds the smallest element of `xs` according to the given comparator `cmp`.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] = match xs {
+        case Nil => None
+        case y :: ys => Some(foldLeft((acc, z) ->
+            match cmp(acc, z) {
+                case GreaterThan => z
+                case _ => acc
+            }, y, ys))
+    }
+
+    ///
+    /// Finds the largest element of `xs` according to the `Order` instance of `a`.
+    ///
+    pub def maximum[a : Order](xs: List[a]): Option[a] = maximumBy((x, y) -> x <=> y, xs)
+
+    ///
+    /// Finds the largest element of `xs` according to the given comparator `cmp`.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] = match xs {
+        case Nil => None
+        case y :: ys => Some(foldLeft((acc, z) ->
+            match cmp(acc, z) {
+                case LessThan => z
+                case _ => acc
+            }, y, ys))
+    }
+
+    ///
     /// Returns the position of `a` in `xs`.
     ///
     /// Returns `-1` if `a` does not exist in `xs`.

@@ -120,6 +120,46 @@ namespace Array {
         exists(y -> y == x, a)
 
     ///
+    /// Finds the smallest element of `a` according to the `Order` instance of `a`.
+    ///
+    pub def minimum[a : Order](a: Array[a]): Option[a] & Impure = minimumBy((x, y) -> x <=> y, a)
+
+    ///
+    /// Finds the smallest element of `a` according to the given comparator `cmp`.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
+        if (length(a) == 0)
+            None
+        else
+            let min = ref a[0];
+            foreach(x ->
+                if (cmp(deref min, x) == GreaterThan)
+                    min := x
+                else
+                    (), a);
+            Some(deref min)
+
+    ///
+    /// Finds the largest element of `a` according to the `Order` instance of `a`.
+    ///
+    pub def maximum[a : Order](a: Array[a]): Option[a] & Impure = maximumBy((x, y) -> x <=> y, a)
+
+    ///
+    /// Finds the largest element of `a` according to the given comparator `cmp`.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
+        if (length(a) == 0)
+            None
+        else
+            let min = ref a[0];
+            foreach(x ->
+                if (cmp(deref min, x) == LessThan)
+                    min := x
+                else
+                    (), a);
+            Some(deref min)
+
+    ///
     /// Alias for `IndexOfLeft`
     ///
     @Time(length(a)) @Space(1)
