@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -136,6 +136,26 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
+    /**
+      * Checks that there is an instance for each superclass of the class of `inst`.
+      */
+    def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) =>
+        val (superclasses, _) = root.classEnv(sym)
+        checkEach(superclasses) {
+          superclass =>
+            val (_, superInsts) = root.classEnv.getOrElse(superclass, (Nil, Nil))
+            // Check each instance of the superclass
+            if (superInsts.exists(superInst => unifiesWith(tpe, superInst.tpe))) {
+              // Case 1: An instance matches. Success.
+              ().toSuccess
+            } else {
+              // Case 2: No instance matches. Error.
+              InstanceError.MissingSuperclassInstance(tpe, sym, superclass, loc).toFailure
+            }
+        }
+    }
+
 
     /**
       * Reassembles a set of instances of the same class.
@@ -151,6 +171,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- Validation.traverse(unchecked)(checkOverlap(_, inst))
             _ <- checkSigMatch(inst)
             _ <- checkOrphan(inst)
+            _ <- checkSuperInstances(inst)
           } yield ()
         case Nil => ().toSuccess
       }
@@ -167,6 +188,16 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
   private def checkEach[In, Error](xs: Iterable[In])(f: In => Validation[Unit, Error]): Validation[Unit, Error] = {
     Validation.fold(xs, ()) {
       case ((), x) => f(x)
+    }
+  }
+
+  /**
+    * Returns true iff `tpe1` unifies with `tpe2`.
+    */
+  private def unifiesWith(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
+    Unification.unifyTypes(tpe1, tpe2) match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
     }
   }
 }

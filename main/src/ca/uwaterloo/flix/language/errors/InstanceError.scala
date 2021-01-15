@@ -178,4 +178,26 @@ object InstanceError {
       vt << Underline("Tip:") << " An instance must be declared in the class's namespace or in the type's namespace."
     }
   }
+
+  /**
+    * Error indicating a missing superclass instance.
+    *
+    * @param tpe the instance type.
+    * @param subclass the subclass symbol.
+    * @param superclass the superclass symbol.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingSuperclassInstance(tpe: Type, subclass: Symbol.ClassSym, superclass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Missing superclass instance."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Missing superclass instance '" << Red(superclass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "' and subclass '" << Red(subclass.name) << "'."
+      vt << NewLine
+      vt << Code(loc, s"missing superclass instance")
+      vt << NewLine
+      vt << Underline("Tip:") << " Create an instance of the superclass."
+    }
+  }
 }

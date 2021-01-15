@@ -406,4 +406,43 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.OrphanInstance](result)
   }
+
+  test("Test.MissingSuperclassInstance.01") {
+    val input =
+      """
+        |class A[a] extends [B]
+        |class B[a]
+        |
+        |instance A[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.MissingSuperclassInstance](result)
+  }
+
+  test("Test.MissingSuperclassInstance.02") {
+    val input =
+      """
+        |class A[a] extends [B, C]
+        |class B[a]
+        |class C[a]
+        |
+        |instance A[Int]
+        |instance B[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.MissingSuperclassInstance](result)
+  }
+
+  test("Test.MissingSuperclassInstance.03") {
+    val input =
+      """
+        |class A[a] extends [B]
+        |class B[a]
+        |
+        |instance A[Int]
+        |instance B[Bool]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.MissingSuperclassInstance](result)
+  }
 }
