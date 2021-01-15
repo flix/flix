@@ -227,28 +227,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "sealed class.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Move the instance to the class's namespace." << NewLine
+      vt << Underline("Tip:") << " Move the instance or subclass to the class's namespace." << NewLine
     }
   }
 
-  /**
-    * Extend Sealed Class Error.
-    *
-    * @param sym the class symbol.
-    * @param loc the location where the error occurred.
-    */
-  case class ExtendSealedClass(sym: Symbol.ClassSym, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Sealed."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Class '" << Red(sym.toString) << s"' is sealed and cannot be extended." << NewLine
-      vt << NewLine
-      vt << Code(loc, "sealed class.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove the sealed modifier." << NewLine
-    }
-  }
   /**
     * Inaccessible Def Error.
     *

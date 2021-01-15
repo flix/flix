@@ -210,6 +210,21 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleClass](result)
   }
 
+  test("InaccessibleClass.04") {
+    val input =
+      """
+        |namespace N {
+        |    class C[a]
+        |}
+        |
+        |namespace O {
+        |    class D[a] extends [N.C]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
   test("SealedClass.01") {
     val input =
       """
@@ -233,6 +248,21 @@ class TestResolver extends FunSuite with TestUtils {
         |
         |    namespace O {
         |        instance N.C[Int]
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SealedClass](result)
+  }
+
+  test("SealedClass.03") {
+    val input =
+      """
+        |namespace N {
+        |    sealed class C[a]
+        |
+        |    namespace O {
+        |        class D[a] extends [N.C]
         |    }
         |}
         |""".stripMargin
