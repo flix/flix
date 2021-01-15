@@ -106,6 +106,22 @@ namespace Test/Dec/Class {
         }
     }
 
+    namespace Test10 {
+        class C[a] {
+            pub def f(x: a): Bool
+        }
+
+        class D[a] extends [C]
+
+        instance C[Int] {
+            def f(_x: Int): Bool = true
+        }
+
+        instance D[Int]
+
+        pub def g[a : D](x: a): Bool = Test/Dec/Class/Test10/C.f(x)
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
