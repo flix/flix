@@ -746,6 +746,12 @@ object SymbolicEvaluator {
         }
 
       /**
+        * IndexMut (into tuple), mutate tuple.
+        */
+      case Expression.IndexMut(base, offset, toInsert, _, _) =>
+        ???
+
+      /**
         * ArrayLit.
         */
       case Expression.ArrayLit(elms, tpe, loc) => ???

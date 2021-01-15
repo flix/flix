@@ -208,6 +208,13 @@ object PrettyPrinter {
           vt.text(offset.toString)
           vt.text("]")
 
+        case Expression.IndexMut(base, offset, toInsert, _, _) =>
+          visitExp(base)
+          vt.text("[")
+          vt.text(offset.toString)
+          vt.text("] := ")
+          visitExp(toInsert)
+
         case Expression.Tuple(elms, tpe, loc) =>
           vt.text("(")
           for (elm <- elms) {

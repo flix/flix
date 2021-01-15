@@ -132,6 +132,9 @@ object LiftedAst {
 
     case class Index(base: LiftedAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
+    case class IndexMut(base: LiftedAst.Expression, offset: scala.Int, toInsert: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+
+
     case class Tuple(elms: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression

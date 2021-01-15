@@ -143,6 +143,10 @@ object VarNumbering extends Phase[Root, Root] {
 
       case Expression.Index(exp, index, tpe, loc) => visitExp(exp, i0)
 
+      case Expression.IndexMut(base, _, toInsert, _, _) =>
+        val i1 = visitExp(base, i0)
+        visitExp(toInsert, i1)
+
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
 
       case Expression.RecordEmpty(tpe, loc) => i0

@@ -154,6 +154,9 @@ object TreeShaker extends Phase[Root, Root] {
       case Expression.Index(exp, _, _, _) =>
         visitExp(exp)
 
+      case Expression.IndexMut(base, _, toInsert, _, _) =>
+        visitExp(base) ++ visitExp(toInsert)
+
       case Expression.Tuple(elms, _, _) =>
         visitExps(elms)
 
