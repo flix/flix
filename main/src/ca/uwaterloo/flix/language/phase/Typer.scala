@@ -82,11 +82,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val envInsts = instances.map {
           case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
         }
-        val superClasses = classes.get(classSym) match {
-          case Some(ResolvedAst.Class(_, _, _, _, superClasses, _, _)) => superClasses
+        val superclasses = classes.get(classSym) match {
+          case Some(ResolvedAst.Class(_, _, _, _, superclasses, _, _)) => superclasses
           case None => throw InternalCompilerException(s"Unexpected unrecognized class $classSym")
         }
-        (classSym, (superClasses, envInsts))
+        (classSym, (superclasses, envInsts))
     }
   }
 
@@ -107,11 +107,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
 
     def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-      case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, signatures, loc) =>
+      case ResolvedAst.Class(doc, mod, sym, tparam, superclasses, signatures, loc) =>
         val tparams = getTypeParams(List(tparam))
         for {
           sigs <- Validation.traverse(signatures)(visitSig)
-        } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, loc))
+        } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superclasses, sigs, loc))
     }
 
     // visit each class
