@@ -16,9 +16,12 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.api.Flix
+import java.util
+import java.util.concurrent.{Callable, Executors}
 
+import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
+import ca.uwaterloo.flix.api.Flix
 
 object ParOps {
 
@@ -53,6 +56,54 @@ object ParOps {
 
     // Aggregate the result in parallel.
     parArray.aggregate(z)(seq, comb)
+  }
+
+  /**
+    * Computes the set of reachables Ts starting from `init` and using the `next` function.
+    */
+  def parReachable[T](init: Set[T], next: T => Set[T])(implicit flix: Flix): Set[T] = {
+    // A wrapper for the next function.
+    class NextCallable(t: T) extends Callable[Set[T]] {
+      override def call(): Set[T] = next(t)
+    }
+
+    // Initialize a new executor service.
+    val executorService = Executors.newFixedThreadPool(flix.options.threads)
+
+    // A mutable variable that holds the currently reachable Ts.
+    var reach = init
+
+    // A mutable variable that holds the reachable Ts discovered in the last iteration.
+    var delta = init
+
+    // Iterate until the fixpoint is reached.
+    while (delta.nonEmpty) {
+
+      // Construct a collection of callables.
+      val callables = new util.ArrayList[NextCallable]
+      for (sym <- delta) {
+        callables.add(new NextCallable(sym))
+      }
+
+      // Invoke all callables in parallel.
+      val futures = executorService.invokeAll(callables)
+
+      // Compute the set of all inferred Ts in this iteration.
+      // May include Ts discovered in previous iterations.
+      val newReach = futures.asScala.foldLeft(Set.empty[T]) {
+        case (acc, future) => acc ++ future.get()
+      }
+
+      // Update delta and reach.
+      delta = newReach -- reach
+      reach = reach ++ delta
+    }
+
+    // Shutdown the executor service.
+    executorService.shutdown()
+
+    // Return the set of reachable Ts.
+    reach
   }
 
 }

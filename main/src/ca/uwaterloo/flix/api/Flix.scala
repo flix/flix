@@ -442,8 +442,7 @@ class Flix {
     * Initializes the fork join pools.
     */
   private def initForkJoin(): Unit = {
-    val threads = options.threads.getOrElse(Runtime.getRuntime.availableProcessors())
-    forkJoinPool = new java.util.concurrent.ForkJoinPool(threads)
+    forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
     forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
   }
 
