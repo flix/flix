@@ -113,13 +113,19 @@ namespace Test/Dec/Class {
 
         class D[a] extends [C]
 
+        class E[a] extends [D]
+
         instance C[Int] {
             def f(_x: Int): Bool = true
         }
 
         instance D[Int]
 
+        instance E[Int]
+
         pub def g[a : D](x: a): Bool = Test/Dec/Class/Test10/C.f(x)
+
+        pub def h[a : E](x: a): Bool = Test/Dec/Class/Test10/C.f(x)
     }
 
     pub enum List[a] {
