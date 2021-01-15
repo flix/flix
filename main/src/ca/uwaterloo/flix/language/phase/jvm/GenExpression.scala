@@ -484,7 +484,7 @@ object GenExpression {
       compileExpression(toInsert, visitor, currentClass, lenv0, entryPoint)
       // Descriptor of the method
       val methodDescriptor = AsmOps.getMethodDescriptor(JvmOps.getErasedJvmType(toInsert.tpe) :: Nil, JvmType.Void)
-      // Invoking `setField${offset}()` method for fetching the field
+      // Invoking `setField${offset}()` method for setting the field
       visitor.visitMethodInsn(INVOKEINTERFACE, classType.name.toInternalName, s"setIndex$offset", methodDescriptor, true)
       // Push the Unit value onto the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
