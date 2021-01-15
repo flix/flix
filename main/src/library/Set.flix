@@ -147,6 +147,38 @@ namespace Set {
         RedBlackTree.memberOf(x, es)
 
     ///
+    /// Optionally finds the smallest element of `xs` according to the `Order` instance of `a`.
+    ///
+    pub def minimum(xs: Set[a]): Option[a] =
+        let Set(es) = xs;
+        RedBlackTree.minimum(es) |> Option.map(fst)
+
+    ///
+    /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
+        foldLeft((acc, x) -> match acc {
+            case None => Some(x)
+            case Some(z) => if (cmp(z, x) == LessThan) Some(z) else Some(x)
+        }, None, xs)
+
+    ///
+    /// Optionally finds the largest element of `xs` according to the `Order` instance of `a`.
+    ///
+    pub def maximum(xs: Set[a]): Option[a] =
+        let Set(es) = xs;
+        RedBlackTree.maximum(es) |> Option.map(fst)
+
+    ///
+    /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
+        foldLeft((acc, x) -> match acc {
+            case None => Some(x)
+            case Some(z) => if (cmp(z, x) == GreaterThan) Some(z) else Some(x)
+        }, None, xs)
+
+    ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))

@@ -124,6 +124,34 @@ namespace MutSet {
         Set.memberOf(x, deref ms)
 
     ///
+    /// Optionally finds the smallest element of `s` according to the `Order` instance of `a`.
+    ///
+    pub def minimum(s: MutSet[a]): Option[a] & Impure =
+        let MutSet(ms) = s;
+        Set.minimum(deref ms)
+
+    ///
+    /// Optionally finds the smallest element of `s` according to the given comparator `cmp`.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, s: MutSet[a]): Option[a] & Impure =
+        let MutSet(ms) = s;
+        Set.minimumBy(cmp, deref ms)
+
+    ///
+    /// Optionally finds the largest element of `s` according to the `Order` instance of `a`.
+    ///
+    pub def maximum(s: MutSet[a]): Option[a] & Impure =
+        let MutSet(ms) = s;
+        Set.maximum(deref ms)
+
+    ///
+    /// Optionally finds the largest element of `s` according to the given comparator `cmp`.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, s: MutSet[a]): Option[a] & Impure =
+        let MutSet(ms) = s;
+        Set.maximumBy(cmp, deref ms)
+
+    ///
     /// Returns the size of the mutable set `s`.
     ///
     pub def size(s: MutSet[a]): Int32 & Impure =

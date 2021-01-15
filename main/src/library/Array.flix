@@ -120,12 +120,12 @@ namespace Array {
         exists(y -> y == x, a)
 
     ///
-    /// Finds the smallest element of `a` according to the `Order` instance of `a`.
+    /// Optionally finds the smallest element of `a` according to the `Order` instance of `a`.
     ///
     pub def minimum[a : Order](a: Array[a]): Option[a] & Impure = minimumBy((x, y) -> x <=> y, a)
 
     ///
-    /// Finds the smallest element of `a` according to the given comparator `cmp`.
+    /// Optionally finds the smallest element of `a` according to the given comparator `cmp`.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
         if (length(a) == 0)
@@ -140,12 +140,12 @@ namespace Array {
             Some(deref min)
 
     ///
-    /// Finds the largest element of `a` according to the `Order` instance of `a`.
+    /// Optionally finds the largest element of `a` according to the `Order` instance of `a`.
     ///
     pub def maximum[a : Order](a: Array[a]): Option[a] & Impure = maximumBy((x, y) -> x <=> y, a)
 
     ///
-    /// Finds the largest element of `a` according to the given comparator `cmp`.
+    /// Optionally finds the largest element of `a` according to the given comparator `cmp`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
         if (length(a) == 0)

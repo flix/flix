@@ -141,6 +141,38 @@ namespace Map {
         RedBlackTree.memberOf(k, xs)
 
     ///
+    /// Optionally finds `k -> v` where `k` is the smallest key according to the `Order` instance of `k`.
+    ///
+    pub def minimum(m: Map[k, v]): Option[(k, v)] =
+        let Map(xs) = m;
+        RedBlackTree.minimum(xs)
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    ///
+    pub def minimumBy(cmp: (k, k) -> Comparison, m: Map[k, v]): Option[(k, v)] =
+        foldLeftWithKey((acc, k, v) -> match acc {
+            case None => Some((k, v))
+            case Some((k1, v1)) => if (cmp(k, k1) == LessThan) Some((k, v)) else Some((k1, v1))
+        }, None, m)
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the largest key according to the `Order` instance of `k`.
+    ///
+    pub def maximum(m: Map[k, v]): Option[(k, v)] =
+        let Map(xs) = m;
+        RedBlackTree.maximum(xs)
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
+    ///
+    pub def maximumBy(cmp: (k, k) -> Comparison, m: Map[k, v]): Option[(k, v)] =
+        foldLeftWithKey((acc, k, v) -> match acc {
+            case None => Some((k, v))
+            case Some((k1, v1)) => if (cmp(k, k1) == GreaterThan) Some((k, v)) else Some((k1, v1))
+        }, None, m)
+
+    ///
     /// Returns the keys of `m`.
     ///
     @Time(size(m)) @Space(size(m) )
