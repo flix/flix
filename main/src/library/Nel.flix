@@ -121,6 +121,30 @@ namespace Nel {
     }
 
     ///
+    /// Finds the smallest element of `xs` according to the `Order` on `a`.
+    ///
+    pub def minimum[a : Order](xs: Nel[a]): a =
+        reduce(Order.min, xs)
+
+    ///
+    /// Finds the smallest element of `xs` according to the given comparator `cmp`.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
+        reduce(Order.minBy(cmp), xs)
+
+    ///
+    /// Finds the largest element of `xs` according to the `Order` on `a`.
+    ///
+    pub def maximum[a : Order](xs: Nel[a]): a =
+        reduce(Order.max, xs)
+
+    ///
+    /// Finds the largest element of `xs` according to the given comparator `cmp`.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
+        reduce(Order.maxBy(cmp), xs)
+
+    ///
     /// Alias for `findLeft`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f))

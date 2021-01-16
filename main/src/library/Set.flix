@@ -147,6 +147,40 @@ namespace Set {
         RedBlackTree.memberOf(x, es)
 
     ///
+    /// Optionally finds the smallest element of `xs` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def minimum(xs: Set[a]): Option[a] =
+        let Set(es) = xs;
+        RedBlackTree.minimum(es) |> Option.map(fst)
+
+    ///
+    /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
+        reduce(Order.minBy(cmp), xs)
+
+    ///
+    /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def maximum(xs: Set[a]): Option[a] =
+        let Set(es) = xs;
+        RedBlackTree.maximum(es) |> Option.map(fst)
+
+    ///
+    /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
+        reduce(Order.maxBy(cmp), xs)
+
+    ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))

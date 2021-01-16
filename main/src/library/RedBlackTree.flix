@@ -430,4 +430,22 @@ namespace RedBlackTree {
         }
     }
 
+    ///
+    /// Extracts `k -> v` where `k` is the leftmost (i.e. smallest) key in the tree.
+    ///
+    pub def minimum(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
+        case Node(_, Leaf, k, v, _) => Some((k, v))
+        case Node(_, a, _, _, _) => minimum(a)
+        case _ => None
+    }
+
+    ///
+    /// Extracts `k -> v` where `k` is the rightmost (i.e. largest) key in the tree.
+    ///
+    pub def maximum(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
+        case Node(_, _, k, v, Leaf) => Some((k, v))
+        case Node(_, _, _, _, b) => maximum(b)
+        case _ => None
+    }
+
 }

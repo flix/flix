@@ -1836,4 +1836,68 @@ def query18(): Bool =
     @test
     def hash05(): Bool = hash(Map#{1 -> 'a', 2 -> 'b', 3 -> 'z', 4 -> 'x'}) == hash(Map#{1 -> 'a', 2 -> 'b', 3 -> 'z', 4 -> 'x'})
 
+    /////////////////////////////////////////////////////////////////////////////
+    // minimum                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimum01(): Bool = Map.minimum(Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def minimum02(): Bool = Map.minimum(Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5}) == Some((1, 2))
+
+    @test
+    def minimum03(): Bool = Map.minimum(Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2}) == Some((0, 2))
+
+    @test
+    def minimum04(): Bool = Map.minimum(Map#{1 -> 2, 2 -> 3, -44 -> 4, 5 -> 5, 0 -> 2}) == Some((-44, 4))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def minimumBy02(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5}) == Some((1, 2))
+
+    @test
+    def minimumBy03(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2}) == Some((0, 2))
+
+    @test
+    def minimumBy04(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, -44 -> 4, 5 -> 5, 0 -> 2}) == Some((-44, 4))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximum                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximum01(): Bool = Map.maximum(Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def maximum02(): Bool = Map.maximum(Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5}) == Some((5, 5))
+
+    @test
+    def maximum03(): Bool = Map.maximum(Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2}) == Some((5, 5))
+
+    @test
+    def maximum04(): Bool = Map.maximum(Map#{1 -> 2, 2 -> 3, 107 -> -107, 5 -> 5, 0 -> 2}) == Some((107, -107))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def maximumBy02(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5}) == Some((5, 5))
+
+    @test
+    def maximumBy03(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2}) == Some((5, 5))
+
+    @test
+    def maximumBy04(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 107 -> -107, 5 -> 5, 0 -> 2}) == Some((107, -107))
+
 }

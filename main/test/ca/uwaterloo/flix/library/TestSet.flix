@@ -1213,4 +1213,68 @@ def query07(): Bool =
     @test
     def hash05(): Bool = hash(Set#{false}) != hash(Set#{true})
 
+    /////////////////////////////////////////////////////////////////////////////
+    // minimum                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimum01(): Bool = Set.minimum(Set#{}: Set[Int32]) == None
+
+    @test
+    def minimum02(): Bool = Set.minimum(Set#{1}) == Some(1)
+
+    @test
+    def minimum03(): Bool = Set.minimum(Set#{1, 2, 3, 0}) == Some(0)
+
+    @test
+    def minimum04(): Bool = Set.minimum(Set.range(5, 55)) == Some(5)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool = Set.minimumBy((x, y) -> x <=> y, Set#{}: Set[Int32]) == None
+
+    @test
+    def minimumBy02(): Bool = Set.minimumBy((x, y) -> x <=> y, Set#{1}) == Some(1)
+
+    @test
+    def minimumBy03(): Bool = Set.minimumBy((x, y) -> x <=> y, Set#{1, 2, 3, 0}) == Some(0)
+
+    @test
+    def minimumBy04(): Bool = Set.minimumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(5)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximum                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximum01(): Bool = Set.maximum(Set#{}: Set[Int32]) == None
+
+    @test
+    def maximum02(): Bool = Set.maximum(Set#{1}) == Some(1)
+
+    @test
+    def maximum03(): Bool = Set.maximum(Set#{1, 2, 3, 0}) == Some(3)
+
+    @test
+    def maximum04(): Bool = Set.maximum(Set.range(5, 55)) == Some(54)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool = Set.maximumBy((x, y) -> x <=> y, Set#{}: Set[Int32]) == None
+
+    @test
+    def maximumBy02(): Bool = Set.maximumBy((x, y) -> x <=> y, Set#{1}) == Some(1)
+
+    @test
+    def maximumBy03(): Bool = Set.maximumBy((x, y) -> x <=> y, Set#{1, 2, 3, 0}) == Some(3)
+
+    @test
+    def maximumBy04(): Bool = Set.maximumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(54)
+
 }

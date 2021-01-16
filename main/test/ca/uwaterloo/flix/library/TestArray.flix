@@ -4042,4 +4042,42 @@ def sortWith13!(): Bool & Impure =
     Array.sortWith!((x,y) -> if (x > y) -1 else 1, a);
     Array.sameElements(a, [4,3,2,2,1,0])
 
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+
+    @test
+    def minimumBy02(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5)) == Some(0)
+
+    @test
+    def minimumBy03(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10)) == Some(4)
+
+    @test
+    def minimumBy04(): Bool & Impure =
+        let a = Array.range(10, 20);
+        a[5] = -22;
+        Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+
+    @test
+    def maximumBy02(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5)) == Some(4)
+
+    @test
+    def maximumBy03(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10)) == Some(9)
+
+    @test
+    def maximumBy04(): Bool & Impure =
+        let a = Array.range(10, 20);
+        a[5] = 42;
+        Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
+
 }

@@ -54,6 +54,42 @@ namespace MutMap {
         Map.memberOf(k, deref mm)
 
     ///
+    /// Optionally finds `k -> v` where `k` is the smallest key according to the `Order` instance of `k`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    pub def minimum(m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.minimum(deref mm)
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.minimumBy(cmp, deref mm)
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the largest key according to the `Order` instance of `k`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    pub def maximum(m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.maximum(deref mm)
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.maximumBy(cmp, deref mm)
+
+    ///
     /// Returns the keys of the mutable map `m`.
     ///
     pub def keysOf[k : Order, v](m: MutMap[k, v]): Set[k] & Impure =

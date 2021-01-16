@@ -1264,4 +1264,54 @@ namespace TestMutList {
         MutList.push!('d', v);
         toString(v) == "MutList#{a, b, c, d}"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.new(): MutList[Int32]) == None
+
+    @test
+    def minimumBy02(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.range(0, 5)) == Some(0)
+
+    @test
+    def minimumBy03(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.range(5, 10)) == Some(5)
+
+    @test
+    def minimumBy04(): Bool & Impure =
+        let v = MutList.range(0, 6);
+        MutList.push!(-2, v);
+        MutList.minimumBy((x, y) -> x <=> y, v) == Some(-2)
+
+    @test
+    def minimumBy05(): Bool & Impure =
+        let v = MutList.range(9, 19);
+        let cmp = (x, y) -> if (x < y and x % 2 == 0) LessThan else GreaterThan;
+        MutList.minimumBy(cmp, v) == Some(10)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.new(): MutList[Int32]) == None
+
+    @test
+    def maximumBy02(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.range(0, 5)) == Some(4)
+
+    @test
+    def maximumBy03(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.range(5, 10)) == Some(9)
+
+    @test
+    def maximumBy04(): Bool & Impure =
+        let v = MutList.range(0, 6);
+        MutList.push!(11, v);
+        MutList.maximumBy((x, y) -> x <=> y, v) == Some(11)
+
+    @test
+    def maximumBy05(): Bool & Impure =
+        let v = MutList.range(9, 19);
+        let cmp = (x, y) -> if (x > y and x % 2 == 0) GreaterThan else LessThan;
+        MutList.maximumBy(cmp, v) == Some(18)
+
 }
