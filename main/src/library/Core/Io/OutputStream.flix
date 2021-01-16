@@ -16,6 +16,13 @@
 
 use Core/Io/File.File;
 use Core/Io/IOError.IOError;
+use Core/Io/OutputStream.{OutputStream};
+
+instance Drop[OutputStream] {
+    pub def drop(x: OutputStream): Unit & Impure =
+        let _ = Core/Io/OutputStream.close(x);
+        ()
+}
 
 namespace Core/Io/OutputStream {
     pub opaque type OutputStream = ##java.io.OutputStream
