@@ -70,7 +70,9 @@ namespace MutList {
     pub def memberOf[a : Eq](x: a, v: MutList[a]): Bool & Impure = exists(y -> y == x, v)
 
     ///
-    /// Optionally finds the smallest element of `v` according to the `Order` instance of `a`.
+    /// Optionally finds the smallest element of `v` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `v` is empty.
     ///
     pub def minimum[a : Order](v: MutList[a]): Option[a] & Impure =
         reduce(Order.min, v)
@@ -78,17 +80,23 @@ namespace MutList {
     ///
     /// Optionally finds the smallest element of `v` according to the given comparator `cmp`.
     ///
+    /// Returns `None` if `v` is empty.
+    ///
     pub def minimumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
         reduce(Order.minBy(cmp), v)
 
     ///
-    /// Optionally finds the largest element of `v` according to the `Order` instance of `a`.
+    /// Optionally finds the largest element of `v` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `v` is empty.
     ///
     pub def maximum[a : Order](v: MutList[a]): Option[a] & Impure =
         reduce(Order.max, v)
 
     ///
     /// Optionally finds the largest element of `v` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `v` is empty.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
         reduce(Order.maxBy(cmp), v)

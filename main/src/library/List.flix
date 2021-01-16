@@ -150,7 +150,9 @@ namespace List {
     }
 
     ///
-    /// Optionally finds the smallest element of `xs` according to the `Order` instance of `a`.
+    /// Optionally finds the smallest element of `xs` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `xs` is empty.
     ///
     pub def minimum[a : Order](xs: List[a]): Option[a] =
         reduce(Order.min, xs)
@@ -158,17 +160,23 @@ namespace List {
     ///
     /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
     ///
+    /// Returns `None` if `xs` is empty.
+    ///
     pub def minimumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
         reduce(Order.minBy(cmp), xs)
 
     ///
-    /// Optionally finds the largest element of `xs` according to the `Order` instance of `a`.
+    /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `xs` is empty.
     ///
     pub def maximum[a : Order](xs: List[a]): Option[a] =
         reduce(Order.max, xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `xs` is empty.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
         reduce(Order.maxBy(cmp), xs)

@@ -121,7 +121,7 @@ namespace Nel {
     }
 
     ///
-    /// Finds the smallest element of `xs` according to the `Order` instance of `a`.
+    /// Finds the smallest element of `xs` according to the `Order` on `a`.
     ///
     pub def minimum[a : Order](xs: Nel[a]): a =
         reduce(Order.min, xs)
@@ -133,7 +133,7 @@ namespace Nel {
         reduce(Order.minBy(cmp), xs)
 
     ///
-    /// Finds the largest element of `xs` according to the `Order` instance of `a`.
+    /// Finds the largest element of `xs` according to the `Order` on `a`.
     ///
     pub def maximum[a : Order](xs: Nel[a]): a =
         reduce(Order.max, xs)

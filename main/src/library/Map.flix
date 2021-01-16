@@ -143,14 +143,16 @@ namespace Map {
     ///
     /// Optionally finds `k -> v` where `k` is the smallest key according to the `Order` instance of `k`.
     ///
+    /// Returns `None` if `m` is empty.
+    ///
     pub def minimum(m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
         RedBlackTree.minimum(xs)
 
-/// reduceWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)]
-
     ///
     /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
     ///
     pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: Map[k, v]): Option[(k, v)] =
         reduceWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), m)
@@ -158,12 +160,16 @@ namespace Map {
     ///
     /// Optionally finds `k -> v` where `k` is the largest key according to the `Order` instance of `k`.
     ///
+    /// Returns `None` if `m` is empty.
+    ///
     pub def maximum(m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
         RedBlackTree.maximum(xs)
 
     ///
     /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
     ///
     pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: Map[k, v]): Option[(k, v)] =
         reduceWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == GreaterThan) (k1, v1) else (k2, v2), m)
