@@ -63,7 +63,7 @@ namespace MutMap {
     ///
     /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
     ///
-    pub def minimumBy(cmp: (k, k) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.minimumBy(cmp, deref mm)
 
@@ -77,7 +77,7 @@ namespace MutMap {
     ///
     /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
     ///
-    pub def maximumBy(cmp: (k, k) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.maximumBy(cmp, deref mm)
 

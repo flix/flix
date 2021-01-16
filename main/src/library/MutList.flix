@@ -72,42 +72,26 @@ namespace MutList {
     ///
     /// Optionally finds the smallest element of `v` according to the `Order` instance of `a`.
     ///
-    pub def minimum[a : Order](v: MutList[a]): Option[a] & Impure = minimumBy((x, y) -> x <=> y, v)
+    pub def minimum[a : Order](v: MutList[a]): Option[a] & Impure =
+        reduce(Order.min, v)
 
     ///
     /// Optionally finds the smallest element of `v` according to the given comparator `cmp`.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
-        if (length(v) == 0)
-            None
-        else
-            let min = ref (get(0, v));
-            foreach(x ->
-                if (cmp(deref min, x) == GreaterThan)
-                    min := x
-                else
-                    (), v);
-            Some(deref min)
+        reduce(Order.minBy(cmp), v)
 
     ///
     /// Optionally finds the largest element of `v` according to the `Order` instance of `a`.
     ///
-    pub def maximum[a : Order](v: MutList[a]): Option[a] & Impure = maximumBy((x, y) -> x <=> y, v)
+    pub def maximum[a : Order](v: MutList[a]): Option[a] & Impure =
+        reduce(Order.max, v)
 
     ///
     /// Optionally finds the largest element of `v` according to the given comparator `cmp`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
-        if (length(v) == 0)
-            None
-        else
-            let min = ref (get(0, v));
-            foreach(x ->
-                if (cmp(deref min, x) == LessThan)
-                    min := x
-                else
-                    (), v);
-            Some(deref min)
+        reduce(Order.maxBy(cmp), v)
 
     ///
     /// Returns the number of elements in the given mutable list `v` that satisfies the given predicate `f`.

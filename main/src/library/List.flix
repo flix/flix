@@ -152,36 +152,26 @@ namespace List {
     ///
     /// Optionally finds the smallest element of `xs` according to the `Order` instance of `a`.
     ///
-    pub def minimum[a : Order](xs: List[a]): Option[a] = minimumBy((x, y) -> x <=> y, xs)
+    pub def minimum[a : Order](xs: List[a]): Option[a] =
+        reduce(Order.min, xs)
 
     ///
     /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] = match xs {
-        case Nil => None
-        case y :: ys => Some(foldLeft((acc, z) ->
-            match cmp(acc, z) {
-                case GreaterThan => z
-                case _ => acc
-            }, y, ys))
-    }
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
+        reduce(Order.minBy(cmp), xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the `Order` instance of `a`.
     ///
-    pub def maximum[a : Order](xs: List[a]): Option[a] = maximumBy((x, y) -> x <=> y, xs)
+    pub def maximum[a : Order](xs: List[a]): Option[a] =
+        reduce(Order.max, xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] = match xs {
-        case Nil => None
-        case y :: ys => Some(foldLeft((acc, z) ->
-            match cmp(acc, z) {
-                case LessThan => z
-                case _ => acc
-            }, y, ys))
-    }
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
+        reduce(Order.maxBy(cmp), xs)
 
     ///
     /// Returns the position of `a` in `xs`.

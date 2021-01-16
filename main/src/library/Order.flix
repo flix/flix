@@ -74,12 +74,24 @@ namespace Order {
     }
 
     ///
+    /// Returns the minimum of `x` and `y` according to the given comparator `cmp`.
+    ///
+    pub def minBy(cmp: (a, a) -> Comparison, x: a, y: a): a =
+        if (cmp(x, y) == GreaterThan) y else x
+
+    ///
     /// Returns the maximum of `x` and `y`.
     ///
     pub def max[a : Order](x: a, y: a): a = match (x <=> y) {
         case LessThan => y
         case _ => x
     }
+
+    ///
+    /// Returns the maximum of `x` and `y` according to the given comparator `cmp`.
+    ///
+    pub def maxBy(cmp: (a, a) -> Comparison, x: a, y: a): a =
+        if (cmp(x, y) == LessThan) y else x
 
 }
 

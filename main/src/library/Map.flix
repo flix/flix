@@ -147,14 +147,13 @@ namespace Map {
         let Map(xs) = m;
         RedBlackTree.minimum(xs)
 
+/// reduceWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)]
+
     ///
     /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
     ///
-    pub def minimumBy(cmp: (k, k) -> Comparison, m: Map[k, v]): Option[(k, v)] =
-        foldLeftWithKey((acc, k, v) -> match acc {
-            case None => Some((k, v))
-            case Some((k1, v1)) => if (cmp(k, k1) == LessThan) Some((k, v)) else Some((k1, v1))
-        }, None, m)
+    pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: Map[k, v]): Option[(k, v)] =
+        reduceWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), m)
 
     ///
     /// Optionally finds `k -> v` where `k` is the largest key according to the `Order` instance of `k`.
@@ -166,11 +165,8 @@ namespace Map {
     ///
     /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
     ///
-    pub def maximumBy(cmp: (k, k) -> Comparison, m: Map[k, v]): Option[(k, v)] =
-        foldLeftWithKey((acc, k, v) -> match acc {
-            case None => Some((k, v))
-            case Some((k1, v1)) => if (cmp(k, k1) == GreaterThan) Some((k, v)) else Some((k1, v1))
-        }, None, m)
+    pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: Map[k, v]): Option[(k, v)] =
+        reduceWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == GreaterThan) (k1, v1) else (k2, v2), m)
 
     ///
     /// Returns the keys of `m`.

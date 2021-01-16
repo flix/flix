@@ -122,42 +122,26 @@ namespace Array {
     ///
     /// Optionally finds the smallest element of `a` according to the `Order` instance of `a`.
     ///
-    pub def minimum[a : Order](a: Array[a]): Option[a] & Impure = minimumBy((x, y) -> x <=> y, a)
+    pub def minimum[a : Order](a: Array[a]): Option[a] & Impure =
+        reduce(Order.min, a)
 
     ///
     /// Optionally finds the smallest element of `a` according to the given comparator `cmp`.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
-        if (length(a) == 0)
-            None
-        else
-            let min = ref a[0];
-            foreach(x ->
-                if (cmp(deref min, x) == GreaterThan)
-                    min := x
-                else
-                    (), a);
-            Some(deref min)
+        reduce(Order.minBy(cmp), a)
 
     ///
     /// Optionally finds the largest element of `a` according to the `Order` instance of `a`.
     ///
-    pub def maximum[a : Order](a: Array[a]): Option[a] & Impure = maximumBy((x, y) -> x <=> y, a)
+    pub def maximum[a : Order](a: Array[a]): Option[a] & Impure =
+        reduce(Order.max, a)
 
     ///
     /// Optionally finds the largest element of `a` according to the given comparator `cmp`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
-        if (length(a) == 0)
-            None
-        else
-            let min = ref a[0];
-            foreach(x ->
-                if (cmp(deref min, x) == LessThan)
-                    min := x
-                else
-                    (), a);
-            Some(deref min)
+        reduce(Order.maxBy(cmp), a)
 
     ///
     /// Alias for `IndexOfLeft`

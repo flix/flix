@@ -123,32 +123,26 @@ namespace Nel {
     ///
     /// Finds the smallest element of `xs` according to the `Order` instance of `a`.
     ///
-    pub def minimum[a : Order](xs: Nel[a]): a = minimumBy((x, y) -> x <=> y, xs)
+    pub def minimum[a : Order](xs: Nel[a]): a =
+        reduce(Order.min, xs)
 
     ///
     /// Finds the smallest element of `xs` according to the given comparator `cmp`.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a = match xs {
-        case Nel(h, l) => match List.minimumBy(cmp, l) {
-            case None => h
-            case Some(m) => if (cmp(h, m) == LessThan) h else m
-        }
-    }
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
+        reduce(Order.minBy(cmp), xs)
 
     ///
     /// Finds the largest element of `xs` according to the `Order` instance of `a`.
     ///
-    pub def maximum[a : Order](xs: Nel[a]): a = maximumBy((x, y) -> x <=> y, xs)
+    pub def maximum[a : Order](xs: Nel[a]): a =
+        reduce(Order.max, xs)
 
     ///
     /// Finds the largest element of `xs` according to the given comparator `cmp`.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a = match xs {
-        case Nel(h, l) => match List.maximumBy(cmp, l) {
-            case None => h
-            case Some(m) => if (cmp(h, m) == GreaterThan) h else m
-        }
-    }
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
+        reduce(Order.maxBy(cmp), xs)
 
     ///
     /// Alias for `findLeft`.

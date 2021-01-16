@@ -1857,16 +1857,16 @@ def query18(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimumBy01(): Bool = Map.minimumBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+    def minimumBy01(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def minimumBy02(): Bool = Map.minimumBy((x, y) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5}) == Some((1, 2))
+    def minimumBy02(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5}) == Some((1, 2))
 
     @test
-    def minimumBy03(): Bool = Map.minimumBy((x, y) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2}) == Some((0, 2))
+    def minimumBy03(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2}) == Some((0, 2))
 
     @test
-    def minimumBy04(): Bool = Map.minimumBy((x, y) -> x <=> y, Map#{1 -> 2, 2 -> 3, -44 -> 4, 5 -> 5, 0 -> 2}) == Some((-44, 4))
+    def minimumBy04(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, -44 -> 4, 5 -> 5, 0 -> 2}) == Some((-44, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // maximum                                                                 //
@@ -1889,15 +1889,15 @@ def query18(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximumBy01(): Bool = Map.maximumBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+    def maximumBy01(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def maximumBy02(): Bool = Map.maximumBy((x, y) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5}) == Some((5, 5))
+    def maximumBy02(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5}) == Some((5, 5))
 
     @test
-    def maximumBy03(): Bool = Map.maximumBy((x, y) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2}) == Some((5, 5))
+    def maximumBy03(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2}) == Some((5, 5))
 
     @test
-    def maximumBy04(): Bool = Map.maximumBy((x, y) -> x <=> y, Map#{1 -> 2, 2 -> 3, 107 -> -107, 5 -> 5, 0 -> 2}) == Some((107, -107))
+    def maximumBy04(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 107 -> -107, 5 -> 5, 0 -> 2}) == Some((107, -107))
 
 }

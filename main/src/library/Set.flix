@@ -157,10 +157,7 @@ namespace Set {
     /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
-        foldLeft((acc, x) -> match acc {
-            case None => Some(x)
-            case Some(z) => if (cmp(z, x) == LessThan) Some(z) else Some(x)
-        }, None, xs)
+        reduce(Order.minBy(cmp), xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the `Order` instance of `a`.
@@ -173,10 +170,7 @@ namespace Set {
     /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
-        foldLeft((acc, x) -> match acc {
-            case None => Some(x)
-            case Some(z) => if (cmp(z, x) == GreaterThan) Some(z) else Some(x)
-        }, None, xs)
+        reduce(Order.maxBy(cmp), xs)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
