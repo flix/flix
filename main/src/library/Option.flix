@@ -89,6 +89,10 @@ instance Order[Option[a]] with [a : Order] {
 
 }
 
+instance Functor[Option] {
+    def map(f: a -> b & e, o: Option[a]): Option[b] & e = Option.map(f, o)
+}
+
 namespace Option {
 
     ///

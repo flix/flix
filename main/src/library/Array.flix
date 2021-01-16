@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+instance Functor[Array] {
+    def map(f: a -> b & e, a: Array[a]): Array[b] & e = Array.map(f, a) as & e
+}
+
 namespace Array {
 
     ///

@@ -82,6 +82,10 @@ instance Order[List[a]] with [a : Order] {
 
 }
 
+instance Functor[List] {
+    def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
+}
+
 namespace List {
 
     ///
@@ -1272,7 +1276,7 @@ namespace List {
     @lint
     def mapZip(): Bool =
       forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
-        List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === List.map2(f, xs, ys)
+        map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === map2(f, xs, ys)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //

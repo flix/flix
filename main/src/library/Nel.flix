@@ -44,6 +44,10 @@ instance Eq[Nel[a]] with[a : Eq] {
 
 }
 
+instance Functor[Nel] {
+    def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = Nel.map(f, xs)
+}
+
 namespace Nel {
 
     ///
