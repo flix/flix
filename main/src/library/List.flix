@@ -86,19 +86,6 @@ instance Functor[List] {
     def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
 }
 
-namespace Functor {
-    ///
-    /// Helper function for `map`.
-    ///
-    pub def mapHelper(f: a -> b, xs: List[a], k: List[b] -> List[b]): List[b] = match xs {
-        case Nil => k(Nil)
-        case x :: rs => {
-            let a = f(x);
-            mapHelper(f, rs, ys -> k(a :: ys))
-        }
-    }
-}
-
 namespace List {
 
     ///
