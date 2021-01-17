@@ -79,18 +79,21 @@ namespace Foldable {
             case Some(y) => Some(y)
         }, None, t)
 
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
     pub def foldMap[t :# Type -> Type : Foldable, a, b : Monoid](f: a -> b, t: t[a]): b =
         Foldable.foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), t)
 
-    //// def intercalate[f: Foldable, a: Monoid](fa: f[a], a: a): f[a]
-    /// TODO: Fix intercalate and remove^
     ///
-    /// Returns the concatenation of the elements in `t` with `a` inserted between every two adjacent elements.
+    /// Returns `t` with `a` inserted between every adjacent element.
     ///
-    /// That is, returns `t1 :: a :: ... :: tn-1 :: a :: tn :: Nil`.
-    ///
-///    pub def intercalate[t :# Type -> Type : Foldable : Monoid, a](t: t[a], a: a): t[a] =
-///        Foldable.foldLeft((acc, x) -> Monoid.combine(acc, Monoid.combine(x, a)), Monoid.empty(), t)
+    pub def intercalate[t :# Type -> Type : Foldable, a : Monoid : Eq](t: t[a], a: a): a =
+        Foldable.foldLeft((acc, x) ->
+        if (acc == Monoid.empty())
+            Monoid.combine(acc, x)
+        else
+            Monoid.combine(acc, Monoid.combine(a, x)), Monoid.empty(), t)
 
     ///
     /// Returns true if and only if `t` is empty.
