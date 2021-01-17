@@ -126,7 +126,7 @@ object Scheme {
     * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Boolean = {
+  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     Validation.sequence(List(checkLessThanEqual(sc1, sc2, classEnv), checkLessThanEqual(sc2, sc1, classEnv))) match {
       case Validation.Success(_) => true
       case Validation.Failure(_) => false
@@ -137,7 +137,7 @@ object Scheme {
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Validation[Unit, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, UnificationError] = {
 
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.

@@ -76,7 +76,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Creates a class environment from a ClassSym-Instance multimap.
     */
-  private def mkClassEnv(classes: Map[Symbol.ClassSym, ResolvedAst.Class], instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]]): Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])] = {
+  private def mkClassEnv(classes: Map[Symbol.ClassSym, ResolvedAst.Class], instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]]): Map[Symbol.ClassSym, Ast.ClassContext] = {
     instances.map {
       case (classSym, instances) =>
         val envInsts = instances.map {
@@ -86,7 +86,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           case Some(ResolvedAst.Class(_, _, _, _, superClasses, _, _)) => superClasses
           case None => throw InternalCompilerException(s"Unexpected unrecognized class $classSym")
         }
-        (classSym, (superClasses, envInsts))
+        (classSym, Ast.ClassContext(superClasses, envInsts))
     }
   }
 
@@ -125,7 +125,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, List[TypedAst.Instance]], TypeError] = {
+  private def visitInstances(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, List[TypedAst.Instance]], TypeError] = {
 
     /**
       * Reassembles a single instance.
@@ -157,7 +157,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Performs type inference and reassembly on the given definition `defn`.
     */
-  private def visitDefn(defn: ResolvedAst.Def, root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
+  private def visitDefn(defn: ResolvedAst.Def, root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
     typeCheckDef(defn, Nil, root, classEnv) map {
       case (defn, _) => defn
     }
@@ -165,7 +165,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Performs type inference and reassembly on the given instance definition `defn`.
     */
-  private def visitInstanceDefn(defn: ResolvedAst.Def, tconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
+  private def visitInstanceDefn(defn: ResolvedAst.Def, tconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
     typeCheckDef(defn, tconstrs, root, classEnv) map {
       case (defn, _) => defn
     }
@@ -175,7 +175,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitDefs(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
+  private def visitDefs(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
     // Compute the results in parallel.
     val results = ParOps.parMap(root.defs.values, visitDefn(_, root, classEnv))
 
@@ -190,7 +190,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
+  private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
     case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, declaredEff, loc) =>
 
       ///

@@ -141,10 +141,10 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) =>
-        val (superClasses, _) = root.classEnv(sym)
+        val superClasses = root.classEnv(sym).superClasses
         checkEach(superClasses) {
           superClass =>
-            val (_, superInsts) = root.classEnv.getOrElse(superClass, (Nil, Nil))
+            val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
             // Check each instance of the superclass
             if (superInsts.exists(superInst => unifiesWith(tpe, superInst.tpe))) {
               // Case 1: An instance matches. Success.

@@ -398,4 +398,9 @@ object Ast {
     */
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
 
+  /**
+    * Represents the superclasses and instances available for a particular class.
+    */
+  case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
+
 }
