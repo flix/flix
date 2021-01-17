@@ -81,9 +81,13 @@ class Flix {
     "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
     "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
+
+    // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
+    "Drop.flix" -> LocalResource.get("/src/library/Drop.flix"),
+    "Copy.flix" -> LocalResource.get("/src/library/Copy.flix"),
 
     // Lattices
     "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
@@ -142,9 +146,6 @@ class Flix {
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
-
-    "Drop.flix" -> LocalResource.get("/src/library/Drop.flix"),
-    "Copy.flix" -> LocalResource.get("/src/library/Copy.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
