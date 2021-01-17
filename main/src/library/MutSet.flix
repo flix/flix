@@ -25,6 +25,12 @@ instance ToString[MutSet[a]] with [a : ToString] {
         "MutSet#{${String.dropRight(2, s)}}"
 }
 
+instance Copy[MutSet[a]] {
+    def copy(s: MutSet[a]): MutSet[a] & e =
+        let MutSet(ms) = s;
+        MutSet(ref (deref ms)) as & e
+}
+
 namespace MutSet {
 
     ///

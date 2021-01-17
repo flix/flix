@@ -32,6 +32,12 @@ instance Functor[MutList] {
     def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
 }
 
+instance Copy[MutList[a]] {
+    def copy(v: MutList[a]): MutList[a] & e =
+        let MutList(a, l) = v;
+        MutList(ref (deref a), ref (deref l)) as & e
+}
+
 namespace MutList {
 
     ///

@@ -18,6 +18,10 @@ instance Functor[Array] {
     def map(f: a -> b & e, a: Array[a]): Array[b] & e = Array.map(f, a) as & e
 }
 
+instance Copy[Array[a]] {
+    def copy(a: Array[a]): Array[a] & e = Array.init(i -> a[i], Array.length(a)) as & e
+}
+
 namespace Array {
 
     ///

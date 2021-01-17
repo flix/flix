@@ -126,6 +126,7 @@ class Flix {
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
+    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
 
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
@@ -143,6 +144,7 @@ class Flix {
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
 
     "Drop.flix" -> LocalResource.get("/src/library/Drop.flix"),
+    "Copy.flix" -> LocalResource.get("/src/library/Copy.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
