@@ -35,7 +35,7 @@ instance Functor[MutList] {
 instance Copy[MutList[a]] {
     def copy(v: MutList[a]): MutList[a] & e =
         let MutList(a, l) = v;
-        MutList(ref (deref a), ref (deref l)) as & e
+        MutList(ref Copy.copy(deref a), ref (deref l)) as & e
 }
 
 namespace MutList {
