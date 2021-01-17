@@ -875,10 +875,15 @@ namespace List {
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(Int32.min(length(xs), length(ys))) @Space(Int32.min(length(xs), length(ys)))
-    pub def zip(xs: List[a], ys: List[b]): List[(a,b)] = match (xs, ys) {
-        case (x :: rs, y :: qs) => (x, y) :: zip(rs, qs)
-        case _ => Nil
-    }
+    pub def zip(xs: List[a], ys: List[b]): List[(a,b)] = zipHelper(xs, ys, ks -> ks)
+
+    ///
+    /// Helper function for `zip`.
+    ///
+    def zipHelper(xs: List[a], ys: List[b], k: List[(a,b)] -> List[(a,b)]): List[(a,b)] = match (xs, ys) {
+            case (x :: rs, y :: qs) => zipHelper(rs, qs, ks -> k((x, y) :: ks))
+            case _ => k(Nil)
+        }
 
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
@@ -887,9 +892,17 @@ namespace List {
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def zipWith(f: (a, b) -> c & e, xs: List[a], ys: List[b]): List[c] & e = match (xs, ys) {
-        case (x :: rs, y :: qs) => f(x, y) :: zipWith(f, rs, qs)
-        case _ => Nil
+    pub def zipWith(f: (a, b) -> c & e, xs: List[a], ys: List[b]): List[c] & e = zipWithHelper(f, xs, ys, ks -> ks)
+
+    ///
+    /// Helper function for `zipWith`.
+    ///
+    def zipWithHelper(f: (a, b) -> c & e, xs: List[a], ys: List[b], k: List[c] -> List[c]): List[c] & e = match (xs, ys) {
+        case (x :: rs, y :: qs) => {
+            let a = f(x, y);
+            zipWithHelper(f, rs, qs, ks -> k(a :: ks))
+        }
+        case _ => k(Nil)
     }
 
     ///
@@ -897,17 +910,62 @@ namespace List {
     /// and the second containing all second components in `xs`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def unzip(xs: List[(a, b)]): (List[a], List[b]) = match xs {
-        case Nil => (Nil, Nil)
-        case (x1, x2) :: rs =>
-            let (r1, r2) = unzip(rs);
-                (x1 :: r1, x2 :: r2)
+    pub def unzip(xs: List[(a, b)]): (List[a], List[b]) = unzipHelper(xs, (ks1, ks2) -> (ks1, ks2))
+
+    ///
+    /// Helper function for `zip`.
+    ///
+    def unzipHelper(xs: List[(a, b)], k: (List[a], List[b]) -> (List[a], List[b])): (List[a], List[b]) = match xs {
+        case Nil => k(Nil, Nil)
+        case (x1, x2) :: rs => unzipHelper(rs, (ks1, ks2) -> k(x1 :: ks1, x2 :: ks2))
     }
 
+    ///
+    /// Returns a list where the element at index `i` is `(a, b, c)` where
+    /// `a` is the element at index `i` in `xs`, `b` is the element at index `i` in `ys`
+    /// and `c` is the element at index `i` in `zs`.
+    ///
+    /// If any one of `xs`, `ys` or `zs` become depleted, then no further elements are added to the resulting list.
+    ///
+    pub def zip3(xs: List[a], ys: List[b], zs: List[c]): List[(a, b, c)] =
+        zipWith3((x, y, z) -> (x, y, z), xs, ys, zs)
 
+    ///
+    /// Returns a list where the element at index `i` is `f(a, b, c)` where
+    /// `a` is the element at index `i` in `xs`, `b` is the element at index `i` in `ys`
+    /// and `c` is the element at index `i` in `zs`.
+    ///
+    /// If any one of `xs`, `ys` or `zs` become depleted, then no further elements are added to the resulting list.
+    ///
+    pub def zipWith3(f: (a, b, c) -> d & ef, xs: List[a], ys: List[b], zs: List[c]): List[d] & ef =
+        zipWith3Helper(f, xs, ys, zs, ks -> ks)
 
+    ///
+    /// Helper function for `zipWith3`.
+    ///
+    def zipWith3Helper(f: (a, b, c) -> d & ef, xs: List[a], ys: List[b], zs: List[c], k: List[d] -> List[d]): List[d] & ef =
+        match (xs, ys, zs) {
+            case (x :: rs, y :: qs, z :: ss) => {
+                let a = f(x, y, z);
+                zipWith3Helper(f, rs, qs, ss, ks -> k(a :: ks))
+            }
+            case _ => k(Nil)
+        }
 
+    ///
+    /// Returns a triple of lists, the first containing all first components in `xs`
+    /// the second containing all second components in `xs` and the third containing all
+    /// third components in `xs`.
+    ///
+    pub def unzip3(xs: List[(a, b, c)]): (List[a], List[b], List[c]) = unzip3Helper(xs, (ks1, ks2, ks3) -> (ks1, ks2, ks3))
 
+    ///
+    /// Helper function for `unzip3`.
+    ///
+    def unzip3Helper(xs: List[(a, b, c)], k: (List[a], List[b], List[c]) -> (List[a], List[b], List[c])): (List[a], List[b], List[c]) = match xs {
+        case Nil => k(Nil, Nil, Nil)
+        case (x1, x2, x3) :: rs => unzip3Helper(rs, (ks1, ks2, ks3) -> k(x1 :: ks1, x2 :: ks2, x3 :: ks3))
+    }
 
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
