@@ -25,6 +25,12 @@ instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
         "MutMap#{${String.dropRight(2, s)}}"
 }
 
+instance Copy[MutMap[k, v]] {
+    def copy(m: MutMap[k, v]): MutMap[k, v] & e =
+        let MutMap(mm) = m;
+        MutMap(ref (deref mm)) as & e
+}
+
 namespace MutMap {
 
     ///
