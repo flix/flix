@@ -48,6 +48,11 @@ instance Functor[Nel] {
     def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = Nel.map(f, xs)
 }
 
+instance Foldable[Nel] {
+    def foldLeft(f: b -> a -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldLeft(f, s, xs)
+    def foldRight(f: a -> b -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldRight(f, s, xs)
+}
+
 namespace Nel {
 
     ///

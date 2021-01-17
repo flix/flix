@@ -22,6 +22,11 @@ instance Copy[Array[a]] {
     def copy(a: Array[a]): Array[a] & e = Array.init(i -> a[i], Array.length(a)) as & e
 }
 
+instance Foldable[Array] {
+    def foldLeft(f: b -> a -> b & e, s: b, a: Array[a]): b & e = Array.foldLeft(f, s, a) as & e
+    def foldRight(f: a -> b -> b & e, s: b, a: Array[a]): b & e = Array.foldRight(f, s, a) as & e
+}
+
 namespace Array {
 
     ///

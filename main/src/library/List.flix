@@ -86,6 +86,11 @@ instance Functor[List] {
     def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
 }
 
+instance Foldable[List] {
+    def foldLeft(f: b -> a -> b & e, s: b, xs: List[a]): b & e = List.foldLeft(f, s, xs)
+    def foldRight(f: a -> b -> b & e, s: b, xs: List[a]): b & e = List.foldRight(f, s, xs)
+}
+
 namespace List {
 
     ///

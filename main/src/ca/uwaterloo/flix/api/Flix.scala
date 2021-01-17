@@ -146,6 +146,7 @@ class Flix {
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
+    "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
