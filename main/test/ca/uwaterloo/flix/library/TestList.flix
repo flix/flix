@@ -1493,6 +1493,77 @@ def unzip04(): Bool = List.unzip((1, true) :: (2, true) :: (3, false) :: Nil) ==
                     (1 :: 2 :: 3 :: Nil, true :: true :: false :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
+// zip3                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def zip301(): Bool = List.zip3(Nil: List[Unit],Nil: List[Unit], Nil: List[Unit]) == Nil
+
+@test
+def zip302(): Bool = List.zip3(1 :: Nil, Nil: List[Unit], Nil: List[Unit]) == Nil
+
+@test
+def zip303(): Bool = List.zip3(Nil: List[Unit], 2 :: Nil, Nil: List[Unit]) == Nil
+
+@test
+def zip304(): Bool = List.zip3(Nil: List[Unit], Nil: List[Unit], 3 :: Nil) == Nil
+
+@test
+def zip305(): Bool = List.zip3(1 :: Nil, 2 :: Nil, 3 :: Nil) == (1, 2, 3) :: Nil
+
+@test
+def zip306(): Bool = List.zip3(1 :: 4 :: Nil, 2 :: 5 :: Nil, 3 :: 6 :: Nil) == (1, 2, 3) :: (4, 5, 6) :: Nil
+
+@test
+def zip307(): Bool = List.zip3(1 :: 4 :: 7 :: Nil, 2 :: 5 :: 8 :: Nil, 3 :: 6 :: 9 :: Nil) == (1, 2, 3) :: (4, 5, 6) :: (7, 8, 9) :: Nil
+
+@test
+def zip308(): Bool = List.zip3(1 :: 4 :: 7 :: 10 :: Nil, 2 :: 5 :: 8 :: 11 :: Nil, 3 :: 6 :: 9 :: 12 :: Nil) == (1, 2, 3) :: (4, 5, 6) :: (7, 8, 9) :: (10, 11, 12) :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// zipWith3                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def zipWith301(): Bool = List.zipWith3((a, b, c) -> if (c) a else b, Nil: List[Int32], Nil, Nil) == Nil
+
+@test
+def zipWith302(): Bool = List.zipWith3((a, b, c) -> if (c) a else b, 1 :: Nil, Nil, Nil) == Nil
+
+@test
+def zipWith303(): Bool = List.zipWith3((a, b, c) -> if (c) a else b, Nil, 10 :: Nil, Nil) == Nil
+
+@test
+def zipWith304(): Bool = List.zipWith3((a, b, c) -> if (c) a else b, Nil: List[Int32], Nil, true :: Nil) == Nil
+
+@test
+def zipWith305(): Bool = List.zipWith3((a, b, c) -> if (c) a else b, 1 :: Nil, 10 :: Nil, true :: Nil) == 1 :: Nil
+
+@test
+def zipWith306(): Bool = List.zipWith3((a, b, c) -> if (c) a else b, 1 :: Nil, 10 :: Nil, false :: Nil) == 10 :: Nil
+
+@test
+def zipWith307(): Bool = List.zipWith3((a, b, c) -> if (c) a else b,
+                            1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil,
+                            10 :: 11 :: 12 :: 13 :: 14 :: 15 :: 16 :: 17 :: Nil,
+                            false :: true :: true :: false :: false :: true :: true :: true ::Nil) ==
+                            10 :: 2 :: 3 :: 13 :: 14 :: 6 :: 7 :: 8 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// unzip3                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def unzip301(): Bool = List.unzip3(Nil: List[(Unit, Unit, Unit)]) == (Nil, Nil, Nil)
+
+@test
+def unzip302(): Bool = List.unzip3((1, 'a', true) :: Nil) == (1 :: Nil, 'a' :: Nil, true :: Nil)
+
+@test
+def unzip303(): Bool = List.unzip3((1, 'a', true) :: (2, 'b', true) :: Nil) == (1 :: 2 :: Nil, 'a' :: 'b' :: Nil, true :: true :: Nil)
+
+@test
+def unzip304(): Bool = List.unzip3((1, 'a', true) :: (2, 'b', true) :: (3, 'c', false) :: Nil) ==
+                    (1 :: 2 :: 3 :: Nil, 'a' :: 'b' :: 'c' :: Nil, true :: true :: false :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
 // map2                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
