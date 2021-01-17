@@ -545,8 +545,8 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "Superclass cycle.") << NewLine
       vt << NewLine
-      for (List(superclass, subclass) <- path.sliding(2)) {
-        vt << s"$subclass extends $superclass" << NewLine
+      for (List(superClass, subclass) <- path.sliding(2)) {
+        vt << s"$subclass extends $superClass" << NewLine
       }
       vt
     }

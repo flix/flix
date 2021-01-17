@@ -33,10 +33,10 @@ object ClassEnvironment {
   // MATT THIH says that toncstrs0 should always be in HNF so checking for byInst is a waste.
   def entail(tconstrs0: List[Ast.TypeConstraint], tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, (List[Symbol.ClassSym], List[Ast.Instance])])(implicit flix: Flix): Validation[Unit, UnificationError] = {
 
-    val superclasses = tconstrs0.flatMap(bySuper(_, classEnv))
+    val superClasses = tconstrs0.flatMap(bySuper(_, classEnv))
 
     // Case 1: tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
-    if (superclasses.contains(tconstr)) {
+    if (superClasses.contains(tconstr)) {
       ().toSuccess
     } else {
       // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
@@ -120,7 +120,7 @@ object ClassEnvironment {
     // Walk the superclass tree.
     // There may be duplicates, but this will terminate since superclasses must be acyclic.
     tconstr :: directSupers.flatMap {
-      superclass => bySuper(Ast.TypeConstraint(superclass, tconstr.arg), classEnv)
+      superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg), classEnv)
     }
   }
 
