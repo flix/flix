@@ -86,16 +86,6 @@ namespace Foldable {
         Foldable.foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), t)
 
     ///
-    /// Returns `t` with `a` inserted between every adjacent element.
-    ///
-    pub def intercalate[t :# Type -> Type : Foldable, a : Monoid : Eq](t: t[a], a: a): a =
-        Foldable.foldLeft((acc, x) ->
-        if (acc == Monoid.empty())
-            Monoid.combine(acc, x)
-        else
-            Monoid.combine(acc, Monoid.combine(a, x)), Monoid.empty(), t)
-
-    ///
     /// Returns true if and only if `t` is empty.
     ///
     pub def isEmpty[t :# Type -> Type : Foldable, a](t: t[a]): Bool =
