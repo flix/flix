@@ -70,11 +70,6 @@ instance Order[Set[a]] with [a : Order] {
 
 }
 
-instance Foldable[Set] {
-    def foldLeft(f: b -> a -> b & e, s: b, xs: Set[a]): b & e = Set.foldLeft(f, s, xs)
-    def foldRight(f: a -> b -> b & e, s: b, xs: Set[a]): b & e = Set.foldRight(f, s, xs)
-}
-
 namespace Set {
 
     ///

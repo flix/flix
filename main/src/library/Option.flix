@@ -94,8 +94,8 @@ instance Functor[Option] {
 }
 
 instance Foldable[Option] {
-    def foldLeft(f: b -> a -> b & e, s: b, o: Option[a]): b & e = Option.foldLeft(f, s, o)
-    def foldRight(f: a -> b -> b & e, s: b, o: Option[a]): b & e = Option.foldRight(f, o, s)
+    def foldLeft(f: (b, a) -> b & e, s: b, o: Option[a]): b & e = Option.foldLeft(f, s, o)
+    def foldRight(f: (a, b) -> b & e, s: b, o: Option[a]): b & e = Option.foldRight(f, o, s)
 }
 
 namespace Option {
