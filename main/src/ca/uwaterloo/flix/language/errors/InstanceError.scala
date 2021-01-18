@@ -182,22 +182,25 @@ object InstanceError {
   /**
     * Error indicating a missing super class instance.
     *
-    * @param tpe the instance type.
-    * @param subClass the sub class symbol.
-    * @param superClass the super class symbol.
+    * @param tpe the type for which the super class instance is missing.
+    * @param subClass the symbol of the sub class.
+    * @param superClass the symbol of the super class.
     * @param loc the location where the error occurred.
     */
   case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
-    override def summary: String = "Missing super class instance."
+    override def summary: String = s"Missing super class instance '$superClass'."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "' and sub class '" << Red(subClass.name) << "'."
+      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << NewLine
+      vt << ">> The class '" << Red(subClass.name) << "' extends the class '" << Red(superClass.name) << "'." << NewLine
+      vt << ">> If you provide an instance for '" << Red(subClass.name) << "' you must also provide an instance for '" << Red(superClass.name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, s"missing super class instance")
       vt << NewLine
-      vt << Underline("Tip:") << " Create an instance of the super class."
+      vt << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
     }
   }
 }
