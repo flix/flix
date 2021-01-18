@@ -533,7 +533,7 @@ object ResolutionError {
   /**
     * An error raise to indicate a cycle in the class hierarchy.
     *
-    * @param path the superclass path from a class to itself.
+    * @param path the super class path from a class to itself.
     * @param loc  the location where the error occurred.
     */
   case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {

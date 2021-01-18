@@ -36,7 +36,7 @@ object ClassEnvironment {
 
     val superClasses = tconstrs0.flatMap(bySuper(_, classEnv))
 
-    // Case 1: tconstrs0 entail tconstr if tconstr is a superclass of any member or tconstrs0
+    // Case 1: tconstrs0 entail tconstr if tconstr is a super class of any member or tconstrs0
     if (superClasses.contains(tconstr)) {
       ().toSuccess
     } else {
@@ -112,14 +112,14 @@ object ClassEnvironment {
   }
 
   /**
-    * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the superclasses of the constraint.
+    * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the super classes of the constraint.
     */
   private def bySuper(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): List[Ast.TypeConstraint] = {
 
     val directSupers = classEnv.get(tconstr.sym).map(_.superClasses).getOrElse(Nil)
 
-    // Walk the superclass tree.
-    // There may be duplicates, but this will terminate since superclasses must be acyclic.
+    // Walk the super class tree.
+    // There may be duplicates, but this will terminate since super classes must be acyclic.
     tconstr :: directSupers.flatMap {
       superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg), classEnv)
     }

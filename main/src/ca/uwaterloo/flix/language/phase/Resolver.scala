@@ -84,7 +84,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
       properties <- propertiesVal
-      _ <- checkSuperclassDag(classes.toMap)
+      _ <- checkSuperClassDag(classes.toMap)
     } yield ResolvedAst.Root(
       classes.toMap, combine(instances), definitions.toMap, enums.toMap, properties.flatten, root.reachable, root.sources
     )
@@ -100,13 +100,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Checks that the superclasses form a DAG (no cycles).
+    * Checks that the super classes form a DAG (no cycles).
     */
   // TODO improve this algo
-  private def checkSuperclassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Class]): Validation[Unit, ResolutionError] = {
+  private def checkSuperClassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Class]): Validation[Unit, ResolutionError] = {
 
     /**
-      * Performs a depth-first search on superclasses, starting from `clazz`, returning a list of acyclic classes.
+      * Performs a depth-first search on super classes, starting from `clazz`, returning a list of acyclic classes.
       */
     def dfs(clazz: ResolvedAst.Class, path: List[Symbol.ClassSym]): Validation[List[Symbol.ClassSym], ResolutionError] = {
       if (path.contains(clazz.sym)) {
