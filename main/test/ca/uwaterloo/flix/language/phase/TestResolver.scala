@@ -964,23 +964,23 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalTypeApplication](result)
   }
 
-  test("SuperclassCycle.01") {
+  test("CyclicClassHierarchy.01") {
     val input = "class A[a] extends [A]"
     val result = compile(input, DefaultOptions)
-    expectError[ResolutionError.SuperclassCycle](result)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 
-  test("SuperclassCycle.02") {
+  test("CyclicClassHierarchy.02") {
     val input =
       """
         |class A[a] extends [B]
         |class B[a] extends [A]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[ResolutionError.SuperclassCycle](result)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 
-  test("SuperclassCycle.03") {
+  test("CyclicClassHierarchy.03") {
     val input =
       """
         |class A[a] extends [B]
@@ -988,20 +988,20 @@ class TestResolver extends FunSuite with TestUtils {
         |class C[a] extends [A]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[ResolutionError.SuperclassCycle](result)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 
-  test("SuperclassCycle.04") {
+  test("CyclicClassHierarchy.04") {
     val input =
       """
         |class A[a] extends [A, B]
         |class B[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[ResolutionError.SuperclassCycle](result)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 
-  test("SuperclassCycle.05") {
+  test("CyclicClassHierarchy.05") {
     val input =
       """
         |class A[a] extends [B]
@@ -1009,6 +1009,6 @@ class TestResolver extends FunSuite with TestUtils {
         |class C[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[ResolutionError.SuperclassCycle](result)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 }

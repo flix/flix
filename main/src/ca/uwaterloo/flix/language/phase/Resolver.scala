@@ -113,7 +113,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         // Case 1: We already saw this class. Create the cycle and report an error for each class in the cycle.
         val cycle = clazz.sym :: path.takeWhile(_ != clazz.sym) ++ List(clazz.sym)
         val errors = cycle.map {
-          sym => ResolutionError.SuperclassCycle(cycle, sym.loc)
+          sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
         }
         Validation.Failure(LazyList.from(errors))
       } else {

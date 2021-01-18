@@ -531,20 +531,21 @@ object ResolutionError {
   }
 
   /**
-    * An error raise to indicate a superclass cycle.
+    * An error raise to indicate a cycle in the class hierarchy.
     *
     * @param path the superclass path from a class to itself.
     * @param loc  the location where the error occurred.
     */
-  case class SuperclassCycle(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "Superclass cycle"
+  case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
+    override def summary: String = "Cyclic inheritance."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << Code(loc, "Superclass cycle.") << NewLine
+      vt << Code(loc, "Cyclic inheritance.") << NewLine
       vt << NewLine
+      vt << "The following classes are in the cycle:"
       for (List(superClass, subclass) <- path.sliding(2)) {
         vt << s"$subclass extends $superClass" << NewLine
       }
