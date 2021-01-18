@@ -227,7 +227,7 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "sealed class.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Move the instance or subclass to the class's namespace." << NewLine
+      vt << Underline("Tip:") << " Move the instance or sub class to the class's namespace." << NewLine
     }
   }
 
@@ -546,8 +546,8 @@ object ResolutionError {
       vt << Code(loc, "Cyclic inheritance.") << NewLine
       vt << NewLine
       vt << "The following classes are in the cycle:"
-      for (List(superClass, subclass) <- path.sliding(2)) {
-        vt << s"$subclass extends $superClass" << NewLine
+      for (List(superClass, subClass) <- path.sliding(2)) {
+        vt << s"$subClass extends $superClass" << NewLine
       }
       vt
     }

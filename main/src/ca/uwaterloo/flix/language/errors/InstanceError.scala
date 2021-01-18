@@ -183,17 +183,17 @@ object InstanceError {
     * Error indicating a missing super class instance.
     *
     * @param tpe the instance type.
-    * @param subclass the sub class symbol.
+    * @param subClass the sub class symbol.
     * @param superClass the super class symbol.
     * @param loc the location where the error occurred.
     */
-  case class MissingSuperClassInstance(tpe: Type, subclass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Missing super class instance."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "' and subclass '" << Red(subclass.name) << "'."
+      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "' and sub class '" << Red(subClass.name) << "'."
       vt << NewLine
       vt << Code(loc, s"missing super class instance")
       vt << NewLine
