@@ -85,11 +85,6 @@ namespace Foldable {
         Foldable.foldRight((x, acc) -> Option.withDefault(acc, if (f(x)) Some(x) else None), None, t)
 
     ///
-    /// TODO
-    ///
-    pub def findMap[t :# Type -> Type : Foldable, a, b, e](f: a -> Option[b] & e, t: t[a]): Option[b] & e = ???
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap[t :# Type -> Type : Foldable, a, b : Monoid](f: a -> b, t: t[a]): b =
