@@ -407,7 +407,7 @@ class TestInstances extends FunSuite with TestUtils {
     expectError[InstanceError.OrphanInstance](result)
   }
 
-  test("Test.MissingSuperclassInstance.01") {
+  test("Test.MissingSuperClassInstance.01") {
     val input =
       """
         |class A[a] extends [B]
@@ -416,10 +416,10 @@ class TestInstances extends FunSuite with TestUtils {
         |instance A[Int]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.MissingSuperclassInstance](result)
+    expectError[InstanceError.MissingSuperClassInstance](result)
   }
 
-  test("Test.MissingSuperclassInstance.02") {
+  test("Test.MissingSuperClassInstance.02") {
     val input =
       """
         |class A[a] extends [B, C]
@@ -430,10 +430,10 @@ class TestInstances extends FunSuite with TestUtils {
         |instance B[Int]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.MissingSuperclassInstance](result)
+    expectError[InstanceError.MissingSuperClassInstance](result)
   }
 
-  test("Test.MissingSuperclassInstance.03") {
+  test("Test.MissingSuperClassInstance.03") {
     val input =
       """
         |class A[a] extends [B]
@@ -443,6 +443,6 @@ class TestInstances extends FunSuite with TestUtils {
         |instance B[Bool]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[InstanceError.MissingSuperclassInstance](result)
+    expectError[InstanceError.MissingSuperClassInstance](result)
   }
 }

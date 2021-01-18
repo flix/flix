@@ -187,7 +187,7 @@ object InstanceError {
     * @param superClass the super class symbol.
     * @param loc the location where the error occurred.
     */
-  case class MissingSuperclassInstance(tpe: Type, subclass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class MissingSuperClassInstance(tpe: Type, subclass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Missing super class instance."
 
     override def message: VirtualTerminal = {

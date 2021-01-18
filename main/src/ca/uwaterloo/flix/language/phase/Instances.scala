@@ -151,7 +151,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
               ().toSuccess
             } else {
               // Case 2: No instance matches. Error.
-              InstanceError.MissingSuperclassInstance(tpe, sym, superClass, loc).toFailure
+              InstanceError.MissingSuperClassInstance(tpe, sym, superClass, loc).toFailure
             }
         }
     }
