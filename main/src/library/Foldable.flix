@@ -113,10 +113,7 @@ namespace Foldable {
     /// Returns `None` if `t` is empty.
     ///
     pub def minimum[t :# Type -> Type : Foldable, a: Order](t: t[a]): Option[a] =
-        Foldable.foldLeft((acc, x) -> match acc {
-            case None => Some(x)
-            case Some(y) => Some(Order.min(x, y))
-        }, None, t)
+        Foldable.foldLeft((acc, x) -> Some(Option.foldLeft((z, v) -> Order.min(z, v), x, acc)), None, t)
 
     ///
     /// Optionally finds the smallest element of `t` according to the given comparator `cmp`.
@@ -124,10 +121,7 @@ namespace Foldable {
     /// Returns `None` if `t` is empty.
     ///
     pub def minimumBy[t :# Type -> Type : Foldable, a](cmp: (a, a) -> Comparison, t: t[a]): Option[a] =
-        Foldable.foldLeft((acc, x) -> match acc {
-            case None => Some(x)
-            case Some(y) => Some(Order.minBy(cmp, x, y))
-        }, None, t)
+        Foldable.foldLeft((acc, x) -> Some(Option.foldLeft((z, v) -> Order.minBy(cmp, z, v), x, acc)), None, t)
 
     ///
     /// Optionally finds the largest element of `t` according to the `Order` on `a`.
@@ -135,10 +129,7 @@ namespace Foldable {
     /// Returns `None` if `t` is empty.
     ///
     pub def maximum[t :# Type -> Type : Foldable, a: Order](t: t[a]): Option[a] =
-        Foldable.foldLeft((acc, x) -> match acc {
-            case None => Some(x)
-            case Some(y) => Some(Order.max(x, y))
-        }, None, t)
+        Foldable.foldLeft((acc, x) -> Some(Option.foldLeft((z, v) -> Order.max(z, v), x, acc)), None, t)
 
     ///
     /// Optionally finds the largest element of `t` according to the given comparator `cmp`.
@@ -146,10 +137,7 @@ namespace Foldable {
     /// Returns `None` if `t` is empty.
     ///
     pub def maximumBy[t :# Type -> Type : Foldable, a](cmp: (a, a) -> Comparison, t: t[a]): Option[a] =
-        Foldable.foldLeft((acc, x) -> match acc {
-            case None => Some(x)
-            case Some(y) => Some(Order.maxBy(cmp, x, y))
-        }, None, t)
+        Foldable.foldLeft((acc, x) -> Some(Option.foldLeft((z, v) -> Order.maxBy(cmp, z, v), x, acc)), None, t)
 
     ///
     /// Optionally applies `f` to all elements in `t` going from left to right until a single value is obtained.
