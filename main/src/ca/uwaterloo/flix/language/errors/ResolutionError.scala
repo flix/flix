@@ -537,7 +537,10 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "Cyclic inheritance."
+    override def summary: String = {
+      val pathString = path.reverse.map(clazz => s"'${clazz.name}'").mkString(" extends ")
+      "Cyclic inheritance: " + pathString
+    }
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
@@ -546,7 +549,7 @@ object ResolutionError {
       vt << Code(loc, "Cyclic inheritance.") << NewLine
       vt << NewLine
       vt << "The following classes are in the cycle:"
-      for (List(superClass, subClass) <- path.sliding(2)) {
+      for (List(subClass, superClass) <- path.reverse.sliding(2)) {
         vt << s"$subClass extends $superClass" << NewLine
       }
       vt
