@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -146,7 +146,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
           superClass =>
             val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
             // Check each instance of the superclass
-            if (superInsts.exists(superInst => unifiesWith(tpe, superInst.tpe))) {
+            if (superInsts.exists(superInst => Unification.unifiesWith(tpe, superInst.tpe))) {
               // Case 1: An instance matches. Success.
               ().toSuccess
             } else {
@@ -188,16 +188,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
   private def checkEach[In, Error](xs: Iterable[In])(f: In => Validation[Unit, Error]): Validation[Unit, Error] = {
     Validation.fold(xs, ()) {
       case ((), x) => f(x)
-    }
-  }
-
-  /**
-    * Returns true iff `tpe1` unifies with `tpe2`.
-    */
-  private def unifiesWith(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
-    Unification.unifyTypes(tpe1, tpe2) match {
-      case Result.Ok(_) => true
-      case Result.Err(_) => false
     }
   }
 }
