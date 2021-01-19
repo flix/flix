@@ -111,9 +111,9 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        class D[a] extends [C]
+        class D[a] extends [C[a]]
 
-        class E[a] extends [D]
+        class E[a] extends [D[a]]
 
         instance C[Int] {
             def f(_x: Int): Bool = true

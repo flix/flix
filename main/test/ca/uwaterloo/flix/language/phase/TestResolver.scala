@@ -218,7 +218,7 @@ class TestResolver extends FunSuite with TestUtils {
         |}
         |
         |namespace O {
-        |    class D[a] extends [N.C]
+        |    class D[a] extends [N.C[a]]
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -262,7 +262,7 @@ class TestResolver extends FunSuite with TestUtils {
         |    sealed class C[a]
         |
         |    namespace O {
-        |        class D[a] extends [N.C]
+        |        class D[a] extends [N.C[a]]
         |    }
         |}
         |""".stripMargin
@@ -965,7 +965,7 @@ class TestResolver extends FunSuite with TestUtils {
   }
 
   test("CyclicClassHierarchy.01") {
-    val input = "class A[a] extends [A]"
+    val input = "class A[a] extends [A[a]]"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.CyclicClassHierarchy](result)
   }
@@ -973,8 +973,8 @@ class TestResolver extends FunSuite with TestUtils {
   test("CyclicClassHierarchy.02") {
     val input =
       """
-        |class A[a] extends [B]
-        |class B[a] extends [A]
+        |class A[a] extends [B[a]]
+        |class B[a] extends [A[a]]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.CyclicClassHierarchy](result)
@@ -983,9 +983,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("CyclicClassHierarchy.03") {
     val input =
       """
-        |class A[a] extends [B]
-        |class B[a] extends [C]
-        |class C[a] extends [A]
+        |class A[a] extends [B[a]]
+        |class B[a] extends [C[a]]
+        |class C[a] extends [A[a]]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.CyclicClassHierarchy](result)
@@ -994,7 +994,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("CyclicClassHierarchy.04") {
     val input =
       """
-        |class A[a] extends [A, B]
+        |class A[a] extends [A[a], B[a]]
         |class B[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1004,8 +1004,8 @@ class TestResolver extends FunSuite with TestUtils {
   test("CyclicClassHierarchy.05") {
     val input =
       """
-        |class A[a] extends [B]
-        |class B[a] extends [A, C]
+        |class A[a] extends [B[a]]
+        |class B[a] extends [A[a], C[a]]
         |class C[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)

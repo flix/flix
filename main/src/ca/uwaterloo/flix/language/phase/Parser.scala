@@ -218,11 +218,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def OptSuperClasses = rule {
-        optional(optWS ~ keyword("extends") ~ optWS ~ "[" ~ optWS ~ oneOrMore(SuperClass).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
+        optional(optWS ~ keyword("extends") ~ optWS ~ "[" ~ optWS ~ oneOrMore(SuperClass).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.SuperClass]]) => o.getOrElse(Seq.empty))
       }
 
       def SuperClass = rule {
-        Names.QualifiedClass
+        SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Names.Variable ~ optWS ~ "]" ~ SP ~> ParsedAst.SuperClass
       }
 
       def EmptyBody = rule {
