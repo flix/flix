@@ -160,6 +160,6 @@ namespace Foldable {
     /// That is, the result is of the form: `t1 :: t2 :: ... :: tn :: Nil`.
     ///
     pub def toList[t :# Type -> Type : Foldable, a](t: t[a]): List[a] =
-        List.reverse(foldLeft((acc, x) -> x :: acc, Nil, t))
+        foldRight((acc, x) -> x :: acc, Nil, t)
 
 }
