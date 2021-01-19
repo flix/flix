@@ -43,7 +43,7 @@ namespace Foldable {
     /// Returns the result of applying `combine` to all the elements `t`,
     /// using `empty` as the initial value.
     ///
-    pub def combineAll[t :# Type -> Type : Foldable, a : Monoid](t: t[a]): a =
+    pub def fold[t :# Type -> Type : Foldable, a : Monoid](t: t[a]): a =
         Foldable.foldLeft((acc, x) -> Monoid.combine(acc, x), Monoid.empty(), t)
 
     ///
@@ -160,6 +160,62 @@ namespace Foldable {
     /// That is, the result is of the form: `t1 :: t2 :: ... :: tn :: Nil`.
     ///
     pub def toList[t :# Type -> Type : Foldable, a](t: t[a]): List[a] =
-        foldRight((acc, x) -> x :: acc, Nil, t)
+        foldRight((x, acc) -> x :: acc, Nil, t)
+
+    ///
+    /// Returns `t` as an array.
+    ///
+    /// That is, the result is of the form: `[t1, t2, ..., tn]`.
+    ///
+    pub def toArray[t :# Type -> Type : Foldable, a](t: t[a]): Array[a] & Impure =
+        let v = MutList.new();
+        foldRight((x, _) -> MutList.push!(x, v), (), t);
+        MutList.toArray(v)
+
+    ///
+    /// Returns `t` as a mutable list.
+    ///
+    pub def toMutList[t :# Type -> Type : Foldable, a](t: t[a]): MutList[a] & Impure =
+        let v = MutList.new();
+        foldRight((x, _) -> MutList.push!(x, v), (), t);
+        v
+
+    ///
+    /// Returns `t` as a set.
+    ///
+    pub def toSet[t :# Type -> Type : Foldable, a : Order](t: t[a]): Set[a] =
+        foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), t)
+
+    ///
+    /// Returns `t` as a map.
+    ///
+    pub def toMap[t :# Type -> Type : Foldable, k : Order, v](t: t[(k, v)]): Map[k, v] =
+        foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map.empty(), t)
+
+    ///
+    /// Returns `t` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Returns an immutable list.
+    ///
+    pub def dropWhile[t :# Type -> Type : Foldable, a](f: a -> Bool, t: t[a]): List[a] =
+        foldLeft((acc, x) -> {
+                let (c, tail) = acc;
+                if (c and f(x)) (true, tail)
+                else (false, x :: tail)
+            }, (true, Nil), t) |> snd |> List.reverse
+
+    ///
+    /// Returns the longest prefix of `t` that satisfies the predicate `f`.
+    ///
+    /// Returns an immutable list.
+    ///
+    pub def takeWhile[t :# Type -> Type : Foldable, a](f: a -> Bool, t: t[a]): List[a] =
+        foldRight((x, acc) -> if (f(x)) x :: acc else Nil, Nil, t)
+
+    ///
+    /// Returns an immutable list of all the elements in `t` that satisfy the predicate `f`.
+    ///
+    pub def filter[t :# Type -> Type : Foldable, a](f: a -> Bool, t: t[a]): List[a] =
+        foldRight((x, acc) -> if (f(x)) x :: acc else acc, Nil, t)
 
 }
