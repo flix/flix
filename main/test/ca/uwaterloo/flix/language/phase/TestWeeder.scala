@@ -275,4 +275,25 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[WeederError.UndefinedAnnotation](result)
   }
+
+  test("MismatchedSuperClassTypeParameter.01") {
+    val input =
+      """
+        |class A[a]
+        |class B[a] extends [A[b]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MismatchedSuperClassTypeParameter](result)
+  }
+
+  test("MismatchedSuperClassTypeParameter.02") {
+    val input =
+      """
+        |class A[a]
+        |class B[a]
+        |class C[a] extends [A[a], B[b]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MismatchedSuperClassTypeParameter](result)
+  }
 }
