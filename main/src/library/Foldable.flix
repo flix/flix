@@ -23,15 +23,11 @@ pub class Foldable[t :# Type -> Type] {
     /// Left-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
     ///
-    /// That is, the result is of the form: `f(...f(f(s, t1), t2)..., tn)`.
-    ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, t: t[a]): b & e
 
     ///
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(t1, ...f(tn-1, f(tn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b & e, s: b, t: t[a]): b & e
 
@@ -137,8 +133,6 @@ namespace Foldable {
     ///
     /// Optionally applies `f` to all elements in `t` going from left to right until a single value is obtained.
     ///
-    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
-    ///
     /// Returns `None` if `t` is empty.
     ///
     pub def reduceLeft[t :# Type -> Type : Foldable, a, e](f: (a, a) -> a & e, t: t[a]): Option[a] & e =
@@ -146,8 +140,6 @@ namespace Foldable {
 
     ///
     /// Optionally applies `f` to all elements in `t` going from right to left until a single value is obtained.
-    ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
     /// Returns `None` if `t` is empty.
     ///
@@ -157,15 +149,11 @@ namespace Foldable {
     ///
     /// Returns `t` as an immutable list.
     ///
-    /// That is, the result is of the form: `t1 :: t2 :: ... :: tn :: Nil`.
-    ///
     pub def toList[t :# Type -> Type : Foldable, a](t: t[a]): List[a] =
         foldRight((x, acc) -> x :: acc, Nil, t)
 
     ///
     /// Returns `t` as an array.
-    ///
-    /// That is, the result is of the form: `[t1, t2, ..., tn]`.
     ///
     pub def toArray[t :# Type -> Type : Foldable, a](t: t[a]): Array[a] & Impure =
         let v = MutList.new();
