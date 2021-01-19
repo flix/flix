@@ -410,7 +410,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.MissingSuperClassInstance.01") {
     val input =
       """
-        |class A[a] extends [B[a]]
+        |class A[a] extends B[a]
         |class B[a]
         |
         |instance A[Int]
@@ -422,7 +422,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.MissingSuperClassInstance.02") {
     val input =
       """
-        |class A[a] extends [B[a], C[a]]
+        |class A[a] extends B[a], C[a]
         |class B[a]
         |class C[a]
         |
@@ -436,7 +436,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.MissingSuperClassInstance.03") {
     val input =
       """
-        |class A[a] extends [B[a]]
+        |class A[a] extends B[a]
         |class B[a]
         |
         |instance A[Int]
