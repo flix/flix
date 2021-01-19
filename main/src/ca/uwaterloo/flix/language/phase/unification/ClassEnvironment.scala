@@ -113,14 +113,25 @@ object ClassEnvironment {
 
   /**
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the super classes of the constraint.
+    *
+    * E.g. if we have 3 classes: `A`, `B`, `C` where
+    * - `A` extends `B`
+    * - `B` extends `C`
+    * Then for the constraint `t : A`, we return:
+    * - `t : A` (given)
+    * - `t : B` (because `B` is a super class of `A`)
+    * - `t : C` (because `C` is a super class of `B`, and transitively a super class of `A`)
+    *
     */
   private def bySuper(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): List[Ast.TypeConstraint] = {
 
+    // Get the classes that are directly superclasses of the class in `tconstr`
     val directSupers = classEnv.get(tconstr.sym).map(_.superClasses).getOrElse(Nil)
 
     // Walk the super class tree.
     // There may be duplicates, but this will terminate since super classes must be acyclic.
     tconstr :: directSupers.flatMap {
+      // recurse on the superclasses of each direct superclass
       superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg), classEnv)
     }
   }
