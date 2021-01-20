@@ -270,6 +270,21 @@ def flatten02(): Bool = Option.flatten(Some(None: Option[Unit])) == None
 @test
 def flatten03(): Bool = Option.flatten(Some(Some(2))) == Some(2)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fold01(): Bool = Option.fold(None: Option[Unit]) == ()
+
+    @test
+    def fold02(): Bool = Option.fold(Some("a")) == "a"
+
+    @test
+    def fold03(): Bool = Option.fold(Some(())) == ()
+
+    @test
+    def fold04(): Bool = Option.fold(Some(("a", "b", "c"))) == ("a", "b", "c")
 
 /////////////////////////////////////////////////////////////////////////////
 // foldLeft                                                                //

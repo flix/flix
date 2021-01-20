@@ -47,7 +47,7 @@ namespace TestRedBlackTree {
     @test
     def testEmptyAfterDelete03(): Bool =
         let tree =
-        List.fold((acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
+        List.foldLeft(acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
         tree == RedBlackTree.empty()
 
     @test
@@ -85,7 +85,7 @@ namespace TestRedBlackTree {
     @test
     def testBinarySearchTreeInvariant09(): Bool =
         let tree =
-        List.fold((acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
+        List.foldLeft(acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkBinarySearchTreeInvariant(tree)
 
     @test
@@ -132,7 +132,7 @@ namespace TestRedBlackTree {
     @test
     def testRedParentInvariant09(): Bool =
         let tree =
-        List.fold((acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
+        List.foldLeft(acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkRedParentInvariant(tree)
 
     @test
@@ -174,7 +174,7 @@ namespace TestRedBlackTree {
     /// Returns a tree with mappings `x -> ()` for all `x` in `xs`.
     ///
     def toTree(xs: List[Int32]): RedBlackTree[Int32, Unit]
-        = List.fold((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
+        = List.foldLeft(acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
 
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
@@ -185,7 +185,7 @@ namespace TestRedBlackTree {
             case _ => panic "no seed given"
         };
         let r = Random.newWithSeed(seed);
-        List.fold((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
+        List.foldLeft(acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
     }
 
 }

@@ -358,20 +358,21 @@ def isProperSubsetOf16(): Bool = Set.isProperSubsetOf(Set#{10, 2, 3, 6, -1, 4}, 
 @test
 def isProperSubsetOf17(): Bool = Set.isProperSubsetOf(Set#{10, 2, 3, 6, 1, 4, 5, 9, 8, 7}, Set#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) == false
 
-/////////////////////////////////////////////////////////////////////////////
-// fold                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def fold01(): Bool = Set.fold((i, e) -> (i - e)*(e % 2 + 1), 100, Set#{}) == 100
+    /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def fold02(): Bool = Set.fold((i, e) -> (i - e)*(e % 2 + 1), 100, Set#{1}) == 198
+    @test
+    def fold01(): Bool = Set.fold(Set#{}: Set[String]) == ""
 
-@test
-def fold03(): Bool = Set.fold((i, e) -> (i - e)*(e % 2 + 1), 100, Set#{2, 1}) == 196
+    @test
+    def fold02(): Bool = Set.fold(Set#{}: Set[Unit]) == ()
 
-@test
-def fold04(): Bool = Set.fold((i, e) -> (i - e)*(e % 2 + 1), 100, Set#{3, 2, 1}) == 386
+    @test
+    def fold03(): Bool = Set.fold(Set#{"a", "b", "c"}) == "abc"
+
+    @test
+    def fold04(): Bool = Set.fold(Set#{("a", "b"), ("c", "d")}) == ("ac", "bd")
 
 /////////////////////////////////////////////////////////////////////////////
 // foldLeft                                                                //
@@ -402,24 +403,6 @@ def foldRight03(): Bool = Set.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, Set#
 
 @test
 def foldRight04(): Bool = Set.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, Set#{3, 2, 1}) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// reduce                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def reduce01(): Bool = Set.reduce((a, b) -> a-b, Set#{}: Set[Int]) == None
-
-@test
-def reduce02(): Bool = Set.reduce((a, b) -> a-b, Set#{1}) == Some(1)
-
-@test
-def reduce03(): Bool = Set.reduce((a, b) -> a-b, Set#{2, 1}) == Some(-1)
-
-@test
-def reduce04(): Bool = Set.reduce((a, b) -> a-b, Set#{3, 2, 1}) == Some(-4)
-
-@test
-def reduce05(): Bool = Set.reduce((a, b) -> a-b, Set#{4, 3, 2, 1}) == Some(-8)
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //

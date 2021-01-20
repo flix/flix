@@ -51,7 +51,7 @@ namespace Core/Io/File {
     ///
     pub def newFromFragments(n: Nel[String]): File & Impure = {
         match n {
-            case Nel(base, xs) => List.fold((p, s) -> p.resolve(s), new(base), xs)
+            case Nel(base, xs) => List.foldLeft((p, s) -> p.resolve(s), new(base), xs)
         }
     }
 

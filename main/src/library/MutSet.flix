@@ -219,10 +219,9 @@ namespace MutSet {
             Set.findRight(f, deref ms)
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `s`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, i: b, s: MutSet[a]): b & Impure =
-        foldLeft(f, i, s)
+    pub def fold[a : Monoid](s: MutSet[a]): a = Foldable.fold(s)
 
     ///
     /// Applies `f` to a start value `i` and all elements in the mutable set `s` going from left to right.
@@ -241,12 +240,6 @@ namespace MutSet {
     pub def foldRight(f: (a, b) -> b & e, i: b, s: MutSet[a]): b & Impure =
         let MutSet(ms) = s;
         Set.foldRight(f, i, deref ms)
-
-    ///
-    /// Alias for `reduceLeftOpt`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, s: MutSet[a]): Option[a] & Impure =
-        reduceLeft(f, s)
 
     ///
     /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.

@@ -401,6 +401,37 @@ namespace TestMutList {
         MutList.sameElements(v, MutList.new())
 
     /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fold01(): Bool & Impure =
+        let v: MutList[Unit] = MutList.new();
+        MutList.fold(v) == ()
+
+    @test
+    def fold02(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!("a", v);
+        MutList.fold(v) == "a"
+
+    @test
+    def fold03(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!("a", v);
+        MutList.push!("b", v);
+        MutList.push!("c", v);
+        MutList.fold(v) == "abc"
+
+    @test
+    def fold04(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!(("a", "d"), v);
+        MutList.push!(("b", "e"), v);
+        MutList.push!(("c", "f"), v);
+        MutList.fold(v) == ("abc", "def")
+
+    /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

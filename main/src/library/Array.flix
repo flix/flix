@@ -138,7 +138,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def minimum[a : Order](a: Array[a]): Option[a] & Impure =
-        reduce(Order.min, a)
+        reduceLeft(Order.min, a)
 
     ///
     /// Optionally finds the smallest element of `a` according to the given comparator `cmp`.
@@ -146,7 +146,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
-        reduce(Order.minBy(cmp), a)
+        reduceLeft(Order.minBy(cmp), a)
 
     ///
     /// Optionally finds the largest element of `a` according to the `Order` on `a`.
@@ -154,7 +154,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def maximum[a : Order](a: Array[a]): Option[a] & Impure =
-        reduce(Order.max, a)
+        reduceLeft(Order.max, a)
 
     ///
     /// Optionally finds the largest element of `a` according to the given comparator `cmp`.
@@ -162,7 +162,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
-        reduce(Order.maxBy(cmp), a)
+        reduceLeft(Order.maxBy(cmp), a)
 
     ///
     /// Alias for `IndexOfLeft`
@@ -726,9 +726,9 @@ namespace Array {
                 isSuffixOfHelper(a1, a2, i-1, j-1)
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, a: Array[a]): b & Impure = foldLeft(f, s, a)
+    pub def fold[a : Monoid](a: Array[a]): a = Foldable.fold(a)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
@@ -767,11 +767,6 @@ namespace Array {
             let s1 = f(a[i], s) as & Impure;
             foldRightHelper(f, s1, a, i - 1)
         }
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, a: Array[a]): Option[a] & Impure = reduceLeft(f, a)
 
     ///
     /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.

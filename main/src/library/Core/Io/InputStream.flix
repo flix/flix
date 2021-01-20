@@ -111,7 +111,7 @@ namespace Core/Io/InputStream {
             Ok(if (r <= 0) None else Some(arr[0..r]))
         };
         let* r = List.unfoldWithOkIter(step);
-        let f = List.fold((acc, elem) -> Array.append(acc, elem), [], r);
+        let f = List.foldLeft((acc, elem) -> Array.append(acc, elem), [], r);
         Ok(f)
     }
 
