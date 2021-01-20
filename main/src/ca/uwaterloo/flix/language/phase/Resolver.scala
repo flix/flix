@@ -102,42 +102,54 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Checks that the super classes form a DAG (no cycles).
     */
-  // TODO improve this algo
   private def checkSuperClassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Class]): Validation[Unit, ResolutionError] = {
 
+    // Set of classes known to be acyclic
+    val acyclic = mutable.Set.empty[Symbol.ClassSym]
+
     /**
-      * Performs a depth-first search on super classes, starting from `clazz`, returning a list of acyclic classes.
+      * Checks the class for super class cycles, where `path` is a list visited nodes.
       */
-    def dfs(clazz: ResolvedAst.Class, path: List[Symbol.ClassSym]): Validation[List[Symbol.ClassSym], ResolutionError] = {
-      if (path.contains(clazz.sym)) {
-        // Case 1: We already saw this class. Create the cycle and report an error for each class in the cycle.
+    def findCycle(clazz: ResolvedAst.Class, path: List[Symbol.ClassSym]): Option[List[Symbol.ClassSym]] = {
+      if (acyclic.contains(clazz.sym)) {
+        // Case 1: We already know this class is acyclic.
+        None
+      } else if (path.contains(clazz.sym)) {
+        // Case 2: This class is in our path. There's a cycle.
         val cycle = clazz.sym :: path.takeWhile(_ != clazz.sym) ++ List(clazz.sym)
-        val errors = cycle.map {
-          sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
-        }
-        Validation.Failure(LazyList.from(errors))
+        Some(cycle)
       } else {
-        // Case 2: We haven't seen this class. Add it to the path and the list of checked nodes and recurse on the super classes.
-        fold(clazz.superClasses, List(clazz.sym)) {
-          (acc, superClass) => dfs(classes(superClass), clazz.sym :: path).map(acc.concat)
+        // Case 3: Check each superclass for cycles.
+        val result = clazz.superClasses.flatMap {
+          superClass => findCycle(classes(superClass), clazz.sym :: path)
+        }.headOption
+
+        if (result.isEmpty) {
+          // mark this class as acyclic if there's no cycle
+          acyclic += clazz.sym
         }
+
+        result
       }
     }
 
-    // Check each class for cycles
-    val checked = fold(classes.values, Set.empty[Symbol.ClassSym]) {
-      case (visited, clazz) =>
-        if (visited.contains(clazz.sym)) {
-          // Case 1: We already checked this class while exploring from another node. Skip it.
-          visited.toSuccess
-        } else {
-          // Case 2: We haven't checked this class. Run the check and add it to the checked list.
-          dfs(clazz, List.empty).map(visited ++ _)
-        }
+    /**
+      * Create a list of CyclicClassHierarchy errors, one for each class.
+      */
+    def mkCycleErrors[T](cycle: List[Symbol.ClassSym]): Validation.Failure[T, ResolutionError] = {
+      val errors = cycle.map {
+        sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
+      }
+      Validation.Failure(LazyList.from(errors))
     }
 
-    // Ignore the checked list.
-    checked.map(_ => ())
+    // Check each class for cycles
+    fold(classes.values, ()) {
+      case ((), clazz) => findCycle(clazz, Nil) match {
+        case Some(cycle) => mkCycleErrors(cycle)
+        case None => ().toSuccess
+      }
+    }
   }
 
   object Constraints {
