@@ -348,15 +348,6 @@ namespace Map {
     pub def mapWithKey[k : Order, v1, v2, e](f: (k, v1) -> v2 & e, m: Map[k, v1]): Map[k, v2] & e =
         foldLeftWithKey((acc, k, v) -> insert(k, f(k, v), acc), empty(), m)
 
-
-
-
-
-    ///
-    /// Alias for `foldLeft`.
-    ///
-    pub def fold(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeft(f, s, m)
-
     ///
     /// Alias for `foldLeftWithKey`.
     ///
@@ -395,16 +386,6 @@ namespace Map {
     pub def foldRightWithKey(f: (k, v, b) -> b & e, s: b, m: Map[k, v]): b & e =
         let Map(xs) = m;
         RedBlackTree.foldRight(f, s, xs)
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e = reduceLeft(f, m)
-
-    ///
-    /// Alias for `reduceLeftWithKey`.
-    ///
-    pub def reduceWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] & e = reduceLeftWithKey(f, m)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
