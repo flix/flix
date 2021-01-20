@@ -439,7 +439,7 @@ namespace MutMap {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, m: MutMap[k, v]): List[(k, v)] & Impure =
+    pub def query[k : Uninitialized, v : Uninitialized](p: k -> Comparison, m: MutMap[k, v]): List[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.query(p, deref mm)
 

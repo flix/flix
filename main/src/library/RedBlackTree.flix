@@ -409,12 +409,12 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def queryWith(p: k -> Comparison & e, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & e =
+    pub def queryWith[k, v, a : Uninitialized, e](p: k -> Comparison & e, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & e =
         let buffer = MutList.new() as & e;
         queryWithHelper(p, f, buffer, tree) as & e;
         MutList.toImmutable(buffer) as & e
 
-    pub def queryWithHelper(p: k -> Comparison & e, f: (k, v) -> a, buffer: MutList[a], tree: RedBlackTree[k, v]): Unit & Impure = {
+    pub def queryWithHelper[k, v, a : Uninitialized, e](p: k -> Comparison & e, f: (k, v) -> a, buffer: MutList[a], tree: RedBlackTree[k, v]): Unit & Impure = {
         match tree {
             case Node(_, a, k, v, b) =>
                 match p(k) {

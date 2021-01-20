@@ -518,7 +518,7 @@ namespace TestMutList {
 
     @test
     def clear!02(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         let len = MutList.length(v);
         MutList.clear!(v);
         len == MutList.length(v)
@@ -889,7 +889,7 @@ namespace TestMutList {
 
     @test
     def shrinkTo!01(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         let c = MutList.capacity(v);
         MutList.shrinkTo!(0, v);
         c == MutList.capacity(v) and MutList.length(v) == 0
@@ -960,7 +960,7 @@ namespace TestMutList {
 
     @test
     def shrink!02(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         let c = MutList.capacity(v);
         MutList.shrink!(v);
         c == 0 and MutList.capacity(v) == 0 and MutList.length(v) == 0
@@ -1023,7 +1023,7 @@ namespace TestMutList {
 
     @test
     def reserve!01(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.reserve!(4, v);
         MutList.capacity(v) == 4
 
@@ -1164,7 +1164,7 @@ namespace TestMutList {
 
     @test
     def compress!02(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.compress!(v);
         MutList.capacity(v) == 0
 

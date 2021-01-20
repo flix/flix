@@ -483,7 +483,7 @@ namespace Set {
     ///
     /// That is, the result is a list of all elements `x` where `p(x)` returns `EqualTo`.
     ///
-    pub def query(p: a -> Comparison & e, xs: Set[a]): List[a] & e =
+    pub def query[a : Uninitialized, e](p: a -> Comparison & e, xs: Set[a]): List[a] & e =
         let Set(es) = xs;
         RedBlackTree.queryWith(p, (k, _) -> k, es)
 

@@ -635,7 +635,7 @@ namespace Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison & e, m: Map[k, v]): List[(k, v)] & e =
+    pub def query[k : Uninitialized, v : Uninitialized, e](p: k -> Comparison & e, m: Map[k, v]): List[(k, v)] & e =
         let Map(xs) = m;
         RedBlackTree.queryWith(p, (k, v) -> (k, v), xs)
 

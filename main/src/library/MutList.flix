@@ -433,9 +433,9 @@ namespace MutList {
     ///
     /// Removes all elements from the given mutable list `v`.
     ///
-    pub def clear!(v: mut MutList[a]): Unit & Impure =
+    pub def clear![a : Uninitialized](v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        a := Array.new(default, Array.length(deref a));
+        a := Array.new(Uninitialized.uninitialized(), Array.length(deref a));
         l := 0
 
     ///
@@ -449,13 +449,13 @@ namespace MutList {
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
     ///
-    pub def pop!(v: mut MutList[a]): Option[a] & Impure =
+    pub def pop![a : Uninitialized](v: mut MutList[a]): Option[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len > 0)
             let last = (deref a)[len - 1];
             l := len - 1;
-            Array.put(deref a, len - 1, default);
+            Array.put(deref a, len - 1, Uninitialized.uninitialized());
             compress!(v);
             Some(last)
         else
@@ -464,7 +464,7 @@ namespace MutList {
     ///
     /// Inserts the given element `x` at the end of the given mutable list `v`.
     ///
-    pub def push!(x: a, v: mut MutList[a]): Unit & Impure =
+    pub def push![a : Uninitialized](x: a, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len == 0) {
@@ -487,7 +487,7 @@ namespace MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, the element is inserted at the last position.
     ///
-    pub def insert!(x: a, i: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def insert![a : Uninitialized](x: a, i: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len == 0) {
@@ -512,7 +512,7 @@ namespace MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, no element is removed.
     ///
-    pub def remove!(i: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def remove![a : Uninitialized](i: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (i < len) {
@@ -526,20 +526,20 @@ namespace MutList {
     ///
     /// Helper function for `remove!`.
     ///
-    def removeHelper!(i: Int32, n: Int32, a: Array[a]): Unit & Impure =
+    def removeHelper![a : Uninitialized](i: Int32, n: Int32, a: Array[a]): Unit & Impure =
         if (i < n - 1) {
             a[i] = a[i + 1];
             removeHelper!(i + 1, n, a)
         }
         else if (i == n - 1)
-            a[i] = default
+            a[i] = Uninitialized.uninitialized()
         else
             ()
 
     ///
     /// Inserts all the elements in the given mutable list `v2` into the mutable list `v1`.
     ///
-    pub def append!(v1: mut MutList[a], v2: MutList[a]): Unit & Impure =
+    pub def append![a : Uninitialized](v1: mut MutList[a], v2: MutList[a]): Unit & Impure =
         let MutList(a1, l1) = v1;
         let MutList(a2, l2) = v2;
         let len1 = deref l1;
@@ -554,7 +554,7 @@ namespace MutList {
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
     ///
-    pub def retain!(f: a -> Bool, v: mut MutList[a]): Unit & Impure =
+    pub def retain![a : Uninitialized](f: a -> Bool, v: mut MutList[a]): Unit & Impure =
         let MutList(a1, l1) = v;
         let l = new();
         foreach(e -> if (f(e)) push!(e, l) else (), v);
@@ -595,14 +595,14 @@ namespace MutList {
     ///
     /// Truncates the mutable list as needed.
     ///
-    pub def shrinkTo!(n: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def shrinkTo![a : Uninitialized](n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         if (n == 0) {
             a := [];
             l := 0
         }
         else if (n < capacity(v)) {
-            let f = i -> if (i < n) (deref a)[i] else default;
+            let f = i -> if (i < n) (deref a)[i] else Uninitialized.uninitialized();
             a := Array.init(f, n);
             l := n
         }
@@ -612,7 +612,7 @@ namespace MutList {
     ///
     /// Shrinks the given mutable list `v` to its actual size.
     ///
-    pub def shrink!(v: mut MutList[a]): Unit & Impure = shrinkTo!(length(v), v)
+    pub def shrink![a : Uninitialized](v: mut MutList[a]): Unit & Impure = shrinkTo!(length(v), v)
 
     ///
     /// Truncates the given mutable list `v` to the given length `l`.
@@ -621,13 +621,13 @@ namespace MutList {
     ///
     /// If the given length `l` is negative, all elements are removed.
     ///
-    pub def truncate!(l: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def truncate![a : Uninitialized](l: Int32, v: mut MutList[a]): Unit & Impure =
         if (l < 0)
             clear!(v)
         else if (l < length(v)) {
             let MutList(a, l0) = v;
             l0 := l;
-            Array.updateSequence!(0, deref a, Array.new(default, l))
+            Array.updateSequence!(0, deref a, Array.new(Uninitialized.uninitialized(), l))
         }
         else
             ()
@@ -639,17 +639,17 @@ namespace MutList {
     ///
     /// The content of the mutable list is unchanged.
     ///
-    pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def reserve![a : Uninitialized](n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len == 0)
-            a := Array.new(default, n)
+            a := Array.new(Uninitialized.uninitialized(), n)
         else {
             let f = i ->
                 if (i < len)
                     (deref a)[i]
                 else
-                    default;
+                    Uninitialized.uninitialized();
             a := Array.init(f, len + n)
         }
 
@@ -756,7 +756,7 @@ namespace MutList {
     ///
     /// The mutable will be shrunk to 1/2 of its size if the load factor is less than 1/4.
     ///
-    pub def compress!(v: mut MutList[a]): Unit & Impure =
+    pub def compress![a : Uninitialized](v: mut MutList[a]): Unit & Impure =
         let c = capacity(v);
         let len = length(v);
         let loadFactor = Int32.toFloat32(len) / Int32.toFloat32(c);

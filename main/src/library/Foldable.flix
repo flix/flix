@@ -154,7 +154,7 @@ namespace Foldable {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray[t :# Type -> Type : Foldable, a](t: t[a]): Array[a] & Impure =
+    pub def toArray[t :# Type -> Type : Foldable, a : Uninitialized](t: t[a]): Array[a] & Impure =
         let v = MutList.new();
         foldRight((x, _) -> MutList.push!(x, v), (), t);
         MutList.toArray(v)
@@ -162,7 +162,7 @@ namespace Foldable {
     ///
     /// Returns `t` as a mutable list.
     ///
-    pub def toMutList[t :# Type -> Type : Foldable, a](t: t[a]): MutList[a] & Impure =
+    pub def toMutList[t :# Type -> Type : Foldable, a : Uninitialized](t: t[a]): MutList[a] & Impure =
         let v = MutList.new();
         foldRight((x, _) -> MutList.push!(x, v), (), t);
         v

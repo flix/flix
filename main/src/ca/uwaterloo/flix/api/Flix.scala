@@ -148,6 +148,7 @@ class Flix {
     "Semigroup.flix" -> LocalResource.get("/src/library/Semigroup.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
+    "Uninitialized.flix" -> LocalResource.get("/src/library/Uninitialized.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
