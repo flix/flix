@@ -156,14 +156,6 @@ namespace LazyList2 {
     }
 
     ///
-    /// Alias for `foldLeft`.
-    ///
-    /// Forces the entire list `xs`.
-    ///
-    pub def fold(f: (b, a) -> b, s: b, xs: LazyList2[a]): b =
-        foldLeft(f, s, xs)
-
-    ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.

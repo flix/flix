@@ -166,7 +166,7 @@ namespace Set {
     /// Returns `None` if `xs` is empty.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
-        reduce(Order.minBy(cmp), xs)
+        reduceLeft(Order.minBy(cmp), xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
@@ -183,7 +183,7 @@ namespace Set {
     /// Returns `None` if `xs` is empty.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
-        reduce(Order.maxBy(cmp), xs)
+        reduceLeft(Order.maxBy(cmp), xs)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
@@ -231,9 +231,9 @@ namespace Set {
 
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e = foldLeft(f, s, xs)
+    pub def fold[a : Monoid](xs: Set[a]): a = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -252,11 +252,6 @@ namespace Set {
     pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
         RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, es)
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e = reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.

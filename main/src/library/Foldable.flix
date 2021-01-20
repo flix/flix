@@ -36,8 +36,7 @@ pub class Foldable[t :# Type -> Type] {
 namespace Foldable {
 
     ///
-    /// Returns the result of applying `combine` to all the elements `t`,
-    /// using `empty` as the initial value.
+    /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.
     ///
     pub def fold[t :# Type -> Type : Foldable, a : Monoid](t: t[a]): a =
         Foldable.foldLeft((acc, x) -> Monoid.combine(acc, x), Monoid.empty(), t)
