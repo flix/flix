@@ -93,6 +93,14 @@ namespace Order {
     pub def maxBy(cmp: (a, a) -> Comparison, x: a, y: a): a =
         if (cmp(x, y) == LessThan) y else x
 
+    ///
+    /// Lazily combines two comparisons.
+    ///
+    /// If `c1` is either `LessThan` or `GreaterThan` then `c2` is never evaluated.
+    ///
+    pub def thenCompare(c1: Comparison, c2: Lazy[Comparison]): Comparison =
+        if (c1 != EqualTo) c1 else force c2
+
 }
 
 instance Order[Unit] {
@@ -298,13 +306,11 @@ instance Order[(a1, a2)] with [a1 : Order, a2: Order] {
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2), t2: (a1, a2)): Comparison =
+        use Order.thenCompare;
         let (x1, x2) = t1;
         let (y1, y2) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                x2 <=> y2
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2)
 
 }
 
@@ -333,17 +339,12 @@ instance Order[(a1, a2, a3)] with [a1 : Order, a2: Order, a3 : Order] {
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2, a3), t2: (a1, a2, a3)): Comparison =
+        use Order.thenCompare;
         let (x1, x2, x3) = t1;
         let (y1, y2, y3) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                let cmp2 = x2 <=> y2;
-                if (cmp2 != EqualTo)
-                    cmp2
-                else
-                    x3 <=> y3
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3)
 
 }
 
@@ -372,21 +373,13 @@ instance Order[(a1, a2, a3, a4)] with [a1 : Order, a2: Order, a3 : Order, a4 : O
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Comparison =
+        use Order.thenCompare;
         let (x1, x2, x3, x4) = t1;
         let (y1, y2, y3, y4) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                let cmp2 = x2 <=> y2;
-                if (cmp2 != EqualTo)
-                    cmp2
-                else
-                    let cmp3 = x3 <=> y3;
-                    if (cmp3 != EqualTo)
-                        cmp3
-                    else
-                        x4 <=> y4
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4)
 
 }
 
@@ -415,29 +408,14 @@ instance Order[(a1, a2, a3, a4, a5)] with [a1 : Order, a2: Order, a3 : Order, a4
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Comparison =
+        use Order.thenCompare;
         let (x1, x2, x3, x4, x5) = t1;
         let (y1, y2, y3, y4, y5) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                let cmp2 = x2 <=> y2;
-                if (cmp2 != EqualTo)
-                    cmp2
-                else
-                    let cmp3 = x3 <=> y3;
-                    if (cmp3 != EqualTo)
-                        cmp3
-                    else
-                        let cmp4 = x4 <=> y4;
-                        if (cmp4 != EqualTo)
-                            cmp4
-                        else
-                            let cmp4 = x4 <=> y4;
-                            if (cmp4 != EqualTo)
-                                cmp4
-                            else
-                                x5 <=> y5
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5)
 
 }
 
@@ -466,33 +444,15 @@ instance Order[(a1, a2, a3, a4, a5, a6)] with [a1 : Order, a2: Order, a3 : Order
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Comparison =
+        use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6) = t1;
         let (y1, y2, y3, y4, y5, y6) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                let cmp2 = x2 <=> y2;
-                if (cmp2 != EqualTo)
-                    cmp2
-                else
-                    let cmp3 = x3 <=> y3;
-                    if (cmp3 != EqualTo)
-                        cmp3
-                    else
-                        let cmp4 = x4 <=> y4;
-                        if (cmp4 != EqualTo)
-                            cmp4
-                        else
-                            let cmp4 = x4 <=> y4;
-                            if (cmp4 != EqualTo)
-                                cmp4
-                            else
-                                let cmp5 = x5 <=> y5;
-                                if (cmp5 != EqualTo)
-                                    cmp5
-                                else
-                                    x6 <=> y6
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6)
 
 }
 
@@ -521,37 +481,16 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Order, a2: Order, a3 : O
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Comparison =
+        use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6, x7) = t1;
         let (y1, y2, y3, y4, y5, y6, y7) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                let cmp2 = x2 <=> y2;
-                if (cmp2 != EqualTo)
-                    cmp2
-                else
-                    let cmp3 = x3 <=> y3;
-                    if (cmp3 != EqualTo)
-                        cmp3
-                    else
-                        let cmp4 = x4 <=> y4;
-                        if (cmp4 != EqualTo)
-                            cmp4
-                        else
-                            let cmp4 = x4 <=> y4;
-                            if (cmp4 != EqualTo)
-                                cmp4
-                            else
-                                let cmp5 = x5 <=> y5;
-                                if (cmp5 != EqualTo)
-                                    cmp5
-                                else
-                                    let cmp6 = x6 <=> y6;
-                                    if (cmp6 != EqualTo)
-                                        cmp6
-                                    else
-                                        x7 <=> y7
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7)
 
 }
 
@@ -580,41 +519,17 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Order, a2: Order, a3
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Comparison =
+        use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6, x7, x8) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                let cmp2 = x2 <=> y2;
-                if (cmp2 != EqualTo)
-                    cmp2
-                else
-                    let cmp3 = x3 <=> y3;
-                    if (cmp3 != EqualTo)
-                        cmp3
-                    else
-                        let cmp4 = x4 <=> y4;
-                        if (cmp4 != EqualTo)
-                            cmp4
-                        else
-                            let cmp4 = x4 <=> y4;
-                            if (cmp4 != EqualTo)
-                                cmp4
-                            else
-                                let cmp5 = x5 <=> y5;
-                                if (cmp5 != EqualTo)
-                                    cmp5
-                                else
-                                    let cmp6 = x6 <=> y6;
-                                    if (cmp6 != EqualTo)
-                                        cmp6
-                                    else
-                                        let cmp7 = x7 <=> y7;
-                                        if (cmp7 != EqualTo)
-                                            cmp7
-                                        else
-                                            x8 <=> y8
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7) `thenCompare`
+        lazy (x8 <=> y8)
 
 }
 
@@ -643,45 +558,18 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Order, a2: Order
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Comparison =
+        use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                let cmp2 = x2 <=> y2;
-                if (cmp2 != EqualTo)
-                    cmp2
-                else
-                    let cmp3 = x3 <=> y3;
-                    if (cmp3 != EqualTo)
-                        cmp3
-                    else
-                        let cmp4 = x4 <=> y4;
-                        if (cmp4 != EqualTo)
-                            cmp4
-                        else
-                            let cmp4 = x4 <=> y4;
-                            if (cmp4 != EqualTo)
-                                cmp4
-                            else
-                                let cmp5 = x5 <=> y5;
-                                if (cmp5 != EqualTo)
-                                    cmp5
-                                else
-                                    let cmp6 = x6 <=> y6;
-                                    if (cmp6 != EqualTo)
-                                        cmp6
-                                    else
-                                        let cmp7 = x7 <=> y7;
-                                        if (cmp7 != EqualTo)
-                                            cmp7
-                                        else
-                                            let cmp8 = x8 <=> y8;
-                                            if (cmp8 != EqualTo)
-                                                cmp8
-                                            else
-                                                x9 <=> y9
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7) `thenCompare`
+        lazy (x8 <=> y8) `thenCompare`
+        lazy (x9 <=> y9)
 
 }
 
@@ -710,48 +598,18 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Order, a2: 
     /// Compares `t1` and `t2` lexicographically.
     ///
     def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Comparison =
+        use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10) = t2;
-            let cmp1 = x1 <=> y1;
-            if (cmp1 != EqualTo)
-                cmp1
-            else
-                let cmp2 = x2 <=> y2;
-                if (cmp2 != EqualTo)
-                    cmp2
-                else
-                    let cmp3 = x3 <=> y3;
-                    if (cmp3 != EqualTo)
-                        cmp3
-                    else
-                        let cmp4 = x4 <=> y4;
-                        if (cmp4 != EqualTo)
-                            cmp4
-                        else
-                            let cmp4 = x4 <=> y4;
-                            if (cmp4 != EqualTo)
-                                cmp4
-                            else
-                                let cmp5 = x5 <=> y5;
-                                if (cmp5 != EqualTo)
-                                    cmp5
-                                else
-                                    let cmp6 = x6 <=> y6;
-                                    if (cmp6 != EqualTo)
-                                        cmp6
-                                    else
-                                        let cmp7 = x7 <=> y7;
-                                        if (cmp7 != EqualTo)
-                                            cmp7
-                                        else
-                                            let cmp8 = x8 <=> y8;
-                                            if (cmp8 != EqualTo)
-                                                cmp8
-                                            else
-                                                let cmp9 = x9 <=> y9;
-                                                if (cmp9 != EqualTo)
-                                                    cmp9
-                                                else
-                                                    x10 <=> y10
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7) `thenCompare`
+        lazy (x8 <=> y8) `thenCompare`
+        lazy (x9 <=> y9) `thenCompare`
+        lazy (x10 <=> y10)
 
 }
