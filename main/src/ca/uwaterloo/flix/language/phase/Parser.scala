@@ -226,11 +226,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def EmptyBody = rule {
-        push(Nil) ~ SP
+        push(Nil) ~ push(Nil) ~ SP
       }
 
       def NonEmptyBody = rule {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS  ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ zeroOrMore(Declarations.Law).separatedBy(WS) ~ optWS  ~ "}" ~ SP
       }
 
       rule {
