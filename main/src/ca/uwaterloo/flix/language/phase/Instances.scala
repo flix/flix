@@ -136,6 +136,26 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
+    /**
+      * Checks that there is an instance for each super class of the class of `inst`.
+      */
+    def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) =>
+        val superClasses = root.classEnv(sym).superClasses
+        checkEach(superClasses) {
+          superClass =>
+            val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
+            // Check each instance of the super class
+            if (superInsts.exists(superInst => Unification.unifiesWith(tpe, superInst.tpe))) {
+              // Case 1: An instance matches. Success.
+              ().toSuccess
+            } else {
+              // Case 2: No instance matches. Error.
+              InstanceError.MissingSuperClassInstance(tpe, sym, superClass, loc).toFailure
+            }
+        }
+    }
+
 
     /**
       * Reassembles a set of instances of the same class.
@@ -151,6 +171,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- Validation.traverse(unchecked)(checkOverlap(_, inst))
             _ <- checkSigMatch(inst)
             _ <- checkOrphan(inst)
+            _ <- checkSuperInstances(inst)
           } yield ()
         case Nil => ().toSuccess
       }

@@ -425,4 +425,25 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate a mismatched super class type parameter.
+    *
+    * @param subTparam   the name of the sub class's tparam
+    * @param superTparam the name of the super class's tparam
+    * @param loc         the location where the error occurred.
+    */
+  case class MismatchedSuperClassTypeParameter(subTparam: Name.Ident, superTparam: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Mismatched class type parameter '${superTparam.name}''"
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Mismatched class type parameter '" << Red(superTparam.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched class type parameter.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Change the superclass type parameter to '${subTparam.name}'."
+    }
+  }
+
 }
