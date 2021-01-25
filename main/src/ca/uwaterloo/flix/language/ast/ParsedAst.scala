@@ -187,7 +187,7 @@ object ParsedAst {
       * @param sigs   the signatures of the class.
       * @param sp2    the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[SuperClass], sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
@@ -1448,6 +1448,17 @@ object ParsedAst {
     * @param sp2     the position of the last character in the context bound.
     */
   case class ConstrainedType(sp1: SourcePosition, tpe: ParsedAst.Type, classes: Seq[Name.QName], sp2: SourcePosition)
+
+
+  /**
+    * Super class.
+    *
+    * @param sp1    the position of the first character in the super class.
+    * @param clazz  the super class.
+    * @param tparam the type parameter.
+    * @param sp2    the position of the last character in the super class.
+    */
+  case class SuperClass(sp1: SourcePosition, clazz: Name.QName, tparam: Name.Ident, sp2: SourcePosition)
 
   /**
     * Formal Parameter.

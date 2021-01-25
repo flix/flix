@@ -133,25 +133,25 @@ namespace Nel {
     /// Finds the smallest element of `xs` according to the `Order` on `a`.
     ///
     pub def minimum[a : Order](xs: Nel[a]): a =
-        reduce(Order.min, xs)
+        reduceLeft(Order.min, xs)
 
     ///
     /// Finds the smallest element of `xs` according to the given comparator `cmp`.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
-        reduce(Order.minBy(cmp), xs)
+        reduceLeft(Order.minBy(cmp), xs)
 
     ///
     /// Finds the largest element of `xs` according to the `Order` on `a`.
     ///
     pub def maximum[a : Order](xs: Nel[a]): a =
-        reduce(Order.max, xs)
+        reduceLeft(Order.max, xs)
 
     ///
     /// Finds the largest element of `xs` according to the given comparator `cmp`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
-        reduce(Order.maxBy(cmp), xs)
+        reduceLeft(Order.maxBy(cmp), xs)
 
     ///
     /// Alias for `findLeft`.
@@ -269,9 +269,9 @@ namespace Nel {
     }
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = foldLeft(f, s, xs)
+    pub def fold[a : Monoid](xs: Nel[a]): a = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -292,9 +292,11 @@ namespace Nel {
     }
 
     ///
-    /// Alias for `reduceLeft`.
+    /// Applies `combine` to all elements in `xs` until a single value is obtained.
     ///
-    pub def reduce(f: (a, a) -> a & e, xs: Nel[a]): a & e = reduceLeft(f, xs)
+    pub def reduce[a: Semigroup](xs: Nel[a]): a = match xs {
+        case Nel(h, l) => Foldable.foldLeft((acc, x) -> Semigroup.combine(acc, x), h, l)
+    }
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.

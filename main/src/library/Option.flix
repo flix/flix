@@ -241,6 +241,11 @@ namespace Option {
     }
 
     ///
+    /// Returns the result of applying `combine` to all the elements in `o`, using `empty` as the initial value.
+    ///
+    pub def fold[a : Monoid](o: Option[a]): a = Foldable.fold(o)
+
+    ///
     /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
     pub def foldLeft(f: (b, a) -> b & e, z: b, o: Option[a]): b & e = match o {

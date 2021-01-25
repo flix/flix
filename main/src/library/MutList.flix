@@ -90,7 +90,7 @@ namespace MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def minimum[a : Order](v: MutList[a]): Option[a] & Impure =
-        reduce(Order.min, v)
+        reduceLeft(Order.min, v)
 
     ///
     /// Optionally finds the smallest element of `v` according to the given comparator `cmp`.
@@ -98,7 +98,7 @@ namespace MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
-        reduce(Order.minBy(cmp), v)
+        reduceLeft(Order.minBy(cmp), v)
 
     ///
     /// Optionally finds the largest element of `v` according to the `Order` on `a`.
@@ -106,7 +106,7 @@ namespace MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def maximum[a : Order](v: MutList[a]): Option[a] & Impure =
-        reduce(Order.max, v)
+        reduceLeft(Order.max, v)
 
     ///
     /// Optionally finds the largest element of `v` according to the given comparator `cmp`.
@@ -114,7 +114,7 @@ namespace MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
-        reduce(Order.maxBy(cmp), v)
+        reduceLeft(Order.maxBy(cmp), v)
 
     ///
     /// Returns the number of elements in the given mutable list `v` that satisfies the given predicate `f`.
@@ -368,9 +368,9 @@ namespace MutList {
         }
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, v: MutList[a]): b & Impure = foldLeft(f, s, v)
+    pub def fold[a : Monoid](v: MutList[a]): a = Foldable.fold(v)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
@@ -409,11 +409,6 @@ namespace MutList {
         else
             let s1 = f(get(i, v), s) as & Impure;
             foldRightHelper(f, s1, v, i - 1)
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, v: MutList[a]): Option[a] & Impure = reduceLeft(f, v)
 
     ///
     /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained. Returns `Some(v)`.

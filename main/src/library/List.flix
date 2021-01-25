@@ -164,7 +164,7 @@ namespace List {
     /// Returns `None` if `xs` is empty.
     ///
     pub def minimum[a : Order](xs: List[a]): Option[a] =
-        reduce(Order.min, xs)
+        reduceLeft(Order.min, xs)
 
     ///
     /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
@@ -172,7 +172,7 @@ namespace List {
     /// Returns `None` if `xs` is empty.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
-        reduce(Order.minBy(cmp), xs)
+        reduceLeft(Order.minBy(cmp), xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
@@ -180,7 +180,7 @@ namespace List {
     /// Returns `None` if `xs` is empty.
     ///
     pub def maximum[a : Order](xs: List[a]): Option[a] =
-        reduce(Order.max, xs)
+        reduceLeft(Order.max, xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
@@ -188,7 +188,7 @@ namespace List {
     /// Returns `None` if `xs` is empty.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
-        reduce(Order.maxBy(cmp), xs)
+        reduceLeft(Order.maxBy(cmp), xs)
 
     ///
     /// Returns the position of `a` in `xs`.
@@ -581,9 +581,9 @@ namespace List {
 
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = foldLeft(f, s, xs)
+    pub def fold[a : Monoid](xs: List[a]): a = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -609,11 +609,6 @@ namespace List {
         case Nil => k(s)
         case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
     }
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, xs: List[a]): Option[a] & e = reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.

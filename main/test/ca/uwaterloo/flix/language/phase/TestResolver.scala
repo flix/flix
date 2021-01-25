@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -210,6 +210,21 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleClass](result)
   }
 
+  test("InaccessibleClass.04") {
+    val input =
+      """
+        |namespace N {
+        |    class C[a]
+        |}
+        |
+        |namespace O {
+        |    class D[a] extends N.C[a]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
   test("SealedClass.01") {
     val input =
       """
@@ -233,6 +248,21 @@ class TestResolver extends FunSuite with TestUtils {
         |
         |    namespace O {
         |        instance N.C[Int]
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SealedClass](result)
+  }
+
+  test("SealedClass.03") {
+    val input =
+      """
+        |namespace N {
+        |    sealed class C[a]
+        |
+        |    namespace O {
+        |        class D[a] extends N.C[a]
         |    }
         |}
         |""".stripMargin
@@ -932,5 +962,53 @@ class TestResolver extends FunSuite with TestUtils {
     val input = "def f(a: (Int, true)): Int = 1"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("CyclicClassHierarchy.01") {
+    val input = "class A[a] extends A[a]"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.02") {
+    val input =
+      """
+        |class A[a] extends B[a]
+        |class B[a] extends A[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.03") {
+    val input =
+      """
+        |class A[a] extends B[a]
+        |class B[a] extends C[a]
+        |class C[a] extends A[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.04") {
+    val input =
+      """
+        |class A[a] extends A[a], B[a]
+        |class B[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.05") {
+    val input =
+      """
+        |class A[a] extends B[a]
+        |class B[a] extends A[a], C[a]
+        |class C[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 }

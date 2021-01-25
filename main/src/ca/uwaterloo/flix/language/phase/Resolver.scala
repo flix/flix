@@ -16,15 +16,14 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.collection.mutable
 
 /**
@@ -85,6 +84,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
       properties <- propertiesVal
+      _ <- checkSuperClassDag(classes.toMap)
     } yield ResolvedAst.Root(
       classes.toMap, combine(instances), definitions.toMap, enums.toMap, properties.flatten, root.reachable, root.sources
     )
@@ -96,6 +96,59 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   private def combine[K, V](list: List[(K, List[V])]): Map[K, List[V]] = {
     list.foldLeft(Map.empty[K, List[V]]) {
       case (acc, (key, value)) => acc + (key -> (value ++ acc.getOrElse(key, Nil)))
+    }
+  }
+
+  /**
+    * Checks that the super classes form a DAG (no cycles).
+    */
+  private def checkSuperClassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Class]): Validation[Unit, ResolutionError] = {
+
+    // Set of classes known to be acyclic
+    val acyclic = mutable.Set.empty[Symbol.ClassSym]
+
+    /**
+      * Checks the class for super class cycles, where `path` is a list visited nodes.
+      */
+    def findCycle(clazz: ResolvedAst.Class, path: List[Symbol.ClassSym]): Option[List[Symbol.ClassSym]] = {
+      if (acyclic.contains(clazz.sym)) {
+        // Case 1: We already know this class is acyclic.
+        None
+      } else if (path.contains(clazz.sym)) {
+        // Case 2: This class is in our path. There's a cycle.
+        val cycle = clazz.sym :: path.takeWhile(_ != clazz.sym) ++ List(clazz.sym)
+        Some(cycle)
+      } else {
+        // Case 3: Check each superclass for cycles.
+        val result = clazz.superClasses.flatMap {
+          superClass => findCycle(classes(superClass), clazz.sym :: path)
+        }.headOption
+
+        if (result.isEmpty) {
+          // mark this class as acyclic if there's no cycle
+          acyclic += clazz.sym
+        }
+
+        result
+      }
+    }
+
+    /**
+      * Create a list of CyclicClassHierarchy errors, one for each class.
+      */
+    def mkCycleErrors[T](cycle: List[Symbol.ClassSym]): Validation.Failure[T, ResolutionError] = {
+      val errors = cycle.map {
+        sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
+      }
+      Validation.Failure(LazyList.from(errors))
+    }
+
+    // Check each class for cycles
+    fold(classes.values, ()) {
+      case ((), clazz) => findCycle(clazz, Nil) match {
+        case Some(cycle) => mkCycleErrors(cycle)
+        case None => ().toSuccess
+      }
     }
   }
 
@@ -125,11 +178,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
     */
   def resolve(c0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
-    case NamedAst.Class(doc, mod, sym, tparam0, signatures, loc) =>
+    case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, loc) =>
       for {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigs <- traverse(signatures)(resolve(_, ns0, root))
-      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, sigs, loc)
+        superClasses <- traverse(superClasses0)(lookupClassForImplementation(_, ns0, root))
+      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses.map(_.sym), sigs, loc)
   }
 
   /**

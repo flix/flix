@@ -16,13 +16,13 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatKind, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
+
+import java.lang.reflect.{Constructor, Field, Method}
 
 /**
   * A common super-type for resolution errors.
@@ -223,11 +223,11 @@ object ResolutionError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Class'" << Red(sym.toString) << s"' is sealed from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << ">> Class '" << Red(sym.toString) << s"' is sealed from the namespace '" << Cyan(ns.toString) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "sealed class.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Move the instance to the class's namespace." << NewLine
+      vt << Underline("Tip:") << " Move the instance or sub class to the class's namespace." << NewLine
     }
   }
 
@@ -525,6 +525,32 @@ object ResolutionError {
       vt << "Available fields:" << NewLine
       for (field <- fields) {
         vt << "  " << stripAccessModifier(field.toString) << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
+    * An error raise to indicate a cycle in the class hierarchy.
+    *
+    * @param path the super class path from a class to itself.
+    * @param loc  the location where the error occurred.
+    */
+  case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
+    override def summary: String = {
+      val pathString = path.reverse.map(clazz => s"'${clazz.name}'").mkString(" extends ")
+      "Cyclic inheritance: " + pathString
+    }
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << Code(loc, "Cyclic inheritance.") << NewLine
+      vt << NewLine
+      vt << "The following classes are in the cycle:"
+      for (List(subClass, superClass) <- path.reverse.sliding(2)) {
+        vt << s"$subClass extends $superClass" << NewLine
       }
       vt
     }

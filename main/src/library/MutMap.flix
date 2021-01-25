@@ -282,12 +282,6 @@ namespace MutMap {
         Map.findRight(f, deref mm)
 
     ///
-    /// Alias for `foldLeft`.
-    ///
-    pub def fold(f: (b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
-        foldLeft(f, i, m)
-
-    ///
     /// Alias for `foldLeftWithKey`.
     ///
     pub def foldWithKey(f: (b, k, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure  =
@@ -327,18 +321,6 @@ namespace MutMap {
     pub def foldRightWithKey(f: (k, v, b) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
         let MutMap(mm) = m;
         Map.foldRightWithKey(f, i, deref mm)
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (v, v) -> v & e, m: MutMap[k, v]): Option[v] & Impure =
-        reduceLeft(f, m)
-
-    ///
-    /// Alias for `reduceLeftWithKey`.
-    ///
-    pub def reduceWithKey(f: (k, v, k, v) -> (k, v) & e, m: MutMap[k, v]): Option[(k, v)] & Impure =
-        reduceLeftWithKey(f, m)
 
     ///
     /// Applies `f` to all values in the mutable map `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
