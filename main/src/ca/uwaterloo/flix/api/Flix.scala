@@ -161,6 +161,7 @@ class Flix {
 
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
+    "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
 
   )
 
