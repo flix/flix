@@ -1262,11 +1262,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
-        //
-        //  exp: Channel[t] @ _
-        //  -------------------
-        //  <- exp : t @ Impure
-        //
         val elementType = Type.freshVar(Kind.Star)
         for {
           (constrs, tpe, _) <- visitExp(exp)
@@ -1276,11 +1271,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
-        //
-        //  exp1: Channel[t] @ _   exp2: t @ _
-        //  ----------------------------------
-        //  exp1 <- exp2 : Channel[t] @ Impure
-        //
         for {
           (constrs1, tpe1, _) <- visitExp(exp1)
           (constrs2, tpe2, _) <- visitExp(exp2)
@@ -1288,60 +1278,41 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      /*
-       * Select Channel Expression.
-       */
       case ResolvedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
-        //  SelectChannelRule
-        //
-        //  chan: Channel[t1],   exp: t2
-        //  ------------------------------------------------
-        //  case sym <- chan => exp : t2
-        //
-        //
-        //  SelectChannel
-        //  rule_i: t,     default: t
-        //  ------------------------------------------------
-        //  select { rule_i; (default) } : t
-        //
-        // check that each rules channel expression is a channel
-        def inferSelectChannelRule(rule: ResolvedAst.SelectChannelRule): InferMonad[Unit] = {
+
+        /**
+          * Performs type inference on the given select rule.
+          */
+        def inferSelectRule(rule: ResolvedAst.SelectChannelRule): InferMonad[Unit] = {
           rule match {
             case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
               (_, channelType, _) <- visitExp(chan)
-              _ <- unifyTypeM(channelType, Type.mkChannel(Type.freshVar(Kind.Star)), loc)
+              _ <- unifyTypeM(channelType, Type.mkChannel(sym.tvar), loc)
             } yield liftM(Type.Unit)
           }
         }
 
-        // check that default case has same type as bodies (the same as result type)
-        def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.Expression]): InferMonad[Type] = {
+        /**
+          * Performs type inference on the given optional expression.
+          */
+        def inferDefaultRule(defaultCase: Option[ResolvedAst.Expression]): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
           defaultCase match {
-            case None => liftM(Type.Unit)
-            case Some(exp) =>
-              for {
-                (_, tpe, _) <- visitExp(exp)
-                _ <- unifyTypeM(rtpe, tpe, loc)
-              } yield Type.Unit
+            case None => liftM(Nil, Type.freshVar(Kind.Star), Type.Pure)
+            case Some(exp) => visitExp(exp)
           }
-        }
 
         val bodies = rules.map(_.exp)
         for {
-          _ <- seqM(rules.map(inferSelectChannelRule))
+          _ <- seqM(rules.map(inferSelectRule))
           (bodyConstrs, bodyTypes, _) <- seqM(bodies map visitExp).map(_.unzip3)
           actualResultType <- unifyTypeM(bodyTypes, loc)
-          _ <- inferSelectChannelDefault(actualResultType, default)
-          resultTyp <- unifyTypeM(tvar, actualResultType, loc)
+          (defaultConstrs, defaultType, _) <- inferDefaultRule(default)
+          resultConstrs = bodyConstrs.flatten ++ defaultConstrs
+          resultTyp <- unifyTypeM(tvar, actualResultType, defaultType, loc)
           resultEff = Type.Impure
-        } yield (bodyConstrs.flatten, resultTyp, resultEff)
+        } yield (resultConstrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Spawn(exp, loc) =>
-        //
-        //  exp: t & _
-        //  -------------------------
-        //  spawn exp : Unit @ Impure
-        //
         for {
           (constrs, tpe, _) <- visitExp(exp)
           resultTyp = Type.Unit
