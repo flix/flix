@@ -1288,7 +1288,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             case ResolvedAst.SelectChannelRule(sym, chan, body) => for {
               (chanConstrs, chanType, _) <- visitExp(chan)
               (bodyConstrs, bodyType, _) <- visitExp(body)
-              elmType <- unifyTypeM(chanType, Type.mkChannel(sym.tvar, sym.loc), sym.loc)
+              _ <- unifyTypeM(chanType, Type.mkChannel(sym.tvar, sym.loc), sym.loc)
               resultCon = chanConstrs ++ bodyConstrs
               resultTyp = bodyType
               resultEff = Type.Impure
