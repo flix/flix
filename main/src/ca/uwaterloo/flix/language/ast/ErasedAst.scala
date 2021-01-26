@@ -45,6 +45,8 @@ object ErasedAst {
 
   object Expression {
 
+    case class Cast[T <: JType, S <: JType](exp: ErasedAst.Expression[T], loc: SourceLocation) extends ErasedAst.Expression[S]
+
     case object Unit extends ErasedAst.Expression[JObject] {
       final val tpe = MonoType.Unit
       final val loc = SourceLocation.Unknown
@@ -144,9 +146,9 @@ object ErasedAst {
 //
 //    case class Untag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[_], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[_]
 //
-//    case class Index(base: ErasedAst.Expression[_], offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[_]
-//
-//    case class Tuple(elms: List[ErasedAst.Expression[_]], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[_]
+      case class Index(base: ErasedAst.Expression[JObject], offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JObject]
+
+      case class Tuple[T <: JType](elms: List[ErasedAst.Expression[T]], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JObject]
 //
 //    case class RecordEmpty(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[_]
 //
@@ -168,7 +170,7 @@ object ErasedAst {
 //
 //    case class ArraySlice(base: ErasedAst.Expression[_], beginIndex: ErasedAst.Expression[_], endIndex: ErasedAst.Expression[_], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[_]
 //
-//    case class Ref(exp: ErasedAst.Expression[_], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[_]
+      case class Ref[T <: JType](exp: ErasedAst.Expression[T], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JRef[T]]
 //
 //    case class Deref(exp: ErasedAst.Expression[_], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[_]
 //
@@ -347,6 +349,8 @@ object ErasedAst {
     sealed trait JBool extends JType
 
     sealed trait JObject extends JType
+
+    sealed trait JRef[T <: JType] extends JType
 
   }
 }
