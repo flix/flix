@@ -97,8 +97,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedAll = (usedExp and checkUnusedFormalParameters(usedExp) and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
     val usedAllWithUnconditionalRecursions = if (usedAll.unconditionallyRecurses) usedAll + UnconditionalRecursion(defn.sym) else usedAll
 
-    // Check if the defn contains holes.
-    // If so we should remove all unused variable errors.
+    // Check if the expression contains holes.
+    // If it does, we discard all unused local variable errors.
     if (usedAllWithUnconditionalRecursions.holeSyms.isEmpty)
       usedAllWithUnconditionalRecursions
     else
