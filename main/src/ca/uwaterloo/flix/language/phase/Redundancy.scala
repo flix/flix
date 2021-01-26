@@ -148,7 +148,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
             // Case 2: Enum is used and here are its used tags.
             // Check if there is any unused tag.
             decl.cases.foldLeft(acc) {
-              case (innerAcc, (tag, caze)) if deadTag(tag, caze, usedTags) => acc + UnusedEnumTag(sym, caze.tag)
+              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => acc + UnusedEnumTag(sym, caze.tag)
               case (innerAcc, _) => innerAcc
             }
         }
@@ -681,9 +681,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       !root.reachable.contains(decl.sym)
 
   /**
-    * Returns `true` if the given tag `decl` is unused according to `used`.
+    * Returns `true` if the given `tag` is unused according to the `usedTags`.
     */
-  private def deadTag(tag: Name.Tag, caze: Case, usedTags: Set[Name.Tag]): Boolean =
+  private def deadTag(tag: Name.Tag, usedTags: Set[Name.Tag]): Boolean =
     !tag.name.startsWith("_") &&
       !usedTags.contains(tag)
 
