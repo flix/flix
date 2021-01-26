@@ -1,17 +1,18 @@
 namespace Test/Unused/Tag {
 
     enum Color {
-        case _Red,
+        case Red,
         case _Blu
     }
 
     enum Currency {
-        case USD,
-        case _CAD,
+        case _USD,
+        case CAD,
+        case _DKK
     }
 
-    def f(): Color = ???
+    pub def f(): Color = Red
 
-    def g(): Currency = USD
+    pub def g(): Currency = CAD
 
 }
