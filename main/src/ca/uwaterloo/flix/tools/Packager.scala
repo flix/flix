@@ -99,13 +99,15 @@ object Packager {
 
     newFile(mainSourceFile) {
       """// The main entry point.
-        |def main(): Unit & Impure = Console.printLine("Hello World!")
+        |def main(_args: Array[String]): Int32 & Impure =
+        |  Console.printLine("Hello World!");
+        |  0 // exit code
         |""".stripMargin
     }
 
     newFile(mainTestFile) {
       """@test
-        |def testMain01(): Bool & Impure = main() == ()
+        |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
   }
@@ -266,11 +268,12 @@ object Packager {
     * Runs the main function in flix package for the given project path `p`.
     */
   def run(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
-    build(p, o) match {
-      case None => // nop
-      case Some(compilationResult) =>
-        val result = compilationResult.evalToString("main")
-        Console.println(result)
+    for {
+      compilationResult <- build(p, o)
+      main <- compilationResult.getMain
+    } yield {
+      val exitCode = main(Array.empty)
+      println(s"Main exited with status code $exitCode.")
     }
   }
 

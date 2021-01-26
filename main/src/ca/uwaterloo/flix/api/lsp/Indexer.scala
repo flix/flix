@@ -91,7 +91,7 @@ object Indexer {
     * Returns a reverse index for the given class `class0`.
     */
   private def visitClass(class0: TypedAst.Class): Index = class0 match {
-    case TypedAst.Class(doc, mod, sym, tparam, signatures, loc) =>
+    case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, loc) =>
       Index.occurrenceOf(class0)
   }
 
@@ -99,7 +99,7 @@ object Indexer {
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, sym, tpe, _, defs, loc) =>
+    case Instance(_, _, sym, tpe, _, defs, _, loc) =>
       val idx1 = Index.useOf(sym, loc)
       val idx2 = visitType(tpe)
       val idx3 = defs.foldLeft(Index.empty) {

@@ -116,7 +116,6 @@ object BenchmarkCompiler {
 
     flix.addInput("Test.Equality.BigInt.flix", LocalResource.get("/test/flix/Test.Equality.BigInt.flix"))
     flix.addInput("Test.Equality.Bool.flix", LocalResource.get("/test/flix/Test.Equality.Bool.flix"))
-    flix.addInput("Test.Equality.Channel.flix", LocalResource.get("/test/flix/Test.Equality.Channel.flix"))
     flix.addInput("Test.Equality.Char.flix", LocalResource.get("/test/flix/Test.Equality.Char.flix"))
     flix.addInput("Test.Equality.Float32.flix", LocalResource.get("/test/flix/Test.Equality.Float32.flix"))
     flix.addInput("Test.Equality.Float64.flix", LocalResource.get("/test/flix/Test.Equality.Float64.flix"))

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -195,6 +195,81 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleClass](result)
   }
 
+  test("InaccessibleClass.03") {
+    val input =
+      """
+        |namespace N {
+        |    class C[a]
+        |}
+        |
+        |namespace O {
+        |    instance N.C[Int]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
+  test("InaccessibleClass.04") {
+    val input =
+      """
+        |namespace N {
+        |    class C[a]
+        |}
+        |
+        |namespace O {
+        |    class D[a] extends N.C[a]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
+  test("SealedClass.01") {
+    val input =
+      """
+        |namespace N {
+        |    pub sealed class C[a]
+        |}
+        |
+        |namespace O {
+        |    instance N.C[Int]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SealedClass](result)
+  }
+
+  test("SealedClass.02") {
+    val input =
+      """
+        |namespace N {
+        |    sealed class C[a]
+        |
+        |    namespace O {
+        |        instance N.C[Int]
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SealedClass](result)
+  }
+
+  test("SealedClass.03") {
+    val input =
+      """
+        |namespace N {
+        |    sealed class C[a]
+        |
+        |    namespace O {
+        |        class D[a] extends N.C[a]
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SealedClass](result)
+  }
+
   test("RecursionLimit.01") {
     val input =
       s"""
@@ -289,8 +364,26 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedName.03") {
     val input =
       s"""
-         |def main(): #{ R } = #{}
+         |def foo(): #{ R } = #{}
        """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.04") {
+    val input =
+      s"""
+         |namespace A {
+         |    class C[a] {
+         |        def f(x: a): a
+         |    }
+         |}
+         |
+         |namespace B {
+         |    use A.f;
+         |    def g(): Int = f(1)
+         |}
+         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedName](result)
   }
@@ -338,7 +431,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmConstructor.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new java.io.File() as _;
          |    ()
        """.stripMargin
@@ -349,7 +442,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmConstructor.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new java.io.File(Int32) as _;
          |    ()
        """.stripMargin
@@ -360,7 +453,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmConstructor.03") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new java.lang.String(Bool) as _;
          |    ()
        """.stripMargin
@@ -371,7 +464,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmConstructor.04") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new java.lang.String(Bool, Char, String) as _;
          |    ()
        """.stripMargin
@@ -382,7 +475,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import new foo.bar.Baz() as newObject;
          |    ()
        """.stripMargin
@@ -393,7 +486,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import foo.bar.Baz.f();
          |    ()
        """.stripMargin
@@ -404,7 +497,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.03") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import foo.bar.Baz:f();
          |    ()
        """.stripMargin
@@ -415,7 +508,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.04") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import get foo.bar.Baz.f as getF;
          |    ()
        """.stripMargin
@@ -426,7 +519,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.05") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import set foo.bar.Baz.f as setF;
          |    ()
        """.stripMargin
@@ -437,7 +530,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.06") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import get foo.bar.Baz:f as getF;
          |    ()
        """.stripMargin
@@ -448,7 +541,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmClass.07") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import set foo.bar.Baz:f as setF;
          |    ()
        """.stripMargin
@@ -459,7 +552,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.getFoo();
          |    ()
        """.stripMargin
@@ -470,7 +563,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.charAt();
          |    ()
        """.stripMargin
@@ -481,7 +574,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.03") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.charAt(Int32, Int32);
          |    ()
        """.stripMargin
@@ -492,7 +585,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.04") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.isEmpty(Bool);
          |    ()
        """.stripMargin
@@ -503,7 +596,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.05") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String:isEmpty();
          |    ()
        """.stripMargin
@@ -514,7 +607,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmMethod.06") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import java.lang.String.valueOf(Bool);
          |    ()
        """.stripMargin
@@ -525,7 +618,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmField.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import get java.lang.Character.foo as getFoo;
          |    ()
          |
@@ -537,7 +630,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmField.02") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import set java.lang.Character.foo as setFoo;
          |    ()
        """.stripMargin
@@ -548,7 +641,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmField.03") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import get java.lang.Character:foo as getFoo;
          |    ()
        """.stripMargin
@@ -559,7 +652,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedJvmField.04") {
     val input =
       s"""
-         |def main(): Unit =
+         |def foo(): Unit =
          |    import set java.lang.Character:foo as setFoo;
          |    ()
        """.stripMargin
@@ -869,5 +962,53 @@ class TestResolver extends FunSuite with TestUtils {
     val input = "def f(a: (Int, true)): Int = 1"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("CyclicClassHierarchy.01") {
+    val input = "class A[a] extends A[a]"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.02") {
+    val input =
+      """
+        |class A[a] extends B[a]
+        |class B[a] extends A[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.03") {
+    val input =
+      """
+        |class A[a] extends B[a]
+        |class B[a] extends C[a]
+        |class C[a] extends A[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.04") {
+    val input =
+      """
+        |class A[a] extends A[a], B[a]
+        |class B[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.05") {
+    val input =
+      """
+        |class A[a] extends B[a]
+        |class B[a] extends A[a], C[a]
+        |class C[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 }

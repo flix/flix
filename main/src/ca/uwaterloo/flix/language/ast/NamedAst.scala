@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.immutable.List
 
@@ -26,22 +25,24 @@ object NamedAst {
 
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
-                  sigs: Map[Name.NName, Map[String, NamedAst.Sig]],
-                  defs: Map[Name.NName, Map[String, NamedAst.Def]],
+                  defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  latticesOps: Map[NamedAst.Type, NamedAst.LatticeOps],
                   properties: Map[Name.NName, List[NamedAst.Property]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, sigs: List[NamedAst.Sig], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[Name.QName], sigs: List[NamedAst.Sig], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
-  case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
+  sealed trait DefOrSig {
+    val loc: SourceLocation
+  }
 
-  case class Def(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
+  case class Def(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation) extends DefOrSig
+
+  case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation) extends DefOrSig
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, kind: Kind, loc: SourceLocation)
 
@@ -49,17 +50,13 @@ object NamedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
-  case class LatticeOps(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation)
-
   sealed trait Use
 
   object Use {
 
-    case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
+    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
 
-    case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
-
-    case class UseTyp(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
+    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
 
     case class UseTag(qname: Name.QName, tag: Name.Tag, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
 
@@ -113,9 +110,9 @@ object NamedAst {
 
     case class Lambda(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Unary(op: UnaryOperator, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Unary(sop: SemanticOperator, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Binary(op: BinaryOperator, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Binary(sop: SemanticOperator, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class IfThenElse(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 

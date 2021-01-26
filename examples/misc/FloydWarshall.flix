@@ -14,44 +14,63 @@ enum Dist {
   case Bot       // Not reachable
 }
 
-// Lattice operations
-
-///
-/// Returns `true` iff `e1` is equal to `e2`.
-///
-def equ(e1: Dist, e2: Dist): Bool = e1 == e2
-
-///
-/// Returns `true` if the distance `e1` is greater than or equal to the distance `e2`.
-///
-def leq(e1: Dist, e2: Dist): Bool = match (e1, e2) {
-  case (_, Top) => true
-  case (Bot, _) => true
-  case (Dst(n1), Dst(n2)) => n1 >= n2
-  case _ => false
+instance LowerBound[Dist] {
+    def minValue(): Dist = Dist.Bot
 }
 
-///
-/// Returns the shorter distance of `e1` and `e2`.
-///
-def lub(e1: Dist, e2: Dist): Dist = match (e1, e2) {
-  case (Bot, x) => x
-  case (x, Bot) => x
-  case (Dst(n1), Dst(n2)) => Dst(Int32.min(n1, n2))
-  case _ => Top
+instance Eq[Dist] {
+    def eq(x: Dist, y: Dist): Bool = match (x, y) {
+        case (Top, Top) => true
+        case (Dst(a), Dst(b)) => a == b
+        case (Bot, Bot) => true
+        case _ => false
+    }
+
+    def neq(x: Dist, y: Dist): Bool = not (x == y)
 }
 
-///
-/// Returns the greater distance of `e1` and `e2`.
-///
-def glb(e1: Dist, e2: Dist): Dist = match (e1, e2) {
-  case (Top, x) => x
-  case (x, Top) => x
-  case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))
-  case _ => Bot
+instance Hash[Dist] {
+    def hash(x: Dist): Int32 = match x {
+        case Top    => 0
+        case Bot    => 1
+        case Dst(n) => n + 2
+    }
 }
 
-let Dist<> = (Bot, Top, equ, leq, lub, glb)
+instance PartialOrder[Dist] {
+    def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
+        case (_, Top) => true
+        case (Bot, _) => true
+        case (Dst(n1), Dst(n2)) => n1 >= n2
+        case _ => false
+    }
+}
+
+instance JoinLattice[Dist] {
+    def leastUpperBound(x: Dist, y: Dist): Dist = match (x, y) {
+        case (Bot, _)           => y
+        case (_, Bot)           => x
+        case (Dst(n1), Dst(n2)) => Dst(Int32.min(n1, n2))
+        case _                  => Top
+    }
+}
+
+instance MeetLattice[Dist] {
+    def greatestLowerBound(x: Dist, y: Dist): Dist = match (x, y) {
+        case (Top, x) => x
+        case (x, Top) => x
+        case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))
+        case _ => Bot
+    }
+}
+
+instance ToString[Dist] {
+    def toString(x: Dist): String = match x {
+        case Top    => "Top"
+        case Dst(n) => "Dst(${n})"
+        case Bot    => "Bot"
+    }
+}
 
 // Copy input relation into the ShortestDist lattice
 ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).

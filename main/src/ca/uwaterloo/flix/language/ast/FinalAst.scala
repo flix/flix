@@ -40,7 +40,7 @@ object FinalAst {
     def loc: SourceLocation = defn.loc
   }
 
-  case class LatticeOps(tpe: MonoType, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
+  case class LatticeOps(tpe: MonoType, bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
   sealed trait Expression {
     def tpe: MonoType
@@ -50,68 +50,54 @@ object FinalAst {
 
   object Expression {
 
-    case object Unit extends FinalAst.Expression {
+    case class Unit(loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Unit
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Null(tpe: MonoType) extends FinalAst.Expression {
-      final val loc = SourceLocation.Unknown
-    }
+    case class Null(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case object True extends FinalAst.Expression {
+    case class True(loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Bool
-      final val loc = SourceLocation.Unknown
     }
 
-    case object False extends FinalAst.Expression {
+    case class False(loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Bool
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Char(lit: scala.Char) extends FinalAst.Expression {
+    case class Char(lit: scala.Char, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Char
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Float32(lit: scala.Float) extends FinalAst.Expression {
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Float32
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Float64(lit: scala.Double) extends FinalAst.Expression {
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Float64
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Int8(lit: scala.Byte) extends FinalAst.Expression {
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Int8
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Int16(lit: scala.Short) extends FinalAst.Expression {
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Int16
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Int32(lit: scala.Int) extends FinalAst.Expression {
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Int32
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Int64(lit: scala.Long) extends FinalAst.Expression {
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Int64
-      final val loc = SourceLocation.Unknown
     }
 
-    case class BigInt(lit: java.math.BigInteger) extends FinalAst.Expression {
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.BigInt
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Str(lit: java.lang.String) extends FinalAst.Expression {
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Str
-      final val loc = SourceLocation.Unknown
     }
 
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression

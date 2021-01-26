@@ -116,7 +116,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Enum |
       Declarations.OpaqueType |
       Declarations.TypeAlias |
-      Declarations.LatticeComponents |
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Class |
@@ -213,19 +212,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def LatticeComponents: Rule1[ParsedAst.Declaration] = {
-      def Elms: Rule1[Seq[ParsedAst.Expression]] = rule {
-        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      rule {
-        optWS ~ SP ~ keyword("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.LatticeComponents
-      }
-    }
-
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ ConstrainedTypeParam ~ optWS ~ "]"
+        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ ConstrainedTypeParam ~ optWS ~ "]" ~ OptSuperClasses
+      }
+
+      def OptSuperClasses = rule {
+        optional(optWS ~ keyword("extends") ~ optWS ~ oneOrMore(SuperClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.SuperClass]]) => o.getOrElse(Seq.empty))
+      }
+
+      def SuperClass = rule {
+        SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Names.Variable ~ optWS ~ "]" ~ SP ~> ParsedAst.SuperClass
       }
 
       def EmptyBody = rule {
@@ -243,7 +240,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Instance: Rule1[ParsedAst.Declaration] = {
       def TypeConstraint: Rule1[ParsedAst.ConstrainedType] = rule {
-        SP ~ Type ~ oneOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedType
+        SP ~ Types.Var ~ oneOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedType
       }
 
       def Head = rule {
@@ -302,7 +299,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseClass | Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
+    keyword("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany )
   }
 
   object Uses {
@@ -332,10 +329,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
-    }
-
-    def UseClass: Rule1[ParsedAst.Use] = rule { // MATT improve syntax
-      keyword("class") ~ WS ~ SP ~ Names.Namespace ~ "." ~ UseName ~ SP ~> ParsedAst.Use.UseClass
     }
 
     def UseName: Rule1[Name.Ident] = rule {
@@ -562,7 +555,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Special ~ zeroOrMore(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
+      Special ~ zeroOrMore(optWS ~ "`" ~ FName ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
     }
 
     def Special: Rule1[ParsedAst.Expression] = {
@@ -660,10 +653,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Lazy | Force | ArrayLit | ArrayNew |
+        GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
         FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
-        UnaryLambda | QName | Tag | SName | Hole
+        UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -857,6 +850,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("force") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Force
     }
 
+    def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
+      SP ~ "$"~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
+    }
+
     def Postfix: Rule1[ParsedAst.Expression] = rule {
       ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
     }
@@ -957,6 +954,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ "Map#{" ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FMap
       }
+    }
+
+    def FName: Rule1[ParsedAst.Expression] = rule {
+      SName | QName
     }
 
     def SName: Rule1[ParsedAst.Expression.SName] = rule {
@@ -1158,11 +1159,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Or: Rule1[ParsedAst.Type] = rule {
-      And ~ zeroOrMore(WS ~ keyword("or") ~ WS ~ Type ~> ParsedAst.Type.Or)
+      And ~ zeroOrMore(WS ~ keyword("or") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Or)
     }
 
     def And: Rule1[ParsedAst.Type] = rule {
-      Apply ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~> ParsedAst.Type.And)
+      Apply ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1254,7 +1255,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Not: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
-      keyword("not") ~ WS ~ Apply ~> ParsedAst.Type.Not
+      SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {
@@ -1274,10 +1275,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Kinds                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Kind: Rule1[ParsedAst.Kind] = rule {
-    Kinds.Star | Kinds.Bool | Kinds.Record | Kinds.Schema
+    Kinds.Arrow | Kinds.SimpleKind
   }
 
   object Kinds {
+
+    def SimpleKind: Rule1[ParsedAst.Kind] = rule {
+      Kinds.Star | Kinds.Bool | Kinds.Record | Kinds.Schema
+    }
+
+    def Arrow: Rule1[ParsedAst.Kind] = rule {
+      SimpleKind ~ optional(optWS ~ atomic("->") ~ optWS ~ Kind ~ SP ~> ParsedAst.Kind.Arrow)
+    }
 
     def Star: Rule1[ParsedAst.Kind.Star] = rule {
       SP ~ keyword("Type") ~ SP ~> ParsedAst.Kind.Star
@@ -1334,8 +1343,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("pub")) ~ SP ~> ParsedAst.Modifier
     }
 
+    def Sealed: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(keyword("sealed")) ~ SP ~> ParsedAst.Modifier
+    }
+
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Public
+      Inline | Public | Sealed
     }
 
     rule {
@@ -1466,6 +1479,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Field: Rule1[Name.Ident] = LowerCaseName
 
     def Hole: Rule1[Name.Ident] = LowerCaseName
+
+    def Intrinsic: Rule1[Name.Ident] = UpperCaseName
 
     def Predicate: Rule1[Name.Ident] = UpperCaseName
 

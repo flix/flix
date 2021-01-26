@@ -152,7 +152,7 @@ namespace Test/Predicate/Guard {
     @test
     def testGuardQuantAndCapturedVar02(): Bool =
         let k = 1;
-        let g = (x: Int, y: Int) -> x == y;
+        let g = (x: Int, y: Int) -> x: Int == y;
         let f = #{ A(1). A(2). B(1). B(2). };
         let c = R(x, y) :- if g(k, x), A(x), B(y).;
         let r = solve f <+> c;

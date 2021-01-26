@@ -177,18 +177,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalInt](result)
   }
 
-  test("IllegalLattice.01") {
-    val input = "let Foo<> = (1, 2)"
-    val result = compile(input, DefaultOptions)
-    expectError[WeederError.IllegalLattice](result)
-  }
-
-  test("IllegalLattice.02") {
-    val input = "let Foo<> = (1, 2, 3, 4, 5, 6, 7, 8, 9)"
-    val result = compile(input, DefaultOptions)
-    expectError[WeederError.IllegalLattice](result)
-  }
-
   test("IllegalUniversal.01") {
     val input = "def f(): Prop = ∀(). true"
     val result = compile(input, DefaultOptions)
@@ -210,7 +198,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalJvmFieldOrMethodName.01") {
     val input =
       s"""
-         |def main(): Unit =
+         |def f(): Unit =
          |    import foo() as bar;
          |    ()
          |""".stripMargin
@@ -286,5 +274,26 @@ class TestWeeder extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.UndefinedAnnotation](result)
+  }
+
+  test("MismatchedSuperClassTypeParameter.01") {
+    val input =
+      """
+        |class A[a]
+        |class B[a] extends A[b]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MismatchedSuperClassTypeParameter](result)
+  }
+
+  test("MismatchedSuperClassTypeParameter.02") {
+    val input =
+      """
+        |class A[a]
+        |class B[a]
+        |class C[a] extends A[a], B[b]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MismatchedSuperClassTypeParameter](result)
   }
 }

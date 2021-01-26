@@ -22,6 +22,37 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
+instance ToString[Nel[a]] with [a : ToString] {
+    def toString(l: Nel[a]): String = match l {
+        case Nel(x, xs) => "Nel(${x}, ${xs})"
+    }
+}
+
+instance Hash[Nel[a]] with [a : Hash] {
+    def hash(l: Nel[a]): Int = match l {
+        case Nel(x, xs) => 39119 + Hash.hash(xs) + Hash.hash(x)
+    }
+}
+
+instance Eq[Nel[a]] with[a : Eq] {
+
+    def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
+        case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
+    }
+
+    def neq(xs: Nel[a], ys: Nel[a]): Bool = not (xs == ys)
+
+}
+
+instance Functor[Nel] {
+    def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = Nel.map(f, xs)
+}
+
+instance Foldable[Nel] {
+    def foldLeft(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldLeft(f, s, xs)
+    def foldRight(f: (a, b) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldRight(f, s, xs)
+}
+
 namespace Nel {
 
     ///
@@ -94,9 +125,33 @@ namespace Nel {
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def memberOf(a: a, xs: Nel[a]): Bool = match xs {
+    pub def memberOf[a : Eq](a: a, xs: Nel[a]): Bool = match xs {
         case Nel(h, l) => h == a or List.memberOf(a, l)
     }
+
+    ///
+    /// Finds the smallest element of `xs` according to the `Order` on `a`.
+    ///
+    pub def minimum[a : Order](xs: Nel[a]): a =
+        reduceLeft(Order.min, xs)
+
+    ///
+    /// Finds the smallest element of `xs` according to the given comparator `cmp`.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
+        reduceLeft(Order.minBy(cmp), xs)
+
+    ///
+    /// Finds the largest element of `xs` according to the `Order` on `a`.
+    ///
+    pub def maximum[a : Order](xs: Nel[a]): a =
+        reduceLeft(Order.max, xs)
+
+    ///
+    /// Finds the largest element of `xs` according to the given comparator `cmp`.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
+        reduceLeft(Order.maxBy(cmp), xs)
 
     ///
     /// Alias for `findLeft`.
@@ -176,7 +231,7 @@ namespace Nel {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace(x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace[a : Eq](x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.
@@ -214,9 +269,9 @@ namespace Nel {
     }
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = foldLeft(f, s, xs)
+    pub def fold[a : Monoid](xs: Nel[a]): a = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -237,9 +292,11 @@ namespace Nel {
     }
 
     ///
-    /// Alias for `reduceLeft`.
+    /// Applies `combine` to all elements in `xs` until a single value is obtained.
     ///
-    pub def reduce(f: (a, a) -> a & e, xs: Nel[a]): a & e = reduceLeft(f, xs)
+    pub def reduce[a: Semigroup](xs: Nel[a]): a = match xs {
+        case Nel(h, l) => Foldable.foldLeft((acc, x) -> Semigroup.combine(acc, x), h, l)
+    }
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.
@@ -355,13 +412,6 @@ namespace Nel {
     @Time(time(f)) @Space(space(f))
     pub def foreach(f: a ~> Unit, xs: Nel[a]): Unit & Impure = match xs {
         case Nel(h, l) => f(h); List.foreach(f, l)
-    }
-
-    ///
-    /// Returns `true` if and only if `xs` and `ys` and equal.
-    ///
-    pub def __eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
-        case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
     }
 
 }

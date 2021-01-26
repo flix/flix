@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Underline}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Red, Underline}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -116,4 +116,91 @@ object InstanceError {
     }
   }
 
+  /**
+    * Error indicating the duplicate use of a type variable in an instance type.
+    *
+    * @param tvar the duplicated type variable.
+    * @param sym  the class symbol.
+    * @param loc  the location where the error occurred.
+    */
+  case class DuplicateTypeVariableOccurrence(tvar: Type.Var, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Duplicate type variable."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Duplicate type variable '" << Red(FormatType.formatType(tvar)) << "' in '" << Red(sym.name) << "'."
+      vt << NewLine
+      vt << Code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Rename one of the instances of the type variable."
+    }
+  }
+
+  /**
+    * Error indicating a complex instance type.
+    *
+    * @param tpe the complex type.
+    * @param sym the class symbol.
+    * @param loc the location where the error occurred.
+    */
+  case class ComplexInstanceType(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Complex instance type."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Complex instance type '" << Red(FormatType.formatType(tpe)) << "' in '" << Red(sym.name) << "'."
+      vt << NewLine
+      vt << Code(loc, s"complex instance type")
+      vt << NewLine
+      vt << Underline("Tip:") << " An instance type must be a type constructor applied to zero or more distinct type variables."
+    }
+  }
+
+  /**
+    * Error indicating an orphan instance.
+    *
+    * @param tpe the instance type.
+    * @param sym the class symbol.
+    * @param loc the location where the error occurred.
+    */
+  case class OrphanInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Orphan instance."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Orphan instance for type '" << Red(FormatType.formatType(tpe)) << "' in '" << Red(sym.name) << "'."
+      vt << NewLine
+      vt << Code(loc, s"orphan instance")
+      vt << NewLine
+      vt << Underline("Tip:") << " An instance must be declared in the class's namespace or in the type's namespace."
+    }
+  }
+
+  /**
+    * Error indicating a missing super class instance.
+    *
+    * @param tpe the type for which the super class instance is missing.
+    * @param subClass the symbol of the sub class.
+    * @param superClass the symbol of the super class.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Missing super class instance '$superClass'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << NewLine
+      vt << ">> The class '" << Red(subClass.name) << "' extends the class '" << Red(superClass.name) << "'." << NewLine
+      vt << ">> If you provide an instance for '" << Red(subClass.name) << "' you must also provide an instance for '" << Red(superClass.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"missing super class instance")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+    }
+  }
 }

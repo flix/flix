@@ -14,10 +14,17 @@ namespace Domain/StrictSign {
                   case Bot
     }
 
-    ///
-    /// Returns `true` iff `e1` is equal to `e2`.
-    ///
-    def equ(e1: Sign, e2: Sign): Bool = e1 == e2
+    instance Eq[Sign] {
+        def eq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
+            case (Top, Top) => true
+            case (Neg, Neg) => true
+            case (Zer, Zer) => true
+            case (Pos, Pos) => true
+            case (Bot, Bot) => true
+            case _          => false
+        }
+        def neq(e1: Sign, e2: Sign): Bool = not (e1 == e2)
+    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
@@ -36,7 +43,7 @@ namespace Domain/StrictSign {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
+    pub def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Bot, x)   => x
         case (x, Bot)   => x
         case (Neg, Neg) => Neg
@@ -49,7 +56,7 @@ namespace Domain/StrictSign {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
+    pub def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) {
         case (Top, x)   => x
         case (x, Top)   => x
         case (Neg, Neg) => Neg
@@ -61,7 +68,7 @@ namespace Domain/StrictSign {
     ///
     /// The lattice height function.
     ///
-    #nonNegative #decreasing(equ, leq)
+    #nonNegative
     pub def height(e: Sign): BigInt = match e {
         case Top    => 0ii
         case Neg    => 1ii
@@ -222,19 +229,17 @@ namespace Domain/StrictSign {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let Sign<> = (Bot, Top, equ, leq, lub, glb)
-
     //
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Sign, Sign) -> Bool, bot: Sign): Bool = Bounded.leastElement(bot, leq)
 

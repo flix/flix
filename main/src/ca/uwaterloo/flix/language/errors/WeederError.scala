@@ -260,6 +260,23 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal intrinsic.
+    *
+    * @param loc the location where the illegal intrinsic occurs.
+    */
+  case class IllegalIntrinsic(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal intrinsic"
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal intrinsic." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal intrinsic.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate the presence of a hole in release mode.
     *
     * @param loc the location where the illegal expression occurs.
@@ -275,30 +292,6 @@ object WeederError {
       vt << Code(loc, "illegal hole.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Implement the hole or disable release mode." << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate an illegal bounded lattice definition.
-    *
-    * @param loc the location where the illegal definition occurs.
-    */
-  case class IllegalLattice(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal lattice."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> A lattice definition must have exactly six components: bot, top, equ, leq, lub and glb." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal definition.") << NewLine
-      vt << NewLine
-      vt << "the 1st component must be the bottom element," << NewLine
-      vt << "the 2nd component must be the top element," << NewLine
-      vt << "the 3rd component must be the equality function," << NewLine
-      vt << "the 4th component must be the partial order function," << NewLine
-      vt << "the 5th component must be the least upper bound function, and" << NewLine
-      vt << "the 6th component must be the greatest upper bound function." << NewLine
     }
   }
 
@@ -431,4 +424,26 @@ object WeederError {
       vt << Code(loc, "undefined annotation.") << NewLine
     }
   }
+
+  /**
+    * An error raised to indicate a mismatched super class type parameter.
+    *
+    * @param subTparam   the name of the sub class's tparam
+    * @param superTparam the name of the super class's tparam
+    * @param loc         the location where the error occurred.
+    */
+  case class MismatchedSuperClassTypeParameter(subTparam: Name.Ident, superTparam: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Mismatched class type parameter '${superTparam.name}''"
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Mismatched class type parameter '" << Red(superTparam.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched class type parameter.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Change the superclass type parameter to '${subTparam.name}'."
+    }
+  }
+
 }

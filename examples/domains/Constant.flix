@@ -14,16 +14,29 @@ namespace Domain/Constant {
           case Bot
     }
 
-    ///
-    /// Returns `true` iff `e1` is equal to `e2`.
-    ///
-    def equ(e1: Constant, e2: Constant): Bool = e1 == e2
+    instance Eq[Constant] {
+        def eq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+            case (Top, Top)         => true
+            case (Cst(x), Cst(y))   => x == y
+            case (Bot, Bot)         => true
+            case _                  => false
+        }
+        def neq(e1: Constant, e2: Constant): Bool = not (e1 == e2)
+    }
+
+    instance Hash[Constant] {
+        def hash(x: Constant): Int32 = match x {
+            case Top    => 1
+            case Bot    => 2
+            case Cst(n) => n
+        }
+    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+    pub def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
         case (_, Top)           => true
@@ -34,7 +47,7 @@ namespace Domain/Constant {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
+    pub def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, x)           => x
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
@@ -45,7 +58,7 @@ namespace Domain/Constant {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
+    pub def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
@@ -55,7 +68,7 @@ namespace Domain/Constant {
     ///
     /// The lattice height function.
     ///
-    #nonNegative #decreasing(equ, leq)
+    #nonNegative
     pub def height(e: Constant): BigInt = match e {
         case Top    => 0ii
         case Cst(_) => 1ii
@@ -265,19 +278,41 @@ namespace Domain/Constant {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let Constant<> = (Bot, Top, equ, leq, lub, glb)
+    instance LowerBound[Constant] {
+        def minValue(): Constant = Constant.Bot
+    }
+
+    instance PartialOrder[Constant] {
+        def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
+    }
+
+    instance JoinLattice[Constant] {
+        def leastUpperBound(x: Constant, y: Constant): Constant = lub(x, y)
+    }
+
+    instance MeetLattice[Constant] {
+        def greatestLowerBound(x: Constant, y: Constant): Constant = glb(x, y)
+    }
+
+    instance ToString[Constant] {
+        def toString(x: Constant): String = match x {
+            case Top    => "Top"
+            case Cst(n) => "Cst(${n})"
+            case Bot    => "Bot"
+        }
+    }
 
     //
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (Constant, Constant) -> Bool, bot: Constant): Bool = Bounded.leastElement(bot, leq)
 

@@ -33,7 +33,10 @@ class TestExamples extends Suites(
   new FlixTest("pipelines-of-fixpoint-computations", "examples/pipelines-of-fixpoint-computations.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("compiler-puzzle", "examples/compiler-puzzle.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-
+  new FlixTest("using-laziness-for-infinite-streams", "examples/using-laziness-for-infinite-streams.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("using-laziness-for-logging", "examples/using-laziness-for-logging.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("using-laziness-to-compute-fibonacci", "examples/using-laziness-to-compute-fibonacci.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  
   // TODO
   //new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 

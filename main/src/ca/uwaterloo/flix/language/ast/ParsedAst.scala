@@ -187,7 +187,7 @@ object ParsedAst {
       * @param sigs   the signatures of the class.
       * @param sp2    the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[SuperClass], sigs: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
@@ -202,8 +202,6 @@ object ParsedAst {
       */
     case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Option[Seq[ParsedAst.ConstrainedType]], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
-    case class LatticeComponents(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
-
   }
 
   /**
@@ -212,16 +210,6 @@ object ParsedAst {
   sealed trait Use
 
   object Use {
-
-    /**
-      * A use of a single class from a namespace.
-      *
-      * @param sp1   the position of the first character.
-      * @param nname the namespace.
-      * @param ident the name.
-      * @param sp2   the position of the last character.
-      */
-    case class UseClass(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends Use
 
     /**
       * A use of a single name from a namespace.
@@ -473,6 +461,16 @@ object ParsedAst {
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Intrinsic Operator.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param op   the intrinsic.
+      * @param exps the arguments.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Intrinsic(sp1: SourcePosition, op: Name.Ident, exps: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Apply Expression (function call).
       *
       * @param lambda the lambda expression.
@@ -491,7 +489,7 @@ object ParsedAst {
       * @param e2   the second argument expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Infix(e1: ParsedAst.Expression, name: Name.QName, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Infix(e1: ParsedAst.Expression, name: ParsedAst.Expression, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Postfix Apply.
@@ -1321,25 +1319,29 @@ object ParsedAst {
     /**
       * The Not type constructor.
       *
+      * @param sp1 the position of the first character in the type.
       * @param tpe the negated type.
+      * @param sp2 the position of the last character in the type.
       */
-    case class Not(tpe: ParsedAst.Type) extends ParsedAst.Type
+    case class Not(sp1: SourcePosition,tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * The And type constructor.
       *
       * @param tpe1 the 1st type.
       * @param tpe2 the 2nd type.
+      * @param sp2 the position of the last character in the type.
       */
-    case class And(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type) extends ParsedAst.Type
+    case class And(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * The Or type constructor.
       *
       * @param tpe1 the 1st type.
       * @param tpe2 the 2nd type.
+      * @param sp2 the position of the last character in the type.
       */
-    case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type) extends ParsedAst.Type
+    case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
   }
 
@@ -1369,6 +1371,11 @@ object ParsedAst {
       * The Schema kind.
       */
     case class Schema(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
+      * The Arrow kind.
+      */
+    case class Arrow(k1: ParsedAst.Kind, k2: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Kind
 
   }
 
@@ -1441,6 +1448,17 @@ object ParsedAst {
     * @param sp2     the position of the last character in the context bound.
     */
   case class ConstrainedType(sp1: SourcePosition, tpe: ParsedAst.Type, classes: Seq[Name.QName], sp2: SourcePosition)
+
+
+  /**
+    * Super class.
+    *
+    * @param sp1    the position of the first character in the super class.
+    * @param clazz  the super class.
+    * @param tparam the type parameter.
+    * @param sp2    the position of the last character in the super class.
+    */
+  case class SuperClass(sp1: SourcePosition, clazz: Name.QName, tparam: Name.Ident, sp2: SourcePosition)
 
   /**
     * Formal Parameter.

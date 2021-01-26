@@ -375,6 +375,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         s2 <- unifyExps(exps1, exps2, metaVars)
       } yield s2 @@ s1
 
+      // TODO: Not sure if we need to take the type of the semantic operator into account, e.g. Int32.Neg is the same as Int16.Neg?
     case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
       unifyExp(exp1, exp2, metaVars)
 
@@ -739,14 +740,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val es = exps.map(apply)
         Expression.Apply(e, es, tpe, eff, loc)
 
-      case Expression.Unary(op, exp, tpe, eff, loc) =>
+      case Expression.Unary(sop, exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.Unary(op, e, tpe, eff, loc)
+        Expression.Unary(sop, e, tpe, eff, loc)
 
-      case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+      case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
-        Expression.Binary(op, e1, e2, tpe, eff, loc)
+        Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
       case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val newSym = apply(sym)

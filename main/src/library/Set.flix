@@ -15,7 +15,6 @@
  */
 
 use RedBlackTree.RedBlackTree;
-use Core/Cmp.Ordering;
 
 ///
 /// The Set type.
@@ -24,6 +23,56 @@ use Core/Cmp.Ordering;
 ///
 enum Set[t] {
     case Set(RedBlackTree[t, Unit])
+}
+
+instance ToString[Set[a]] with [a : ToString] {
+    def toString(xs: Set[a]): String =
+        let s = Set.foldRight((x, acc) -> "${x}, ${acc}", "", xs);
+        "Set#{${String.dropRight(2, s)}}"
+}
+
+instance Hash[Set[a]] with [a : Hash] {
+    def hash(xs: Set[a]): Int =
+        Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, xs)
+}
+
+instance Eq[Set[a]] with[a : Eq, a : Order] {
+
+    def eq(xs: Set[a], ys: Set[a]): Bool =
+        Set.isSubsetOf(xs, ys) and Set.isSubsetOf(ys, xs)
+
+    def neq(xs: Set[a], ys: Set[a]): Bool = not (xs == ys)
+
+}
+
+instance Order[Set[a]] with [a : Order] {
+
+    def less(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    def lessEqual(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    def greater(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    def greaterEqual(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    pub def compare(xs: Set[a], ys: Set[a]): Comparison =
+        Set.toList(xs) <=> Set.toList(ys)
+
+}
+
+instance Foldable[Set] {
+    def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e = Set.foldLeft(f, s, xs)
+    def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e = Set.foldRight(f, s, xs)
 }
 
 namespace Set {
@@ -55,7 +104,7 @@ namespace Set {
     /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
     ///
     @Time(1) @Space(1)
-    pub def singleton(x: a): Set[a] = insert(x, empty())
+    pub def singleton[a : Order](x: a): Set[a] = insert(x, empty())
 
     ///
     /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
@@ -70,7 +119,7 @@ namespace Set {
     /// Adds `x` to `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def insert(x: a, xs: Set[a]): Set[a] =
+    pub def insert[a : Order](x: a, xs: Set[a]): Set[a] =
         let Set(es) = xs;
         Set(RedBlackTree.insert(x, (), es))
 
@@ -78,7 +127,7 @@ namespace Set {
     /// Removes `x` from `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def delete(x: a, xs: Set[a]): Set[a] =
+    pub def delete[a : Order](x: a, xs: Set[a]): Set[a] =
         let Set(es) = xs;
         Set(RedBlackTree.delete(x, es))
 
@@ -92,27 +141,61 @@ namespace Set {
     @Time(1) @Space(1)
     pub def isEmpty(xs: Set[a]): Bool =
         let Set(es) = xs;
-        es == RedBlackTree.empty()
+        RedBlackTree.isEmpty(es)
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(1)
-    pub def memberOf(x: a, xs: Set[a]): Bool =
+    pub def memberOf[a : Order](x: a, xs: Set[a]): Bool =
         let Set(es) = xs;
         RedBlackTree.memberOf(x, es)
+
+    ///
+    /// Optionally finds the smallest element of `xs` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def minimum(xs: Set[a]): Option[a] =
+        let Set(es) = xs;
+        RedBlackTree.minimum(es) |> Option.map(fst)
+
+    ///
+    /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
+        reduceLeft(Order.minBy(cmp), xs)
+
+    ///
+    /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def maximum(xs: Set[a]): Option[a] =
+        let Set(es) = xs;
+        RedBlackTree.maximum(es) |> Option.map(fst)
+
+    ///
+    /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
+        reduceLeft(Order.maxBy(cmp), xs)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isSubsetOf(xs: Set[a], ys: Set[a]): Bool = forall(x -> memberOf(x, ys), xs)
+    pub def isSubsetOf[a : Order](xs: Set[a], ys: Set[a]): Bool = forall(x -> memberOf(x, ys), xs)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool = size(xs) != size(ys) and isSubsetOf(xs, ys)
+    pub def isProperSubsetOf[a : Order](xs: Set[a], ys: Set[a]): Bool = size(xs) != size(ys) and isSubsetOf(xs, ys)
 
     ///
     /// Alias for `findLeft`.
@@ -148,9 +231,9 @@ namespace Set {
 
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e = foldLeft(f, s, xs)
+    pub def fold[a : Monoid](xs: Set[a]): a = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -169,11 +252,6 @@ namespace Set {
     pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
         RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, es)
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e = reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -211,7 +289,7 @@ namespace Set {
     /// Returns the union of the elements in `xs`.
     ///
     @Time(size(xs) * Int32.log2(size(xs))) @Space(size(xs) * Int32.log2(size(xs)))
-    pub def flatten(xs: Set[Set[a]]): Set[a] =
+    pub def flatten[a : Order](xs: Set[Set[a]]): Set[a] =
         foldLeft((acc, x) -> union(acc, x), empty(), xs)
 
     ///
@@ -247,28 +325,28 @@ namespace Set {
     /// Returns the union of `xs` and `ys`.
     ///
     @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
-    pub def union(xs: Set[a], ys: Set[a]): Set[a] =
+    pub def union[a : Order](xs: Set[a], ys: Set[a]): Set[a] =
         foldLeft((acc, x) -> insert(x, acc), xs, ys)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
     @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
-    pub def intersection(xs: Set[a], ys: Set[a]): Set[a] =
+    pub def intersection[a : Order](xs: Set[a], ys: Set[a]): Set[a] =
         foldLeft((acc, x) -> if (memberOf(x, xs)) insert(x, acc) else acc, empty(), ys)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
     ///
     @Time(size(xs) * Int32.log2(size(ys))) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def difference(xs: Set[a], ys: Set[a]): Set[a] =
+    pub def difference[a : Order](xs: Set[a], ys: Set[a]): Set[a] =
         foldLeft((acc, x) -> if (not memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
 
     ///
     /// Returns all subsets of `xs`.
     ///
     @Time(size(xs) * (1 <<< size(xs))) @Space(size(xs) * (1 <<< size(xs)))
-    pub def subsets(xs: Set[a]): Set[Set[a]] =
+    pub def subsets[a : Order](xs: Set[a]): Set[Set[a]] =
         foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), xs)
 
 
@@ -282,7 +360,7 @@ namespace Set {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
-    pub def filter(f: a -> Bool, xs: Set[a]): Set[a] =
+    pub def filter[a : Order](f: a -> Bool, xs: Set[a]): Set[a] =
         foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs)
 
     ///
@@ -291,14 +369,14 @@ namespace Set {
     /// Note: The returned set may be smaller than `xs`.
     ///
     @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
-    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e =
+    pub def map[a, b : Order, e](f: a -> b & e, xs: Set[a]): Set[b] & e =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
     @Time(time(f) * size(xs) * Int32.log2(size(xs))) @Space(space(f) * size(xs) * Int32.log2(size(xs)))
-    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e =
+    pub def flatMap[a, b : Order, e](f: a -> Set[b] & e, xs: Set[a]): Set[b] & e =
         foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
 
     ///
@@ -307,7 +385,7 @@ namespace Set {
     /// Note: The returned set may be smaller than `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def replace(x: a, y: a, xs: Set[a]): Set[a] =
+    pub def replace[a : Order](x: a, y: a, xs: Set[a]): Set[a] =
         if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
 
     ///
@@ -319,7 +397,7 @@ namespace Set {
     /// The function `f` must be pure.
     ///
     @Time(size(xs) * Int32.log2(size(xs))) @Space(size(xs) * Int32.log2(size(xs)))
-    pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
+    pub def partition[a : Order](f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
         foldLeft((acc, x) ->
             let (a, b) = acc;
             if (f(x))
@@ -352,7 +430,7 @@ namespace Set {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(size(xs)) @Space(size(xs))
-    pub def toMap(xs: Set[(a, b)]): Map[a, b] =
+    pub def toMap[a : Order, b](xs: Set[(a, b)]): Map[a, b] =
         foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, xs)
 
     ///
@@ -372,12 +450,12 @@ namespace Set {
     ///
     /// `f` should return `None` to signal the end of building the set.
     ///
-    pub def unfold(f: s -> Option[(a, s)] & e, st: s): Set[a] & e = unfoldHelper(f, st, empty())
+    pub def unfold[a : Order, s, e](f: s -> Option[(a, s)] & e, st: s): Set[a] & e = unfoldHelper(f, st, empty())
 
     ///
     /// Helper function for `unfold`.
     ///
-    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e = match f(st) {
+    def unfoldHelper[a : Order, s, e](f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e = match f(st) {
         case None => ac
         case Some((a, st1)) => unfoldHelper(f, st1, insert(a, ac))
     }
@@ -390,12 +468,12 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter(next: () ~> Option[a]): Set[a] & Impure = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter[a : Order](next: () ~> Option[a]): Set[a] & Impure = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () ~> Option[a], ac: Set[a]): Set[a] & Impure = match next() {
+    def unfoldWithIterHelper[a : Order](next: () ~> Option[a], ac: Set[a]): Set[a] & Impure = match next() {
         case None => ac
         case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }
@@ -403,33 +481,11 @@ namespace Set {
     ///
     /// Extracts a range of elements from the set `xs`.
     ///
-    /// That is, the result is a list of all elements `x` where `p(x)` returns `Equal`.
+    /// That is, the result is a list of all elements `x` where `p(x)` returns `EqualTo`.
     ///
-    pub def query(p: a -> Ordering & e, xs: Set[a]): List[a] & e =
+    pub def query(p: a -> Comparison & e, xs: Set[a]): List[a] & e =
         let Set(es) = xs;
         RedBlackTree.queryWith(p, (k, _) -> k, es)
-
-    ///
-    /// Helper function for `cmp`.
-    ///
-    def __cmpHelper(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {
-        case (z :: zs, w :: ws) =>
-            let cmp = z <=> w;
-            if (cmp == 0) __cmpHelper(zs, ws) else cmp
-        case (_ :: _, Nil) => 1
-        case (Nil, _ :: _) => -1
-        case (Nil, Nil) => 0
-    }
-
-    ///
-    /// Returns the result of a three-way comparison between `xs` and `ys`.
-    ///
-    /// Returns n < 0 if `xs` is lexicographically smaller than `ys`.
-    /// Returns n = 0 if `xs` is equal to `ys`.
-    /// Returns n > 0 if `xs` is lexicographically greater than `ys`.
-    ///
-    pub def __cmp(xs: Set[a], ys: Set[a]): Int32 =
-        __cmpHelper(toList(xs), toList(ys))
 
     ///
     /// Helper function for `range`.
@@ -437,8 +493,4 @@ namespace Set {
     def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
         if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
 
-    ///
-    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
-    ///
-    pub def __eq(xs: Set[a], ys: Set[a]): Bool = __cmp(xs, ys) == 0
 }

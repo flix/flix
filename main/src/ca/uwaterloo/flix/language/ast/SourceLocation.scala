@@ -9,13 +9,11 @@ import flix.runtime.ReifiedSourceLocation
   * Companion object for the [[SourceLocation]] class.
   */
 object SourceLocation {
-  /**
-    * Represents a generated source location.
-    */
-  val Generated: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
 
   /**
     * Represents an unknown source location.
+    *
+    * Must only be used if *absolutely necessary*.
     */
   val Unknown: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
 

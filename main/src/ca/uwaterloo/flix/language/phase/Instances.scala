@@ -17,12 +17,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -42,6 +42,49 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns [[Err]] if a definition fails to type check.
     */
   private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
+
+    /**
+      * Checks that an instance is not an orphan.
+      * It is declared in either:
+      * * The class's companion namespace.
+      * * The same namespace as its type.
+      */
+    def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
+      case TypedAst.Instance(_, _, classSym, tpe, _, _, ns, loc) => tpe.typeConstructor match {
+        // Case 1: Enum type in the same namespace as the instance: not an orphan
+        case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
+        // Case 2: Any type in the class namespace: not an orphan
+        case _ if (classSym.namespace) == ns.idents.map(_.name) => ().toSuccess
+        // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
+        case _ => InstanceError.OrphanInstance(tpe, classSym, loc).toFailure
+      }
+    }
+
+    /**
+      * Checks that the instance type is simple:
+      * * all type variables are unique
+      * * all type arguments are variables
+      */
+    def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) => tpe match {
+        case _: Type.Cst => ().toSuccess
+        case _: Type.Var => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
+        case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
+        case _: Type.Apply =>
+          Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
+            // Case 1: Type variable
+            case (seen, tvar: Type.Var) =>
+              // Case 1.1 We've seen it already. Error.
+              if (seen.contains(tvar))
+                InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, loc).toFailure
+              // Case 1.2 We haven't seen it before. Add it to the list.
+              else
+                (tvar :: seen).toSuccess
+            // Case 2: Non-type variable. Error.
+            case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
+          }.map(_ => ())
+      }
+    }
 
     /**
       * Checks for overlap of instance types, assuming the instances are of the same class.
@@ -93,6 +136,26 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
+    /**
+      * Checks that there is an instance for each super class of the class of `inst`.
+      */
+    def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) =>
+        val superClasses = root.classEnv(sym).superClasses
+        checkEach(superClasses) {
+          superClass =>
+            val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
+            // Check each instance of the super class
+            if (superInsts.exists(superInst => Unification.unifiesWith(tpe, superInst.tpe))) {
+              // Case 1: An instance matches. Success.
+              ().toSuccess
+            } else {
+              // Case 2: No instance matches. Error.
+              InstanceError.MissingSuperClassInstance(tpe, sym, superClass, loc).toFailure
+            }
+        }
+    }
+
 
     /**
       * Reassembles a set of instances of the same class.
@@ -104,8 +167,11 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       checkEach(checks) {
         case inst :: unchecked =>
           for {
+            _ <- checkSimple(inst)
             _ <- Validation.traverse(unchecked)(checkOverlap(_, inst))
             _ <- checkSigMatch(inst)
+            _ <- checkOrphan(inst)
+            _ <- checkSuperInstances(inst)
           } yield ()
         case Nil => ().toSuccess
       }

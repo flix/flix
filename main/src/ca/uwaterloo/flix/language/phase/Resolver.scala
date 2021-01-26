@@ -16,16 +16,14 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Constructor, Field, Method, Modifier}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.collection.mutable
 
 /**
@@ -59,11 +57,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    val definitionsVal = root.defs.flatMap {
-      case (ns0, defs) => defs.map {
-        case (_, defn) => resolve(defn, ns0, root) map {
+    val definitionsVal = root.defsAndSigs.flatMap {
+      case (ns0, defsAndSigs) => defsAndSigs.collect {
+        case (_, defn: NamedAst.Def) => resolve(defn, ns0, root) map {
           case d => d.sym -> d
         }
+        // Skip Sigs as they are handled under classes.
       }
     }
 
@@ -75,28 +74,82 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    val latticeComponentsVal = root.latticesOps.map {
-      case (tpe0, lattice0) =>
-        for {
-          tpe <- lookupType(tpe0, lattice0.ns, root)
-          lattice <- resolve(lattice0, lattice0.ns, root)
-        } yield (tpe, lattice)
-    }
-
     val propertiesVal = traverse(root.properties) {
       case (ns0, properties) => Properties.resolve(properties, ns0, root)
     }
 
     for {
       classes <- sequence(classesVal)
-      instances <- sequence(instancesVal) // MATT add synth instances
+      instances <- sequence(instancesVal)
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
-      latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
+      _ <- checkSuperClassDag(classes.toMap)
     } yield ResolvedAst.Root(
-      classes.toMap, instances.toMap, definitions.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, root.reachable, root.sources
+      classes.toMap, combine(instances), definitions.toMap, enums.toMap, properties.flatten, root.reachable, root.sources
     )
+  }
+
+  /**
+    * Creates a map from a list of key-(value list) pairs, appending in the case of duplicates.
+    */
+  private def combine[K, V](list: List[(K, List[V])]): Map[K, List[V]] = {
+    list.foldLeft(Map.empty[K, List[V]]) {
+      case (acc, (key, value)) => acc + (key -> (value ++ acc.getOrElse(key, Nil)))
+    }
+  }
+
+  /**
+    * Checks that the super classes form a DAG (no cycles).
+    */
+  private def checkSuperClassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Class]): Validation[Unit, ResolutionError] = {
+
+    // Set of classes known to be acyclic
+    val acyclic = mutable.Set.empty[Symbol.ClassSym]
+
+    /**
+      * Checks the class for super class cycles, where `path` is a list visited nodes.
+      */
+    def findCycle(clazz: ResolvedAst.Class, path: List[Symbol.ClassSym]): Option[List[Symbol.ClassSym]] = {
+      if (acyclic.contains(clazz.sym)) {
+        // Case 1: We already know this class is acyclic.
+        None
+      } else if (path.contains(clazz.sym)) {
+        // Case 2: This class is in our path. There's a cycle.
+        val cycle = clazz.sym :: path.takeWhile(_ != clazz.sym) ++ List(clazz.sym)
+        Some(cycle)
+      } else {
+        // Case 3: Check each superclass for cycles.
+        val result = clazz.superClasses.flatMap {
+          superClass => findCycle(classes(superClass), clazz.sym :: path)
+        }.headOption
+
+        if (result.isEmpty) {
+          // mark this class as acyclic if there's no cycle
+          acyclic += clazz.sym
+        }
+
+        result
+      }
+    }
+
+    /**
+      * Create a list of CyclicClassHierarchy errors, one for each class.
+      */
+    def mkCycleErrors[T](cycle: List[Symbol.ClassSym]): Validation.Failure[T, ResolutionError] = {
+      val errors = cycle.map {
+        sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
+      }
+      Validation.Failure(LazyList.from(errors))
+    }
+
+    // Check each class for cycles
+    fold(classes.values, ()) {
+      case ((), clazz) => findCycle(clazz, Nil) match {
+        case Some(cycle) => mkCycleErrors(cycle)
+        case None => ().toSuccess
+      }
+    }
   }
 
   object Constraints {
@@ -125,11 +178,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
     */
   def resolve(c0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
-    case NamedAst.Class(doc, mod, sym, tparam0, signatures, loc) =>
+    case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, loc) =>
       for {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigs <- traverse(signatures)(resolve(_, ns0, root))
-      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, sigs, loc)
+        superClasses <- traverse(superClasses0)(lookupClassForImplementation(_, ns0, root))
+      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses.map(_.sym), sigs, loc)
   }
 
   /**
@@ -138,11 +192,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(i0: NamedAst.Instance, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
     case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
       for {
-        clazz <- lookupClass(clazz0, ns0, root)
+        clazz <- lookupClassForImplementation(clazz0, ns0, root)
         tpe <- lookupType(tpe0, ns0, root)
         tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, ns0, root))
         defs <- traverse(defs0)(resolve(_, ns0, root))
-      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, loc)
+      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, ns0, loc)
   }
 
   /**
@@ -209,22 +263,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
-    */
-  def resolve(l0: NamedAst.LatticeOps, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.LatticeOps, ResolutionError] = {
-    val tenv0 = Map.empty[Symbol.VarSym, Type]
-    for {
-      tpe <- lookupType(l0.tpe, ns0, root)
-      bot <- Expressions.resolve(l0.bot, tenv0, ns0, root)
-      top <- Expressions.resolve(l0.top, tenv0, ns0, root)
-      equ <- Expressions.resolve(l0.equ, tenv0, ns0, root)
-      leq <- Expressions.resolve(l0.leq, tenv0, ns0, root)
-      lub <- Expressions.resolve(l0.lub, tenv0, ns0, root)
-      glb <- Expressions.resolve(l0.glb, tenv0, ns0, root)
-    } yield ResolvedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
-  }
-
-  /**
     * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
     */
   private def visitAttribute(a0: NamedAst.Attribute, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Attribute, ResolutionError] = {
@@ -255,7 +293,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def mkFreshFparams(arity: Int, loc: SourceLocation): List[ResolvedAst.FormalParam] = {
         // Introduce a fresh variable symbol for each argument of the function definition.
-        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i)).toList
+        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
         varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
@@ -326,6 +364,41 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           }
       }
 
+      /**
+        * Resolve the application expression, applying `defn` to `exps`.
+        */
+      def visitApplyDef(app: NamedAst.Expression.Apply, defn: NamedAst.Def, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        if (defn.fparams.length == exps.length) {
+          // Case 1: Hooray! We can call the function directly.
+          for {
+            es <- traverse(exps)(visit(_, tenv0))
+          } yield {
+            val base = ResolvedAst.Expression.Def(defn.sym, Type.freshVar(Kind.Star), innerLoc)
+            ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
+          }
+        } else {
+          // Case 2: We have to curry. (See below).
+          visitApply(app)
+        }
+      }
+
+      /**
+        * Resolve the application expression, applying `sig` to `exps`.
+        */
+      def visitApplySig(app: NamedAst.Expression.Apply, sig: NamedAst.Sig, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        if (sig.fparams.length == exps.length) {
+          // Case 1: Hooray! We can call the function directly.
+          for {
+            es <- traverse(exps)(visit(_, tenv0))
+          } yield {
+            val base = ResolvedAst.Expression.Sig(sig.sym, Type.freshVar(Kind.Star), innerLoc)
+            ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
+          }
+        } else {
+          // Case 2: We have to curry. (See below).
+          visitApply(app)
+        }
+      }
 
       /**
         * Local visitor.
@@ -341,9 +414,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
 
         case NamedAst.Expression.DefOrSig(qname, tvar, loc) =>
-          mapN(lookupDefSig(qname, ns0, root)) {
-            case NameLookupResult.Def(defn) => visitDef(defn, tvar, loc)
-            case NameLookupResult.Sig(sig) => visitSig(sig, tvar, loc)
+          mapN(lookupDefOrSig(qname, ns0, root)) {
+            case defn: NamedAst.Def => visitDef(defn, tvar, loc)
+            case sig: NamedAst.Sig => visitSig(sig, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -356,13 +429,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {
-            case NamedAst.Use.UseClass(qname, _, _) =>
-              flatMapN(lookupClass(qname, ns0, root))(_ => visit(exp, tenv0))
+            case NamedAst.Use.UseDefOrSig(qname, _, _) =>
+              flatMapN(lookupDefOrSig(qname, ns0, root))(_ => visit(exp, tenv0))
 
-            case NamedAst.Use.UseDef(qname, _, _) =>
-              flatMapN(lookupDefSig(qname, ns0, root))(_ => visit(exp, tenv0))
-
-            case NamedAst.Use.UseTyp(qname, _, _) =>
+            case NamedAst.Use.UseTypeOrClass(qname, _, _) =>
               flatMapN(lookupType(NamedAst.Type.Ambiguous(qname, loc), ns0, root))(_ => visit(exp, tenv0))
 
             case NamedAst.Use.UseTag(qname, tag, _, _) =>
@@ -397,34 +467,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(Type.freshVar(Kind.Star), loc).toSuccess
 
-        case app@NamedAst.Expression.Apply(exp@NamedAst.Expression.DefOrSig(qname, _, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupDefSig(qname, ns0, root)) {
-            case NameLookupResult.Def(defn) =>
-              if (defn.fparams.length == exps.length) {
-                // Case 1: Hooray! We can call the function directly.
-                for {
-                  es <- traverse(exps)(visit(_, tenv0))
-                } yield {
-                  val base = ResolvedAst.Expression.Def(defn.sym, Type.freshVar(Kind.Star), innerLoc)
-                  ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
-                }
-              } else {
-                // Case 2: We have to curry. (See below).
-                visitApply(app)
-              }
-            case NameLookupResult.Sig(sig) =>
-              if (sig.fparams.length == exps.length) {
-                // Case 1: Hooray! We can call the function directly.
-                for {
-                  es <- traverse(exps)(visit(_, tenv0))
-                } yield {
-                  val base = ResolvedAst.Expression.Sig(sig.sym, Type.freshVar(Kind.Star), innerLoc)
-                  ResolvedAst.Expression.Apply(base, es, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), outerLoc)
-                }
-              } else {
-                // Case 2: We have to curry. (See below).
-                visitApply(app)
-              }
+        case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, _, innerLoc), exps, outerLoc) =>
+          flatMapN(lookupDefOrSig(qname, ns0, root)) {
+            case defn: NamedAst.Def => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
+            case sig: NamedAst.Sig => visitApplySig(app, sig, exps, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app)
@@ -436,16 +482,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             p <- Params.resolve(fparam, ns0, root)
           } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
 
-        case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
+        case NamedAst.Expression.Unary(sop, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Unary(op, e, tvar, loc)
+          } yield ResolvedAst.Expression.Unary(sop, e, tvar, loc)
 
-        case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Binary(op, e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.Binary(sop, e1, e2, tvar, loc)
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
           for {
@@ -519,7 +565,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
 
                   // Construct a fresh symbol for the formal parameter.
-                  val freshVar = Symbol.freshVarSym("x")
+                  val freshVar = Symbol.freshVarSym("x", loc)
 
                   // Construct the formal parameter for the fresh symbol.
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshVar(Kind.Star), loc)
@@ -1018,6 +1064,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
+    * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
+    */
+  def lookupClassForImplementation(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
+    val classOpt = tryLookupClass(qname, ns0, root)
+    classOpt match {
+      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
+      case Some(clazz) =>
+        getClassAccessibility(clazz, ns0) match {
+          case Accessibility.Accessible => clazz.toSuccess
+          case Accessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
+          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+        }
+    }
+  }
+
+  /**
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
@@ -1025,10 +1087,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     classOpt match {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
-        if (isClassAccessible(clazz, ns0)) {
-          clazz.toSuccess
-        } else {
-          ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+        getClassAccessibility(clazz, ns0) match {
+          case Accessibility.Accessible | Accessibility.Sealed => clazz.toSuccess
+          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
     }
   }
@@ -1055,70 +1116,37 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       root.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
-  /**
-    * Finds the def with the qualified name `qname` in the namespace `ns0`.
-    */
-  def lookupDef(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Def, ResolutionError] = {
-    val defOpt = tryLookupDef(qname, ns0, root)
 
-    defOpt match {
+  /**
+    * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
+    */
+  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
+    val defOrSigOpt = tryLookupDefOrSig(qname, ns0, root)
+
+    defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case Some(defn) =>
+      case Some(defn@NamedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)) =>
         if (isDefAccessible(defn, ns0)) {
           defn.toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-    }
-  }
-
-  /**
-    * Finds the def or sig with the qualified name `qname` in the namespace `ns0`.
-    */
-  def lookupDefSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NameLookupResult, ResolutionError] = {
-    val defOpt = tryLookupDef(qname, ns0, root)
-    val sigOpt = tryLookupSig(qname, ns0, root)
-
-    (defOpt, sigOpt) match {
-      // Case 1: Can't find the name anywhere
-      case (None, None) => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      // Case 2: Can find only a def with the name
-      case (Some(defn), None) =>
-        if (isDefAccessible(defn, ns0)) {
-          NameLookupResult.Def(defn).toSuccess
-        } else {
-          ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
-        }
-      // Case 3: Can find only a sig with the name
-      case (None, Some(sig)) =>
+      case Some(sig@NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)) =>
         if (isSigAccessible(sig, ns0)) {
-          NameLookupResult.Sig(sig).toSuccess
+          sig.toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
-      // Case 4: Can find both with the name
-      case (Some(defn), Some(sig)) =>
-        (isDefAccessible(defn, ns0), isSigAccessible(sig, ns0)) match {
-          // Case 4.1: Neither is accessible
-          case (false, false) => ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure // MATT need something for if both are inaccessible?
-          // Case 4.2: Only the def is accessible
-          case (true, false) => NameLookupResult.Def(defn).toSuccess
-          // Case 4.3: Only the sig is accessible
-          case (false, true) => NameLookupResult.Sig(sig).toSuccess
-          // Case 4.4: Both are accessible
-          case (true, true) => ResolutionError.AmbiguousName(qname, ns0, List(defn.loc, sig.loc), qname.loc).toFailure
-        }
     }
   }
 
   /**
-    * Tries to find a def with the qualified name `qname` in the namespace `ns0`.
+    * Attempts to lookup the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  def tryLookupDef(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Def] = {
-    // Check whether the name is fully-qualified.
+  def tryLookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.DefOrSig] = {
     if (qname.isUnqualified) {
       // Case 1: Unqualified name. Lookup in the current namespace.
-      val defnOpt = root.defs.getOrElse(ns0, Map.empty).get(qname.ident.name)
+      val defnOpt = root.defsAndSigs.getOrElse(ns0, Map.empty).get(qname.ident.name)
 
       defnOpt match {
         case Some(defn) =>
@@ -1126,34 +1154,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           Some(defn)
         case None =>
           // Case 1.1: Try the global namespace.
-          root.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+          root.defsAndSigs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
       }
     } else {
       // Case 2: Qualified. Lookup in the given namespace.
-      root.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
-    * Tries to find a sig with the qualified name `qname` in the namespace `ns0`.
-    */
-  def tryLookupSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Sig] = {
-    // Check whether the name is fully-qualified.
-    if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup in the current namespace.
-      val sigOpt = root.sigs.getOrElse(ns0, Map.empty).get(qname.ident.name)
-
-      sigOpt match {
-        case Some(sig) =>
-          // Case 1.2: Found in the current namespace.
-          Some(sig)
-        case None =>
-          // Case 1.1: Try the global namespace.
-          root.sigs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Case 2: Qualified. Lookup in the given namespace.
-      root.sigs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      root.defsAndSigs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
@@ -1296,11 +1301,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, loc)
 
           // Case 4: Errors.
-          case (x, y) =>
-            val loc1 = x.map(_.loc)
-            val loc2 = y.map(_.loc)
-            val locs = List(loc1, loc2).flatten
-            ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
+          case (_, _) => throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
         }
     }
 
@@ -1482,30 +1483,36 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Determines if the class is accessible from the namespace.
     *
-    * A class `class0` is accessible from a namespace `ns0` if:
+    * Accessibility depends on the modifiers on the class
+    * and the accessing namespace's relation to the class namespace:
     *
-    * (a) the class is marked public, or
-    * (b) the class is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    * |            | same | child | other |
+    * |------------|------|-------|-------|
+    * | (none)     | A    | A     | I     |
+    * | sealed     | A    | S     | I     |
+    * | pub        | A    | A     | A     |
+    * | pub sealed | A    | S     | S     |
+    *
+    * (A: Accessible, S: Sealed, I: Inaccessible)
     */
-  def isClassAccessible(class0: NamedAst.Class, ns0: Name.NName): Boolean = {
-    //
-    // Check if the class is marked public.
-    //
-    if (class0.mod.isPublic)
-      return true
+  private def getClassAccessibility(class0: NamedAst.Class, ns0: Name.NName): Accessibility = {
 
-    //
-    // Check if the class is defined in `ns0` or in a parent of `ns0`.
-    //
-    val prefixNs = class0.sym.namespace
-    val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return true
+    val classNs = class0.sym.namespace
+    val accessingNs = ns0.idents.map(_.name)
 
-    //
-    // The class is not accessible.
-    //
-    false
+    if (classNs == accessingNs) {
+      // Case 1: We're in the same namespace: Accessible
+      Accessibility.Accessible
+    } else if (!class0.mod.isPublic && !accessingNs.startsWith(classNs)) {
+      // Case 2: The class is private and we're in unrelated namespaces: Inaccessible
+      Accessibility.Inaccessible
+    } else if (class0.mod.isSealed) {
+      // Case 3: The class is accessible but sealed
+      Accessibility.Sealed
+    } else {
+      // Case 4: The class is otherwise accessible
+      Accessibility.Accessible
+    }
   }
 
   /**
@@ -1555,7 +1562,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
     //
-    val prefixNs = sig0.sym.clazz.namespace
+    val prefixNs = sig0.sym.clazz.namespace :+ sig0.sym.clazz.name
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
       return true
@@ -1885,9 +1892,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     mkPredicate(Ast.Denotation.Latticenal, ts0, loc)
   }
 
-  sealed trait NameLookupResult
-  object NameLookupResult {
-    case class Sig(sig: NamedAst.Sig) extends NameLookupResult
-    case class Def(defn: NamedAst.Def) extends NameLookupResult
+  /**
+    * Enum describing the extent to which a class is accessible.
+    */
+  private sealed trait Accessibility
+  private object Accessibility {
+    case object Accessible extends Accessibility
+    case object Sealed extends Accessibility
+    case object Inaccessible extends Accessibility
   }
 }

@@ -16,30 +16,32 @@
  
 namespace Validation {
 
+    use Hash.hash;
+
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def ap01(): Bool = ap(Success(x -> x + 1), Success(123)) == Success(124)
+    def ap01(): Bool = ap(Success(x -> x + 1), Success(123)): Validation[_, Unit] == Success(124)
 
     @test
     def ap02(): Bool = ap(Success(x -> x + 1), Failure(Nel(42, Nil))) == Failure(Nel(42, Nil))
 
     @test
-    def ap03(): Bool = ap(Failure(Nel(42, Nil)), Success(123)) == Failure(Nel(42, Nil))
+    def ap03(): Bool = ap(Failure(Nel(42, Nil)), Success(123)): Validation[Unit, _] == Failure(Nel(42, Nil))
 
     @test
-    def ap04(): Bool = ap(Failure(Nel(123, Nil)), (Failure(Nel(456, Nil)))) == Failure(Nel(123, 456 :: Nil))
+    def ap04(): Bool = ap(Failure(Nel(123, Nil)), (Failure(Nel(456, Nil)))): Validation[Unit, _] == Failure(Nel(123, 456 :: Nil))
 
     @test
-    def ap05(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, Nil)))) == Failure(Nel(1, 2 :: 3 :: Nil))
+    def ap05(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, Nil)))): Validation[Unit, _] == Failure(Nel(1, 2 :: 3 :: Nil))
 
     @test
-    def ap06(): Bool = ap(Failure(Nel(1, Nil)), (Failure(Nel(2, 3 :: Nil)))) == Failure(Nel(1, 2 :: 3 :: Nil))
+    def ap06(): Bool = ap(Failure(Nel(1, Nil)), (Failure(Nel(2, 3 :: Nil)))): Validation[Unit, _] == Failure(Nel(1, 2 :: 3 :: Nil))
 
     @test
-    def ap07(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, 4 :: Nil)))) == Failure(Nel(1, 2 :: 3 :: 4 :: Nil))
+    def ap07(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, 4 :: Nil)))): Validation[Unit, _] == Failure(Nel(1, 2 :: 3 :: 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
@@ -56,7 +58,7 @@ namespace Validation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def withDefault01(): Bool = withDefault(Success(1), Success(2)) == Success(1)
+    def withDefault01(): Bool = withDefault(Success(1), Success(2)): Validation[_, Unit] == Success(1)
 
     @test
     def withDefault02(): Bool = withDefault(Success(1), Failure(Nel(1, Nil))) == Success(1)
@@ -65,7 +67,7 @@ namespace Validation {
     def withDefault03(): Bool = withDefault(Failure(Nel(1, Nil)), Success(2)) == Success(2)
 
     @test
-    def withDefault04(): Bool = withDefault(Failure(Nel(1, Nil)), Failure(Nel(2, Nil))) == Failure(Nel(2, Nil))
+    def withDefault04(): Bool = withDefault(Failure(Nel(1, Nil)), Failure(Nel(2, Nil))): Validation[Unit, _] == Failure(Nel(2, Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -92,35 +94,35 @@ namespace Validation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map01(): Bool = map(x -> x, Success(123)) == Success(123)
+    def map01(): Bool = map(x -> x, Success(123)): Validation[_, Unit] == Success(123)
 
     @test
-    def map02(): Bool = map(x -> x + 1, Success(123)) == Success(124)
+    def map02(): Bool = map(x -> x + 1, Success(123)): Validation[_, Unit] == Success(124)
 
     @test
-    def map03(): Bool = map(x -> x, Failure(Nel(123, Nil))) == Failure(Nel(123, Nil))
+    def map03(): Bool = map(x -> x, Failure(Nel(123, Nil))): Validation[Unit, _] == Failure(Nel(123, Nil))
 
     @test
-    def map04(): Bool = Success(123) |> map(x -> x + 1) |> map(x -> x * 2) == Success(248)
+    def map04(): Bool = (Success(123): Validation[_, Unit]) |> map(x -> x + 1) |> map(x -> x * 2)  == Success(248)
 
     /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sequence01(): Bool = sequence(Success(1) :: Nil) == Success(1 :: Nil)
+    def sequence01(): Bool = sequence(Success(1) :: Nil): Validation[_, Unit] == Success(1 :: Nil)
 
     @test
-    def sequence02(): Bool = sequence(Success(1) :: Success(2) :: Nil) == Success(1 :: 2 :: Nil)
+    def sequence02(): Bool = sequence(Success(1) :: Success(2) :: Nil): Validation[_, Unit] == Success(1 :: 2 :: Nil)
 
     @test
-    def sequence03(): Bool = sequence(Success(1) :: Success(2) :: Success(3) :: Nil) == Success(1 :: 2 :: 3 :: Nil)
+    def sequence03(): Bool = sequence(Success(1) :: Success(2) :: Success(3) :: Nil): Validation[_, Unit] == Success(1 :: 2 :: 3 :: Nil)
 
     @test
-    def sequence04(): Bool = sequence(Failure(Nel(1, Nil)) :: Nil) == Failure(Nel(1, Nil))
+    def sequence04(): Bool = sequence(Failure(Nel(1, Nil)) :: Nil): Validation[List[Unit], _] == Failure(Nel(1, Nil))
 
     @test
-    def sequence05(): Bool = sequence(Failure(Nel(1, Nil)) :: Failure(Nel(2, Nil)) :: Nil) == Failure(Nel(1, 2 :: Nil))
+    def sequence05(): Bool = sequence(Failure(Nel(1, Nil)) :: Failure(Nel(2, Nil)) :: Nil): Validation[List[Unit], _] == Failure(Nel(1, 2 :: Nil))
 
     @test
     def sequence06(): Bool = sequence(Success(1) :: Failure(Nel(42, Nil)) :: Nil) == Failure(Nel(42, Nil))
@@ -133,19 +135,19 @@ namespace Validation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def traverse01(): Bool = traverse(x -> Success(x + 1), 1 :: Nil) == Success(2 :: Nil)
+    def traverse01(): Bool = traverse(x -> Success(x + 1), 1 :: Nil): Validation[_, Unit] == Success(2 :: Nil)
 
     @test
-    def traverse02(): Bool = traverse(x -> Success(x + 1), 1 :: 2 :: Nil) == Success(2 :: 3 :: Nil)
+    def traverse02(): Bool = traverse(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[_, Unit] == Success(2 :: 3 :: Nil)
 
     @test
-    def traverse03(): Bool = traverse(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil) == Success(2 :: 3 :: 4 :: Nil)
+    def traverse03(): Bool = traverse(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[_, Unit] == Success(2 :: 3 :: 4 :: Nil)
 
     @test
-    def traverse04(): Bool = traverse(x -> Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 2 :: 3 :: Nil))
+    def traverse04(): Bool = traverse(x -> Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil): Validation[List[Unit], _] == Failure(Nel(1, 2 :: 3 :: Nil))
 
     @test
-    def traverse05(): Bool = traverse(x -> Failure(Nel(x, x :: Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil))
+    def traverse05(): Bool = traverse(x -> Failure(Nel(x, x :: Nil)), 1 :: 2 :: 3 :: Nil): Validation[List[Unit], _] == Failure(Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil))
 
     @test
     def traverse06(): Bool = traverse(x -> if (x != 2) Success(x + 1) else Failure(Nel(42, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(42, Nil))
@@ -158,13 +160,13 @@ namespace Validation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def traverseX01(): Bool = traverseX(x -> Success(x + 1), 1 :: Nil) == Success()
+    def traverseX01(): Bool = traverseX(x -> Success(x + 1), 1 :: Nil): Validation[_, Unit] == Success()
 
     @test
-    def traverseX02(): Bool = traverseX(x -> Success(x + 1), 1 :: 2 :: Nil) == Success()
+    def traverseX02(): Bool = traverseX(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[_, Unit] == Success()
 
     @test
-    def traverseX03(): Bool = traverseX(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil) == Success()
+    def traverseX03(): Bool = traverseX(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[_, Unit] == Success()
 
     @test
     def traverseX04(): Bool = traverseX(x -> Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 2 :: 3 :: Nil))
@@ -186,17 +188,17 @@ namespace Validation {
     def toOption01(): Bool = (Success(123)).toOption() == Some(123)
 
     @test
-    def toOption02(): Bool = (Failure(Nel(42, Nil))).toOption() == None
+    def toOption02(): Bool = (Failure(Nel(42, Nil))).toOption(): Option[Int32] == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toResult                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toResult01(): Bool = (Success(123)).toResult() == Ok(123)
+    def toResult01(): Bool = (Success(123)).toResult(): Result[_, Nel[Unit]] == Ok(123)
 
     @test
-    def toResult02(): Bool = (Failure(Nel(42, Nil))).toResult() == Err(Nel(42, Nil))
+    def toResult02(): Bool = (Failure(Nel(42, Nil))).toResult(): Result[Unit, _] == Err(Nel(42, Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
@@ -206,14 +208,14 @@ namespace Validation {
     def toList01(): Bool = (Success(123)).toList() == 123 :: Nil
 
     @test
-    def toList02(): Bool = (Failure(Nel(42, Nil))).toList() == Nil
+    def toList02(): Bool = (Failure(Nel(42, Nil)): Validation[Unit, _]).toList() == Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // lift2                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift201(): Bool = Validation.lift2((x1,x2) -> x1 + x2, Success(123), Success(1)) == Success(124)
+def lift201(): Bool = Validation.lift2((x1,x2) -> x1 + x2, Success(123), Success(1)): Validation[_, Unit] == Success(124)
 
 @test
 def lift202(): Bool = Validation.lift2((x1,x2) -> x1 + x2, Success(123), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -229,7 +231,7 @@ def lift204(): Bool = Validation.lift2((x1,x2) -> x1 + x2, Failure(Nel("e1", Nil
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift301(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Success(2)) == Success(126)
+def lift301(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Success(2)): Validation[_, Unit] == Success(126)
 
 @test
 def lift302(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -254,7 +256,7 @@ def lift307(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Failure(Nel("
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift401(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Success(3)) == Success(129)
+def lift401(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Success(3)): Validation[_, Unit] == Success(129)
 
 @test
 def lift402(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -276,7 +278,7 @@ def lift406(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Failu
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift501(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Success(4)) == Success(133)
+def lift501(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Success(4)): Validation[_, Unit] == Success(133)
 
 @test
 def lift502(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -301,7 +303,7 @@ def lift507(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift601(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5)) == Success(138)
+def lift601(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5)): Validation[_, Unit] == Success(138)
 
 @test
 def lift602(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -329,7 +331,7 @@ def lift608(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift701(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)) == Success(144)
+def lift701(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)): Validation[_, Unit] == Success(144)
 
 @test
 def lift702(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -360,7 +362,7 @@ def lift709(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + 
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift801(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)) == Success(151)
+def lift801(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)): Validation[_, Unit] == Success(151)
 
 @test
 def lift802(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -394,7 +396,7 @@ def lift810(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift901(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)) == Success(159)
+def lift901(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)): Validation[_, Unit] == Success(159)
 
 @test
 def lift902(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -431,7 +433,7 @@ def lift911(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 +
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift1001(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)) == Success(168)
+def lift1001(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)): Validation[_, Unit] == Success(168)
 
 @test
 def lift1002(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
@@ -465,5 +467,24 @@ def lift1011(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 
 
 @test
 def lift1012(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)), Failure(Nel("e5", Nil)), Failure(Nel("e6", Nil)), Failure(Nel("e7", Nil)), Failure(Nel("e8", Nil)), Failure(Nel("e9", Nil)), Failure(Nel("e10", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: "e5" :: "e6" :: "e7" :: "e8" :: "e9" :: "e10" :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(Success(()): Validation[_, Unit]) == hash(Success(()): Validation[_, Unit])
+
+    @test
+    def hash02(): Bool = hash(Success(()): Validation[_, Unit]) != hash(Failure(Nel((), () :: Nil)): Validation[Unit, _])
+
+    @test
+    def hash03(): Bool = hash(Success(1, 2): Validation[_, Unit]) == hash(Success(1, 2): Validation[_, Unit])
+
+    @test
+    def hash04(): Bool = hash(Success(1, 2, 3): Validation[_, Unit]) != hash(Success(1, 3, 2): Validation[_, Unit])
+
+    @test
+    def hash05(): Bool = hash(Success(Nel(1, Nil)): Validation[_, Int32]) != hash(Failure(Nel(1, Nil)): Validation[Nel[Int32], _])
 
 }

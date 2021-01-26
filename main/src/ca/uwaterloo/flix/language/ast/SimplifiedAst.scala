@@ -37,7 +37,7 @@ object SimplifiedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression)
 
-  case class LatticeOps(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
+  case class LatticeOps(tpe: Type, bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
   sealed trait Expression {
     def tpe: Type
@@ -47,80 +47,54 @@ object SimplifiedAst {
 
   object Expression {
 
-    case object Unit extends SimplifiedAst.Expression {
+    case class Unit(loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Unit
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Null(tpe: Type) extends SimplifiedAst.Expression {
-      def loc: SourceLocation = SourceLocation.Unknown
-    }
+    case class Null(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case object True extends SimplifiedAst.Expression {
+    case class True(loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case object False extends SimplifiedAst.Expression {
+    case class False(loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Char(lit: scala.Char) extends SimplifiedAst.Expression {
+    case class Char(lit: scala.Char, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Char
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Float32(lit: scala.Float) extends SimplifiedAst.Expression {
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Float32
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Float64(lit: scala.Double) extends SimplifiedAst.Expression {
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Float64
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int8
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Int16(lit: scala.Short) extends SimplifiedAst.Expression {
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int16
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Int32(lit: scala.Int) extends SimplifiedAst.Expression {
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int32
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Int64(lit: scala.Long) extends SimplifiedAst.Expression {
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int64
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class BigInt(lit: java.math.BigInteger) extends SimplifiedAst.Expression {
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.BigInt
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
-    case class Str(lit: java.lang.String) extends SimplifiedAst.Expression {
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Str
-
-      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

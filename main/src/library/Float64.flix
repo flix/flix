@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Float64] {
+    def minValue(): Float64 = Float64.minValue()
+}
+
+instance UpperBound[Float64] {
+    def maxValue(): Float64 = Float64.maxValue()
+}
+
 namespace Float64 {
 
     ///
@@ -104,9 +112,7 @@ namespace Float64 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Float64): String =
-        import java.lang.Double:toString(Float64);
-        x.toString() as & Pure
+    pub def toString(x: Float64): String = ToString.toString(x)
 
 // TODO
 //    ///

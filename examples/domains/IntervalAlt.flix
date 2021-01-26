@@ -23,12 +23,12 @@ namespace Domain/IntervalAlt {
     ///
     /// Returns the maximum width of an interval before we go to top.
     ///
-    def maxWidth(): BigInt = 10ii
+    pub def maxWidth(): BigInt = 10ii
 
     ///
     /// Returns the canonical representation of the given IntervalAlt `e`.
     ///
-    def norm(x: IntervalAlt): IntervalAlt = match x {
+    pub def norm(x: IntervalAlt): IntervalAlt = match x {
         case Bot            => Bot
         case Range(b, e)    => if (b <= e) (if (e - b <= maxWidth()) Range(b, e) else Top) else Bot
         case Top            => Top
@@ -39,11 +39,16 @@ namespace Domain/IntervalAlt {
     ///
     pub def equ(e1: IntervalAlt, e2: IntervalAlt): Bool = e1 == e2
 
+    instance Eq[IntervalAlt] {
+        def eq(e1: IntervalAlt, e2: IntervalAlt): Bool = equ(e1, e2)
+        def neq(e1: IntervalAlt, e2: IntervalAlt): Bool = not equ(e1, e2)
+    }
+
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(x: IntervalAlt, y: IntervalAlt): Bool = match (x, y) {
+    pub def leq(x: IntervalAlt, y: IntervalAlt): Bool = match (x, y) {
         case (Bot, _)                       => true
         case (Range(b1, e1), Range(b2, e2)) => b2 <= b1 and e1 <= e2
         case (_, Top)                       => true
@@ -54,7 +59,7 @@ namespace Domain/IntervalAlt {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound
-    def lub(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
+    pub def lub(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
         case (Bot, _)                       => y
         case (_, Bot)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.min(b1, b2), BigInt.max(e1, e2)))
@@ -65,7 +70,7 @@ namespace Domain/IntervalAlt {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound
-    def glb(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
+    pub def glb(x: IntervalAlt, y: IntervalAlt): IntervalAlt = match (x, y) {
         case (Top, _)                       => y
         case (_, Top)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.max(b1, b2), BigInt.min(e1, e2)))
@@ -197,8 +202,6 @@ namespace Domain/IntervalAlt {
     #safeBelnap2((x, y) -> x <= y)
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
     pub def lessEqual(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = Belnap.or(x `less` y, x `eq` y)
-
-    let IntervalAlt<> = (Bot, Top, equ, leq, lub, glb)
 
     // ------------------------------------------------------------------------
     // Specialized Laws

@@ -93,8 +93,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
     * Translates the given simplified lattice op `op0` into a lifted lattice op.
     */
   private def visitLatticeOp(op0: SimplifiedAst.LatticeOps): LiftedAst.LatticeOps = op0 match {
-    case SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
-      LiftedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
+    case SimplifiedAst.LatticeOps(tpe, bot, equ, leq, lub, glb) =>
+      LiftedAst.LatticeOps(tpe, bot, equ, leq, lub, glb)
   }
 
   /**
@@ -114,31 +114,31 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
       * Performs closure conversion and lambda lifting on the given expression `exp0`.
       */
     def visitExp(e: SimplifiedAst.Expression): LiftedAst.Expression = e match {
-      case SimplifiedAst.Expression.Unit => LiftedAst.Expression.Unit
+      case SimplifiedAst.Expression.Unit(loc) => LiftedAst.Expression.Unit(loc)
 
-      case SimplifiedAst.Expression.Null(tpe) => LiftedAst.Expression.Null(tpe)
+      case SimplifiedAst.Expression.Null(tpe, loc) => LiftedAst.Expression.Null(tpe, loc)
 
-      case SimplifiedAst.Expression.True => LiftedAst.Expression.True
+      case SimplifiedAst.Expression.True(loc) => LiftedAst.Expression.True(loc)
 
-      case SimplifiedAst.Expression.False => LiftedAst.Expression.False
+      case SimplifiedAst.Expression.False(loc) => LiftedAst.Expression.False(loc)
 
-      case SimplifiedAst.Expression.Char(lit) => LiftedAst.Expression.Char(lit)
+      case SimplifiedAst.Expression.Char(lit, loc) => LiftedAst.Expression.Char(lit, loc)
 
-      case SimplifiedAst.Expression.Float32(lit) => LiftedAst.Expression.Float32(lit)
+      case SimplifiedAst.Expression.Float32(lit, loc) => LiftedAst.Expression.Float32(lit, loc)
 
-      case SimplifiedAst.Expression.Float64(lit) => LiftedAst.Expression.Float64(lit)
+      case SimplifiedAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
 
-      case SimplifiedAst.Expression.Int8(lit) => LiftedAst.Expression.Int8(lit)
+      case SimplifiedAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
 
-      case SimplifiedAst.Expression.Int16(lit) => LiftedAst.Expression.Int16(lit)
+      case SimplifiedAst.Expression.Int16(lit, loc) => LiftedAst.Expression.Int16(lit, loc)
 
-      case SimplifiedAst.Expression.Int32(lit) => LiftedAst.Expression.Int32(lit)
+      case SimplifiedAst.Expression.Int32(lit, loc) => LiftedAst.Expression.Int32(lit, loc)
 
-      case SimplifiedAst.Expression.Int64(lit) => LiftedAst.Expression.Int64(lit)
+      case SimplifiedAst.Expression.Int64(lit, loc) => LiftedAst.Expression.Int64(lit, loc)
 
-      case SimplifiedAst.Expression.BigInt(lit) => LiftedAst.Expression.BigInt(lit)
+      case SimplifiedAst.Expression.BigInt(lit, loc) => LiftedAst.Expression.BigInt(lit, loc)
 
-      case SimplifiedAst.Expression.Str(lit) => LiftedAst.Expression.Str(lit)
+      case SimplifiedAst.Expression.Str(lit, loc) => LiftedAst.Expression.Str(lit, loc)
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(sym, tpe, loc)
 
@@ -147,7 +147,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val liftedExp = visitExp(exp)
 
         // Generate a fresh symbol for the new lifted definition.
-        val freshSymbol = Symbol.freshDefnSym(ns, name)
+        val freshSymbol = Symbol.freshDefnSym(ns, name, loc)
 
         // Construct annotations and modifiers for the fresh definition.
         val ann = Ast.Annotations.Empty

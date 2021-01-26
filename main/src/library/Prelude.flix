@@ -30,7 +30,7 @@ pub def curry(f: (a, b) -> c & e): a -> (b -> c & e) = x -> y -> f(x, y)
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
 @Time(1) @Space(1)
-pub def uncurry(f: a -> (b -> c & e1) & e2): (a, b) -> c & (e1 and e2) = (x, y) -> (y |> f(x))
+pub def uncurry(f: a -> (b -> c & e1) & e2): ((a, b)) -> c & (e1 and e2) = match (x, y) -> f(x, y)
 
 ///
 /// Returns the first component of `t`.
@@ -82,6 +82,13 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 
 ///
+/// Unsafely converts `x` to a string using Java's built-in toString.
+///
+pub def unsafeToString(x: a): String =
+    import java.util.Objects:toString(##java.lang.Object);
+    toString(x as ##java.lang.Object) as & Pure
+
+///
 /// Panics (crashes) the current process with the given message `m`.
 ///
 @Time(1) @Space(1)
@@ -100,13 +107,13 @@ pub def space(_f: a -> Int32): Int32 = 1
 ///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
 ///
-law commutative(f: (a, a) -> b): Bool =
+law commutative[a, b : Eq](f: (a, a) -> b): Bool =
     ∀(x: a, y: a). f(x, y) == f(y, x)
 
 ///
 /// The associative law asserts that for a binary operator `f` the result of `f(x, f(y, z))` is equal to `f(f(x, y), z)`.
 ///
-law associative(f: (a, a) -> a): Bool =
+law associative[a : Eq](f: (a, a) -> a): Bool =
     ∀(x: a, y: a, z: a). f(x, f(y, z)) == f(f(x, y), z)
 
 ///
@@ -118,7 +125,7 @@ law reflexive(⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
 /// The anti-symmetry law asserts that if `x` is less than or equal to `y` and vice versa then the
 /// two elements must be equal.
 ///
-law antiSymmetric(⊑: (e, e) -> Bool): Bool =
+law antiSymmetric[e : Eq](⊑: (e, e) -> Bool): Bool =
     use Bool.{∧, →};
     ∀(x: e, y: e). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y)
 
@@ -147,84 +154,3 @@ law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool =
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.
 ///
 def ===(_x: a, _y: a): Bool = panic("meta-programming construct")
-
-namespace Tuple2 {
-
-    ///
-    /// Returns `true` if and only if `t1` and `t2` and equal.
-    ///
-    def __eq(t1: (a, b), t2: (a, b)): Bool =
-        let (a1, b1) = t1;
-        let (a2, b2) = t2;
-            a1 == a2 and b1 == b2
-
-    ///
-    /// Compares `t1` and `t2` lexicographically.
-    ///
-    def __cmp(t1: (a, b), t2: (a, b)): Int32 =
-        let (a1, b1) = t1;
-        let (a2, b2) = t2;
-            let cmp1 = a1 <=> a2;
-            if (cmp1 != 0)
-                cmp1
-            else
-                b1 <=> b2
-}
-
-namespace Tuple3 {
-
-    ///
-    /// Returns `true` if and only if `t1` and `t2` and equal.
-    ///
-    def __eq(t1: (a, b, c), t2: (a, b, c)): Bool =
-        let (a1, b1, c1) = t1;
-        let (a2, b2, c2) = t2;
-            a1 == a2 and b1 == b2 and c1 == c2
-
-    ///
-    /// Compares `t1` and `t2` lexicographically.
-    ///
-    def __cmp(t1: (a, b, c), t2: (a, b, c)): Int32 =
-        let (a1, b1, c1) = t1;
-        let (a2, b2, c2) = t2;
-            let cmp1 = a1 <=> a2;
-            if (cmp1 != 0)
-                cmp1
-            else
-                let cmp2 = b1 <=> b2;
-                if (cmp2 != 0)
-                    cmp2
-                else
-                    c1 <=> c2
-}
-
-namespace Tuple4 {
-
-    ///
-    /// Returns `true` if and only if `t1` and `t2` and equal.
-    ///
-    def __eq(t1: (a, b, c, d), t2: (a, b, c, d)): Bool =
-        let (a1, b1, c1, d1) = t1;
-        let (a2, b2, c2, d2) = t2;
-            a1 == a2 and b1 == b2 and c1 == c2 and d1 == d2
-
-    ///
-    /// Compares `t1` and `t2` lexicographically.
-    ///
-    def __cmp(t1: (a, b, c, d), t2: (a, b, c, d)): Int32 =
-        let (a1, b1, c1, d1) = t1;
-        let (a2, b2, c2, d2) = t2;
-            let cmp1 = a1 <=> a2;
-            if (cmp1 != 0)
-                cmp1
-            else
-                let cmp2 = b1 <=> b2;
-                if (cmp2 != 0)
-                    cmp2
-                else
-                    let cmp3 = c1 <=> c2;
-                    if (cmp3 != 0)
-                        cmp3
-                    else
-                        d1 <=> d2
-}

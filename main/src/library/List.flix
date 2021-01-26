@@ -25,6 +25,72 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
+instance ToString[List[a]] with [a : ToString] {
+    def toString(xs: List[a]): String =
+        List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
+}
+
+instance Hash[List[a]] with [a : Hash] {
+    def hash(xs: List[a]): Int =
+        List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
+}
+
+instance Eq[List[a]] with[a : Eq] {
+
+    def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+        case (Nil, Nil) => true
+        case (x :: rs, y :: qs) => if (x != y) false else rs == qs
+        case _ => false
+    }
+
+    def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
+
+}
+
+instance Order[List[a]] with [a : Order] {
+
+    def less(x: List[a], y: List[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    def lessEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    def greater(x: List[a], y: List[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    def greaterEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+
+    ///
+    /// Compares `xs` and `ys` lexicographically.
+    ///
+    def compare(xs: List[a], ys: List[a]): Comparison = match (xs, ys) {
+        case (_ :: _, Nil) => GreaterThan
+        case (Nil, Nil) => EqualTo
+        case (Nil, _ :: _) => LessThan
+        case (z :: zs, w :: ws) =>
+            let cmp = z <=> w;
+            if (cmp == EqualTo) zs <=> ws else cmp
+    }
+
+}
+
+instance Functor[List] {
+    def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
+}
+
+instance Foldable[List] {
+    def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = List.foldLeft(f, s, xs)
+    def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = List.foldRight(f, s, xs)
+}
+
 namespace List {
 
     ///
@@ -87,10 +153,42 @@ namespace List {
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def memberOf(a: a, xs: List[a]): Bool = match xs {
+    pub def memberOf[a : Eq](a: a, xs: List[a]): Bool = match xs {
         case Nil => false
         case x :: rs => if (x == a) true else memberOf(a, rs)
     }
+
+    ///
+    /// Optionally finds the smallest element of `xs` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def minimum[a : Order](xs: List[a]): Option[a] =
+        reduceLeft(Order.min, xs)
+
+    ///
+    /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
+        reduceLeft(Order.minBy(cmp), xs)
+
+    ///
+    /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def maximum[a : Order](xs: List[a]): Option[a] =
+        reduceLeft(Order.max, xs)
+
+    ///
+    /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `xs` is empty.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
+        reduceLeft(Order.maxBy(cmp), xs)
 
     ///
     /// Returns the position of `a` in `xs`.
@@ -98,12 +196,12 @@ namespace List {
     /// Returns `-1` if `a` does not exist in `xs`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def indexOf(a: a, xs: List[a]): Int32 = indexOfHelper(a, xs, 0)
+    pub def indexOf[a : Eq](a: a, xs: List[a]): Int32 = indexOfHelper(a, xs, 0)
 
     ///
     /// Helper function for `indexOf`.
     ///
-    def indexOfHelper(a: a, xs: List[a], acc: Int32): Int32 = match xs {
+    def indexOfHelper[a : Eq](a: a, xs: List[a], acc: Int32): Int32 = match xs {
         case Nil => -1
         case x :: rs => if (x == a) acc else indexOfHelper(a, rs, acc+1)
     }
@@ -309,7 +407,7 @@ namespace List {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace(x: a, y: a, xs: List[a]): List[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace[a : Eq](x: a, y: a, xs: List[a]): List[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns `ys` with the `n` elements starting at index `i` replaced with the elements of `xs`.
@@ -456,7 +554,7 @@ namespace List {
     /// Returns `true` if and only if `xs` is a prefix of `ys`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def isPrefixOf(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+    pub def isPrefixOf[a : Eq](xs: List[a], ys: List[a]): Bool = match (xs, ys) {
         case (Nil, _) => true
         case (_, Nil) => false
         case (x :: qs, y :: rs) => if (x == y) isPrefixOf(qs, rs) else false
@@ -466,7 +564,7 @@ namespace List {
     /// Returns `true` if and only if `xs` is an infix of `ys`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def isInfixOf(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+    pub def isInfixOf[a : Eq](xs: List[a], ys: List[a]): Bool = match (xs, ys) {
         case (Nil, _) => true
         case (_, Nil) => false
         case (_, _ :: rs) => if (isPrefixOf(xs, ys)) true else isInfixOf(xs, rs)
@@ -476,16 +574,16 @@ namespace List {
     /// Returns `true` if and only if `xs` is a suffix of `ys`.
     ///
     @Time(length(xs)) @Space(Int32.max(length(xs), length(ys)))
-    pub def isSuffixOf(xs: List[a], ys: List[a]): Bool = isPrefixOf(reverse(xs), reverse(ys))
+    pub def isSuffixOf[a : Eq](xs: List[a], ys: List[a]): Bool = isPrefixOf(reverse(xs), reverse(ys))
 
 
 
 
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = foldLeft(f, s, xs)
+    pub def fold[a : Monoid](xs: List[a]): a = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -511,11 +609,6 @@ namespace List {
         case Nil => k(s)
         case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
     }
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, xs: List[a]): Option[a] & e = reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -782,10 +875,15 @@ namespace List {
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(Int32.min(length(xs), length(ys))) @Space(Int32.min(length(xs), length(ys)))
-    pub def zip(xs: List[a], ys: List[b]): List[(a,b)] = match (xs, ys) {
-        case (x :: rs, y :: qs) => (x, y) :: zip(rs, qs)
-        case _ => Nil
-    }
+    pub def zip(xs: List[a], ys: List[b]): List[(a,b)] = zipHelper(xs, ys, ks -> ks)
+
+    ///
+    /// Helper function for `zip`.
+    ///
+    def zipHelper(xs: List[a], ys: List[b], k: List[(a,b)] -> List[(a,b)]): List[(a,b)] = match (xs, ys) {
+            case (x :: rs, y :: qs) => zipHelper(rs, qs, ks -> k((x, y) :: ks))
+            case _ => k(Nil)
+        }
 
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
@@ -794,9 +892,17 @@ namespace List {
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def zipWith(f: (a, b) -> c & e, xs: List[a], ys: List[b]): List[c] & e = match (xs, ys) {
-        case (x :: rs, y :: qs) => f(x, y) :: zipWith(f, rs, qs)
-        case _ => Nil
+    pub def zipWith(f: (a, b) -> c & e, xs: List[a], ys: List[b]): List[c] & e = zipWithHelper(f, xs, ys, ks -> ks)
+
+    ///
+    /// Helper function for `zipWith`.
+    ///
+    def zipWithHelper(f: (a, b) -> c & e, xs: List[a], ys: List[b], k: List[c] -> List[c]): List[c] & e = match (xs, ys) {
+        case (x :: rs, y :: qs) => {
+            let a = f(x, y);
+            zipWithHelper(f, rs, qs, ks -> k(a :: ks))
+        }
+        case _ => k(Nil)
     }
 
     ///
@@ -804,17 +910,62 @@ namespace List {
     /// and the second containing all second components in `xs`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def unzip(xs: List[(a, b)]): (List[a], List[b]) = match xs {
-        case Nil => (Nil, Nil)
-        case (x1, x2) :: rs =>
-            let (r1, r2) = unzip(rs);
-                (x1 :: r1, x2 :: r2)
+    pub def unzip(xs: List[(a, b)]): (List[a], List[b]) = unzipHelper(xs, (ks1, ks2) -> (ks1, ks2))
+
+    ///
+    /// Helper function for `zip`.
+    ///
+    def unzipHelper(xs: List[(a, b)], k: (List[a], List[b]) -> (List[a], List[b])): (List[a], List[b]) = match xs {
+        case Nil => k(Nil, Nil)
+        case (x1, x2) :: rs => unzipHelper(rs, (ks1, ks2) -> k(x1 :: ks1, x2 :: ks2))
     }
 
+    ///
+    /// Returns a list where the element at index `i` is `(a, b, c)` where
+    /// `a` is the element at index `i` in `xs`, `b` is the element at index `i` in `ys`
+    /// and `c` is the element at index `i` in `zs`.
+    ///
+    /// If any one of `xs`, `ys` or `zs` become depleted, then no further elements are added to the resulting list.
+    ///
+    pub def zip3(xs: List[a], ys: List[b], zs: List[c]): List[(a, b, c)] =
+        zipWith3((x, y, z) -> (x, y, z), xs, ys, zs)
 
+    ///
+    /// Returns a list where the element at index `i` is `f(a, b, c)` where
+    /// `a` is the element at index `i` in `xs`, `b` is the element at index `i` in `ys`
+    /// and `c` is the element at index `i` in `zs`.
+    ///
+    /// If any one of `xs`, `ys` or `zs` become depleted, then no further elements are added to the resulting list.
+    ///
+    pub def zipWith3(f: (a, b, c) -> d & ef, xs: List[a], ys: List[b], zs: List[c]): List[d] & ef =
+        zipWith3Helper(f, xs, ys, zs, ks -> ks)
 
+    ///
+    /// Helper function for `zipWith3`.
+    ///
+    def zipWith3Helper(f: (a, b, c) -> d & ef, xs: List[a], ys: List[b], zs: List[c], k: List[d] -> List[d]): List[d] & ef =
+        match (xs, ys, zs) {
+            case (x :: rs, y :: qs, z :: ss) => {
+                let a = f(x, y, z);
+                zipWith3Helper(f, rs, qs, ss, ks -> k(a :: ks))
+            }
+            case _ => k(Nil)
+        }
 
+    ///
+    /// Returns a triple of lists, the first containing all first components in `xs`
+    /// the second containing all second components in `xs` and the third containing all
+    /// third components in `xs`.
+    ///
+    pub def unzip3(xs: List[(a, b, c)]): (List[a], List[b], List[c]) = unzip3Helper(xs, (ks1, ks2, ks3) -> (ks1, ks2, ks3))
 
+    ///
+    /// Helper function for `unzip3`.
+    ///
+    def unzip3Helper(xs: List[(a, b, c)], k: (List[a], List[b], List[c]) -> (List[a], List[b], List[c])): (List[a], List[b], List[c]) = match xs {
+        case Nil => k(Nil, Nil, Nil)
+        case (x1, x2, x3) :: rs => unzip3Helper(rs, (ks1, ks2, ks3) -> k(x1 :: ks1, x2 :: ks2, x3 :: ks3))
+    }
 
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
@@ -900,14 +1051,14 @@ namespace List {
         }
     }
 
-
-
     ///
-    /// Returns the list of characters `xs` as a string.
+    /// Render the list `xs` as a String. Elements are rendered with the
+    /// function `f` and separated with the string `sep`.
     ///
-    @Time(length(xs)) @Space(length(xs))
-    pub def toString(xs: List[Char]): String =
-        List.foldLeft((acc, c) -> String.concat(acc, Char.toString(c)), "", xs)
+    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
+    pub def formatWith(f: a -> String, sep: String, xs: List[a]): String =
+        let s = foldRight((x, acc) -> "${f(x)}${sep}${acc}", "", xs) as & Pure;
+        String.dropRight(String.length(sep), s)
 
     ///
     /// Returns `xs` as a mutable list.
@@ -919,7 +1070,7 @@ namespace List {
     /// Returns the list `xs` as a set.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def toSet(xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
+    pub def toSet[a : Order](xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -928,7 +1079,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def toMap(xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
+    pub def toMap[a : Order, b](xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -1097,13 +1248,13 @@ namespace List {
     /// `distinct` uses the Flix's builtin equality test. Use `distinctWith` if you
     /// need a custom equality test.
     ///
-    pub def distinct(xs: List[a]): List[a] =
+    pub def distinct[a : Eq](xs: List[a]): List[a] =
         distinctHelper(xs, Nil, ks -> ks)
 
     ///
     /// Helper function for `distinct`.
     ///
-    def distinctHelper(xs: List[a], ys: List[a], k: List[a] -> List[a]): List[a] = match xs {
+    def distinctHelper[a : Eq](xs: List[a], ys: List[a], k: List[a] -> List[a]): List[a] = match xs {
         case Nil => k(Nil)
         case x :: rs =>
             if (memberOf(x, ys))
@@ -1146,27 +1297,6 @@ namespace List {
                 memberOfWith(f, x, rs)
     }
 
-    ///
-    /// Compares `xs` and `ys` lexicographically.
-    ///
-    def __cmp(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {
-        case (_ :: _, Nil) => 1
-        case (Nil, Nil) => 0
-        case (Nil, _ :: _) => -1
-        case (z :: zs, w :: ws) =>
-            let cmp = z <=> w;
-            if (cmp == 0) __cmp(zs, ws) else cmp
-    }
-
-    ///
-    /// Returns `true` if and only if `xs` and `ys` and equal.
-    ///
-    pub def __eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
-        case (Nil, Nil) => true
-        case (x :: rs, y :: qs) => if (x == y) __eq(rs, qs) else false
-        case _ => false
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -1204,7 +1334,7 @@ namespace List {
     @lint
     def mapZip(): Bool =
       forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
-        List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === List.map2(f, xs, ys)
+        map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === map2(f, xs, ys)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //

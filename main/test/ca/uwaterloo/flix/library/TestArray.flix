@@ -86,7 +86,7 @@ def testSlice03(): Bool & Impure = Array.slice([1, 2, 3], 2, 3)[0] == 3
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testToList01(): Bool & Impure = Array.toList([]) == Nil
+def testToList01(): Bool & Impure = Array.toList([]: Array[Unit]) == Nil
 
 @test
 def testToList02(): Bool & Impure = Array.toList([1]) == 1 :: Nil
@@ -115,7 +115,7 @@ def head04(): Bool & Impure = Array.head([3,2,1]) == Some(3)
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def last01(): Bool & Impure = Array.last([]) == None
+def last01(): Bool & Impure = Array.last([]): Option[Unit] == None
 
 @test
 def last02(): Bool & Impure = Array.last([1]) == Some(1)
@@ -1467,7 +1467,7 @@ def intercalate07(): Bool & Impure =
 def transpose01(): Bool & Impure =
     let a = Array.transpose([]);
     let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil
+    b: List[List[Unit]] == Nil
 
 @test
 def transpose02(): Bool & Impure =
@@ -1729,16 +1729,16 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def fold01(): Bool & Impure = Array.fold((i, e) -> (i - e)*(e % 2 + 1), 100, []) == 100
+def fold01(): Bool & Impure = Array.fold([]: Array[Unit]) == ()
 
 @test
-def fold02(): Bool & Impure = Array.fold((i, e) -> (i - e)*(e % 2 + 1), 100, [1]) == 198
+def fold02(): Bool & Impure = Array.fold(["a"]) == "a"
 
 @test
-def fold03(): Bool & Impure = Array.fold((i, e) -> (i - e)*(e % 2 + 1), 100, [1,2]) == 196
+def fold03(): Bool & Impure = Array.fold(["a", "b", "c"]) == "abc"
 
 @test
-def fold04(): Bool & Impure = Array.fold((i, e) -> (i - e)*(e % 2 + 1), 100, [1,2,3]) == 386
+def fold04(): Bool & Impure = Array.fold([("yes", "no"), ("no", "yes")]) == ("yesno", "noyes")
 
 /////////////////////////////////////////////////////////////////////////////
 // foldLeft                                                                //
@@ -1771,25 +1771,6 @@ def foldRight03(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e % 2 + 1)
 
 @test
 def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, [1,2,3]) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// reduce                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def reduce01(): Bool & Impure = Array.reduce((a, b) -> a-b, []: Array[Int]) == None
-
-@test
-def reduce02(): Bool & Impure = Array.reduce((a, b) -> a-b, [1]) == Some(1)
-
-@test
-def reduce03(): Bool & Impure = Array.reduce((a, b) -> a-b, [1,2]) == Some(-1)
-
-@test
-def reduce04(): Bool & Impure = Array.reduce((a, b) -> a-b, [1,2,3]) == Some(-4)
-
-@test
-def reduce05(): Bool & Impure = Array.reduce((a, b) -> a-b, [1,2,3,4]) == Some(-8)
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -2880,7 +2861,7 @@ def zipWith06(): Bool & Impure =
 
 @test
 def unzip01(): Bool & Impure =
-    let (a,b) = Array.unzip([]);
+    let (a,b) = Array.unzip([]: Array[(Unit, Unit)]);
     Array.sameElements(a, []) and Array.sameElements(b, [])
 
 @test
@@ -4041,5 +4022,43 @@ def sortWith13!(): Bool & Impure =
     let a = [2,3,0,4,1,2];
     Array.sortWith!((x,y) -> if (x > y) -1 else 1, a);
     Array.sameElements(a, [4,3,2,2,1,0])
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+
+    @test
+    def minimumBy02(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5)) == Some(0)
+
+    @test
+    def minimumBy03(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10)) == Some(4)
+
+    @test
+    def minimumBy04(): Bool & Impure =
+        let a = Array.range(10, 20);
+        a[5] = -22;
+        Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+
+    @test
+    def maximumBy02(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5)) == Some(4)
+
+    @test
+    def maximumBy03(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10)) == Some(9)
+
+    @test
+    def maximumBy04(): Bool & Impure =
+        let a = Array.range(10, 20);
+        a[5] = 42;
+        Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
 
 }

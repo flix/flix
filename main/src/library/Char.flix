@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Char] {
+    def minValue(): Char = '\u0000'
+}
+
+instance UpperBound[Char] {
+    def maxValue(): Char = '\uffff'
+}
+
 namespace Char {
 
     ///
@@ -119,9 +127,7 @@ namespace Char {
     /// Returns the character `c` as a string.
     ///
     @Time(1) @Space(1)
-    pub def toString(c: Char): String =
-        import java.lang.Character:toString(Char);
-        c.toString() as & Pure
+    pub def toString(c: Char): String = ToString.toString(c)
 
     ///
     /// Returns the character `c` as an Int32.

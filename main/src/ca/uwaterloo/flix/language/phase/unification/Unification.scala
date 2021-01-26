@@ -277,9 +277,6 @@ object Unification {
 
         case Result.Err(err@UnificationError.NoMatchingInstance(_, _)) =>
           throw InternalCompilerException(s"Unexpected unification error: $err")
-
-        case Result.Err(err@UnificationError.UnfulfilledConstraint(_)) =>
-          throw InternalCompilerException(s"Unexpected unification error: $err")
       }
     }
     )
@@ -364,6 +361,16 @@ object Unification {
     }
 
     visit(liftM(fs.head), fs.tail)
+  }
+
+  /**
+    * Returns true iff `tpe1` unifies with `tpe2`.
+    */
+  def unifiesWith(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
+    Unification.unifyTypes(tpe1, tpe2) match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
+    }
   }
 
 }

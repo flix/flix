@@ -26,6 +26,78 @@ enum Option[t] {
     case Some(t)
 }
 
+instance ToString[Option[a]] with [a : ToString] {
+    def toString(o: Option[a]): String = match o {
+        case None => "None"
+        case Some(y) => "Some(${y})"
+    }
+}
+
+instance Hash[Option[a]] with [a : Hash] {
+    def hash(o: Option[a]): Int = match o {
+        case Some(y) => 919 * Hash.hash(y)
+        case None => 1046527
+    }
+}
+
+instance Eq[Option[a]] with[a : Eq] {
+
+    def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
+        case (None, None) => true
+        case (Some(v1), Some(v2)) => v1 == v2
+        case _ => false
+    }
+
+    def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
+
+}
+
+instance Order[Option[a]] with [a : Order] {
+
+    def less(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    def lessEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    def greater(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    def greaterEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+
+    ///
+    /// Returns the result of a three-way comparison between `o1` and `o2`.
+    ///
+    /// Returns LessThan if `o1` is smaller than `o2`.
+    /// Returns EqualTo if `o1` is equal to `o2`.
+    /// Returns GreaterThan if `o1` is greater than `o2`.
+    ///
+    def compare(o1: Option[a], o2: Option[a]): Comparison = match (o1, o2) {
+        case (None, None)           => EqualTo
+        case (None, _)              => LessThan
+        case (Some(v1), Some(v2))   => v1 <=> v2
+        case _                      => GreaterThan
+    }
+
+}
+
+instance Functor[Option] {
+    def map(f: a -> b & e, o: Option[a]): Option[b] & e = Option.map(f, o)
+}
+
+instance Foldable[Option] {
+    def foldLeft(f: (b, a) -> b & e, s: b, o: Option[a]): b & e = Option.foldLeft(f, s, o)
+    def foldRight(f: (a, b) -> b & e, s: b, o: Option[a]): b & e = Option.foldRight(f, o, s)
+}
+
 namespace Option {
 
     ///
@@ -59,7 +131,7 @@ namespace Option {
     /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
     ///
     @Time(1) @Space(1)
-    pub def replace(x: a, y: a, o: Option[a]): Option[a] = match o {
+    pub def replace[a : Eq](x: a, y: a, o: Option[a]): Option[a] = match o {
         case None => o
         case Some(v) => Some(if (v == x) y else v)
     }
@@ -167,6 +239,11 @@ namespace Option {
         case None => None
         case Some(v) => v
     }
+
+    ///
+    /// Returns the result of applying `combine` to all the elements in `o`, using `empty` as the initial value.
+    ///
+    pub def fold[a : Monoid](o: Option[a]): a = Foldable.fold(o)
 
     ///
     /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
@@ -287,7 +364,7 @@ namespace Option {
     /// Returns a one-element set of the value `v` if `o` is `Some(v)`. Otherwise returns the empty set.
     ///
     @Time(1) @Space(1)
-    pub def toSet(o: Option[a]): Set[a] = match o {
+    pub def toSet[a : Order](o: Option[a]): Set[a] = match o {
         case None       => Set.empty()
         case Some(v)    => Set.singleton(v)
     }
@@ -296,7 +373,7 @@ namespace Option {
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Some((k, v))`. Otherwise returns the empty map.
     ///
     @Time(1) @Space(1)
-    pub def toMap(o: Option[(k, v)]): Map[k, v] = match o {
+    pub def toMap[k : Order, v](o: Option[(k, v)]): Map[k, v] = match o {
         case None           => Map.empty()
         case Some((k, v))   => Map.singleton(k, v)
     }
@@ -460,29 +537,6 @@ namespace Option {
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] & f =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
-    ///
-    /// Returns `true` if and only if `o1` and `o2` and equal.
-    ///
-    def __eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
-        case (None, None)           => true
-        case (Some(v1), Some(v2))   => v1 == v2
-        case _ => false
-    }
-
-    ///
-    /// Returns the result of a three-way comparison between `o1` and `o2`.
-    ///
-    /// Returns n < 0 if `o1` is smaller than `o2`.
-    /// Returns n = 0 if `o1` is equal to `o2`.
-    /// Returns n > 0 if `o1` is greater than `o2`.
-    ///
-    def __cmp(o1: Option[a], o2: Option[a]): Int32 = match (o1, o2) {
-        case (None, None)           =>  0
-        case (None, _)              => -1
-        case (Some(v1), Some(v2))   => v1 <=> v2
-        case _                      => +1
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -531,39 +585,39 @@ namespace Option {
     // Lints: Use Cases                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @lint
-    def useExists(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            getWithDefault(map(f, o), false) === exists(f, o)
-
-    @lint
-    def useForall(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            getWithDefault(map(f, o), true) === forall(f, o)
-
-    @lint
-    def useFilter(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
-
-    @lint
-    def useReplace(): Bool =
-        forall [a] (x: a, y: a, o: Option[a]).
-            Option.map(z -> if (z == x) y else z, o) === Option.replace(x, y, o)
-
-    @lint
-    def useSequence(): Bool =
-        forall [a] (xs: List[Option[a]]).
-            traverse(x -> x, xs) === sequence(xs)
-
-    @lint
-    def useTraverse(): Bool =
-        forall [a, b, e] (f : a -> Option[b] & e, xs: List[a]).
-            sequence(List.map(f, xs)) === traverse(f, xs)
-
-    @lint
-    def useZip(): Bool =
-        forall [a, b] (o1: Option[a], o2: Option[b]).
-            flatMap(x -> map(y -> (x, y), o2), o1) === zip(o1, o2)
+///    @lint
+///    def useExists(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            getWithDefault(map(f, o), false) === exists(f, o)
+///
+///    @lint
+///    def useForall(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            getWithDefault(map(f, o), true) === forall(f, o)
+///
+///    @lint
+///    def useFilter(): Bool =
+///        forall [a] (f: a -> Bool, o: Option[a]).
+///            flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
+///
+///    @lint
+///    def useReplace(): Bool =
+///        forall [a] (x: a, y: a, o: Option[a]).
+///            Option.map(z -> if (z == x) y else z, o) === Option.replace(x, y, o)
+///
+///    @lint
+///    def useSequence(): Bool =
+///        forall [a] (xs: List[Option[a]]).
+///            traverse(x -> x, xs) === sequence(xs)
+///
+///    @lint
+///    def useTraverse(): Bool =
+///        forall [a, b, e] (f : a -> Option[b] & e, xs: List[a]).
+///            sequence(List.map(f, xs)) === traverse(f, xs)
+///
+///    @lint
+///    def useZip(): Bool =
+///        forall [a, b] (o1: Option[a], o2: Option[b]).
+///            flatMap(x -> map(y -> (x, y), o2), o1) === zip(o1, o2)
 
 }

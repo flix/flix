@@ -225,11 +225,6 @@ object Ast {
     */
   case class Modifiers(mod: List[Modifier]) {
     /**
-      * Returns `true` if these modifiers contain the entry point modifier.
-      */
-    def isEntryPoint: Boolean = mod contains Modifier.EntryPoint
-
-    /**
       * Returns `true` if these modifiers contain the inline modifier.
       */
     def isInline: Boolean = mod contains Modifier.Inline
@@ -238,6 +233,11 @@ object Ast {
       * Returns `true` if these modifiers contain the public modifier.
       */
     def isPublic: Boolean = mod contains Modifier.Public
+
+    /**
+      * Returns `true` if these modifiers contain the sealed modifier.
+      */
+    def isSealed: Boolean = mod contains Modifier.Sealed
 
     /**
       * Returns `true` if these modifiers contain the synthetic modifier.
@@ -253,11 +253,6 @@ object Ast {
   object Modifier {
 
     /**
-      * The entry point modifier.
-      */
-    case object EntryPoint extends Modifier
-
-    /**
       * The inline modifier.
       */
     case object Inline extends Modifier
@@ -266,6 +261,11 @@ object Ast {
       * The public modifier.
       */
     case object Public extends Modifier
+
+    /**
+      * The sealed modifier.
+      */
+    case object Sealed extends Modifier
 
     /**
       * The synthetic modifier.
@@ -397,5 +397,10 @@ object Ast {
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
+
+  /**
+    * Represents the super classes and instances available for a particular class.
+    */
+  case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
 
 }

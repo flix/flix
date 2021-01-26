@@ -1,5 +1,7 @@
 namespace Nel {
 
+    use Hash.hash;
+
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -306,6 +308,22 @@ namespace Nel {
     def intersperse03(): Bool = intersperse(7, Nel(1, 2 :: 3 :: Nil)) == Nel(1, 7 :: 2 :: 7 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fold01(): Bool = Nel.fold(Nel("a", Nil)) == "a"
+
+    @test
+    def fold02(): Bool = Nel.fold(Nel((), Nil)) == ()
+
+    @test
+    def fold03(): Bool = Nel.fold(Nel("a", "b" :: "c" :: Nil)) == "abc"
+
+    @test
+    def fold04(): Bool = Nel.fold(Nel(("a", ()), ("b", ()) :: ("c", ()) :: Nil)) == ("abc", ())
+
+    /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -330,6 +348,19 @@ namespace Nel {
 
     @test
     def foldRight03(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduce                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduce01(): Bool = Nel.reduce(Nel("a", Nil)) == "a"
+
+    @test
+    def reduce02(): Bool = Nel.reduce(Nel((), Nil)) == ()
+
+    @test
+    def reduce03(): Bool = Nel.reduce(Nel("a", "b" :: "c" :: Nil)) == "abc"
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
@@ -500,5 +531,62 @@ namespace Nel {
 
     @test
     def toList03(): Bool = toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hash                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def hash01(): Bool = hash(Nel(1, Nil)) == hash(Nel(1, Nil))
+
+    @test
+    def hash02(): Bool = hash(Nel(1, 2 :: 3 :: Nil)) == hash(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def hash03(): Bool = hash(Nel(1, 3 :: 2 :: Nil)) != hash(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def hash04(): Bool = hash(Nel(1, Nil)) != hash(Nel(2, Nil))
+
+    @test
+    def hash05(): Bool = hash(Nel("c", "b" :: "a" :: Nil)) != hash(Nel("c", "a" :: "b" :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(1, Nil)) == 1
+
+    @test
+    def minimumBy02(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(1, 2 :: 3 :: Nil)) == 1
+
+    @test
+    def minimumBy03(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(1, 2 :: 0 :: 3 :: Nil)) == 0
+
+    @test
+    def minimumBy04(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 3
+
+    @test
+    def minimumBy05(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)) == 2
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(1, Nil)) == 1
+
+    @test
+    def maximumBy02(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(1, 2 :: 3 :: Nil)) == 3
+
+    @test
+    def maximumBy03(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(1, 2 :: 0 :: 3 :: Nil)) == 3
+
+    @test
+    def maximumBy04(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 9
+
+    @test
+    def maximumBy05(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
 
 }

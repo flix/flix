@@ -56,6 +56,12 @@ class TestMain extends FunSuite {
     assert(opts.command == Main.Command.Test)
   }
 
+  test("--args --abc --def") {
+    val args = Array("--args", "--abc --def")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.args.contains("--abc --def"))
+  }
+
   test("--benchmark") {
     val args = Array("--benchmark", "p.flix")
     val opts = Main.parseCmdOpts(args).get

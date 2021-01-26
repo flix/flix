@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance LowerBound[Int8] {
+    def minValue(): Int8 = Int8.minValue()
+}
+
+instance UpperBound[Int8] {
+    def maxValue(): Int8 = Int8.maxValue()
+}
+
 namespace Int8 {
 
     ///
@@ -267,9 +275,7 @@ namespace Int8 {
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
-    pub def toString(x: Int8): String =
-        import java.lang.Byte:toString(Int8);
-        x.toString() as & Pure
+    pub def toString(x: Int8): String = ToString.toString(x)
 
     ///
     /// Parse the string `s` as an Int8, leading or trailing whitespace is trimmed.

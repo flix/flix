@@ -44,31 +44,31 @@ object Optimizer extends Phase[Root, Root] {
       * Performs intra-procedural optimization on the given expression `exp0` and substitution map `env0`.
       */
     def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
-      case Expression.Unit => exp0
+      case Expression.Unit(_) => exp0
 
-      case Expression.Null(tpe) => exp0
+      case Expression.Null(_, _) => exp0
 
-      case Expression.True => exp0
+      case Expression.True(_) => exp0
 
-      case Expression.False => exp0
+      case Expression.False(_) => exp0
 
-      case Expression.Char(lit) => exp0
+      case Expression.Char(_, _) => exp0
 
-      case Expression.Float32(lit) => exp0
+      case Expression.Float32(_, _) => exp0
 
-      case Expression.Float64(lit) => exp0
+      case Expression.Float64(_, _) => exp0
 
-      case Expression.Int8(lit) => exp0
+      case Expression.Int8(_, _) => exp0
 
-      case Expression.Int16(lit) => exp0
+      case Expression.Int16(_, _) => exp0
 
-      case Expression.Int32(lit) => exp0
+      case Expression.Int32(_, _) => exp0
 
-      case Expression.Int64(lit) => exp0
+      case Expression.Int64(_, _) => exp0
 
-      case Expression.BigInt(lit) => exp0
+      case Expression.BigInt(_, _) => exp0
 
-      case Expression.Str(lit) => exp0
+      case Expression.Str(_, _) => exp0
 
       case Expression.Var(sym, tpe, loc) =>
         // Lookup to see if the variable should be replaced by a copy.
@@ -120,8 +120,8 @@ object Optimizer extends Phase[Root, Root] {
         val consequent = visitExp(exp2, env0)
         val alternative = visitExp(exp3, env0)
         cond match {
-          case Expression.True => consequent
-          case Expression.False => alternative
+          case Expression.True(_) => consequent
+          case Expression.False(_) => alternative
           case _ => Expression.IfThenElse(cond, consequent, alternative, tpe, loc)
         }
 

@@ -16,6 +16,8 @@
 
 namespace TestMutList {
 
+    use ToString.toString;
+
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -147,7 +149,7 @@ namespace TestMutList {
         MutList.head(v) == Some(42)
 
     @test
-    def head02(): Bool & Impure = MutList.head(MutList.new()) == None
+    def head02(): Bool & Impure = MutList.head(MutList.new(): MutList[Unit]) == None
 
     @test
     def head03(): Bool & Impure =
@@ -161,7 +163,7 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def last01(): Bool & Impure = MutList.last(MutList.new()) == None
+    def last01(): Bool & Impure = MutList.last(MutList.new(): MutList[Unit]) == None
 
     @test
     def last02(): Bool & Impure = MutList.last(MutList.range(0, 8)) == Some(7)
@@ -321,7 +323,7 @@ namespace TestMutList {
 
     @test
     def map03(): Bool & Impure =
-        let v = MutList.map(identity, MutList.new());
+        let v = MutList.map(identity, MutList.new(): MutList[Unit]);
         MutList.sameElements(v, MutList.new())
 
     @test
@@ -347,7 +349,7 @@ namespace TestMutList {
 
     @test
     def transform!03(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.transform!(identity, v);
         MutList.sameElements(v, MutList.new())
 
@@ -397,6 +399,37 @@ namespace TestMutList {
         let v = MutList.new();
         MutList.transformWithIndex!((_, i) -> if (i == 0) 42 else 0, v);
         MutList.sameElements(v, MutList.new())
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fold01(): Bool & Impure =
+        let v: MutList[Unit] = MutList.new();
+        MutList.fold(v) == ()
+
+    @test
+    def fold02(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!("a", v);
+        MutList.fold(v) == "a"
+
+    @test
+    def fold03(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!("a", v);
+        MutList.push!("b", v);
+        MutList.push!("c", v);
+        MutList.fold(v) == "abc"
+
+    @test
+    def fold04(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!(("a", "d"), v);
+        MutList.push!(("b", "e"), v);
+        MutList.push!(("c", "f"), v);
+        MutList.fold(v) == ("abc", "def")
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
@@ -534,7 +567,7 @@ namespace TestMutList {
 
     @test
     def pop02(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.pop!(v) == None
 
     @test
@@ -657,7 +690,7 @@ namespace TestMutList {
 
     @test
     def remove!01(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.remove!(0, v);
         MutList.sameElements(v, MutList.new())
 
@@ -735,8 +768,8 @@ namespace TestMutList {
 
     @test
     def append!04(): Bool & Impure =
-        let v1 = MutList.new();
-        let v2 = MutList.new();
+        let v1: MutList[Unit] = MutList.new();
+        let v2: MutList[Unit] = MutList.new();
         MutList.append!(v1, v2);
         MutList.sameElements(v1, MutList.new())
 
@@ -822,7 +855,7 @@ namespace TestMutList {
 
     @test
     def reverse01!(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.reverse!(v);
         MutList.sameElements(v, MutList.new())
 
@@ -956,7 +989,7 @@ namespace TestMutList {
 
     @test
     def truncate!01(): Bool & Impure =
-        let v = MutList.new();
+        let v: MutList[Unit] = MutList.new();
         MutList.truncate!(0, v);
         MutList.sameElements(v, MutList.new())
 
@@ -1227,5 +1260,89 @@ namespace TestMutList {
         MutList.insert!(2, 0, v);
         MutList.insert!(1, 0, v);
         MutList.capacity(v) == 8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!(1, v);
+        toString(v) == "MutList#{1}"
+
+    @test
+    def toString02(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!(1, v);
+        MutList.push!(97, v);
+        toString(v) == "MutList#{1, 97}"
+
+    @test
+    def toString03(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!(1, v);
+        MutList.push!(97, v);
+        MutList.push!(0, v);
+        toString(v) == "MutList#{1, 97, 0}"
+
+    @test
+    def toString04(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!('a', v);
+        MutList.push!('b', v);
+        MutList.push!('c', v);
+        MutList.push!('d', v);
+        toString(v) == "MutList#{a, b, c, d}"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.new(): MutList[Int32]) == None
+
+    @test
+    def minimumBy02(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.range(0, 5)) == Some(0)
+
+    @test
+    def minimumBy03(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.range(5, 10)) == Some(5)
+
+    @test
+    def minimumBy04(): Bool & Impure =
+        let v = MutList.range(0, 6);
+        MutList.push!(-2, v);
+        MutList.minimumBy((x, y) -> x <=> y, v) == Some(-2)
+
+    @test
+    def minimumBy05(): Bool & Impure =
+        let v = MutList.range(9, 19);
+        let cmp = (x, y) -> if (x < y and x % 2 == 0) LessThan else GreaterThan;
+        MutList.minimumBy(cmp, v) == Some(10)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.new(): MutList[Int32]) == None
+
+    @test
+    def maximumBy02(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.range(0, 5)) == Some(4)
+
+    @test
+    def maximumBy03(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.range(5, 10)) == Some(9)
+
+    @test
+    def maximumBy04(): Bool & Impure =
+        let v = MutList.range(0, 6);
+        MutList.push!(11, v);
+        MutList.maximumBy((x, y) -> x <=> y, v) == Some(11)
+
+    @test
+    def maximumBy05(): Bool & Impure =
+        let v = MutList.range(9, 19);
+        let cmp = (x, y) -> if (x > y and x % 2 == 0) GreaterThan else LessThan;
+        MutList.maximumBy(cmp, v) == Some(18)
 
 }

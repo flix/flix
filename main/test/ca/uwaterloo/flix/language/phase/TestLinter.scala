@@ -15,7 +15,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.leftAdditionByZero") {
     val input =
       s"""
-         |def main(): Int = 0 + 21
+         |def foo(): Int = 0 + 21
          |
        """.stripMargin
     val result = run(input)
@@ -25,7 +25,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.rightAdditionByZero") {
     val input =
       s"""
-         |def main(): Int = 21 + 0
+         |def foo(): Int = 21 + 0
          |
        """.stripMargin
     val result = run(input)
@@ -35,7 +35,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.subtractionByZero") {
     val input =
       s"""
-         |def main(): Int = 21 - 0
+         |def foo(): Int = 21 - 0
          |
        """.stripMargin
     val result = run(input)
@@ -45,7 +45,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.subtractionBySelf") {
     val input =
       s"""
-         |def main(): Int =
+         |def foo(): Int =
          |    let x = 21;
          |    x - x
          |
@@ -57,7 +57,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.leftMultiplicationByZero") {
     val input =
       s"""
-         |def main(): Int = 0 * 21
+         |def foo(): Int = 0 * 21
          |
        """.stripMargin
     val result = run(input)
@@ -67,7 +67,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.rightMultiplicationByZero") {
     val input =
       s"""
-         |def main(): Int = 21 * 0
+         |def foo(): Int = 21 * 0
          |
        """.stripMargin
     val result = run(input)
@@ -77,7 +77,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.leftMultiplicationByOne") {
     val input =
       s"""
-         |def main(): Int = 1 * 21
+         |def foo(): Int = 1 * 21
          |
        """.stripMargin
     val result = run(input)
@@ -87,7 +87,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.rightMultiplicationByOne") {
     val input =
       s"""
-         |def main(): Int = 1 * 21
+         |def foo(): Int = 1 * 21
          |
        """.stripMargin
     val result = run(input)
@@ -97,7 +97,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.divisionByZero") {
     val input =
       s"""
-         |def main(): Int = 21 / 0
+         |def foo(): Int = 21 / 0
          |
        """.stripMargin
     val result = run(input)
@@ -107,7 +107,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.divisionByOne") {
     val input =
       s"""
-         |def main(): Int = 21 / 1
+         |def foo(): Int = 21 / 1
          |
        """.stripMargin
     val result = run(input)
@@ -117,7 +117,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Int32.divisionBySelf") {
     val input =
       s"""
-         |def main(): Int =
+         |def foo(): Int =
          |    let x = 21;
          |    x / x
          |
@@ -129,7 +129,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Option.existsSome") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    let f = x -> x == 21;
          |    Option.exists(f, Some(42))
          |
@@ -141,7 +141,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Option.flattenSome") {
     val input =
       s"""
-         |def main(): Option[Int] =
+         |def foo(): Option[Int] =
          |    Option.flatten(Some(Some(42)))
          |
        """.stripMargin
@@ -152,7 +152,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Option.useExists") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    let f = x -> x == 21;
          |    let o = Some(42);
          |    Option.getWithDefault(Option.map(f, o), false)
@@ -165,7 +165,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Option.useForall") {
     val input =
       s"""
-         |def main(): Bool =
+         |def foo(): Bool =
          |    let f = x -> x == 21;
          |    let o = Some(42);
          |    Option.getWithDefault(Option.map(f, o), true)
@@ -178,7 +178,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Option.useReplace") {
     val input =
       s"""
-         |def main(): Option[Int] =
+         |def foo(): Option[Int] =
          |    let o = Some(21);
          |    Option.map(x -> if (x == 21) 42 else x, o)
          |
@@ -190,7 +190,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Option.useSequence") {
     val input =
       s"""
-         |def main(): Option[List[Int]] =
+         |def foo(): Option[List[Int]] =
          |    let f = x -> if (x % 2 == 0) Some(x) else None;
          |    let xs = List.map(f, 1 :: 2 :: 3 :: Nil);
          |    Option.traverse(x -> x, xs)
@@ -203,7 +203,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Option.useTraverse") {
     val input =
       s"""
-         |def main(): Option[List[Int]] =
+         |def foo(): Option[List[Int]] =
          |    let f = x -> if (x % 2 == 0) Some(x) else None;
          |    Option.sequence(List.map(f, 1 :: 2 :: 3 :: Nil))
          |
@@ -215,7 +215,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("Option.useZip") {
     val input =
       s"""
-         |def main(): Option[(Int, Int)] =
+         |def foo(): Option[(Int, Int)] =
          |    let o1 = Some(21);
          |    let o2 = Some(42);
          |    Option.flatMap(x -> Option.map(y -> (x, y), o2), o1)
@@ -228,7 +228,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.filterFilter") {
     val input =
       s"""
-         |def main(): List[Int] =
+         |def foo(): List[Int] =
          |    List.filter(x -> x > 21, List.filter(y -> y > 42, Nil))
          |
        """.stripMargin
@@ -239,7 +239,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.findFind") {
     val input =
       s"""
-         |def main(): Option[Int] =
+         |def foo(): Option[Int] =
          |    Option.find(x -> x > 21, List.find(y -> y > 42, Nil))
          |
        """.stripMargin
@@ -250,7 +250,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.mapIdentity") {
     val input =
       s"""
-         |def main(): List[Int] =
+         |def foo(): List[Int] =
          |    List.map(x -> x, 1 :: Nil)
          |
        """.stripMargin
@@ -261,7 +261,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.mapMap01") {
     val input =
       s"""
-         |def main(): List[Int] =
+         |def foo(): List[Int] =
          |    List.map(x -> x + 1, List.map(y -> y + 2, Nil))
          |
        """.stripMargin
@@ -272,7 +272,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.mapMap02") {
     val input =
       s"""
-         |def main(): List[Int] & Impure =
+         |def foo(): List[Int] & Impure =
          |    List.map(x -> x + 1, List.map(y -> {[1, 2, 3]; y + 2}, Nil))
          |
        """.stripMargin
@@ -283,7 +283,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.mapMap03") {
     val input =
       s"""
-         |def main(): List[Int] & Impure =
+         |def foo(): List[Int] & Impure =
          |    List.map(x -> {[1, 2, 3]; x + 1}, List.map(y -> y + 2, Nil))
          |
        """.stripMargin
@@ -294,7 +294,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.mapZip") {
     val input =
       s"""
-         |def main(): List[Int] =
+         |def foo(): List[Int] =
          |    let f = (x, y) -> x + y;
          |    let xs = 1 :: 2 :: Nil;
          |    let ys = 1 :: 2 :: Nil;
@@ -308,7 +308,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("String.leftConcatenateEmptyString") {
     val input =
       s"""
-         |def main(): String =
+         |def foo(): String =
          |    "" + "hello world"
          |
        """.stripMargin
@@ -319,7 +319,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("String.rightConcatenateEmptyString") {
     val input =
       s"""
-         |def main(): String =
+         |def foo(): String =
          |    "hello world" + ""
          |
        """.stripMargin
@@ -330,7 +330,7 @@ class TestLinter extends FunSuite with TestUtils {
   test("String.trimTrim") {
     val input =
       s"""
-         |def main(): String =
+         |def foo(): String =
          |    String.trim(String.trim("hello world"))
          |
        """.stripMargin

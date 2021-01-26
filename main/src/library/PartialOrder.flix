@@ -1,7 +1,36 @@
+/*
+ *  Copyright 2020 Magnus Madsen
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+class PartialOrder[a] {
+
+    ///
+    /// Returns `true` if `x` is smaller equal to `y`.
+    ///
+    def partialCompare(x: a, y: a): Bool
+    // TODO This should not return a Boolean, but instead perform a three-way comparison.
+
+}
+
+// TODO: Add instances for tuples.
+
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
 ///
 namespace PartialOrder {
+
+    // TODO: Move this somewhere else.
 
     ///
     /// The monotonicity law asserts that a function `f` is order-preserving w.r.t.
@@ -10,8 +39,8 @@ namespace PartialOrder {
     /// NB: This particular law is for unary functions.
     ///
     law monotone1[a, b](f: a -> b, dom: (a, a) -> Bool, codom: (b, b) -> Bool): Bool =
-        use Bool.→;
-        ∀(x: a, y: a). (x `dom` y) → (f(x) `codom` f(y))
+        let implies = (x, y) -> (not x) or y;
+        ∀(x: a, y: a). (x `dom` y) `implies` (f(x) `codom` f(y))
 
     ///
     /// The monotonicity law asserts that a function `f` is order-preserving w.r.t.
@@ -20,8 +49,8 @@ namespace PartialOrder {
     /// NB: This particular law is for binary functions.
     ///
     law monotone2[a, b, c](f: (a, b) -> c, dom1: (a, a) -> Bool, dom2: (b, b) -> Bool, codom: (c, c) -> Bool): Bool =
-        use Bool.{∧, →};
-        ∀(x1: a, x2: a, y1: b, y2: b). ((x1 `dom1` y1) ∧ (x2 `dom2` y2)) → (f(x1, x2) `codom` f(y1, y2))
+        let implies = (x, y) -> (not x) or y;
+        ∀(x1: a, x2: a, y1: b, y2: b). ((x1 `dom1` y1) and (x2 `dom2` y2)) `implies` (f(x1, x2) `codom` f(y1, y2))
 
     ///
     /// The safety law asserts that the abstract function `fa` is an over-approximation of the concrete

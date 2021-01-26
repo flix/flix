@@ -34,7 +34,7 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Class(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, sigs: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[Name.QName], sigs: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: WeededAst.Type, tconstrs: List[WeededAst.ConstrainedType], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -50,19 +50,15 @@ object WeededAst {
 
     case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class LatticeOps(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
-
   }
 
   sealed trait Use
 
   object Use {
 
-    case class UseClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
-    case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
-
-    case class UseTyp(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
     case class UseTag(qname: Name.QName, tag: Name.Tag, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
@@ -76,7 +72,9 @@ object WeededAst {
 
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
-    case class VarOrDefOrSig(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+    case class VarOrDefOrSig(name: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
+
+    case class DefOrSig(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
@@ -114,9 +112,9 @@ object WeededAst {
 
     case class Lambda(fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Unary(op: UnaryOperator, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Unary(sop: SemanticOperator, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Binary(op: BinaryOperator, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Binary(sop: SemanticOperator, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class IfThenElse(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

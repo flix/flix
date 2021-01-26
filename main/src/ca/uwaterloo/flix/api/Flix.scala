@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.api
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
-import java.util.concurrent.{ExecutorService, Executors}
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
@@ -33,7 +32,6 @@ import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext
 
 /**
   * Main programmatic interface for Flix.
@@ -62,8 +60,52 @@ class Flix {
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
+    *
+    * The core library *must* be present for any program to compile.
     */
-  private val library = List(
+  private val coreLibrary = List(
+    // Comparison
+    "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
+
+    // Operators
+    "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
+    "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
+    "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
+    "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
+    "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
+    "Rem.flix" -> LocalResource.get("/src/library/Rem.flix"),
+    "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
+    "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
+    "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
+    "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
+    "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
+    "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
+    "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
+
+    // Built-in
+    "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
+    "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
+    "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
+    "Drop.flix" -> LocalResource.get("/src/library/Drop.flix"),
+    "Copy.flix" -> LocalResource.get("/src/library/Copy.flix"),
+
+    // Lattices
+    "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
+    "LowerBound.flix" -> LocalResource.get("/src/library/LowerBound.flix"),
+    "UpperBound.flix" -> LocalResource.get("/src/library/UpperBound.flix"),
+    "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),
+    "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
+
+    // String
+    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix")
+  )
+
+  /**
+    * A sequence of internal inputs to be parsed into Flix ASTs.
+    *
+    * The standard library is not required to be present for at least some programs to compile.
+    */
+  private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
@@ -77,6 +119,8 @@ class Flix {
     "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
+    "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
+    "LazyList2.flix" -> LocalResource.get("/src/library/LazyList2.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
@@ -86,6 +130,7 @@ class Flix {
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
+    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
 
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
@@ -97,28 +142,26 @@ class Flix {
     "Core/Io/OutputStream.flix" -> LocalResource.get("/src/library/Core/Io/OutputStream.flix"),
     "Core/Io/ZipInput.flix" -> LocalResource.get("/src/library/Core/Io/ZipInput.flix"),
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
-    "Core/Cmp/Ordering.flix" -> LocalResource.get("/src/library/Core/Cmp/Ordering.flix"),
 
-    "Core/ToString.flix" -> LocalResource.get("/src/library/Core/ToString.flix"),
-    "Core/FromString.flix" -> LocalResource.get("/src/library/Core/FromString.flix"),
-
-    "Pkger/SemVer.flix" -> LocalResource.get("/src/library/Pkger/SemVer.flix"),
+    "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
+    "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
+    "Semigroup.flix" -> LocalResource.get("/src/library/Semigroup.flix"),
+    "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
+    "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
-    "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),
-    "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
-    "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
     "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
-    "flix/channel/Channel.flix" -> LocalResource.get("/src/library/flix/channel/Channel.flix"),
-    "flix/channel/Ticker.flix" -> LocalResource.get("/src/library/flix/channel/Ticker.flix"),
-    "flix/channel/Timer.flix" -> LocalResource.get("/src/library/flix/channel/Timer.flix"),
-    "flix/time/Duration.flix" -> LocalResource.get("/src/library/flix/time/Duration.flix"),
-    "flix/time/Instant.flix" -> LocalResource.get("/src/library/flix/time/Instant.flix"),
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
+    "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
+    "Duration.flix" -> LocalResource.get("/src/library/Duration.flix"),
+    "Instant.flix" -> LocalResource.get("/src/library/Instant.flix"),
 
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
+    "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
 
   )
 
@@ -278,7 +321,6 @@ class Flix {
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
       Monomorph |>
-      Synthesize |>
       Simplifier |>
       ClosureConv |>
       LambdaLift |>
@@ -377,7 +419,7 @@ class Flix {
     val si1 = getStringInputs
     val si2 = getPathInputs
     val si3 = inputs.toList
-    val si4 = if (options.core) Nil else getStandardLibraryInputs
+    val si4 = if (options.core) getInputs(coreLibrary) else getInputs(coreLibrary ++ standardLibrary)
     si1 ::: si2 ::: si3 ::: si4
   }
 
@@ -398,9 +440,9 @@ class Flix {
   }
 
   /**
-    * Returns the inputs for the standard library.
+    * Returns the inputs for the given list of (path, text) pairs.
     */
-  private def getStandardLibraryInputs: List[Input] = library.foldLeft(List.empty[Input]) {
+  private def getInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
     case (xs, (name, text)) => Input.Internal(name, text) :: xs
   }
 
@@ -408,8 +450,7 @@ class Flix {
     * Initializes the fork join pools.
     */
   private def initForkJoin(): Unit = {
-    val threads = options.threads.getOrElse(Runtime.getRuntime.availableProcessors())
-    forkJoinPool = new java.util.concurrent.ForkJoinPool(threads)
+    forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
     forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
   }
 

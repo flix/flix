@@ -16,16 +16,23 @@ namespace Domain/ConstantSign {
                   case Bot
     }
 
-    ///
-    /// Returns `true` iff `e1` is equal to `e2`.
-    ///
-    def equ(e1: ConstantSign, e2: ConstantSign): Bool = e1 == e2
+    instance Eq[ConstantSign] {
+        def eq(e1: ConstantSign, e2: ConstantSign): Bool = match (e1, e2) {
+            case (Top, Top) => true
+            case (Neg, Neg) => true
+            case (Pos, Pos) => true
+            case (Cst(x), Cst(y)) => x == y
+            case (Bot, Bot) => true
+            case _ => false
+        }
+        def neq(e1: ConstantSign, e2: ConstantSign): Bool = not (e1 == e2)
+    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: ConstantSign, e2: ConstantSign): Bool = match (e1, e2) {
+    pub def leq(e1: ConstantSign, e2: ConstantSign): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
         case (Cst(n), Neg)      => n <= 0ii
@@ -40,7 +47,7 @@ namespace Domain/ConstantSign {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
+    pub def lub(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
         case (Bot, x)           => x
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => {
@@ -62,7 +69,7 @@ namespace Domain/ConstantSign {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
+    pub def glb(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2) Cst(n1) else Bot
@@ -80,7 +87,7 @@ namespace Domain/ConstantSign {
     ///
     /// The lattice height function.
     ///
-    #nonNegative #decreasing(equ, leq)
+    #nonNegative
     pub def height(e: ConstantSign): BigInt = match e {
         case Top    => 0ii
         case Neg    => 1ii
@@ -230,20 +237,17 @@ namespace Domain/ConstantSign {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let ConstantSign<> = (Bot, Top, equ, leq, lub, glb)
-
-
     //
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.upperBound(leq, lub)
+    law upperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.lowerBound(leq, glb)
+    law lowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
     law leastElement(leq: (ConstantSign, ConstantSign) -> Bool, bot: ConstantSign): Bool = Bounded.leastElement(bot, leq)
 

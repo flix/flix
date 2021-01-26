@@ -111,11 +111,4 @@ object UnificationError {
     * @param tpe the type of the type constraint
     */
   case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type) extends UnificationError
-
-  /**
-    * A unification error due to an unfulfilled type constraint.
-    *
-    * @param tconstr the type constraint.
-    */
-  case class UnfulfilledConstraint(tconstr: Ast.TypeConstraint) extends UnificationError
 }

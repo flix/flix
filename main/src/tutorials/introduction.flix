@@ -40,48 +40,81 @@ enum Constant {
       case Bot
 }
 
+instance LowerBound[Constant] {
+    def minValue(): Constant = Constant.Bot
+}
+
 //
 // We define equality of two lattice elements by structural equality.
 //
-def equ(e1: Constant, e2: Constant): Bool = e1 == e2
+instance Eq[Constant] {
+    def eq(x: Constant, y: Constant): Bool = match (x, y) {
+        case (Top, Top) => true
+        case (Cst(a), Cst(b)) => a == b
+        case (Bot, Bot) => true
+        case _ => false
+    }
+    def neq(x: Constant, y: Constant): Bool = not (x == y)
+}
+
+//
+// We define a simple hash function for lattice elements:
+//
+instance Hash[Constant] {
+    def hash(x: Constant): Int32 = match x {
+        case Top    => 1
+        case Bot    => 2
+        case Cst(n) => n
+    }
+}
 
 //
 // The next task is to define the partial order on Constant.
 // This is straightforward with pattern matching on the arguments:
 //
-def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
-    case (Bot, _)           => true
-    case (Cst(n1), Cst(n2)) => n1 == n2
-    case (_, Top)           => true
-    case _                  => false
+instance PartialOrder[Constant] {
+    def partialCompare(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+        case (Bot, _)           => true
+        case (Cst(n1), Cst(n2)) => n1 == n2
+        case (_, Top)           => true
+        case _                  => false
+    }
 }
 
 //
 // Then it's on to the least upper bound:
 //
-def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-    case (Bot, x)           => x
-    case (x, Bot)           => x
-    case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
-    case _                  => Top
+instance JoinLattice[Constant] {
+    def leastUpperBound(x: Constant, y: Constant): Constant = match (x, y) {
+        case (Bot, _)           => y
+        case (_, Bot)           => x
+        case (Cst(n1), Cst(n2)) => if (n1 == n2) x else Top
+        case _                  => Top
+    }
 }
 
 //
 // ... and the greatest lower bound:
 //
-def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-    case (Top, x)           => x
-    case (x, Top)           => x
-    case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
-    case _                  => Bot
+instance MeetLattice[Constant] {
+    def greatestLowerBound(e1: Constant, e2: Constant): Constant = match (e1, e2) {
+        case (Top, x)           => x
+        case (x, Top)           => x
+        case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
+        case _                  => Bot
+    }
 }
 
 //
-// This complete the specification of the lattice. We associate the
-// lattice components with the Constant type in the following way:
+// We need an instance of ToString for pretty printing:
 //
-let Constant<> = (Bot, Top, equ, leq, lub, glb)
-// NB: In the future, this syntax is subject to change.
+instance ToString[Constant] {
+    def toString(x: Constant): String = match x {
+        case Top    => "Top"
+        case Cst(n) => "Cst(${n})"
+        case Bot    => "Bot"
+    }
+}
 
 //
 // Finally it is handy to have a small function to lift an integer into

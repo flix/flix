@@ -30,7 +30,6 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Equality.BigInt", "main/test/flix/Test.Equality.BigInt.flix"),
   new FlixTest("Test.Equality.Bool", "main/test/flix/Test.Equality.Bool.flix"),
-  new FlixTest("Test.Equality.Channel", "main/test/flix/Test.Equality.Channel.flix"),
   new FlixTest("Test.Equality.Char", "main/test/flix/Test.Equality.Char.flix"),
   new FlixTest("Test.Equality.Float32", "main/test/flix/Test.Equality.Float32.flix"),
   new FlixTest("Test.Equality.Float64", "main/test/flix/Test.Equality.Float64.flix"),
@@ -298,7 +297,7 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix"),
   new FlixTest("Test.Term.Lit", "main/test/flix/Test.Term.Lit.flix"),
-  new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.List.flix"),
+  new FlixTest("Test.Term.Lit.List", "main/test/flix/Test.Term.Lit.List.flix"),
   new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.Option.flix"),
   new FlixTest("Test.Term.Lit.Result", "main/test/flix/Test.Term.Lit.Result.flix"),
   new FlixTest("Test.Term.Lit.Set", "main/test/flix/Test.Term.Lit.Set.flix")(Options.TestWithLibrary),
@@ -320,6 +319,7 @@ class LangSuite extends Suites(
   // Use.
   //
   new FlixTest("Test.Use.Def", "main/test/flix/Test.Use.Def.flix"),
+  new FlixTest("Test.Use.Sig", "main/test/flix/Test.Use.Sig.flix"),
   new FlixTest("Test.Use.Tag", "main/test/flix/Test.Use.Tag.flix"),
   new FlixTest("Test.Use.Type", "main/test/flix/Test.Use.Type.flix"),
 

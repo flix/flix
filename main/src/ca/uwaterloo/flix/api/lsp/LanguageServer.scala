@@ -53,7 +53,7 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): List[Int] = List.range(1, 10)"}
+  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(_: Array[String]): Int32 & Impure = println(\"Hello World\"); 0"}
   * > {"id": "2", "request": "lsp/check"}
   * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
   *
@@ -290,7 +290,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         return Nil
       }
 
-      val main = Symbol.mkDefnSym("main")
+      val main = Symbol.Main
       root.defs.get(main) match {
         case Some(defn) if matchesUri(uri, defn.loc) =>
           val loc = defn.sym.loc
@@ -351,8 +351,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case None =>
           ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "Compilation successful. No main to run.")
         case Some(main) =>
-          val result = main()
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toString)
+          try {
+            val result = main(Array.empty)
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toString)
+          } catch {
+            case ex: Throwable =>
+              ex.printStackTrace(System.err)
+              ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> ex.getMessage)
+          }
       }
       case Failure(errors) =>
         // Case 2: Compilation failed. Send back the error messages.
@@ -373,15 +379,20 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     flix.compile() match {
       case Success(t) =>
-        val testResults = Tester.test(t).results.sortBy(tr => tr.sym.loc)
-        val results: List[JValue] = testResults.map {
-          case TestResult.Success(sym, _) =>
-            ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "success")
-          case TestResult.Failure(sym, m) =>
-            ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "failure") ~ ("message" -> m)
+        try {
+          val testResults = Tester.test(t).results.sortBy(tr => tr.sym.loc)
+          val results: List[JValue] = testResults.map {
+            case TestResult.Success(sym, _) =>
+              ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "success")
+            case TestResult.Failure(sym, m) =>
+              ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "failure") ~ ("message" -> m)
+          }
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(results))
+        } catch {
+          case ex: Throwable =>
+            ex.printStackTrace(System.err)
+            ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> ex.getMessage)
         }
-
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(results))
       case Failure(errors) =>
         // Case 2: Compilation failed. Send back the error messages.
         val results = PublishDiagnosticsParams.from(errors)

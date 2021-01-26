@@ -7,42 +7,41 @@ namespace Test/Dec/Class {
     namespace Test02 {
 
         class X[a] {
-            def f(x: a): Bool
+            pub def f(x: a): Bool
         }
 
     }
 
     namespace Test03 {
         class X[a] {
-            def f(x: a): Bool
+            pub def f(x: a): Bool
         }
 
         instance X[Int] {
             def f(x: Int): Bool = x == 0
         }
 
-        pub def g(x: Int): Bool = f(x)
+        pub def g(x: Int): Bool = Test/Dec/Class/Test03/X.f(x)
     }
 
     namespace Test04 {
         class C[a] {
-            def f(x: a): Bool
+            pub def f(x: a): Bool
         }
 
         class D[a] {
-            def g(x: a): Bool
+            pub def g(x: a): Bool
         }
 
-        pub def h[a : C : D](x: a): Bool = f(x) and g(x)
+        pub def h[a : C : D](x: a): Bool = Test/Dec/Class/Test04/C.f(x) and Test/Dec/Class/Test04/D.g(x)
     }
 
     namespace Test05 {
         use Test/Dec/Class.List;
-        use Test/Dec/Class.Option;
 
         class C[a]
 
-        instance C[List[a]] with [a : C, Option[a] : C]
+        instance C[List[a]] with [a : C]
     }
 
     namespace Test06 {
@@ -51,7 +50,7 @@ namespace Test/Dec/Class {
         use Test/Dec/Class.Option;
 
         pub class C[a] {
-            def f(x: a): Bool
+            pub def f(x: a): Bool
         }
 
         instance C[Int] {
@@ -67,13 +66,66 @@ namespace Test/Dec/Class {
             }
         }
 
-        pub def g(x: List[Int]): Bool = f(x)
+        pub def g(x: List[Int]): Bool = Test/Dec/Class/Test06/C.f(x)
     }
 
     namespace Test07 {
-        use class Test/Dec/Class/Test06.C;
+        use Test/Dec/Class/Test06.C;
 
         pub def g[a: C](x: a): a = x
+    }
+
+    namespace Test08 {
+        use Test/Dec/Class.Option;
+        use Test/Dec/Class.Option.None;
+        use Test/Dec/Class.Option.Some;
+
+        class F[m :# Type -> Type] {
+            pub def map(f: a -> b, x: m[a]): m[b]
+        }
+
+        instance F[Option] {
+            def map(f: a -> b, x: Option[a]): Option[b] = match x {
+                case None => None
+                case Some(y) => Some(f(y))
+            }
+        }
+    }
+
+    namespace Test09 {
+        class Eff[e :# Bool] {
+            pub def isPure(f: a -> b & e): Bool
+        }
+
+        instance Eff[Pure] {
+            def isPure(f: a -> b): Bool = true
+        }
+
+        instance Eff[Impure] {
+            def isPure(f: a ~> b): Bool = false
+        }
+    }
+
+    namespace Test10 {
+        class C[a] {
+            pub def f(x: a): Bool
+        }
+
+        class D[a] extends C[a]
+
+        class E[a] extends D[a]
+
+        instance C[Int] {
+            def f(_x: Int): Bool = true
+        }
+
+        instance D[Int]
+
+        instance E[Int]
+
+        pub def g[a : D](x: a): Bool = Test/Dec/Class/Test10/C.f(x)
+
+        pub def h[a : E](x: a): Bool = Test/Dec/Class/Test10/C.f(x)
     }
 
     pub enum List[a] {
