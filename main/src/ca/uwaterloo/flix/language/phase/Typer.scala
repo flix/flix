@@ -58,7 +58,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
     val classEnv = mkClassEnv(root.classes, root.instances)
 
-    val classesVal = visitClasses(root)
+    val classesVal = visitClasses(root, classEnv)
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv)
     val enumsVal = visitEnums(root)
@@ -95,7 +95,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitClasses(root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
+  private def visitClasses(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
 
     def visitSig(sig: ResolvedAst.Sig): Validation[TypedAst.Sig, TypeError] = sig match {
       case ResolvedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, sc, eff, loc) =>
@@ -107,11 +107,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
 
     def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-      case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
+      case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws0, loc) =>
         val tparams = getTypeParams(List(tparam))
+        val tconstr = Ast.TypeConstraint(sym, tparam.tpe)
         for {
           sigs <- Validation.traverse(signatures)(visitSig)
-        } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, loc))
+          laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
+        } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc))
     }
 
     // visit each class
@@ -133,7 +135,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     def visitInstance(inst: ResolvedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
       case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
         for {
-          defs <- Validation.traverse(defs0)(visitInstanceDefn(_, tconstrs, root, classEnv))
+          defs <- Validation.traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
         } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
     }
 
@@ -157,16 +159,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Performs type inference and reassembly on the given definition `defn`.
     */
-  private def visitDefn(defn: ResolvedAst.Def, root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
-    typeCheckDef(defn, Nil, root, classEnv) map {
-      case (defn, _) => defn
-    }
-
-  /**
-    * Performs type inference and reassembly on the given instance definition `defn`.
-    */
-  private def visitInstanceDefn(defn: ResolvedAst.Def, tconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
-    typeCheckDef(defn, tconstrs, root, classEnv) map {
+  private def visitDefn(defn: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
+    typeCheckDef(defn, assumedTconstrs, root, classEnv) map {
       case (defn, _) => defn
     }
 
@@ -177,7 +171,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitDefs(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
     // Compute the results in parallel.
-    val results = ParOps.parMap(root.defs.values, visitDefn(_, root, classEnv))
+    val results = ParOps.parMap(root.defs.values, visitDefn(_, Nil, root, classEnv))
 
     // Sequence the results.
     Validation.sequence(results) map {

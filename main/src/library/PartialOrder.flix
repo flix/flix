@@ -50,7 +50,7 @@ namespace PartialOrder {
     ///
     law monotone2[a, b, c](f: (a, b) -> c, dom1: (a, a) -> Bool, dom2: (b, b) -> Bool, codom: (c, c) -> Bool): Bool =
         let implies = (x, y) -> (not x) or y;
-        ∀(x1: a, x2: a, y1: b, y2: b). ((x1 `dom1` y1) and (x2 `dom2` y2)) `implies` (f(x1, x2) `codom` f(y1, y2))
+        ∀(x1: a, x2: a, y1: b, y2: b). ((x1 `dom1` x2) and (y1 `dom2` y2)) `implies` (f(x1, y1) `codom` f(x2, y2))
 
     ///
     /// The safety law asserts that the abstract function `fa` is an over-approximation of the concrete

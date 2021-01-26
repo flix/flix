@@ -128,6 +128,19 @@ namespace Test/Dec/Class {
         pub def h[a : E](x: a): Bool = Test/Dec/Class/Test10/C.f(x)
     }
 
+    namespace Test11 {
+        class C[a] {
+            pub def f(x: a, y: a): Bool
+
+            // TODO handle namespaces better
+            law reflexivity(): Bool = forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
+        }
+
+        instance C[Int] {
+            def f(_x: Int, _y: Int): Bool = true
+        }
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
