@@ -51,18 +51,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Computes all used symbols in all defs (in parallel).
-    val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
+    val usedAll = ParOps.parAgg(root.defs, Used.empty)({
       case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
     }, _ and _)
-
-    // Computes all used symbols in all lattices.
-    val usedLats = root.latticeOps.values.foldLeft(Used.empty) {
-      case (acc, LatticeOps(tpe, bot, equ, leq, lub, glb)) =>
-        acc and (Used.of(bot) and Used.of(equ) and Used.of(leq) and Used.of(lub) and Used.of(glb))
-    }
-
-    // Computes all used symbols.
-    val usedAll = usedLats and usedDefs
 
     // Check for unused symbols.
     val usedRes =
@@ -104,14 +95,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Check for unused parameters and remove all variable symbols.
     val usedAll = (usedExp and checkUnusedFormalParameters(usedExp) and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
-
     val usedAllWithUnconditionalRecursions = if (usedAll.unconditionallyRecurses) usedAll + UnconditionalRecursion(defn.sym) else usedAll
 
-    // Check if the used symbols contains holes. If so, strip out all error messages.
+    // Check if the defn contains holes.
+    // If so we should remove all unused variable errors.
     if (usedAllWithUnconditionalRecursions.holeSyms.isEmpty)
       usedAllWithUnconditionalRecursions
     else
-      usedAllWithUnconditionalRecursions.copy(errors = Set.empty)
+      usedAllWithUnconditionalRecursions.withoutUnusedVars
   }
 
   /**
@@ -847,6 +838,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def withUnconditionalRecursion: Used =
       if (unconditionallyRecurses) this else copy(unconditionallyRecurses = true)
+
+    /**
+      * Returns `this` without any unused variable errors.
+      */
+    def withoutUnusedVars: Used = copy(errors = errors.filter {
+      case e: RedundancyError.UnusedVarSym => false
+      case _ => true
+    })
 
     /**
       * Returns Successful(a) unless `this` contains errors.
