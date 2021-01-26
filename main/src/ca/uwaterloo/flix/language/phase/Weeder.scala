@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
-import java.math.BigInteger
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
@@ -26,6 +24,8 @@ import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
 
+import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
+import java.math.BigInteger
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.collection.mutable
@@ -117,7 +117,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed))
         sigs <- traverse(sigs0)(visitSig)
         superClasses <- visitSuperClasses(tparam0, superClasses0)
-      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses.toList, sigs.flatten, loc))
+      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses, sigs.flatten, loc))
   }
 
   /**
@@ -1543,36 +1543,29 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, ident, sp2) =>
-        val array = traverse(pats)(visit) map {
-          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
+        flatMapN(traverse(pats)(visit)) {
+          case elms if ident.name == "_" => WeededAst.Pattern.ArrayTailSpread(elms, None, mkSL(sp2, sp2)).toSuccess
+          case elms =>
+            seen.get(ident.name) match {
+              case None =>
+                seen += (ident.name -> ident)
+                WeededAst.Pattern.ArrayTailSpread(elms, Some(ident), mkSL(sp1, sp2)).toSuccess
+              case Some(otherIdent) =>
+                NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+            }
         }
-        if (ident.name == "_") {
-          WeededAst.Pattern.ArrayTailSpread(array.get.elms, None, mkSL(sp2, sp2)).toSuccess
-        } else {
-          seen.get(ident.name) match {
-            case None =>
-              seen += (ident.name -> ident)
-              WeededAst.Pattern.ArrayTailSpread(array.get.elms, Some(ident), mkSL(sp1, sp2)).toSuccess
-            case Some(otherIdent) =>
-              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
-          }
-        }
-
 
       case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, pats, sp2) =>
-        val array = traverse(pats)(visit) map {
-          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
-        }
-        if (ident.name == "_") {
-          WeededAst.Pattern.ArrayHeadSpread(None, array.get.elms, mkSL(sp1, sp2)).toSuccess
-        } else {
-          seen.get(ident.name) match {
-            case None =>
-              seen += (ident.name -> ident)
-              WeededAst.Pattern.ArrayHeadSpread(Some(ident), array.get.elms, mkSL(sp1, sp2)).toSuccess
-            case Some(otherIdent) =>
-              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
-          }
+        flatMapN(traverse(pats)(visit)) {
+          case elms if ident.name == "_" => WeededAst.Pattern.ArrayHeadSpread(None, elms, mkSL(sp1, sp2)).toSuccess
+          case elms =>
+            seen.get(ident.name) match {
+              case None =>
+                seen += (ident.name -> ident)
+                WeededAst.Pattern.ArrayHeadSpread(Some(ident), elms, mkSL(sp1, sp2)).toSuccess
+              case Some(otherIdent) =>
+                NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+            }
         }
 
       case ParsedAst.Pattern.FNil(sp1, sp2) =>
