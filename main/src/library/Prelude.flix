@@ -30,7 +30,7 @@ pub def curry(f: (a, b) -> c & e): a -> (b -> c & e) = x -> y -> f(x, y)
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
 @Time(1) @Space(1)
-pub def uncurry(f: a -> (b -> c & e1) & e2): (a, b) -> c & (e1 and e2) = (x, y) -> (y |> f(x))
+pub def uncurry(f: a -> (b -> c & e1) & e2): ((a, b)) -> c & (e1 and e2) = match (x, y) -> f(x, y)
 
 ///
 /// Returns the first component of `t`.
