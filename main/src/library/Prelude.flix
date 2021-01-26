@@ -92,7 +92,7 @@ pub def unsafeToString(x: a): String =
 /// Panics (crashes) the current process with the given message `m`.
 ///
 @Time(1) @Space(1)
-pub def panic(m: String): a = ?panic
+pub def panic(_m: String): a = ?panic
 
 ///
 /// Meta-programming facility to express the time complexity of a function `f`.

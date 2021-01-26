@@ -843,6 +843,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns `this` without any unused variable errors.
       */
     def withoutUnusedVars: Used = copy(errors = errors.filter {
+      case e: RedundancyError.UnusedFormalParam => false
       case e: RedundancyError.UnusedVarSym => false
       case _ => true
     })
