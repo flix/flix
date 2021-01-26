@@ -1358,8 +1358,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the free vars and their inferred kinds in the given type `tpe0`, with `varKind` assigned if `tpe0` is a type var.
     */
-  private def freeVarsWithKind(tpe0: WeededAst.Type, tenv: Map[String, Type.Var]): List[(Name.Ident, Kind)] = {
-    def visit(tpe0: WeededAst.Type, varKind: Kind): List[(Name.Ident, Kind)] = tpe0 match {
+  private def freeVarsWithKind(tpe0: WeededAst.Type, tenv: Map[String, Type.Var])(implicit flix: Flix): List[(Name.Ident, Kind)] = {
+    def visit(tpe0: WeededAst.Type, varKind: => Kind): List[(Name.Ident, Kind)] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) =>
         if (tenv.contains(ident.name))
           Nil
@@ -1379,7 +1379,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit(_, Kind.Star))
       case WeededAst.Type.Native(fqm, loc) => Nil
       case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(visit(_, Kind.Star)) ::: visit(eff, Kind.Bool) ::: visit(tresult, Kind.Star)
-      case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1, Kind.Star) ++ visit(tpe2, Kind.Star)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1, Kind.freshVar()) ++ visit(tpe2, Kind.freshVar())
       case WeededAst.Type.True(loc) => Nil
       case WeededAst.Type.False(loc) => Nil
       case WeededAst.Type.Not(tpe, loc) => visit(tpe, Kind.Bool)
@@ -1600,9 +1600,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case ((ident0, kind0), acc) => acc.get(ident0.name) match {
         // Case 1: name not found; add to map
         case None => (acc + (ident0.name -> (ident0, kind0))).toSuccess
-        // Case 2: kind matches first kind; continue
-        case Some((_, kind1)) if kind0 == kind1 => acc.toSuccess
-        // Case 3: kinds do not match; error
+        // Case 2: new kind is a super kind of the found kind; continue
+        case Some((_, oldKind)) if oldKind <:: kind0 => acc.toSuccess
+        // Case 3: new kind is a sub kind of the found kind; replace with new kind
+        case Some((_, oldKind)) if kind0 <:: oldKind => (acc + (ident0.name -> (ident0, kind0))).toSuccess
+        // Case 4: kinds do not match; error
         case Some((ident1, kind1)) => NameError.MismatchedTypeParamKinds(ident0.name, ident0.loc, kind0, ident1.loc, kind1).toFailure
       }
     }
@@ -1612,7 +1614,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       kindedNames =>
         kindedNames.values.toList.sortBy(_._1.name).map {
           case (id, kind) =>
-            val tvar = Type.freshVar(kind, text = Some(id.name)) // use the kind we validated from the parameter context
+            // If the kind cannot be inferred, default to Star
+            val kind1 = kind match {
+              case Kind.Var(_) => Kind.Star
+              case _ => kind
+            }
+            val tvar = Type.freshVar(kind1, text = Some(id.name)) // use the kind we validated from the parameter context
             NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
         }
     }
