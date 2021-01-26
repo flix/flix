@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 
 object ErasedAst {
 
+  case class Root()
 //  case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
 //                  enums: Map[Symbol.EnumSym, ErasedAst.Enum],
 //                  latticeOps: Map[MonoType, ErasedAst.LatticeOps],
@@ -45,7 +46,7 @@ object ErasedAst {
 
   object Expression {
 
-    case class Cast[T <: JType, S <: JType](exp: ErasedAst.Expression[T], loc: SourceLocation) extends ErasedAst.Expression[S]
+    case class Cast[T <: JType, S <: JType](exp: ErasedAst.Expression[T], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[S]
 
     case object Unit extends ErasedAst.Expression[JObject] {
       final val tpe = MonoType.Unit
@@ -324,7 +325,7 @@ object ErasedAst {
 //
 //  case class FreeVar(sym: Symbol.VarSym, tpe: MonoType)
 
-  sealed trait Expression[T <: JType] {
+  sealed trait Expression[+T <: JType] {
     def loc: SourceLocation
   }
 

@@ -25,6 +25,8 @@ object BytecodeCompiler {
     case Expression.Int32(lit) => ???
     case Expression.Int64(lit) => ???
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => branch(compileExp(exp1), compileExp(exp2), compileExp(exp3))
+//    case Expression.Ref(exp, tpe, loc) => ???//compose(compileExp(exp), makeRef())
+    case _ => ???
   }
 
   def pushUnit[R <: Stack](): F[R] => F[R ** JObject] = ???
