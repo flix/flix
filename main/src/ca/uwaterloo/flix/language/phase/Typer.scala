@@ -1281,36 +1281,36 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
 
         /**
-          * Performs type inference on the given select rule.
+          * Performs type inference on the given select rule `sr0`.
           */
-        def inferSelectRule(rule: ResolvedAst.SelectChannelRule): InferMonad[Unit] = {
-          rule match {
-            case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
-              (_, channelType, _) <- visitExp(chan)
-              _ <- unifyTypeM(channelType, Type.mkChannel(sym.tvar), loc)
-            } yield liftM(Type.Unit)
+        def inferSelectRule(sr0: ResolvedAst.SelectChannelRule): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
+          sr0 match {
+            case ResolvedAst.SelectChannelRule(sym, chan, body) => for {
+              (chanConstrs, chanType, _) <- visitExp(chan)
+              (bodyConstrs, bodyType, _) <- visitExp(body)
+              elmType <- unifyTypeM(chanType, Type.mkChannel(sym.tvar, sym.loc), sym.loc)
+              resultCon = chanConstrs ++ bodyConstrs
+              resultTyp = bodyType
+              resultEff = Type.Impure
+            } yield (resultCon, resultTyp, resultEff)
           }
-        }
 
         /**
-          * Performs type inference on the given optional expression.
+          * Performs type inference on the given optional default expression `exp0`.
           */
-        def inferDefaultRule(defaultCase: Option[ResolvedAst.Expression]): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
-          defaultCase match {
+        def inferDefaultRule(exp0: Option[ResolvedAst.Expression]): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
+          exp0 match {
             case None => liftM(Nil, Type.freshVar(Kind.Star), Type.Pure)
             case Some(exp) => visitExp(exp)
           }
 
-        val bodies = rules.map(_.exp)
         for {
-          _ <- seqM(rules.map(inferSelectRule))
-          (bodyConstrs, bodyTypes, _) <- seqM(bodies map visitExp).map(_.unzip3)
-          actualResultType <- unifyTypeM(bodyTypes, loc)
+          (ruleConstrs, ruleTypes, _) <- seqM(rules.map(inferSelectRule)).map(_.unzip3)
           (defaultConstrs, defaultType, _) <- inferDefaultRule(default)
-          resultConstrs = bodyConstrs.flatten ++ defaultConstrs
-          resultTyp <- unifyTypeM(tvar, actualResultType, defaultType, loc)
+          resultCon = ruleConstrs.flatten ++ defaultConstrs
+          resultTyp <- unifyTypeM(tvar :: defaultType :: ruleTypes, loc)
           resultEff = Type.Impure
-        } yield (resultConstrs, resultTyp, resultEff)
+        } yield (resultCon, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Spawn(exp, loc) =>
         for {
