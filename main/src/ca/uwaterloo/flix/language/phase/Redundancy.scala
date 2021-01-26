@@ -148,7 +148,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
             // Case 2: Enum is used and here are its used tags.
             // Check if there is any unused tag.
             decl.cases.foldLeft(acc) {
-              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => acc + UnusedEnumTag(sym, caze.tag)
+              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => innerAcc + UnusedEnumTag(sym, caze.tag)
               case (innerAcc, _) => innerAcc
             }
         }
