@@ -85,6 +85,12 @@ object BenchmarkCompiler {
     // Compute the median throughput (per second).
     val median = StatUtils.median(throughputs.map(_.toLong)).toInt
 
+    // Compute the fastest iteration.
+    val iteration = timings.indexOf(timings.min)
+
+    // Compute the ration between the slowest and fastest run.
+    val ratio = timings.max.toDouble / timings.min.toDouble
+
     // Print JSON or plain text?
     if (o.json) {
       val json = ("lines" -> lines) ~ ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
@@ -96,6 +102,9 @@ object BenchmarkCompiler {
       println(f"Throughput (best): $max%,6d lines/sec")
       println()
       println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $median%,6d")
+      println()
+      println(f"  The iteration with the highest throughput was: $iteration.")
+      println(f"  The ratio between the fastest and slowest was: $ratio%1.1fx")
       println()
       println(f"Completed $N iterations on $lines%,6d lines in $totalTime seconds.")
     }
