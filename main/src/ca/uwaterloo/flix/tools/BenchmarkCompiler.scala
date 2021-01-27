@@ -3,6 +3,9 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils, Validation}
 import ca.uwaterloo.flix.util.vt.TerminalContext
+import org.json4s.JsonDSL._
+import org.json4s._
+import org.json4s.native.JsonMethods
 
 /**
   * A collection of internal utilities to measure the performance of the Flix compiler itself.
@@ -12,12 +15,12 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform before the statistics are collected.
     */
-  val WarmupIterations = 25
+  val WarmupIterations = 2
 
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val BenchmarkIterations = 10
+  val BenchmarkIterations = 1
 
   /**
     * Outputs statistics about time spent in each compiler phase.
@@ -73,6 +76,12 @@ object BenchmarkCompiler {
     val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
 
     println(s"$currentTime, $throughput")
+
+   val json = ("range" -> currentTime) ~
+      ("severity" -> throughput)
+
+    println(JsonMethods.pretty(JsonMethods.render(json)))
+
   }
 
   /**
