@@ -100,16 +100,16 @@ object BenchmarkCompiler {
       val s = JsonMethods.pretty(JsonMethods.render(json))
       println(s)
     } else {
-      println("===================== Flix Compiler Throughput =====================")
+      println("====================== Flix Compiler Throughput ======================")
       println()
-      println(f"Throughput (best): $max%,6d lines/sec (with $threads thread(s))")
+      println(f"Throughput (best): $max%,6d lines/sec (with $threads threads.)")
       println()
       println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $median%,6d")
       println()
-      println(f"  The highest throughput was in: $iteration (out of $N).")
-      println(f"  The ratio between the best and worst was: $ratio%1.1fx.")
+      println(f"  The highest throughput was in iteration: $iteration (out of $N).")
+      println(f"  The ratio between the best and worst iteration was: $ratio%1.1fx.")
       println()
-      println(f"Completed $N iterations on $lines%,6d lines in $totalTime seconds.")
+      println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
     }
   }
 
