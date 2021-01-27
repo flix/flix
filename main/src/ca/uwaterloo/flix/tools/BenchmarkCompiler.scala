@@ -15,7 +15,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val N = 3
+  val N = 25
 
   /**
     * Outputs statistics about time spent in each compiler phase.
@@ -91,14 +91,13 @@ object BenchmarkCompiler {
       val s = JsonMethods.pretty(JsonMethods.render(json))
       println(s)
     } else {
-      println("== Flix Compiler Benchmark ==")
+      println("=== Flix Compiler Benchmark ===")
       println()
-      println(f"Throughput:")
-      println(f"  min: $min%,5d, avg: $avg%,5d, max: $max%,5d (total $lines%,6d lines)")
+      println(f"Throughput: $max%,5d lines/sec (best)")
+      println(f"  min: $min%,5d, max: $max%,5d, avg: $avg%,5d, med: $median%,5d")
       println()
-      println(f"Completed $N iterations in $totalTime seconds.")
+      println(f"Completed $N iterations on $lines%,6d lines in $totalTime seconds.")
     }
-
   }
 
   /**
