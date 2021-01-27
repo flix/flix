@@ -10,7 +10,7 @@ object BytecodeCompiler {
   sealed case class StackCons[+R <: Stack, +T <: JType](rest : R, top : T) extends Stack
 
   type **[R <: Stack, T <: JType] = StackCons[R, T]
-  sealed trait F[T]
+  sealed trait F[+T]
 
   def compileExp[R <: Stack, T <: JType](exp : Expression[T]): F[R] => F[R ** T]  = exp match {
     case Expression.Unit => pushUnit()
