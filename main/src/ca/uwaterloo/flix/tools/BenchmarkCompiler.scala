@@ -96,7 +96,10 @@ object BenchmarkCompiler {
 
     // Print JSON or plain text?
     if (o.json) {
-      val json = ("lines" -> lines) ~ ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
+      val json =
+        ("lines" -> lines) ~
+          ("threads" -> threads) ~
+          ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
       val s = JsonMethods.pretty(JsonMethods.render(json))
       println(s)
     } else {
