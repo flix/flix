@@ -1943,6 +1943,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
       WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
+
+
   }
 
   /**
