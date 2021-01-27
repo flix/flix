@@ -91,6 +91,9 @@ object BenchmarkCompiler {
     // Compute the ration between the slowest and fastest run.
     val ratio = timings.max.toDouble / timings.min.toDouble
 
+    // The number of threads uses.
+    val threads = o.threads
+
     // Print JSON or plain text?
     if (o.json) {
       val json = ("lines" -> lines) ~ ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
@@ -99,12 +102,12 @@ object BenchmarkCompiler {
     } else {
       println("===================== Flix Compiler Throughput =====================")
       println()
-      println(f"Throughput (best): $max%,6d lines/sec")
+      println(f"Throughput (best): $max%,6d lines/sec (with $threads thread(s))")
       println()
       println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $median%,6d")
       println()
-      println(f"  The iteration with the highest throughput was: $iteration.")
-      println(f"  The ratio between the fastest and slowest was: $ratio%1.1fx")
+      println(f"  The highest throughput was in: $iteration (out of $N).")
+      println(f"  The ratio between the best and worst was: $ratio%1.1fx.")
       println()
       println(f"Completed $N iterations on $lines%,6d lines in $totalTime seconds.")
     }
