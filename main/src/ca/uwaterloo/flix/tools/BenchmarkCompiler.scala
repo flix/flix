@@ -91,10 +91,11 @@ object BenchmarkCompiler {
       val s = JsonMethods.pretty(JsonMethods.render(json))
       println(s)
     } else {
-      println("=================== Flix Compiler Throughput ===================")
+      println("===================== Flix Compiler Throughput =====================")
       println()
-      println(f"Throughput: $max%,5d lines/sec (best)")
-      println(f"  min: $min%,5d, max: $max%,5d, avg: $avg%,5d, med: $median%,5d")
+      println(f"Throughput (best): $max%,6d lines/sec")
+      println()
+      println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $median%,6d")
       println()
       println(f"Completed $N iterations on $lines%,6d lines in $totalTime seconds.")
     }
