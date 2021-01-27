@@ -13,14 +13,9 @@ import org.json4s.native.JsonMethods
 object BenchmarkCompiler {
 
   /**
-    * The number of compilations to perform before the statistics are collected.
-    */
-  val WarmupIterations = 1
-
-  /**
     * The number of compilations to perform when collecting statistics.
     */
-  val BenchmarkIterations = 2
+  val N = 3
 
   /**
     * Outputs statistics about time spent in each compiler phase.
@@ -28,9 +23,7 @@ object BenchmarkCompiler {
   def benchmarkPhases(o: Options): Unit = {
     val flix = newFlix(o)
 
-    warmup(flix)
-
-    val results = List.fill(BenchmarkIterations) {
+    val results = List.fill(N) {
       flix.compile() match {
         case Validation.Success(_) =>
           flix.phaseTimers.toList
@@ -59,44 +52,51 @@ object BenchmarkCompiler {
     * Computes the throughput of the compiler.
     */
   def benchmarkThroughput(o: Options): Unit = {
-    val flix = newFlix(o)
-
-    // Warmup
-    warmup(flix)
-
-    // Measure
-    val results = (0 until BenchmarkIterations).map {
-      case _ => flix.compile().get
+    //
+    // Collect data from N iterations.
+    //
+    val results = (0 until N).map {
+      case _ =>
+        val flix = newFlix(o)
+        flix.compile().get
     }
 
-    // Computes the throughput in lines/sec.
-    val totalLines = results.head.getTotalLines().toLong
-    val totalTime = StatUtils.median(results.map(_.getTotalTime()).toList)
-    val currentTime = System.currentTimeMillis() / 1000
-    val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
+    // Find the number of lines of source code.
+    val lines = results.head.getTotalLines().toLong
 
+    // Find the timings of each run.
+    val timings = results.map(_.getTotalTime()).toList
+
+    // Find the throughput of each run.
+    val throughputs = timings.map(throughput(lines, _))
+
+    // Compute the minimum throughput (per second).
+    val min = throughputs.min
+
+    // Compute the maximum throughput (per second).
+    val max = throughputs.max
+
+    // Compute the average throughput (per second).
+    val avg = StatUtils.avg(throughputs.map(_.toLong)).toInt
+
+    // Compute the median throughput (per second).
+    val median = StatUtils.median(throughputs.map(_.toLong)).toInt
+
+    // Print JSON or plain text?
     if (o.json) {
-      val json = ("totalLines" -> totalLines) ~ ("throughput" -> throughput)
-      println(JsonMethods.pretty(JsonMethods.render(json)))
+      val json = ("lines" -> lines) ~ ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
+      val s = JsonMethods.pretty(JsonMethods.render(json))
+      println(s)
     } else {
-      println(s"$currentTime, $throughput")
+      println(s"$lines, $max")
     }
 
   }
 
   /**
-    * Runs the compiler a number of times to warmup the JIT.
+    * Returns the throughput per second.
     */
-  private def warmup(flix: Flix): Unit = {
-    for (i <- 0 until WarmupIterations) {
-      flix.compile() match {
-        case Validation.Success(compilationResult) => // nop
-        case Validation.Failure(errors) =>
-          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
-          System.exit(1)
-      }
-    }
-  }
+  private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
 
   /**
     * Returns a Flix object configured with the benchmark program.
