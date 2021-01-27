@@ -77,8 +77,7 @@ object BenchmarkCompiler {
 
     println(s"$currentTime, $throughput")
 
-   val json = ("range" -> currentTime) ~
-      ("severity" -> throughput)
+    val json = ("totalLines" -> totalLines) ~ ("throughput" -> throughput)
 
     println(JsonMethods.pretty(JsonMethods.render(json)))
 
