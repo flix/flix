@@ -15,12 +15,12 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform before the statistics are collected.
     */
-  val WarmupIterations = 2
+  val WarmupIterations = 1
 
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val BenchmarkIterations = 1
+  val BenchmarkIterations = 10
 
   /**
     * Outputs statistics about time spent in each compiler phase.
@@ -75,11 +75,12 @@ object BenchmarkCompiler {
     val currentTime = System.currentTimeMillis() / 1000
     val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
 
-    println(s"$currentTime, $throughput")
-
-    val json = ("totalLines" -> totalLines) ~ ("throughput" -> throughput)
-
-    println(JsonMethods.pretty(JsonMethods.render(json)))
+    if (o.json) {
+      val json = ("totalLines" -> totalLines) ~ ("throughput" -> throughput)
+      println(JsonMethods.pretty(JsonMethods.render(json)))
+    } else {
+      println(s"$currentTime, $throughput")
+    }
 
   }
 
