@@ -138,9 +138,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           case Some(usedTags) =>
             // Case 2: Enum is used and here are its used tags.
             // Check if there is any unused tag.
-            decl.cases.values.find(caze => !usedTags.contains(caze.tag)) match {
-              case None => acc
-              case Some(caze) => acc + UnusedEnumTag(sym, caze.tag)
+            decl.cases.foldLeft(acc) {
+              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => innerAcc + UnusedEnumTag(sym, caze.tag)
+              case (innerAcc, _) => innerAcc
             }
         }
     }
@@ -670,6 +670,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       !decl.sym.name.startsWith("_") &&
       !used.defSyms.contains(decl.sym) &&
       !root.reachable.contains(decl.sym)
+
+  /**
+    * Returns `true` if the given `tag` is unused according to the `usedTags`.
+    */
+  private def deadTag(tag: Name.Tag, usedTags: Set[Name.Tag]): Boolean =
+    !tag.name.startsWith("_") &&
+      !usedTags.contains(tag)
 
   /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
