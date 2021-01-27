@@ -67,6 +67,9 @@ object BenchmarkCompiler {
     // Find the timings of each run.
     val timings = results.map(_.getTotalTime()).toList
 
+    // Compute the total time in seconds.
+    val totalTime = (timings.sum / 1_000_000_000L).toInt
+
     // Find the throughput of each run.
     val throughputs = timings.map(throughput(lines, _))
 
@@ -88,7 +91,12 @@ object BenchmarkCompiler {
       val s = JsonMethods.pretty(JsonMethods.render(json))
       println(s)
     } else {
-      println(s"$lines, $max")
+      println("== Flix Compiler Benchmark ==")
+      println()
+      println(f"Throughput:")
+      println(f"  min: $min%,5d, avg: $avg%,5d, max: $max%,5d (total $lines%,6d lines)")
+      println()
+      println(f"Completed $N iterations in $totalTime seconds.")
     }
 
   }
