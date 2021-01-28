@@ -237,8 +237,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
         }
 
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
-      throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
+      case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
+        throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
     }
   }
 
@@ -257,9 +257,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * The result of looking up a type or class name in an ast root.
     */
   private sealed trait NameLookupResult
+
   private object LookupResult {
+
     case object NotDefined extends NameLookupResult
+
     case class AlreadyDefined(loc: SourceLocation) extends NameLookupResult
+
   }
 
   /**
@@ -1171,6 +1175,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (t1, t2) => NamedAst.Type.Or(t1, t2, loc)
       }
 
+    case WeededAst.Type.Ascribe(tpe, kind, loc) =>
+      visitType(tpe, uenv0, tenv0)
   }
 
   /**
@@ -1353,6 +1359,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Not(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.And(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+    case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
   /**
@@ -1385,6 +1392,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Type.Not(tpe, loc) => visit(tpe, Kind.Bool)
       case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
       case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
+      case WeededAst.Type.Ascribe(tpe, kind, loc) =>
+        // Match on `tpe` to determine if it is a variable.
+        tpe match {
+          case WeededAst.Type.Var(ident, _) => List(ident -> kind)
+          case _ => freeVarsWithKind(tpe, tenv)
+        }
     }
 
     visit(tpe0, Kind.Star)
@@ -1491,7 +1504,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
   /**
     * Performs naming on the given type parameter. Kind is assumed to be `Star` unless otherwise annotated.
-   */
+    */
   private def getTypeParamDefaultStar(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam(ident, kind, classes) =>
       NamedAst.TypeParam(ident, Type.freshVar(kind.getOrElse(Kind.Star), text = Some(ident.name)), classes, ident.loc)

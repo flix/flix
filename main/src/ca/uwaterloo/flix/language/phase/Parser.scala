@@ -1163,7 +1163,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def And: Rule1[ParsedAst.Type] = rule {
-      Apply ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
+      Ascribe ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
+    }
+
+    def Ascribe: Rule1[ParsedAst.Type] = rule {
+      Apply ~ optional(WS ~ keyword(":#") ~ WS ~ Kind ~ SP ~> ParsedAst.Type.Ascribe)
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {

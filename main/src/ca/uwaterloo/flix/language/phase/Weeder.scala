@@ -1943,6 +1943,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
       WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
+
+    case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe)
+      val t = visitType(tpe)
+      val k = visitKind(kind)
+      WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
   }
 
   /**
@@ -2277,6 +2283,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Not(sp1, _, _) => sp1
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
   }
 
   /**
