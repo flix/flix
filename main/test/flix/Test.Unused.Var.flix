@@ -73,6 +73,23 @@ namespace Test/Unused/Var {
             case _bar <- c2 => 456
         }
 
+    // NB: Compile, but not execute.
+    pub def testUnusedVar12(): Int =
+        let x = 123;
+        ?hole
+
+    // NB: Compile, but not execute.
+    pub def testUnusedVar13(): Int =
+        let x = 123;
+        let y = 123;
+        ?hole
+
+    // NB: Compile, but not execute.
+    pub def testUnusedVar14(): Int =
+        match 123 {
+            case foo => ?hole
+        }
+
     enum Option[t] {
         case None,
         case Some(t)

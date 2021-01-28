@@ -20,6 +20,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
+  // Definitions.
+  //
+  new FlixTest("Test.Def.KindInference", "main/test/flix/Test.Def.KindInference.flix"),
+
+  //
   // Effects.
   //
   new FlixTest("Test.Eff.Advanced", "main/test/flix/Test.Eff.Advanced.flix"),
@@ -313,6 +318,7 @@ class LangSuite extends Suites(
   //
   // Unused.
   //
+  new FlixTest("Test.Unused.Tag", "main/test/flix/Test.Unused.Tag.flix"),
   new FlixTest("Test.Unused.Var", "main/test/flix/Test.Unused.Var.flix"),
 
   //

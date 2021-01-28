@@ -1323,14 +1323,14 @@ object ParsedAst {
       * @param tpe the negated type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Not(sp1: SourcePosition,tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class Not(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * The And type constructor.
       *
       * @param tpe1 the 1st type.
       * @param tpe2 the 2nd type.
-      * @param sp2 the position of the last character in the type.
+      * @param sp2  the position of the last character in the type.
       */
     case class And(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
@@ -1339,9 +1339,18 @@ object ParsedAst {
       *
       * @param tpe1 the 1st type.
       * @param tpe2 the 2nd type.
-      * @param sp2 the position of the last character in the type.
+      * @param sp2  the position of the last character in the type.
       */
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Kind Ascription.
+      *
+      * @param tpe  the ascribed type.
+      * @param kind the ascribed kind.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class Ascribe(tpe: ParsedAst.Type, kind: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Type
 
   }
 
