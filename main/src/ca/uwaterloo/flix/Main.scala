@@ -200,7 +200,7 @@ object Main {
           }
 
           if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))
+            Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
           }
 
           if (cmdOpts.test) {

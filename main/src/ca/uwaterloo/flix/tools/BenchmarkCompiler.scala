@@ -1,9 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils, Validation}
-import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 

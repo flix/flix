@@ -2,7 +2,14 @@ package ca.uwaterloo.flix.tools
 
 import java.io.PrintWriter
 
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.Options
+
+import org.json4s.JsonDSL._
+import org.json4s.native.JsonMethods
+
+import scala.collection.mutable
 
 /**
   * Evaluates all benchmarks in a model.
@@ -22,7 +29,12 @@ object Benchmarker {
   /**
     * Evaluates all benchmarks.
     */
-  def benchmark(compilationResult: CompilationResult, writer: PrintWriter): Unit = {
+  def benchmark(compilationResult: CompilationResult, writer: PrintWriter)(implicit options: Options): Unit = {
+    //
+    // A mutable list of results. Populated incrementally.
+    //
+    val results = mutable.ListBuffer.empty[(Symbol.DefnSym, Long)]
+
     /*
       * Group benchmarks by namespace.
       */
@@ -47,11 +59,21 @@ object Benchmarker {
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
         val totalTime = run(defn, ActualRounds)
         val averageTimeInNanoSeconds = totalTime / ActualRounds
-        writer.println(f"$sym,$averageTimeInNanoSeconds")
+        if (!options.json) {
+          writer.println(f"$sym,$averageTimeInNanoSeconds")
+        }
+        results += ((sym, averageTimeInNanoSeconds))
         sleepAndGC()
       }
 
-      writer.println()
+      // Print JSON
+      if (options.json) {
+        val json = ("benchmarks" -> results.toList.map {
+          case (sym, time) => ("name" -> sym.name) ~ ("time" -> time)
+        })
+        val s = JsonMethods.pretty(JsonMethods.render(json))
+        println(s)
+      }
     }
   }
 
