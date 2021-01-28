@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils, Validation}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.json4s.JsonDSL._
-import org.json4s._
 import org.json4s.native.JsonMethods
 
 /**
@@ -15,7 +14,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val N = 25
+  val N = 15
 
   /**
     * Outputs statistics about time spent in each compiler phase.
