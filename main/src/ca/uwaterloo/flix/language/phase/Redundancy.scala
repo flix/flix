@@ -51,18 +51,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Computes all used symbols in all defs (in parallel).
-    val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
+    val usedAll = ParOps.parAgg(root.defs, Used.empty)({
       case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
     }, _ and _)
-
-    // Computes all used symbols in all lattices.
-    val usedLats = root.latticeOps.values.foldLeft(Used.empty) {
-      case (acc, LatticeOps(tpe, bot, equ, leq, lub, glb)) =>
-        acc and (Used.of(bot) and Used.of(equ) and Used.of(leq) and Used.of(lub) and Used.of(glb))
-    }
-
-    // Computes all used symbols.
-    val usedAll = usedLats and usedDefs
 
     // Check for unused symbols.
     val usedRes =
@@ -104,14 +95,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Check for unused parameters and remove all variable symbols.
     val usedAll = (usedExp and checkUnusedFormalParameters(usedExp) and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
-
     val usedAllWithUnconditionalRecursions = if (usedAll.unconditionallyRecurses) usedAll + UnconditionalRecursion(defn.sym) else usedAll
 
-    // Check if the used symbols contains holes. If so, strip out all error messages.
+    // Check if the expression contains holes.
+    // If it does, we discard all unused local variable errors.
     if (usedAllWithUnconditionalRecursions.holeSyms.isEmpty)
       usedAllWithUnconditionalRecursions
     else
-      usedAllWithUnconditionalRecursions.copy(errors = Set.empty)
+      usedAllWithUnconditionalRecursions.withoutUnusedVars
   }
 
   /**
@@ -147,9 +138,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           case Some(usedTags) =>
             // Case 2: Enum is used and here are its used tags.
             // Check if there is any unused tag.
-            decl.cases.values.find(caze => !usedTags.contains(caze.tag)) match {
-              case None => acc
-              case Some(caze) => acc + UnusedEnumTag(sym, caze.tag)
+            decl.cases.foldLeft(acc) {
+              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => innerAcc + UnusedEnumTag(sym, caze.tag)
+              case (innerAcc, _) => innerAcc
             }
         }
     }
@@ -681,6 +672,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       !root.reachable.contains(decl.sym)
 
   /**
+    * Returns `true` if the given `tag` is unused according to the `usedTags`.
+    */
+  private def deadTag(tag: Name.Tag, usedTags: Set[Name.Tag]): Boolean =
+    !tag.name.startsWith("_") &&
+      !usedTags.contains(tag)
+
+  /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def deadTypeVar(tvar: Type.Var, used: Set[Type.Var]): Boolean = {
@@ -847,6 +845,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def withUnconditionalRecursion: Used =
       if (unconditionallyRecurses) this else copy(unconditionallyRecurses = true)
+
+    /**
+      * Returns `this` without any unused variable errors.
+      */
+    def withoutUnusedVars: Used = copy(errors = errors.filter {
+      case e: RedundancyError.UnusedFormalParam => false
+      case e: RedundancyError.UnusedVarSym => false
+      case _ => true
+    })
 
     /**
       * Returns Successful(a) unless `this` contains errors.

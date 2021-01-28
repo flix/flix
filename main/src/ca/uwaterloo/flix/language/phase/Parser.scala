@@ -1163,7 +1163,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def And: Rule1[ParsedAst.Type] = rule {
-      Apply ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
+      Ascribe ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
+    }
+
+    def Ascribe: Rule1[ParsedAst.Type] = rule {
+      Apply ~ optional(WS ~ keyword(":#") ~ WS ~ Kind ~ SP ~> ParsedAst.Type.Ascribe)
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1372,7 +1376,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * A lowercase letter.
       */
-    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha ++ "_"
+    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha
 
     /**
       * An uppercase letter.
@@ -1405,14 +1409,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
       */
     def LowerCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture(LowerLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ LowerLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
     def UpperCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture(UpperLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ UpperLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -1427,6 +1431,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       */
     def UpperCaseQName: Rule1[Name.QName] = rule {
       SP ~ optional(Namespace ~ ".") ~ UpperCaseName ~ SP ~> Name.QName.mk _
+    }
+
+    /**
+      * A wildcard identifier.
+      */
+    def Wildcard: Rule1[Name.Ident] = rule {
+      SP ~ capture("_") ~ SP ~> Name.Ident
     }
 
     /**
@@ -1495,7 +1506,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def QualifiedType: Rule1[Name.QName] = UpperCaseQName
 
     def Variable: Rule1[Name.Ident] = rule {
-      LowerCaseName | GreekName | MathName
+      LowerCaseName | Wildcard | GreekName | MathName
     }
 
     def JavaName: Rule1[Seq[String]] = {

@@ -318,6 +318,7 @@ class LangSuite extends Suites(
   //
   // Unused.
   //
+  new FlixTest("Test.Unused.Tag", "main/test/flix/Test.Unused.Tag.flix"),
   new FlixTest("Test.Unused.Var", "main/test/flix/Test.Unused.Var.flix"),
 
   //
