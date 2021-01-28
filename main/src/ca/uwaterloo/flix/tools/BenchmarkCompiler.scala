@@ -24,8 +24,8 @@ object BenchmarkCompiler {
 
     val results = List.fill(N) {
       flix.compile() match {
-        case Validation.Success(_) =>
-          flix.phaseTimers.toList
+        case Validation.Success(r) =>
+          (r, flix.phaseTimers.toList)
         case Validation.Failure(errors) =>
           errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
           System.exit(1)
@@ -34,7 +34,7 @@ object BenchmarkCompiler {
     }
 
     // phase -> list of times
-    val phaseMap = results.flatten.groupMap(_.phase)(_.time)
+    val phaseMap = results.map(_._2).flatten.groupMap(_.phase)(_.time)
 
     // phase -> median time
     val phaseMedians = phaseMap.map {
@@ -45,6 +45,25 @@ object BenchmarkCompiler {
       val currentTime = System.currentTimeMillis() / 1000
       println(s"$phase, $currentTime, $time")
     }
+
+    // Find the number of lines of source code.
+    val lines = results.head._1.getTotalLines().toLong
+
+    // The number of threads used.
+    val threads = o.threads
+
+    // Find the timings of each run.
+    val timings = results.map(_._1).map(_.getTotalTime()).toList
+
+    // Compute the total time in seconds.
+    val totalTime = (timings.sum / 1_000_000_000L).toInt
+
+    println("====================== Flix Compiler Throughput ======================")
+    println()
+    println(f"Throughput (best) lines/sec (with $threads threads.)")
+    println()
+    println()
+    println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
   }
 
   /**
@@ -62,6 +81,9 @@ object BenchmarkCompiler {
 
     // Find the number of lines of source code.
     val lines = results.head.getTotalLines().toLong
+
+    // The number of threads used.
+    val threads = o.threads
 
     // Find the timings of each run.
     val timings = results.map(_.getTotalTime()).toList
@@ -89,9 +111,6 @@ object BenchmarkCompiler {
 
     // Compute the ration between the slowest and fastest run.
     val bestWorstRatio = timings.max.toDouble / timings.min.toDouble
-
-    // The number of threads uses.
-    val threads = o.threads
 
     // Print JSON or plain text?
     if (o.json) {
