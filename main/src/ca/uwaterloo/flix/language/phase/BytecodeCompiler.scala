@@ -13,17 +13,17 @@ object BytecodeCompiler {
   sealed trait F[+T]
 
   def compileExp[R <: Stack, T <: JType](exp : Expression[T]): F[R] => F[R ** T]  = exp match {
-    case Expression.Unit => pushUnit()
-    case Expression.Null(tpe) => pushNull()
-    case Expression.True => pushBool(true)
-    case Expression.False => pushBool(false)
-    case Expression.Char(lit) => ???
-    case Expression.Float32(lit) => ???
-    case Expression.Float64(lit) => ???
-    case Expression.Int8(lit) => ???
-    case Expression.Int16(lit) => ???
-    case Expression.Int32(lit) => ???
-    case Expression.Int64(lit) => ???
+    case Expression.Unit(loc) => pushUnit()
+    case Expression.Null(tpe, loc) => pushNull()
+    case Expression.True(loc) => pushBool(true)
+    case Expression.False(loc) => pushBool(false)
+    case Expression.Char(lit, loc) => ???
+    case Expression.Float32(lit, loc) => ???
+    case Expression.Float64(lit, loc) => ???
+    case Expression.Int8(lit, loc) => ???
+    case Expression.Int16(lit, loc) => ???
+    case Expression.Int32(lit, loc) => ???
+    case Expression.Int64(lit, loc) => ???
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => branch(compileExp(exp1), compileExp(exp2), compileExp(exp3))
 //    case Expression.Ref(exp, tpe, loc) => ???//compose(compileExp(exp), makeRef())
     case _ => ???
