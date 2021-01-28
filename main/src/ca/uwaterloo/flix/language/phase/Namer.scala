@@ -237,8 +237,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
         }
 
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
-      throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
+      case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
+        throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
     }
   }
 
@@ -257,9 +257,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * The result of looking up a type or class name in an ast root.
     */
   private sealed trait NameLookupResult
+
   private object LookupResult {
+
     case object NotDefined extends NameLookupResult
+
     case class AlreadyDefined(loc: SourceLocation) extends NameLookupResult
+
   }
 
   /**
@@ -1171,6 +1175,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (t1, t2) => NamedAst.Type.Or(t1, t2, loc)
       }
 
+    case WeededAst.Type.Ascribe(tpe, kind, loc) =>
+      visitType(tpe, uenv0, tenv0)
   }
 
   /**
@@ -1353,13 +1359,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Not(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.And(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+    case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
   /**
     * Returns the free vars and their inferred kinds in the given type `tpe0`, with `varKind` assigned if `tpe0` is a type var.
     */
-  private def freeVarsWithKind(tpe0: WeededAst.Type, tenv: Map[String, Type.Var]): List[(Name.Ident, Kind)] = {
-    def visit(tpe0: WeededAst.Type, varKind: Kind): List[(Name.Ident, Kind)] = tpe0 match {
+  private def freeVarsWithKind(tpe0: WeededAst.Type, tenv: Map[String, Type.Var])(implicit flix: Flix): List[(Name.Ident, Kind)] = {
+    def visit(tpe0: WeededAst.Type, varKind: => Kind): List[(Name.Ident, Kind)] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) =>
         if (tenv.contains(ident.name))
           Nil
@@ -1379,12 +1386,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit(_, Kind.Star))
       case WeededAst.Type.Native(fqm, loc) => Nil
       case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(visit(_, Kind.Star)) ::: visit(eff, Kind.Bool) ::: visit(tresult, Kind.Star)
-      case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1, Kind.Star) ++ visit(tpe2, Kind.Star)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1, Kind.freshVar()) ++ visit(tpe2, Kind.freshVar())
       case WeededAst.Type.True(loc) => Nil
       case WeededAst.Type.False(loc) => Nil
       case WeededAst.Type.Not(tpe, loc) => visit(tpe, Kind.Bool)
       case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
       case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
+      case WeededAst.Type.Ascribe(tpe, kind, loc) =>
+        // Match on `tpe` to determine if it is a variable.
+        tpe match {
+          case WeededAst.Type.Var(ident, _) => List(ident -> kind)
+          case _ => freeVarsWithKind(tpe, tenv)
+        }
     }
 
     visit(tpe0, Kind.Star)
@@ -1491,7 +1504,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
   /**
     * Performs naming on the given type parameter. Kind is assumed to be `Star` unless otherwise annotated.
-   */
+    */
   private def getTypeParamDefaultStar(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam(ident, kind, classes) =>
       NamedAst.TypeParam(ident, Type.freshVar(kind.getOrElse(Kind.Star), text = Some(ident.name)), classes, ident.loc)
@@ -1600,9 +1613,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case ((ident0, kind0), acc) => acc.get(ident0.name) match {
         // Case 1: name not found; add to map
         case None => (acc + (ident0.name -> (ident0, kind0))).toSuccess
-        // Case 2: kind matches first kind; continue
-        case Some((_, kind1)) if kind0 == kind1 => acc.toSuccess
-        // Case 3: kinds do not match; error
+        // Case 2: new kind is a super kind of the found kind; continue
+        case Some((_, oldKind)) if oldKind <:: kind0 => acc.toSuccess
+        // Case 3: new kind is a sub kind of the found kind; replace with new kind
+        case Some((_, oldKind)) if kind0 <:: oldKind => (acc + (ident0.name -> (ident0, kind0))).toSuccess
+        // Case 4: kinds do not match; error
         case Some((ident1, kind1)) => NameError.MismatchedTypeParamKinds(ident0.name, ident0.loc, kind0, ident1.loc, kind1).toFailure
       }
     }
@@ -1612,7 +1627,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       kindedNames =>
         kindedNames.values.toList.sortBy(_._1.name).map {
           case (id, kind) =>
-            val tvar = Type.freshVar(kind, text = Some(id.name)) // use the kind we validated from the parameter context
+            // If the kind cannot be inferred, default to Star
+            val kind1 = kind match {
+              case Kind.Var(_) => Kind.Star
+              case _ => kind
+            }
+            val tvar = Type.freshVar(kind1, text = Some(id.name)) // use the kind we validated from the parameter context
             NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
         }
     }
