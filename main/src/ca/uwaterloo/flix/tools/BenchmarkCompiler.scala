@@ -45,6 +45,9 @@ object BenchmarkCompiler {
       case (phase, times) => (phase, StatUtils.median(times.toList))
     }.toList
 
+    // The number of threads used.
+    val threads = o.threads
+
     // Find the number of lines of source code.
     val lines = results.head.getTotalLines().toLong
 
@@ -57,8 +60,12 @@ object BenchmarkCompiler {
     // Print JSON or plain text?
     if (o.json) {
       val json =
-        ("lines" -> lines) ~
-          ("iterations" -> N)
+        ("threads" -> threads) ~
+          ("lines" -> lines) ~
+          ("iterations" -> N) ~
+          ("phases" -> phaseMedians.map {
+            case (phase, time) => ("phase" -> phase) ~ ("time" -> time)
+          })
       val s = JsonMethods.pretty(JsonMethods.render(json))
       println(s)
     } else {
@@ -87,11 +94,11 @@ object BenchmarkCompiler {
         flix.compile().get
     }
 
-    // Find the number of lines of source code.
-    val lines = results.head.getTotalLines().toLong
-
     // The number of threads used.
     val threads = o.threads
+
+    // Find the number of lines of source code.
+    val lines = results.head.getTotalLines().toLong
 
     // Find the timings of each run.
     val timings = results.map(_.getTotalTime()).toList
@@ -123,8 +130,8 @@ object BenchmarkCompiler {
     // Print JSON or plain text?
     if (o.json) {
       val json =
-        ("lines" -> lines) ~
-          ("threads" -> threads) ~
+        ("threads" -> threads) ~
+          ("lines" -> lines) ~
           ("iterations" -> N) ~
           ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
       val s = JsonMethods.pretty(JsonMethods.render(json))
