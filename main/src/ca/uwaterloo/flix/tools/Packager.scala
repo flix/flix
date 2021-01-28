@@ -284,7 +284,7 @@ object Packager {
     build(p, o) match {
       case None => // nop
       case Some(compilationResult) =>
-        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))
+        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
     }
   }
 

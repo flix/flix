@@ -385,7 +385,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execBenchmark()(implicit terminal: Terminal): Unit = {
     // Run all benchmarks.
-    Benchmarker.benchmark(this.compilationResult, terminal.writer())
+    Benchmarker.benchmark(this.compilationResult, terminal.writer())(options)
   }
 
   /**

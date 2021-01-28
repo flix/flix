@@ -88,6 +88,7 @@ object Main {
       core = cmdOpts.xcore,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
+      json = cmdOpts.json,
       optimizations = optimizations,
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       quickchecker = cmdOpts.quickchecker,
@@ -199,7 +200,7 @@ object Main {
           }
 
           if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))
+            Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
           }
 
           if (cmdOpts.test) {
@@ -228,6 +229,7 @@ object Main {
                      benchmark: Boolean = false,
                      documentor: Boolean = false,
                      interactive: Boolean = false,
+                     json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
                      quickchecker: Boolean = false,
@@ -325,6 +327,10 @@ object Main {
       // Interactive.
       opt[Unit]("interactive").action((f, c) => c.copy(interactive = true)).
         text("enables interactive mode.")
+
+      // Json.
+      opt[Unit]("json").action((f, c) => c.copy(json = true)).
+        text("enables json output.")
 
       // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).

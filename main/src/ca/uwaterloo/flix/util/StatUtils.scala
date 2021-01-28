@@ -21,7 +21,7 @@ object StatUtils {
   /**
     * Returns the average of `xs`.
     */
-  def mean(xs: List[Long]): Double = {
+  def avg(xs: List[Long]): Double = {
     if (xs.isEmpty) return 0.0
     xs.sum.toDouble / xs.length.toDouble
   }
