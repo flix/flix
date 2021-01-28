@@ -48,58 +48,46 @@ object ErasedAst {
 
     case class Cast[T <: JType, S <: JType](exp: ErasedAst.Expression[T], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[S]
 
-    case object Unit extends ErasedAst.Expression[JObject] {
+    case class Unit(loc: SourceLocation) extends ErasedAst.Expression[JObject] {
       final val tpe = MonoType.Unit
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Null(tpe: MonoType) extends ErasedAst.Expression[JObject] {
-      final val loc = SourceLocation.Unknown
-    }
+    case class Null(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JObject]
 
-    case object True extends ErasedAst.Expression[JBool] {
+    case class True(loc: SourceLocation) extends ErasedAst.Expression[JBool] {
       final val tpe = MonoType.Bool
-      final val loc = SourceLocation.Unknown
     }
 
-    case object False extends ErasedAst.Expression[JBool] {
+    case class False(loc: SourceLocation) extends ErasedAst.Expression[JBool] {
       final val tpe = MonoType.Bool
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Char(lit: scala.Char) extends ErasedAst.Expression[JChar] {
+    case class Char(lit: scala.Char, loc: SourceLocation) extends ErasedAst.Expression[JChar] {
       final val tpe = MonoType.Char
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Float32(lit: scala.Float) extends ErasedAst.Expression[JFloat32] {
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends ErasedAst.Expression[JFloat32] {
       final val tpe = MonoType.Float32
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Float64(lit: scala.Double) extends ErasedAst.Expression[JDouble64] {
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends ErasedAst.Expression[JDouble64] {
       final val tpe = MonoType.Float64
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Int8(lit: scala.Byte) extends ErasedAst.Expression[JByte8] {
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ErasedAst.Expression[JByte8] {
       final val tpe = MonoType.Int8
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Int16(lit: scala.Short) extends ErasedAst.Expression[JShort16] {
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends ErasedAst.Expression[JShort16] {
       final val tpe = MonoType.Int16
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Int32(lit: scala.Int) extends ErasedAst.Expression[JInt32] {
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends ErasedAst.Expression[JInt32] {
       final val tpe = MonoType.Int32
-      final val loc = SourceLocation.Unknown
     }
 
-    case class Int64(lit: scala.Long) extends ErasedAst.Expression[JLong64] {
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends ErasedAst.Expression[JLong64] {
       final val tpe = MonoType.Int64
-      final val loc = SourceLocation.Unknown
     }
 
 //    case class BigInt(lit: java.math.BigInteger) extends ErasedAst.Expression[_] {
@@ -107,10 +95,9 @@ object ErasedAst {
 //      final val loc = SourceLocation.Unknown
 //    }
 //
-//    case class Str(lit: java.lang.String) extends ErasedAst.Expression[_] {
-//      final val tpe = MonoType.Str
-//      final val loc = SourceLocation.Unknown
-//    }
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends ErasedAst.Expression[JObject] {
+      final val tpe = MonoType.Str
+    }
 //
 //    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[_]
 //

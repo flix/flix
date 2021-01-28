@@ -2,12 +2,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ErasedAst
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
-import ca.uwaterloo.flix.language.ast.FinalAst
-import ca.uwaterloo.flix.language.phase.TreeShaker.{initReachable, visitSym}
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
+import ca.uwaterloo.flix.util.Validation
+import ErasedAst.{Expression => ErasedExp}
+import FinalAst.{Expression => FinalExp}
 
 object Eraser {
 
@@ -15,20 +15,22 @@ object Eraser {
     ???
   }
 
-  def visitExp[T <: JType](exp: FinalAst.Expression): ErasedAst.Expression[T] = exp match {
+  def castToExp[T <: JType](exp: ErasedExp[_]): ErasedExp[T] = exp.asInstanceOf[ErasedExp[T]]
+
+  def visitExp[T <: JType](exp: FinalExp): ErasedExp[T] = exp match {
 //    case Expression.Unit(loc) =>
 //    case Expression.Null(tpe, loc) =>
-    case FinalAst.Expression.True(loc) => ErasedAst.Expression.True.asInstanceOf[ErasedAst.Expression[T]]
-//    case Expression.False(loc) =>
-//    case Expression.Char(lit, loc) =>
-//    case Expression.Float32(lit, loc) =>
-//    case Expression.Float64(lit, loc) =>
-//    case Expression.Int8(lit, loc) =>
-//    case Expression.Int16(lit, loc) =>
-//    case Expression.Int32(lit, loc) =>
-//    case Expression.Int64(lit, loc) =>
-//    case Expression.BigInt(lit, loc) =>
-//    case Expression.Str(lit, loc) =>
+    case FinalExp.True(loc) => castToExp(ErasedExp.True(loc))
+    case FinalExp.False(loc) => castToExp(ErasedExp.False(loc))
+    case FinalExp.Char(lit, loc) => castToExp(ErasedExp.Char(lit, loc))
+    case FinalExp.Float32(lit, loc) => castToExp(ErasedExp.Float32(lit, loc))
+    case FinalExp.Float64(lit, loc) => castToExp(ErasedExp.Float64(lit, loc))
+    case FinalExp.Int8(lit, loc) => castToExp(ErasedExp.Int8(lit, loc))
+    case FinalExp.Int16(lit, loc) => castToExp(ErasedExp.Int16(lit, loc))
+    case FinalExp.Int32(lit, loc) => castToExp(ErasedExp.Int32(lit, loc))
+    case FinalExp.Int64(lit, loc) => castToExp(ErasedExp.Int64(lit, loc))
+//    case Expression.BigInt(lit, _) =>
+    case FinalExp.Str(lit, loc) => ErasedExp.Str(lit, loc).asInstanceOf[ErasedExp[T]]
 //    case Expression.Var(sym, tpe, loc) =>
 //    case Expression.Closure(sym, freeVars, fnMonoType, tpe, loc) =>
 //    case Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -38,21 +40,21 @@ object Eraser {
 //    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
 //    case Expression.Unary(sop, op, exp, tpe, loc) =>
 //    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-    case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case FinalExp.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val e1 = visitExp[JBool](exp1)
       val e2 = visitExp[T](exp2)
       val e3 = visitExp[T](exp3)
-      ErasedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
+      ErasedExp.IfThenElse(e1, e2, e3, tpe, loc)
 //    case Expression.Branch(exp, branches, tpe, loc) =>
 //    case Expression.JumpTo(sym, tpe, loc) =>
 //    case Expression.Let(sym, exp1, exp2, tpe, loc) =>
 //    case Expression.Is(sym, tag, exp, loc) =>
 //    case Expression.Tag(sym, tag, exp, tpe, loc) =>
 //    case Expression.Untag(sym, tag, exp, tpe, loc) =>
-    case FinalAst.Expression.Index(base, offset, tpe, loc) =>
+    case FinalExp.Index(base, offset, tpe, loc) =>
       val b = visitExp[JObject](base)
-      val e = ErasedAst.Expression.Index(b, offset, tpe, loc)
-      ErasedAst.Expression.Cast[JObject, T](e, tpe, loc)
+      val e = ErasedExp.Index(b, offset, tpe, loc)
+      ErasedExp.Cast[JObject, T](e, tpe, loc)
 
 //    case Expression.Tuple(elms, tpe, loc) =>
 //    case Expression.RecordEmpty(tpe, loc) =>
@@ -65,9 +67,9 @@ object Eraser {
 //    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
 //    case Expression.ArrayLength(base, tpe, loc) =>
 //    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-    case FinalAst.Expression.Ref(exp, tpe, loc) =>
+    case FinalExp.Ref(exp, tpe, loc) =>
       val e1 = visitExp(exp)
-      ErasedAst.Expression.Ref(e1, tpe, loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedExp.Ref(e1, tpe, loc).asInstanceOf[ErasedExp[T]]
 //    case Expression.Deref(exp, tpe, loc) =>
 //    case Expression.Assign(exp1, exp2, tpe, loc) =>
 //    case Expression.Existential(fparam, exp, loc) =>
@@ -98,5 +100,4 @@ object Eraser {
 //    case Expression.MatchError(tpe, loc) =>
     case _ => ???
   }
-
 }
