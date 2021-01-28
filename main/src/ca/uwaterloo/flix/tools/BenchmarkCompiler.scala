@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils, Validation}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.json4s.JsonDSL._
@@ -20,25 +21,28 @@ object BenchmarkCompiler {
     * Outputs statistics about time spent in each compiler phase.
     */
   def benchmarkPhases(o: Options): Unit = {
-    val flix = newFlix(o)
-
-    val results = List.fill(N) {
-      flix.compile() match {
-        case Validation.Success(r) =>
-          (r, flix.phaseTimers.toList)
-        case Validation.Failure(errors) =>
-          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
-          System.exit(1)
-          throw new AssertionError("impossible") // inaccessible
-      }
+    //
+    // Collect data from N iterations.
+    //
+    val r = (0 until N).map {
+      case _ =>
+        val flix = newFlix(o)
+        val compilationResult = flix.compile().get
+        (compilationResult, flix.phaseTimers.toList)
     }
 
+    //
+    // Split into compilation results and phase results.
+    //
+    val results = r.map(_._1).toList
+    val phases = r.map(_._2)
+
     // phase -> list of times
-    val phaseMap = results.map(_._2).flatten.groupMap(_.phase)(_.time)
+    val phaseMap = phases.flatten.groupMap(_.phase)(_.time)
 
     // phase -> median time
     val phaseMedians = phaseMap.map {
-      case (phase, times) => (phase, StatUtils.median(times))
+      case (phase, times) => (phase, StatUtils.median(times.toList))
     }
 
     for ((phase, time) <- phaseMedians) {
@@ -47,20 +51,16 @@ object BenchmarkCompiler {
     }
 
     // Find the number of lines of source code.
-    val lines = results.head._1.getTotalLines().toLong
-
-    // The number of threads used.
-    val threads = o.threads
+    val lines = results.head.getTotalLines().toLong
 
     // Find the timings of each run.
-    val timings = results.map(_._1).map(_.getTotalTime()).toList
+    val timings = results.map(_.getTotalTime())
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
 
     println("====================== Flix Compiler Throughput ======================")
     println()
-    println(f"Throughput (best) lines/sec (with $threads threads.)")
     println()
     println()
     println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
