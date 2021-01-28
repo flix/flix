@@ -45,11 +45,6 @@ object BenchmarkCompiler {
       case (phase, times) => (phase, StatUtils.median(times.toList))
     }
 
-    for ((phase, time) <- phaseMedians) {
-      val currentTime = System.currentTimeMillis() / 1000
-      println(s"$phase, $currentTime, $time")
-    }
-
     // Find the number of lines of source code.
     val lines = results.head.getTotalLines().toLong
 
@@ -59,11 +54,22 @@ object BenchmarkCompiler {
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
 
-    println("====================== Flix Compiler Throughput ======================")
-    println()
-    println()
-    println()
-    println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
+    // Print JSON or plain text?
+    if (o.json) {
+      val json =
+        ("lines" -> lines) ~
+          ("iterations" -> N)
+      val s = JsonMethods.pretty(JsonMethods.render(json))
+      println(s)
+    } else {
+      println("====================== Flix Compiler Phases ======================")
+      println()
+      for ((phase, time) <- phaseMedians) {
+        println(s"  $phase, $time ns")
+      }
+      println()
+      println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
+    }
   }
 
   /**
