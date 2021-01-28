@@ -19,12 +19,12 @@ object Benchmarker {
   /**
     * The number of times to evaluate the benchmark before measurements.
     */
-  val WarmupRounds = 10_000
+  val WarmupRounds = 5_000
 
   /**
     * The number of times to evaluate the benchmark to compute the average.
     */
-  val ActualRounds = 100_000
+  val ActualRounds = 15_000
 
   /**
     * Evaluates all benchmarks.
@@ -69,7 +69,7 @@ object Benchmarker {
       // Print JSON
       if (options.json) {
         val json = ("benchmarks" -> results.toList.map {
-          case (sym, time) => ("name" -> sym.name) ~ ("time" -> time)
+          case (sym, time) => ("name" -> sym.toString) ~ ("time" -> time)
         })
         val s = JsonMethods.pretty(JsonMethods.render(json))
         println(s)
@@ -97,9 +97,9 @@ object Benchmarker {
     * Sleeps for a little while and tries to run the garbage collector.
     */
   private def sleepAndGC(): Unit = {
-    Thread.sleep(500)
+    Thread.sleep(250)
     System.gc()
-    Thread.sleep(500)
+    Thread.sleep(250)
   }
 
 }
