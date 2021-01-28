@@ -37,13 +37,16 @@ object BenchmarkCompiler {
     val results = r.map(_._1).toList
     val phases = r.map(_._2)
 
-    // phase -> list of times
-    val phaseMap = phases.flatten.groupMap(_.phase)(_.time)
+    // Compute a map from phase -> list of times.
+    val phaseTimings = phases.flatten.groupMap(_.phase)(_.time)
 
-    // phase -> median time
-    val phaseMedians = phaseMap.map {
-      case (phase, times) => (phase, StatUtils.median(times.toList))
+    // Compute a map from phase -> minimum time.
+    val phaseMinTime = phaseTimings.map {
+      case (phase, times) => (phase, times.min)
     }.toList
+
+    // Compute the sum of all the minimum times.
+    val totalMinTime = phaseMinTime.map(_._2).sum
 
     // The number of threads used.
     val threads = o.threads
@@ -63,7 +66,7 @@ object BenchmarkCompiler {
         ("threads" -> threads) ~
           ("lines" -> lines) ~
           ("iterations" -> N) ~
-          ("phases" -> phaseMedians.map {
+          ("phases" -> phaseMinTime.map {
             case (phase, time) => ("phase" -> phase) ~ ("time" -> time)
           })
       val s = JsonMethods.pretty(JsonMethods.render(json))
@@ -71,10 +74,11 @@ object BenchmarkCompiler {
     } else {
       println("====================== Flix Compiler Phases ======================")
       println()
-      println("Median runtime per phase:")
-      for ((phase, time) <- phaseMedians.sortBy(_._2)) {
+      println("Best runtime per phase (low to high):")
+      for ((phase, time) <- phaseMinTime.sortBy(_._2)) {
         val msec = time.toDouble / 1_000_000.toDouble
-        println(f"  $phase%-30s $msec%5.1f ms.")
+        val percent = 100.0 * (time.toDouble / totalMinTime.toDouble)
+        println(f"  $phase%-30s $msec%5.1f ms ($percent%04.1f%%)")
       }
       println()
       println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
