@@ -16,9 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Constructor, Field, Method}
-
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 
 object ErasedAst {
@@ -90,11 +87,11 @@ object ErasedAst {
       final val tpe = MonoType.Int64
     }
 
-//    case class BigInt(lit: java.math.BigInteger) extends ErasedAst.Expression[_] {
-//      final val tpe = MonoType.BigInt
-//      final val loc = SourceLocation.Unknown
-//    }
-//
+    case class BigInt(lit: java.math.BigInteger) extends ErasedAst.Expression[JObject] {
+      final val tpe = MonoType.BigInt
+      final val loc = SourceLocation.Unknown
+    }
+
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ErasedAst.Expression[JObject] {
       final val tpe = MonoType.Str
     }
