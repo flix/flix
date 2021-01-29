@@ -56,21 +56,29 @@ object Benchmarker {
       /*
        * Actual Rounds.
        */
+      if (!options.json) {
+        println("====================== Flix Benchmark ======================")
+      }
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
         val totalTime = run(defn, ActualRounds)
-        val averageTimeInNanoSeconds = totalTime / ActualRounds
+        val averageTime = totalTime / ActualRounds
         if (!options.json) {
-          writer.println(f"$sym,$averageTimeInNanoSeconds")
+          writer.println(f"  $sym  $averageTime%,8d ns.")
         }
-        results += ((sym, averageTimeInNanoSeconds))
+        results += ((sym, averageTime))
         sleepAndGC()
+      }
+      if (!options.json) {
+        println()
+        println(f"Finished ${benchmarks.size} benchmarks with $ActualRounds iterations each.")
       }
 
       // Print JSON
       if (options.json) {
-        val json = ("benchmarks" -> results.toList.map {
-          case (sym, time) => ("name" -> sym.toString) ~ ("time" -> time)
-        })
+        val json = ("threads" -> options.threads) ~
+          ("benchmarks" -> results.toList.map {
+            case (sym, time) => ("name" -> sym.toString) ~ ("time" -> time)
+          })
         val s = JsonMethods.pretty(JsonMethods.render(json))
         println(s)
       }
@@ -81,16 +89,14 @@ object Benchmarker {
     * Returns the timings of evaluating `f` over `n` rounds.
     */
   private def run(f: () => AnyRef, n: Int): Long = {
+    val t = System.nanoTime()
     var i = 0
     var s = 0L
     while (i < n) {
-      val t = System.nanoTime()
       f()
-      val e = System.nanoTime() - t
-      s = s + e
       i = i + 1
     }
-    s
+    System.nanoTime() - t
   }
 
   /**
