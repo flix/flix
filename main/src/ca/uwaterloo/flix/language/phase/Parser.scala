@@ -150,6 +150,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
+    def LawOrSig: Rule1[ParsedAst.Declaration.LawOrSig] = rule {
+      Declarations.Law | Declarations.Sig
+    }
+
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
       def Case: Rule1[ParsedAst.Case] = {
         def CaseWithUnit: Rule1[ParsedAst.Case] = rule {
@@ -230,7 +234,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = rule {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.LawOrSig).separatedBy(WS) ~ optWS  ~ "}" ~ SP
       }
 
       rule {

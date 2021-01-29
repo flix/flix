@@ -965,4 +965,13 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedBools](result)
   }
+
+  test("Test.MismatchedTypes.Law.01") {
+    val input =
+      """
+        |law f(): Bool = forall (x: Int, y: Bool) . x + y == 3
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedTypes](result)
+  }
 }
