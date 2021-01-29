@@ -75,9 +75,10 @@ object Benchmarker {
 
       // Print JSON
       if (options.json) {
-        val json = ("benchmarks" -> results.toList.map {
-          case (sym, time) => ("name" -> sym.toString) ~ ("time" -> time)
-        })
+        val json = ("threads" -> options.threads) ~
+          ("benchmarks" -> results.toList.map {
+            case (sym, time) => ("name" -> sym.toString) ~ ("time" -> time)
+          })
         val s = JsonMethods.pretty(JsonMethods.render(json))
         println(s)
       }
