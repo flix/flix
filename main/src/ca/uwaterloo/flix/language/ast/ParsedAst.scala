@@ -47,6 +47,11 @@ object ParsedAst {
   object Declaration {
 
     /**
+      * Union of law declarations and sig declarations.
+      */
+    sealed trait LawOrSig
+
+    /**
       * Namespace Declaration.
       *
       * @param sp1   the position of the first character in the declaration.
@@ -86,7 +91,7 @@ object ParsedAst {
       * @param tpe        the declared type.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -99,7 +104,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Law(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Law(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Enum Declaration.
@@ -185,11 +190,10 @@ object ParsedAst {
       * @param ident        the name of the definition.
       * @param tparam       the type parameter.
       * @param superClasses the super classes of the class.
-      * @param sigs         the signatures of the class.
-      * @param laws         the laws of the class.
+      * @param lawsAndSigs  the signatures and laws of the class.
       * @param sp2          the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[SuperClass], sigs: Seq[ParsedAst.Declaration.Sig], laws: Seq[ParsedAst.Declaration.Law], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.SuperClass], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.

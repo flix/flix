@@ -141,6 +141,18 @@ namespace Test/Dec/Class {
         }
     }
 
+    namespace Test12 {
+        class C[a] {
+            pub def f(): a
+
+            law l(): Bool = true
+
+            pub def g(): a
+
+            law m(): Bool = true
+        }
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
