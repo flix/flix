@@ -80,6 +80,12 @@ class TestMain extends FunSuite {
     assert(opts.interactive)
   }
 
+  test("--json") {
+    val args = Array("--json")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.json)
+  }
+
   test("--listen") {
     val args = Array("--listen", "8080", "p.flix")
     val opts = Main.parseCmdOpts(args).get

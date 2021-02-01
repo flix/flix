@@ -89,7 +89,7 @@ object Scheme {
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
     def visitTvar(t: Type.Var): Type.Var = t match {
-      case Type.Var(x, k, rigidity, _) =>
+      case Type.Var(x, k, rigidity, name) =>
         freshVars.get(x) match {
           case None =>
             // Determine the rigidity of the free type variable.
@@ -118,7 +118,7 @@ object Scheme {
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
   def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
-    val quantifiers = tpe0.typeVars
+    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(_.arg.typeVars)
     Scheme(quantifiers.toList, tconstrs, tpe0)
   }
 

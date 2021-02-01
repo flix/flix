@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.language.phase.Namer.getClass
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -87,7 +86,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             }
         }
 
-      case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, superClasses, sigs, loc) =>
+      case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, superClasses, sigs, laws, loc) =>
         // Check if the class already exists.
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
@@ -96,8 +95,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
             visitClass(decl, uenv0, Map.empty, ns0) flatMap {
-              case clazz@NamedAst.Class(_, _, _, _, _, sigs, _) =>
+              case clazz@NamedAst.Class(_, _, _, _, _, sigs, _, _) =>
                 // add each signature to the namespace
+                // TODO add laws
                 val defsAndSigsVal = Validation.fold(sigs, defsAndSigs0) {
                   case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
                     case Some(otherSig) =>
@@ -346,14 +346,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, mod, ident, tparams0, superClasses0, signatures, loc) =>
+    case WeededAst.Declaration.Class(doc, mod, ident, tparams0, superClasses0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparam = getTypeParamDefaultStar(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
       val superClasses = superClasses0.map(getClass(_, uenv0))
+      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.tpe, tparam.loc))
       for {
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
-      } yield NamedAst.Class(doc, mod, sym, tparam, superClasses, sigs, loc)
+        laws <- traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.tpe)))
+      } yield NamedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc)
   }
 
   /**
@@ -709,14 +711,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       for {
-        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true, uenv0, Map.empty)
+        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true, uenv0, tenv0)
         p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
         e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
       } yield NamedAst.Expression.Existential(p, e, loc) // TODO: Preserve type parameters in NamedAst?
 
     case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
       for {
-        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true, uenv0, Map.empty)
+        tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true, uenv0, tenv0)
         p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams))
         e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams))
       } yield NamedAst.Expression.Universal(p, e, loc) // TODO: Preserve type parameters in NamedAst?

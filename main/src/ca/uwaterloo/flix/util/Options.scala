@@ -28,6 +28,7 @@ object Options {
     debug = false,
     documentor = false,
     invariants = false,
+    json = false,
     mode = CompilationMode.Development,
     optimizations = Optimization.All,
     quickchecker = false,
@@ -70,6 +71,7 @@ object Options {
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
   * @param invariants         enables checking of compiler invariants.
+  * @param json               enable json output
   * @param mode               the compilation mode.
   * @param quickchecker       enables the quickchecker.
   * @param test               enables test mode.
@@ -91,6 +93,7 @@ case class Options(core: Boolean,
                    debug: Boolean,
                    documentor: Boolean,
                    invariants: Boolean,
+                   json: Boolean,
                    optimizations: Set[Optimization],
                    mode: CompilationMode,
                    quickchecker: Boolean,
