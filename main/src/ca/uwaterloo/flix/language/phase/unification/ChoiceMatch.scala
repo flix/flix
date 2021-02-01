@@ -27,6 +27,8 @@ object ChoiceMatch {
     *
     * The partial order states that one pattern is smaller than another if it is more specific (i.e. less liberal).
     *
+    * The top element is the wildcard.
+    *
     * Thus:
     *
     * A <= A    P <= P    x <= W for any x (where W is a wildcard).
@@ -42,9 +44,9 @@ object ChoiceMatch {
   /**
     * Returns `true` if the list of choice patterns `l1` is less than or equal to `l2`.
     *
-    * The partial order on lists of choice patterns states that one list is smaller than
-    * or equal to another list if every element of the first list is pair-wise smaller
-    * than or equal to the corresponding element of the second list.
+    * The partial order on lists states that one list is smaller than or equal to
+    * another list if every element of the first list is pair-wise smaller than or equal
+    * to the corresponding element of the second list.
     *
     * Note: The lists must have the same length.
     */
