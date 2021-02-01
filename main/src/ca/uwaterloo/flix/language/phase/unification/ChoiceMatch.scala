@@ -16,6 +16,9 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.TypedAst.ChoicePattern
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.annotation.tailrec
 
 object ChoiceMatch {
 
@@ -38,18 +41,22 @@ object ChoiceMatch {
   }
 
   /**
-    * Returns `true` if the list of patterns `l1` is less than or equal to `l2`.
+    * Returns `true` if the list of choice patterns `l1` is less than or equal to `l2`.
     *
-    * The
+    * The partial order on lists of choice patterns states that one list is smaller than
+    * or equal to another list if every element of the first list is pair-wise smaller
+    * than or equal to the corresponding element of the second list.
+    *
+    * Note: The lists must have the same length.
     */
+  @tailrec
+  def leq(l1: List[ChoicePattern], l2: List[ChoicePattern]): Boolean = (l1, l2) match {
+    case (Nil, Nil) => true
+    case (x :: xs, y :: ys) => leq(x, y) && leq(xs, ys)
+    case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
+  }
 
-  //
-  //  def le_pattern(l1:List[Int],l2:List[Int]):Bool =
-  //  match (l1,l2) {
-  //    case (Nil,Nil)          => true
-  //    case (a1::l1s, a2::l2s) => le(a1,a2) and le_pattern(l1s,l2s)
-  //    case _                  => false
-  //  }
+
   //
   //  // remove redundant patterns
   //  def antichain(patterns:List[List[Int]]):List[List[Int]] = aux(Nil,patterns)
