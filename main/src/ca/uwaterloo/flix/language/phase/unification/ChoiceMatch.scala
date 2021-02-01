@@ -31,7 +31,7 @@ object ChoiceMatch {
     *
     * A <= A    P <= P    x <= W for any x (where W is a wildcard).
     */
-  def leq(pat1: ChoicePattern, pat2: ChoicePattern): Boolean = (pat1, pat2) match {
+  private def leq(pat1: ChoicePattern, pat2: ChoicePattern): Boolean = (pat1, pat2) match {
     case (ChoicePattern.Wild(_), ChoicePattern.Wild(_)) => true
     case (ChoicePattern.Absent(_), ChoicePattern.Absent(_)) => true
     case (ChoicePattern.Present(_, _, _), ChoicePattern.Present(_, _, _)) => true
@@ -49,7 +49,7 @@ object ChoiceMatch {
     * Note: The lists must have the same length.
     */
   @tailrec
-  def leq(l1: List[ChoicePattern], l2: List[ChoicePattern]): Boolean = (l1, l2) match {
+  private def leq(l1: List[ChoicePattern], l2: List[ChoicePattern]): Boolean = (l1, l2) match {
     case (Nil, Nil) => true
     case (x :: xs, y :: ys) => leq(x, y) && leq(xs, ys)
     case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
@@ -58,14 +58,14 @@ object ChoiceMatch {
   /**
     * Returns true if the list of choice patterns `l` is subsumed by a list in the choice pattern match matrix `m`.
     */
-  def subsumed(p: List[ChoicePattern], m: List[List[ChoicePattern]]): Boolean = m.exists(row => leq(p, row))
+  private def subsumed(p: List[ChoicePattern], m: List[List[ChoicePattern]]): Boolean = m.exists(row => leq(p, row))
 
   /**
     * Computes an anti-chain on the given choice pattern match matrix `m`.
     *
     * Every element (i.e. row) in the anti-chain is incomparable to every other element.
     */
-  def antiChain(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
+  private def antiChain(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
     @tailrec
     def visit(acc: List[List[ChoicePattern]], rest: List[List[ChoicePattern]]): List[List[ChoicePattern]] = rest match {
       case Nil => acc.reverse
@@ -87,7 +87,7 @@ object ChoiceMatch {
     *
     * The length of `l1` and `l2` must be the same and the length of the optionally returned list is guaranteed to be the same.
     */
-  def generalize(l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[ChoicePattern]] = {
+  private def generalize(l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[ChoicePattern]] = {
 
     @tailrec
     def before(acc: List[ChoicePattern], l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[ChoicePattern]] =
@@ -121,8 +121,7 @@ object ChoiceMatch {
   /**
     * Performs generalization on the given choice pattern matrix `m`.
     */
-  def generalizeAll(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
-
+  private def generalizeAll(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
     /**
       * Given a list `l` returns all unordered pairs.
       *
@@ -133,43 +132,47 @@ object ChoiceMatch {
       case x :: xs => xs.map(y => (x, y)) ::: allDiagonalPairs(xs)
     }
 
-    //allDiagonalPairs(m).map(p => generalize(p._1, p))
-
-    //    filterMap(generalize(), )
-
-
-    //allPairs()
-    ???
+    filterMap(allDiagonalPairs(m))(p => generalize(p._1, p._2))
   }
 
   /**
-    *
+    * Saturates the given choice pattern matrix `m`.
     */
+  @tailrec
+  def saturate(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
+    val m1 = antiChain(m ::: generalizeAll(m))
+    if (eq(m, m1)) m1 else saturate(m1)
+  }
 
-  //
-  //
-  //  // add all generalized pairs of rules once
-  //  def generalizeAll(p:List[List[Int]]):List[List[Int]] =
-  //    optlistlist(List.map(my_uncurry(generalize),allpairs(p)))
-  //
-  //  def my_uncurry(f: (a,b) -> c) : ((a, b)) -> c = match (x, y) -> f(x,y)
-  //
-  //
+  /**
+    * Returns `true` if the two given pattern match matrices `m1` and `m2` are equal.
+    */
+  private def eq(m1: List[List[ChoicePattern]], m2: List[List[ChoicePattern]]): Boolean = {
+    def eqPat(p1: ChoicePattern, p2: ChoicePattern): Boolean = (p1, p2) match {
+      case (ChoicePattern.Wild(_), ChoicePattern.Wild(_)) => true
+      case (ChoicePattern.Absent(_), ChoicePattern.Absent(_)) => true
+      case (ChoicePattern.Present(_, _, _), ChoicePattern.Present(_, _, _)) => true
+      case _ => false
+    }
 
-  //
-  //  // Normalize a list of patterns (main function)
-  //  def normalize(p:List[List[Int]]):List[List[Int]] =
-  //    let p1 = antichain(p ::: generalizeAll(p));
-  //  if (List.toSet(p)==List.toSet(p1)) p1 else normalize(p1)
+    @tailrec
+    def eqRow(l1: List[ChoicePattern], l2: List[ChoicePattern]): Boolean = (l1, l2) match {
+      case (Nil, Nil) => true
+      case (x :: xs, y :: ys) => eqPat(x, y) && eqRow(xs, ys)
+      case _ => false
+    }
+
+    m1.forall(l1 => m2.contains(l2 => eqRow(l1, l2)))
+  }
 
   /**
     * Collects the result of applying the partial function `f` to every element in `l`.
     */
-  private def filterMap[A, B](f: A => Option[B], l: List[A]): List[B] = l match {
+  private def filterMap[A, B](l: List[A])(f: A => Option[B]): List[B] = l match {
     case Nil => Nil
     case x :: xs => f(x) match {
-      case None => filterMap(f, xs)
-      case Some(b) => b :: filterMap(f, xs)
+      case None => filterMap(xs)(f)
+      case Some(b) => b :: filterMap(xs)(f)
     }
   }
 
