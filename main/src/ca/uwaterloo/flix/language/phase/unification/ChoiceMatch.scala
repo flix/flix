@@ -84,16 +84,21 @@ object ChoiceMatch {
     *
     * Returns `None` if the choice pattern lists cannot be combined.
     * Otherwise returns `Some(l)` where `l` is a generalized choice pattern list.
+    *
+    * The length of `l1` and `l2` must be the same and the length of the optionally returned list is guaranteed to be the same.
     */
   def generalize(l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[ChoicePattern]] = {
 
     @tailrec
     def before(acc: List[ChoicePattern], l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[ChoicePattern]] =
       (l1, l2) match {
-        case (Nil, Nil) => None // TODO: Jaco why?
-        case (x :: xs, y :: ys) if leq(x, y) => before(x :: acc, xs, ys) // TODO: Jaco why pick x?
-        case (x :: xs, y :: ys) if leq(y, x) => before(y :: acc, xs, ys)
-        case (x :: xs, y :: ys) => after(ChoicePattern.Wild(x.loc) :: acc, xs, ys) // TODO: Argumnent? They are incomp. so must be absent/present?
+        case (Nil, Nil) => None
+        case (x :: xs, y :: ys) if leq(x, y) => before(x :: acc, xs, ys) // We choose x because its the cap.
+        case (x :: xs, y :: ys) if leq(y, x) => before(y :: acc, xs, ys) // We choose y because its the cap.
+        case (x :: xs, y :: ys) =>
+          // We know that x and y are incomparable, consequent they are either A and P (or vise versa).
+          // Thus we can combine them with a wildcard.
+          after(ChoicePattern.Wild(x.loc) :: acc, xs, ys)
         case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
       }
 
@@ -103,11 +108,40 @@ object ChoiceMatch {
         case (Nil, Nil) => Some(acc.reverse)
         case (x :: xs, y :: ys) if leq(x, y) => after(x :: acc, xs, ys)
         case (x :: xs, y :: ys) if leq(y, x) => after(y :: acc, xs, ys)
+        case (x :: xs, y :: ys) =>
+          // We know that x and y are incomparable. However we have "already spent" our wildcard.
+          // We cannot generalize the pattern.
+          None
         case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
       }
 
     before(Nil, l1, l2)
   }
+
+  /**
+    * Performs generalization on the given choice pattern matrix `m`.
+    */
+  def generalizeAll(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
+
+    /**
+      * Given a list `l` returns all unordered pairs.
+      *
+      * E.g. 1 :: 2 :: 3 :: Nil => (1, 1) :: (1, 2) :: (1, 3) :: (2, 3) :: Nil
+      */
+    def allDiagonalPairs[T](l: List[T]): List[(T, T)] = l match {
+      case Nil => Nil
+      case x :: xs => xs.map(y => (x, y)) ::: allDiagonalPairs(xs)
+    }
+
+
+
+    //allPairs()
+    ???
+  }
+
+  /**
+    *
+    */
 
   //
   //
