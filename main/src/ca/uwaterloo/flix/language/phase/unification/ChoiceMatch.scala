@@ -58,7 +58,7 @@ object ChoiceMatch {
   /**
     * Returns true if the list of choice patterns `l` is subsumed by a list in the choice pattern match matrix `m`.
     */
-  private def subsumed(p: List[ChoicePattern], m: List[List[ChoicePattern]]): Boolean = m.exists(row => leq(p, row))
+  private def subsumed(l: List[ChoicePattern], m: List[List[ChoicePattern]]): Boolean = m.exists(l2 => leq(l, l2))
 
   /**
     * Computes an anti-chain on the given choice pattern match matrix `m`.
@@ -70,7 +70,7 @@ object ChoiceMatch {
     def visit(acc: List[List[ChoicePattern]], rest: List[List[ChoicePattern]]): List[List[ChoicePattern]] = rest match {
       case Nil => acc.reverse
       case p :: ps =>
-        if (subsumed(p, ps) || subsumed(p, ps))
+        if (subsumed(p, acc) || subsumed(p, ps))
           visit(acc, ps)
         else
           visit(p :: acc, ps)
