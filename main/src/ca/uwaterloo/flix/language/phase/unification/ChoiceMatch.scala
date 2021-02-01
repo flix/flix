@@ -133,9 +133,9 @@ object ChoiceMatch {
       case x :: xs => xs.map(y => (x, y)) ::: allDiagonalPairs(xs)
     }
 
-    allDiagonalPairs(m).map(p => generalize(p._1, p))
+    //allDiagonalPairs(m).map(p => generalize(p._1, p))
 
-    filterMap(generalize(), )
+    //    filterMap(generalize(), )
 
 
     //allPairs()
