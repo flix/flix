@@ -32,7 +32,6 @@ object ChoiceMatch {
     * A <= A    P <= P    x <= W for any x (where W is a wildcard).
     */
   def leq(pat1: ChoicePattern, pat2: ChoicePattern): Boolean = (pat1, pat2) match {
-    // Reflexive.
     case (ChoicePattern.Wild(_), ChoicePattern.Wild(_)) => true
     case (ChoicePattern.Absent(_), ChoicePattern.Absent(_)) => true
     case (ChoicePattern.Present(_, _, _), ChoicePattern.Present(_, _, _)) => true
@@ -80,19 +79,40 @@ object ChoiceMatch {
     visit(Nil, m)
   }
 
-  //
-  //  // add a generalized pattern
-  //  def generalize(p1:List[Int],p2:List[Int]):Option[List[Int]] = before(Nil,p1,p2)
-  //
-  //  def before(acc:List[Int],p1:List[Int],p2:List[Int]):Option[List[Int]] =
-  //  match (p1,p2) {
-  //    case (Nil,Nil) => None
-  //    case ((a1::p1s),(a2::p2s)) =>
-  //      if      (le(a1,a2)) before(a1::acc,p1s,p2s)
-  //      else if (le(a2,a1)) before(a2::acc,p1s,p2s)
-  //      else                after(8::acc,p1s,p2s)
-  //    case _ => None
-  //  }
+  /**
+    * Attempts to combine the choice pattern lists `l1` and `l2` into a generalize patterns.
+    *
+    * Returns `None` if the choice pattern lists cannot be combined.
+    * Otherwise returns `Some(l)` where `l` is a generalized choice pattern list.
+    */
+  def generalize(l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[Int]] = {
+
+    @tailrec
+    def before(acc: List[ChoicePattern], l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[Int]] =
+      (l1, l2) match {
+        case (Nil, Nil) => None // TODO: Jaco why?
+        case (x :: xs, y :: ys) if leq(x, y) => before(x :: acc, xs, ys) // TODO: Jaco why pick x?
+        case (x :: xs, y :: ys) if leq(y, x) => before(y :: acc, xs, ys)
+        case (x :: xs, y :: ys) => after(ChoicePattern.Wild(x.loc) :: acc, xs, ys) // TODO: Argumnent? They are incomp. so must be absent/present?
+        case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
+      }
+
+    def after(acc: List[ChoicePattern], l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[Int]] = ???
+
+    //  def before(acc:List[Int],p1:List[Int],p2:List[Int]):Option[List[Int]] =
+    //  match (p1,p2) {
+    //    case (Nil,Nil) => None
+    //    case ((a1::p1s),(a2::p2s)) =>
+    //      if      (le(a1,a2)) before(a1::acc,p1s,p2s)
+    //      else if (le(a2,a1)) before(a2::acc,p1s,p2s)
+    //      else                after(8::acc,p1s,p2s)
+    //    case _ => None
+    //  }
+
+    before(Nil, l1, l2)
+  }
+
+
   //
   //  def after(acc:List[Int],p1:List[Int],p2:List[Int]):Option[List[Int]] =
   //  match (p1,p2) {
