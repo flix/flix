@@ -56,17 +56,30 @@ object ChoiceMatch {
     case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
   }
 
+  /**
+    * Returns true if the list of choice patterns `l` is subsumed by a list in the choice pattern match matrix `m`.
+    */
+  def subsumed(p: List[ChoicePattern], m: List[List[ChoicePattern]]): Boolean = m.exists(row => leq(p, row))
 
-  //
-  //  // remove redundant patterns
-  //  def antichain(patterns:List[List[Int]]):List[List[Int]] = aux(Nil,patterns)
-  //
-  //  def aux(acc:List[List[Int]],rest:List[List[Int]]):List[List[Int]] =
-  //    let subsumed = (p,ps) -> List.exists(x->le_pattern(p,x),ps);
-  //  match rest {
-  //    case Nil   => List.reverse(acc)
-  //    case p::ps => if (subsumed(p,acc) or subsumed(p,ps)) aux(acc,ps) else aux(p::acc,ps)
-  //  }
+  /**
+    * Computes an anti-chain on the given choice pattern match matrix `m`.
+    *
+    * Every element (i.e. row) in the anti-chain is incomparable to every other element.
+    */
+  def antiChain(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
+    @tailrec
+    def visit(acc: List[List[ChoicePattern]], rest: List[List[ChoicePattern]]): List[List[ChoicePattern]] = rest match {
+      case Nil => acc.reverse
+      case p :: ps =>
+        if (subsumed(p, ps) || subsumed(p, ps))
+          visit(acc, ps)
+        else
+          visit(p :: acc, ps)
+    }
+
+    visit(Nil, m)
+  }
+
   //
   //  // add a generalized pattern
   //  def generalize(p1:List[Int],p2:List[Int]):Option[List[Int]] = before(Nil,p1,p2)
