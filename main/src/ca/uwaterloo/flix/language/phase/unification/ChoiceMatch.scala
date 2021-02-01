@@ -133,14 +133,9 @@ object ChoiceMatch {
       case x :: xs => xs.map(y => (x, y)) ::: allDiagonalPairs(xs)
     }
 
+    allDiagonalPairs(m).map(p => generalize(p._1, p))
 
-
-    //  def optlistlist(x:List[Option[a]]):List[a] =
-    //  match x {
-    //    case Nil => Nil
-    //    case None::xs => optlistlist(xs)
-    //    case Some(y)::xs => y::optlistlist(xs)
-    //  }
+    filterMap(generalize(), )
 
 
     //allPairs()
