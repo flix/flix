@@ -135,6 +135,14 @@ object ChoiceMatch {
 
 
 
+    //  def optlistlist(x:List[Option[a]]):List[a] =
+    //  match x {
+    //    case Nil => Nil
+    //    case None::xs => optlistlist(xs)
+    //    case Some(y)::xs => y::optlistlist(xs)
+    //  }
+
+
     //allPairs()
     ???
   }
@@ -151,23 +159,23 @@ object ChoiceMatch {
   //
   //  def my_uncurry(f: (a,b) -> c) : ((a, b)) -> c = match (x, y) -> f(x,y)
   //
-  //  def allpairs(x:List[a]):List[(a,a)] =
-  //  match x {
-  //    case Nil => Nil
-  //    case a::xs => List.map(x->(a,x),xs) ::: allpairs(xs)
-  //  }
   //
-  //  def optlistlist(x:List[Option[a]]):List[a] =
-  //  match x {
-  //    case Nil => Nil
-  //    case None::xs => optlistlist(xs)
-  //    case Some(y)::xs => y::optlistlist(xs)
-  //  }
+
   //
   //  // Normalize a list of patterns (main function)
   //  def normalize(p:List[List[Int]]):List[List[Int]] =
   //    let p1 = antichain(p ::: generalizeAll(p));
   //  if (List.toSet(p)==List.toSet(p1)) p1 else normalize(p1)
 
+  /**
+    * Collects the result of applying the partial function `f` to every element in `l`.
+    */
+  private def filterMap[A, B](f: A => Option[B], l: List[A]): List[B] = l match {
+    case Nil => Nil
+    case x :: xs => f(x) match {
+      case None => filterMap(f, xs)
+      case Some(b) => b :: filterMap(f, xs)
+    }
+  }
 
 }
