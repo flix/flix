@@ -31,7 +31,7 @@ object Eraser {
     case FinalExp.Int64(lit, loc) => castToExp(ErasedExp.Int64(lit, loc))
 //    case Expression.BigInt(lit, _) =>
     case FinalExp.Str(lit, loc) => ErasedExp.Str(lit, loc).asInstanceOf[ErasedExp[T]]
-//    case Expression.Var(sym, tpe, loc) =>
+    case FinalExp.Var(sym, tpe, loc) => ErasedExp.Var(sym, tpe, loc)
 //    case Expression.Closure(sym, freeVars, fnMonoType, tpe, loc) =>
 //    case Expression.ApplyClo(exp, args, tpe, loc) =>
 //    case Expression.ApplyDef(sym, args, tpe, loc) =>
@@ -41,7 +41,7 @@ object Eraser {
 //    case Expression.Unary(sop, op, exp, tpe, loc) =>
 //    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
     case FinalExp.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      val e1 = visitExp[JBool](exp1)
+      val e1 = visitExp[PrimInt32](exp1)
       val e2 = visitExp[T](exp2)
       val e3 = visitExp[T](exp3)
       ErasedExp.IfThenElse(e1, e2, e3, tpe, loc)
@@ -55,7 +55,6 @@ object Eraser {
       val b = visitExp[JObject](base)
       val e = ErasedExp.Index(b, offset, tpe, loc)
       ErasedExp.Cast[JObject, T](e, tpe, loc)
-
 //    case Expression.Tuple(elms, tpe, loc) =>
 //    case Expression.RecordEmpty(tpe, loc) =>
 //    case Expression.RecordSelect(exp, field, tpe, loc) =>

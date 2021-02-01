@@ -7,7 +7,7 @@ object BytecodeCompiler {
 
   sealed trait Stack
   sealed trait StackNil extends Stack
-  sealed case class StackCons[+R <: Stack, +T <: JType](rest : R, top : T) extends Stack
+  sealed case class StackCons[+R <: Stack, +T <: JType](rest: R, top: T) extends Stack
 
   type **[R <: Stack, T <: JType] = StackCons[R, T]
   sealed trait F[+T]
@@ -25,7 +25,7 @@ object BytecodeCompiler {
     case Expression.Int32(lit, loc) => ???
     case Expression.Int64(lit, loc) => ???
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => branch(compileExp(exp1), compileExp(exp2), compileExp(exp3))
-//    case Expression.Ref(exp, tpe, loc) => ???//compose(compileExp(exp), makeRef())
+    case Expression.Ref(exp, tpe, loc) => compose(compileExp(exp), makeRef())
     case _ => ???
   }
 
@@ -33,14 +33,13 @@ object BytecodeCompiler {
 
   def pushNull[R <: Stack](): F[R] => F[R ** JObject] = ???
 
-  def pushBool[R <: Stack](b : Boolean): F[R] => F[R ** JBool] = ???
+  def pushBool[R <: Stack](b : Boolean): F[R] => F[R ** PrimInt32] = ???
 
-  // TODO: Is there an universal int to push? case on the size of n? pushInt32?
-  def pushInt[R <: Stack](n : Int): F[R] => F[R ** JInt32] = ???
+  def pushInt[R <: Stack](n : Int): F[R] => F[R ** PrimInt32] = ???
 
   def compose[A, B, C](f: F[A] => F[B], g: F[B] => F[C]): F[A] => F[C] = ???
 
-  def branch[R1 <: Stack, R2 <: Stack](cond: F[R1] => F[R1 ** JBool], thenBranch: F[R1] => F[R2], elseBranch: F[R1] => F[R2]): F[R1] => F[R2] = ???
+  def branch[R1 <: Stack, R2 <: Stack](cond: F[R1] => F[R1 ** PrimInt32], thenBranch: F[R1] => F[R2], elseBranch: F[R1] => F[R2]): F[R1] => F[R2] = ???
 
-
+  def makeRef[R <: Stack, T <: JType](): F[R ** T] => F[R ** JRef[T]] = ???
 }
