@@ -237,7 +237,9 @@ object ResolvedAst {
 
   }
 
-  sealed trait ChoicePattern
+  sealed trait ChoicePattern {
+    def loc: SourceLocation
+  }
 
   object ChoicePattern {
 

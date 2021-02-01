@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.TypedAst.ChoicePattern
+import ca.uwaterloo.flix.language.ast.ResolvedAst.ChoicePattern
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
@@ -175,5 +175,10 @@ object ChoiceMatch {
       case Some(b) => b :: filterMap(xs)(f)
     }
   }
+
+  /**
+    * Converts the given choice pattern match matrix `m` into a readable form.
+    */
+  private def toPrettyString(x: String): String = ??? // TODO
 
 }

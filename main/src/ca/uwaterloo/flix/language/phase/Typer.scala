@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.io.PrintWriter
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
@@ -25,7 +26,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, InferMonad, Substitution, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, ChoiceMatch, InferMonad, Substitution, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.ToFailure
 import ca.uwaterloo.flix.util._
@@ -701,6 +702,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
+
+        val matrix = rules0.map {
+          case ResolvedAst.ChoiceRule(pat, _) => pat
+        }
+
+        println(matrix)
+        val saturated = ChoiceMatch.saturate(matrix)
+        println(matrix)
+        println()
+        println()
+
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
