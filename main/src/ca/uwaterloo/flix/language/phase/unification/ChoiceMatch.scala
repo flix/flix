@@ -141,8 +141,7 @@ object ChoiceMatch {
   @tailrec
   def saturate(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
     val m1 = antiChain(m ::: generalizeAll(m))
-    println(toPrettyString(m1))
-    if (eq(m, m1)) m1 else saturate(m1)
+    if (eq(m, m1)) m else saturate(m1)
   }
 
   /**
@@ -163,7 +162,8 @@ object ChoiceMatch {
       case _ => false
     }
 
-    m1.forall(l1 => m2.contains(l2 => eqRow(l1, l2)))
+    m1.forall(l1 => m2.exists(l2 => eqRow(l1, l2))) &&
+      m2.forall(l1 => m1.exists(l2 => eqRow(l1, l2)))
   }
 
   /**
@@ -180,7 +180,7 @@ object ChoiceMatch {
   /**
     * Converts the given choice pattern match matrix `m` into a readable form.
     */
-  private def toPrettyString(m: List[List[ChoicePattern]]): String = {
+  def toPrettyString(m: List[List[ChoicePattern]]): String = {
     def toPrettyString(p: ChoicePattern): String = p match {
       case ChoicePattern.Wild(_) => "W"
       case ChoicePattern.Absent(_) => "A"

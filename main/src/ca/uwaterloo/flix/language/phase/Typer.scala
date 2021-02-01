@@ -707,12 +707,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           case ResolvedAst.ChoiceRule(pat, _) => pat
         }
 
-        println(matrix)
+        println(ChoiceMatch.toPrettyString(matrix))
         val saturated = ChoiceMatch.saturate(matrix)
-        println(matrix)
         println()
+        println(ChoiceMatch.toPrettyString(saturated))
         println()
-
+        println("--")
+        println()
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
