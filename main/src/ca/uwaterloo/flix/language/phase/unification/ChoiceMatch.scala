@@ -23,7 +23,7 @@ import scala.annotation.tailrec
 object ChoiceMatch {
 
   /**
-    * Returns `true` if the `pat1` is less than or equal to `pat2` according to the partial order on choice patterns.
+    * Returns `true` if `pat1` is less than or equal to `pat2` according to the partial order on choice patterns.
     *
     * The partial order states that one pattern is smaller than another if it is more specific (i.e. less liberal).
     *
@@ -42,25 +42,24 @@ object ChoiceMatch {
   }
 
   /**
-    * Returns `true` if the list of choice patterns `l1` is less than or equal to `l2`.
+    * Returns `true` if the row of choice patterns `r1` is less than or equal to `r2`.
     *
-    * The partial order on lists states that one list is smaller than or equal to
-    * another list if every element of the first list is pair-wise smaller than or equal
-    * to the corresponding element of the second list.
+    * A row is less than or equal to another row if every element of the first row is
+    * pair-wise less than or equal to the corresponding element of the second row.
     *
-    * Note: The lists must have the same length.
+    * Note: The rows must have the same length.
     */
   @tailrec
-  private def leq(l1: List[ChoicePattern], l2: List[ChoicePattern]): Boolean = (l1, l2) match {
+  private def leq(r1: List[ChoicePattern], r2: List[ChoicePattern]): Boolean = (r1, r2) match {
     case (Nil, Nil) => true
     case (x :: xs, y :: ys) => leq(x, y) && leq(xs, ys)
-    case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
+    case (xs, ys) => throw InternalCompilerException(s"Mismatched rows: '$xs' and '$ys'.")
   }
 
   /**
-    * Returns true if the list of choice patterns `l` is subsumed by a list in the choice pattern match matrix `m`.
+    * Returns true if the row `r` is subsumed by a row in the choice pattern match matrix `m`.
     */
-  private def subsumed(l: List[ChoicePattern], m: List[List[ChoicePattern]]): Boolean = m.exists(l2 => leq(l, l2))
+  private def subsumed(r: List[ChoicePattern], m: List[List[ChoicePattern]]): Boolean = m.exists(r2 => leq(r, r2))
 
   /**
     * Computes an anti-chain on the given choice pattern match matrix `m`.
@@ -71,29 +70,29 @@ object ChoiceMatch {
     @tailrec
     def visit(acc: List[List[ChoicePattern]], rest: List[List[ChoicePattern]]): List[List[ChoicePattern]] = rest match {
       case Nil => acc.reverse
-      case p :: ps =>
-        if (subsumed(p, acc) || subsumed(p, ps))
-          visit(acc, ps)
+      case r :: rs =>
+        if (subsumed(r, acc) || subsumed(r, rs))
+          visit(acc, rs)
         else
-          visit(p :: acc, ps)
+          visit(r :: acc, rs)
     }
 
     visit(Nil, m)
   }
 
   /**
-    * Attempts to combine the choice pattern lists `l1` and `l2` into a generalize patterns.
+    * Attempts to combine the rows `r1` and `r2` into a generalized row.
     *
-    * Returns `None` if the choice pattern lists cannot be combined.
-    * Otherwise returns `Some(l)` where `l` is a generalized choice pattern list.
+    * Returns `None` if the rows cannot be combined.
     *
-    * The length of `l1` and `l2` must be the same and the length of the optionally returned list is guaranteed to be the same.
+    * The length of rows `r1` and `r2` must be the same.
+    * The length of the (optionally) returned row is the same as `r1` and `r2`.
     */
-  private def generalize(l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[ChoicePattern]] = {
+  private def generalize(r1: List[ChoicePattern], r2: List[ChoicePattern]): Option[List[ChoicePattern]] = {
 
     @tailrec
-    def before(acc: List[ChoicePattern], l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[ChoicePattern]] =
-      (l1, l2) match {
+    def before(acc: List[ChoicePattern], row1: List[ChoicePattern], row2: List[ChoicePattern]): Option[List[ChoicePattern]] =
+      (row1, row2) match {
         case (Nil, Nil) => None
         case (x :: xs, y :: ys) if leq(x, y) => before(x :: acc, xs, ys) // We choose x because its the cap.
         case (x :: xs, y :: ys) if leq(y, x) => before(y :: acc, xs, ys) // We choose y because its the cap.
@@ -105,35 +104,25 @@ object ChoiceMatch {
       }
 
     @tailrec
-    def after(acc: List[ChoicePattern], l1: List[ChoicePattern], l2: List[ChoicePattern]): Option[List[ChoicePattern]] =
-      (l1, l2) match {
+    def after(acc: List[ChoicePattern], row1: List[ChoicePattern], row2: List[ChoicePattern]): Option[List[ChoicePattern]] =
+      (row1, row2) match {
         case (Nil, Nil) => Some(acc.reverse)
-        case (x :: xs, y :: ys) if leq(x, y) => after(x :: acc, xs, ys)
-        case (x :: xs, y :: ys) if leq(y, x) => after(y :: acc, xs, ys)
+        case (x :: xs, y :: ys) if leq(x, y) => after(x :: acc, xs, ys) // We choose x because its the cap.
+        case (x :: xs, y :: ys) if leq(y, x) => after(y :: acc, xs, ys) // We choose y because its the cap.
         case (x :: xs, y :: ys) =>
           // We know that x and y are incomparable. However we have "already spent" our wildcard.
-          // We cannot generalize the pattern.
+          // Thus we cannot generalize the pattern.
           None
         case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
       }
 
-    before(Nil, l1, l2)
+    before(Nil, r1, r2)
   }
 
   /**
     * Performs generalization on the given choice pattern matrix `m`.
     */
   private def generalizeAll(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
-    /**
-      * Given a list `l` returns all unordered pairs.
-      *
-      * E.g. 1 :: 2 :: 3 :: Nil => (1, 1) :: (1, 2) :: (1, 3) :: (2, 3) :: Nil
-      */
-    def allDiagonalPairs[T](l: List[T]): List[(T, T)] = l match {
-      case Nil => Nil
-      case x :: xs => xs.map(y => (x, y)) ::: allDiagonalPairs(xs)
-    }
-
     filterMap(allDiagonalPairs(m))(p => generalize(p._1, p._2))
   }
 
@@ -142,6 +131,7 @@ object ChoiceMatch {
     */
   @tailrec
   def saturate(m: List[List[ChoicePattern]]): List[List[ChoicePattern]] = {
+    // Computes the fixpoint on generalizeAll.
     val m1 = antiChain(m ::: generalizeAll(m))
     if (eq(m, m1)) m else saturate(m1)
   }
@@ -164,8 +154,10 @@ object ChoiceMatch {
       case _ => false
     }
 
-    m1.forall(l1 => m2.exists(l2 => eqRow(l1, l2))) &&
-      m2.forall(l1 => m1.exists(l2 => eqRow(l1, l2)))
+    val isSubsetL = m1.forall(r1 => m2.exists(r2 => eqRow(r1, r2)))
+    val isSubsetR = m2.forall(r2 => m1.exists(r1 => eqRow(r2, r1)))
+
+    isSubsetL && isSubsetR
   }
 
   /**
@@ -177,6 +169,16 @@ object ChoiceMatch {
       case None => filterMap(xs)(f)
       case Some(b) => b :: filterMap(xs)(f)
     }
+  }
+
+  /**
+    * Given a list `l` returns all unordered pairs.
+    *
+    * E.g. 1 :: 2 :: 3 :: Nil => (1, 1) :: (1, 2) :: (1, 3) :: (2, 3) :: Nil
+    */
+  private def allDiagonalPairs[T](l: List[T]): List[(T, T)] = l match {
+    case Nil => Nil
+    case x :: xs => xs.map(y => (x, y)) ::: allDiagonalPairs(xs)
   }
 
   /**
