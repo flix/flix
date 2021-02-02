@@ -25,7 +25,11 @@ object BytecodeCompiler {
     case Expression.Int32(lit, loc) => ???
     case Expression.Int64(lit, loc) => ???
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => branch(compileExp(exp1), compileExp(exp2), compileExp(exp3))
-    case Expression.Ref(exp, tpe, loc) => compose(compileExp(exp), makeRef())
+    case Expression.Ref(exp, tpe, loc) => ???
+//      NEW("class name") ~
+//      DUP ~
+//      compileExp(exp) ~
+//      INVOKESPECIAL("class name", "constructor signature")
     case _ => ???
   }
 
