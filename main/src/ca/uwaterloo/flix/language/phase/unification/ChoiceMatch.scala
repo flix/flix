@@ -148,7 +148,7 @@ object ChoiceMatch {
     }
 
     @tailrec
-    def eqRow(l1: List[ChoicePattern], l2: List[ChoicePattern]): Boolean = (l1, l2) match {
+    def eqRow(r1: List[ChoicePattern], r2: List[ChoicePattern]): Boolean = (r1, r2) match {
       case (Nil, Nil) => true
       case (x :: xs, y :: ys) => eqPat(x, y) && eqRow(xs, ys)
       case _ => false
