@@ -1049,25 +1049,15 @@ object GenExpression {
       // Get the relevant branchNumber and put it on the stack
       visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "branchNumber", "I")
 
-      val labels: List[Label] = rules.map(r => new Label())
+      val labels: List[Label] = rules.map(_ => new Label())
+      val lookupErrorLabel: Label = new Label()
       val completedLabel: Label = new Label()
-      // Find the correct branch and get the associated element
-      for (((rule, index), label) <- rules.zipWithIndex.zip(labels)) {
-        // Dup since we need branchNumber for each rule
-        visitor.visitInsn(DUP)
-        // Put the current index of rules on the stack
-        compileInt(visitor, index)
-        // Get the difference of branchNumber and current index of rules
-        visitor.visitInsn(ISUB)
-        // If the difference is not 0, then it is not the correct case.
-        // Thus we jump so we don't compute anything
-        visitor.visitJumpInsn(IFNE, label)
+      // Find the correct branch with a table switch
+      visitor.visitTableSwitchInsn(0, rules.length-1, lookupErrorLabel, labels:_*)
 
-
-        // We found the correct branch
-        // We don't need to keep track of the branchNumber anymore
-        visitor.visitInsn(POP)
-        // The SelectChoice is on top again. We now get the element of the channel
+      for ((rule, label) <- rules.zip(labels)) {
+        visitor.visitLabel(label)
+        // The SelectChoice is on top of the stack. We get the element of the channel
         visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", "Ljava/lang/Object;")
         // Jvm Type of the elementType
         val channelType = rule.chan.tpe.asInstanceOf[MonoType.Channel].tpe
@@ -1080,14 +1070,12 @@ object GenExpression {
         visitor.visitVarInsn(iStore, rule.sym.getStackOffset + 3)
         // Finally compile the body of the selected rule
         compileExpression(rule.exp, visitor, currentClass, lenv0, entryPoint)
-        // Jump out of the branches so we do not go through unnecessary branches
+        // Jump out of the cases so we do not fall through to the next one
         visitor.visitJumpInsn(GOTO, completedLabel)
-
-
-        // We jumped here to not compute anything
-        visitor.visitLabel(label)
       }
 
+      // TableSwitch instruction jumps here if "0 <= index < rules.length" is not satisfied.
+      visitor.visitLabel(lookupErrorLabel)
       // TODO SJ: throw flixError med god string ELLER egen subclass
       // Throw exception
       visitor.visitInsn(ACONST_NULL)
