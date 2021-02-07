@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Expression, JType}
@@ -6,13 +6,16 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.{Expression, JType}
 object BytecodeCompiler {
 
   sealed trait Stack
+
   sealed trait StackNil extends Stack
+
   sealed case class StackCons[+R <: Stack, +T <: JType](rest: R, top: T) extends Stack
 
   type **[R <: Stack, T <: JType] = StackCons[R, T]
+
   sealed trait F[+T]
 
-  def compileExp[R <: Stack, T <: JType](exp : Expression[T]): F[R] => F[R ** T]  = exp match {
+  def compileExp[R <: Stack, T <: JType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) => pushUnit()
     case Expression.Null(tpe, loc) => pushNull()
     case Expression.True(loc) => pushBool(true)
@@ -26,20 +29,20 @@ object BytecodeCompiler {
     case Expression.Int64(lit, loc) => ???
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => branch(compileExp(exp1), compileExp(exp2), compileExp(exp3))
     case Expression.Ref(exp, tpe, loc) => ???
-//      NEW("class name") ~
-//      DUP ~
-//      compileExp(exp) ~
-//      INVOKESPECIAL("class name", "constructor signature")
+    //      NEW("class name") ~
+    //      DUP ~
+    //      compileExp(exp) ~
+    //      INVOKESPECIAL("class name", "constructor signature")
     case _ => ???
   }
 
-  def pushUnit[R <: Stack](): F[R] => F[R ** JObject] = ???
+  def pushUnit[R <: Stack](): F[R] => F[R ** JUnit] = ???
 
   def pushNull[R <: Stack](): F[R] => F[R ** JObject] = ???
 
-  def pushBool[R <: Stack](b : Boolean): F[R] => F[R ** PrimInt32] = ???
+  def pushBool[R <: Stack](b: Boolean): F[R] => F[R ** PrimInt32] = ???
 
-  def pushInt[R <: Stack](n : Int): F[R] => F[R ** PrimInt32] = ???
+  def pushInt[R <: Stack](n: Int): F[R] => F[R ** PrimInt32] = ???
 
   def compose[A, B, C](f: F[A] => F[B], g: F[B] => F[C]): F[A] => F[C] = ???
 

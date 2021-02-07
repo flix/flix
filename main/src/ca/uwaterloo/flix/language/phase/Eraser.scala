@@ -34,7 +34,7 @@ object Eraser {
     case FinalExp.Var(sym, tpe, loc) => ErasedExp.Var(sym, tpe, loc)
     case FinalExp.Closure(sym, freeVars, fnMonoType, tpe, loc) =>
       val newFreeVars = freeVars.map({ case FinalAst.FreeVar(sym, tpe) => ErasedAst.FreeVar(sym, tpe) })
-      castExp(ErasedExp.Closure(sym, newFreeVars, fnMonoType, tpe, loc))
+      castExp(ErasedExp.Closure(sym, newFreeVars, tpe, loc))
     case FinalExp.ApplyClo(exp, args, tpe, loc) =>
       castExp(ErasedExp.ApplyClo(visitExp(exp), args.map(visitExp), tpe, loc))
     case FinalExp.ApplyDef(sym, args, tpe, loc) => castExp(ErasedExp.ApplyDef(sym, args.map(visitExp), tpe, loc))
@@ -62,7 +62,7 @@ object Eraser {
     case FinalExp.Index(base, offset, tpe, loc) =>
       val b = visitExp[JObject](base)
       val e = ErasedExp.Index(b, offset, tpe, loc)
-      ErasedExp.Cast[JObject, T](e, tpe, loc)
+      ErasedExp.Cast(e, tpe, loc)
 //    case FinalExp.Tuple(elms, tpe, loc) =>
 //    case FinalExp.RecordEmpty(tpe, loc) =>
 //    case FinalExp.RecordSelect(exp, field, tpe, loc) =>
