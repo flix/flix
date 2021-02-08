@@ -32,7 +32,7 @@ object Eraser {
     case FinalExp.BigInt(lit, loc) => castExp(ErasedExp.BigInt(lit, loc))
     case FinalExp.Str(lit, loc) => castExp(ErasedExp.Str(lit, loc))
     case FinalExp.Var(sym, tpe, loc) => ErasedExp.Var(sym, tpe, loc)
-    case FinalExp.Closure(sym, freeVars, fnMonoType, tpe, loc) =>
+    case FinalExp.Closure(sym, freeVars, _, tpe, loc) =>
       val newFreeVars = freeVars.map({ case FinalAst.FreeVar(sym, tpe) => ErasedAst.FreeVar(sym, tpe) })
       castExp(ErasedExp.Closure(sym, newFreeVars, tpe, loc))
     case FinalExp.ApplyClo(exp, args, tpe, loc) =>
