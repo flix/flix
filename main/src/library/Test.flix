@@ -26,7 +26,7 @@ namespace Test {
     /// An algebraic data type that represents different types of tests.
     ///
     pub enum Test {
-        case EqTest(Unit -> Result[Unit, String])
+        case EqTest(Unit -> TestOutcome)
     }
 
     ///
@@ -43,15 +43,18 @@ namespace Test {
     /// - the actual and expected value can be compared for equality.
     /// - the actual and expected value can be diffed.
     ///
-    pub def defineTest[a: Eq : Diff](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
+    pub def defineTest[a: Eq : Diff : ToString](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
         EqTest(
             (_: Unit) ->
                 let actual = force r.actual;
                 let expect = force r.expect;
                 if (actual == expect)
-                    Ok(())
+                    Success
                 else
-                    Err(Diff.diff(actual, expect))
+                    Failure({
+                        expected = ToString.toString(expect),
+                        got = ToString.toString(actual),
+                        diff = Diff.diff(actual, expect)})
         )
 
     ///
@@ -62,12 +65,20 @@ namespace Test {
         println("${suiteName} (${Map.size(tests)} tests):");
         let f = (n: String, t: Test) -> match t {
             case EqTest(test) => match test() {
-                case Ok(_) =>  println("  OK ${n: String}")
-                case Err(_) => println("  ERROR: ${n: String}")
+                case Success    => println("  ${n: String}: Success.")
+                case Failure(r) => println("  ${n: String}: FAILURE: expected: ${r.expected}, but got: ${r.got}")
             }
         };
         Map.foreach(f, tests);
         0
+    }
+
+    ///
+    /// Represents the outcome of a test.
+    ///
+    enum TestOutcome {
+        case Success,
+        case Failure({expected: String, got: String, diff: String})
     }
 
 }
@@ -135,79 +146,3 @@ namespace TestList {
 
 def main(_args: Array[String]): Int32 & Impure =
     Test.runAll(TestList.tests())
-
-
-namespace Blargh {
-
-    pub enum Test {
-        case Test
-    }
-
-    pub enum Suite {
-        case Suite(List[Test])
-        case ParallelSuite(List[Test])
-    }
-
-    class Diffable[a] {
-        def diff(x: a, y: a): String
-    }
-
-
-
-    pub def defineTest[a : Eq, r :# Record](test: {name: String, expected: Lazy[a], actual: Lazy[a] | r}): Test = ???
-
-    pub def defineTestWithOps[a : Eq, r :# Record, r2 :# Record](test: {name: String, expected: Lazy[a], actual: Lazy[a] | r}, opts: {timeout: Option[Int] | r2}): Test = ???
-
-    pub def disableTest(r: {name: String, expected: Lazy[a], actual: Lazy[a]}): Test = ???
-
-    // TODO: parallel
-
-    pub def defaultTest(): {} = {}
-
-    class DefTest[r :# Record] {
-        pub def defTest(): { retry: Int | r }
-    }
-
-    pub def defaultOpts(): { timeout: Option[Int] } = { timeout = None }
-
-    // TODO: Use a map?
-    pub /* const */ def listSuite(): Suite = Suite(
-        defineTest({
-            +name        = "List.head01",
-            +actual      = lazy List.head(1 :: Nil),
-            +expected    = lazy Some(1)
-            | defaultTest()
-        })
-
-        ::
-
-        disableTest({
-            name        = "List.head02",
-            actual      = lazy List.head(1 :: 2 :: Nil),
-            expected    = lazy Some(1)
-        })
-
-        ::
-
-        defineTest({
-            name        = "List.head03",
-            actual      = lazy List.head(1 :: Nil),
-            expected    = lazy Some(1),
-            retry       = 3
-        })
-
-        ::
-
-        defineTestWithOps({
-            name        = "List.head04",
-            actual      = lazy List.head(1 :: 2 :: 3 :: Nil),
-            expected    = lazy Some(1)
-        })({timeout = Some(123)})
-
-        ::
-
-        Nil
-    )
-
-
-}
