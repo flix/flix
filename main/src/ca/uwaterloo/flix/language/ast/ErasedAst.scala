@@ -21,8 +21,6 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-
-// TODO: replace JType with T <: JType type variable
 object ErasedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
@@ -44,6 +42,10 @@ object ErasedAst {
   }
 
   case class LatticeOps(tpe: MonoType, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
+
+  sealed trait Expression[+T <: JType] {
+    def loc: SourceLocation
+  }
 
   object Expression {
 
@@ -124,11 +126,13 @@ object ErasedAst {
 
     case class Let[T <: JType](sym: Symbol.VarSym, exp1: ErasedAst.Expression[JType], exp2: ErasedAst.Expression[T], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
+    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[JObject], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+      final val tpe: MonoType = MonoType.Bool
+    }
 
     case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[JType], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JObject]
 
-    case class Untag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JType]
+    case class Untag[T <: JType](sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class Index[T <: JType](base: ErasedAst.Expression[JObject], offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -136,7 +140,7 @@ object ErasedAst {
 
     case class RecordEmpty(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JObject]
 
-    case class RecordSelect(exp: ErasedAst.Expression[JObject], field: Name.Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JType]
+    case class RecordSelect[T <: JType](exp: ErasedAst.Expression[JObject], field: Name.Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class RecordExtend(field: Name.Field, value: ErasedAst.Expression[JType], rest: ErasedAst.Expression[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JObject]
 
@@ -166,19 +170,19 @@ object ErasedAst {
 
     case class Cast[T <: JType](exp: ErasedAst.Expression[JType], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class TryCatch[T <: JType](exp: ErasedAst.Expression[T], rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class TryCatch[T <: JType](exp: ErasedAst.Expression[T], rules: List[ErasedAst.CatchRule[T]], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression[JType]], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JObject]
 
-    case class InvokeMethod(method: Method, exp: ErasedAst.Expression[JObject], args: List[ErasedAst.Expression[JType]], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JType]
+    case class InvokeMethod[T <: JType](method: Method, exp: ErasedAst.Expression[JObject], args: List[ErasedAst.Expression[JType]], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression[JType]], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JType]
+    case class InvokeStaticMethod[T <: JType](method: Method, args: List[ErasedAst.Expression[JType]], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class GetField(field: Field, exp: ErasedAst.Expression[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JType]
+    case class GetField[T <: JType](field: Field, exp: ErasedAst.Expression[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class PutField(field: Field, exp1: ErasedAst.Expression[JObject], exp2: ErasedAst.Expression[JType], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JUnit]
 
-    case class GetStaticField(field: Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JType]
+    case class GetStaticField[T <: JType](field: Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class PutStaticField(field: Field, exp: ErasedAst.Expression[JType], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JUnit]
 
@@ -206,7 +210,7 @@ object ErasedAst {
 
     case class FixpointEntails(exp1: ErasedAst.Expression[JObject], exp2: ErasedAst.Expression[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
 
-    case class FixpointFold(pred: Name.Pred, init: ErasedAst.Expression.Var[JObject], f: ErasedAst.Expression.Var[JObject], constraints: ErasedAst.Expression.Var[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[JType]
+    case class FixpointFold[T <: JType](pred: Name.Pred, init: ErasedAst.Expression.Var[JObject], f: ErasedAst.Expression.Var[JObject], constraints: ErasedAst.Expression.Var[JObject], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class HoleError[T <: JType](sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -228,7 +232,7 @@ object ErasedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, terms: List[ErasedAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Predicate.Head
 
-      case class Union(exp: ErasedAst.Expression[JUnknown[Nothing]], terms: List[ErasedAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Predicate.Head
+      case class Union(exp: ErasedAst.Expression[JObject], terms: List[ErasedAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Predicate.Head
 
     }
 
@@ -238,7 +242,7 @@ object ErasedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[ErasedAst.Term.Body], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Predicate.Body
 
-      case class Guard(exp: ErasedAst.Expression[JUnknown[Nothing]], terms: List[ErasedAst.Term.Body], loc: SourceLocation) extends ErasedAst.Predicate.Body
+      case class Guard(exp: ErasedAst.Expression[PrimInt32], terms: List[ErasedAst.Term.Body], loc: SourceLocation) extends ErasedAst.Predicate.Body
 
     }
 
@@ -258,7 +262,7 @@ object ErasedAst {
 
       case class Lit(sym: Symbol.DefnSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Term.Head
 
-      case class App(exp: ErasedAst.Expression[JUnknown[Nothing]], args: List[Symbol.VarSym], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Term.Head
+      case class App(exp: ErasedAst.Expression[JObject], args: List[Symbol.VarSym], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Term.Head
 
     }
 
@@ -284,7 +288,7 @@ object ErasedAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression[JType])
+  case class CatchRule[T <: JType](sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression[T])
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
@@ -320,10 +324,6 @@ object ErasedAst {
   case class UnboxFloat32(exp: ErasedAst.Expression[BoxedFloat32], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32]
   case class UnboxFloat64(exp: ErasedAst.Expression[BoxedFloat64], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64]
 
-  sealed trait Expression[+T <: JType] {
-    def loc: SourceLocation
-  }
-
   sealed trait JType
 
   object JType {
@@ -356,9 +356,6 @@ object ErasedAst {
     sealed trait JArray[T <: JType] extends JType
     sealed trait JChan[T <: JType] extends JType
     sealed trait JLazy[T <: JType] extends JType
-
-    // Indicates an undecided type, this is to be removed
-    sealed trait JUnknown[T <: JType] extends JType
   }
 }
 
