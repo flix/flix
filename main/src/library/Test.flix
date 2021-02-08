@@ -15,6 +15,8 @@
  */
 namespace Test {
 
+    use ToString.toString;
+
     ///
     /// An algebraic data type that represents a suite of tests.
     ///
@@ -26,7 +28,7 @@ namespace Test {
     /// An algebraic data type that represents different types of tests.
     ///
     pub enum Test {
-        case EqTest(Unit -> TestOutcome)
+        case EqTest(Unit -> Outcome)
     }
 
     ///
@@ -39,23 +41,20 @@ namespace Test {
     ///
     /// A test consists of an actual value and an expected value.
     ///
-    /// The type constraints ensure that:
-    /// - the actual and expected value can be compared for equality.
-    /// - the actual and expected value can be diffed.
-    ///
     pub def defineTest[a: Eq : Diff : ToString](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
-        EqTest(
-            (_: Unit) ->
-                let actual = force r.actual;
+        let runner = () -> {
                 let expect = force r.expect;
-                if (actual == expect)
+                let actual = force r.actual;
+                if (expect == actual)
                     Success
                 else
                     Failure({
-                        expected = ToString.toString(expect),
-                        got = ToString.toString(actual),
-                        diff = Diff.diff(actual, expect)})
-        )
+                        expected    = toString(expect),
+                        got         = toString(actual),
+                        diff        = Diff.diff(actual, expect)
+                    })
+        };
+        EqTest(runner)
 
     ///
     /// Runs all tests in the given suite `s`.
@@ -67,7 +66,7 @@ namespace Test {
             case EqTest(test) => test()
         };
         let m = Map.map(f, tests);
-        let g = (n: String, o: TestOutcome) -> match o {
+        let g = (n: String, o: Outcome) -> match o {
             case Success    => println("  ${n: String}: Success.")
             case Failure(r) => println("  ${n: String}: FAILURE: expected: ${r.expected}, but got: ${r.got}")
         };
@@ -79,7 +78,7 @@ namespace Test {
     ///
     /// Represents the outcome of a test:
     ///
-    enum TestOutcome {
+    enum Outcome {
         case Success,
         case Failure({expected: String, got: String, diff: String})
     }
@@ -87,7 +86,7 @@ namespace Test {
     ///
     /// Returns `true` if the given outcome is a success.
     ///
-    def isSuccess(o: TestOutcome): Bool = match o {
+    def isSuccess(o: Outcome): Bool = match o {
         case Success    => true
         case Failure(_) => false
     }
@@ -95,7 +94,7 @@ namespace Test {
     ///
     /// Returns `true` if the given outcome is a failure.
     ///
-    def isFailure(o: TestOutcome): Bool = match o {
+    def isFailure(o: Outcome): Bool = match o {
         case Success    => false
         case Failure(_) => true
     }
@@ -103,13 +102,13 @@ namespace Test {
     ///
     /// Returns the number of successful outcomes in the given outcome map `m`.
     ///
-    def successful(m: Map[String, TestOutcome]): Int32 =
+    def successful(m: Map[String, Outcome]): Int32 =
         Map.count((_, v) -> isSuccess(v), m)
 
     ///
     /// Returns the number of failed outcomes in the given outcome map `m`.
     ///
-    def failures(m: Map[String, TestOutcome]): Int32 =
+    def failures(m: Map[String, Outcome]): Int32 =
         Map.count((_, v) -> isFailure(v), m)
 
 }
@@ -144,14 +143,15 @@ instance Diff[Option[a]] with [a : ToString] {
     pub def diff(x: Option[a], y: Option[a]): String = "${x} - ${y}"
 }
 
-// TODO: Add <| ?
+
+pub def <|(f: a -> b & e, x: a): b & e = f(x)
 
 namespace TestList {
 
     use Test.defineSuite;
     use Test.defineTest;
 
-    pub def tests(): Test.Suite = defineSuite("TestList", Map#{
+    pub def tests(): Test.Suite = defineSuite("TestList") <| Map#{
         "List.head01" -> defineTest({
             actual = lazy List.head(1 :: Nil),
             expect = lazy Some(1)
@@ -171,9 +171,11 @@ namespace TestList {
             actual = lazy List.head(1 :: 2 :: 3 :: Nil),
             expect = lazy Some(1)
         })
-    })
+    }
 
 }
 
 def main(_args: Array[String]): Int32 & Impure =
     Test.runAll(TestList.tests())
+
+
