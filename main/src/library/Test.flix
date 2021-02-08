@@ -63,18 +63,21 @@ namespace Test {
     pub def runAll(s: Suite): Int32 & Impure = {
         let Suite(suiteName, tests) = s;
         println("${suiteName} (${Map.size(tests)} tests):");
-        let f = (n: String, t: Test) -> match t {
-            case EqTest(test) => match test() {
-                case Success    => println("  ${n: String}: Success.")
-                case Failure(r) => println("  ${n: String}: FAILURE: expected: ${r.expected}, but got: ${r.got}")
-            }
+        let f = (t: Test) -> match t {
+            case EqTest(test) => test()
         };
-        Map.foreach(f, tests);
+        let m = Map.map(f, tests);
+        let g = (n: String, o: TestOutcome) -> match o {
+            case Success    => println("  ${n: String}: Success.")
+            case Failure(r) => println("  ${n: String}: FAILURE: expected: ${r.expected}, but got: ${r.got}")
+        };
+        Map.foreach(g, m);
+        println("Succeeded: 0");
         0
     }
 
     ///
-    /// Represents the outcome of a test.
+    /// Represents the outcome of a test:
     ///
     enum TestOutcome {
         case Success,
