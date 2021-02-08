@@ -19,12 +19,12 @@ object Benchmarker {
   /**
     * The number of times to evaluate the benchmark before measurements.
     */
-  val WarmupRounds = 5_000
+  val WarmupRounds = 10_000
 
   /**
     * The number of times to evaluate the benchmark to compute the average.
     */
-  val ActualRounds = 15_000
+  val ActualRounds = 25_000
 
   /**
     * Evaluates all benchmarks.
