@@ -72,7 +72,7 @@ namespace Test {
             case Failure(r) => println("  ${n: String}: FAILURE: expected: ${r.expected}, but got: ${r.got}")
         };
         Map.foreach(g, m);
-        println("Succeeded: 0");
+        println("${suiteName}: Succeeded: ${successful(m)}. Failed: ${failures(m)}.");
         0
     }
 
@@ -83,6 +83,34 @@ namespace Test {
         case Success,
         case Failure({expected: String, got: String, diff: String})
     }
+
+    ///
+    /// Returns `true` if the given outcome is a success.
+    ///
+    def isSuccess(o: TestOutcome): Bool = match o {
+        case Success    => true
+        case Failure(_) => false
+    }
+
+    ///
+    /// Returns `true` if the given outcome is a failure.
+    ///
+    def isFailure(o: TestOutcome): Bool = match o {
+        case Success    => false
+        case Failure(_) => true
+    }
+
+    ///
+    /// Returns the number of successful outcomes in the given outcome map `m`.
+    ///
+    def successful(m: Map[String, TestOutcome]): Int32 =
+        Map.count((_, v) -> isSuccess(v), m)
+
+    ///
+    /// Returns the number of failed outcomes in the given outcome map `m`.
+    ///
+    def failures(m: Map[String, TestOutcome]): Int32 =
+        Map.count((_, v) -> isFailure(v), m)
 
 }
 
