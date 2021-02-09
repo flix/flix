@@ -7,8 +7,9 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ErasedAst.{Expression => ErasedExp}
-import FinalAst.{Expression => FinalExp}
-import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Head
+import FinalAst.{ConstraintParam, Expression => FinalExp}
+import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.FinalAst.Term.{Body, Head}
 
 object Eraser {
 
@@ -57,7 +58,7 @@ object Eraser {
       val e3 = visitExp[T](exp3)
       ErasedExp.IfThenElse(e1, e2, e3, tpe, loc)
     case FinalExp.Branch(exp, branches, tpe, loc) =>
-      val newBranches = branches.map({case (label, branchExp) => (label, visitExp(branchExp))})
+      val newBranches = branches.map({ case (label, branchExp) => (label, visitExp(branchExp)) })
       ErasedExp.Branch(visitExp(exp), newBranches, tpe, loc)
     case FinalExp.JumpTo(sym, tpe, loc) =>
       ErasedExp.JumpTo(sym, tpe, loc)
@@ -133,7 +134,7 @@ object Eraser {
     case FinalExp.PutChannel(exp1, exp2, tpe, loc) =>
       castExp(ErasedExp.PutChannel(visitExp(exp1), visitExp(exp2), tpe, loc))
     case FinalExp.SelectChannel(rules, default, tpe, loc) =>
-      val newRules = rules.map(visitChannelRule[T])
+      val newRules = rules.map({ case FinalAst.SelectChannelRule(sym, chan, exp) => ErasedAst.SelectChannelRule[T](sym, visitExp(chan), visitExp(exp)) })
       ErasedExp.SelectChannel(newRules, default.map(visitExp[T]), tpe, loc)
     case FinalExp.Spawn(exp, tpe, loc) =>
       castExp(ErasedExp.Spawn(visitExp(exp), tpe, loc))
@@ -141,19 +142,20 @@ object Eraser {
       castExp(ErasedExp.Lazy(visitExp(exp), tpe, loc))
     case FinalExp.Force(exp, tpe, loc) =>
       ErasedExp.Force(visitExp(exp), tpe, loc)
-//    case FinalExp.FixpointConstraintSet(cs, tpe, loc) =>
-//      val newCs = cs.map({
-//        case FinalAst.Constraint(cparams, head, body, loc) =>
-//          val newHead = head match {
-//            case Head.Atom(pred, den, terms, tpe, loc) =>
-//              ErasedAst.Predicate.Head.Atom(pred, den, terms)
-//            case Head.Union(exp, terms, tpe, loc) =>
-//          }
-//          val newCparams = cparams.map({???})
-//          val newBody = ???
-//          ErasedAst.Constraint(newCparams, newHead, newBody, loc)
-//      })
-//      castExp(ErasedExp.FixpointConstraintSet(newCs, tpe, loc))
+    case FinalExp.FixpointConstraintSet(cs, tpe, loc) =>
+      val newCs = cs.map({
+        case FinalAst.Constraint(cparams, head, body, loc) =>
+          val newHead = head match {
+            case FinalAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
+              ErasedAst.Predicate.Head.Atom(pred, den, terms.map(visitTermHead), tpe, loc)
+            case FinalAst.Predicate.Head.Union(exp, terms, tpe, loc) =>
+              ErasedAst.Predicate.Head.Union(visitExp(exp), terms.map(visitTermHead), tpe, loc)
+          }
+          val newCparams = cparams.map(visitConstraintParam)
+          val newBody = body.map(visitPredicateBody)
+          ErasedAst.Constraint(newCparams, newHead, newBody, loc)
+      })
+      castExp(ErasedExp.FixpointConstraintSet(newCs, tpe, loc))
 //    case FinalExp.FixpointCompose(exp1, exp2, tpe, loc) =>
 //    case FinalExp.FixpointSolve(exp, stf, tpe, loc) =>
 //    case FinalExp.FixpointProject(pred, exp, tpe, loc) =>
@@ -164,13 +166,29 @@ object Eraser {
     case _ => ???
   }
 
-  def visitChannelRule[T <: JType](rule: FinalAst.SelectChannelRule): ErasedAst.SelectChannelRule[T] = {
-    val FinalAst.SelectChannelRule(sym, chan, exp) = rule
-    ErasedAst.SelectChannelRule(sym, visitExp(chan), visitExp(exp))
+  def visitTermHead(head: FinalAst.Term.Head): ErasedAst.Term.Head = head match {
+    case FinalAst.Term.Head.QuantVar(sym, tpe, loc) => ErasedAst.Term.Head.QuantVar(sym, tpe, loc)
+    case FinalAst.Term.Head.CapturedVar(sym, tpe, loc) => ErasedAst.Term.Head.CapturedVar(sym, tpe, loc)
+    case FinalAst.Term.Head.Lit(sym, tpe, loc) => ErasedAst.Term.Head.Lit(sym, tpe, loc)
+    case FinalAst.Term.Head.App(exp, args, tpe, loc) => ErasedAst.Term.Head.App(visitExp(exp), args, tpe, loc)
   }
 
-//  def visitCatchRule[T <: JType](rule: FinalAst.CatchRule): ErasedAst.CatchRule[T] = {
-//    val FinalAst.CatchRule(sym, clazz, exp) = rule
-//    ErasedAst.CatchRule(sym, clazz, visitExp(exp))
-//  }
+  def visitTermBody(body: FinalAst.Term.Body): ErasedAst.Term.Body = body match {
+    case FinalAst.Term.Body.Wild(tpe, loc) => ErasedAst.Term.Body.Wild(tpe, loc)
+    case FinalAst.Term.Body.QuantVar(sym, tpe, loc) => ErasedAst.Term.Body.QuantVar(sym, tpe, loc)
+    case FinalAst.Term.Body.CapturedVar(sym, tpe, loc) => ErasedAst.Term.Body.CapturedVar(sym, tpe, loc)
+    case FinalAst.Term.Body.Lit(sym, tpe, loc) => ErasedAst.Term.Body.Lit(sym, tpe, loc)
+  }
+
+  def visitConstraintParam(param: FinalAst.ConstraintParam): ErasedAst.ConstraintParam = param match {
+    case ConstraintParam.HeadParam(sym, tpe, loc) => ErasedAst.ConstraintParam.HeadParam(sym, tpe, loc)
+    case ConstraintParam.RuleParam(sym, tpe, loc) => ErasedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+  }
+
+  def visitPredicateBody(body: FinalAst.Predicate.Body): ErasedAst.Predicate.Body = body match {
+    case FinalAst.Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
+      ErasedAst.Predicate.Body.Atom(pred, den, polarity, terms.map(visitTermBody), tpe, loc)
+    case FinalAst.Predicate.Body.Guard(exp, terms, loc) =>
+      ErasedAst.Predicate.Body.Guard(visitExp(exp), terms.map(visitTermBody), loc)
+  }
 }
