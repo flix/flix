@@ -156,6 +156,19 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         }
     }
 
+    // MATT docs
+    // MATT test
+    // MATT actually use this def
+    def checkLawfulness(clazz: TypedAst.Class): Validation[Unit, InstanceError] = clazz match {
+      case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) => (mod.isLawless, laws) match {
+        // Case 1: lawless class with laws: error
+        case (true, _ :: _) => ??? // MATT make error
+        // Case 2: lawful class without laws: error
+        case (false, Nil) => ??? // MATT make error
+        // Case 3: appropriate modifier
+        case _ => ().toSuccess
+      }
+    }
 
     /**
       * Reassembles a set of instances of the same class.
