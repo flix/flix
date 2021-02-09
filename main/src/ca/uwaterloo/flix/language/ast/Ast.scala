@@ -258,6 +258,11 @@ object Ast {
     case object Inline extends Modifier
 
     /**
+      * The lawless modifier.
+      */
+    case object Lawless extends Modifier
+
+    /**
       * The public modifier.
       */
     case object Public extends Modifier
@@ -271,6 +276,11 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
+
+    /**
+      * The unlawful modifier.
+      */
+    case object Unlawful extends Modifier
 
   }
 
