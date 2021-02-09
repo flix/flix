@@ -8,6 +8,7 @@ import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ErasedAst.{Expression => ErasedExp}
 import FinalAst.{Expression => FinalExp}
+import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Head
 
 object Eraser {
 
@@ -37,7 +38,8 @@ object Eraser {
       castExp(ErasedExp.Closure(sym, newFreeVars, tpe, loc))
     case FinalExp.ApplyClo(exp, args, tpe, loc) =>
       castExp(ErasedExp.ApplyClo(visitExp(exp), args.map(visitExp), tpe, loc))
-    case FinalExp.ApplyDef(sym, args, tpe, loc) => castExp(ErasedExp.ApplyDef(sym, args.map(visitExp), tpe, loc))
+    case FinalExp.ApplyDef(sym, args, tpe, loc) =>
+      castExp(ErasedExp.ApplyDef(sym, args.map(visitExp), tpe, loc))
     case FinalExp.ApplyCloTail(exp, args, tpe, loc) =>
       castExp(ErasedExp.ApplyCloTail(visitExp(exp), args.map(visitExp), tpe, loc))
     case FinalExp.ApplyDefTail(sym, args, tpe, loc) =>
@@ -45,7 +47,8 @@ object Eraser {
     case FinalExp.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
       val newFormals = formals.map({ case FinalAst.FormalParam(sym, tpe) => ErasedAst.FormalParam(sym, tpe) })
       castExp(ErasedExp.ApplySelfTail(sym, newFormals, actuals.map(visitExp), tpe, loc))
-    case FinalExp.Unary(sop, op, exp, tpe, loc) => castExp(ErasedExp.Unary(sop, op, visitExp(exp), tpe, loc))
+    case FinalExp.Unary(sop, op, exp, tpe, loc) =>
+      castExp(ErasedExp.Unary(sop, op, visitExp(exp), tpe, loc))
     case FinalExp.Binary(sop, op, exp1, exp2, tpe, loc) =>
       castExp(ErasedExp.Binary(sop, op, visitExp(exp1), visitExp(exp2), tpe, loc))
     case FinalExp.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
@@ -53,51 +56,104 @@ object Eraser {
       val e2 = visitExp[T](exp2)
       val e3 = visitExp[T](exp3)
       ErasedExp.IfThenElse(e1, e2, e3, tpe, loc)
-//    case FinalExp.Branch(exp, branches, tpe, loc) =>
-//    case FinalExp.JumpTo(sym, tpe, loc) =>
-//    case FinalExp.Let(sym, exp1, exp2, tpe, loc) =>
-//    case FinalExp.Is(sym, tag, exp, loc) =>
-//    case FinalExp.Tag(sym, tag, exp, tpe, loc) =>
-//    case FinalExp.Untag(sym, tag, exp, tpe, loc) =>
+    case FinalExp.Branch(exp, branches, tpe, loc) =>
+      val newBranches = branches.map({case (label, branchExp) => (label, visitExp(branchExp))})
+      ErasedExp.Branch(visitExp(exp), newBranches, tpe, loc)
+    case FinalExp.JumpTo(sym, tpe, loc) =>
+      ErasedExp.JumpTo(sym, tpe, loc)
+    case FinalExp.Let(sym, exp1, exp2, tpe, loc) =>
+      ErasedExp.Let(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+    case FinalExp.Is(sym, tag, exp, loc) =>
+      castExp(ErasedExp.Is(sym, tag, visitExp(exp), loc))
+    case FinalExp.Tag(sym, tag, exp, tpe, loc) =>
+      castExp(ErasedExp.Tag(sym, tag, visitExp(exp), tpe, loc))
+    case FinalExp.Untag(sym, tag, exp, tpe, loc) =>
+      ErasedExp.Untag(sym, tag, visitExp(exp), tpe, loc)
     case FinalExp.Index(base, offset, tpe, loc) =>
       val b = visitExp[JObject](base)
       val e = ErasedExp.Index(b, offset, tpe, loc)
       ErasedExp.Cast(e, tpe, loc)
-//    case FinalExp.Tuple(elms, tpe, loc) =>
-//    case FinalExp.RecordEmpty(tpe, loc) =>
-//    case FinalExp.RecordSelect(exp, field, tpe, loc) =>
-//    case FinalExp.RecordExtend(field, value, rest, tpe, loc) =>
-//    case FinalExp.RecordRestrict(field, rest, tpe, loc) =>
-//    case FinalExp.ArrayLit(elms, tpe, loc) =>
-//    case FinalExp.ArrayNew(elm, len, tpe, loc) =>
-//    case FinalExp.ArrayLoad(base, index, tpe, loc) =>
-//    case FinalExp.ArrayStore(base, index, elm, tpe, loc) =>
-//    case FinalExp.ArrayLength(base, tpe, loc) =>
-//    case FinalExp.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+    case FinalExp.Tuple(elms, tpe, loc) =>
+      castExp(ErasedExp.Tuple(elms.map(visitExp), tpe, loc))
+    case FinalExp.RecordEmpty(tpe, loc) =>
+      castExp(ErasedExp.RecordEmpty(tpe, loc))
+    case FinalExp.RecordSelect(exp, field, tpe, loc) =>
+      ErasedExp.RecordSelect(visitExp(exp), field, tpe, loc)
+    case FinalExp.RecordExtend(field, value, rest, tpe, loc) =>
+      castExp(ErasedExp.RecordExtend(field, visitExp(value), visitExp(rest), tpe, loc))
+    case FinalExp.RecordRestrict(field, rest, tpe, loc) =>
+      castExp(ErasedExp.RecordRestrict(field, visitExp(rest), tpe, loc))
+    case FinalExp.ArrayLit(elms, tpe, loc) =>
+      castExp(ErasedExp.ArrayLit(elms.map(visitExp), tpe, loc))
+    case FinalExp.ArrayNew(elm, len, tpe, loc) =>
+      castExp(ErasedExp.ArrayNew(visitExp(elm), visitExp(len), tpe, loc))
+    case FinalExp.ArrayLoad(base, index, tpe, loc) =>
+      ErasedExp.ArrayLoad(visitExp(base), visitExp(index), tpe, loc)
+    case FinalExp.ArrayStore(base, index, elm, tpe, loc) =>
+      castExp(ErasedExp.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), tpe, loc))
+    case FinalExp.ArrayLength(base, tpe, loc) =>
+      castExp(ErasedExp.ArrayLength(visitExp(base), tpe, loc))
+    case FinalExp.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      castExp(ErasedExp.ArraySlice(visitExp(base), visitExp(beginIndex), visitExp(endIndex), tpe, loc))
     case FinalExp.Ref(exp, tpe, loc) =>
-      val e1 = visitExp(exp)
-      ErasedExp.Ref(e1, tpe, loc).asInstanceOf[ErasedExp[T]]
-//    case FinalExp.Deref(exp, tpe, loc) =>
-//    case FinalExp.Assign(exp1, exp2, tpe, loc) =>
-//    case FinalExp.Existential(fparam, exp, loc) =>
-//    case FinalExp.Universal(fparam, exp, loc) =>
-//    case FinalExp.Cast(exp, tpe, loc) =>
-//    case FinalExp.TryCatch(exp, rules, tpe, loc) =>
-//    case FinalExp.InvokeConstructor(constructor, args, tpe, loc) =>
-//    case FinalExp.InvokeMethod(method, exp, args, tpe, loc) =>
-//    case FinalExp.InvokeStaticMethod(method, args, tpe, loc) =>
-//    case FinalExp.GetField(field, exp, tpe, loc) =>
-//    case FinalExp.PutField(field, exp1, exp2, tpe, loc) =>
-//    case FinalExp.GetStaticField(field, tpe, loc) =>
-//    case FinalExp.PutStaticField(field, exp, tpe, loc) =>
-//    case FinalExp.NewChannel(exp, tpe, loc) =>
-//    case FinalExp.GetChannel(exp, tpe, loc) =>
-//    case FinalExp.PutChannel(exp1, exp2, tpe, loc) =>
-//    case FinalExp.SelectChannel(rules, default, tpe, loc) =>
-//    case FinalExp.Spawn(exp, tpe, loc) =>
-//    case FinalExp.Lazy(exp, tpe, loc) =>
-//    case FinalExp.Force(exp, tpe, loc) =>
+      castExp(ErasedExp.Ref(visitExp(exp), tpe, loc))
+    case FinalExp.Deref(exp, tpe, loc) =>
+      ErasedExp.Deref(visitExp(exp), tpe, loc)
+    case FinalExp.Assign(exp1, exp2, tpe, loc) =>
+      castExp(ErasedExp.Assign(visitExp(exp1), visitExp(exp2), tpe, loc))
+    case FinalExp.Existential(fparam, exp, loc) =>
+      val FinalAst.FormalParam(sym, tpe) = fparam
+      castExp(ErasedExp.Existential(ErasedAst.FormalParam(sym, tpe), visitExp(exp), loc))
+    case FinalExp.Universal(fparam, exp, loc) =>
+      val FinalAst.FormalParam(sym, tpe) = fparam
+      castExp(ErasedExp.Universal(ErasedAst.FormalParam(sym, tpe), visitExp(exp), loc))
+    case FinalExp.Cast(exp, tpe, loc) =>
+      ErasedExp.Cast(visitExp(exp), tpe, loc)
+    case FinalExp.TryCatch(exp, rules, tpe, loc) =>
+      val newRules = rules.map({ case FinalAst.CatchRule(sym, clazz, exp) => ErasedAst.CatchRule[T](sym, clazz, visitExp(exp)) })
+      ErasedExp.TryCatch(visitExp(exp), newRules, tpe, loc)
+    case FinalExp.InvokeConstructor(constructor, args, tpe, loc) =>
+      castExp(ErasedExp.InvokeConstructor(constructor, args.map(visitExp), tpe, loc))
+    case FinalExp.InvokeMethod(method, exp, args, tpe, loc) =>
+      ErasedExp.InvokeMethod(method, visitExp(exp), args.map(visitExp), tpe, loc)
+    case FinalExp.InvokeStaticMethod(method, args, tpe, loc) =>
+      ErasedExp.InvokeStaticMethod(method, args.map(visitExp), tpe, loc)
+    case FinalExp.GetField(field, exp, tpe, loc) =>
+      ErasedExp.GetField(field, visitExp(exp), tpe, loc)
+    case FinalExp.PutField(field, exp1, exp2, tpe, loc) =>
+      castExp(ErasedExp.PutField(field, visitExp(exp1), visitExp(exp2), tpe, loc))
+    case FinalExp.GetStaticField(field, tpe, loc) =>
+      ErasedExp.GetStaticField(field, tpe, loc)
+    case FinalExp.PutStaticField(field, exp, tpe, loc) =>
+      castExp(ErasedExp.PutStaticField(field, visitExp(exp), tpe, loc))
+    case FinalExp.NewChannel(exp, tpe, loc) =>
+      castExp(ErasedExp.NewChannel(visitExp(exp), tpe, loc))
+    case FinalExp.GetChannel(exp, tpe, loc) =>
+      ErasedExp.GetChannel(visitExp(exp), tpe, loc)
+    case FinalExp.PutChannel(exp1, exp2, tpe, loc) =>
+      castExp(ErasedExp.PutChannel(visitExp(exp1), visitExp(exp2), tpe, loc))
+    case FinalExp.SelectChannel(rules, default, tpe, loc) =>
+      val newRules = rules.map(visitChannelRule[T])
+      ErasedExp.SelectChannel(newRules, default.map(visitExp[T]), tpe, loc)
+    case FinalExp.Spawn(exp, tpe, loc) =>
+      castExp(ErasedExp.Spawn(visitExp(exp), tpe, loc))
+    case FinalExp.Lazy(exp, tpe, loc) =>
+      castExp(ErasedExp.Lazy(visitExp(exp), tpe, loc))
+    case FinalExp.Force(exp, tpe, loc) =>
+      ErasedExp.Force(visitExp(exp), tpe, loc)
 //    case FinalExp.FixpointConstraintSet(cs, tpe, loc) =>
+//      val newCs = cs.map({
+//        case FinalAst.Constraint(cparams, head, body, loc) =>
+//          val newHead = head match {
+//            case Head.Atom(pred, den, terms, tpe, loc) =>
+//              ErasedAst.Predicate.Head.Atom(pred, den, terms)
+//            case Head.Union(exp, terms, tpe, loc) =>
+//          }
+//          val newCparams = cparams.map({???})
+//          val newBody = ???
+//          ErasedAst.Constraint(newCparams, newHead, newBody, loc)
+//      })
+//      castExp(ErasedExp.FixpointConstraintSet(newCs, tpe, loc))
 //    case FinalExp.FixpointCompose(exp1, exp2, tpe, loc) =>
 //    case FinalExp.FixpointSolve(exp, stf, tpe, loc) =>
 //    case FinalExp.FixpointProject(pred, exp, tpe, loc) =>
@@ -107,4 +163,14 @@ object Eraser {
 //    case FinalExp.MatchError(tpe, loc) =>
     case _ => ???
   }
+
+  def visitChannelRule[T <: JType](rule: FinalAst.SelectChannelRule): ErasedAst.SelectChannelRule[T] = {
+    val FinalAst.SelectChannelRule(sym, chan, exp) = rule
+    ErasedAst.SelectChannelRule(sym, visitExp(chan), visitExp(exp))
+  }
+
+//  def visitCatchRule[T <: JType](rule: FinalAst.CatchRule): ErasedAst.CatchRule[T] = {
+//    val FinalAst.CatchRule(sym, clazz, exp) = rule
+//    ErasedAst.CatchRule(sym, clazz, visitExp(exp))
+//  }
 }
