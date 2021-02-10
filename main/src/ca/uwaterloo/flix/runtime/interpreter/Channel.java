@@ -71,7 +71,7 @@ public final class Channel {
 
   public static void spawn(Spawnable s) {
     // Create a new Thread and evaluate the spawned expression in the new Thread
-    Thread thread = new Thread(s::spawn); // Q: How does this compile given that 'Spawnable' doesn't implement 'Runnable'
+    Thread thread = new Thread(s::spawn);
     thread.start();
   }
 
@@ -173,6 +173,7 @@ public final class Channel {
    * @param channels the channels to unlock
    */
   private static void unlockAllChannels(Channel[] channels) {
+    // Unlock channels in reverse order like Go.
     for (int i = channels.length - 1; i >= 0; i--) {
       channels[i].channelLock.unlock();
     }
