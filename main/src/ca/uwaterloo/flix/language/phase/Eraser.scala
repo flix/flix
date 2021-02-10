@@ -8,8 +8,6 @@ import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ErasedAst.{Expression => ErasedExp}
 import FinalAst.{ConstraintParam, Expression => FinalExp}
-import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.FinalAst.Term.{Body, Head}
 
 object Eraser {
 
@@ -156,14 +154,21 @@ object Eraser {
           ErasedAst.Constraint(newCparams, newHead, newBody, loc)
       })
       castExp(ErasedExp.FixpointConstraintSet(newCs, tpe, loc))
-//    case FinalExp.FixpointCompose(exp1, exp2, tpe, loc) =>
-//    case FinalExp.FixpointSolve(exp, stf, tpe, loc) =>
-//    case FinalExp.FixpointProject(pred, exp, tpe, loc) =>
-//    case FinalExp.FixpointEntails(exp1, exp2, tpe, loc) =>
-//    case FinalExp.FixpointFold(pred, init, f, constraints, tpe, loc) =>
-//    case FinalExp.HoleError(sym, tpe, loc) =>
-//    case FinalExp.MatchError(tpe, loc) =>
-    case _ => ???
+    case FinalExp.FixpointCompose(exp1, exp2, tpe, loc) =>
+      castExp(ErasedExp.FixpointCompose(visitExp(exp1), visitExp(exp2), tpe, loc))
+    case FinalExp.FixpointSolve(exp, stf, tpe, loc) =>
+      castExp(ErasedExp.FixpointSolve(visitExp(exp), stf, tpe, loc))
+    case FinalExp.FixpointProject(pred, exp, tpe, loc) =>
+      castExp(ErasedExp.FixpointProject(pred, visitExp(exp), tpe, loc))
+    case FinalExp.FixpointEntails(exp1, exp2, tpe, loc) =>
+      castExp(ErasedExp.FixpointEntails(visitExp(exp1), visitExp(exp2), tpe, loc))
+    case FinalExp.FixpointFold(pred, init, f, constraints, tpe, loc) =>
+      def visitVar[TT <: JType](v: FinalExp.Var): ErasedExp.Var[TT] = visitExp(v).asInstanceOf[ErasedExp.Var[TT]]
+      ErasedExp.FixpointFold(pred, visitVar(init), visitVar(f), visitVar(constraints), tpe, loc)
+    case FinalExp.HoleError(sym, tpe, loc) =>
+      ErasedExp.HoleError(sym, tpe, loc)
+    case FinalExp.MatchError(tpe, loc) =>
+      ErasedExp.MatchError(tpe, loc)
   }
 
   def visitTermHead(head: FinalAst.Term.Head): ErasedAst.Term.Head = head match {
