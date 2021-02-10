@@ -176,9 +176,6 @@ public final class Channel {
     for (int i = channels.length - 1; i >= 0; i--) {
       channels[i].channelLock.unlock();
     }
-//      for (Channel c : channels) {
-//          c.channelLock.unlock();
-//      }
   }
 
   /**
