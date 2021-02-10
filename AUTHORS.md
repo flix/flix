@@ -32,3 +32,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Rasmus Larsen](https://github.com/herbstein)
 - [Thomas Søe Plougsgaard](https://github.com/plougsgaard)
 - [Oskar Haarklou Veileborg](https://github.com/BarrensZeppelin)
+- [Justin Fargnoli](https://github.com/justinfargnoli)
