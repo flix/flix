@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -35,6 +36,126 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     } yield root
   }
 
+  // MATT use this
+  private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
+
+    def checkLawfulSuperClasses(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
+      case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) => // MATT make _
+        if (mod.isLawless) {
+          ().toSuccess
+        } else {
+          Validation.traverseX(superClasses) {
+            superSym =>
+              val superClass = root.classes(superSym)
+              if (superClass.mod.isLawless) {
+                ??? // MATT error
+              } else {
+                ().toSuccess
+              }
+          }
+        }
+    }
+
+    // MATT docs
+    def findUsedSigs(defn0: TypedAst.Def): List[Symbol.SigSym] = {
+      def visit(exp0: TypedAst.Expression): List[Symbol.SigSym] = exp0 match {
+        case Expression.Unit(loc) => Nil
+        case Expression.Null(tpe, loc) => Nil
+        case Expression.True(loc) => Nil
+        case Expression.False(loc) => Nil
+        case Expression.Char(lit, loc) => Nil
+        case Expression.Float32(lit, loc) => Nil
+        case Expression.Float64(lit, loc) => Nil
+        case Expression.Int8(lit, loc) => Nil
+        case Expression.Int16(lit, loc) => Nil
+        case Expression.Int32(lit, loc) => Nil
+        case Expression.Int64(lit, loc) => Nil
+        case Expression.BigInt(lit, loc) => Nil
+        case Expression.Str(lit, loc) => Nil
+        case Expression.Default(tpe, loc) => Nil
+        case Expression.Wild(tpe, loc) => Nil
+        case Expression.Var(sym, tpe, loc) => Nil
+        case Expression.Def(sym, tpe, loc) => Nil
+        case Expression.Sig(sym, tpe, loc) => List(sym)
+        case Expression.Hole(sym, tpe, eff, loc) => Nil
+        case Expression.Lambda(fparam, exp, tpe, loc) => visit(exp)
+        case Expression.Apply(exp, exps, tpe, eff, loc) => visit(exp) ++ exps.flatMap(visit)
+        case Expression.Unary(sop, exp, tpe, eff, loc) => visit(exp)
+        case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
+        case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
+        case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
+        case Expression.Stm(exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
+        case Expression.Match(exp, rules, tpe, eff, loc) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp) ++ visit(rule.guard))
+        case Expression.Choose(exps, rules, tpe, eff, loc) => exps.flatMap(visit) ++ rules.flatMap(rule => visit(rule.exp))
+        case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visit(exp)
+        case Expression.Tuple(elms, tpe, eff, loc) => elms.flatMap(visit)
+        case Expression.RecordEmpty(tpe, loc) => Nil
+        case Expression.RecordSelect(exp, field, tpe, eff, loc) => visit(exp)
+        case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => visit(value) ++ visit(rest)
+        case Expression.RecordRestrict(field, rest, tpe, eff, loc) => visit(rest)
+        case Expression.ArrayLit(elms, tpe, eff, loc) => elms.flatMap(visit)
+        case Expression.ArrayNew(elm, len, tpe, eff, loc) => visit(elm) ++ visit(len)
+        case Expression.ArrayLoad(base, index, tpe, eff, loc) => visit(base) ++ visit(index)
+        case Expression.ArrayLength(base, eff, loc) => visit(base)
+        case Expression.ArrayStore(base, index, elm, loc) => visit(base) ++ visit(index)
+        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => visit(base) ++ visit(beginIndex) ++ visit(endIndex)
+        case Expression.Ref(exp, tpe, eff, loc) => visit(exp)
+        case Expression.Deref(exp, tpe, eff, loc) => visit(exp)
+        case Expression.Assign(exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
+        case Expression.Existential(fparam, exp, loc) => visit(exp)
+        case Expression.Universal(fparam, exp, loc) => visit(exp)
+        case Expression.Ascribe(exp, tpe, eff, loc) => visit(exp)
+        case Expression.Cast(exp, tpe, eff, loc) => visit(exp)
+        case Expression.TryCatch(exp, rules, tpe, eff, loc) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp))
+        case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => args.flatMap(visit)
+        case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visit(exp) ++ args.flatMap(visit)
+        case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => args.flatMap(visit)
+        case Expression.GetField(field, exp, tpe, eff, loc) => visit(exp)
+        case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
+        case Expression.GetStaticField(field, tpe, eff, loc) => Nil
+        case Expression.PutStaticField(field, exp, tpe, eff, loc) => visit(exp)
+        case Expression.NewChannel(exp, tpe, eff, loc) => visit(exp)
+        case Expression.GetChannel(exp, tpe, eff, loc) => visit(exp)
+        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
+        case Expression.SelectChannel(rules, default, tpe, eff, loc) => rules.flatMap(rule => visit(rule.chan) ++ visit(rule.exp)) ++ default.toList.flatMap(visit)
+        case Expression.Spawn(exp, tpe, eff, loc) => visit(exp)
+        case Expression.Lazy(exp, tpe, loc) => visit(exp)
+        case Expression.Force(exp, tpe, eff, loc) => visit(exp)
+        case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => Nil
+        case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => visit(exp1) ++ (visit(exp2))
+        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visit(exp)
+        case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visit(exp)
+        case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
+        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
+      }
+
+      visit(defn0.exp)
+    }
+
+    // MATT docs
+    def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
+      case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) => // MATT make _
+        if (mod.isLawless) {
+          ().toSuccess
+        } else {
+          val usedSigs = laws.flatMap(findUsedSigs)
+          Validation.traverseX(signatures) {
+            sig =>
+              if (usedSigs.contains(sig.sym)) {
+                ().toSuccess
+              } else {
+                ??? // MATT error
+              }
+          }
+        }
+    }
+
+    def visitClass(class0: TypedAst.Class): Validation[Unit, InstanceError] = {
+      ??? // MATT
+    }
+
+    ??? // MATT
+  }
 
   /**
     * Validates all instances in the given AST root.
@@ -154,20 +275,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
               InstanceError.MissingSuperClassInstance(tpe, sym, superClass, loc).toFailure
             }
         }
-    }
-
-    // MATT docs
-    // MATT test
-    // MATT actually use this def
-    def checkLawfulness(clazz: TypedAst.Class): Validation[Unit, InstanceError] = clazz match {
-      case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) => (mod.isLawless, laws) match {
-        // Case 1: lawless class with laws: error
-        case (true, _ :: _) => ??? // MATT make error
-        // Case 2: lawful class without laws: error
-        case (false, Nil) => ??? // MATT make error
-        // Case 3: appropriate modifier
-        case _ => ().toSuccess
-      }
     }
 
     /**
