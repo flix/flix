@@ -107,7 +107,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       val clazz = root.classes(inst.sym)
 
       // Step 1: check that each signature has an implementation.
-      val sigMatchVal = checkEach(clazz.signatures) {
+      val sigMatchVal = Validation.traverseX(clazz.signatures) {
         sig =>
           inst.defs.find(_.sym.name == sig.sym.name) match {
             // Case 1: there is no definition with the same name
@@ -126,7 +126,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       // Step 2: check that there are no extra definitions
       sigMatchVal.flatMap {
         _ =>
-          checkEach(inst.defs) {
+          Validation.traverseX(inst.defs) {
             defn =>
               clazz.signatures.find(_.sym.name == defn.sym.name) match {
                 case None => InstanceError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
@@ -142,7 +142,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) =>
         val superClasses = root.classEnv(sym).superClasses
-        checkEach(superClasses) {
+        Validation.traverseX(superClasses) {
           superClass =>
             val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
             // Check each instance of the super class
@@ -177,7 +177,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       val insts = insts0
       // Check each instance against each instance that hasn't been checked yet
       val checks = insts.tails.toSeq
-      checkEach(checks) {
+      Validation.traverseX(checks) {
         case inst :: unchecked =>
           for {
             _ <- checkSimple(inst)
@@ -192,15 +192,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Check the instances of each class in parallel.
     val results = ParOps.parMap(root.instances.values, checkInstancesOfClass)
-    checkEach(results)(identity)
-  }
-
-  /**
-    * Apply a check to each element in the sequence `xs`.
-    */
-  private def checkEach[In, Error](xs: Iterable[In])(f: In => Validation[Unit, Error]): Validation[Unit, Error] = {
-    Validation.fold(xs, ()) {
-      case ((), x) => f(x)
-    }
+    Validation.traverseX(results)(identity)
   }
 }
