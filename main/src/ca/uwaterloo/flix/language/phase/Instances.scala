@@ -75,25 +75,25 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Str(_, _) => Nil
         case Expression.Default(_, _) => Nil
         case Expression.Wild(_, _) => Nil
-        case Expression.Var(sym, _, _) => Nil
-        case Expression.Def(sym, _, _) => Nil
+        case Expression.Var(_, _, _) => Nil
+        case Expression.Def(_, _, _) => Nil
         case Expression.Sig(sym, _, _) => List(sym)
-        case Expression.Hole(sym, _, _, _) => Nil
-        case Expression.Lambda(fparam, exp, _, _) => visit(exp)
+        case Expression.Hole(_, _, _, _) => Nil
+        case Expression.Lambda(_, exp, _, _) => visit(exp)
         case Expression.Apply(exp, exps, _, _, _) => visit(exp) ++ exps.flatMap(visit)
-        case Expression.Unary(sop, exp, _, _, _) => visit(exp)
-        case Expression.Binary(sop, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
-        case Expression.Let(sym, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.Unary(_, exp, _, _, _) => visit(exp)
+        case Expression.Binary(_, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.Let(_, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
         case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
         case Expression.Stm(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
         case Expression.Match(exp, rules, _, _, _) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp) ++ visit(rule.guard))
         case Expression.Choose(exps, rules, _, _, _) => exps.flatMap(visit) ++ rules.flatMap(rule => visit(rule.exp))
-        case Expression.Tag(sym, tag, exp, _, _, _) => visit(exp)
+        case Expression.Tag(_, _, exp, _, _, _) => visit(exp)
         case Expression.Tuple(elms, _, _, _) => elms.flatMap(visit)
         case Expression.RecordEmpty(_, _) => Nil
-        case Expression.RecordSelect(exp, field, _, _, _) => visit(exp)
-        case Expression.RecordExtend(field, value, rest, _, _, _) => visit(value) ++ visit(rest)
-        case Expression.RecordRestrict(field, rest, _, _, _) => visit(rest)
+        case Expression.RecordSelect(exp, _, _, _, _) => visit(exp)
+        case Expression.RecordExtend(_, value, rest, _, _, _) => visit(value) ++ visit(rest)
+        case Expression.RecordRestrict(_, rest, _, _, _) => visit(rest)
         case Expression.ArrayLit(elms, _, _, _) => elms.flatMap(visit)
         case Expression.ArrayNew(elm, len, _, _, _) => visit(elm) ++ visit(len)
         case Expression.ArrayLoad(base, index, _, _, _) => visit(base) ++ visit(index)
@@ -135,7 +135,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // MATT docs
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, mod, _, _, _, signatures, laws, _) => // MATT make _
+      case TypedAst.Class(_, mod, _, _, _, signatures, laws, _) =>
         if (mod.isLawless) {
           ().toSuccess
         } else {
