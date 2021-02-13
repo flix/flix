@@ -104,18 +104,6 @@ public final class Channel {
         selectLock.lock();
 
         try {
-//          // Check if any channel has an element
-//          for (int index = 0; index < channels.length; index++) {
-//            Channel channel = channels[index];
-//            Object element = channel.tryGet();
-//            if (element != null) {
-//              // Element found.
-//              // Return the element and the branchNumber (index of the array) of the containing channel
-//              return new SelectChoice(index, element);
-//            }
-//          }
-
-          // Return SelectChoice if there is are waiting element(s) in one of the channels
           {
             // List of channels with waiting elements.
             // 7 is a guess of the maximum number of channels with waiting elements.
@@ -139,7 +127,6 @@ public final class Channel {
               return new SelectChoice(randomChannelIndex, element);
             }
           }
-
 
           // No element was found.
 
