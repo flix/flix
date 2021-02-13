@@ -228,4 +228,25 @@ object InstanceError {
     }
   }
 
+  /**
+    * Error indicating an unlawful signature in a lawful class.
+    *
+    * @param sym the symbol of the unlawful signature.
+    * @param loc the location where the error occurred.
+    */
+  case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Unlawful signature '$sym'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unlawful signature '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << ">> Each signature of a lawful class must appear in at least one law."
+      vt << NewLine
+      vt << Code(loc, s"unlawful signature")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Create a law for ${sym} or mark the class as unlawful."
+    }
+  }
 }

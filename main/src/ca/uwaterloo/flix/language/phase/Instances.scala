@@ -145,7 +145,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
               if (usedSigs.contains(sig.sym)) {
                 ().toSuccess
               } else {
-                ??? // MATT error
+                InstanceError.UnlawfulSignature(sig.sym, sig.loc).toFailure
               }
           }
         }
