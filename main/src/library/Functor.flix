@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be mapped over.
 ///
-class Functor[m :# Type -> Type] {
+lawless class Functor[m :# Type -> Type] {
     ///
     /// Applies the function `f` to `s` preserving its structure.
     ///

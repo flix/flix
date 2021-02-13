@@ -17,7 +17,7 @@
 ///
 /// A type class for partially ordered types that have an upper bound.
 ///
-pub class UpperBound[a] {
+pub lawless class UpperBound[a] {
     ///
     /// Returns the largest value of `a`.
     ///

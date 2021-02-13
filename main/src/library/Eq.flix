@@ -17,7 +17,7 @@
 ///
 /// A type class for equality and inequality.
 ///
-pub class Eq[a] {
+pub lawless class Eq[a] {
 
     ///
     /// Returns `true` if and only if `x` is equal to `y`.

@@ -25,7 +25,7 @@ namespace Test/Exp/Infix {
         pub def mul(x: Int, y: Int): Int = x * y
     }
 
-    class Divisible[a] {
+    lawless class Divisible[a] {
         pub def div(x: a, y: a): a
     }
 
