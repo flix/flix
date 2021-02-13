@@ -154,7 +154,7 @@ namespace Test/Exp/Concurrency/Select {
         ()
     }
 
-    @test
+    /*@test
     def testSelectRandom02(): Unit & Impure = {
         let c10 = chan Unit 0;
         let c11 = chan Unit 0;
@@ -166,7 +166,7 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- c11 => <- c13 ; <- c12 ; <- c10 ; ()
         };
         ()
-    }
+    }*/
 
     @test
     def testSelectRandom03(): Unit & Impure = {
@@ -361,6 +361,24 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- c6 => ()
         case _ <- c6 => ()
         } ; c7 <- () ; () ; () } ; () ; c6 <- () ; () ; <- c9;
+        ()
+    }
+
+    @test
+    def testSelectRandom10(): Unit & Impure = {
+        let c10 = chan Unit 0;
+        let c11 = chan Unit 0;
+        let c12 = chan Unit 0;
+        let c13 = chan Unit 0;
+        spawn { c13 <- () ; () } ;
+        spawn { c12 <- () ; () } ;
+        spawn { c11 <- () ; () } ;
+        spawn { c10 <- () ; () } ;
+        select {
+            case _ <- c10 => <- c13 ; <- c12 ; <- c11
+            case _ <- c13 => <- c12 ; <- c10 ; <- c11
+            case _ <- c11 => <- c13 ; <- c12 ; <- c10
+        };
         ()
     }
 
