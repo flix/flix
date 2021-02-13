@@ -246,7 +246,7 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"unlawful signature")
       vt << NewLine
-      vt << Underline("Tip:") << s" Create a law for ${sym} or mark the class as unlawful."
+      vt << Underline("Tip:") << s" Create a law for '${sym}' or mark the class as unlawful."
     }
   }
 }

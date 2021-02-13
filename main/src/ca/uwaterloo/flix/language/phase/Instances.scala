@@ -33,10 +33,11 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
   override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Instances") {
     for {
       _ <- visitInstances(root)
+      _ <- visitClasses(root)
     } yield root
   }
 
-  // MATT use this
+  // MATT docs
   private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
     // MATT docs
@@ -152,10 +153,13 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     def visitClass(class0: TypedAst.Class): Validation[Unit, InstanceError] = {
-      ??? // MATT
+      for {
+        _ <- checkLawfulSuperClasses(class0)
+        _ <- checkLawApplication(class0)
+      } yield ()
     }
 
-    ??? // MATT
+    Validation.traverseX(root.classes.values)(visitClass)
   }
 
   /**
