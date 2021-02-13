@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
-    * Validates instances in the given AST root.
+    * Validates instances and classes in the given AST root.
     */
   override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Instances") {
     for {
@@ -37,10 +37,14 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     } yield root
   }
 
-  // MATT docs
+  /**
+    * Validates all instances in the given AST root.
+    */
   private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
-    // MATT docs
+    /**
+      * Checks that every super class of `class0` is lawful, unless `class0` is marked `lawless`.
+      */
     def checkLawfulSuperClasses(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
       case TypedAst.Class(_, mod, sym, _, superClasses, _, _, loc) =>
         if (mod.isLawless) {
@@ -58,7 +62,9 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         }
     }
 
-    // MATT docs
+    /**
+      * Creates a list of all the sigs used in the given `defn0`.
+      */
     def findUsedSigs(defn0: TypedAst.Def): List[Symbol.SigSym] = {
       def visit(exp0: TypedAst.Expression): List[Symbol.SigSym] = exp0 match {
         case Expression.Unit(_) => Nil
@@ -134,7 +140,9 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       visit(defn0.exp)
     }
 
-    // MATT docs
+    /**
+      * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
+      */
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
       case TypedAst.Class(_, mod, _, _, _, signatures, laws, _) =>
         if (mod.isLawless) {
@@ -152,6 +160,9 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         }
     }
 
+    /**
+      * Performs validations on a single class.
+      */
     def visitClass(class0: TypedAst.Class): Validation[Unit, InstanceError] = {
       for {
         _ <- checkLawfulSuperClasses(class0)
@@ -165,8 +176,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
     * Validates all instances in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
     */
   private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
