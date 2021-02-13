@@ -40,7 +40,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
     def checkLawfulSuperClasses(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) => // MATT make _
+      case TypedAst.Class(_, mod, _, _, superClasses, _, _, _) =>
         if (mod.isLawless) {
           ().toSuccess
         } else {
@@ -59,74 +59,74 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     // MATT docs
     def findUsedSigs(defn0: TypedAst.Def): List[Symbol.SigSym] = {
       def visit(exp0: TypedAst.Expression): List[Symbol.SigSym] = exp0 match {
-        case Expression.Unit(loc) => Nil
-        case Expression.Null(tpe, loc) => Nil
-        case Expression.True(loc) => Nil
-        case Expression.False(loc) => Nil
-        case Expression.Char(lit, loc) => Nil
-        case Expression.Float32(lit, loc) => Nil
-        case Expression.Float64(lit, loc) => Nil
-        case Expression.Int8(lit, loc) => Nil
-        case Expression.Int16(lit, loc) => Nil
-        case Expression.Int32(lit, loc) => Nil
-        case Expression.Int64(lit, loc) => Nil
-        case Expression.BigInt(lit, loc) => Nil
-        case Expression.Str(lit, loc) => Nil
-        case Expression.Default(tpe, loc) => Nil
-        case Expression.Wild(tpe, loc) => Nil
-        case Expression.Var(sym, tpe, loc) => Nil
-        case Expression.Def(sym, tpe, loc) => Nil
-        case Expression.Sig(sym, tpe, loc) => List(sym)
-        case Expression.Hole(sym, tpe, eff, loc) => Nil
-        case Expression.Lambda(fparam, exp, tpe, loc) => visit(exp)
-        case Expression.Apply(exp, exps, tpe, eff, loc) => visit(exp) ++ exps.flatMap(visit)
-        case Expression.Unary(sop, exp, tpe, eff, loc) => visit(exp)
-        case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
-        case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
-        case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
-        case Expression.Stm(exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
-        case Expression.Match(exp, rules, tpe, eff, loc) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp) ++ visit(rule.guard))
-        case Expression.Choose(exps, rules, tpe, eff, loc) => exps.flatMap(visit) ++ rules.flatMap(rule => visit(rule.exp))
-        case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visit(exp)
-        case Expression.Tuple(elms, tpe, eff, loc) => elms.flatMap(visit)
-        case Expression.RecordEmpty(tpe, loc) => Nil
-        case Expression.RecordSelect(exp, field, tpe, eff, loc) => visit(exp)
-        case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => visit(value) ++ visit(rest)
-        case Expression.RecordRestrict(field, rest, tpe, eff, loc) => visit(rest)
-        case Expression.ArrayLit(elms, tpe, eff, loc) => elms.flatMap(visit)
-        case Expression.ArrayNew(elm, len, tpe, eff, loc) => visit(elm) ++ visit(len)
-        case Expression.ArrayLoad(base, index, tpe, eff, loc) => visit(base) ++ visit(index)
-        case Expression.ArrayLength(base, eff, loc) => visit(base)
-        case Expression.ArrayStore(base, index, elm, loc) => visit(base) ++ visit(index)
-        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => visit(base) ++ visit(beginIndex) ++ visit(endIndex)
-        case Expression.Ref(exp, tpe, eff, loc) => visit(exp)
-        case Expression.Deref(exp, tpe, eff, loc) => visit(exp)
-        case Expression.Assign(exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
-        case Expression.Existential(fparam, exp, loc) => visit(exp)
-        case Expression.Universal(fparam, exp, loc) => visit(exp)
-        case Expression.Ascribe(exp, tpe, eff, loc) => visit(exp)
-        case Expression.Cast(exp, tpe, eff, loc) => visit(exp)
-        case Expression.TryCatch(exp, rules, tpe, eff, loc) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp))
-        case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => args.flatMap(visit)
-        case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visit(exp) ++ args.flatMap(visit)
-        case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => args.flatMap(visit)
-        case Expression.GetField(field, exp, tpe, eff, loc) => visit(exp)
-        case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
-        case Expression.GetStaticField(field, tpe, eff, loc) => Nil
-        case Expression.PutStaticField(field, exp, tpe, eff, loc) => visit(exp)
-        case Expression.NewChannel(exp, tpe, eff, loc) => visit(exp)
-        case Expression.GetChannel(exp, tpe, eff, loc) => visit(exp)
-        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
-        case Expression.SelectChannel(rules, default, tpe, eff, loc) => rules.flatMap(rule => visit(rule.chan) ++ visit(rule.exp)) ++ default.toList.flatMap(visit)
-        case Expression.Spawn(exp, tpe, eff, loc) => visit(exp)
-        case Expression.Lazy(exp, tpe, loc) => visit(exp)
-        case Expression.Force(exp, tpe, eff, loc) => visit(exp)
-        case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => Nil
-        case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => visit(exp1) ++ (visit(exp2))
-        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visit(exp)
-        case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visit(exp)
-        case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visit(exp1) ++ visit(exp2)
-        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
+        case Expression.Unit(_) => Nil
+        case Expression.Null(_, _) => Nil
+        case Expression.True(_) => Nil
+        case Expression.False(_) => Nil
+        case Expression.Char(_, _) => Nil
+        case Expression.Float32(_, _) => Nil
+        case Expression.Float64(_, _) => Nil
+        case Expression.Int8(_, _) => Nil
+        case Expression.Int16(_, _) => Nil
+        case Expression.Int32(_, _) => Nil
+        case Expression.Int64(_, _) => Nil
+        case Expression.BigInt(_, _) => Nil
+        case Expression.Str(_, _) => Nil
+        case Expression.Default(_, _) => Nil
+        case Expression.Wild(_, _) => Nil
+        case Expression.Var(sym, _, _) => Nil
+        case Expression.Def(sym, _, _) => Nil
+        case Expression.Sig(sym, _, _) => List(sym)
+        case Expression.Hole(sym, _, _, _) => Nil
+        case Expression.Lambda(fparam, exp, _, _) => visit(exp)
+        case Expression.Apply(exp, exps, _, _, _) => visit(exp) ++ exps.flatMap(visit)
+        case Expression.Unary(sop, exp, _, _, _) => visit(exp)
+        case Expression.Binary(sop, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.Let(sym, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
+        case Expression.Stm(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.Match(exp, rules, _, _, _) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp) ++ visit(rule.guard))
+        case Expression.Choose(exps, rules, _, _, _) => exps.flatMap(visit) ++ rules.flatMap(rule => visit(rule.exp))
+        case Expression.Tag(sym, tag, exp, _, _, _) => visit(exp)
+        case Expression.Tuple(elms, _, _, _) => elms.flatMap(visit)
+        case Expression.RecordEmpty(_, _) => Nil
+        case Expression.RecordSelect(exp, field, _, _, _) => visit(exp)
+        case Expression.RecordExtend(field, value, rest, _, _, _) => visit(value) ++ visit(rest)
+        case Expression.RecordRestrict(field, rest, _, _, _) => visit(rest)
+        case Expression.ArrayLit(elms, _, _, _) => elms.flatMap(visit)
+        case Expression.ArrayNew(elm, len, _, _, _) => visit(elm) ++ visit(len)
+        case Expression.ArrayLoad(base, index, _, _, _) => visit(base) ++ visit(index)
+        case Expression.ArrayLength(base, _, _) => visit(base)
+        case Expression.ArrayStore(base, index, elm, _) => visit(base) ++ visit(index) ++ visit(elm)
+        case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => visit(base) ++ visit(beginIndex) ++ visit(endIndex)
+        case Expression.Ref(exp, _, _, _) => visit(exp)
+        case Expression.Deref(exp, _, _, _) => visit(exp)
+        case Expression.Assign(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.Existential(_, exp, _) => visit(exp)
+        case Expression.Universal(_, exp, _) => visit(exp)
+        case Expression.Ascribe(exp, _, _, _) => visit(exp)
+        case Expression.Cast(exp, _, _, _) => visit(exp)
+        case Expression.TryCatch(exp, rules, _, _, _) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp))
+        case Expression.InvokeConstructor(_, args, _, _, _) => args.flatMap(visit)
+        case Expression.InvokeMethod(_, exp, args, _, _, _) => visit(exp) ++ args.flatMap(visit)
+        case Expression.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(visit)
+        case Expression.GetField(_, exp, _, _, _) => visit(exp)
+        case Expression.PutField(_, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.GetStaticField(_, _, _, _) => Nil
+        case Expression.PutStaticField(_, exp, _, _, _) => visit(exp)
+        case Expression.NewChannel(exp, _, _, _) => visit(exp)
+        case Expression.GetChannel(exp, _, _, _) => visit(exp)
+        case Expression.PutChannel(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => visit(rule.chan) ++ visit(rule.exp)) ++ default.toList.flatMap(visit)
+        case Expression.Spawn(exp, _, _, _) => visit(exp)
+        case Expression.Lazy(exp, _, _) => visit(exp)
+        case Expression.Force(exp, _, _, _) => visit(exp)
+        case Expression.FixpointConstraintSet(_, _, _, _) => Nil
+        case Expression.FixpointCompose(exp1, exp2, _, _, _, _) => visit(exp1) ++ (visit(exp2))
+        case Expression.FixpointSolve(exp, _, _, _, _) => visit(exp)
+        case Expression.FixpointProject(_, exp, _, _, _) => visit(exp)
+        case Expression.FixpointEntails(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
+        case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
       }
 
       visit(defn0.exp)
@@ -134,7 +134,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // MATT docs
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) => // MATT make _
+      case TypedAst.Class(_, mod, _, _, _, signatures, laws, _) => // MATT make _
         if (mod.isLawless) {
           ().toSuccess
         } else {
