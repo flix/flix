@@ -55,6 +55,11 @@ public final class Channel {
    */
   private final boolean unbuffered;
 
+  /**
+   * a random number generator used to pick one of the ready channels of a 'select' statement.
+   */
+  private static final Random RANDOM = new Random(); // TODO: Q: Should we supply a seed?
+
   public Channel(int bufferSize) {
     if (bufferSize < 0) {
       throw new RuntimeException("Channel bufferSize must be positive");
@@ -99,16 +104,39 @@ public final class Channel {
         selectLock.lock();
 
         try {
-          // Check if any channel has an element
-          for (int index = 0; index < channels.length; index++) {
-            Channel channel = channels[index];
-            Object element = channel.tryGet();
-            if (element != null) {
-              // Element found.
-              // Return the element and the branchNumber (index of the array) of the containing channel
-              return new SelectChoice(index, element);
+//          // Check if any channel has an element
+//          for (int index = 0; index < channels.length; index++) {
+//            Channel channel = channels[index];
+//            Object element = channel.tryGet();
+//            if (element != null) {
+//              // Element found.
+//              // Return the element and the branchNumber (index of the array) of the containing channel
+//              return new SelectChoice(index, element);
+//            }
+//          }
+
+          // Return SelectChoice if there is are waiting element(s) in one of the channels
+          {
+            // List of channels with waiting elements.
+            // 7 is a guess of the maximum number of channels with waiting elements.
+            List<SelectChoice> selectChoices = new ArrayList<>(7);
+
+            // Add channels with waiting elements to the list
+            for (int index = 0; index < channels.length; index++) {
+              Object element = channels[index].tryGet(); // TODO: BUG: if an element is taken from the channel, but not randomly selected, then it is never delivered.
+              if (element != null) { // Found a channel with a waiting element
+                selectChoices.add(new SelectChoice(index, element));
+              }
+            }
+
+            if (selectChoices.size() > 0) { // There are channels with waiting elements.
+              // Randomly select an element of the list. This prevents excessive backpressure from building up on
+              // channels with waiting elements.
+              int randomIndex = RANDOM.nextInt(selectChoices.size());
+              return selectChoices.get(randomIndex);
             }
           }
+
 
           // No element was found.
 
