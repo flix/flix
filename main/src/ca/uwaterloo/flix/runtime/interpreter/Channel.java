@@ -321,6 +321,11 @@ public final class Channel {
     }
   }
 
+  /**
+   * Retrieves the head of the elementQueue without removing it.
+   *
+   * @return the head of the elementQueue
+   */
   private Object peek() {
     channelLock.lock();
     try {
