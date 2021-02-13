@@ -119,21 +119,24 @@ public final class Channel {
           {
             // List of channels with waiting elements.
             // 7 is a guess of the maximum number of channels with waiting elements.
-            List<SelectChoice> selectChoices = new ArrayList<>(7);
+            List<Integer> nonEmptyChannelIndices = new ArrayList<>(7);
 
             // Add channels with waiting elements to the list
             for (int index = 0; index < channels.length; index++) {
-              Object element = channels[index].tryGet(); // TODO: BUG: if an element is taken from the channel, but not randomly selected, then it is never delivered.
-              if (element != null) { // Found a channel with a waiting element
-                selectChoices.add(new SelectChoice(index, element));
+              if (channels[index].peek() != null) {
+                // Found a channel with a waiting element
+                nonEmptyChannelIndices.add(index);
               }
             }
 
-            if (selectChoices.size() > 0) { // There are channels with waiting elements.
-              // Randomly select an element of the list. This prevents excessive backpressure from building up on
-              // channels with waiting elements.
-              int randomIndex = RANDOM.nextInt(selectChoices.size());
-              return selectChoices.get(randomIndex);
+            if (nonEmptyChannelIndices.size() > 0) { // There are channels with waiting elements.
+              // Randomly select an element of the list.
+              // This prevents excessive backpressure from building up on channels with waiting elements.
+
+              int randomChannelIndex = nonEmptyChannelIndices.get(RANDOM.nextInt(nonEmptyChannelIndices.size()));
+              // element will never be null because we checked that it had a waiting element.
+              Object element = channels[randomChannelIndex].tryGet();
+              return new SelectChoice(randomChannelIndex, element);
             }
           }
 
@@ -326,6 +329,16 @@ public final class Channel {
       }
       // Return the element from the channel, or null if channel was empty
       return element;
+    } finally {
+      channelLock.unlock();
+    }
+  }
+
+  private Object peek() {
+    channelLock.lock();
+    try {
+      // Return the element from the channel, or null if channel was empty
+      return elementQueue.peekFirst();
     } finally {
       channelLock.unlock();
     }
