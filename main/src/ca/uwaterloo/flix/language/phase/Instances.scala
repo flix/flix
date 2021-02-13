@@ -39,8 +39,9 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
   // MATT use this
   private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
+    // MATT docs
     def checkLawfulSuperClasses(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, mod, _, _, superClasses, _, _, _) =>
+      case TypedAst.Class(_, mod, sym, _, superClasses, _, _, loc) =>
         if (mod.isLawless) {
           ().toSuccess
         } else {
@@ -48,7 +49,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             superSym =>
               val superClass = root.classes(superSym)
               if (superClass.mod.isLawless) {
-                ??? // MATT error
+                InstanceError.UnlawfulSuperClass(sym, superSym, loc).toFailure
               } else {
                 ().toSuccess
               }
