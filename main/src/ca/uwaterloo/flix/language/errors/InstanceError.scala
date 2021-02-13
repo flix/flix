@@ -205,26 +205,26 @@ object InstanceError {
   }
 
   /**
-    * Error indicating an unlawful super class of a lawful subclass.
+    * Error indicating an lawless super class of a lawful subclass.
     *
     * @param subClass   the lawful sub class.
-    * @param superClass the unlawful super class.
+    * @param superClass the lawless super class.
     * @param loc        the location where the error occurred.
     */
-  case class UnlawfulSuperClass(subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
-    override def summary: String = s"Unlawful super class '$superClass'."
+  case class LawlessSuperClass(subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Lawless super class '$superClass'."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unlawful super class '" << Red(superClass.name) << "'." << NewLine
+      vt << ">> Lawless super class '" << Red(superClass.name) << "'." << NewLine
       vt << NewLine
-      vt << ">> The class '" << Red(subClass.name) << "' extends the unlawful class '" << Red(superClass.name) << "'." << NewLine
+      vt << ">> The class '" << Red(subClass.name) << "' extends the lawless class '" << Red(superClass.name) << "'." << NewLine
       vt << ">> A lawful class cannot extend an unlawful class."
       vt << NewLine
-      vt << Code(loc, s"unlawful super class")
+      vt << Code(loc, s"lawless super class")
       vt << NewLine
-      vt << Underline("Tip:") << s" Mark '${subClass.name}' as unlawful."
+      vt << Underline("Tip:") << s" Mark '${subClass.name}' as lawless."
     }
   }
 

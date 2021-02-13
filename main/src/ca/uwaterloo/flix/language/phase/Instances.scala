@@ -50,7 +50,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             superSym =>
               val superClass = root.classes(superSym)
               if (superClass.mod.isLawless) {
-                InstanceError.UnlawfulSuperClass(sym, superSym, loc).toFailure
+                InstanceError.LawlessSuperClass(sym, superSym, loc).toFailure
               } else {
                 ().toSuccess
               }
