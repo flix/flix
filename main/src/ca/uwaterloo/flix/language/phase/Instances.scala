@@ -159,7 +159,8 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       } yield ()
     }
 
-    Validation.traverseX(root.classes.values)(visitClass)
+    val results = ParOps.parMap(root.classes.values, visitClass)
+    Validation.traverseX(results)(identity)
   }
 
   /**
