@@ -60,18 +60,30 @@ namespace Test {
     /// Runs all tests in the given suite `s`.
     ///
     pub def runAll(s: Suite): Int32 & Impure = {
+        use Console/Color.blue;
+        use Console/Color.red;
+        use Console/Color.green;
+        use Console/Color.yellow;
+        use Console.rgb;
+        let gray = rgb((100, 100, 100));
         let Suite(suiteName, tests) = s;
+        println("------------------------ Running Tests ---------------------- ");
         println("${suiteName} (${Map.size(tests)} tests):");
         let f = (t: Test) -> match t {
             case EqTest(test) => test()
         };
         let m = Map.map(f, tests);
         let g = (n: String, o: Outcome) -> match o {
-            case Success    => println("  ${n: String}: Success.")
-            case Failure(r) => println("  ${n: String}: FAILURE: expected: ${r.expected}, but got: ${r.got}")
+            case Success    =>
+                let statusPart = "${green("+")}";
+                let timePart = gray("${123} ms");
+                println("  ${n: String}: ${statusPart} ${timePart}.")
+            case Failure(r) =>
+                println("  ${n: String}: ${red("FAILURE")}: expected: ${green(r.expected)}, but got: ${yellow(r.got)}")
         };
         Map.foreach(g, m);
         println("${suiteName}: Succeeded: ${successful(m)}. Failed: ${failures(m)}.");
+        println("------------------------ Failing Tests ---------------------- ");
         0
     }
 
