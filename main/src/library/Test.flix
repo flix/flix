@@ -73,15 +73,31 @@ namespace Test {
         let g = (n: String, o: TestOutcome) -> match o {
             case Success(r)    =>
                 let statusPart = "${green("+")}";
+                let namePart = n: String;
                 let timePart = gray("${r.time} ms");
-                println("  ${statusPart} ${n: String} ${timePart}")
-            case Failure(r) =>
+                println("  ${statusPart} ${namePart} ${timePart}")
+            case Failure(_) =>
                 let statusPart = "${red("-")}";
-                println("  ${statusPart} ${n: String} (expected: ${green(r.expected)}, but got: ${yellow(r.got)})")
+                let namePart = n: String;
+                let messagePart = "(${red("unexpected value")})";
+                println("  ${statusPart} ${namePart} ${messagePart}")
         };
+        println("");
         Map.foreach(g, m);
-        println("${suiteName}: Succeeded: ${successful(m)}. Failed: ${failures(m)}.");
+        println("");
         println("------------------------ Failing Tests ---------------------- ");
+        let g2 = (n: String, o: TestOutcome) -> match o {
+            case Success(_) => () // NOP
+            case Failure(r) =>
+                println("  ${red(n)}");
+                println("      expected:   ${green(r.expected)}");
+                println("      got     :   ${yellow(r.got)})");
+                println("")
+        };
+        println("");
+        Map.foreach(g2, m);
+        println("");
+        println("${suiteName}: Succeeded: ${successful(m)}. Failed: ${failures(m)}.");
         0
     }
 
