@@ -28,7 +28,7 @@ namespace Test {
     /// An algebraic data type that represents different types of tests.
     ///
     pub enum Test {
-        case EqTest(Unit -> Outcome)
+        case EqTest(Unit ~> TestOutcome)
     }
 
     ///
@@ -44,9 +44,9 @@ namespace Test {
     pub def defineTest[a: Eq : Diff : ToString](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
         let runner = () -> {
                 let expect = force r.expect;
-                let actual = force r.actual;
+                let (actual, time) = time(() -> force r.actual);
                 if (expect == actual)
-                    Success
+                    Success({time = time})
                 else
                     Failure({
                         expected    = toString(expect),
@@ -69,17 +69,15 @@ namespace Test {
         let Suite(suiteName, tests) = s;
         println("------------------------ Running Tests ---------------------- ");
         println("${suiteName} (${Map.size(tests)} tests):");
-        let f = (t: Test) -> match t {
-            case EqTest(test) => test()
-        };
-        let m = Map.map(f, tests);
-        let g = (n: String, o: Outcome) -> match o {
-            case Success    =>
+        let m = Map.map(runTest, tests);
+        let g = (n: String, o: TestOutcome) -> match o {
+            case Success(r)    =>
                 let statusPart = "${green("+")}";
-                let timePart = gray("${123} ms");
-                println("  ${n: String}: ${statusPart} ${timePart}.")
+                let timePart = gray("${r.time} ms");
+                println("  ${statusPart} ${n: String} ${timePart}")
             case Failure(r) =>
-                println("  ${n: String}: ${red("FAILURE")}: expected: ${green(r.expected)}, but got: ${yellow(r.got)}")
+                let statusPart = "${red("-")}";
+                println("  ${statusPart} ${n: String} (expected: ${green(r.expected)}, but got: ${yellow(r.got)})")
         };
         Map.foreach(g, m);
         println("${suiteName}: Succeeded: ${successful(m)}. Failed: ${failures(m)}.");
@@ -88,39 +86,57 @@ namespace Test {
     }
 
     ///
-    /// Represents the outcome of a test:
+    /// Runs the given test `t`.
     ///
-    enum Outcome {
-        case Success,
+    def runTest(t: Test): TestOutcome & Impure = match t {
+        case EqTest(f) => f()
+    }
+
+    ///
+    /// Returns a pair with the result of `f` and the time it took.
+    ///
+    def time(f: Unit -> a): (a, Int32) & Impure = {
+        import java.lang.System:nanoTime() as nanoTime;
+        let t = nanoTime();
+        let r = f();
+        let e = nanoTime() - t;
+        (r, Int64.clampToInt32(e / 1000_000i64, 0, Int32.maxValue()))
+    }
+
+    ///
+    /// Represents the outcome of a test.
+    ///
+    enum TestOutcome {
+        case Success({time: Int32}),
         case Failure({expected: String, got: String, diff: String})
     }
 
     ///
     /// Returns `true` if the given outcome is a success.
     ///
-    def isSuccess(o: Outcome): Bool = match o {
-        case Success    => true
+    def isSuccess(o: TestOutcome): Bool = match o {
+        case Success(_) => true
         case Failure(_) => false
     }
 
     ///
     /// Returns `true` if the given outcome is a failure.
     ///
-    def isFailure(o: Outcome): Bool = match o {
-        case Success    => false
+    def isFailure(o: TestOutcome): Bool = match o {
+        case Success(_) => false
         case Failure(_) => true
     }
 
     ///
     /// Returns the number of successful outcomes in the given outcome map `m`.
     ///
-    def successful(m: Map[String, Outcome]): Int32 =
+    def successful(m: Map[String, TestOutcome]): Int32 =
         Map.count((_, v) -> isSuccess(v), m)
 
     ///
     /// Returns the number of failed outcomes in the given outcome map `m`.
     ///
-    def failures(m: Map[String, Outcome]): Int32 =
+    def failures(m: Map[String, TestOutcome]): Int32 =
         Map.count((_, v) -> isFailure(v), m)
 
 }
