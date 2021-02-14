@@ -24,6 +24,26 @@ namespace Test {
         case Suite(String, Map[String, Test])
     }
 
+
+    ///
+    /// TODO: DOC
+    ///
+    pub opaque type TestPath = List[String]
+
+    pub enum MySuite {
+        // TODO: Use TestPath
+        case MySuite(Map[List[String], Map[String, List[Test]]])
+    }
+
+    instance Monoid[MySuite] {
+        def empty(): MySuite = MySuite(Map#{})
+
+        def combine(x: MySuite, y: MySuite): MySuite =
+            let MySuite(s1) = x;
+            let MySuite(s2) = y;
+            MySuite(Monoid.combine(s1, s2))
+    }
+
     ///
     /// An algebraic data type that represents different types of tests.
     ///
@@ -34,14 +54,17 @@ namespace Test {
     ///
     /// Returns a suite of test cases with the given `name` and test case list.
     ///
-    pub def defineSuite(name: String, tests: Map[String, Test]): Suite = Suite(name, tests)
+    pub def defineSuite(fqn: String, t: Map[String, Test]): MySuite =
+        let path = (String.split(fqn, "\.") |> Array.toList) as & Pure;
+        let tests = Map.map(v -> v :: Nil, t);
+        MySuite(Map.empty() |> Map.insert(path, tests))
 
     ///
     /// Returns an executable test case.
     ///
     /// A test consists of an actual value and an expected value.
     ///
-    pub def defineTest[a: Eq : Diff : ToString](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
+    pub def defineTest[a: Eq : ToString](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
         let runner = () -> {
                 let expect = force r.expect;
                 let (actual, time) = time(() -> force r.actual);
@@ -51,10 +74,67 @@ namespace Test {
                     Failure({
                         expected    = toString(expect),
                         got         = toString(actual),
-                        diff        = Diff.diff(actual, expect)
+                        diff        = "no diff"
                     })
         };
         EqTest(runner)
+
+
+    pub def runAll2(s: MySuite, cb: Callbacks): Int32 & Impure = {
+        use Console/Color.blue;
+        use Console/Color.red;
+        use Console/Color.green;
+        use Console/Color.yellow;
+        use Console.rgb;
+        let gray = rgb((100, 100, 100));
+        let MySuite(m) = s;
+        println("------------------------ Running Tests ---------------------- ");
+        let g = (path: List[String], innerM: Map[String, List[Test]]) -> {
+            let suiteName2: String = gray(List.foldLeft((acc: String, elm: String) -> acc + "." + elm, "", path));
+            let numberOfTests = Map.size(innerM: Map[String, List[Test]]) : Int32;
+            println("${suiteName2}: Number of tests: ${numberOfTests}");
+            let evalTest = (testName: String, testList: List[Test]) -> {
+                match testList {
+                    case t :: Nil =>
+                        match runTest(t) {
+                            case Success(r) => (cb.onTestSuccess)(testName, r.time)
+                            case Failure(_) =>
+                                let statusPart = "${red("-")}";
+                                let namePart = testName: String;
+                                let messagePart = "(${red("unexpected value")})";
+                                println("  ${statusPart} ${namePart} ${messagePart}")
+                        }
+
+                    case _ => ?fail
+                }
+            };
+            Map.foreach(evalTest, innerM)
+        };
+        println("");
+        Map.foreach(g, m);
+        0
+    }
+
+    pub def green(s: String): String  =
+        use Console/Color.green;
+        green(s)
+
+    pub def gray(s: String): String =
+        use Console.rgb;
+        rgb((100, 100, 100), s)
+
+    type alias Callbacks = {
+        onTestSuccess: (String, Int32) ~> Unit
+    }
+
+    ///
+    /// Callback for when a test completes successfully.
+    ///
+    pub def onTestSuccess(testName: String, testTime: Int32): Unit & Impure =
+        let statusPart = "${green("+")}";
+        let namePart = testName;
+        let timePart = gray("${testTime} ms");
+        println("  ${statusPart} ${namePart} ${timePart}")
 
     ///
     /// Runs all tests in the given suite `s`.
@@ -91,7 +171,7 @@ namespace Test {
             case Failure(r) =>
                 println("  ${red(n)}");
                 println("      expected:   ${green(r.expected)}");
-                println("      got     :   ${yellow(r.got)})");
+                println("      got     :   ${yellow(r.got)}");
                 println("")
         };
         println("");
@@ -116,7 +196,7 @@ namespace Test {
         let t = nanoTime();
         let r = f();
         let e = nanoTime() - t;
-        (r, Int64.clampToInt32(e / 1000_000i64, 0, Int32.maxValue()))
+        (r, Int64.clampToInt32(e / 1_000_000i64, 0, Int32.maxValue()))
     }
 
     ///
@@ -195,31 +275,49 @@ namespace TestList {
     use Test.defineSuite;
     use Test.defineTest;
 
-    pub def tests(): Test.Suite = defineSuite("TestList") <| Map#{
-        "List.head01" -> defineTest({
+    pub def tests(): Test.MySuite = tests1() `Monoid.combine` tests2() `Monoid.combine` tests3()
+
+    pub def tests1(): Test.MySuite = defineSuite("List") <| Map#{
+        "head01" -> defineTest({
             actual = lazy List.head(1 :: Nil),
             expect = lazy Some(1)
         }),
 
-        "List.head02" -> defineTest({
+        "head02" -> defineTest({
             actual = lazy List.head(1 :: 2 :: Nil),
             expect = lazy Some(21)
         }),
 
-        "List.head03" -> defineTest({
+        "head03" -> defineTest({
             actual = lazy List.head(1 :: Nil),
             expect = lazy Some(1)
         }),
 
-        "List.head04" -> defineTest({
+        "head04" -> defineTest({
             actual = lazy List.head(1 :: 2 :: 3 :: Nil),
             expect = lazy Some(1)
+        })
+    }
+
+    pub def tests2(): Test.MySuite = defineSuite("List") <| Map#{
+        "isEmpty01" -> defineTest({
+            actual = lazy (List.range(1, 100_000) |> List.isEmpty),
+            expect = lazy false
+        })
+    }
+
+    pub def tests3(): Test.MySuite = defineSuite("Option") <| Map#{
+        "isEmpty01" -> defineTest({
+            actual = lazy Option.isEmpty(None),
+            expect = lazy true
         })
     }
 
 }
 
 def main(_args: Array[String]): Int32 & Impure =
-    Test.runAll(TestList.tests())
+    Test.runAll2(TestList.tests(), {
+        onTestSuccess = Test.onTestSuccess
+     })
 
 
