@@ -13,13 +13,13 @@ object BytecodeCompiler {
 
   type **[R <: Stack, T <: JType] = StackCons[R, T]
 
-  sealed trait F[+T]
+  sealed trait F[T]
 
   def compileExp[R <: Stack, T <: JType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
-    case Expression.Unit(loc) => pushUnit()
-    case Expression.Null(tpe, loc) => pushNull()
-    case Expression.True(loc) => pushBool(true)
-    case Expression.False(loc) => pushBool(false)
+    case Expression.Unit(loc) => pushUnit[R]()
+    case Expression.Null(tpe, loc) => pushNull[R]()
+    case Expression.True(loc) => pushBool[R](true)
+    case Expression.False(loc) => pushBool[R](false)
     case Expression.Char(lit, loc) => ???
     case Expression.Float32(lit, loc) => ???
     case Expression.Float64(lit, loc) => ???
