@@ -104,27 +104,26 @@ public final class Channel {
         selectLock.lock();
 
         try {
+          // Find channels with waiting elements in a random order to prevent backpressure.
           {
-            // List of channels with waiting elements.
-            // 7 is a guess of the maximum number of channels with waiting elements.
-            List<Integer> nonEmptyChannelIndices = new ArrayList<>(7);
-
-            // Add channels with waiting elements to the list
+            // Build list mapping a channel to it's branchNumber (the index of the 'channels' array)
+            List<ChannelIndexPair> channelIndexPairs = new LinkedList<>();
             for (int index = 0; index < channels.length; index++) {
-              if (channels[index].peek() != null) {
-                // Found a channel with a waiting element
-                nonEmptyChannelIndices.add(index);
-              }
+              channelIndexPairs.add(new ChannelIndexPair(channels[index], index));
             }
 
-            if (nonEmptyChannelIndices.size() > 0) { // There are channels with waiting elements.
-              // Randomly select an element of the list.
-              // This prevents excessive backpressure from building up on channels with waiting elements.
+            // Randomize the order channels are looked at.
+            // This prevents backpressure from building up on one channel.
+            Collections.shuffle(channelIndexPairs);
 
-              int randomChannelIndex = nonEmptyChannelIndices.get(RANDOM.nextInt(nonEmptyChannelIndices.size()));
-              // element will never be null because we checked that it had a waiting element.
-              Object element = channels[randomChannelIndex].tryGet();
-              return new SelectChoice(randomChannelIndex, element);
+            // Find channels with waiting elements
+            for (ChannelIndexPair channelIndexPair : channelIndexPairs) {
+              Object element = channelIndexPair.getChannel().tryGet();
+              if (element != null) {
+                // There is a waiting element in this channel.
+                // Return the element and the branchNumber of this channel
+                return new SelectChoice(channelIndexPair.getIndex(), element);
+              }
             }
           }
 
@@ -316,21 +315,6 @@ public final class Channel {
       }
       // Return the element from the channel, or null if channel was empty
       return element;
-    } finally {
-      channelLock.unlock();
-    }
-  }
-
-  /**
-   * Retrieves the head of the elementQueue without removing it.
-   *
-   * @return the head of the elementQueue
-   */
-  private Object peek() {
-    channelLock.lock();
-    try {
-      // Return the element from the channel, or null if channel was empty
-      return elementQueue.peekFirst();
     } finally {
       channelLock.unlock();
     }
