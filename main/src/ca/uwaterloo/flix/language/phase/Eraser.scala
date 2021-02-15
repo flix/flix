@@ -40,7 +40,8 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root]  {
 
     /**
      * Translates the given expression `exp0` to the ErasedAst.
-     * TODO: Formal like Simplifier.scala
+     * TODO: Format like Simplifier.scala
+     * TODO: cast expressions missing
      */
     def visitExp[T <: JType](exp0: FinalAst.Expression): ErasedAst.Expression[T] = exp0 match {
       case FinalAst.Expression.Unit(loc) => castExp(ErasedAst.Expression.Unit(loc))

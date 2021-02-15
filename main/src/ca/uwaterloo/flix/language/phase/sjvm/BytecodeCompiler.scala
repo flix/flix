@@ -44,7 +44,7 @@ object BytecodeCompiler {
 
   def pushInt[R <: Stack](n: Int): F[R] => F[R ** PrimInt32] = ???
 
-  def compose[A, B, C](f: F[A] => F[B], g: F[B] => F[C]): F[A] => F[C] = ???
+  def compose[A <: Stack, B <: Stack, C <: Stack](f: F[A] => F[B], g: F[B] => F[C]): F[A] => F[C] = ???
 
   def branch[R1 <: Stack, R2 <: Stack](cond: F[R1] => F[R1 ** PrimInt32], thenBranch: F[R1] => F[R2], elseBranch: F[R1] => F[R2]): F[R1] => F[R2] = ???
 
