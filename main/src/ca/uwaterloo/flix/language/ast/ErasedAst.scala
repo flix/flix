@@ -41,7 +41,7 @@ object ErasedAst {
     def loc: SourceLocation = defn.loc
   }
 
-  case class LatticeOps(tpe: MonoType, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
+  case class LatticeOps(tpe: MonoType, bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
   sealed trait Expression[+T <: JType] {
     def loc: SourceLocation

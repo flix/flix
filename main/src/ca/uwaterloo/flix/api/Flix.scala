@@ -332,6 +332,7 @@ class Flix {
       Finalize |>
       QuickChecker |>
       Verifier |>
+      Eraser |>
       JvmBackend |>
       Finish
 
