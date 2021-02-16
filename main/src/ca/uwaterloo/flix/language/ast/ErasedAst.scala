@@ -43,60 +43,61 @@ object ErasedAst {
 
   case class LatticeOps(tpe: ErasedType[JType], bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
-  sealed trait Expression[+T <: JType] {
+  sealed trait Expression[T <: JType] {
+    def tpe: ErasedType[T]
     def loc: SourceLocation
   }
 
   object Expression {
 
     case class Unit(loc: SourceLocation) extends ErasedAst.Expression[JUnit] {
-      final val tpe = ErasedType.Unit
+      final val tpe = ErasedType.Unit()
     }
 
     case class Null(tpe: ErasedType[JObject], loc: SourceLocation) extends ErasedAst.Expression[JObject]
 
     case class True(loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
-      final val tpe = ErasedType.Bool
+      final val tpe = ErasedType.Bool()
     }
 
     case class False(loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
-      final val tpe = ErasedType.Bool
+      final val tpe = ErasedType.Bool()
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends ErasedAst.Expression[PrimChar] {
-      final val tpe = ErasedType.Char
+      final val tpe = ErasedType.Char()
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32] {
-      final val tpe = ErasedType.Float32
+      final val tpe = ErasedType.Float32()
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64] {
-      final val tpe = ErasedType.Float64
+      final val tpe = ErasedType.Float64()
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends ErasedAst.Expression[PrimInt8] {
-      final val tpe = ErasedType.Int8
+      final val tpe = ErasedType.Int8()
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends ErasedAst.Expression[PrimInt16] {
-      final val tpe = ErasedType.Int16
+      final val tpe = ErasedType.Int16()
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
-      final val tpe = ErasedType.Int32
+      final val tpe = ErasedType.Int32()
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends ErasedAst.Expression[PrimInt64] {
-      final val tpe = ErasedType.Int64
+      final val tpe = ErasedType.Int64()
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ErasedAst.Expression[JObject] {
-      final val tpe = ErasedType.BigInt
+      final val tpe = ErasedType.BigInt()
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ErasedAst.Expression[JObject] {
-      final val tpe = ErasedType.Str
+      final val tpe = ErasedType.Str()
     }
 
     case class Var[T <: JType](sym: Symbol.VarSym, tpe: ErasedType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
@@ -164,9 +165,13 @@ object ErasedAst {
 
     case class Assign[T <: JType](exp1: ErasedAst.Expression[JRef[T]], exp2: ErasedAst.Expression[T], tpe: ErasedType[JUnit], loc: SourceLocation) extends ErasedAst.Expression[JUnit]
 
-    case class Existential(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
+    case class Existential(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+      final val tpe = ErasedType.Bool()
+    }
 
-    case class Universal(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
+    case class Universal(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+      final val tpe = ErasedType.Bool()
+    }
 
     case class Cast[T <: JType](exp: ErasedAst.Expression[JType], tpe: ErasedType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -308,21 +313,21 @@ object ErasedAst {
 
   case class FreeVar(sym: Symbol.VarSym, tpe: ErasedType[JType])
 
-  case class BoxInt8(exp: ErasedAst.Expression[PrimInt8], tpe: ErasedType[BoxedInt8], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt8]
-  case class BoxInt16(exp: ErasedAst.Expression[PrimInt16], tpe: ErasedType[BoxedInt16], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt16]
-  case class BoxInt32(exp: ErasedAst.Expression[PrimInt32], tpe: ErasedType[BoxedInt32], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt32]
-  case class BoxInt64(exp: ErasedAst.Expression[PrimInt64], tpe: ErasedType[BoxedInt64], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt64]
-  case class BoxChar(exp: ErasedAst.Expression[PrimChar], tpe: ErasedType[BoxedChar], loc: SourceLocation) extends ErasedAst.Expression[BoxedChar]
-  case class BoxFloat32(exp: ErasedAst.Expression[PrimFloat32], tpe: ErasedType[BoxedFloat32], loc: SourceLocation) extends ErasedAst.Expression[BoxedFloat32]
-  case class BoxFloat64(exp: ErasedAst.Expression[PrimFloat64], tpe: ErasedType[BoxedFloat64], loc: SourceLocation) extends ErasedAst.Expression[BoxedFloat64]
+  case class BoxInt8(exp: ErasedAst.Expression[PrimInt8], final val tpe: ErasedType[BoxedInt8], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt8]
+  case class BoxInt16(exp: ErasedAst.Expression[PrimInt16], final val tpe: ErasedType[BoxedInt16], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt16]
+  case class BoxInt32(exp: ErasedAst.Expression[PrimInt32], final val tpe: ErasedType[BoxedInt32], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt32]
+  case class BoxInt64(exp: ErasedAst.Expression[PrimInt64], final val tpe: ErasedType[BoxedInt64], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt64]
+  case class BoxChar(exp: ErasedAst.Expression[PrimChar], final val tpe: ErasedType[BoxedChar], loc: SourceLocation) extends ErasedAst.Expression[BoxedChar]
+  case class BoxFloat32(exp: ErasedAst.Expression[PrimFloat32], final val tpe: ErasedType[BoxedFloat32], loc: SourceLocation) extends ErasedAst.Expression[BoxedFloat32]
+  case class BoxFloat64(exp: ErasedAst.Expression[PrimFloat64], final val tpe: ErasedType[BoxedFloat64], loc: SourceLocation) extends ErasedAst.Expression[BoxedFloat64]
 
-  case class UnboxInt8(exp: ErasedAst.Expression[BoxedInt8], tpe: ErasedType[PrimInt8], loc: SourceLocation) extends ErasedAst.Expression[PrimInt8]
-  case class UnboxInt16(exp: ErasedAst.Expression[BoxedInt16], tpe: ErasedType[PrimInt16], loc: SourceLocation) extends ErasedAst.Expression[PrimInt16]
-  case class UnboxInt32(exp: ErasedAst.Expression[BoxedInt32], tpe: ErasedType[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
-  case class UnboxInt64(exp: ErasedAst.Expression[BoxedInt64], tpe: ErasedType[PrimInt64], loc: SourceLocation) extends ErasedAst.Expression[PrimInt64]
-  case class UnboxChar(exp: ErasedAst.Expression[BoxedChar], tpe: ErasedType[PrimChar], loc: SourceLocation) extends ErasedAst.Expression[PrimChar]
-  case class UnboxFloat32(exp: ErasedAst.Expression[BoxedFloat32], tpe: ErasedType[PrimFloat32], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32]
-  case class UnboxFloat64(exp: ErasedAst.Expression[BoxedFloat64], tpe: ErasedType[PrimFloat64], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64]
+  case class UnboxInt8(exp: ErasedAst.Expression[BoxedInt8], final val tpe: ErasedType[PrimInt8], loc: SourceLocation) extends ErasedAst.Expression[PrimInt8]
+  case class UnboxInt16(exp: ErasedAst.Expression[BoxedInt16], final val tpe: ErasedType[PrimInt16], loc: SourceLocation) extends ErasedAst.Expression[PrimInt16]
+  case class UnboxInt32(exp: ErasedAst.Expression[BoxedInt32], final val tpe: ErasedType[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
+  case class UnboxInt64(exp: ErasedAst.Expression[BoxedInt64], final val tpe: ErasedType[PrimInt64], loc: SourceLocation) extends ErasedAst.Expression[PrimInt64]
+  case class UnboxChar(exp: ErasedAst.Expression[BoxedChar], final val tpe: ErasedType[PrimChar], loc: SourceLocation) extends ErasedAst.Expression[PrimChar]
+  case class UnboxFloat32(exp: ErasedAst.Expression[BoxedFloat32], final val tpe: ErasedType[PrimFloat32], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32]
+  case class UnboxFloat64(exp: ErasedAst.Expression[BoxedFloat64], final val tpe: ErasedType[PrimFloat64], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64]
 
   sealed trait JType
 
@@ -358,7 +363,7 @@ object ErasedAst {
     sealed trait JLazy[T <: JType] extends JType
   }
 
-  sealed trait ErasedType[+T <: JType]
+  sealed trait ErasedType[T <: JType]
 
   object ErasedType {
 
@@ -415,9 +420,6 @@ object ErasedAst {
     case class Lattice(tpes: List[ErasedType[JType]]) extends ErasedType[JObject]
 
     case class Native(clazz: Class[_]) extends ErasedType[JObject]
-
-    // TODO: Should be removed.
-    case class Var(id: Int) extends ErasedType[Nothing]
   }
 }
 

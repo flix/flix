@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Expression, JType}
+import ca.uwaterloo.flix.language.ast.ErasedAst.{ErasedType, Expression, JType}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 object BytecodeCompiler {
@@ -10,11 +10,11 @@ object BytecodeCompiler {
 
   sealed trait StackNil extends Stack
 
-  sealed case class StackCons[+R <: Stack, +T <: JType](rest: R, top: T) extends Stack
+  sealed case class StackCons[R <: Stack, T <: JType](rest: R, top: T) extends Stack
 
   type **[R <: Stack, T <: JType] = StackCons[R, T]
 
-  sealed trait F[+T]
+  sealed trait F[T]
 
   def compileExp[R <: Stack, T <: JType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) => pushUnit[R]()
@@ -34,6 +34,12 @@ object BytecodeCompiler {
     //      DUP ~
     //      compileExp(exp) ~
     //      INVOKESPECIAL("class name", "constructor signature")
+    case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+//      exp1.tpe match {
+//        case ErasedType.Int32() => WithSource[R](null) ~ compileExp(exp1) ~ popInt()
+//        case _ => ???
+//      }
+      compileExp(exp2)
     case _ => ???
   }
 
@@ -46,6 +52,12 @@ object BytecodeCompiler {
   def pushBool[R <: Stack](b: Boolean): F[R] => F[R ** PrimInt32] = ???
 
   def pushInt[R <: Stack](n: Int): F[R] => F[R ** PrimInt32] = ???
+
+  def popInt[R <: Stack](): F[R ** PrimInt32] => F[R] = ???
+
+  implicit class ComposeOps[A, B](f: F[A] => F[B]){
+    def ~[C](that: F[B] => F[C]): F[A] => F[C] = ???
+  }
 
   def compose[A <: Stack, B <: Stack, C <: Stack](f: F[A] => F[B], g: F[B] => F[C]): F[A] => F[C] = ???
 
