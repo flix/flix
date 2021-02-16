@@ -288,7 +288,7 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       case MonoType.Relation(tpes) => ErasedType.Relation(tpes.map(visitTpe))
       case MonoType.Lattice(tpes) => ErasedType.Lattice(tpes.map(visitTpe))
       case MonoType.Native(clazz) => ErasedType.Native(clazz)
-      case MonoType.Var(id) => throw InternalCompilerException(s"Unexpected type: $tpe.")
+      case MonoType.Var(id) => ErasedType.Var(id)
     }).asInstanceOf[ErasedType[T]]
 
     //
@@ -302,9 +302,9 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
         }
         k -> ErasedAst.Enum(mod, sym, cases, loc)
     }
-    val latticeOps: Map[ErasedType[JType], ErasedAst.LatticeOps] = root.latticeOps.map { case (k, v) => visitTpe(k) -> visitLatticeOps(v) }
+    val latticeOps: Map[ErasedType[JType], ErasedAst.LatticeOps] = root.latticeOps.map { case (k, v) => visitTpe[JType](k) -> visitLatticeOps(v) }
     val properties = root.properties.map { p => visitProperty(p) }
-    val specialOps = root.specialOps.map { case (k1, m) => k1 -> m.map[ErasedType[JType], Symbol.DefnSym] { case (k2, v) => visitTpe(k2) -> v } }
+    val specialOps = root.specialOps.map { case (k1, m) => k1 -> m.map[ErasedType[JType], Symbol.DefnSym] { case (k2, v) => visitTpe[JType](k2) -> v } }
     val reachable = root.reachable
 
     val actualTransformation = ErasedAst.Root(defns, enums, latticeOps, properties, specialOps, reachable, root.sources).toSuccess

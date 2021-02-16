@@ -420,6 +420,9 @@ object ErasedAst {
     case class Lattice(tpes: List[ErasedType[JType]]) extends ErasedType[JObject]
 
     case class Native(clazz: Class[_]) extends ErasedType[JObject]
+
+    // TODO: Should be removed.
+    case class Var(id: Int) extends ErasedType[Nothing]
   }
 }
 
