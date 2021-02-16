@@ -17,7 +17,7 @@
 ///
 /// A type class for meet semi lattices.
 ///
-class MeetLattice[a] {
+lawless class MeetLattice[a] {
 
     ///
     /// Returns the greatest lower bound of `x` and `y`.

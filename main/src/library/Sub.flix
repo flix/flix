@@ -17,7 +17,7 @@
 ///
 /// A type class for subtraction.
 ///
-pub class Sub[a] {
+pub lawless class Sub[a] {
     ///
     /// Returns the difference of `x` and `y`.
     ///

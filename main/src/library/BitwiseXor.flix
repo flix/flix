@@ -17,7 +17,7 @@
 ///
 /// A type class for bitwise xor.
 ///
-pub class BitwiseXor[a] {
+pub lawless class BitwiseXor[a] {
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///

@@ -445,4 +445,55 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.MissingSuperClassInstance](result)
   }
+
+  test("Test.LawlessSuperClass.01") {
+    val input =
+      """
+        |lawless class A[a]
+        |class B[a] extends A[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.LawlessSuperClass](result)
+  }
+
+  test("Test.LawlessSuperClass.02") {
+    val input =
+      """
+        |lawless class A[a]
+        |class B[a]
+        |class C[a] extends A[a], B[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.LawlessSuperClass](result)
+  }
+
+  test("Test.UnlawfulSignature.01") {
+    val input =
+      """
+        |class C[a] {
+        |  def f(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.UnlawfulSignature](result)
+  }
+
+  test("Test.UnlawfulSignature.02") {
+    val input =
+      """
+        |instance C[Int] {
+        |  pub def f(x: Int): Bool = true
+        |  pub def g(x: Int): Bool = true
+        |}
+        |
+        |class C[a] {
+        |  pub def f(x: a): Bool
+        |  pub def g(x: a): Bool
+        |
+        |  law l(): Bool = forall (x: a) . C.f(x)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.UnlawfulSignature](result)
+  }
 }

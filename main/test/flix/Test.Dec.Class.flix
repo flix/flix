@@ -6,14 +6,14 @@ namespace Test/Dec/Class {
 
     namespace Test02 {
 
-        class X[a] {
+        lawless class X[a] {
             pub def f(x: a): Bool
         }
 
     }
 
     namespace Test03 {
-        class X[a] {
+        lawless class X[a] {
             pub def f(x: a): Bool
         }
 
@@ -25,11 +25,11 @@ namespace Test/Dec/Class {
     }
 
     namespace Test04 {
-        class C[a] {
+        lawless class C[a] {
             pub def f(x: a): Bool
         }
 
-        class D[a] {
+        lawless class D[a] {
             pub def g(x: a): Bool
         }
 
@@ -49,7 +49,7 @@ namespace Test/Dec/Class {
         use Test/Dec/Class.List.Nil;
         use Test/Dec/Class.Option;
 
-        pub class C[a] {
+        pub lawless class C[a] {
             pub def f(x: a): Bool
         }
 
@@ -80,7 +80,7 @@ namespace Test/Dec/Class {
         use Test/Dec/Class.Option.None;
         use Test/Dec/Class.Option.Some;
 
-        class F[m :# Type -> Type] {
+        lawless class F[m :# Type -> Type] {
             pub def map(f: a -> b, x: m[a]): m[b]
         }
 
@@ -93,7 +93,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test09 {
-        class Eff[e :# Bool] {
+        lawless class Eff[e :# Bool] {
             pub def isPure(f: a -> b & e): Bool
         }
 
@@ -107,13 +107,13 @@ namespace Test/Dec/Class {
     }
 
     namespace Test10 {
-        class C[a] {
+        lawless class C[a] {
             pub def f(x: a): Bool
         }
 
-        class D[a] extends C[a]
+        lawless class D[a] extends C[a]
 
-        class E[a] extends D[a]
+        lawless class E[a] extends D[a]
 
         instance C[Int] {
             def f(_x: Int): Bool = true
@@ -142,7 +142,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test12 {
-        class C[a] {
+        lawless class C[a] {
             pub def f(): a
 
             law l(): Bool = true

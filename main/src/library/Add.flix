@@ -17,7 +17,7 @@
 ///
 /// A type class for addition.
 ///
-pub class Add[a] {
+pub lawless class Add[a] {
     ///
     /// Returns the sum of `x` and `y`.
     ///

@@ -17,7 +17,7 @@
 ///
 /// A type class for modulo (i.e. remainder).
 ///
-pub class Rem[a] {
+pub lawless class Rem[a] {
     ///
     /// Returns `x` modulo `n`.
     ///
