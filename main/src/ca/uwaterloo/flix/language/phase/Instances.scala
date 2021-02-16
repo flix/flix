@@ -46,19 +46,13 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * Checks that every super class of `class0` is lawful, unless `class0` is marked `lawless`.
       */
     def checkLawfulSuperClasses(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, mod, sym, _, superClasses, _, _, loc) =>
-        if (mod.isLawless) {
-          ().toSuccess
-        } else {
-          Validation.traverseX(superClasses) {
-            superSym =>
-              val superClass = root.classes(superSym)
-              if (superClass.mod.isLawless) {
-                InstanceError.LawlessSuperClass(sym, superSym, loc).toFailure
-              } else {
-                ().toSuccess
-              }
-          }
+      case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
+      case TypedAst.Class(_, _, sym, _, superClasses, _, _, loc) =>
+        val lawlessSuperClasses = superClasses.filter {
+          superSym => root.classes(superSym).mod.isLawless
+        }
+        Validation.traverseX(lawlessSuperClasses) {
+          superSym => InstanceError.LawlessSuperClass(sym, superSym, loc).toFailure
         }
     }
 
@@ -66,21 +60,14 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
       */
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, mod, _, _, _, signatures, laws, _) =>
-        if (mod.isLawless) {
-          ().toSuccess
-        } else {
-          val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
-            case (acc, TypedAst.Def(_, _, _, _, _, _, exp, _, _, _, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
-          }
-          Validation.traverseX(signatures) {
-            sig =>
-              if (usedSigs.contains(sig.sym)) {
-                ().toSuccess
-              } else {
-                InstanceError.UnlawfulSignature(sig.sym, sig.loc).toFailure
-              }
-          }
+      case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
+      case TypedAst.Class(_, _, _, _, _, sigs, laws, _) =>
+        val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
+          case (acc, TypedAst.Def(_, _, _, _, _, _, exp, _, _, _, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
+        }
+        val unusedSigs = sigs.map(_.sym).toSet.removedAll(usedSigs)
+        Validation.traverseX(unusedSigs) {
+          sig => InstanceError.UnlawfulSignature(sig, sig.loc).toFailure
         }
     }
 
