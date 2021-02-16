@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
@@ -63,84 +63,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Creates a list of all the sigs used in the given `defn0`.
-      */
-    def findUsedSigs(defn0: TypedAst.Def): List[Symbol.SigSym] = {
-      def visit(exp0: TypedAst.Expression): List[Symbol.SigSym] = exp0 match {
-        case Expression.Unit(_) => Nil
-        case Expression.Null(_, _) => Nil
-        case Expression.True(_) => Nil
-        case Expression.False(_) => Nil
-        case Expression.Char(_, _) => Nil
-        case Expression.Float32(_, _) => Nil
-        case Expression.Float64(_, _) => Nil
-        case Expression.Int8(_, _) => Nil
-        case Expression.Int16(_, _) => Nil
-        case Expression.Int32(_, _) => Nil
-        case Expression.Int64(_, _) => Nil
-        case Expression.BigInt(_, _) => Nil
-        case Expression.Str(_, _) => Nil
-        case Expression.Default(_, _) => Nil
-        case Expression.Wild(_, _) => Nil
-        case Expression.Var(_, _, _) => Nil
-        case Expression.Def(_, _, _) => Nil
-        case Expression.Sig(sym, _, _) => List(sym)
-        case Expression.Hole(_, _, _, _) => Nil
-        case Expression.Lambda(_, exp, _, _) => visit(exp)
-        case Expression.Apply(exp, exps, _, _, _) => visit(exp) ++ exps.flatMap(visit)
-        case Expression.Unary(_, exp, _, _, _) => visit(exp)
-        case Expression.Binary(_, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
-        case Expression.Let(_, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
-        case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
-        case Expression.Stm(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
-        case Expression.Match(exp, rules, _, _, _) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp) ++ visit(rule.guard))
-        case Expression.Choose(exps, rules, _, _, _) => exps.flatMap(visit) ++ rules.flatMap(rule => visit(rule.exp))
-        case Expression.Tag(_, _, exp, _, _, _) => visit(exp)
-        case Expression.Tuple(elms, _, _, _) => elms.flatMap(visit)
-        case Expression.RecordEmpty(_, _) => Nil
-        case Expression.RecordSelect(exp, _, _, _, _) => visit(exp)
-        case Expression.RecordExtend(_, value, rest, _, _, _) => visit(value) ++ visit(rest)
-        case Expression.RecordRestrict(_, rest, _, _, _) => visit(rest)
-        case Expression.ArrayLit(elms, _, _, _) => elms.flatMap(visit)
-        case Expression.ArrayNew(elm, len, _, _, _) => visit(elm) ++ visit(len)
-        case Expression.ArrayLoad(base, index, _, _, _) => visit(base) ++ visit(index)
-        case Expression.ArrayLength(base, _, _) => visit(base)
-        case Expression.ArrayStore(base, index, elm, _) => visit(base) ++ visit(index) ++ visit(elm)
-        case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => visit(base) ++ visit(beginIndex) ++ visit(endIndex)
-        case Expression.Ref(exp, _, _, _) => visit(exp)
-        case Expression.Deref(exp, _, _, _) => visit(exp)
-        case Expression.Assign(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
-        case Expression.Existential(_, exp, _) => visit(exp)
-        case Expression.Universal(_, exp, _) => visit(exp)
-        case Expression.Ascribe(exp, _, _, _) => visit(exp)
-        case Expression.Cast(exp, _, _, _) => visit(exp)
-        case Expression.TryCatch(exp, rules, _, _, _) => visit(exp) ++ rules.flatMap(rule => visit(rule.exp))
-        case Expression.InvokeConstructor(_, args, _, _, _) => args.flatMap(visit)
-        case Expression.InvokeMethod(_, exp, args, _, _, _) => visit(exp) ++ args.flatMap(visit)
-        case Expression.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(visit)
-        case Expression.GetField(_, exp, _, _, _) => visit(exp)
-        case Expression.PutField(_, exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
-        case Expression.GetStaticField(_, _, _, _) => Nil
-        case Expression.PutStaticField(_, exp, _, _, _) => visit(exp)
-        case Expression.NewChannel(exp, _, _, _) => visit(exp)
-        case Expression.GetChannel(exp, _, _, _) => visit(exp)
-        case Expression.PutChannel(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
-        case Expression.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => visit(rule.chan) ++ visit(rule.exp)) ++ default.toList.flatMap(visit)
-        case Expression.Spawn(exp, _, _, _) => visit(exp)
-        case Expression.Lazy(exp, _, _) => visit(exp)
-        case Expression.Force(exp, _, _, _) => visit(exp)
-        case Expression.FixpointConstraintSet(_, _, _, _) => Nil
-        case Expression.FixpointCompose(exp1, exp2, _, _, _, _) => visit(exp1) ++ (visit(exp2))
-        case Expression.FixpointSolve(exp, _, _, _, _) => visit(exp)
-        case Expression.FixpointProject(_, exp, _, _, _) => visit(exp)
-        case Expression.FixpointEntails(exp1, exp2, _, _, _) => visit(exp1) ++ visit(exp2)
-        case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
-      }
-
-      visit(defn0.exp)
-    }
-
-    /**
       * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
       */
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
@@ -148,7 +70,9 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         if (mod.isLawless) {
           ().toSuccess
         } else {
-          val usedSigs = laws.flatMap(findUsedSigs)
+          val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
+            case (acc, TypedAst.Def(_, _, _, _, _, _, exp, _, _, _, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
+          }
           Validation.traverseX(signatures) {
             sig =>
               if (usedSigs.contains(sig.sym)) {

@@ -317,6 +317,80 @@ object TypedAstOps {
   }
 
   /**
+    * Creates a set of all the sigs used in the given `exp`.
+    */
+  def sigSymsOf(exp: Expression): Set[Symbol.SigSym] = exp match {
+    case Expression.Unit(_) => Set.empty
+    case Expression.Null(_, _) => Set.empty
+    case Expression.True(_) => Set.empty
+    case Expression.False(_) => Set.empty
+    case Expression.Char(_, _) => Set.empty
+    case Expression.Float32(_, _) => Set.empty
+    case Expression.Float64(_, _) => Set.empty
+    case Expression.Int8(_, _) => Set.empty
+    case Expression.Int16(_, _) => Set.empty
+    case Expression.Int32(_, _) => Set.empty
+    case Expression.Int64(_, _) => Set.empty
+    case Expression.BigInt(_, _) => Set.empty
+    case Expression.Str(_, _) => Set.empty
+    case Expression.Default(_, _) => Set.empty
+    case Expression.Wild(_, _) => Set.empty
+    case Expression.Var(_, _, _) => Set.empty
+    case Expression.Def(_, _, _) => Set.empty
+    case Expression.Sig(sym, _, _) => Set(sym)
+    case Expression.Hole(_, _, _, _) => Set.empty
+    case Expression.Lambda(_, exp, _, _) => sigSymsOf(exp)
+    case Expression.Apply(exp, exps, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
+    case Expression.Unary(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+    case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
+    case Expression.Choose(exps, rules, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expression.Tag(_, _, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
+    case Expression.RecordEmpty(_, _) => Set.empty
+    case Expression.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.RecordExtend(_, value, rest, _, _, _) => sigSymsOf(value) ++ sigSymsOf(rest)
+    case Expression.RecordRestrict(_, rest, _, _, _) => sigSymsOf(rest)
+    case Expression.ArrayLit(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
+    case Expression.ArrayNew(elm, len, _, _, _) => sigSymsOf(elm) ++ sigSymsOf(len)
+    case Expression.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
+    case Expression.ArrayLength(base, _, _) => sigSymsOf(base)
+    case Expression.ArrayStore(base, index, elm, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
+    case Expression.Ref(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Existential(_, exp, _) => sigSymsOf(exp)
+    case Expression.Universal(_, exp, _) => sigSymsOf(exp)
+    case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Cast(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expression.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
+    case Expression.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
+    case Expression.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
+    case Expression.GetField(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.PutField(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.GetStaticField(_, _, _, _) => Set.empty
+    case Expression.PutStaticField(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.NewChannel(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.GetChannel(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
+    case Expression.Spawn(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
+    case Expression.Force(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
+    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ (sigSymsOf(exp2))
+    case Expression.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.FixpointEntails(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+  }
+
+  /**
     * Returns `true` if the given annotations contains the [[Benchmark]] annotation.
     */
   def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {
