@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Expression, JType}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
 object BytecodeCompiler {
 
@@ -13,7 +14,7 @@ object BytecodeCompiler {
 
   type **[R <: Stack, T <: JType] = StackCons[R, T]
 
-  sealed trait F[T]
+  sealed trait F[+T]
 
   def compileExp[R <: Stack, T <: JType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) => pushUnit[R]()
@@ -35,6 +36,8 @@ object BytecodeCompiler {
     //      INVOKESPECIAL("class name", "constructor signature")
     case _ => ???
   }
+
+  def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = ???
 
   def pushUnit[R <: Stack](): F[R] => F[R ** JUnit] = ???
 
