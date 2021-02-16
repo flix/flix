@@ -82,7 +82,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     val results = ParOps.parMap(root.classes.values, visitClass)
-    Validation.traverseX(results)(identity)
+    Validation.sequenceX(results)
   }
 
   /**
