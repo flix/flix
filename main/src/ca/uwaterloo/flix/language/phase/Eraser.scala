@@ -103,31 +103,23 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       case FinalAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
         ErasedAst.Expression.RecordRestrict(field, visitExp(rest), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.ArrayLit(elms, tpe, loc) =>
-//        ErasedAst.Expression.ArrayLit(elms.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.ArrayLit(elms.map(visitExp[JType]), visitTpe[JArray[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-//        ErasedAst.Expression.ArrayNew(visitExp(elm), visitExp(len), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.ArrayNew(visitExp[JType](elm), visitExp(len), visitTpe[JArray[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-//        ErasedAst.Expression.ArrayLoad(visitExp(base), visitExp(index), visitTpe(tpe), loc)
-        ???
+        ErasedAst.Expression.ArrayLoad(visitExp[JArray[T]](base), visitExp(index), visitTpe(tpe), loc)
       case FinalAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-//        ErasedAst.Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.ArrayStore(visitExp[JArray[JType]](base), visitExp(index), visitExp(elm), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.ArrayLength(base, tpe, loc) =>
-//        ErasedAst.Expression.ArrayLength(visitExp(base), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.ArrayLength(visitExp[JArray[JType]](base), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-//        ErasedAst.Expression.ArraySlice(visitExp(base), visitExp(beginIndex), visitExp(endIndex), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.ArraySlice(visitExp[JArray[JType]](base), visitExp(beginIndex), visitExp(endIndex), visitTpe[JArray[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.Ref(exp, tpe, loc) =>
-//        ErasedAst.Expression.Ref(visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.Ref(visitExp(exp), visitTpe[JRef[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.Deref(exp, tpe, loc) =>
         ErasedAst.Expression.Deref(visitExp(exp), visitTpe(tpe), loc)
       case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-//        ErasedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.Assign(visitExp[JRef[JType]](exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.Existential(fparam, exp, loc) =>
         val FinalAst.FormalParam(sym, tpe) = fparam
         ErasedAst.Expression.Existential(ErasedAst.FormalParam(sym, visitTpe(tpe)), visitExp(exp), loc).asInstanceOf[ErasedAst.Expression[T]]
@@ -156,13 +148,11 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
         ErasedAst.Expression.PutStaticField(field, visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
-//        ErasedAst.Expression.NewChannel(visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.NewChannel(visitExp(exp), visitTpe[JChan[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
         ErasedAst.Expression.GetChannel(visitExp(exp), visitTpe(tpe), loc)
       case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-//        ErasedAst.Expression.PutChannel(visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.PutChannel(visitExp[JChan[JType]](exp1), visitExp(exp2), visitTpe[JChan[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.SelectChannel(rules, default, tpe, loc) =>
         val newRules = rules.map { case FinalAst.SelectChannelRule(sym, chan, exp) =>
           ErasedAst.SelectChannelRule[T](sym, visitExp(chan), visitExp(exp))
@@ -171,8 +161,7 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       case FinalAst.Expression.Spawn(exp, tpe, loc) =>
         ErasedAst.Expression.Spawn(visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-//        ErasedAst.Expression.Lazy(visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-        ???
+        ErasedAst.Expression.Lazy(visitExp(exp), visitTpe[JLazy[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
       case FinalAst.Expression.Force(exp, tpe, loc) =>
         ErasedAst.Expression.Force(visitExp(exp), visitTpe(tpe), loc)
       case FinalAst.Expression.FixpointConstraintSet(cs, tpe, loc) =>
