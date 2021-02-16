@@ -230,6 +230,11 @@ object Ast {
     def isInline: Boolean = mod contains Modifier.Inline
 
     /**
+      * Returns `true` if these modifiers contain the lawless modifier.
+      */
+    def isLawless: Boolean = mod contains Modifier.Lawless
+
+    /**
       * Returns `true` if these modifiers contain the public modifier.
       */
     def isPublic: Boolean = mod contains Modifier.Public
@@ -243,6 +248,12 @@ object Ast {
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
+
+    /**
+      * Returns `true` if these modifiers contain the unlawful modifier.
+      */
+    def isUnlawful: Boolean = mod contains Modifier.Unlawful
+
   }
 
   /**
@@ -258,6 +269,11 @@ object Ast {
     case object Inline extends Modifier
 
     /**
+      * The lawless modifier.
+      */
+    case object Lawless extends Modifier
+
+    /**
       * The public modifier.
       */
     case object Public extends Modifier
@@ -271,6 +287,11 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
+
+    /**
+      * The unlawful modifier.
+      */
+    case object Unlawful extends Modifier
 
   }
 

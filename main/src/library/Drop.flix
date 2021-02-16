@@ -17,7 +17,7 @@
 ///
 /// A type class for closable types.
 ///
-pub class Drop[a] {
+pub lawless class Drop[a] {
     ///
     /// Drops `x`.
     ///

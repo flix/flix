@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be constructed from strings.
 ///
-pub class FromString[a] {
+pub lawless class FromString[a] {
     ///
     /// Optionally returns the value associated with the given string `s`.
     ///

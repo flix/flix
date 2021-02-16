@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Red, Underline}
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -201,6 +201,52 @@ object InstanceError {
       vt << Code(loc, s"missing super class instance")
       vt << NewLine
       vt << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+    }
+  }
+
+  /**
+    * Error indicating an lawless super class of a lawful subclass.
+    *
+    * @param subClass   the lawful sub class.
+    * @param superClass the lawless super class.
+    * @param loc        the location where the error occurred.
+    */
+  case class LawlessSuperClass(subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Lawless super class '$superClass'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Lawless super class '" << Red(superClass.name) << "'." << NewLine
+      vt << NewLine
+      vt << ">> The class '" << Red(subClass.name) << "' extends the lawless class '" << Red(superClass.name) << "'." << NewLine
+      vt << ">> A lawful class cannot extend an unlawful class."
+      vt << NewLine
+      vt << Code(loc, s"lawless super class")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Mark '${subClass.name}' as lawless."
+    }
+  }
+
+  /**
+    * Error indicating an unlawful signature in a lawful class.
+    *
+    * @param sym the symbol of the unlawful signature.
+    * @param loc the location where the error occurred.
+    */
+  case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Unlawful signature '$sym'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unlawful signature '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << ">> Each signature of a lawful class must appear in at least one law."
+      vt << NewLine
+      vt << Code(loc, s"unlawful signature")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Create a law for '${sym}' or mark the class as unlawful."
     }
   }
 }

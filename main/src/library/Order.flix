@@ -17,7 +17,7 @@
 ///
 /// A type class for types with a total order.
 ///
-pub class Order[a] {
+pub lawless class Order[a] {
 
     /// Returns `true` if and only if `x < y`.
     pub def less(x: a, y: a): Bool

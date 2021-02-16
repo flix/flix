@@ -18,7 +18,7 @@
 /// A type class for monoids, objects that support an associative binary
 /// operation `combine` and neutral element `empty`.
 ///
-pub class Monoid[a] {
+pub lawless class Monoid[a] {
     ///
     /// Returns a neutral element.
     ///

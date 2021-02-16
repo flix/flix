@@ -98,9 +98,23 @@ object Validation {
   }
 
   /**
+    * Sequences the given list of validations `xs`, ignoring non-error results.
+    */
+  def sequenceX[T, E](xs: Iterable[Validation[T, E]]): Validation[Unit, E] = {
+    sequence(xs).map(_ => ())
+  }
+
+  /**
     * Traverses `xs` applying the function `f` to each element.
     */
   def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
+
+  /**
+    * Traverses `xs` applying the function `f` to each element, ignoring non-error results.
+    */
+  def traverseX[T, E](xs: Iterable[T])(f: T => Validation[_, E]): Validation[Unit, E] = {
+    traverse(xs)(f).map(_ => ())
+  }
 
   /**
     * A fast implementation of traverse.
