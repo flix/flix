@@ -55,7 +55,7 @@ namespace Test {
     /// Returns a suite of test cases with the given `name` and test case list.
     ///
     pub def defineSuite(fqn: String, t: Map[String, Test]): MySuite =
-        let path = (String.split(fqn, "\.") |> Array.toList) as & Pure;
+        let path = (String.splitOn(fqn, ".")) as & Pure;
         let tests = Map.map(v -> v :: Nil, t);
         MySuite(Map.empty() |> Map.insert(path, tests))
 
@@ -80,55 +80,81 @@ namespace Test {
         EqTest(runner)
 
 
-    pub def runAll2(s: MySuite, cb: Callbacks): Int32 & Impure = {
-        use Console/Color.blue;
-        use Console/Color.red;
-        use Console/Color.green;
-        use Console/Color.yellow;
-        use Console.rgb;
-        let gray = rgb((100, 100, 100));
+    pub def runSuite(s: MySuite, _cb: Callbacks): Int32 & Impure = {
         let MySuite(m) = s;
-        println("------------------------ Running Tests ---------------------- ");
-        let g = (path: List[String], innerM: Map[String, List[Test]]) -> {
-            let suiteName2: String = gray(List.foldLeft((acc: String, elm: String) -> acc + "." + elm, "", path));
-            let numberOfTests = Map.size(innerM: Map[String, List[Test]]) : Int32;
-            println("${suiteName2}: Number of tests: ${numberOfTests}");
-            let evalTest = (testName: String, testList: List[Test]) -> {
-                match testList {
-                    case t :: Nil =>
-                        match runTest(t) {
-                            case Success(r) => (cb.onTestSuccess)(testName, r.time)
-                            case Failure(_) =>
-                                let statusPart = "${red("-")}";
-                                let namePart = testName: String;
-                                let messagePart = "(${red("unexpected value")})";
-                                println("  ${statusPart} ${namePart} ${messagePart}")
-                        }
-
-                    case _ => ?fail
-                }
-            };
-            Map.foreach(evalTest, innerM)
-        };
-        println("");
-        Map.foreach(g, m);
+        printTestHeader();
+        let _testOutComes = Map.mapWithKey(evalSuite, m);
+        printFailingTestHeader();
         0
+    }
+
+    def evalSuite(path: List[String], innerM: Map[String, List[Test]]): Map[String, TestOutcome] & Impure = {
+        beforeSuite(path, innerM);
+        let result = Map.mapWithKey(evalTestGroup, innerM);
+        afterSuite(path, result);
+        result
+    }
+
+    def evalTestGroup(testName: String, testList: List[Test]): TestOutcome & Impure = {
+        match testList {
+            case t :: Nil =>
+                let result = runTest(t);
+                match result {
+                    case Success(r) => {
+                        onTestSuccess(testName, r.time);
+                        result
+                    }
+                    case Failure(r) => {
+                        onTestFailure(testName, 0);
+                        result
+                    }
+                }
+            case _ => ?fail
+        }
+    }
+
+    def printTestHeader(): Unit & Impure = {
+        println("------------------------ Running Tests ---------------------- ")
+    }
+
+    def printFailingTestHeader(): Unit & Impure = {
+        println("------------------------ Failing Tests ---------------------- ")
+    }
+
+    def beforeSuite(path: List[String], innerM: Map[String, List[Test]]): Unit & Impure = {
+        let namePart: String = gray(List.foldLeft((acc: String, elm: String) -> acc + "/" + elm, "", path));
+        let numberOfTests: Int32 = Map.size(innerM);
+        let testsPart = "(${numberOfTests} tests)";
+        println("${namePart} ${testsPart}")
+    }
+
+    def afterSuite(_path: List[String], innerM: Map[String, TestOutcome]): Unit & Impure = {
+        let numTests = Map.size(innerM);
+        let numSuccess = successful(innerM);
+        let numFailed = failures(innerM);
+        println("  Tests: ${numTests}, Passed: ${numSuccess}, Failed: ${numFailed}.");
+        println("")
     }
 
     pub def green(s: String): String  =
         use Console/Color.green;
         green(s)
 
+    pub def red(s: String): String  =
+        use Console/Color.red;
+        red(s)
+
     pub def gray(s: String): String =
         use Console.rgb;
         rgb((100, 100, 100), s)
 
     type alias Callbacks = {
-        onTestSuccess: (String, Int32) ~> Unit
+        onTestSuccess: (String, Int32) ~> Unit,
+        onTestFailure: (String, Int32) ~> Unit
     }
 
     ///
-    /// Callback for when a test completes successfully.
+    /// Callback for when a test succeeds.
     ///
     pub def onTestSuccess(testName: String, testTime: Int32): Unit & Impure =
         let statusPart = "${green("+")}";
@@ -137,49 +163,13 @@ namespace Test {
         println("  ${statusPart} ${namePart} ${timePart}")
 
     ///
-    /// Runs all tests in the given suite `s`.
+    /// Callback for when a test fails.
     ///
-    pub def runAll(s: Suite): Int32 & Impure = {
-        use Console/Color.blue;
-        use Console/Color.red;
-        use Console/Color.green;
-        use Console/Color.yellow;
-        use Console.rgb;
-        let gray = rgb((100, 100, 100));
-        let Suite(suiteName, tests) = s;
-        println("------------------------ Running Tests ---------------------- ");
-        println("${suiteName} (${Map.size(tests)} tests):");
-        let m = Map.map(runTest, tests);
-        let g = (n: String, o: TestOutcome) -> match o {
-            case Success(r)    =>
-                let statusPart = "${green("+")}";
-                let namePart = n: String;
-                let timePart = gray("${r.time} ms");
-                println("  ${statusPart} ${namePart} ${timePart}")
-            case Failure(_) =>
-                let statusPart = "${red("-")}";
-                let namePart = n: String;
-                let messagePart = "(${red("unexpected value")})";
-                println("  ${statusPart} ${namePart} ${messagePart}")
-        };
-        println("");
-        Map.foreach(g, m);
-        println("");
-        println("------------------------ Failing Tests ---------------------- ");
-        let g2 = (n: String, o: TestOutcome) -> match o {
-            case Success(_) => () // NOP
-            case Failure(r) =>
-                println("  ${red(n)}");
-                println("      expected:   ${green(r.expected)}");
-                println("      got     :   ${yellow(r.got)}");
-                println("")
-        };
-        println("");
-        Map.foreach(g2, m);
-        println("");
-        println("${suiteName}: Succeeded: ${successful(m)}. Failed: ${failures(m)}.");
-        0
-    }
+    pub def onTestFailure(testName: String, _testTime: Int32): Unit & Impure =
+        let statusPart = "${red("-")}";
+        let namePart = testName: String;
+        let messagePart = "(${red("unexpected value")})";
+        println("  ${statusPart} ${namePart} ${messagePart}")
 
     ///
     /// Runs the given test `t`.
@@ -316,8 +306,9 @@ namespace TestList {
 }
 
 def main(_args: Array[String]): Int32 & Impure =
-    Test.runAll2(TestList.tests(), {
-        onTestSuccess = Test.onTestSuccess
+    Test.runSuite(TestList.tests(), {
+        onTestSuccess = Test.onTestSuccess,
+        onTestFailure = Test.onTestFailure
      })
 
 
