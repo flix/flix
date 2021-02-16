@@ -30,7 +30,6 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       */
     def visitDef(def0: FinalAst.Def): ErasedAst.Def = {
       val fs = def0.formals.map(visitFormalParam)
-      // TODO: what is JType here?
       val exp = visitExp[JType](def0.exp)
       val tpe = visitTpe[JType](def0.tpe)
       ErasedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, tpe, def0.loc)
@@ -38,8 +37,6 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
 
     /**
       * Translates the given expression `exp0` to the ErasedAst.
-      * TODO: Format like Simplifier.scala
-      * TODO: cast expressions missing
       */
     def visitExp[T <: JType](exp0: FinalAst.Expression): ErasedAst.Expression[T] = exp0 match {
       case FinalAst.Expression.Unit(loc) => ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]]
