@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime.interpreter;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.*;
 
@@ -55,11 +56,6 @@ public final class Channel {
    */
   private final boolean unbuffered;
 
-  /**
-   * a random number generator used to pick one of the ready channels of a 'select' statement.
-   */
-  private static final Random RANDOM = new Random(); // TODO: Q: Should we supply a seed?
-
   public Channel(int bufferSize) {
     if (bufferSize < 0) {
       throw new RuntimeException("Channel bufferSize must be positive");
@@ -107,14 +103,14 @@ public final class Channel {
           // Find channels with waiting elements in a random order to prevent backpressure.
           {
             // Build list mapping a channel to it's branchNumber (the index of the 'channels' array)
-            List<ChannelIndexPair> channelIndexPairs = new LinkedList<>();
+            List<ChannelIndexPair> channelIndexPairs = new ArrayList<>();
             for (int index = 0; index < channels.length; index++) {
               channelIndexPairs.add(new ChannelIndexPair(channels[index], index));
             }
 
             // Randomize the order channels are looked at.
             // This prevents backpressure from building up on one channel.
-            Collections.shuffle(channelIndexPairs);
+            Collections.shuffle(channelIndexPairs, ThreadLocalRandom.current());
 
             // Find channels with waiting elements
             for (ChannelIndexPair channelIndexPair : channelIndexPairs) {
