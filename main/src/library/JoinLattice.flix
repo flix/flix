@@ -17,7 +17,7 @@
 ///
 /// A type class for join semi lattices.
 ///
-class JoinLattice[a] {
+lawless class JoinLattice[a] {
 
     ///
     /// Returns the least upper bound of `x` and `y`.

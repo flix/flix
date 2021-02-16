@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-class PartialOrder[a] {
+lawless class PartialOrder[a] {
 
     ///
     /// Returns `true` if `x` is smaller equal to `y`.

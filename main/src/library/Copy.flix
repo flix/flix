@@ -17,7 +17,7 @@
 ///
 /// A type class for duplicable elements.
 ///
-pub class Copy[a] {
+pub lawless class Copy[a] {
     ///
     /// Returns a shallow copy of `x`.
     ///

@@ -17,7 +17,7 @@
 ///
 /// A type class for bitwise right shift.
 ///
-pub class BitwiseShr[a] {
+pub lawless class BitwiseShr[a] {
     ///
     /// Returns `x` shifted right by `n` bits.
     ///

@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -27,19 +28,65 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
-    * Validates instances in the given AST root.
+    * Validates instances and classes in the given AST root.
     */
   override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Instances") {
     for {
       _ <- visitInstances(root)
+      _ <- visitClasses(root)
     } yield root
   }
 
+  /**
+    * Validates all instances in the given AST root.
+    */
+  private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
+
+    /**
+      * Checks that every super class of `class0` is lawful, unless `class0` is marked `lawless`.
+      */
+    def checkLawfulSuperClasses(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
+      case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
+      case TypedAst.Class(_, _, sym, _, superClasses, _, _, loc) =>
+        val lawlessSuperClasses = superClasses.filter {
+          superSym => root.classes(superSym).mod.isLawless
+        }
+        Validation.traverseX(lawlessSuperClasses) {
+          superSym => InstanceError.LawlessSuperClass(sym, superSym, loc).toFailure
+        }
+    }
+
+    /**
+      * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
+      */
+    def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
+      case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
+      case TypedAst.Class(_, _, _, _, _, sigs, laws, _) =>
+        val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
+          case (acc, TypedAst.Def(_, _, _, _, _, _, exp, _, _, _, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
+        }
+        val unusedSigs = sigs.map(_.sym).toSet.removedAll(usedSigs)
+        Validation.traverseX(unusedSigs) {
+          sig => InstanceError.UnlawfulSignature(sig, sig.loc).toFailure
+        }
+    }
+
+    /**
+      * Performs validations on a single class.
+      */
+    def visitClass(class0: TypedAst.Class): Validation[Unit, InstanceError] = {
+      for {
+        _ <- checkLawfulSuperClasses(class0)
+        _ <- checkLawApplication(class0)
+      } yield ()
+    }
+
+    val results = ParOps.parMap(root.classes.values, visitClass)
+    Validation.sequenceX(results)
+  }
 
   /**
     * Validates all instances in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
     */
   private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
@@ -107,7 +154,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       val clazz = root.classes(inst.sym)
 
       // Step 1: check that each signature has an implementation.
-      val sigMatchVal = checkEach(clazz.signatures) {
+      val sigMatchVal = Validation.traverseX(clazz.signatures) {
         sig =>
           inst.defs.find(_.sym.name == sig.sym.name) match {
             // Case 1: there is no definition with the same name
@@ -126,7 +173,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       // Step 2: check that there are no extra definitions
       sigMatchVal.flatMap {
         _ =>
-          checkEach(inst.defs) {
+          Validation.traverseX(inst.defs) {
             defn =>
               clazz.signatures.find(_.sym.name == defn.sym.name) match {
                 case None => InstanceError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
@@ -142,7 +189,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) =>
         val superClasses = root.classEnv(sym).superClasses
-        checkEach(superClasses) {
+        Validation.traverseX(superClasses) {
           superClass =>
             val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
             // Check each instance of the super class
@@ -156,7 +203,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         }
     }
 
-
     /**
       * Reassembles a set of instances of the same class.
       */
@@ -164,7 +210,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       val insts = insts0
       // Check each instance against each instance that hasn't been checked yet
       val checks = insts.tails.toSeq
-      checkEach(checks) {
+      Validation.traverseX(checks) {
         case inst :: unchecked =>
           for {
             _ <- checkSimple(inst)
@@ -179,15 +225,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Check the instances of each class in parallel.
     val results = ParOps.parMap(root.instances.values, checkInstancesOfClass)
-    checkEach(results)(identity)
-  }
-
-  /**
-    * Apply a check to each element in the sequence `xs`.
-    */
-  private def checkEach[In, Error](xs: Iterable[In])(f: In => Validation[Unit, Error]): Validation[Unit, Error] = {
-    Validation.fold(xs, ()) {
-      case ((), x) => f(x)
-    }
+    Validation.traverseX(results)(identity)
   }
 }
