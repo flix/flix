@@ -205,7 +205,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
   def resolve(s0: NamedAst.Sig, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
-    case NamedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, sc0, eff0, loc) =>
+    case NamedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, exp0, sc0, eff0, loc) => // MATT handle exp
       for {
         fparams <- resolveFormalParams(fparams0, ns0, root)
         tparams <- resolveTypeParams(tparams0, ns0, root)
@@ -1127,13 +1127,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case Some(defn@NamedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)) =>
+      case Some(defn: NamedAst.Def) =>
         if (isDefAccessible(defn, ns0)) {
           defn.toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-      case Some(sig@NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)) =>
+      case Some(sig: NamedAst.Sig) =>
         if (isSigAccessible(sig, ns0)) {
           sig.toSuccess
         } else {
