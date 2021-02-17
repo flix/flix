@@ -139,8 +139,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given sig declaration `s0`.
     */
   private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
-    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, exp, sp2) =>
-      // MATT handle exp
+    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
@@ -148,14 +147,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
+      val expVal = Validation.traverse(exp0)(visitExp) // MATT change traverse to use typeclassy stuff?
 
       for {
-        res <- sequenceT(annVal, modVal, formalsVal, effVal)
-        (as, mod, fparams, eff) = res
+        res <- sequenceT(annVal, modVal, formalsVal, effVal, expVal)
+        (as, mod, fparams, eff, exp) = res
         _ <- requirePublic(mod, ident)
         ts = fparams.map(_.tpe.get)
         tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
-      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, tpe, eff, loc))
+      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, eff, loc))
   }
 
   /**

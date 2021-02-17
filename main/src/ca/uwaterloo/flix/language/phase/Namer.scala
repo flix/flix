@@ -237,7 +237,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
         }
 
-      case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
+      case _: WeededAst.Declaration.Sig =>
         throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
     }
   }
@@ -389,7 +389,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe, eff0, loc) => // MATT handle exp
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0), checkSigType(ident, classTparam, tpe, loc)) {
         case (tparams, _) =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
