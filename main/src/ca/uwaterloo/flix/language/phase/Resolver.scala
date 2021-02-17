@@ -205,14 +205,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
   def resolve(s0: NamedAst.Sig, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
-    case NamedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, exp0, sc0, eff0, loc) => // MATT handle exp
+    case NamedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, exp0, sc0, eff0, loc) =>
+      val fparam = fparams0.head
       for {
+        fparamType <- lookupType(fparam.tpe, ns0, root)
         fparams <- resolveFormalParams(fparams0, ns0, root)
         tparams <- resolveTypeParams(tparams0, ns0, root)
         ann <- traverse(ann0)(visitAnnotation(_, ns0, root))
         scheme <- resolveScheme(sc0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield ResolvedAst.Sig(doc, ann, mod, sym, tparams, fparams, scheme, eff, loc)
+        exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), ns0, root))
+      } yield ResolvedAst.Sig(doc, ann, mod, sym, tparams, fparams, exp.headOption, scheme, eff, loc)
   }
 
   /**

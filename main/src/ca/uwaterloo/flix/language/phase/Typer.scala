@@ -99,7 +99,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   private def visitClasses(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
 
     def visitSig(sig: ResolvedAst.Sig): Validation[TypedAst.Sig, TypeError] = sig match {
-      case ResolvedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, sc, eff, loc) =>
+      case ResolvedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, exp, sc, eff, loc) => // MATT handle exp
         val tparams = getTypeParams(tparams0)
         val fparams = getFormalParams(fparams0, Substitution.empty)
         for {
