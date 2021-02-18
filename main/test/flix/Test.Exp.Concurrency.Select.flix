@@ -364,4 +364,22 @@ namespace Test/Exp/Concurrency/Select {
         ()
     }
 
+    @test
+    def testSelectRandom10(): Unit & Impure = {
+        let c10 = chan Unit 0;
+        let c11 = chan Unit 0;
+        let c12 = chan Unit 0;
+        let c13 = chan Unit 0;
+        spawn { c13 <- () ; () } ;
+        spawn { c12 <- () ; () } ;
+        spawn { c11 <- () ; () } ;
+        spawn { c10 <- () ; () } ;
+        select {
+            case _ <- c10 => <- c13 ; <- c12 ; <- c11
+            case _ <- c13 => <- c12 ; <- c10 ; <- c11
+            case _ <- c11 => <- c13 ; <- c12 ; <- c10
+        };
+        ()
+    }
+
 }

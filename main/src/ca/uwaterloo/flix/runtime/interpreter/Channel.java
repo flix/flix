@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime.interpreter;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.*;
 
@@ -99,14 +100,26 @@ public final class Channel {
         selectLock.lock();
 
         try {
-          // Check if any channel has an element
-          for (int index = 0; index < channels.length; index++) {
-            Channel channel = channels[index];
-            Object element = channel.tryGet();
-            if (element != null) {
-              // Element found.
-              // Return the element and the branchNumber (index of the array) of the containing channel
-              return new SelectChoice(index, element);
+          // Find channels with waiting elements in a random order to prevent backpressure.
+          {
+            // Build list mapping a channel to it's branchNumber (the index of the 'channels' array)
+            List<ChannelIndexPair> channelIndexPairs = new ArrayList<>();
+            for (int index = 0; index < channels.length; index++) {
+              channelIndexPairs.add(new ChannelIndexPair(channels[index], index));
+            }
+
+            // Randomize the order channels are looked at.
+            // This prevents backpressure from building up on one channel.
+            Collections.shuffle(channelIndexPairs, ThreadLocalRandom.current());
+
+            // Find channels with waiting elements
+            for (ChannelIndexPair channelIndexPair : channelIndexPairs) {
+              Object element = channelIndexPair.getChannel().tryGet();
+              if (element != null) {
+                // There is a waiting element in this channel.
+                // Return the element and the branchNumber of this channel
+                return new SelectChoice(channelIndexPair.getIndex(), element);
+              }
             }
           }
 
