@@ -156,16 +156,18 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       // Step 1: check that each signature has an implementation.
       val sigMatchVal = Validation.traverseX(clazz.signatures) {
         sig =>
-          inst.defs.find(_.sym.name == sig.sym.name) match {
-            // Case 1: there is no definition with the same name
-            case None => InstanceError.MissingImplementation(sig.sym, inst.loc).toFailure
-            case Some(defn) =>
+          (inst.defs.find(_.sym.name == sig.sym.name), sig.exp) match {
+            // Case 1: there is no definition with the same name, and no default implementation
+            case (None, None) => InstanceError.MissingImplementation(sig.sym, inst.loc).toFailure
+            // Case 2: there is no definition with the same name, but there is a default implementation
+            case (None, Some(_)) => ().toSuccess
+            case (Some(defn), _) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.sc, clazz.tparam.tpe, inst.tpe)
               if (Scheme.equal(expectedScheme, defn.declaredScheme, root.classEnv)) {
-                // Case 2.1: the schemes match. Success!
+                // Case 3.1: the schemes match. Success!
                 ().toSuccess
               } else {
-                // Case 2.2: the schemes do not match
+                // Case 3.2: the schemes do not match
                 InstanceError.MismatchedSignatures(sig.sym, defn.loc, expectedScheme, defn.declaredScheme).toFailure
               }
           }
