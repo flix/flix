@@ -136,4 +136,56 @@ namespace Test/Exp/ChooseStar {
         };
         map2((x, y) -> x * y, Present(123), Present(456)) |> isPresent
 
+    @test
+    def testFlatMap01(): Bool =
+        let flatMap = (f, x) -> {
+            choose* x {
+                case Absent     => Absent
+                case Present(v) => f(v)
+            }
+        };
+        let isAbsent = x -> choose x {
+            case Absent => true
+        };
+        flatMap(x -> Present(x * 2), Absent) |> isAbsent
+
+    @test
+    def testFlatMap02(): Bool =
+        let flatMap = (f, x) -> {
+            choose* x {
+                case Absent     => Absent
+                case Present(v) => f(v)
+            }
+        };
+        let isPresent = x -> choose x {
+            case Present(_) => true
+        };
+        flatMap(x -> Present(x * 2), Present(123)) |> isPresent
+
+    @test
+    def testFlatMap03(): Bool =
+        let flatMap = (f, x) -> {
+            choose* x {
+                case Absent     => Absent
+                case Present(v) => f(v)
+            }
+        };
+        let isAbsent = x -> choose x {
+            case Absent => true
+        };
+        flatMap(_x -> Absent, Absent) |> isAbsent
+
+    @test
+    def testFlatMap04(): Bool =
+        let flatMap = (f, x) -> {
+            choose* x {
+                case Absent     => Absent
+                case Present(v) => f(v)
+            }
+        };
+        let isAbsent = x -> choose x {
+            case Absent => true
+        };
+        flatMap(_x -> Absent, Present(123)) |> isAbsent
+
 }
