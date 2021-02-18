@@ -701,7 +701,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(isStar, exps0, rules0, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -735,7 +735,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           seqM(rs.map(visitRuleBody)).map(_.unzip3)
         }
 
-        // TODO: DOC
+        /**
+          * Returns a transformed result type that encodes the Boolean constraint of each row pattern in the result type.
+          *
+          * NB: Requires that the `ts` types are Choice-types.
+          */
         def transformResultTypes(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[ResolvedAst.ChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
           def visitRuleBody(r: ResolvedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
             case ResolvedAst.ChoiceRule(r, exp0) =>
@@ -748,6 +752,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               } yield (Type.mkImplies(cond, isAbsentVar), Type.mkImplies(cond, isPresentVar), innerType)
           }
 
+          ///
+          /// Simply compute the mgu of the `ts` types if this is not a star choose.
+          ///
+          if (!isStar) {
+            return unifyTypeM(ts, loc)
+          }
+
+          ///
+          /// Otherwise construct a new Choice type with isAbsent and isPresent conditions that depend on each pattern row.
+          ///
           for {
             (isAbsentConds, isPresentConds, innerTypes) <- seqM(rs.zip(ts).map(p => visitRuleBody(p._1, p._2))).map(_.unzip3)
             isAbsentCond = Type.mkAnd(isAbsentConds)
@@ -1508,7 +1522,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Choose(exps, rules, loc) =>
+      case ResolvedAst.Expression.Choose(_, exps, rules, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
           case ResolvedAst.ChoiceRule(pat0, exp) =>
