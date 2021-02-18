@@ -1515,13 +1515,31 @@ object ParsedAst {
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression)
 
   /**
-    * A select channel rule consists of an identifier, a channel expression, and a body expression.
-    *
-    * @param ident the bound identifier.
-    * @param chan  the channel expression of the rule.
-    * @param exp   the body expression of the rule.
-    */
-  case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression)
+   * The cases of a select statement
+   */
+  sealed trait SelectChannelRule
+
+  object SelectChannelRule {
+
+    /**
+     * A select get consists of an identifier, a channel expression, and a body expression.
+     *
+     * @param ident the bound identifier.
+     * @param channel  the channel expression of the rule.
+     * @param exp   the body expression of the rule.
+     */
+    case class SelectGet(ident: Name.Ident, channel: ParsedAst.Expression, exp: ParsedAst.Expression) extends SelectChannelRule
+
+    /**
+     * A select put consists of an identifier, a channel expression, and a body expression.
+     *
+     * @param channel  the channel expression of the rule.
+     * @param value the value to be put in the channel.
+     * @param exp   the body expression of the rule.
+     */
+    case class SelectPut(channel: ParsedAst.Expression, value: ParsedAst.Expression, exp: ParsedAst.Expression) extends SelectChannelRule
+
+  }
 
   /**
     * Modifier.
