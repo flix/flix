@@ -735,6 +735,28 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           seqM(rs.map(visitRuleBody)).map(_.unzip3)
         }
 
+        // TODO: DOC
+        def transformResultTypes(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[ResolvedAst.ChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+          def visitRuleBody(r: ResolvedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
+            case ResolvedAst.ChoiceRule(r, exp0) =>
+              val cond = mkInnerConj(isAbsentVars, isPresentVars, r)
+              val innerType = Type.freshVar(Kind.Star)
+              val isAbsentVar = Type.freshVar(Kind.Bool)
+              val isPresentVar = Type.freshVar(Kind.Bool)
+              for {
+                choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar), loc)
+              } yield (Type.mkImplies(cond, isAbsentVar), Type.mkImplies(cond, isPresentVar), innerType)
+          }
+
+          for {
+            (isAbsentConds, isPresentConds, innerTypes) <- seqM(rs.zip(ts).map(p => visitRuleBody(p._1, p._2))).map(_.unzip3)
+            isAbsentCond = Type.mkAnd(isAbsentConds)
+            isPresentCond = Type.mkAnd(isPresentConds)
+            innerType <- unifyTypeM(innerTypes, loc)
+            resultType = Type.mkChoice(innerType, isAbsentCond, isPresentCond)
+          } yield resultType
+        }
+
         /**
           * Constructs a Boolean constraint for the given choice rule `r`.
           *
@@ -818,7 +840,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
-          resultTyp <- unifyTypeM(ruleBodyTyp, loc)
+          resultTyp <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
+          //resultTyp <- unifyTypeM(ruleBodyTyp, loc)
           resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
