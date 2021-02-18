@@ -45,6 +45,7 @@ object ErasedAst {
 
   sealed trait Expression[T <: JType] {
     def tpe: ErasedType[T]
+
     def loc: SourceLocation
   }
 
@@ -313,54 +314,106 @@ object ErasedAst {
 
   case class FreeVar(sym: Symbol.VarSym, tpe: ErasedType[JType])
 
-  case class BoxInt8(exp: ErasedAst.Expression[PrimInt8], final val tpe: ErasedType[BoxedInt8], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt8]
-  case class BoxInt16(exp: ErasedAst.Expression[PrimInt16], final val tpe: ErasedType[BoxedInt16], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt16]
-  case class BoxInt32(exp: ErasedAst.Expression[PrimInt32], final val tpe: ErasedType[BoxedInt32], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt32]
-  case class BoxInt64(exp: ErasedAst.Expression[PrimInt64], final val tpe: ErasedType[BoxedInt64], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt64]
-  case class BoxChar(exp: ErasedAst.Expression[PrimChar], final val tpe: ErasedType[BoxedChar], loc: SourceLocation) extends ErasedAst.Expression[BoxedChar]
-  case class BoxFloat32(exp: ErasedAst.Expression[PrimFloat32], final val tpe: ErasedType[BoxedFloat32], loc: SourceLocation) extends ErasedAst.Expression[BoxedFloat32]
-  case class BoxFloat64(exp: ErasedAst.Expression[PrimFloat64], final val tpe: ErasedType[BoxedFloat64], loc: SourceLocation) extends ErasedAst.Expression[BoxedFloat64]
+  case class BoxInt8(exp: ErasedAst.Expression[PrimInt8], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt8] {
+    final val tpe = ErasedType.BoxedInt8()
+  }
 
-  case class UnboxInt8(exp: ErasedAst.Expression[BoxedInt8], final val tpe: ErasedType[PrimInt8], loc: SourceLocation) extends ErasedAst.Expression[PrimInt8]
-  case class UnboxInt16(exp: ErasedAst.Expression[BoxedInt16], final val tpe: ErasedType[PrimInt16], loc: SourceLocation) extends ErasedAst.Expression[PrimInt16]
-  case class UnboxInt32(exp: ErasedAst.Expression[BoxedInt32], final val tpe: ErasedType[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
-  case class UnboxInt64(exp: ErasedAst.Expression[BoxedInt64], final val tpe: ErasedType[PrimInt64], loc: SourceLocation) extends ErasedAst.Expression[PrimInt64]
-  case class UnboxChar(exp: ErasedAst.Expression[BoxedChar], final val tpe: ErasedType[PrimChar], loc: SourceLocation) extends ErasedAst.Expression[PrimChar]
-  case class UnboxFloat32(exp: ErasedAst.Expression[BoxedFloat32], final val tpe: ErasedType[PrimFloat32], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32]
-  case class UnboxFloat64(exp: ErasedAst.Expression[BoxedFloat64], final val tpe: ErasedType[PrimFloat64], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64]
+  case class BoxInt16(exp: ErasedAst.Expression[PrimInt16], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt16] {
+    final val tpe = ErasedType.BoxedInt16()
+  }
+
+  case class BoxInt32(exp: ErasedAst.Expression[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt32] {
+    final val tpe = ErasedType.BoxedInt32()
+  }
+
+  case class BoxInt64(exp: ErasedAst.Expression[PrimInt64], loc: SourceLocation) extends ErasedAst.Expression[BoxedInt64] {
+    final val tpe = ErasedType.BoxedInt64()
+  }
+
+  case class BoxChar(exp: ErasedAst.Expression[PrimChar], loc: SourceLocation) extends ErasedAst.Expression[BoxedChar] {
+    final val tpe = ErasedType.BoxedChar()
+  }
+
+  case class BoxFloat32(exp: ErasedAst.Expression[PrimFloat32], loc: SourceLocation) extends ErasedAst.Expression[BoxedFloat32] {
+    final val tpe = ErasedType.BoxedFloat32()
+  }
+
+  case class BoxFloat64(exp: ErasedAst.Expression[PrimFloat64], loc: SourceLocation) extends ErasedAst.Expression[BoxedFloat64] {
+    final val tpe = ErasedType.BoxedFloat64()
+  }
+
+  case class UnboxInt8(exp: ErasedAst.Expression[BoxedInt8], loc: SourceLocation) extends ErasedAst.Expression[PrimInt8] {
+    final val tpe = ErasedType.Int8()
+  }
+
+  case class UnboxInt16(exp: ErasedAst.Expression[BoxedInt16], loc: SourceLocation) extends ErasedAst.Expression[PrimInt16] {
+    final val tpe = ErasedType.Int16()
+  }
+
+  case class UnboxInt32(exp: ErasedAst.Expression[BoxedInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+    final val tpe = ErasedType.Int32()
+  }
+
+  case class UnboxInt64(exp: ErasedAst.Expression[BoxedInt64], loc: SourceLocation) extends ErasedAst.Expression[PrimInt64] {
+    final val tpe = ErasedType.Int64()
+  }
+
+  case class UnboxChar(exp: ErasedAst.Expression[BoxedChar], loc: SourceLocation) extends ErasedAst.Expression[PrimChar] {
+    final val tpe = ErasedType.Char()
+  }
+
+  case class UnboxFloat32(exp: ErasedAst.Expression[BoxedFloat32], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32] {
+    final val tpe = ErasedType.Float32()
+  }
+
+  case class UnboxFloat64(exp: ErasedAst.Expression[BoxedFloat64], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64] {
+    final val tpe = ErasedType.Float64()
+  }
 
   sealed trait JType
 
   object JType {
 
     sealed trait PrimInt8 extends JType
+
     sealed trait BoxedInt8 extends JType
 
     sealed trait PrimInt16 extends JType
+
     sealed trait BoxedInt16 extends JType
 
     sealed trait PrimInt32 extends JType
+
     sealed trait BoxedInt32 extends JType
 
     sealed trait PrimInt64 extends JType
+
     sealed trait BoxedInt64 extends JType
 
     sealed trait PrimChar extends JType
+
     sealed trait BoxedChar extends JType
 
     sealed trait PrimFloat32 extends JType
+
     sealed trait BoxedFloat32 extends JType
 
     sealed trait PrimFloat64 extends JType
+
     sealed trait BoxedFloat64 extends JType
 
     sealed trait JObject extends JType
+
     sealed trait JUnit extends JType
 
     sealed trait JRef[T <: JType] extends JType
+
     sealed trait JArray[T <: JType] extends JType
+
     sealed trait JChan[T <: JType] extends JType
+
     sealed trait JLazy[T <: JType] extends JType
+
   }
 
   sealed trait ErasedType[T <: JType]
@@ -371,19 +424,35 @@ object ErasedAst {
 
     case class Bool() extends ErasedType[PrimInt32]
 
+    case class BoxedBool() extends ErasedType[JType.BoxedInt32]
+
     case class Char() extends ErasedType[PrimChar]
+
+    case class BoxedChar() extends ErasedType[JType.BoxedChar]
 
     case class Float32() extends ErasedType[PrimFloat32]
 
+    case class BoxedFloat32() extends ErasedType[JType.BoxedFloat32]
+
     case class Float64() extends ErasedType[PrimFloat64]
+
+    case class BoxedFloat64() extends ErasedType[JType.BoxedFloat64]
 
     case class Int8() extends ErasedType[PrimInt8]
 
+    case class BoxedInt8() extends ErasedType[JType.BoxedInt8]
+
     case class Int16() extends ErasedType[PrimInt16]
+
+    case class BoxedInt16() extends ErasedType[JType.BoxedInt16]
 
     case class Int32() extends ErasedType[PrimInt32]
 
+    case class BoxedInt32() extends ErasedType[JType.BoxedInt32]
+
     case class Int64() extends ErasedType[PrimInt64]
+
+    case class BoxedInt64() extends ErasedType[JType.BoxedInt64]
 
     case class BigInt() extends ErasedType[JObject]
 
@@ -423,6 +492,8 @@ object ErasedAst {
 
     // TODO: Should be removed.
     case class Var(id: Int) extends ErasedType[Nothing]
+
   }
+
 }
 
