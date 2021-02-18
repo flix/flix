@@ -17,7 +17,7 @@
 ///
 /// A type class for equality and inequality.
 ///
-pub class Eq[a] {
+pub lawless class Eq[a] {
 
     ///
     /// Returns `true` if and only if `x` is equal to `y`.
@@ -28,10 +28,6 @@ pub class Eq[a] {
     /// Returns `true` if and only if `x` is not equal to `y`.
     ///
     pub def neq(x: a, y: a): Bool
-
-    law neqInverse(): a -> a -> Bool = x -> y -> (x == y) == not (x != y)
-
-    law reflexivity(): a -> Bool = x -> x == x
 
 }
 
