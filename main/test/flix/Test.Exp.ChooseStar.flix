@@ -1,0 +1,3 @@
+namespace Test/Exp/ChooseStar {
+
+}
