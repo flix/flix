@@ -79,6 +79,36 @@ namespace Test/Exp/ChooseStar {
         f(Present(123), Present(456)) |> isPresent
 
     @test
+    def testChooseStarOTwo03(): Bool =
+        let f = (x, y) -> {
+            choose* (x, y) {
+                case (Absent, Absent)         => Absent
+                case (Absent, Present(_))     => Present(123)
+                case (Present(_), Absent)     => Absent
+                case (Present(_), Present(_)) => Present(123)
+            }
+        };
+        let isPresent = x -> choose x {
+            case Present(_) => true
+        };
+        f(Absent, Present(123)) |> isPresent
+
+    @test
+    def testChooseStarOTwo04(): Bool =
+        let f = (x, y) -> {
+            choose* (x, y) {
+                case (Absent, Absent)         => Absent
+                case (Absent, Present(_))     => Present(123)
+                case (Present(_), Absent)     => Absent
+                case (Present(_), Present(_)) => Present(123)
+            }
+        };
+        let isPresent = x -> choose x {
+            case Present(_) => true
+        };
+        f(Present(123), Present(456)) |> isPresent
+
+    @test
     def testMap01(): Bool =
         let map = (f, x) -> {
             choose* x {
