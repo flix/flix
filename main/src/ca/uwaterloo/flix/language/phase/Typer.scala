@@ -98,13 +98,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitClasses(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
 
-    def visitSig(sig: ResolvedAst.Sig): Validation[TypedAst.Sig, TypeError] = sig match {
-      case ResolvedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, exp, sc, eff, loc) => // MATT handle exp
+    // MATT clean up this garbage
+    def visitSig(sig: ResolvedAst.Sig, tconstr: Ast.TypeConstraint): Validation[TypedAst.Sig, TypeError] = sig match {
+      case ResolvedAst.Sig(_, _, _, _, _, _, Some(_), _, _, _) =>
+        for {
+          sigAndSubst <- typeCheckSig(sig, List(tconstr), root, classEnv)
+          (sig1, _) = sigAndSubst
+        } yield sig1
+      case ResolvedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, None, sc, eff, loc) =>
         val tparams = getTypeParams(tparams0)
         val fparams = getFormalParams(fparams0, Substitution.empty)
         for {
           ann <- visitAnnotations(ann0, root)
-        } yield TypedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
+        } yield TypedAst.Sig(doc, ann, mod, sym, tparams, fparams, None, sc, None, eff, loc)
     }
 
     def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
@@ -112,7 +118,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tparams = getTypeParams(List(tparam))
         val tconstr = Ast.TypeConstraint(sym, tparam.tpe)
         for {
-          sigs <- Validation.traverse(sigs.values)(visitSig)
+          sigs <- Validation.traverse(sigs.values)(visitSig(_, tconstr))
           laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
         } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc))
     }
@@ -182,6 +188,100 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
   }
 
+  // MATT copy pasta
+  /**
+    * Infers the type of the given signature `sig0`.
+    */
+  private def typeCheckSig(sig0: ResolvedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Sig, Substitution), TypeError] = sig0 match {
+    case ResolvedAst.Sig(_, _, _, _, _, _, None, _, _, _) => throw InternalCompilerException("don't send empty sigs here") // MATT
+    case ResolvedAst.Sig(doc, ann, mod, sym, tparams0, fparams0, Some(exp0), sc, declaredEff, loc) =>
+
+      ///
+      /// Infer the type of the expression `exp0`.
+      ///
+      val result = for {
+        (inferredConstrs, inferredTyp, inferredEff) <- inferExp(exp0, root)
+      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp))
+
+      // Use the declared type.
+      val declaredScheme = sc.copy(constraints = sc.constraints ++ assumedTconstrs)
+
+      ///
+      /// Pattern match on the result to determine if type inference was successful.
+      ///
+      result match {
+        case InferMonad(run) =>
+
+          ///
+          /// NB: We *DO NOT* run the type inference under the empty environment (as you would expect).
+          /// Instead, we pre-populate the environment with the types from the formal parameters.
+          /// This is required because we have expressions such as `x + y` where we must know the type of `x`
+          /// (or y) to determine the type of floating-point or integer operations.
+          ///
+          val initialSubst = getSubstFromParams(fparams0)
+
+          run(initialSubst) match {
+            case Ok((subst, (partialTconstrs, partialType))) =>
+              ///
+              /// The partial type returned by the inference monad does not have the substitution applied.
+              ///
+              val (inferredConstrs, inferredType) = (partialTconstrs.map(subst.apply), subst(partialType))
+
+              ///
+              /// Check that the inferred type is at least as general as the declared type.
+              ///
+              /// NB: Because the inferredType is always a function type, the effect is always implicitly accounted for.
+              ///
+              val inferredSc = Scheme.generalize(inferredConstrs, inferredType)
+              Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv) match {
+                // Case 1: no errors, continue
+                case Validation.Success(_) => // noop
+                case Validation.Failure(errs) =>
+                  val instanceErrs = errs.collect {
+                    case UnificationError.NoMatchingInstance(clazz, tpe) => TypeError.NoMatchingInstance(clazz, tpe, loc)
+                  }
+                  // Case 2: non instance error
+                  if (instanceErrs.isEmpty) {
+                    return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
+                    // Case 3: instance error
+                  } else {
+                    return Validation.Failure(instanceErrs)
+                  }
+              }
+
+              ///
+              /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
+              ///
+              val exp = reassembleExp(exp0, root, subst)
+              val tparams = getTypeParams(tparams0)
+              val fparams = getFormalParams(fparams0, subst)
+
+              ///
+              /// Compute a type scheme that matches the type variables that appear in the expression body.
+              ///
+              /// NB: It is very important to understand that: The type scheme a function is declared with must match the inferred type scheme.
+              /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
+              /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
+              ///
+              val inferredScheme = Scheme(inferredType.typeVars.toList, inferredConstrs, inferredType)
+
+              ///
+              /// Infer types for annotations.
+              ///
+              val annVal = visitAnnotations(ann, root)
+
+              ///
+              /// Reassemble everything.
+              ///
+              Validation.mapN(annVal) {
+                case as =>
+                  (TypedAst.Sig(doc, as, mod, sym, tparams, fparams, Some(exp), sc, Some(inferredScheme), declaredEff, loc), subst)
+              }
+
+            case Err(e) => Validation.Failure(LazyList(e))
+          }
+      }
+  }
   /**
     * Infers the type of the given definition `defn0`.
     */

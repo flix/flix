@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, SpecialOperator, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
@@ -633,20 +634,34 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         inst =>
           inst.defs.find {
             defn =>
-              defn.sym.name == sig.sym.name && (
-                Unification.unifyTypes(defn.declaredScheme.base, tpe) match {
-                  case Result.Ok(_) => true
-                  case Result.Err(_) => false
-                }
-                )
+              defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.declaredScheme.base, tpe)
           }
       }
 
-      if (defns.size != 1) {
-        throw InternalCompilerException(s"Expected exactly one matching signature for '$sym', but found ${defns.size} signatures.")
+      (sig.exp, defns) match {
+        // Case 1: An instance implementation exists. Use it.
+        case (_, defn :: Nil) => specializeDef(defn, tpe)
+        // Case 2: No instance implementation, but a default implementation exists. Use it.
+        case (Some(_), Nil) => specializeDef(sigToDef(sig), tpe)
+        // Case 3: Multiple matching defs. Should have been caught previously.
+        case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.")
+        // Case 4: No matching defs and no default. Should have been caught previously.
+        case (None, Nil) => throw InternalCompilerException(s"No default or matching definition found for '$sym'.")
       }
+    }
 
-      specializeDef(defns.head, tpe)
+    // MATT docs
+    def sigToDef(sig: TypedAst.Sig): TypedAst.Def = sig match {
+      case TypedAst.Sig(doc, ann, mod, sym, tparams, fparams, Some(exp), sc, Some(inferredScheme), eff, loc) =>
+        TypedAst.Def(doc, ann, mod, sigSymToDefSym(sym), tparams, fparams, exp, sc, inferredScheme, eff, loc)
+      case _ => throw InternalCompilerException("Unexpected empty signature.")
+    }
+
+    // MATT docs
+    // MATT maybe cache
+    def sigSymToDefSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
+      val ns = sigSym.clazz.namespace :+ sigSym.clazz.name
+      new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
     }
 
     /**
