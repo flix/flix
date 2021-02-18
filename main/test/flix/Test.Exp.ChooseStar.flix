@@ -1,4 +1,5 @@
 namespace Test/Exp/ChooseStar {
+
     @test
     def testChooseStarOne01(): Bool =
         let f = x -> {
