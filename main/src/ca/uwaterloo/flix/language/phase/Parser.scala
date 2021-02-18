@@ -829,8 +829,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
-      def SelectChannelRule: Rule1[ParsedAst.SelectChannelRule] = rule {
-        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.SelectChannelRule
+      def SelectChannelGetRule: Rule1[ParsedAst.SelectChannelRule] = rule {
+        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.SelectChannelRule.SelectGet
+      }
+
+      def SelectChannelPutRule: Rule1[ParsedAst.SelectChannelRule] = rule {
+        keyword("case") ~ WS ~ Expression ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.SelectChannelRule.SelectPut
       }
 
       def SelectChannelDefault: Rule1[ParsedAst.Expression] = rule {
@@ -838,7 +842,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(SelectChannelRule).separatedBy(CaseSeparator) ~ optWS ~ optional(SelectChannelDefault) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
+        SP ~ keyword("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(SelectChannelGetRule | SelectChannelPutRule).separatedBy(CaseSeparator) ~ optWS ~ optional(SelectChannelDefault) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
       }
     }
 
