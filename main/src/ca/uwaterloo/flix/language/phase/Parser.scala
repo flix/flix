@@ -1372,7 +1372,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawless | Public | Sealed | Unlawful
+      Inline | Lawless | Override | Public | Sealed | Unlawful
     }
 
     rule {

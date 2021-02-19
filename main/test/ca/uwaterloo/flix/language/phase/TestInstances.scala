@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestInstances extends FunSuite with TestUtils {
@@ -511,5 +511,35 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.MissingImplementation](result)
     expectError[InstanceError.ExtraneousDefinition](result)
+  }
+
+  test("Test.IllegalOverride.01") {
+    val input =
+      """
+        |class C[a] {
+        |  pub def f(x: a): Bool
+        |}
+        |
+        |instance C[Int] {
+        |  override pub def f(x: Int): Bool = true
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.IllegalOverride](result)
+  }
+
+  test("Test.UnmarkedOverride.01") {
+    val input =
+      """
+        |class C[a] {
+        |  pub def f(x: a): Bool = true
+        |}
+        |
+        |instance C[Int] {
+        |  pub def f(x: Int): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.UnmarkedOverride](result)
   }
 }
