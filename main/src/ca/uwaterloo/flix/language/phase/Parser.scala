@@ -1355,6 +1355,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("lawless")) ~ SP ~> ParsedAst.Modifier
     }
 
+    def Override: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(keyword("override")) ~ SP ~> ParsedAst.Modifier
+    }
+
     def Public: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("pub")) ~ SP ~> ParsedAst.Modifier
     }
