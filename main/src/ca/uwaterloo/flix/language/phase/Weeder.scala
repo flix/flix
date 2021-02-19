@@ -1300,8 +1300,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, default, sp2) =>
       val rulesVal = traverse(rules) {
-        case ParsedAst.SelectChannelRule(ident, chan, body) => mapN(visitExp(chan), visitExp(body)) {
-          case (c, b) => WeededAst.SelectChannelRule(ident, c, b)
+        case ParsedAst.SelectChannelRule.SelectGet(ident, chan, body) => mapN(visitExp(chan), visitExp(body)) {
+          case (c, b) => WeededAst.SelectChannelRule.SelectGet(ident, c, b)
+        }
+
+        case ParsedAst.SelectChannelRule.SelectPut(chan, value, body) => mapN(visitExp(chan), visitExp(value), visitExp(body)) {
+          case (c, v, b) => WeededAst.SelectChannelRule.SelectPut(c, v, b)
         }
       }
 
