@@ -650,16 +650,22 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
-    // MATT docs
+    /**
+      * Converts a signature with an implementation into the equivalent definition.
+      *
+      * Precondition: the provided signature must have an implementation.
+      * // MATT revisit and use types instead of a precondition and crash
+      */
     def sigToDef(sig: TypedAst.Sig): TypedAst.Def = sig match {
       case TypedAst.Sig(doc, ann, mod, sym, tparams, fparams, Some(exp), sc, Some(inferredScheme), eff, loc) =>
-        TypedAst.Def(doc, ann, mod, sigSymToDefSym(sym), tparams, fparams, exp, sc, inferredScheme, eff, loc)
+        TypedAst.Def(doc, ann, mod, sigSymToDefnSym(sym), tparams, fparams, exp, sc, inferredScheme, eff, loc)
       case _ => throw InternalCompilerException("Unexpected empty signature.")
     }
 
-    // MATT docs
-    // MATT maybe cache
-    def sigSymToDefSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
+    /**
+      * Converts a SigSym into the equivalent DefnSym.
+      */
+    def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
       val ns = sigSym.clazz.namespace :+ sigSym.clazz.name
       new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
     }

@@ -255,7 +255,12 @@ object InstanceError {
     }
   }
 
-  // MATT docs
+  /**
+    * Error indicating the illegal placement of an override modifier.
+    *
+    * @param sym the def that the modifier was applied to.
+    * @param loc the location where the error occurred.
+    */
   case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Illegal override '$sym'."
 
@@ -272,7 +277,12 @@ object InstanceError {
     }
   }
 
- // MATT docs
+  /**
+    * Error indicating a missing override modifier.
+    *
+    * @param sym the def that is missing the modifier.
+    * @param loc the location where the error occurred.
+    */
   case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Unmarked override '$sym'."
 
