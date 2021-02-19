@@ -254,4 +254,38 @@ object InstanceError {
       vt << Underline("Tip:") << s" Create a law for '${sym}' or mark the class as unlawful."
     }
   }
+
+  // MATT docs
+  case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Illegal override '$sym'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal override '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << ">> Only signatures with default implementations can be overridden."
+      vt << NewLine
+      vt << Code(loc, s"illegal override")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Remove the modifier."
+    }
+  }
+
+ // MATT docs
+  case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Unmarked override '$sym'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unmarked override '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << ">> This definition overrides a default implementation."
+      vt << NewLine
+      vt << Code(loc, s"illegal override")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Either remove the definition or add the `override` modifier."
+    }
+  }
 }

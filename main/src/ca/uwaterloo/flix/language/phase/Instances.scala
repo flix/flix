@@ -161,13 +161,18 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             case (None, None) => InstanceError.MissingImplementation(sig.sym, inst.loc).toFailure
             // Case 2: there is no definition with the same name, but there is a default implementation
             case (None, Some(_)) => ().toSuccess
+            // Case 3: there is an implementation marked override, but no default implementation
+            case (Some(defn), None) if defn.mod.isOverride => InstanceError.IllegalOverride(defn.sym, defn.loc).toFailure
+            // Case 4: there is an overriding implementation, but no override modifier
+            case (Some(defn), Some(_)) if !defn.mod.isOverride => InstanceError.UnmarkedOverride(defn.sym, defn.loc).toFailure
+            // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.sc, clazz.tparam.tpe, inst.tpe)
               if (Scheme.equal(expectedScheme, defn.declaredScheme, root.classEnv)) {
-                // Case 3.1: the schemes match. Success!
+                // Case 5.1: the schemes match. Success!
                 ().toSuccess
               } else {
-                // Case 3.2: the schemes do not match
+                // Case 5.2: the schemes do not match
                 InstanceError.MismatchedSignatures(sig.sym, defn.loc, expectedScheme, defn.declaredScheme).toFailure
               }
           }
