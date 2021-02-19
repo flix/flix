@@ -147,7 +147,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
-      val expVal = Validation.traverse(exp0)(visitExp) // MATT change traverse to use typeclassy stuff?
+      val expVal = Validation.traverse(exp0)(visitExp)
 
       for {
         res <- sequenceT(annVal, modVal, formalsVal, effVal, expVal)

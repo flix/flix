@@ -654,7 +654,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       * Converts a signature with an implementation into the equivalent definition.
       *
       * Precondition: the provided signature must have an implementation.
-      * // MATT revisit and use types instead of a precondition and crash
+      * // TODO revisit and use types instead of a precondition and crash
       */
     def sigToDef(sig: TypedAst.Sig): TypedAst.Def = sig match {
       case TypedAst.Sig(doc, ann, mod, sym, tparams, fparams, Some(exp), sc, Some(inferredScheme), eff, loc) =>
