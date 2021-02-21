@@ -25,8 +25,12 @@ namespace Test {
         case TestSuite(Map[List[String], TestGroup])
     }
 
-    pub enum  TestGroup {
+    pub enum TestGroup {
         case TestGroup(Map[String, List[Test]])
+    }
+
+    pub enum TestGroupOutcome {
+        case TestGroupOutcome(Map[String, TestOutcome])
     }
 
     ///
@@ -312,7 +316,8 @@ namespace TestList {
     use Test.defSuite;
     use Test.defineTest;
 
-    pub def tests(): TestSuite = tests1() `Monoid.combine` tests2() `Monoid.combine` tests3()
+    pub def tests(): TestSuite =
+        (tests1() :: tests2() :: tests3() :: Nil) |> Monoid.combineAll
 
     pub def tests1(): TestSuite = defSuite("List") <| Map#{
         "head01" -> defineTest({
