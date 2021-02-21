@@ -70,7 +70,8 @@ namespace Test {
     ///
     enum TestOutcome {
         case Success({time: Int32}),
-        case Failure({actual: String, expect: String, time: Int32})
+        case UnexpectedResult({actual: String, expect: String, time: Int32})
+        case UnexpectedException({actual: String, expect: String, time: Int32})
         // TODO: Exception
         // TODO: Timeout
     }
@@ -91,11 +92,17 @@ namespace Test {
     pub def defineTest[a : Eq : ToString](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
         let runner = () -> {
                 let expect = force r.expect;
-                let (actual, time) = time(() -> force r.actual);
-                if (expect == actual)
-                    Success({time = time})
-                else
-                    Failure({actual = toString(actual), expect = toString(expect), time = time})
+                try {
+                    let (actual, time) = time(() -> force r.actual);
+                    if (expect == actual)
+                        Success({time = time})
+                    else
+                        UnexpectedResult({actual = toString(actual), expect = toString(expect), time = time})
+                } catch {
+                    case _ex: ##java.lang.Throwable =>
+                        let exception = "Exception";
+                        UnexpectedException({actual = exception, expect = toString(expect), time = 0}) // TODO: args?
+                }
         };
         EqTest(runner)
 
@@ -123,8 +130,13 @@ namespace Test {
             let g = (k: String, v: TestOutcome) -> {
                 match v {
                     case Success(_) => () // nop
-                    case Failure(r) =>
+                    case UnexpectedResult(r) =>
                         println("${red("+")} ${getName(fqn, k)} (unexpected value)");
+                        println("    expect:  ${green(r.expect)}");
+                        println("    actual:  ${yellow(r.actual)}");
+                        println("")
+                    case UnexpectedException(r) =>
+                        println("${red("+")} ${getName(fqn, k)} (unexpected exception)");
                         println("    expect:  ${green(r.expect)}");
                         println("    actual:  ${yellow(r.actual)}");
                         println("")
@@ -152,7 +164,11 @@ namespace Test {
                         onTestSuccess(testName, r.time);
                         result
                     }
-                    case Failure(r) => {
+                    case UnexpectedResult(r) => {
+                        onTestFailure(testName, 0);
+                        result
+                    }
+                    case UnexpectedException(r) => {
                         onTestFailure(testName, 0);
                         result
                     }
@@ -237,16 +253,18 @@ namespace Test {
     /// Returns `true` if the given outcome is a success.
     ///
     def isSuccess(o: TestOutcome): Bool = match o {
-        case Success(_) => true
-        case Failure(_) => false
+        case Success(_)             => true
+        case UnexpectedResult(_)    => false
+        case UnexpectedException(_) => false
     }
 
     ///
     /// Returns `true` if the given outcome is a failure.
     ///
     def isFailure(o: TestOutcome): Bool = match o {
-        case Success(_) => false
-        case Failure(_) => true
+        case Success(_)             => false
+        case UnexpectedResult(_)    => true
+        case UnexpectedException(_) => true
     }
 
     ///
@@ -357,7 +375,13 @@ namespace TestList {
         "isEmpty02" -> defineTest({
             actual = lazy Some(123),
             expect = lazy None
+        }),
+
+        "isEmpty03" -> defineTest({
+            actual = lazy Some(???: Int),
+            expect = lazy None
         })
+
     }
 
 }
