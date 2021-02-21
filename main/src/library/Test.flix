@@ -84,6 +84,9 @@ namespace Test {
         let tests = TestGroup(Map.map(v -> v :: Nil, m));
         TestSuite(Map.empty() |> Map.insert(path, tests))
 
+    // TODO: DOC
+    pub def assert(r: Lazy[Bool]): Test = defineTest({actual = r, expect = lazy true})
+
     ///
     /// Returns an executable test case.
     ///
@@ -131,12 +134,12 @@ namespace Test {
                 match v {
                     case Success(_) => () // nop
                     case UnexpectedResult(r) =>
-                        println("${red("+")} ${getName(fqn, k)} (unexpected value)");
+                        println("${red("-")} ${getName(fqn, k)} (unexpected result)");
                         println("    expect:  ${green(r.expect)}");
                         println("    actual:  ${yellow(r.actual)}");
                         println("")
                     case UnexpectedException(r) =>
-                        println("${red("+")} ${getName(fqn, k)} (unexpected exception)");
+                        println("${red("-")} ${getName(fqn, k)} (unexpected exception)");
                         println("    expect:  ${green(r.expect)}");
                         println("    actual:  ${yellow(r.actual)}");
                         println("")
@@ -333,6 +336,9 @@ namespace TestList {
     use Test.{TestSuite};
     use Test.defSuite;
     use Test.defineTest;
+    use Test.assert;
+
+    pub def ===[a : Eq : ToString](actual: Lazy[a], expect: Lazy[a]): Test.Test = defineTest({actual = actual, expect = expect})
 
     pub def tests(): TestSuite =
         (tests1() :: tests2() :: tests3() :: Nil) |> Monoid.combineAll
@@ -356,7 +362,11 @@ namespace TestList {
         "head04" -> defineTest({
             actual = lazy List.head(1 :: 2 :: 3 :: Nil),
             expect = lazy Some(1)
-        })
+        }),
+
+        "head05" -> assert(lazy List.isEmpty(Nil)),
+
+        "head06" -> (lazy List.head(1 :: Nil)) === (lazy Some(1))
     }
 
     pub def tests2(): TestSuite = defSuite("List") <| Map#{
@@ -377,7 +387,7 @@ namespace TestList {
             expect = lazy None
         }),
 
-        "isEmpty03" -> defineTest({
+        "isEmpty00" -> defineTest({
             actual = lazy Some(???: Int),
             expect = lazy None
         })
