@@ -22,7 +22,11 @@ namespace Test {
     ///
     pub enum TestSuite {
         // TODO: Use TestPath
-        case TestSuite(Map[List[String], Map[String, List[Test]]])
+        case TestSuite(Map[List[String], TestGroup])
+    }
+
+    pub enum  TestGroup {
+        case TestGroup(Map[String, List[Test]])
     }
 
     ///
@@ -34,10 +38,21 @@ namespace Test {
         def empty(): TestSuite = TestSuite(Map#{})
 
         def combine(x: TestSuite, y: TestSuite): TestSuite =
-            let TestSuite(s1) = x;
-            let TestSuite(s2) = y;
-            TestSuite(Monoid.combine(s1, s2))
+            let TestSuite(g1) = x;
+            let TestSuite(g2) = y;
+            TestSuite(Monoid.combine(g1, g2))
     }
+
+
+    instance Monoid[TestGroup] {
+        def empty(): TestGroup = TestGroup(Map#{})
+
+        def combine(x: TestGroup, y: TestGroup): TestGroup =
+            let TestGroup(s1) = x;
+            let TestGroup(s2) = y;
+            TestGroup(Monoid.combine(s1, s2))
+    }
+
 
     ///
     /// Represents a single test.
@@ -61,7 +76,7 @@ namespace Test {
     ///
     pub def defSuite(fqn: String, m: Map[String, Test]): TestSuite =
         let path = (String.splitOn(fqn, ".")) as & Pure;
-        let tests = Map.map(v -> v :: Nil, m);
+        let tests = TestGroup(Map.map(v -> v :: Nil, m));
         TestSuite(Map.empty() |> Map.insert(path, tests))
 
     ///
@@ -91,8 +106,9 @@ namespace Test {
         0
     }
 
-    def evalSuite(path: List[String], innerM: Map[String, List[Test]]): Map[String, TestOutcome] & Impure = {
-        beforeSuite(path, innerM);
+    def evalSuite(path: List[String], g: TestGroup): Map[String, TestOutcome] & Impure = {
+        beforeSuite(path, g);
+        let TestGroup(innerM) = g;
         let result = Map.mapWithKey(evalTestGroup, innerM);
         afterSuite(path, result);
         result
@@ -104,7 +120,7 @@ namespace Test {
                 match v {
                     case Success(_) => () // nop
                     case Failure(r) =>
-                        println("${red("+")} ${getName(fqn, k)}");
+                        println("${red("+")} ${getName(fqn, k)} (unexpected value)");
                         println("    expect:  ${green(r.expect)}");
                         println("    actual:  ${yellow(r.actual)}");
                         println("")
@@ -155,12 +171,16 @@ namespace Test {
     ///
     /// Callback executed before a test suite is evaluated.
     ///
-    def beforeSuite(path: List[String], innerM: Map[String, List[Test]]): Unit & Impure = {
+    def beforeSuite(path: List[String], innerM: TestGroup): Unit & Impure = {
         let namePart: String = gray(List.foldLeft((acc: String, elm: String) -> acc + "/" + elm, "", path));
-        let numberOfTests: Int32 = Map.size(innerM);
+        let numberOfTests: Int32 = size(innerM);
         let testsPart = "(${numberOfTests} tests)";
         println("${namePart} ${testsPart}")
     }
+
+    def size(g: TestGroup): Int32 =
+        let TestGroup(m) = g;
+        Map.size(m)
 
     ///
     /// Callback executed after a test suite is evaluated.
