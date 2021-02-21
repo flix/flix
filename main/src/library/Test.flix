@@ -20,44 +20,39 @@ namespace Test {
     ///
     /// An algebraic data type that represents a suite of tests.
     ///
-    pub enum Suite {
-        case Suite(String, Map[String, Test])
+    pub enum TestSuite {
+        // TODO: Use TestPath
+        case TestSuite(Map[List[String], Map[String, List[Test]]])
     }
-
 
     ///
     /// TODO: DOC
     ///
     pub opaque type TestPath = List[String]
 
-    pub enum MySuite {
-        // TODO: Use TestPath
-        case MySuite(Map[List[String], Map[String, List[Test]]])
-    }
+    instance Monoid[TestSuite] {
+        def empty(): TestSuite = TestSuite(Map#{})
 
-    instance Monoid[MySuite] {
-        def empty(): MySuite = MySuite(Map#{})
-
-        def combine(x: MySuite, y: MySuite): MySuite =
-            let MySuite(s1) = x;
-            let MySuite(s2) = y;
-            MySuite(Monoid.combine(s1, s2))
+        def combine(x: TestSuite, y: TestSuite): TestSuite =
+            let TestSuite(s1) = x;
+            let TestSuite(s2) = y;
+            TestSuite(Monoid.combine(s1, s2))
     }
 
     ///
-    /// An algebraic data type that represents different types of tests.
+    /// Represents a single test.
     ///
     pub enum Test {
         case EqTest(Unit ~> TestOutcome)
     }
 
     ///
-    /// Returns a suite of test cases with the given `name` and test case list.
+    /// Returns a test suite with the given fully-qualified name `fqn` and test map `m`.
     ///
-    pub def defineSuite(fqn: String, t: Map[String, Test]): MySuite =
+    pub def defSuite(fqn: String, m: Map[String, Test]): TestSuite =
         let path = (String.splitOn(fqn, ".")) as & Pure;
-        let tests = Map.map(v -> v :: Nil, t);
-        MySuite(Map.empty() |> Map.insert(path, tests))
+        let tests = Map.map(v -> v :: Nil, m);
+        TestSuite(Map.empty() |> Map.insert(path, tests))
 
     ///
     /// Returns an executable test case.
@@ -71,20 +66,17 @@ namespace Test {
                 if (expect == actual)
                     Success({time = time})
                 else
-                    Failure({
-                        expected    = toString(expect),
-                        got         = toString(actual),
-                        diff        = "no diff"
-                    })
+                    Failure({actual = toString(actual), expect = toString(expect), time = time})
         };
         EqTest(runner)
 
 
-    pub def runSuite(s: MySuite, _cb: Callbacks): Int32 & Impure = {
-        let MySuite(m) = s;
+    pub def runSuite(s: TestSuite): Int32 & Impure = {
+        let TestSuite(m) = s;
         printTestHeader();
-        let _testOutComes = Map.mapWithKey(evalSuite, m);
+        let testOutComes = Map.mapWithKey(evalSuite, m);
         printFailingTestHeader();
+        printFailingTests(testOutComes);
         0
     }
 
@@ -93,6 +85,16 @@ namespace Test {
         let result = Map.mapWithKey(evalTestGroup, innerM);
         afterSuite(path, result);
         result
+    }
+
+    def printFailingTests(o: Map[List[String], Map[String, TestOutcome]]): Unit & Impure = {
+        let f = (_fqn: List[String], outcomes: Map[String, TestOutcome]) -> {
+            let g = (k: String, _v: TestOutcome) -> {
+                println("Failed ${k: String}")
+            };
+            Map.foreach(g, outcomes)
+        };
+        Map.foreach(f, o)
     }
 
     def evalTestGroup(testName: String, testList: List[Test]): TestOutcome & Impure = {
@@ -121,6 +123,9 @@ namespace Test {
         println("------------------------ Failing Tests ---------------------- ")
     }
 
+    ///
+    /// Callback executed before a test suite is evaluated.
+    ///
     def beforeSuite(path: List[String], innerM: Map[String, List[Test]]): Unit & Impure = {
         let namePart: String = gray(List.foldLeft((acc: String, elm: String) -> acc + "/" + elm, "", path));
         let numberOfTests: Int32 = Map.size(innerM);
@@ -128,29 +133,15 @@ namespace Test {
         println("${namePart} ${testsPart}")
     }
 
+    ///
+    /// Callback executed after a test suite is evaluated.
+    ///
     def afterSuite(_path: List[String], innerM: Map[String, TestOutcome]): Unit & Impure = {
         let numTests = Map.size(innerM);
         let numSuccess = successful(innerM);
         let numFailed = failures(innerM);
         println("  Tests: ${numTests}, Passed: ${numSuccess}, Failed: ${numFailed}.");
         println("")
-    }
-
-    pub def green(s: String): String  =
-        use Console/Color.green;
-        green(s)
-
-    pub def red(s: String): String  =
-        use Console/Color.red;
-        red(s)
-
-    pub def gray(s: String): String =
-        use Console.rgb;
-        rgb((100, 100, 100), s)
-
-    type alias Callbacks = {
-        onTestSuccess: (String, Int32) ~> Unit,
-        onTestFailure: (String, Int32) ~> Unit
     }
 
     ///
@@ -194,7 +185,7 @@ namespace Test {
     ///
     enum TestOutcome {
         case Success({time: Int32}),
-        case Failure({expected: String, got: String, diff: String})
+        case Failure({actual: String, expect: String, time: Int32})
     }
 
     ///
@@ -225,6 +216,28 @@ namespace Test {
     def failures(m: Map[String, TestOutcome]): Int32 =
         Map.count((_, v) -> isFailure(v), m)
 
+
+    ///
+    /// Returns the string `s` wrapped in green escape codes.
+    ///
+    pub def green(s: String): String  =
+        use Console/Color.green;
+        green(s)
+
+    ///
+    /// Returns the string `s` wrapped in red escape codes.
+    ///
+    pub def red(s: String): String  =
+        use Console/Color.red;
+        red(s)
+
+    ///
+    /// Returns the string `s` wrapped in gray escape codes.
+    ///
+    pub def gray(s: String): String =
+        use Console.rgb;
+        rgb((100, 100, 100), s)
+
 }
 
 /*
@@ -243,31 +256,16 @@ namespace Test {
  *  limitations under the License.
  */
 
-///
-/// A type class for values that can be diffed.
-///
-class Diff[a] {
-    ///
-    /// Returns a string representation of the difference between `x` and `y`.
-    ///
-    pub def diff(x: a, y: a): String
-}
-
-instance Diff[Option[a]] with [a : ToString] {
-    pub def diff(x: Option[a], y: Option[a]): String = "${x} - ${y}"
-}
-
-
 pub def <|(f: a -> b & e, x: a): b & e = f(x)
 
 namespace TestList {
 
-    use Test.defineSuite;
+    use Test.defSuite;
     use Test.defineTest;
 
-    pub def tests(): Test.MySuite = tests1() `Monoid.combine` tests2() `Monoid.combine` tests3()
+    pub def tests(): Test.TestSuite = tests1() `Monoid.combine` tests2() `Monoid.combine` tests3()
 
-    pub def tests1(): Test.MySuite = defineSuite("List") <| Map#{
+    pub def tests1(): Test.TestSuite = defSuite("List") <| Map#{
         "head01" -> defineTest({
             actual = lazy List.head(1 :: Nil),
             expect = lazy Some(1)
@@ -289,14 +287,14 @@ namespace TestList {
         })
     }
 
-    pub def tests2(): Test.MySuite = defineSuite("List") <| Map#{
+    pub def tests2(): Test.TestSuite = defSuite("List") <| Map#{
         "isEmpty01" -> defineTest({
             actual = lazy (List.range(1, 100_000) |> List.isEmpty),
             expect = lazy false
         })
     }
 
-    pub def tests3(): Test.MySuite = defineSuite("Option") <| Map#{
+    pub def tests3(): Test.TestSuite = defSuite("Option") <| Map#{
         "isEmpty01" -> defineTest({
             actual = lazy Option.isEmpty(None),
             expect = lazy true
@@ -306,9 +304,6 @@ namespace TestList {
 }
 
 def main(_args: Array[String]): Int32 & Impure =
-    Test.runSuite(TestList.tests(), {
-        onTestSuccess = Test.onTestSuccess,
-        onTestFailure = Test.onTestFailure
-     })
+    Test.runSuite(TestList.tests())
 
 
