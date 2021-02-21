@@ -26,7 +26,7 @@ namespace Test {
     }
 
     ///
-    /// TODO: DOC
+    /// A fully qualified name to a test namespace.
     ///
     pub opaque type TestPath = List[String]
 
@@ -47,6 +47,16 @@ namespace Test {
     }
 
     ///
+    /// Represents the outcome of a test.
+    ///
+    enum TestOutcome {
+        case Success({time: Int32}),
+        case Failure({actual: String, expect: String, time: Int32})
+        // TODO: Exception
+        // TODO: Timeout
+    }
+
+    ///
     /// Returns a test suite with the given fully-qualified name `fqn` and test map `m`.
     ///
     pub def defSuite(fqn: String, m: Map[String, Test]): TestSuite =
@@ -59,7 +69,7 @@ namespace Test {
     ///
     /// A test consists of an actual value and an expected value.
     ///
-    pub def defineTest[a: Eq : ToString](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
+    pub def defineTest[a : Eq : ToString](r: {actual: Lazy[a], expect: Lazy[a]}): Test =
         let runner = () -> {
                 let expect = force r.expect;
                 let (actual, time) = time(() -> force r.actual);
@@ -77,6 +87,7 @@ namespace Test {
         let testOutComes = Map.mapWithKey(evalSuite, m);
         printFailingTestHeader();
         printFailingTests(testOutComes);
+        printSummary(testOutComes);
         0
     }
 
@@ -88,13 +99,28 @@ namespace Test {
     }
 
     def printFailingTests(o: Map[List[String], Map[String, TestOutcome]]): Unit & Impure = {
-        let f = (_fqn: List[String], outcomes: Map[String, TestOutcome]) -> {
-            let g = (k: String, _v: TestOutcome) -> {
-                println("Failed ${k: String}")
+        let f = (fqn: List[String], outcomes: Map[String, TestOutcome]) -> {
+            let g = (k: String, v: TestOutcome) -> {
+                match v {
+                    case Success(_) => () // nop
+                    case Failure(r) =>
+                        println("${red("+")} ${getName(fqn, k)}");
+                        println("    expect:  ${green(r.expect)}");
+                        println("    actual:  ${yellow(r.actual)}");
+                        println("")
+                }
             };
             Map.foreach(g, outcomes)
         };
         Map.foreach(f, o)
+    }
+
+    def printSummary(o: Map[List[String], Map[String, TestOutcome]]): Unit & Impure = {
+        let totalTests = Map.foldLeft((acc, m) -> acc + Map.size(m), 0, o);
+        let totalSuccesses = Map.foldLeft((acc, m) -> acc + successful(m), 0, o);
+        let totalFailures = Map.foldLeft((acc, m) -> acc + failures(m), 0, o);
+        let color = if (totalFailures > 0) red else green;
+        println("Tests: ${totalTests}, Passed: ${totalSuccesses}, Failed: ${totalFailures}." |> color)
     }
 
     def evalTestGroup(testName: String, testList: List[Test]): TestOutcome & Impure = {
@@ -123,6 +149,9 @@ namespace Test {
         println("------------------------ Failing Tests ---------------------- ")
     }
 
+    def getName(l: List[String], s: String): String =
+        List.foldRight((x, acc) -> x + "." + acc, s, l)
+
     ///
     /// Callback executed before a test suite is evaluated.
     ///
@@ -147,7 +176,7 @@ namespace Test {
     ///
     /// Callback for when a test succeeds.
     ///
-    pub def onTestSuccess(testName: String, testTime: Int32): Unit & Impure =
+    def onTestSuccess(testName: String, testTime: Int32): Unit & Impure =
         let statusPart = "${green("+")}";
         let namePart = testName;
         let timePart = gray("${testTime} ms");
@@ -156,7 +185,7 @@ namespace Test {
     ///
     /// Callback for when a test fails.
     ///
-    pub def onTestFailure(testName: String, _testTime: Int32): Unit & Impure =
+    def onTestFailure(testName: String, _testTime: Int32): Unit & Impure =
         let statusPart = "${red("-")}";
         let namePart = testName: String;
         let messagePart = "(${red("unexpected value")})";
@@ -178,14 +207,6 @@ namespace Test {
         let r = f();
         let e = nanoTime() - t;
         (r, Int64.clampToInt32(e / 1_000_000i64, 0, Int32.maxValue()))
-    }
-
-    ///
-    /// Represents the outcome of a test.
-    ///
-    enum TestOutcome {
-        case Success({time: Int32}),
-        case Failure({actual: String, expect: String, time: Int32})
     }
 
     ///
@@ -225,6 +246,13 @@ namespace Test {
         green(s)
 
     ///
+    /// Returns the string `s` wrapped in yellow escape codes.
+    ///
+    pub def yellow(s: String): String  =
+        use Console/Color.yellow;
+        yellow(s)
+
+    ///
     /// Returns the string `s` wrapped in red escape codes.
     ///
     pub def red(s: String): String  =
@@ -260,12 +288,13 @@ pub def <|(f: a -> b & e, x: a): b & e = f(x)
 
 namespace TestList {
 
+    use Test.{TestSuite};
     use Test.defSuite;
     use Test.defineTest;
 
-    pub def tests(): Test.TestSuite = tests1() `Monoid.combine` tests2() `Monoid.combine` tests3()
+    pub def tests(): TestSuite = tests1() `Monoid.combine` tests2() `Monoid.combine` tests3()
 
-    pub def tests1(): Test.TestSuite = defSuite("List") <| Map#{
+    pub def tests1(): TestSuite = defSuite("List") <| Map#{
         "head01" -> defineTest({
             actual = lazy List.head(1 :: Nil),
             expect = lazy Some(1)
@@ -287,17 +316,22 @@ namespace TestList {
         })
     }
 
-    pub def tests2(): Test.TestSuite = defSuite("List") <| Map#{
+    pub def tests2(): TestSuite = defSuite("List") <| Map#{
         "isEmpty01" -> defineTest({
             actual = lazy (List.range(1, 100_000) |> List.isEmpty),
             expect = lazy false
         })
     }
 
-    pub def tests3(): Test.TestSuite = defSuite("Option") <| Map#{
+    pub def tests3(): TestSuite = defSuite("Option") <| Map#{
         "isEmpty01" -> defineTest({
             actual = lazy Option.isEmpty(None),
             expect = lazy true
+        }),
+
+        "isEmpty02" -> defineTest({
+            actual = lazy Some(123),
+            expect = lazy None
         })
     }
 
