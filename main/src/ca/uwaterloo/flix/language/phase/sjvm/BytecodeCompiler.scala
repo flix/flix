@@ -17,11 +17,11 @@ object BytecodeCompiler {
   sealed trait F[T]
 
   def compileExp[R <: Stack, T <: JType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
-    case Expression.Unit(loc) => pushUnit[R]()
-    case Expression.Null(tpe, loc) => pushNull[R]()
-    case Expression.True(loc) => pushBool[R](true)
-    case Expression.False(loc) => pushBool[R](false)
-    case Expression.Char(lit, loc) => ???
+    case Expression.Unit(loc) => WithSource[R](loc) ~ pushUnit()
+    case Expression.Null(tpe, loc) => WithSource[R](loc) ~ pushNull()
+    case Expression.True(loc) => WithSource[R](loc) ~ pushBool(true)
+    case Expression.False(loc) => WithSource[R](loc) ~ pushBool(false)
+    case Expression.Char(lit, loc) => WithSource[R](loc) ~ pushChar(lit)
     case Expression.Float32(lit, loc) => ???
     case Expression.Float64(lit, loc) => ???
     case Expression.Int8(lit, loc) => ???
@@ -40,6 +40,15 @@ object BytecodeCompiler {
 //        case _ => ???
 //      }
       compileExp(exp2)
+    case Expression.ArrayLoad(base, index, tpe, loc) => tpe match {
+      case ErasedType.Int8() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.BALoad()
+      case ErasedType.Int16() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.SALoad()
+      case ErasedType.Int32() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.IALoad()
+      case ErasedType.Int64() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.LALoad()
+      case ErasedType.Float32() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.FALoad()
+      case ErasedType.Float64() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.DALoad()
+      case _ => ???
+    }
     case _ => ???
   }
 
@@ -52,6 +61,22 @@ object BytecodeCompiler {
   def pushBool[R <: Stack](b: Boolean): F[R] => F[R ** PrimInt32] = ???
 
   def pushInt[R <: Stack](n: Int): F[R] => F[R ** PrimInt32] = ???
+
+  def pushChar[R <: Stack](c: Char): F[R] => F[R ** PrimChar] = ???
+
+  object ArrayInstruction {
+    def BALoad[R <: Stack](): F[R ** JArray[PrimInt8] ** PrimInt32] => F[R ** PrimInt8] = ???
+
+    def SALoad[R <: Stack](): F[R ** JArray[PrimInt16] ** PrimInt32] => F[R ** PrimInt16] = ???
+
+    def IALoad[R <: Stack](): F[R ** JArray[PrimInt32] ** PrimInt32] => F[R ** PrimInt32] = ???
+
+    def LALoad[R <: Stack](): F[R ** JArray[PrimInt64] ** PrimInt32] => F[R ** PrimInt64] = ???
+
+    def FALoad[R <: Stack](): F[R ** JArray[PrimFloat32] ** PrimInt32] => F[R ** PrimFloat32] = ???
+
+    def DALoad[R <: Stack](): F[R ** JArray[PrimFloat64] ** PrimInt32] => F[R ** PrimFloat64] = ???
+  }
 
   def popInt[R <: Stack](): F[R ** PrimInt32] => F[R] = ???
 
