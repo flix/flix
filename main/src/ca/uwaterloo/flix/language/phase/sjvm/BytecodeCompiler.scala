@@ -33,44 +33,68 @@ object BytecodeCompiler {
   sealed trait F[T]
 
   def compileExp[R <: Stack, T <: JType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
-    case Expression.Unit(loc) => WithSource[R](loc) ~ pushUnit()
-    case Expression.Null(tpe, loc) => WithSource[R](loc) ~ pushNull()
-    case Expression.True(loc) => WithSource[R](loc) ~ pushBool(true)
-    case Expression.False(loc) => WithSource[R](loc) ~ pushBool(false)
-    case Expression.Char(lit, loc) => WithSource[R](loc) ~ pushChar(lit)
+    case Expression.Unit(loc) =>
+      WithSource[R](loc) ~ pushUnit()
+
+    case Expression.Null(tpe, loc) =>
+      WithSource[R](loc) ~ pushNull()
+
+    case Expression.True(loc) =>
+      WithSource[R](loc) ~ pushBool(true)
+
+    case Expression.False(loc) =>
+      WithSource[R](loc) ~ pushBool(false)
+
+    case Expression.Char(lit, loc) =>
+      WithSource[R](loc) ~ pushChar(lit)
+
     case Expression.Float32(lit, loc) => ???
+
     case Expression.Float64(lit, loc) => ???
+
     case Expression.Int8(lit, loc) => ???
+
     case Expression.Int16(lit, loc) => ???
+
     case Expression.Int32(lit, loc) => ???
+
     case Expression.Int64(lit, loc) => ???
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => branch(compileExp(exp1), compileExp(exp2), compileExp(exp3))
+
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      branch(compileExp(exp1), compileExp(exp2), compileExp(exp3))
+
     case Expression.Ref(exp, tpe, loc) => ???
     //      NEW("class name") ~
     //      DUP ~
     //      compileExp(exp) ~
     //      INVOKESPECIAL("class name", "constructor signature")
+
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       //      exp1.tpe match {
       //        case ErasedType.Int32() => WithSource[R](null) ~ compileExp(exp1) ~ popInt()
       //        case _ => ???
       //      }
       compileExp(exp2)
+
     case Expression.ArrayLoad(base, index, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
         compileExp(index) ~
         ArrayInstructions.XALoad(tpe)
+
     case Expression.ArrayStore(base, index, elm, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
         compileExp(index) ~
         compileExp(elm) ~
-        ArrayInstructions.XAStore(elm.tpe)
+        ArrayInstructions.XAStore(elm.tpe) ~
+        pushUnit()
+
     case Expression.ArrayLength(base, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
         ArrayInstructions.arrayLength()
+
     case _ => ???
   }
 
@@ -135,23 +159,23 @@ object BytecodeCompiler {
       case ErasedType.Var(id) => ???
     }
 
-    def BAStore[R <: Stack](): F[R ** JArray[PrimInt8] ** PrimInt32 ** PrimInt8] => F[R ** JUnit] = ???
+    def BAStore[R <: Stack](): F[R ** JArray[PrimInt8] ** PrimInt32 ** PrimInt8] => F[R] = ???
 
-    def SAStore[R <: Stack](): F[R ** JArray[PrimInt16] ** PrimInt32 ** PrimInt16] => F[R ** JUnit] = ???
+    def SAStore[R <: Stack](): F[R ** JArray[PrimInt16] ** PrimInt32 ** PrimInt16] => F[R] = ???
 
-    def IAStore[R <: Stack](): F[R ** JArray[PrimInt32] ** PrimInt32 ** PrimInt32] => F[R ** JUnit] = ???
+    def IAStore[R <: Stack](): F[R ** JArray[PrimInt32] ** PrimInt32 ** PrimInt32] => F[R] = ???
 
-    def LAStore[R <: Stack](): F[R ** JArray[PrimInt64] ** PrimInt32 ** PrimInt64] => F[R ** JUnit] = ???
+    def LAStore[R <: Stack](): F[R ** JArray[PrimInt64] ** PrimInt32 ** PrimInt64] => F[R] = ???
 
-    def CAStore[R <: Stack](): F[R ** JArray[PrimChar] ** PrimInt32 ** PrimChar] => F[R ** JUnit] = ???
+    def CAStore[R <: Stack](): F[R ** JArray[PrimChar] ** PrimInt32 ** PrimChar] => F[R] = ???
 
-    def FAStore[R <: Stack](): F[R ** JArray[PrimFloat32] ** PrimInt32 ** PrimFloat32] => F[R ** JUnit] = ???
+    def FAStore[R <: Stack](): F[R ** JArray[PrimFloat32] ** PrimInt32 ** PrimFloat32] => F[R] = ???
 
-    def DAStore[R <: Stack](): F[R ** JArray[PrimFloat64] ** PrimInt32 ** PrimFloat64] => F[R ** JUnit] = ???
+    def DAStore[R <: Stack](): F[R ** JArray[PrimFloat64] ** PrimInt32 ** PrimFloat64] => F[R] = ???
 
-    def AAStore[R <: Stack](): F[R ** JArray[JObject] ** PrimInt32 ** JObject] => F[R ** JUnit] = ???
+    def AAStore[R <: Stack](): F[R ** JArray[JObject] ** PrimInt32 ** JObject] => F[R] = ???
 
-    def XAStore[R <: Stack, T <: JType](tpe: ErasedType[T]): F[R ** JArray[T] ** PrimInt32 ** T] => F[R ** JUnit] = tpe match {
+    def XAStore[R <: Stack, T <: JType](tpe: ErasedType[T]): F[R ** JArray[T] ** PrimInt32 ** T] => F[R] = tpe match {
       case ErasedType.Unit() => ???
       case ErasedType.Bool() => ???
       case ErasedType.BoxedBool() => ???
