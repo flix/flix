@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 import ca.uwaterloo.flix.language.ast.ErasedAst.{ErasedType, Expression, JType}
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 object BytecodeCompiler {
 
@@ -96,10 +95,42 @@ object BytecodeCompiler {
         compileExp(base) ~
         ArrayInstructions.arrayLength()
 
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(base) ~
+        compileExp(beginIndex) ~
+        compileExp(endIndex) ~
+        SWAP(beginIndex.tpe, endIndex.tpe) ~
+        DUP_X1(endIndex.tpe, beginIndex.tpe) ~
+        ISUB() ~
+        DUP()
+        // newArray(tpe) ~ not sure how to continue
+
+      ???
+
     case _ => ???
   }
 
   def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = ???
+
+  // TODO QUESTION: which functions are "unsafe" irt. types?
+
+  def ISWAP[R <: Stack](): F[R ** PrimInt32 ** PrimInt32] => F[R ** PrimInt32 ** PrimInt32] = ???
+
+  // TODO QUESTION: match on given types or copy per type?
+  def SWAP[R <: Stack, T <: JType, U <: JType](t: ErasedType[T], u: ErasedType[U]): F[R ** T ** U] => F[R ** U ** T] = (t, u) match {
+    case (ErasedType.Int32(), ErasedType.Int32()) => ISWAP()
+    case _ => ???
+  }
+
+  def DUP_X1[R <: Stack, T <: JType, U <: JType](t: ErasedType[T], u: ErasedType[U]): F[R ** T ** U] => F[R ** U ** T ** U] = (t, u) match {
+    case (ErasedType.Int8() | ErasedType.Int32() | ErasedType.Int16(), ErasedType.Int8() | ErasedType.Int32() | ErasedType.Int16()) => ???
+    case _ => ???
+  }
+
+  def DUP[R <: Stack](): F[R ** PrimInt32] => F[R ** PrimInt32 ** PrimInt32] = ???
+
+  def ISUB[R <: Stack](): F[R ** PrimInt32 ** PrimInt32] => F[R ** PrimInt32] = ???
 
   def pushUnit[R <: Stack](): F[R] => F[R ** JUnit] = ???
 
