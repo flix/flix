@@ -35,20 +35,22 @@ object BytecodeCompiler {
     //      compileExp(exp) ~
     //      INVOKESPECIAL("class name", "constructor signature")
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-//      exp1.tpe match {
-//        case ErasedType.Int32() => WithSource[R](null) ~ compileExp(exp1) ~ popInt()
-//        case _ => ???
-//      }
+      //      exp1.tpe match {
+      //        case ErasedType.Int32() => WithSource[R](null) ~ compileExp(exp1) ~ popInt()
+      //        case _ => ???
+      //      }
       compileExp(exp2)
-    case Expression.ArrayLoad(base, index, tpe, loc) => tpe match {
-      case ErasedType.Int8() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.BALoad()
-      case ErasedType.Int16() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.SALoad()
-      case ErasedType.Int32() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.IALoad()
-      case ErasedType.Int64() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.LALoad()
-      case ErasedType.Float32() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.FALoad()
-      case ErasedType.Float64() => WithSource[R](loc) ~ compileExp(base) ~ compileExp(index) ~ ArrayInstruction.DALoad()
-      case _ => ???
-    }
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(base) ~
+        compileExp(index) ~
+        ArrayInstruction.XALoad(tpe)
+    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(base) ~
+        compileExp(index) ~
+        compileExp(elm) ~
+        ArrayInstruction.XAStore(elm.tpe)
     case _ => ???
   }
 
@@ -73,14 +75,92 @@ object BytecodeCompiler {
 
     def LALoad[R <: Stack](): F[R ** JArray[PrimInt64] ** PrimInt32] => F[R ** PrimInt64] = ???
 
+    def CALoad[R <: Stack](): F[R ** JArray[PrimChar] ** PrimInt32] => F[R ** PrimChar] = ???
+
     def FALoad[R <: Stack](): F[R ** JArray[PrimFloat32] ** PrimInt32] => F[R ** PrimFloat32] = ???
 
     def DALoad[R <: Stack](): F[R ** JArray[PrimFloat64] ** PrimInt32] => F[R ** PrimFloat64] = ???
+
+    def AALoad[R <: Stack](): F[R ** JArray[JObject] ** PrimInt32] => F[R ** JObject] = ???
+
+    def XALoad[R <: Stack, T <: JType](tpe: ErasedType[T]): F[R ** JArray[T] ** PrimInt32] => F[R ** T] = tpe match {
+      case ErasedType.Unit() => ???
+      case ErasedType.Bool() => ???
+      case ErasedType.BoxedBool() => ???
+      case ErasedType.Char() => CALoad()
+      case ErasedType.BoxedChar() => ???
+      case ErasedType.Float32() => ???
+      case ErasedType.BoxedFloat32() => ???
+      case ErasedType.Float64() => ???
+      case ErasedType.BoxedFloat64() => ???
+      case ErasedType.Int8() => BALoad()
+      case ErasedType.BoxedInt8() => ???
+      case ErasedType.Int16() => SALoad()
+      case ErasedType.BoxedInt16() => ???
+      case ErasedType.Int32() => IALoad()
+      case ErasedType.BoxedInt32() => ???
+      case ErasedType.Int64() => LALoad()
+      case ErasedType.BoxedInt64() => ???
+      case ErasedType.Array(tpe) => ???
+      case ErasedType.Channel(tpe) => ???
+      case ErasedType.Lazy(tpe) => ???
+      case ErasedType.Ref(tpe) => ???
+      case _: ErasedType.Str | _: ErasedType.BigInt | _: ErasedType.Tuple | _: ErasedType.Enum | _: ErasedType.Arrow |
+           _: ErasedType.RecordEmpty | _: ErasedType.RecordExtend | _: ErasedType.SchemaEmpty |
+           _: ErasedType.SchemaExtend | _: ErasedType.Relation | _: ErasedType.Native | _: ErasedType.Lattice =>
+        AALoad()
+      case ErasedType.Var(id) => ???
+    }
+
+    def BAStore[R <: Stack](): F[R ** JArray[PrimInt8] ** PrimInt32 ** PrimInt8] => F[R ** JUnit] = ???
+
+    def SAStore[R <: Stack](): F[R ** JArray[PrimInt16] ** PrimInt32 ** PrimInt16] => F[R ** JUnit] = ???
+
+    def IAStore[R <: Stack](): F[R ** JArray[PrimInt32] ** PrimInt32 ** PrimInt32] => F[R ** JUnit] = ???
+
+    def LAStore[R <: Stack](): F[R ** JArray[PrimInt64] ** PrimInt32 ** PrimInt64] => F[R ** JUnit] = ???
+
+    def CAStore[R <: Stack](): F[R ** JArray[PrimChar] ** PrimInt32 ** PrimChar] => F[R ** JUnit] = ???
+
+    def FAStore[R <: Stack](): F[R ** JArray[PrimFloat32] ** PrimInt32 ** PrimFloat32] => F[R ** JUnit] = ???
+
+    def DAStore[R <: Stack](): F[R ** JArray[PrimFloat64] ** PrimInt32 ** PrimFloat64] => F[R ** JUnit] = ???
+
+    def AAStore[R <: Stack](): F[R ** JArray[JObject] ** PrimInt32 ** JObject] => F[R ** JUnit] = ???
+
+    def XAStore[R <: Stack, T <: JType](tpe: ErasedType[T]): F[R ** JArray[T] ** PrimInt32 ** T] => F[R ** JUnit] = tpe match {
+      case ErasedType.Unit() => ???
+      case ErasedType.Bool() => ???
+      case ErasedType.BoxedBool() => ???
+      case ErasedType.Char() => CAStore()
+      case ErasedType.BoxedChar() => ???
+      case ErasedType.Float32() => ???
+      case ErasedType.BoxedFloat32() => ???
+      case ErasedType.Float64() => ???
+      case ErasedType.BoxedFloat64() => ???
+      case ErasedType.Int8() => BAStore()
+      case ErasedType.BoxedInt8() => ???
+      case ErasedType.Int16() => SAStore()
+      case ErasedType.BoxedInt16() => ???
+      case ErasedType.Int32() => IAStore()
+      case ErasedType.BoxedInt32() => ???
+      case ErasedType.Int64() => LAStore()
+      case ErasedType.BoxedInt64() => ???
+      case ErasedType.Array(tpe) => ???
+      case ErasedType.Channel(tpe) => ???
+      case ErasedType.Lazy(tpe) => ???
+      case ErasedType.Ref(tpe) => ???
+      case _: ErasedType.Str | _: ErasedType.BigInt | _: ErasedType.Tuple | _: ErasedType.Enum | _: ErasedType.Arrow |
+           _: ErasedType.RecordEmpty | _: ErasedType.RecordExtend | _: ErasedType.SchemaEmpty |
+           _: ErasedType.SchemaExtend | _: ErasedType.Relation | _: ErasedType.Native | _: ErasedType.Lattice =>
+        AAStore()
+      case ErasedType.Var(id) => ???
+    }
   }
 
   def popInt[R <: Stack](): F[R ** PrimInt32] => F[R] = ???
 
-  implicit class ComposeOps[A, B](f: F[A] => F[B]){
+  implicit class ComposeOps[A, B](f: F[A] => F[B]) {
     def ~[C](that: F[B] => F[C]): F[A] => F[C] = ???
   }
 
