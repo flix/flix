@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 import ca.uwaterloo.flix.language.ast.ErasedAst.{ErasedType, Expression, JType}
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.Symbol
 
 object BytecodeCompiler {
 
@@ -70,11 +71,11 @@ object BytecodeCompiler {
     //      INVOKESPECIAL("class name", "constructor signature")
 
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-      //      exp1.tpe match {
-      //        case ErasedType.Int32() => WithSource[R](null) ~ compileExp(exp1) ~ popInt()
-      //        case _ => ???
-      //      }
-      compileExp(exp2)
+      // sym is unsafe. localvar stack + reg as types?
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        XStore(sym, exp1.tpe) ~
+        compileExp(exp2)
 
     case Expression.ArrayLoad(base, index, tpe, loc) =>
       WithSource[R](loc) ~
@@ -203,6 +204,45 @@ object BytecodeCompiler {
         AAStore()
       case ErasedType.Var(id) => ???
     }
+  }
+
+  def IStore[R <: Stack](sym: Symbol.VarSym): F[R ** PrimInt32] => F[R] = ???
+
+  def LStore[R <: Stack](sym: Symbol.VarSym): F[R ** PrimInt64] => F[R] = ???
+
+  def FStore[R <: Stack](sym: Symbol.VarSym): F[R ** PrimFloat32] => F[R] = ???
+
+  def DStore[R <: Stack](sym: Symbol.VarSym): F[R ** PrimFloat64] => F[R] = ???
+
+  def AStore[R <: Stack](sym: Symbol.VarSym): F[R ** JObject] => F[R] = ???
+
+  def XStore[R <: Stack, T <: JType](sym: Symbol.VarSym, tpe: ErasedType[T]): F[R ** T] => F[R] = tpe match {
+    case ErasedType.Unit() => ???
+    case ErasedType.Bool() => ???
+    case ErasedType.BoxedBool() => ???
+    case ErasedType.Char() => ???
+    case ErasedType.BoxedChar() => ???
+    case ErasedType.Float32() => FStore(sym)
+    case ErasedType.BoxedFloat32() => ???
+    case ErasedType.Float64() => DStore(sym)
+    case ErasedType.BoxedFloat64() => ???
+    case ErasedType.Int8() => ???
+    case ErasedType.BoxedInt8() => ???
+    case ErasedType.Int16() => ???
+    case ErasedType.BoxedInt16() => ???
+    case ErasedType.Int32() => IStore(sym)
+    case ErasedType.BoxedInt32() => ???
+    case ErasedType.Int64() => LStore(sym)
+    case ErasedType.BoxedInt64() => ???
+    case ErasedType.Array(tpe) => ???
+    case ErasedType.Channel(tpe) => ???
+    case ErasedType.Lazy(tpe) => ???
+    case ErasedType.Ref(tpe) => ???
+    case _: ErasedType.Str | _: ErasedType.BigInt | _: ErasedType.Tuple | _: ErasedType.Enum | _: ErasedType.Arrow |
+         _: ErasedType.RecordEmpty | _: ErasedType.RecordExtend | _: ErasedType.SchemaEmpty |
+         _: ErasedType.SchemaExtend | _: ErasedType.Relation | _: ErasedType.Native | _: ErasedType.Lattice =>
+      AStore(sym)
+    case ErasedType.Var(id) => ???
   }
 
   def popInt[R <: Stack](): F[R ** PrimInt32] => F[R] = ???
