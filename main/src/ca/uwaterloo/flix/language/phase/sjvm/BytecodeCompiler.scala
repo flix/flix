@@ -44,13 +44,17 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         compileExp(base) ~
         compileExp(index) ~
-        ArrayInstruction.XALoad(tpe)
+        ArrayInstructions.XALoad(tpe)
     case Expression.ArrayStore(base, index, elm, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
         compileExp(index) ~
         compileExp(elm) ~
-        ArrayInstruction.XAStore(elm.tpe)
+        ArrayInstructions.XAStore(elm.tpe)
+    case Expression.ArrayLength(base, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(base) ~
+        ArrayInstructions.arrayLength()
     case _ => ???
   }
 
@@ -66,7 +70,10 @@ object BytecodeCompiler {
 
   def pushChar[R <: Stack](c: Char): F[R] => F[R ** PrimChar] = ???
 
-  object ArrayInstruction {
+  object ArrayInstructions {
+
+    def arrayLength[R <: Stack](): F[R ** JArray[JType]] => F[R ** PrimInt32] = ???
+
     def BALoad[R <: Stack](): F[R ** JArray[PrimInt8] ** PrimInt32] => F[R ** PrimInt8] = ???
 
     def SALoad[R <: Stack](): F[R ** JArray[PrimInt16] ** PrimInt32] => F[R ** PrimInt16] = ???
