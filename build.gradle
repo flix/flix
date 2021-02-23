@@ -36,7 +36,7 @@ tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = [
             "-language:postfixOps",
             "-Xfatal-warnings",
-            "-Ypatmat-exhaust-depth", "off"
+            "-Ypatmat-exhaust-depth", "200"
     ]
     compileScala.sourceCompatibility = 11
     compileScala.targetCompatibility = 11
