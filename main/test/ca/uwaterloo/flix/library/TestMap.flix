@@ -1635,6 +1635,28 @@ def unfoldWithIter06(): Bool & Impure =
     Map.unfoldWithIter(step) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
 
 /////////////////////////////////////////////////////////////////////////////
+// inverse                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def testInvert01(): Bool = Map.invert(Map#{1 -> "a"}) == Map#{"a" -> Set#{1}}
+
+@test
+def testInvert02(): Bool = Map.invert(Map#{1 -> "a", 2 -> "b"}) == Map#{"a" -> Set#{1}, "b" -> Set#{2}}
+
+@test
+def testInvert03(): Bool = Map.invert(Map#{1 -> "a", 2 -> "a"}) == Map#{"a" -> Set#{1, 2}}
+
+@test
+def testInvert04(): Bool = Map.invert(Map#{1 -> "a", 2 -> "b", 3 -> "a"}) == Map#{"a" -> Set#{1, 3}, "b" -> Set#{2}}
+
+@test
+def testInvert05(): Bool = Map.invert(Map#{1 -> "a", 2 -> "a", 3 -> "a"}) == Map#{"a" -> Set#{1, 2, 3}}
+
+@test
+def testInvert06(): Bool = Map.invert(Map#{1 -> "a", 2 -> "b", 3 -> "a", 4 -> "b"}) == Map#{"a" -> Set#{1, 3}, "b" -> Set#{2, 4}}
+
+/////////////////////////////////////////////////////////////////////////////
 // query                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
