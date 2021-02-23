@@ -24,21 +24,4 @@ pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
 
 namespace Choice {
 
-    ///
-    /// Returns the value in `c` which must be `Present`.
-    ///
-    pub def unbox[a, isAbsent :# Bool](c: Choice[a, false, isAbsent]): a = choose c {
-        case Present(v) => v
-    }
-
-    ///
-    /// Returns the given choice `c` as an `Option`.
-    ///
-    pub def toOption[a, isAbsent :# Bool, isPresent :# Bool](c: Choice[a, isAbsent, isPresent]): Option[a] = choose c {
-        case Absent     => None
-        case Present(v) => Some(v)
-    }
-
-    // TODO: Add combinators
-
 }

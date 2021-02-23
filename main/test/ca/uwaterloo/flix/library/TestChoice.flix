@@ -15,14 +15,4 @@
  */
 namespace TestChoice {
 
-    @test
-    def unbox01(): Bool = Choice.unbox(Present("a")) == "a"
-
-    @test
-    def toOption01(): Bool = Choice.toOption(Absent): Option[Unit] == None
-
-    @test
-    def toOption02(): Bool = Choice.toOption(Present("a")) == Some("a")
-
 }
-

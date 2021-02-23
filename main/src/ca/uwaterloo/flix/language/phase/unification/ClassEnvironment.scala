@@ -107,7 +107,7 @@ object ClassEnvironment {
     tconstrGroups match {
       case Nil => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toFailure
       case tconstrs :: Nil => tconstrs.toSuccess
-      case _ :: _ :: _ => throw InternalCompilerException("Multiple matching instances")
+      case _ :: _ :: _ => UnificationError.MultipleMatchingInstances(tconstr.sym, tconstr.arg).toFailure
     }
   }
 

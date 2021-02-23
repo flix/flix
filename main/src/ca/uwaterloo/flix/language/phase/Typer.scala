@@ -701,7 +701,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -733,6 +733,42 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           }
 
           seqM(rs.map(visitRuleBody)).map(_.unzip3)
+        }
+
+        /**
+          * Returns a transformed result type that encodes the Boolean constraint of each row pattern in the result type.
+          *
+          * NB: Requires that the `ts` types are Choice-types.
+          */
+        def transformResultTypes(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[ResolvedAst.ChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+          def visitRuleBody(r: ResolvedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
+            case ResolvedAst.ChoiceRule(r, exp0) =>
+              val cond = mkInnerConj(isAbsentVars, isPresentVars, r)
+              val innerType = Type.freshVar(Kind.Star)
+              val isAbsentVar = Type.freshVar(Kind.Bool)
+              val isPresentVar = Type.freshVar(Kind.Bool)
+              for {
+                choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar), loc)
+              } yield (Type.mkImplies(cond, isAbsentVar), Type.mkImplies(cond, isPresentVar), innerType)
+          }
+
+          ///
+          /// Simply compute the mgu of the `ts` types if this is not a star choose.
+          ///
+          if (!star) {
+            return unifyTypeM(ts, loc)
+          }
+
+          ///
+          /// Otherwise construct a new Choice type with isAbsent and isPresent conditions that depend on each pattern row.
+          ///
+          for {
+            (isAbsentConds, isPresentConds, innerTypes) <- seqM(rs.zip(ts).map(p => visitRuleBody(p._1, p._2))).map(_.unzip3)
+            isAbsentCond = Type.mkAnd(isAbsentConds)
+            isPresentCond = Type.mkAnd(isPresentConds)
+            innerType <- unifyTypeM(innerTypes, loc)
+            resultType = Type.mkChoice(innerType, isAbsentCond, isPresentCond)
+          } yield resultType
         }
 
         /**
@@ -818,7 +854,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
-          resultTyp <- unifyTypeM(ruleBodyTyp, loc)
+          resultTyp <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
+          //resultTyp <- unifyTypeM(ruleBodyTyp, loc)
           resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
@@ -1485,7 +1522,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Choose(exps, rules, loc) =>
+      case ResolvedAst.Expression.Choose(_, exps, rules, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
           case ResolvedAst.ChoiceRule(pat0, exp) =>
