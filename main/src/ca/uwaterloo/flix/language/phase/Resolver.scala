@@ -1306,7 +1306,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
     }
 
-    case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
+    case NamedAst.Type.Ambiguous(qname, loc) =>
       // Disambiguate type.
       (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
         case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure

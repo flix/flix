@@ -12,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.1'
-    implementation 'org.scala-lang:scala-reflect:2.13.1'
+    implementation 'org.scala-lang:scala-library:2.13.5'
+    implementation 'org.scala-lang:scala-reflect:2.13.5'
 
     implementation files('lib/com.github.scopt-3.7.1.jar')
     implementation files('lib/com.microsoft.z3.jar')
