@@ -13,8 +13,65 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+pub enum UnsafeBox[a] {
+    case UnsafeBox(a, (a, a) -> Comparison)
+}
+
+instance Order[UnsafeBox[a]] {
+
+    ///
+    /// Compares the values in the boxes `x` and `y`.
+    ///
+    def compare(x: UnsafeBox[a], y: UnsafeBox[a]): Comparison = match (x, y) {
+        case (UnsafeBox(v1, cmp), UnsafeBox(v2, _)) => cmp(v1, v2)
+    }
+
+    def less(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    def lessEqual(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    def greater(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    def greaterEqual(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+}
+
 namespace UnsafeBox {
 
+    ///
+    /// A type alias for the top element of the Java type lattice.
+    ///
+    type alias Any = ##java.lang.Object
 
+    ///
+    /// Boxes the given value `x`.
+    ///
+    pub def box[a: Order](x: a): UnsafeBox[Any] = UnsafeBox(x, Order.compare) as UnsafeBox[Any]
+
+    ///
+    /// Lifts the given function `f` to one on boxed values.
+    ///
+    pub def lift1[a, t : Order](f: a -> t): UnsafeBox[Any] -> UnsafeBox[Any] =
+        match (UnsafeBox(v1, _)) -> {
+            box(f(v1 as a))
+        }
+
+    ///
+    /// Lifts the given function `f` to one on boxed values.
+    ///
+    pub def lift2[a, b, t : Order](f: (a, b) -> t): (UnsafeBox[Any], UnsafeBox[Any]) -> UnsafeBox[Any] =
+        (x: UnsafeBox[Any], y: UnsafeBox[Any]) -> match (x, y) {
+            case (UnsafeBox(v1, _), UnsafeBox(v2, _)) => box(f(v1 as a, v2 as b))
+        }
 
 }
