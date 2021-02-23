@@ -17,6 +17,14 @@ pub enum UnsafeBox[a] {
     case UnsafeBox(a, (a, a) -> Comparison)
 }
 
+instance Eq[UnsafeBox[a]] {
+    def eq(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x, y) {
+        case (UnsafeBox(v1, cmp), UnsafeBox(v2, _)) => cmp(v1, v2) == Comparison.EqualTo
+    }
+
+    def neq(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = not (x == y)
+}
+
 instance Order[UnsafeBox[a]] {
 
     ///
