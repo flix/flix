@@ -560,9 +560,15 @@ namespace Map {
                              else m;
         foldRightWithKey(g, diff, m2)
 
-
-
-
+    ///
+    /// Returns the inverse map of `m`.
+    ///
+    /// That is, given a `Map[k, v]` returns a map `Map[v, Set[k]]`
+    /// where every value is mapped to its key(s) in the original map.
+    ///
+    pub def invert[k: Order, v: Order](m: Map[k, v]): Map[v, Set[k]] =
+        let f = (acc, k, v) -> Map.insertWith(Set.union, v, Set#{k}, acc);
+        Map.foldLeftWithKey(f, Map#{}, m)
 
     ///
     /// Returns `m` as a mutable set.
