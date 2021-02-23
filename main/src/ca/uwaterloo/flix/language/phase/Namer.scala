@@ -604,7 +604,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
       }
 
-    case WeededAst.Expression.Choose(isStar, exps, rules, loc) =>
+    case WeededAst.Expression.Choose(star, exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, env0, uenv0, tenv0))
       val rulesVal = traverse(rules) {
         case WeededAst.ChoiceRule(pat0, exp0) =>
@@ -623,7 +623,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expression.Choose(isStar, es, rs, loc)
+        case (es, rs) => NamedAst.Expression.Choose(star, es, rs, loc)
       }
 
     case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>

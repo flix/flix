@@ -918,7 +918,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Choose(sp1, isStar, exps, rules, sp2) =>
+    case ParsedAst.Expression.Choose(sp1, star, exps, rules, sp2) =>
       //
       // Check for mismatched arity of `exps` and `rules`.
       //
@@ -943,7 +943,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => WeededAst.Expression.Choose(isStar, es, rs, mkSL(sp1, sp2))
+        case (es, rs) => WeededAst.Expression.Choose(star, es, rs, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>

@@ -617,12 +617,12 @@ object ParsedAst {
       * Choose Expression.
       *
       * @param sp1    the position of the first character in the expression.
-      * @param isStar true if this a star choose expression.
+      * @param star true if this a star choose expression.
       * @param exps   the match expressions.
       * @param rules  the rules of the pattern match.
       * @param sp2    the position of the last character in the expression.
       */
-    case class Choose(sp1: SourcePosition, isStar: Boolean, exps: Seq[ParsedAst.Expression], rules: Seq[ChoiceRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Choose(sp1: SourcePosition, star: Boolean, exps: Seq[ParsedAst.Expression], rules: Seq[ChoiceRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.

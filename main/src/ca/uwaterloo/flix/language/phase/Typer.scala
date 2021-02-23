@@ -701,7 +701,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Choose(isStar, exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -755,7 +755,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           ///
           /// Simply compute the mgu of the `ts` types if this is not a star choose.
           ///
-          if (!isStar) {
+          if (!star) {
             return unifyTypeM(ts, loc)
           }
 
