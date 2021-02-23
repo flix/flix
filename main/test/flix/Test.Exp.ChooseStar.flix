@@ -108,31 +108,32 @@ namespace Test/Exp/ChooseStar {
         };
         f(Present(123), Present(456)) |> isPresent
 
-    @test
-    pub def testChooseStarLub01(): Bool =
-        let f = x -> {
-            choose* x {
-                case Absent     => Present(123)
-                case Present(_) => Present(123)
-            }
-        };
-        let isPresent = x -> choose x {
-            case Present(_) => true
-        };
-        f(if (true) Absent else Present(42)) |> isPresent
-
-    @test
-    pub def testChooseStarLub02(): Bool =
-        let f = x -> {
-            choose* x {
-                case Absent     => Absent
-                case Present(_) => Absent
-            }
-        };
-        let isAbsent = x -> choose x {
-            case Absent => true
-        };
-        f(if (true) Absent else Present(42)) |> isAbsent
+// TODO
+//    @test
+//    pub def testChooseStarLub01(): Bool =
+//        let f = x -> {
+//            choose* x {
+//                case Absent     => Present(123)
+//                case Present(_) => Present(123)
+//            }
+//        };
+//        let isPresent = x -> choose x {
+//            case Present(_) => true
+//        };
+//        f(if (true) Absent else Present(42)) |> isPresent
+//
+//    @test
+//    pub def testChooseStarLub02(): Bool =
+//        let f = x -> {
+//            choose* x {
+//                case Absent     => Absent
+//                case Present(_) => Absent
+//            }
+//        };
+//        let isAbsent = x -> choose x {
+//            case Absent => true
+//        };
+//        f(if (true) Absent else Present(42)) |> isAbsent
 
     @test
     def testMap01(): Bool =
