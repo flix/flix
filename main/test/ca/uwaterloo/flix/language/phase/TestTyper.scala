@@ -978,10 +978,52 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.ChooseStar.01") {
     val input =
       """
-        |law f(): Bool = forall (x: Int, y: Bool) . x + y == 3
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |pub def f(): Bool =
+        |    let f = x -> {
+        |        choose* x {
+        |            case Absent     => Absent
+        |            case Present(v) => Present(v)
+        |        }
+        |    };
+        |    let isAbsent = x -> choose x {
+        |        case Absent => true
+        |    };
+        |    isAbsent(f(Present(123)))
+        |
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedBools](result)
   }
+
+  test("Test.ChooseStar.02") {
+    val input =
+      """
+        |pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
+        |pub def f(): Bool =
+        |    let f = x -> {
+        |        choose* x {
+        |            case Absent     => Present(123)
+        |            case Present(_) => Absent
+        |        }
+        |    };
+        |    let isAbsent = x -> choose x {
+        |        case Absent => true
+        |    };
+        |    isAbsent(f(Absent))
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+
 
 }
