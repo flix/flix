@@ -63,13 +63,25 @@ namespace Choice {
         }
 
     ///
-    /// Returns `Present(f(v))` if `o` is `Present(v)`. Otherwise returns `Absent`.
+    /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
     pub def map[s :# Type, t :# Type, a :# Bool, p :# Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
         choose* c {
             case Absent     => Absent
             case Present(x) => Present(f(x))
         }
+
+    ///
+    /// Returns `Present(f(v1, v2))` if `c1` is `Present(v1)` and `c2` is `Present(v2)`. Otherwise returns `Absent`.
+    ///
+//    pub def map2[s1 :# Type, s2 :# Type, t :# Type, a1 :# Bool, a2 :# Bool, p1 :# Bool, p2 :# Bool]
+//                (f: (s1, s2) -> t, c1: Choice[s1, a1, p1], c2: Choice[s2, a2, p2]): Choice[t, a1 or a2, p1 and p2] =
+//        choose* (c1, c2) {
+//            case (Absent, Absent)         => Absent
+//            case (Absent, Present(_))     => Absent
+//            case (Present(_), Absent)     => Absent
+//            case (Present(x), Present(y)) => Present(f(x, y))
+//        }
 
     ///
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
