@@ -25,6 +25,22 @@ pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
 namespace Choice {
 
     ///
+    /// Returns `true` if `c` is `Absent`.
+    ///
+    pub def isAbsent(c: Choice[_, _, _]): Bool = choose c {
+        case Absent     => true
+        case Present(_) => false
+    }
+
+    ///
+    /// Returns `true` if `c` is `Present`.
+    ///
+    pub def isPresent(c: Choice[_, _, _]): Bool = choose c {
+        case Absent     => false
+        case Present(_) => true
+    }
+
+    ///
     /// Returns `Present(f(v))` if `o` is `Present(v)`. Otherwise returns `Absent`.
     ///
     pub def map[s :# Type, t :# Type, a :# Bool, p :# Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
@@ -40,5 +56,36 @@ namespace Choice {
         choose c {
             case Present(x) => x
         }
+
+}
+
+namespace Choice {
+
+    @test
+    def isAbsent01(): Bool = isAbsent(Absent)
+
+    @test
+    def isAbsent02(): Bool = not isAbsent(Present(123))
+
+    @test
+    def isPresent01(): Bool = isPresent(Present(123))
+
+    @test
+    def isPresent02(): Bool = not isPresent(Absent)
+
+    @test
+    def map01(): Bool = isAbsent(map(x -> x, Absent))
+
+    @test
+    def map02(): Bool = isPresent(map(x -> x, Present(123)))
+
+    @test
+    def map03(): Bool = unbox(map(x -> x * 2, Present(42))) == 84
+
+    @test
+    def unbox01(): Bool = unbox(Present(123)) == 123
+
+    @test
+    def unbox02(): Bool = unbox(Present("Hello World")) == "Hello World"
 
 }
