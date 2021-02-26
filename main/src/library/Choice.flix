@@ -24,4 +24,21 @@ pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
 
 namespace Choice {
 
+    ///
+    /// Returns `Present(f(v))` if `o` is `Present(v)`. Otherwise returns `Absent`.
+    ///
+    pub def map[s :# Type, t :# Type, a :# Bool, p :# Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
+        choose* c {
+            case Absent     => Absent
+            case Present(x) => Present(f(x))
+        }
+
+    ///
+    /// Returns `v` where `c` must be `Present(v)`.
+    ///
+    pub def unbox[s](c: Choice[s, false, true]): s =
+        choose c {
+            case Present(x) => x
+        }
+
 }
