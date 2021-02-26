@@ -33,13 +33,13 @@ namespace TestChoice {
     def isPresent01(): Bool = isPresent(Present(123))
 
     @test
+    def isPresent02(): Bool = not isPresent(Absent)
+
+    @test
     def unbox01(): Bool = unbox(Present(123)) == 123
 
     @test
     def unbox02(): Bool = unbox(Present("Hello World")) == "Hello World"
-
-    @test
-    def isPresent02(): Bool = not isPresent(Absent)
 
     @test
     def map01(): Bool = isAbsent(map(x -> x, Absent))
@@ -61,6 +61,5 @@ namespace TestChoice {
 
     @test
     def invert04(): Bool = isPresent(invert(invert(invert(Absent, 21), 42), 84))
-
 
 }
