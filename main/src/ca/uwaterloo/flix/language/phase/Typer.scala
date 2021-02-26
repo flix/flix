@@ -743,13 +743,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         def transformResultTypes(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[ResolvedAst.ChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
           def visitRuleBody(r: ResolvedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
             case ResolvedAst.ChoiceRule(r, exp0) =>
-              val cond = mkUnderApprox(isAbsentVars, isPresentVars, r)
+              val cond = mkOverApprox(isAbsentVars, isPresentVars, r)
               val innerType = Type.freshVar(Kind.Star)
               val isAbsentVar = Type.freshVar(Kind.Bool)
               val isPresentVar = Type.freshVar(Kind.Bool)
               for {
                 choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar), loc)
-              } yield (Type.mkImplies(cond, isAbsentVar), Type.mkImplies(cond, isPresentVar), innerType)
+              } yield (Type.mkAnd(cond, isAbsentVar), Type.mkAnd(cond, isPresentVar), innerType)
           }
 
           ///
@@ -764,8 +764,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           ///
           for {
             (isAbsentConds, isPresentConds, innerTypes) <- seqM(rs.zip(ts).map(p => visitRuleBody(p._1, p._2))).map(_.unzip3)
-            isAbsentCond = Type.mkAnd(isAbsentConds)
-            isPresentCond = Type.mkAnd(isPresentConds)
+            isAbsentCond = Type.mkOr(isAbsentConds)
+            isPresentCond = Type.mkOr(isPresentConds)
             innerType <- unifyTypeM(innerTypes, loc)
             resultType = Type.mkChoice(innerType, isAbsentCond, isPresentCond)
           } yield resultType
@@ -804,10 +804,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               // Case 1: No constraint is generated for a wildcard.
               acc
             case (acc, ((isAbsentVar, _), ResolvedAst.ChoicePattern.Absent(_))) =>
-              // Case 2: An `Absent` pattern forces the `isAbsentVar` to be `true`.
+              // Case 2: An `Absent` pattern may match if the `isAbsentVar` is `true`.
               BoolUnification.mkAnd(acc, isAbsentVar)
             case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Present(_, _, _))) =>
-              // Case 3: An `Absent` pattern forces the `isPresentVar` to be `true`.
+              // Case 3: A `Present` pattern may match if the `isPresentVar` is `true`.
               BoolUnification.mkAnd(acc, isPresentVar)
           }
 
