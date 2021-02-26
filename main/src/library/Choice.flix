@@ -25,6 +25,20 @@ pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
 namespace Choice {
 
     ///
+    /// Asserts that `c` is `Absent`. Akin to a type ascription.
+    ///
+    pub def assertAbsent(c: Choice[_, true, false]): Unit = choose c {
+        case Absent => ()
+    }
+
+    ///
+    /// Asserts that `c` is `Present`. Akin to a type ascription.
+    ///
+    pub def assertPresent(c: Choice[_, false, true]): Unit = choose c {
+        case Present(_) => ()
+    }
+
+    ///
     /// Returns `true` if `c` is `Absent`.
     ///
     pub def isAbsent(c: Choice[_, _, _]): Bool = choose c {
@@ -60,6 +74,12 @@ namespace Choice {
 }
 
 namespace Choice {
+
+    @test
+    def assertAbsent01(): Bool = assertAbsent(Absent) == ()
+
+    @test
+    def assertPresent01(): Bool = assertPresent(Present(123)) == ()
 
     @test
     def isAbsent01(): Bool = isAbsent(Absent)
