@@ -55,6 +55,14 @@ namespace Choice {
     }
 
     ///
+    /// Returns `v` where `c` must be `Present(v)`.
+    ///
+    pub def unbox[s](c: Choice[s, false, true]): s =
+        choose c {
+            case Present(x) => x
+        }
+
+    ///
     /// Returns `Present(f(v))` if `o` is `Present(v)`. Otherwise returns `Absent`.
     ///
     pub def map[s :# Type, t :# Type, a :# Bool, p :# Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
@@ -64,12 +72,12 @@ namespace Choice {
         }
 
     ///
-    /// Returns `v` where `c` must be `Present(v)`.
+    /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
     ///
-    pub def unbox[s](c: Choice[s, false, true]): s =
-        choose c {
-            case Present(x) => x
-        }
+    pub def invert[s :# Type, a :# Bool, p :# Bool](c: Choice[s, a, p], v: s): Choice[s, p, a] = choose* c {
+        case Absent     => Present(v)
+        case Present(_) => Absent
+    }
 
 }
 
@@ -91,6 +99,12 @@ namespace Choice {
     def isPresent01(): Bool = isPresent(Present(123))
 
     @test
+    def unbox01(): Bool = unbox(Present(123)) == 123
+
+    @test
+    def unbox02(): Bool = unbox(Present("Hello World")) == "Hello World"
+
+    @test
     def isPresent02(): Bool = not isPresent(Absent)
 
     @test
@@ -103,9 +117,15 @@ namespace Choice {
     def map03(): Bool = unbox(map(x -> x * 2, Present(42))) == 84
 
     @test
-    def unbox01(): Bool = unbox(Present(123)) == 123
+    def invert01(): Bool = unbox(invert(Absent, 42)) == 42
 
     @test
-    def unbox02(): Bool = unbox(Present("Hello World")) == "Hello World"
+    def invert02(): Bool = isAbsent(invert(Present(42), 84))
+
+    @test
+    def invert03(): Bool = isAbsent(invert(invert(Absent, 42), 84))
+
+    @test
+    def invert04(): Bool = isPresent(invert(invert(invert(Absent, 21), 42), 84))
 
 }
