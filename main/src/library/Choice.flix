@@ -62,6 +62,97 @@ namespace Choice {
             case Present(x) => x
         }
 
+
+// TODO
+//    ///
+//    /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
+//    ///
+//    @Time(1) @Space(1)
+//    pub def getWithDefault(o: Option[a], d: a): a = match o {
+//        case None => d
+//        case Some(v) => v
+//    }
+// TODO
+//    ///
+//    /// Returns `o1` if it is `Some(v)`. Otherwise returns `o2`.
+//    ///
+//    @Time(1) @Space(1)
+//    pub def withDefault(o1: Option[a], o2: Option[a]): Option[a] = match o1 {
+//        case None => o2
+//        case Some(_) => o1
+//    }
+// TODO
+//    ///
+//    /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
+//    ///
+//    @Time(1) @Space(1)
+//    pub def replace[a : Eq](x: a, y: a, o: Option[a]): Option[a] = match o {
+//        case None => o
+//        case Some(v) => Some(if (v == x) y else v)
+//    }
+//
+//    pub def filter(f: a -> Bool, o: Option[a]): Option[a] = match o {
+//        case None => None
+//        case Some(v) => if (f(v)) o else None
+//    }
+
+
+// TODO
+//     pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] & e = match o {
+//
+//    }
+// TODO
+//    ///
+//    /// Returns `v` if `o` is `Some(v)`. Otherwise returns `None`.
+//    ///
+//    @Time(1) @Space(1)
+//    pub def flatten(o: Option[Option[a]]): Option[a] = match o {
+//        case None => None
+//        case Some(v) => v
+//    }
+
+
+// TODO
+//    ///
+//    /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
+//    ///
+//    @Time(List.length(xs)) @Space(List.length(xs))
+//    pub def sequence(xs: List[Option[a]]): Option[List[a]] =
+//        sequenceHelper(xs, _ -> None, ys -> Some(ys))
+
+// TODO
+//    ///
+//    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
+//    ///
+//    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e =
+//        traverseHelper(f, xs, _ -> None, ys -> Some(ys))
+
+// TODO
+//    ///
+//    /// Returns `Some((v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
+//    ///
+//    @Time(1) @Space(1)
+//    pub def zip(o1: Option[a], o2: Option[b]): Option[(a, b)] = match (o1, o2) {
+//        case (None, _) => None
+//        case (_, None) => None
+//        case (Some(v1), Some(v2)) => Some((v1, v2))
+//    }
+// TODO
+//    ///
+//    /// Returns `(Some(v1), Some(v2))` if `o` is `Some((v1, v2))`. Otherwise returns `(None, None)`.
+//    ///
+//    @Time(1) @Space(1)
+//    pub def unzip(o: Option[(a, b)]): (Option[a], Option[b]) = match o {
+//        case None => (None, None)
+//        case Some((v1, v2)) => (Some(v1), Some(v2))
+//    }
+
+// TODO
+//    pub def foreach(f: a ~> Unit, o: Option[a]): Unit & Impure = match o {
+//        case None    => ()
+//        case Some(v) => f(v)
+//    }
+
     ///
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
