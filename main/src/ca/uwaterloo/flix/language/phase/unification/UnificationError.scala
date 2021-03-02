@@ -111,4 +111,13 @@ object UnificationError {
     * @param tpe the type of the type constraint
     */
   case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type) extends UnificationError
+
+  /**
+    * A unification error resulting from multiple matching instances.
+    *
+    * @param clazz the class of the type constraint
+    * @param tpe the type of the type constraint
+    */
+  case class MultipleMatchingInstances(clazz: Symbol.ClassSym, tpe: Type) extends UnificationError
+
 }
