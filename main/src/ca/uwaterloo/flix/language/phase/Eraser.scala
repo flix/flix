@@ -305,22 +305,39 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     case MonoType.Int16 => ErasedType.Int16()
     case MonoType.Int32 => ErasedType.Int32()
     case MonoType.Int64 => ErasedType.Int64()
-    case MonoType.BigInt => ErasedType.BigInt()
-    case MonoType.Str => ErasedType.Str()
-    case MonoType.Array(tpe) => ErasedType.Array(visitTpe(tpe))
-    case MonoType.Channel(tpe) => ErasedType.Channel(visitTpe(tpe))
-    case MonoType.Lazy(tpe) => ErasedType.Lazy(visitTpe(tpe))
-    case MonoType.Ref(tpe) => ErasedType.Ref(visitTpe(tpe))
-    case MonoType.Tuple(elms) => ErasedType.Tuple(elms.map(visitTpe))
-    case MonoType.Enum(sym, args) => ErasedType.Enum(sym, args.map(visitTpe))
-    case MonoType.Arrow(args, result) => ErasedType.Arrow(args.map(visitTpe), visitTpe(result))
-    case MonoType.RecordEmpty() => ErasedType.RecordEmpty()
-    case MonoType.RecordExtend(field, value, rest) => ErasedType.RecordExtend(field, visitTpe(value), visitTpe(rest))
-    case MonoType.SchemaEmpty() => ErasedType.SchemaEmpty()
-    case MonoType.SchemaExtend(name, tpe, rest) => ErasedType.SchemaExtend(name, visitTpe(tpe), visitTpe(rest))
-    case MonoType.Relation(tpes) => ErasedType.Relation(tpes.map(visitTpe))
-    case MonoType.Lattice(tpes) => ErasedType.Lattice(tpes.map(visitTpe))
-    case MonoType.Native(clazz) => ErasedType.Native(clazz)
-    case MonoType.Var(id) => ErasedType.Var(id)
+    case MonoType.BigInt =>
+      ErasedType.ObjectT(ErasedType.ObjectType.BigInt())
+    case MonoType.Str =>
+      ErasedType.ObjectT(ErasedType.ObjectType.Str())
+    case MonoType.Array(tpe) =>
+      ErasedType.Array(visitTpe(tpe))
+    case MonoType.Channel(tpe) =>
+      ErasedType.Channel(visitTpe(tpe))
+    case MonoType.Lazy(tpe) =>
+      ErasedType.Lazy(visitTpe(tpe))
+    case MonoType.Ref(tpe) =>
+      ErasedType.Ref(visitTpe(tpe))
+    case MonoType.Tuple(elms) =>
+      ErasedType.ObjectT(ErasedType.ObjectType.Tuple(elms.map(visitTpe)))
+    case MonoType.Enum(sym, args) =>
+      ErasedType.ObjectT(ErasedType.ObjectType.Enum(sym, args.map(visitTpe)))
+    case MonoType.Arrow(args, result) =>
+      ErasedType.ObjectT(ErasedType.ObjectType.Arrow(args.map(visitTpe), visitTpe(result)))
+    case MonoType.RecordEmpty() =>
+      ErasedType.ObjectT(ErasedType.ObjectType.RecordEmpty())
+    case MonoType.RecordExtend(field, value, rest) =>
+      ErasedType.ObjectT(ErasedType.ObjectType.RecordExtend(field, visitTpe(value), visitTpe(rest)))
+    case MonoType.SchemaEmpty() =>
+      ErasedType.ObjectT(ErasedType.ObjectType.SchemaEmpty())
+    case MonoType.SchemaExtend(name, tpe, rest) =>
+      ErasedType.ObjectT(ErasedType.ObjectType.SchemaExtend(name, visitTpe(tpe), visitTpe(rest)))
+    case MonoType.Relation(tpes) =>
+      ErasedType.ObjectT(ErasedType.ObjectType.Relation(tpes.map(visitTpe)))
+    case MonoType.Lattice(tpes) =>
+      ErasedType.ObjectT(ErasedType.ObjectType.Lattice(tpes.map(visitTpe)))
+    case MonoType.Native(clazz) =>
+      ErasedType.ObjectT(ErasedType.ObjectType.Native(clazz))
+    case MonoType.Var(id) =>
+      ErasedType.Var(id)
   }).asInstanceOf[ErasedType[T]]
 }

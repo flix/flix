@@ -94,11 +94,11 @@ object ErasedAst {
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ErasedAst.Expression[JObject] {
-      final val tpe = ErasedType.BigInt()
+      final val tpe = ErasedType.ObjectT(ErasedType.ObjectType.BigInt())
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ErasedAst.Expression[JObject] {
-      final val tpe = ErasedType.Str()
+      final val tpe = ErasedType.ObjectT(ErasedType.ObjectType.Str())
     }
 
     case class Var[T <: JType](sym: Symbol.VarSym, tpe: ErasedType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
@@ -454,10 +454,6 @@ object ErasedAst {
 
     case class BoxedInt64() extends ErasedType[JType.BoxedInt64]
 
-    case class BigInt() extends ErasedType[JObject]
-
-    case class Str() extends ErasedType[JObject]
-
     ///
     /// Compound Types.
     ///
@@ -470,28 +466,40 @@ object ErasedAst {
 
     case class Ref[T <: JType](tpe: ErasedType[T]) extends ErasedType[JRef[T]]
 
-    case class Tuple(elms: List[ErasedType[JType]]) extends ErasedType[JObject]
-
-    case class Enum(sym: Symbol.EnumSym, args: List[ErasedType[JType]]) extends ErasedType[JObject]
-
-    case class Arrow(args: List[ErasedType[JType]], result: ErasedType[JType]) extends ErasedType[JObject]
-
-    case class RecordEmpty() extends ErasedType[JObject]
-
-    case class RecordExtend(field: String, value: ErasedType[JType], rest: ErasedType[JObject]) extends ErasedType[JObject]
-
-    case class SchemaEmpty() extends ErasedType[JObject]
-
-    case class SchemaExtend(name: String, tpe: ErasedType[JType], rest: ErasedType[JObject]) extends ErasedType[JObject]
-
-    case class Relation(tpes: List[ErasedType[JType]]) extends ErasedType[JObject]
-
-    case class Lattice(tpes: List[ErasedType[JType]]) extends ErasedType[JObject]
-
-    case class Native(clazz: Class[_]) extends ErasedType[JObject]
+    case class ObjectT(o: ObjectType) extends ErasedType[JObject]
 
     // TODO: Should be removed.
     case class Var(id: Int) extends ErasedType[Nothing]
+
+    sealed trait ObjectType
+
+    object ObjectType {
+
+      case class Tuple(elms: List[ErasedType[JType]]) extends ObjectType
+
+      case class Enum(sym: Symbol.EnumSym, args: List[ErasedType[JType]]) extends ObjectType
+
+      case class BigInt() extends ObjectType
+
+      case class Str() extends ObjectType
+
+      case class Arrow(args: List[ErasedType[JType]], result: ErasedType[JType]) extends ObjectType
+
+      case class RecordEmpty() extends ObjectType
+
+      case class RecordExtend(field: String, value: ErasedType[JType], rest: ErasedType[JObject]) extends ObjectType
+
+      case class SchemaEmpty() extends ObjectType
+
+      case class SchemaExtend(name: String, tpe: ErasedType[JType], rest: ErasedType[JObject]) extends ObjectType
+
+      case class Relation(tpes: List[ErasedType[JType]]) extends ObjectType
+
+      case class Lattice(tpes: List[ErasedType[JType]]) extends ObjectType
+
+      case class Native(clazz: Class[_]) extends ObjectType
+
+    }
 
   }
 
