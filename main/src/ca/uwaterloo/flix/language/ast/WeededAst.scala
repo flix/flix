@@ -378,9 +378,9 @@ object WeededAst {
 
   object SelectChannelRule {
 
-    case class SelectGet(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression) extends SelectChannelRule
+    case class SelectGet(ident: Name.Ident, chan: WeededAst.Expression, exp: WeededAst.Expression) extends SelectChannelRule
 
-    case class SelectPut(channel: WeededAst.Expression, value: WeededAst.Expression, exp: WeededAst.Expression) extends SelectChannelRule
+    case class SelectPut(chan: WeededAst.Expression, value: WeededAst.Expression, exp: WeededAst.Expression) extends SelectChannelRule
 
   }
 
