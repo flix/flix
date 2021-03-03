@@ -434,7 +434,19 @@ object TypedAst {
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
+//  case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
+
+  sealed trait SelectChannelRule
+
+  object SelectChannelRule {
+
+    // TODO: I see that TypedAST.Expression.SelectGet and TypedAST.Expression.SelectPut both have a type and effect in their constructors. Should these also have them?
+
+    case class SelectGet(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression) extends SelectChannelRule
+
+    case class SelectPut(chan: TypedAst.Expression, value: TypedAst.Expression, exp: TypedAst.Expression) extends SelectChannelRule
+
+  }
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, classes: List[Symbol.ClassSym], loc: SourceLocation)
 

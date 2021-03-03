@@ -1264,11 +1264,21 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           */
         def inferSelectRule(sr0: ResolvedAst.SelectChannelRule): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
           sr0 match {
-            case ResolvedAst.SelectChannelRule(sym, chan, body) => for {
+            case ResolvedAst.SelectChannelRule.SelectGet(sym, chan, body) => for {
               (chanConstrs, chanType, _) <- visitExp(chan)
               (bodyConstrs, bodyType, _) <- visitExp(body)
               _ <- unifyTypeM(chanType, Type.mkChannel(sym.tvar, sym.loc), sym.loc)
               resultCon = chanConstrs ++ bodyConstrs
+              resultTyp = bodyType
+              resultEff = Type.Impure
+            } yield (resultCon, resultTyp, resultEff)
+
+            case ResolvedAst.SelectChannelRule.SelectPut(chan, value, body) => for {
+              (chanConstrs, chanType, _) <- visitExp(chan)
+              (valueConstrs, valueType, _) <- visitExp(value)
+              (bodyConstrs, bodyType, _) <- visitExp(body)
+              // TODO: Should I unify something here?
+              resultCon = chanConstrs ++ valueConstrs ++ bodyConstrs
               resultTyp = bodyType
               resultEff = Type.Impure
             } yield (resultCon, resultTyp, resultEff)
@@ -1732,10 +1742,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
         val rs = rules map {
-          case ResolvedAst.SelectChannelRule(sym, chan, exp) =>
+          case ResolvedAst.SelectChannelRule.SelectGet(sym, chan, exp) =>
             val c = visitExp(chan, subst0)
             val b = visitExp(exp, subst0)
-            TypedAst.SelectChannelRule(sym, c, b)
+            TypedAst.SelectChannelRule.SelectGet(sym, c, b)
+          case ResolvedAst.SelectChannelRule.SelectPut(chan, value, exp) =>
+            val c = visitExp(chan, subst0)
+            val v = visitExp(value, subst0)
+            val b = visitExp(exp, subst0)
+            TypedAst.SelectChannelRule.SelectPut(c, v, b)
         }
         val d = default.map(visitExp(_, subst0))
         val eff = Type.Impure
