@@ -303,7 +303,17 @@ object ResolvedAst {
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
+//  case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
+
+  sealed trait SelectChannelRule
+
+  object SelectChannelRule {
+
+    case class SelectGet(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends SelectChannelRule
+
+    case class SelectPut(chan: ResolvedAst.Expression, value: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends SelectChannelRule
+
+  }
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, classes: List[Symbol.ClassSym], loc: SourceLocation)
 

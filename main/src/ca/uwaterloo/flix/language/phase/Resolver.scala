@@ -798,11 +798,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
           val rulesVal = traverse(rules) {
-            case NamedAst.SelectChannelRule(sym, chan, body) =>
+            case NamedAst.SelectChannelRule.SelectGet(sym, chan, body) =>
               for {
                 c <- visit(chan, tenv0)
                 b <- visit(body, tenv0)
-              } yield ResolvedAst.SelectChannelRule(sym, c, b)
+              } yield ResolvedAst.SelectChannelRule.SelectGet(sym, c, b)
+
+            case NamedAst.SelectChannelRule.SelectPut(chan, value, body) =>
+              for {
+                c <- visit(chan, tenv0)
+                v <- visit(value, tenv0)
+                b <- visit(body, tenv0)
+              } yield ResolvedAst.SelectChannelRule.SelectPut(c, v, b)
           }
 
           val defaultVal = default match {
