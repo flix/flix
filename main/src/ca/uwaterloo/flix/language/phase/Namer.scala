@@ -828,12 +828,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
       val rulesVal = traverse(rules) {
-        case WeededAst.SelectChannelRule(ident, chan, body) =>
+        case WeededAst.SelectChannelRule.SelectGet(ident, chan, body) =>
           // make a fresh variable symbol for the local recursive variable.
           val sym = Symbol.freshVarSym(ident)
           val env1 = env0 + (ident.name -> sym)
           mapN(visitExp(chan, env0, uenv0, tenv0), visitExp(body, env1, uenv0, tenv0)) {
-            case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
+            case (c, b) => NamedAst.SelectChannelRule.SelectGet(sym, c, b)
+          }
+
+        case WeededAst.SelectChannelRule.SelectPut(chan, value, body) =>
+          // make a fresh variable symbol for the local recursive variable.
+          mapN(visitExp(chan, env0, uenv0, tenv0), visitExp(value, env0, uenv0, tenv0), visitExp(body, env0, uenv0, tenv0)) {
+            case (c, v, b) => NamedAst.SelectChannelRule.SelectPut(c, v, b)
           }
       }
 
