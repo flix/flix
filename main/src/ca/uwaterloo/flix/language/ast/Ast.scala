@@ -235,7 +235,7 @@ object Ast {
     def isLawless: Boolean = mod contains Modifier.Lawless
 
     /**
-      * Returns `true` if these modifiers contain the lawless modifier.
+      * Returns `true` if these modifiers contain the override modifier.
       */
     def isOverride: Boolean = mod contains Modifier.Override
 
