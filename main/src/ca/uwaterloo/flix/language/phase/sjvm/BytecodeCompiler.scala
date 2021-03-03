@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.{ErasedType, Expression, JType}
+import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -33,10 +34,10 @@ object BytecodeCompiler {
 
   def compileExp[R <: Stack, T <: JType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) =>
-      WithSource[R](loc) ~ pushUnit()
+      WithSource[R](loc) ~ pushUnit
 
     case Expression.Null(tpe, loc) =>
-      WithSource[R](loc) ~ pushNull()
+      WithSource[R](loc) ~ pushNull
 
     case Expression.True(loc) =>
       WithSource[R](loc) ~ pushBool(true)
@@ -69,10 +70,12 @@ object BytecodeCompiler {
       WithSource[R](loc) ~ compileExp(exp3)
 
     case Expression.Ref(exp, tpe, loc) => ???
-    //      NEW("class name") ~
-    //      DUP ~
-    //      compileExp(exp) ~
-    //      INVOKESPECIAL("class name", "constructor signature")
+      //      NEW("class name") ~
+      //      DUP ~
+      //      compileExp(exp) ~
+      //      INVOKESPECIAL("class name", "constructor signature")
+      WithSource[R](loc) ~ pushNull ~ ???
+    // TODO: what should happen here? how can an object be a JRef[T]?
 
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       // sym is unsafe. localvar stack + reg as types?
@@ -93,29 +96,38 @@ object BytecodeCompiler {
         compileExp(index) ~
         compileExp(elm) ~
         XAStore(elm.tpe) ~
-        pushUnit()
+        pushUnit
 
     case Expression.ArrayLength(base, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
-        arrayLength()
+        arrayLength
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(base) ~
-        compileExp(beginIndex) ~
-        compileExp(endIndex) ~
-        TEMPSWAP() ~
-        DUP_X1(endIndex.tpe, beginIndex.tpe) ~
-        ISUB() ~
-        DUP() ~
-        XNEWARRAY(tpe) ~
-        DUP2_X2(base.tpe, ErasedType.Int32(), ErasedType.Int32(), ???)
-      // newArray(tpe) ~ not sure how to continue
+      WithSource[R](loc)                      ~[R ** JArray[JType]]
+        compileExp(base)                      ~[R ** JObject]
+        upCast                                ~[R ** JObject ** PrimInt32]
+        compileExp(beginIndex)                ~[R ** JObject ** PrimInt32 ** PrimInt32]
+        compileExp(endIndex)                  ~[R ** JObject ** PrimInt32 ** PrimInt32]
+        ISWAP                                 ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
+        DUP_X1(endIndex.tpe, beginIndex.tpe)  ~[R ** JObject ** PrimInt32 ** PrimInt32]
+        ISUB                                  ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
+        DUP                                   ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JArray[JType]]
+        XNEWARRAY(tpe)                        ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
+        upCast                                ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
+        DUP2_X2(ErasedType.ObjectT(ErasedType.ObjectType.Casted(base.tpe)), ErasedType.Int32(), ErasedType.Int32(), ErasedType.Int32()) ~
+        NOP                                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32]
+        SWAP(ErasedType.ObjectT(ErasedType.ObjectType.Casted(base.tpe)), ErasedType.Int32()) ~
+        NOP                                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
+        pushInt32(0)                          ~
+        ISWAP                                 ~
+        ???//systemArrayCopy                       ~
+        //SWAP(???, ???)                        ~
+        //POP
       // arraycopy : object int object int int
 
       ???
-    case Expression.ApplyClo(exp, args, tpe, loc) => ??? //WithSource[R](loc) ~ pushNull()
+    case Expression.ApplyClo(exp, args, tpe, loc) => ??? //WithSource[R](loc) ~ pushNull
     case _ => ???
   }
 

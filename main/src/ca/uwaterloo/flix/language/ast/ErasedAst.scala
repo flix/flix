@@ -475,6 +475,8 @@ object ErasedAst {
 
     object ObjectType {
 
+      case class Casted[T <: JType](actual: ErasedType[T]) extends ObjectType
+
       case class Tuple(elms: List[ErasedType[JType]]) extends ObjectType
 
       case class Enum(sym: Symbol.EnumSym, args: List[ErasedType[JType]]) extends ObjectType
