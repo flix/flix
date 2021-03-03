@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.io.PrintWriter
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
@@ -26,10 +24,12 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, ChoiceMatch, InferMonad, Substitution, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.ToFailure
 import ca.uwaterloo.flix.util._
+
+import java.io.PrintWriter
 
 object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
@@ -147,7 +147,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       val instsVal = Validation.traverse(insts0)(visitInstance)
 
       instsVal.map {
-        insts => (insts.head.sym -> insts)
+        insts => insts.head.sym -> insts
       }
     }
 
@@ -701,7 +701,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Choose(exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -736,14 +736,49 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
 
         /**
-          * Constructs a Boolean constraint for the given choice rule `r`.
+          * Returns a transformed result type that encodes the Boolean constraint of each row pattern in the result type.
           *
-          * If a pattern is a wildcard it is trivially satisfied (could be `Absent` or `Present`).
+          * NB: Requires that the `ts` types are Choice-types.
+          */
+        def transformResultTypes(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[ResolvedAst.ChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+          def visitRuleBody(r: ResolvedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
+            case ResolvedAst.ChoiceRule(r, exp0) =>
+              val cond = mkOverApprox(isAbsentVars, isPresentVars, r)
+              val innerType = Type.freshVar(Kind.Star)
+              val isAbsentVar = Type.freshVar(Kind.Bool)
+              val isPresentVar = Type.freshVar(Kind.Bool)
+              for {
+                choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar), loc)
+              } yield (Type.mkAnd(cond, isAbsentVar), Type.mkAnd(cond, isPresentVar), innerType)
+          }
+
+          ///
+          /// Simply compute the mgu of the `ts` types if this is not a star choose.
+          ///
+          if (!star) {
+            return unifyTypeM(ts, loc)
+          }
+
+          ///
+          /// Otherwise construct a new Choice type with isAbsent and isPresent conditions that depend on each pattern row.
+          ///
+          for {
+            (isAbsentConds, isPresentConds, innerTypes) <- seqM(rs.zip(ts).map(p => visitRuleBody(p._1, p._2))).map(_.unzip3)
+            isAbsentCond = Type.mkOr(isAbsentConds)
+            isPresentCond = Type.mkOr(isPresentConds)
+            innerType <- unifyTypeM(innerTypes, loc)
+            resultType = Type.mkChoice(innerType, isAbsentCond, isPresentCond)
+          } yield resultType
+        }
+
+        /**
+          * Constructs a Boolean constraint for the given choice rule `r` which is an under-approximation.
+          *
+          * If a pattern is a wildcard it *must* always match.
           * If a pattern is `Absent`  its corresponding `isPresentVar` must be `false` (i.e. to prevent the value from being `Present`).
           * If a pattern is `Present` its corresponding `isAbsentVar`  must be `false` (i.e. to prevent the value from being `Absent`).
-          *
           */
-        def mkInnerConj(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[ResolvedAst.ChoicePattern]): Type =
+        def mkUnderApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[ResolvedAst.ChoicePattern]): Type =
           isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.True) {
             case (acc, (_, ResolvedAst.ChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
@@ -757,11 +792,31 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           }
 
         /**
+          * Constructs a Boolean constraint for the given choice rule `r` which is an over-approximation.
+          *
+          * If a pattern is a wildcard it *may* always match.
+          * If a pattern is `Absent` it *may* match if its corresponding `isAbsent` is `true`.
+          * If a pattern is `Present` it *may* match if its corresponding `isPresentVar`is `true`.
+          */
+        def mkOverApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[ResolvedAst.ChoicePattern]): Type =
+          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.True) {
+            case (acc, (_, ResolvedAst.ChoicePattern.Wild(_))) =>
+              // Case 1: No constraint is generated for a wildcard.
+              acc
+            case (acc, ((isAbsentVar, _), ResolvedAst.ChoicePattern.Absent(_))) =>
+              // Case 2: An `Absent` pattern may match if the `isAbsentVar` is `true`.
+              BoolUnification.mkAnd(acc, isAbsentVar)
+            case (acc, ((_, isPresentVar), ResolvedAst.ChoicePattern.Present(_, _, _))) =>
+              // Case 3: A `Present` pattern may match if the `isPresentVar` is `true`.
+              BoolUnification.mkAnd(acc, isPresentVar)
+          }
+
+        /**
           * Constructs a disjunction of the constraints of each choice rule.
           */
         def mkOuterDisj(m: List[List[ResolvedAst.ChoicePattern]], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type =
           m.foldLeft(Type.False) {
-            case (acc, rule) => BoolUnification.mkOr(acc, mkInnerConj(isAbsentVars, isPresentVars, rule))
+            case (acc, rule) => BoolUnification.mkOr(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule))
           }
 
         /**
@@ -818,7 +873,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
-          resultTyp <- unifyTypeM(ruleBodyTyp, loc)
+          resultTyp <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
           resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
@@ -1485,7 +1540,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Choose(exps, rules, loc) =>
+      case ResolvedAst.Expression.Choose(_, exps, rules, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
           case ResolvedAst.ChoiceRule(pat0, exp) =>

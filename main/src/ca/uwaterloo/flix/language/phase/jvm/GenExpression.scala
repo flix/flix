@@ -1396,7 +1396,9 @@ object GenExpression {
           // stack: [index, acc+, "tuple"]
           tpe
 
-        // Other cases than arrow should not happen due to type-checking phase
+        case _ =>
+          // Other cases than arrow should not happen due to type-checking phase
+          throw InternalCompilerException(s"Unexpected type")
       }
 
       // Now we have the tuple on the top of the stack

@@ -15,14 +15,51 @@
  */
 namespace TestChoice {
 
-    @test
-    def unbox01(): Bool = Choice.unbox(Present("a")) == "a"
+    use Choice.{assertAbsent, assertPresent, isAbsent, isPresent, unbox, map, invert};
 
     @test
-    def toOption01(): Bool = Choice.toOption(Absent): Option[Unit] == None
+    def assertAbsent01(): Bool = assertAbsent(Absent) == ()
 
     @test
-    def toOption02(): Bool = Choice.toOption(Present("a")) == Some("a")
+    def assertPresent01(): Bool = assertPresent(Present(123)) == ()
+
+    @test
+    def isAbsent01(): Bool = isAbsent(Absent)
+
+    @test
+    def isAbsent02(): Bool = not isAbsent(Present(123))
+
+    @test
+    def isPresent01(): Bool = isPresent(Present(123))
+
+    @test
+    def isPresent02(): Bool = not isPresent(Absent)
+
+    @test
+    def unbox01(): Bool = unbox(Present(123)) == 123
+
+    @test
+    def unbox02(): Bool = unbox(Present("Hello World")) == "Hello World"
+
+    @test
+    def map01(): Bool = isAbsent(map(x -> x, Absent))
+
+    @test
+    def map02(): Bool = isPresent(map(x -> x, Present(123)))
+
+    @test
+    def map03(): Bool = unbox(map(x -> x * 2, Present(42))) == 84
+
+    @test
+    def invert01(): Bool = unbox(invert(Absent, 42)) == 42
+
+    @test
+    def invert02(): Bool = isAbsent(invert(Present(42), 84))
+
+    @test
+    def invert03(): Bool = isAbsent(invert(invert(Absent, 42), 84))
+
+    @test
+    def invert04(): Bool = isPresent(invert(invert(invert(Absent, 21), 42), 84))
 
 }
-
