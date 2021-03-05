@@ -215,7 +215,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         scheme <- resolveScheme(sc0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
         exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), ns0, root))
-      } yield ResolvedAst.Sig(doc, ann, mod, sym, tparams, fparams, exp.headOption, scheme, eff, loc)
+        spec = ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc)
+      } yield ResolvedAst.Sig(sym, spec, exp.headOption)
   }
 
   /**
@@ -233,7 +234,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, root)
         scheme <- resolveScheme(sc0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
+        spec = ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc)
+      } yield ResolvedAst.Def(sym, spec, exp)
   }
 
   /**

@@ -72,7 +72,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * - a non-lint.
     * - a non-test.
     */
-  private def isTarget(defn: TypedAst.Def): Boolean = !isBenchmark(defn.ann) && !isLint(defn.ann) && !isTest(defn.ann)
+  private def isTarget(defn: TypedAst.Def): Boolean = !isBenchmark(defn.spec.ann) && !isLint(defn.spec.ann) && !isTest(defn.spec.ann)
 
   /**
     * Searches for lint instances in the given definition `defn0`.
@@ -80,7 +80,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns [[Nil]] if no lint instances are found.
     */
   private def visitDef(defn: Def, lints: List[Lint])(implicit flix: Flix): List[LinterError] =
-    lints.flatMap(visitExp(defn.exp, _))
+    lints.flatMap(visitExp(defn.impl.exp, _))
 
   /**
     * Searches for instances of the given `lint0` in the given expression `exp0`.
@@ -581,7 +581,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns all lints in the given AST `root`.
     */
   private def lintsOf(root: Root): List[Lint] = root.defs.foldLeft(Nil: List[Lint]) {
-    case (acc, (sym, defn)) if isLint(defn.ann) => lintOf(sym, defn.exp) match {
+    case (acc, (sym, defn)) if isLint(defn.spec.ann) => lintOf(sym, defn.impl.exp) match {
       case None => acc
       case Some(l) => l :: acc
     }

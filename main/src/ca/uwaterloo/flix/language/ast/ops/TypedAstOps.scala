@@ -267,7 +267,7 @@ object TypedAstOps {
 
     // Visit every definition.
     root.defs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-      case (macc, (sym, defn)) => macc ++ visitExp(defn.exp, getEnvFromParams(defn.fparams))
+      case (macc, (sym, defn)) => macc ++ visitExp(defn.impl.exp, getEnvFromParams(defn.spec.fparams))
     }
   }
 

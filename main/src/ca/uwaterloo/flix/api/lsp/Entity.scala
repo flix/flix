@@ -34,11 +34,11 @@ object Entity {
   }
 
   case class Def(e: TypedAst.Def) extends Entity {
-    def loc: SourceLocation = e.loc
+    def loc: SourceLocation = e.spec.loc
   }
 
   case class Sig(e: TypedAst.Sig) extends Entity {
-    def loc: SourceLocation = e.loc
+    def loc: SourceLocation = e.spec.loc
   }
 
   case class Enum(e: TypedAst.Enum) extends Entity {

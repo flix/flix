@@ -123,7 +123,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param root The AST root
     */
   def checkPats(tast: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, CompilationError] = for {
-    _ <- Expressions.checkPats(tast.exp, root)
+    _ <- Expressions.checkPats(tast.impl.exp, root)
   } yield tast
 
   object Expressions {

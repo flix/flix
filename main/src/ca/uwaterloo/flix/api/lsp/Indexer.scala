@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec, TypeParam}
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object Indexer {
@@ -50,14 +50,14 @@ object Indexer {
     */
   private def visitDef(def0: Def): Index = {
     val idx0 = Index.occurrenceOf(def0)
-    val idx1 = visitExp(def0.exp)
-    val idx2 = def0.fparams.foldLeft(Index.empty) {
+    val idx1 = visitExp(def0.impl.exp)
+    val idx2 = def0.spec.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    val idx3 = def0.tparams.foldLeft(Index.empty) {
+    val idx3 = def0.spec.tparams.foldLeft(Index.empty) {
       case (acc, tparam) => acc ++ visitTypeParam(tparam)
     }
-    val idx4 = visitScheme(def0.declaredScheme, def0.loc)
+    val idx4 = visitScheme(def0.spec.declaredScheme, def0.spec.loc)
     idx0 ++ idx1 ++ idx2 ++ idx3 ++ idx4
   }
 
@@ -65,7 +65,7 @@ object Indexer {
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, _, _, _, tparams, fparams, _, _, _, _, _) =>
+    case Sig(_, Spec(_, _, _, tparams, fparams, _, _, _), _) =>
       val idx1 = Index.occurrenceOf(sig0)
       val idx2 = fparams.foldLeft(Index.empty) {
         case (acc, fparam) => acc ++ visitFormalParam(fparam)
