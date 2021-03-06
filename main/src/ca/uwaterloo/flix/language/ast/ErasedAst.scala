@@ -372,51 +372,57 @@ object ErasedAst {
 
   sealed trait JType
 
+  // only exist at scala compile time, to help compiler writers
   object JType {
 
-    sealed trait PrimInt8 extends JType
+    sealed trait PrimInt8 extends JType with Cat1
 
-    sealed trait BoxedInt8 extends JType
+    sealed trait BoxedInt8 extends JType with Cat1
 
-    sealed trait PrimInt16 extends JType
+    sealed trait PrimInt16 extends JType with Cat1
 
-    sealed trait BoxedInt16 extends JType
+    sealed trait BoxedInt16 extends JType with Cat1
 
-    sealed trait PrimInt32 extends JType
+    sealed trait PrimInt32 extends JType with Cat1
 
-    sealed trait BoxedInt32 extends JType
+    sealed trait BoxedInt32 extends JType with Cat1
 
-    sealed trait PrimInt64 extends JType
+    sealed trait PrimInt64 extends JType with Cat2
 
-    sealed trait BoxedInt64 extends JType
+    sealed trait BoxedInt64 extends JType with Cat1
 
-    sealed trait PrimChar extends JType
+    sealed trait PrimChar extends JType with Cat1
 
-    sealed trait BoxedChar extends JType
+    sealed trait BoxedChar extends JType with Cat1
 
-    sealed trait PrimFloat32 extends JType
+    sealed trait PrimFloat32 extends JType with Cat1
 
-    sealed trait BoxedFloat32 extends JType
+    sealed trait BoxedFloat32 extends JType with Cat1
 
-    sealed trait PrimFloat64 extends JType
+    sealed trait PrimFloat64 extends JType with Cat2
 
-    sealed trait BoxedFloat64 extends JType
+    sealed trait BoxedFloat64 extends JType with Cat1
 
-    sealed trait JObject extends JType
+    sealed trait JObject extends JType with Cat1
 
-    sealed trait JUnit extends JType
+    sealed trait JUnit extends JType with Cat1
 
-    sealed trait JRef[T <: JType] extends JType
+    sealed trait JRef[T <: JType] extends JType with Cat1
 
-    sealed trait JArray[T <: JType] extends JType
+    sealed trait JArray[T <: JType] extends JType with Cat1
 
-    sealed trait JChan[T <: JType] extends JType
+    sealed trait JChan[T <: JType] extends JType with Cat1
 
-    sealed trait JLazy[T <: JType] extends JType
+    sealed trait JLazy[T <: JType] extends JType with Cat1
 
   }
 
+  // actual flix types
   sealed trait ErasedType[T <: JType]
+
+  sealed trait Cat1
+
+  sealed trait Cat2
 
   object ErasedType {
 

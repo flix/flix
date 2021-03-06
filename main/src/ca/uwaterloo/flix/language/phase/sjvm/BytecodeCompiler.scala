@@ -104,24 +104,22 @@ object BytecodeCompiler {
         arrayLength
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      WithSource[R](loc)                      ~[R ** JArray[JType]]
-        compileExp(base)                      ~[R ** JObject]
-        upCast                                ~[R ** JObject ** PrimInt32]
-        compileExp(beginIndex)                ~[R ** JObject ** PrimInt32 ** PrimInt32]
-        compileExp(endIndex)                  ~[R ** JObject ** PrimInt32 ** PrimInt32]
-        ISWAP                                 ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
-        DUP_X1(endIndex.tpe, beginIndex.tpe)  ~[R ** JObject ** PrimInt32 ** PrimInt32]
-        ISUB                                  ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
-        DUP                                   ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JArray[JType]]
-        XNEWARRAY(tpe)                        ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
-        upCast                                ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
-        DUP2_X2(ErasedType.ObjectT(ErasedType.ObjectType.Casted(base.tpe)), ErasedType.Int32(), ErasedType.Int32(), ErasedType.Int32()) ~
-        NOP                                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32]
-        SWAP(ErasedType.ObjectT(ErasedType.ObjectType.Casted(base.tpe)), ErasedType.Int32()) ~
-        NOP                                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
-        pushInt32(0)                          ~
-        ISWAP                                 ~
-        ???//systemArrayCopy                       ~
+      WithSource[R](loc)        ~[R ** JArray[JType]]
+        compileExp(base)        ~[R ** JObject]
+        upCast                  ~[R ** JObject ** PrimInt32]
+        compileExp(beginIndex)  ~[R ** JObject ** PrimInt32 ** PrimInt32]
+        compileExp(endIndex)    ~[R ** JObject ** PrimInt32 ** PrimInt32]
+        ISWAP                   ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
+        DUP_X1                  ~[R ** JObject ** PrimInt32 ** PrimInt32]
+        ISUB                    ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
+        DUP                     ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JArray[JType]]
+        XNEWARRAY(tpe)          ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
+        upCast                  ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
+        DUP2_X2_cat1_onCat1     ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32]
+        ISWAP                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
+        pushInt32(0)            ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
+        ISWAP                   ~[R]
+        ???//systemArrayCopy ~ ???
         //SWAP(???, ???)                        ~
         //POP
       // arraycopy : object int object int int

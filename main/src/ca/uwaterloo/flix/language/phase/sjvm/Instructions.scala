@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.ErasedAst.{ErasedType => ET, JType}
+import ca.uwaterloo.flix.language.ast.ErasedAst.{Cat1, Cat2, JType, ErasedType => ET}
 import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -27,16 +27,8 @@ object Instructions {
 
   // TODO QUESTION: which functions are "unsafe" irt. types? A: Leafs
 
-  def SWAP[R <: Stack, T1 <: JType, T2 <: JType](t1: ET[T1], t2: ET[T2]): F[R ** T2 ** T1] => F[R ** T1 ** T2] = (t1, t2) match {
-    case (
-      ET.Int32() | ET.Unit() | ET.Bool() | ET.BoxedBool() | ET.Char() | ET.BoxedChar() | ET.Float32() | ET.BoxedFloat64() | ET.Int8() | ET.BoxedInt8() | ET.Int16() | ET.BoxedInt16() | ET.Int32() | ET.BoxedInt32() | ET.BoxedInt64() | ET.Array(_) | ET.Channel(_) | ET.Lazy(_) | ET.Ref(_) | ET.ObjectT(_),
-      ET.Int32() | ET.Unit() | ET.Bool() | ET.BoxedBool() | ET.Char() | ET.BoxedChar() | ET.Float32() | ET.BoxedFloat64() | ET.Int8() | ET.BoxedInt8() | ET.Int16() | ET.BoxedInt16() | ET.Int32() | ET.BoxedInt32() | ET.BoxedInt64() | ET.Array(_) | ET.Channel(_) | ET.Lazy(_) | ET.Ref(_) | ET.ObjectT(_))
-    => ??? // jvm iswap
-    case (ET.Float64() | ET.Int64(), ET.Float64() | ET.Int64()) => ??? // error or multiple instructions
-    case _ => ??? // cases where one value is cat1 one is cat2
-  }
-
-  def ISWAP[R <: Stack]: F[R ** PrimInt32 ** PrimInt32] => F[R ** PrimInt32 ** PrimInt32] = ???
+  //todo: naming
+  def ISWAP[R <: Stack, T1 <: JType with Cat1, T2 <: JType with Cat1]: F[R ** T2 ** T1] => F[R ** T1 ** T2] = ???
 
   // instead of covariance
   def upCast[R <: Stack, T <: JType]: F[R ** JArray[T]] => F[R ** JObject] = ???
@@ -45,30 +37,19 @@ object Instructions {
 
   def POP[R <: Stack, T <: JType]: F[R ** T] => F[R] = ???
 
-  // TODO QUESTION: match on given types or copy per type?
-  //  def SWAP[R <: Stack, T <: JType, U <: JType](t: ET[T], u: ET[U]): F[R ** T ** U] => F[R ** U ** T] = (t, u) match {
-  //    case (ET.Int32(), ET.Int32()) => ISWAP
-  //    case _ => ???
-  //  }
+  def DUP_X1[R <: Stack, T1 <: JType with Cat1, T2 <: JType with Cat1]: F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = ???
 
-  // TODO: reverse 1 2
-  def DUP_X1[R <: Stack, T1 <: JType, T2 <: JType](t1: ET[T1], t2: ET[T2]): F[R ** T1 ** T2] => F[R ** T2 ** T1 ** T2] = (t1, t2) match {
-    case (ET.Int8() | ET.Int32() | ET.Int16(), ET.Int8() | ET.Int32() | ET.Int16()) => ???
-    case _ => ???
-  }
+  def DUP_X2_onCat1[R <: Stack, T1 <: JType with Cat1, T2 <: JType with Cat1, T3 <: JType with Cat1]: F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = ???
 
-  // TODO: This will have 4 versions, depending on the value categories
-  def DUP2_X2[R <: Stack, T1 <: JType, T2 <: JType, T3 <: JType, T4 <: JType](t1: ET[T1], t2: ET[T2], t3: ET[T3], t4: ET[T4]): F[R ** T4 ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T4 ** T3 ** T2 ** T1] = (t1, t2, t3, t4) match {
-    case (ET.Array(tpe), ET.Int32(), ET.Int32(), ET.Int32()) => ???
-    case _ => ???
-  }
+  def DUP_X2_onCat2[R <: Stack, T1 <: JType with Cat1, T2 <: JType with Cat2]: F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = ???
 
-  def systemArrayCopy[R <: Stack]: F[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32] => F[R] = ???
+  def DUP2_X2_cat1_onCat1[R <: Stack, T1 <: JType with Cat1, T2 <: JType with Cat1, T3 <: JType with Cat1, T4 <: JType with Cat1]: F[R ** T4 ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T4 ** T3 ** T2 ** T1] = ???
 
-  // also make void
-  def defMakeFunction[R <: Stack, T <: JType](t: ET[T], x: F[R]): F[R ** T] = ???
+  def DUP2_X2_cat2_onCat1[R <: Stack, T1 <: JType with Cat2, T2 <: JType with Cat1, T3 <: JType with Cat1]: F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = ???
 
-  def foo = defMakeFunction(ET.Int32(), defMakeFunction(ET.Int32(), null))
+  def DUP2_X2_cat1_onCat2[R <: Stack, T1 <: JType with Cat1, T2 <: JType with Cat1, T3 <: JType with Cat2]: F[R ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T3 ** T2 ** T1] = ???
+
+  def DUP2_X2_cat2_onCat2[R <: Stack, T1 <: JType with Cat2, T2 <: JType with Cat2]: F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = ???
 
   def DUP[R <: Stack]: F[R ** PrimInt32] => F[R ** PrimInt32 ** PrimInt32] = ???
 
@@ -93,8 +74,6 @@ object Instructions {
   def pushFloat64[R <: Stack](n: Double): F[R] => F[R ** PrimFloat64] = ???
 
   def pushChar[R <: Stack](c: Char): F[R] => F[R ** PrimChar] = ???
-
-  def arrayLength[R <: Stack]: F[R ** JArray[JType]] => F[R ** PrimInt32] = ???
 
   def BALoad[R <: Stack]: F[R ** JArray[PrimInt8] ** PrimInt32] => F[R ** PrimInt8] = ???
 
@@ -241,33 +220,43 @@ object Instructions {
   }
 
   def XNEWARRAY[R <: Stack, T <: JType](arrayType: ET[JArray[T]]): F[R] => F[R ** JArray[T]] = arrayType match {
-          case ET.Array(tpe) => tpe match {
-            case ET.Unit() => ???
-            case ET.Bool() => BOOLNEWARRAY
-            case ET.BoxedBool() => ???
-            case ET.Char() => CNEWARRAY
-            case ET.BoxedChar() => ???
-            case ET.Float32() => FNEWARRAY
-            case ET.BoxedFloat32() => ???
-            case ET.Float64() => DNEWARRAY
-            case ET.BoxedFloat64() => ???
-            case ET.Int8() => BNEWARRAY
-            case ET.BoxedInt8() => ???
-            case ET.Int16() => SNEWARRAY
-            case ET.BoxedInt16() => ???
-            case ET.Int32() => INEWARRAY
-            case ET.BoxedInt32() => ???
-            case ET.Int64() => LNEWARRAY
-            case ET.BoxedInt64() => ???
-            case ET.Array(tpe) => ???
-            case ET.Channel(tpe) => ???
-            case ET.Lazy(tpe) => ???
-            case ET.Ref(tpe) => ???
-            case ET.ObjectT(o) => ANEWARRAY
-            case ET.Var(id) => ???
-          }
+    case ET.Array(tpe) => tpe match {
+      case ET.Unit() => ???
+      case ET.Bool() => BOOLNEWARRAY
+      case ET.BoxedBool() => ???
+      case ET.Char() => CNEWARRAY
+      case ET.BoxedChar() => ???
+      case ET.Float32() => FNEWARRAY
+      case ET.BoxedFloat32() => ???
+      case ET.Float64() => DNEWARRAY
+      case ET.BoxedFloat64() => ???
+      case ET.Int8() => BNEWARRAY
+      case ET.BoxedInt8() => ???
+      case ET.Int16() => SNEWARRAY
+      case ET.BoxedInt16() => ???
+      case ET.Int32() => INEWARRAY
+      case ET.BoxedInt32() => ???
+      case ET.Int64() => LNEWARRAY
+      case ET.BoxedInt64() => ???
+      case ET.Array(tpe) => ???
+      case ET.Channel(tpe) => ???
+      case ET.Lazy(tpe) => ???
+      case ET.Ref(tpe) => ???
+      case ET.ObjectT(o) => ANEWARRAY
+      case ET.Var(id) => ???
+    }
     case _ => throw InternalCompilerException("unexpected non-array type")
   }
+
+  def systemArrayCopy[R <: Stack]: F[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32] => F[R] = ???
+
+  def arrayLength[R <: Stack]: F[R ** JArray[JType]] => F[R ** PrimInt32] = ???
+
+  // also make void
+  def defMakeFunction[R <: Stack, T <: JType](t: ET[T], x: F[R]): F[R ** T] = ???
+
+  def foo = defMakeFunction(ET.Int32(), defMakeFunction(ET.Int32(), null))
+
 
   implicit class ComposeOps[A, B](f: F[A] => F[B]) {
     def ~[C](that: F[B] => F[C]): F[A] => F[C] = ???
