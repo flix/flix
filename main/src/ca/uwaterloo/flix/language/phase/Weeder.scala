@@ -122,12 +122,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
   }
 
+  // MATT use visitTypeConstraint instead
   /**
     * Checks each super class to ensure the type parameter name matches `tparam`.
     */
-  private def visitSuperClasses(tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.SuperClass]): Validation[List[Name.QName], WeederError] = {
+  private def visitSuperClasses(tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint]): Validation[List[Name.QName], WeederError] = {
     traverse(superClasses) {
-      case ParsedAst.SuperClass(sp1, clazz, ident, sp2) =>
+      case ParsedAst.TypeConstraint(sp1, clazz, ident, sp2) =>
         if (ident.name == tparam.ident.name)
           clazz.toSuccess
         else
@@ -2096,9 +2097,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given type constraints `constraints0`.
     */
-  private def visitTypeConstraints(constraints0: Seq[ParsedAst.ConstrainedType]): List[WeededAst.ConstrainedType] = {
+  private def visitTypeConstraints(constraints0: Seq[ParsedAst.TypeConstraint]): List[WeededAst.TypeConstraint] = {
     constraints0.map {
-      case ParsedAst.ConstrainedType(sp1, tpe, classes, sp2) => WeededAst.ConstrainedType(visitType(tpe), classes.toList)
+      case ParsedAst.TypeConstraint(sp1, clazz, tparam, sp2) => WeededAst.TypeConstraint(clazz, tparam)
     }.toList
   }
 

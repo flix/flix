@@ -374,6 +374,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs.flatten, defs, loc)
   }
 
+  private def visitTypeConstraint(tconstr: WeededAst.TypeConstraint, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
+    case WeededAst.TypeConstraint(clazz, tparam) =>
+
+  }
   /**
     * Performs naming on the given constrained type `tconstr`.
     */
