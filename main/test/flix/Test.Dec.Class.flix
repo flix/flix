@@ -111,9 +111,9 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        lawless class D[a] extends C[a]
+        lawless class D[a] with C[a]
 
-        lawless class E[a] extends D[a]
+        lawless class E[a] with D[a]
 
         instance C[Int] {
             def f(_x: Int): Bool = true
