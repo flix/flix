@@ -81,7 +81,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
       }
 
-    case d: ParsedAst.Declaration.Def => visitDef(d)
+    case d: ParsedAst.Declaration.Def => visitDef(d, requiresPublic = false)
 
     case d: ParsedAst.Declaration.Law => visitLaw(d)
 
@@ -149,12 +149,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
 
-      mapN(annVal, modVal, formalsVal, effVal) {
-        case (as, mod, fparams, eff) =>
-          val ts = fparams.map(_.tpe.get)
-          val tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, tpe, eff, loc))
-      }
+      for {
+        res <- sequenceT(annVal, modVal, formalsVal, effVal)
+        (as, mod, fparams, eff) = res
+        _ <- requirePublic(mod, ident)
+        ts = fparams.map(_.tpe.get)
+        tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, tpe, eff, loc))
   }
 
   /**
@@ -167,7 +168,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tpe = visitType(tpe0)
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Unlawful))
-        defs <- traverse(defs0)(visitDef)
+        defs <- traverse(defs0)(visitDef(_, requiresPublic = true))
         constrs = visitTypeConstraints(constrs0.getOrElse(Seq.empty))
       } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, clazz.loc))
 
@@ -176,7 +177,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given def declaration `d0`.
     */
-  private def visitDef(d0: ParsedAst.Declaration.Def)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
+  private def visitDef(d0: ParsedAst.Declaration.Def, requiresPublic: Boolean)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
     case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
@@ -187,12 +188,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
 
-      mapN(annVal, modVal, formalsVal, expVal, effVal) {
-        case (as, mod, fparams, exp, eff) =>
-          val ts = fparams.map(_.tpe.get)
-          val tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, loc))
-      }
+      for {
+        res <- sequenceT(annVal, modVal, formalsVal, expVal, effVal)
+        (as, mod, fparams, exp, eff) = res
+        _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
+        ts = fparams.map(_.tpe.get)
+        tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, loc))
   }
 
   /**
@@ -1757,6 +1759,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       IllegalModifier(mkSL(m.sp1, m.sp2)).toFailure
   }
 
+ // MATT docs
+  private def requirePublic(mods: Ast.Modifiers, ident: Name.Ident): Validation[Unit, WeederError] = {
+    if (mods.isPublic) {
+      ().toSuccess
+    } else {
+      WeederError.IllegalPrivateDeclaration(ident, ident.loc).toFailure
+    }
+  }
+
   /**
     * Collects all constraints in the given AST `roots`.
     */
@@ -2010,7 +2021,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             seen += (ident.name -> param)
           }
 
-          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline)) flatMap {
+          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline), requiredModifiers = Set.empty) flatMap {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
                 IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure

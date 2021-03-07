@@ -433,7 +433,7 @@ object WeederError {
     * @param loc         the location where the error occurred.
     */
   case class MismatchedSuperClassTypeParameter(subTparam: Name.Ident, superTparam: Name.Ident, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Mismatched class type parameter '${superTparam.name}''"
+    def summary: String = s"Mismatched class type parameter '${superTparam.name}'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -443,6 +443,21 @@ object WeederError {
       vt << Code(loc, "mismatched class type parameter.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << s" Change the superclass type parameter to '${subTparam.name}'."
+    }
+  }
+
+  // MATT docs
+  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Illegal private signature '${ident.name}'."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal private declaration '" << Red(ident.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal private declaration") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Mark the declaration as 'pub'."
     }
   }
 
