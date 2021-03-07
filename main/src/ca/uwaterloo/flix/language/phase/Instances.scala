@@ -166,7 +166,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
                 ().toSuccess
               } else {
                 // Case 2.2: the schemes do not match
-                InstanceError.MismatchedSignatures(defn.loc, expectedScheme, defn.declaredScheme).toFailure
+                InstanceError.MismatchedSignatures(sig.sym, defn.loc, expectedScheme, defn.declaredScheme).toFailure
               }
           }
       }

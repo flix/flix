@@ -58,11 +58,12 @@ object InstanceError {
   /**
     * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
     *
+    * @param sigSym   the mismatched signature
     * @param loc      the location of the definition
     * @param expected the scheme of the signature
     * @param actual   the scheme of the definition
     */
-  case class MismatchedSignatures(loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
+  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
     def summary: String = "Mismatched signature."
 
     def message: VirtualTerminal = {
@@ -71,8 +72,10 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, "mismatched signature.") << NewLine
       vt << NewLine
+      vt << "Mismatched signature '" << Red(sigSym.name) << "' declared in class '" << Red(sigSym.clazz.name) << "'." << NewLine
+      vt << NewLine
       vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)}" << NewLine
-      vt << s"Actual scheme: ${FormatScheme.formatScheme(actual)}" << NewLine
+      vt << s"Actual scheme:   ${FormatScheme.formatScheme(actual)}" << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Modify the definition to match the signature."
     }
