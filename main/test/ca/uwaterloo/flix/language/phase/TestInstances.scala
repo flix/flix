@@ -410,7 +410,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.MissingSuperClassInstance.01") {
     val input =
       """
-        |class A[a] extends B[a]
+        |class A[a] with B[a]
         |class B[a]
         |
         |instance A[Int]
@@ -422,7 +422,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.MissingSuperClassInstance.02") {
     val input =
       """
-        |class A[a] extends B[a], C[a]
+        |class A[a] with B[a], C[a]
         |class B[a]
         |class C[a]
         |
@@ -436,7 +436,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.MissingSuperClassInstance.03") {
     val input =
       """
-        |class A[a] extends B[a]
+        |class A[a] with B[a]
         |class B[a]
         |
         |instance A[Int]
@@ -450,7 +450,7 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |lawless class A[a]
-        |class B[a] extends A[a]
+        |class B[a] with A[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.LawlessSuperClass](result)
@@ -461,7 +461,7 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |lawless class A[a]
         |class B[a]
-        |class C[a] extends A[a], B[a]
+        |class C[a] with A[a], B[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.LawlessSuperClass](result)
