@@ -287,7 +287,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Var(sym, tpe, loc) => ??? // TODO: Translate to BodyTerm.Var
 
-    case Pattern.Unit(loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc))
 
     case Pattern.True(loc) => ??? // TODO: Translate to BodyTerm.Lit
 
@@ -309,7 +309,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.BigInt(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
 
-    case Pattern.Str(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc))
 
     case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.") // TODO: Support tags???
 
@@ -342,5 +342,7 @@ object Lowering extends Phase[Root, Root] {
     val innerExp = Expression.Unit(loc)
     Expression.Tag(sym, Name.Tag(tag, loc), innerExp, tpe, Type.Pure, loc)
   }
+
+  private def mkUnsafeBox(exp: Expression): Expression = ??? // TODO
 
 }
