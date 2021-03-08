@@ -153,13 +153,28 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.ArrayNew(e, l, t, eff, loc)
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+      val b = visitExp(base)
+      val i = visitExp(index)
+      val t = visitType(tpe)
+      Expression.ArrayLoad(b, i, t, eff, loc)
 
-    case Expression.ArrayLength(base, eff, loc) => ???
+    case Expression.ArrayLength(base, eff, loc) =>
+      val b = visitExp(base)
+      Expression.ArrayLength(b, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, loc) => ???
+    case Expression.ArrayStore(base, index, elm, loc) =>
+      val b = visitExp(base)
+      val i = visitExp(index)
+      val e = visitExp(elm)
+      Expression.ArrayStore(b, i, e, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ???
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      val b = visitExp(base)
+      val bi = visitExp(beginIndex)
+      val ei = visitExp(endIndex)
+      val t = visitType(tpe)
+      Expression.ArraySlice(b, bi, ei, t, loc)
 
     case Expression.Ref(exp, tpe, eff, loc) => ???
 
