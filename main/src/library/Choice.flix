@@ -62,16 +62,15 @@ namespace Choice {
             case Present(x) => x
         }
 
+    ///
+    /// Returns `v` if `o` is `Present(v).` Otherwise returns `d`.
+    ///
+    pub def getWithDefault(c: Choice[s, _, _], d: s): s =
+        choose c {
+            case Absent     => d
+            case Present(v) => v
+        }
 
-// TODO
-//    ///
-//    /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
-//    ///
-//    @Time(1) @Space(1)
-//    pub def getWithDefault(o: Option[a], d: a): a = match o {
-//        case None => d
-//        case Some(v) => v
-//    }
 // TODO
 //    ///
 //    /// Returns `o1` if it is `Some(v)`. Otherwise returns `o2`.

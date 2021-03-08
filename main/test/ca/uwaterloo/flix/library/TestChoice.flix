@@ -42,6 +42,12 @@ namespace TestChoice {
     def unbox02(): Bool = unbox(Present("Hello World")) == "Hello World"
 
     @test
+    def getWithDefault01(): Bool = getWithDefault(Absent, 42) == 42
+
+    @test
+    def getWithDefault02(): Bool = getWithDefault(Present(21), 42) == 21
+
+    @test
     def map01(): Bool = isAbsent(map(x -> x, Absent))
 
     @test
