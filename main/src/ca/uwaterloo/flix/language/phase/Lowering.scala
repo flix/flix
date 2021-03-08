@@ -92,18 +92,31 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Lambda(p, e, t, loc)
 
-    case Expression.Apply(exp, exps, tpe, eff, loc) => ???
+    case Expression.Apply(exp, exps, tpe, eff, loc) => ??? // TODO
 
     case Expression.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Unary(sop, e, t, eff, loc)
 
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.Binary(sop, e1, e2, t, eff, loc)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.Let(sym, e1, e2, t, eff, loc)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ???
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val t = visitType(tpe)
+      Expression.IfThenElse(e1, e2, e3, t, eff, loc)
 
     case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
 
