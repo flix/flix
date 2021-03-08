@@ -132,7 +132,9 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Tuple(elms, tpe, eff, loc) => ???
 
-    case Expression.RecordEmpty(tpe, loc) => ???
+    case Expression.RecordEmpty(tpe, loc) =>
+      val t = visitType(tpe)
+      Expression.RecordEmpty(t, loc)
 
     case Expression.RecordSelect(exp, field, tpe, eff, loc) => ???
 
@@ -140,9 +142,16 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ???
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+    case Expression.ArrayLit(elms, tpe, eff, loc) =>
+      val es = visitExps(elms)
+      val t = visitType(tpe)
+      Expression.ArrayLit(es, t, eff, loc)
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+      val e = visitExp(elm)
+      val l = visitExp(len)
+      val t = visitType(tpe)
+      Expression.ArrayNew(e, l, t, eff, loc)
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
 
@@ -229,6 +238,8 @@ object Lowering extends Phase[Root, Root] {
       // TODO: Call into solver
       ???
   }
+
+  private def visitExps(exps: List[Expression]): List[Expression] = exps.map(visitExp)
 
   private def visitType(t: Type): Type = ???
 
