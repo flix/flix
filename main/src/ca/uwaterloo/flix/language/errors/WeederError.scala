@@ -446,7 +446,12 @@ object WeederError {
     }
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate an illegal private declaration.
+    *
+    * @param ident the name of the declaration.
+    * @param loc   the location where the error occurred.
+    */
   case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
     def summary: String = s"Illegal private signature '${ident.name}'."
 

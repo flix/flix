@@ -1759,7 +1759,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       IllegalModifier(mkSL(m.sp1, m.sp2)).toFailure
   }
 
- // MATT docs
+  /**
+    * Returns an error if `public` is not among the modifiers in `mods`.
+    */
   private def requirePublic(mods: Ast.Modifiers, ident: Name.Ident): Validation[Unit, WeederError] = {
     if (mods.isPublic) {
       ().toSuccess
