@@ -18,11 +18,11 @@ pub enum UnsafeBox[a] {
 }
 
 instance Eq[UnsafeBox[a]] {
-    def eq(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x, y) {
+    pub def eq(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x, y) {
         case (UnsafeBox(v1, cmp), UnsafeBox(v2, _)) => cmp(v1, v2) == Comparison.EqualTo
     }
 
-    def neq(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = not (x == y)
+    pub def neq(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = not (x == y)
 }
 
 instance Order[UnsafeBox[a]] {
@@ -30,24 +30,24 @@ instance Order[UnsafeBox[a]] {
     ///
     /// Compares the values in the boxes `x` and `y`.
     ///
-    def compare(x: UnsafeBox[a], y: UnsafeBox[a]): Comparison = match (x, y) {
+    pub def compare(x: UnsafeBox[a], y: UnsafeBox[a]): Comparison = match (x, y) {
         case (UnsafeBox(v1, cmp), UnsafeBox(v2, _)) => cmp(v1, v2)
     }
 
-    def less(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
+    pub def less(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
+    pub def lessEqual(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
+    pub def greater(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
+    pub def greaterEqual(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
