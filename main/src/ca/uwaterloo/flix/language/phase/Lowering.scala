@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, Pattern, Predicate, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Def, Expression, Pattern, Predicate, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -44,7 +44,7 @@ object Lowering extends Phase[Root, Root] {
 
   private def visitDef(defn: Def): Def = {
     val e = visitExp(defn.exp)
-    defn.copy(exp =  e)
+    defn.copy(exp = e)
   }
 
   private def visitExp(exp0: Expression): Expression = exp0 match {
@@ -172,18 +172,32 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Force(exp, tpe, eff, loc) => ???
 
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ???
+    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
+      // TODO: Call into solver
+      ???
 
-    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => ???
+    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
+      // TODO: Call into solver
+      ???
 
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
+    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+      // TODO: Call into solver
+      ???
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+      // TODO: Call into solver
+      ???
 
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
+      // TODO: Call into solver
+      ???
 
     case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ???
   }
+
+  private def visitType(t: Type): Type = ???
+
+  private def visitConstraint(c: Constraint): Expression = ???
 
   private def visitHeadPred(p: Predicate.Head): Expression = p match {
     case Head.Atom(pred, den, terms, tpe, loc) =>
@@ -198,7 +212,9 @@ object Lowering extends Phase[Root, Root] {
       val ts = terms.map(visitBodyTerm)
 
       ???
-    case Body.Guard(exp, loc) => ???
+    case Body.Guard(exp, loc) =>
+
+      ???
   }
 
   private def visitHeadTerm(e: Expression): Expression = ???
@@ -225,9 +241,6 @@ object Lowering extends Phase[Root, Root] {
     case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => ??? // TODO: Translate to BodyTerm.Lit
   }
 
-  /**
-    * Returns an expression that evaluates the given polarity `p` to a Flix expression.
-    */
   private def visitPolarity(p: Ast.Polarity, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = p match {
     case Polarity.Positive =>
       val (_, tpe) = Scheme.instantiate(root.enums(PolaritySym).sc, InstantiateMode.Flexible)
