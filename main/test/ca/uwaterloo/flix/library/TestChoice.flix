@@ -15,7 +15,7 @@
  */
 namespace TestChoice {
 
-    use Choice.{assertAbsent, assertPresent, isAbsent, isPresent, unbox, map, invert};
+    use Choice.{assertAbsent, assertPresent, isAbsent, isPresent, unbox, getWithDefault, map, invert};
 
     @test
     def assertAbsent01(): Bool = assertAbsent(Absent) == ()

@@ -126,16 +126,21 @@ namespace Choice {
 //    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e =
 //        traverseHelper(f, xs, _ -> None, ys -> Some(ys))
 
-// TODO
-//    ///
-//    /// Returns `Some((v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
-//    ///
-//    @Time(1) @Space(1)
-//    pub def zip(o1: Option[a], o2: Option[b]): Option[(a, b)] = match (o1, o2) {
-//        case (None, _) => None
-//        case (_, None) => None
-//        case (Some(v1), Some(v2)) => Some((v1, v2))
-//    }
+    ///
+    /// Returns `Present((v1, v2))` if `c1` is `Present(v1)` and `c2` is `Present(v2)`.
+    ///
+    /// Otherwise returns `None`.
+    ///
+    // TODO: Add type signature
+    pub def zip(): Unit =
+        let _f = (x, y) -> choose* (x, y) {
+            case (Absent, Absent)           => Absent
+            case (Absent, Present(_))       => Absent
+            case (Present(_), Absent)       => Absent
+            case (Present(v1), Present(v2)) => Present((v1, v2))
+        };
+        ()
+
 // TODO
 //    ///
 //    /// Returns `(Some(v1), Some(v2))` if `o` is `Some((v1, v2))`. Otherwise returns `(None, None)`.
@@ -144,12 +149,6 @@ namespace Choice {
 //    pub def unzip(o: Option[(a, b)]): (Option[a], Option[b]) = match o {
 //        case None => (None, None)
 //        case Some((v1, v2)) => (Some(v1), Some(v2))
-//    }
-
-// TODO
-//    pub def foreach(f: a ~> Unit, o: Option[a]): Unit & Impure = match o {
-//        case None    => ()
-//        case Some(v) => f(v)
 //    }
 
     ///
