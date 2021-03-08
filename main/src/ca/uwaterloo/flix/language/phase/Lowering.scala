@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Def, Expression, FormalParam, Pattern, Predicate, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Lowering extends Phase[Root, Root] {
 
@@ -283,25 +283,43 @@ object Lowering extends Phase[Root, Root] {
   private def visitHeadTerm(e: Expression): Expression = ???
 
   private def visitBodyTerm(p: Pattern): Expression = p match {
-    case Pattern.Wild(tpe, loc) => ??? // TODO: Support ?
+    case Pattern.Wild(tpe, loc) => ??? // TODO: Translate to ???
+
     case Pattern.Var(sym, tpe, loc) => ??? // TODO: Translate to BodyTerm.Var
+
     case Pattern.Unit(loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.True(loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.False(loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.Char(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.Float32(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.Float64(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.Int8(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.Int16(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.Int32(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.Int64(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.BigInt(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
     case Pattern.Str(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
-    case Pattern.Tag(sym, tag, pat, tpe, loc) => ??? // TODO: Translate to BodyTerm.Lit
-    case Pattern.Tuple(elms, tpe, loc) => ??? // TODO: Translate to BodyTerm.Lit
-    case Pattern.Array(elms, tpe, loc) => ??? // TODO: Translate to BodyTerm.Lit
-    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => ??? // TODO: Translate to BodyTerm.Lit
-    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => ??? // TODO: Translate to BodyTerm.Lit
+
+    case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.") // TODO: Support tags???
+
+    case Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.")
+
+    case Pattern.Array(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.")
+
+    case Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.")
+
+    case Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.")
   }
 
   /**
