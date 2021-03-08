@@ -118,7 +118,11 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.IfThenElse(e1, e2, e3, t, eff, loc)
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.Stm(e1, e2, t, eff, loc)
 
     case Expression.Match(exp, rules, tpe, eff, loc) => ???
 
@@ -186,11 +190,20 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
 
-    case Expression.Spawn(exp, tpe, eff, loc) => ???
+    case Expression.Spawn(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Spawn(e, t, eff, loc)
 
-    case Expression.Lazy(exp, tpe, loc) => ???
+    case Expression.Lazy(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Lazy(e, t, loc)
 
-    case Expression.Force(exp, tpe, eff, loc) => ???
+    case Expression.Force(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Force(e, t, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
       // TODO: Call into solver
@@ -212,7 +225,9 @@ object Lowering extends Phase[Root, Root] {
       // TODO: Call into solver
       ???
 
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ???
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
+      // TODO: Call into solver
+      ???
   }
 
   private def visitType(t: Type): Type = ???
@@ -263,6 +278,9 @@ object Lowering extends Phase[Root, Root] {
     case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => ??? // TODO: Translate to BodyTerm.Lit
   }
 
+  /**
+    * Translates a [[Polarity]] AST node to an expression.
+    */
   private def visitPolarity(p: Ast.Polarity, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = p match {
     case Polarity.Positive =>
       val (_, tpe) = Scheme.instantiate(root.enums(PolaritySym).sc, InstantiateMode.Flexible)
