@@ -71,15 +71,16 @@ namespace Choice {
             case Present(v) => v
         }
 
-// TODO
-//    ///
-//    /// Returns `o1` if it is `Some(v)`. Otherwise returns `o2`.
-//    ///
-//    @Time(1) @Space(1)
-//    pub def withDefault(o1: Option[a], o2: Option[a]): Option[a] = match o1 {
-//        case None => o2
-//        case Some(_) => o1
-//    }
+    ///
+    /// Returns `c1` if it is `Present(v)`. Otherwise returns `c2`.
+    ///
+    pub def withDefault[s :# Type, b :# Bool, c :# Bool, d :# Bool, e :# Bool, f :# Bool]
+                       (c1: Choice[s, b, c], c2: Choice[s, d, e]): Choice[s, (b and d) or (c and f), (b and e) or c] =
+        choose* c1 {
+            case Absent     => c2
+            case Present(v) => Present(v)
+        }
+
 // TODO
 //    ///
 //    /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
@@ -127,31 +128,6 @@ namespace Choice {
 //        traverseHelper(f, xs, _ -> None, ys -> Some(ys))
 
     ///
-    /// Returns `Present((v1, v2))` if `c1` is `Present(v1)` and `c2` is `Present(v2)`.
-    ///
-    /// Otherwise returns `None`.
-    ///
-    // TODO: Add type signature
-    pub def zip(): Unit =
-        let _f = (x, y) -> choose* (x, y) {
-            case (Absent, Absent)           => Absent
-            case (Absent, Present(_))       => Absent
-            case (Present(_), Absent)       => Absent
-            case (Present(v1), Present(v2)) => Present((v1, v2))
-        };
-        ()
-
-// TODO
-//    ///
-//    /// Returns `(Some(v1), Some(v2))` if `o` is `Some((v1, v2))`. Otherwise returns `(None, None)`.
-//    ///
-//    @Time(1) @Space(1)
-//    pub def unzip(o: Option[(a, b)]): (Option[a], Option[b]) = match o {
-//        case None => (None, None)
-//        case Some((v1, v2)) => (Some(v1), Some(v2))
-//    }
-
-    ///
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
     pub def map[s :# Type, t :# Type, a :# Bool, p :# Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
@@ -179,5 +155,34 @@ namespace Choice {
         case Absent     => Present(v)
         case Present(_) => Absent
     }
+
+    ///
+    /// Returns `Present((v1, v2))` if `c1` is `Present(v1)` and `c2` is `Present(v2)`.
+    ///
+    /// Otherwise returns `None`.
+    ///
+    // TODO: Add type signature
+    pub def zip(): Unit =
+        let _f = (x, y) -> choose* (x, y) {
+            case (Absent, Absent)           => Absent
+            case (Absent, Present(_))       => Absent
+            case (Present(_), Absent)       => Absent
+            case (Present(v1), Present(v2)) => Present((v1, v2))
+        };
+        ()
+
+    ///
+    /// Returns `(Present(v1), Present(v2))` if `c` is `Present((v1, v2))`.
+    ///
+    /// Otherwise returns `(None, None)`.
+    ///
+    /// Note that `unzip` loses all information about absence and presence.
+    ///
+    pub def unzip[s :# Type, t :# Type, a :# Bool, p :# Bool]
+                 (c: Choice[(s, t), a, p]): (Choice[s, true, true], Choice[t, true, true]) =
+        choose c {
+            case Absent     => (Absent, Absent)
+            case Present(v) => (Present(fst(v)), Present(snd(v)))
+        }
 
 }
