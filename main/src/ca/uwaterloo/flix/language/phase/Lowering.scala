@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Def, Expression, Pattern, Predicate, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Def, Expression, FormalParam, Pattern, Predicate, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -48,49 +48,56 @@ object Lowering extends Phase[Root, Root] {
   }
 
   private def visitExp(exp0: Expression): Expression = exp0 match {
-    case Expression.Unit(loc) => ???
+    case Expression.Unit(_) => exp0
 
-    case Expression.Null(tpe, loc) => ???
+    case Expression.Null(_, _) => exp0
 
-    case Expression.True(loc) => ???
+    case Expression.True(_) => exp0
 
-    case Expression.False(loc) => ???
+    case Expression.False(_) => exp0
 
-    case Expression.Char(lit, loc) => ???
+    case Expression.Char(_, _) => exp0
 
-    case Expression.Float32(lit, loc) => ???
+    case Expression.Float32(_, _) => exp0
 
-    case Expression.Float64(lit, loc) => ???
+    case Expression.Float64(_, _) => exp0
 
-    case Expression.Int8(lit, loc) => ???
+    case Expression.Int8(_, _) => exp0
 
-    case Expression.Int16(lit, loc) => ???
+    case Expression.Int16(_, _) => exp0
 
-    case Expression.Int32(lit, loc) => ???
+    case Expression.Int32(_, _) => exp0
 
-    case Expression.Int64(lit, loc) => ???
+    case Expression.Int64(_, _) => exp0
 
-    case Expression.BigInt(lit, loc) => ???
+    case Expression.BigInt(_, _) => exp0
 
-    case Expression.Str(lit, loc) => ???
+    case Expression.Str(_, _) => exp0
 
-    case Expression.Default(tpe, loc) => ???
+    case Expression.Default(_, _) => exp0
 
-    case Expression.Wild(tpe, loc) => ???
+    case Expression.Wild(_, _) => exp0
 
-    case Expression.Var(sym, tpe, loc) => ???
+    case Expression.Var(_, _, _) => exp0
 
-    case Expression.Def(sym, tpe, loc) => ???
+    case Expression.Def(_, _, _) => exp0
 
-    case Expression.Sig(sym, tpe, loc) => ???
+    case Expression.Sig(_, _, _) => exp0
 
-    case Expression.Hole(sym, tpe, eff, loc) => ???
+    case Expression.Hole(_, _, _, _) => exp0
 
-    case Expression.Lambda(fparam, exp, tpe, loc) => ???
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
+      val p = visitFormalParam(fparam)
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Lambda(p, e, t, loc)
 
     case Expression.Apply(exp, exps, tpe, eff, loc) => ???
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) => ???
+    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Unary(sop, e, t, eff, loc)
 
     case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => ???
 
@@ -196,6 +203,8 @@ object Lowering extends Phase[Root, Root] {
   }
 
   private def visitType(t: Type): Type = ???
+
+  private def visitFormalParam(fparam: FormalParam): FormalParam = ???
 
   private def visitConstraint(c: Constraint): Expression = ???
 
