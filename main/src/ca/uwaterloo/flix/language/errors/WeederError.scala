@@ -453,7 +453,7 @@ object WeederError {
     * @param loc   the location where the error occurred.
     */
   case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Illegal private signature '${ident.name}'."
+    def summary: String = s"Illegal private declaration '${ident.name}'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
