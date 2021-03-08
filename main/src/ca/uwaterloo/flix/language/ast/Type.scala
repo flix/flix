@@ -705,6 +705,14 @@ object Type {
   }
 
   /**
+    * Returns the type `Or(tpe1, Or(tpe2, ...))`.
+    */
+  def mkOr(tpes: List[Type]): Type = tpes match {
+    case Nil => Type.False
+    case x :: xs => mkOr(x, mkOr(xs))
+  }
+
+  /**
     * Returns the type `tpe1 => tpe2`.
     */
   def mkImplies(tpe1: Type, tpe2: Type): Type = Type.mkOr(Type.mkNot(tpe1), tpe2)

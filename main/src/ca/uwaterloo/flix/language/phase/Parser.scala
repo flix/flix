@@ -139,11 +139,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -222,7 +222,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def OptSuperClasses = rule {
-        optional(optWS ~ keyword("extends") ~ optWS ~ oneOrMore(SuperClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.SuperClass]]) => o.getOrElse(Seq.empty))
+        optional(optWS ~ keyword("with") ~ optWS ~ oneOrMore(SuperClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.SuperClass]]) => o.getOrElse(Seq.empty))
       }
 
       def SuperClass = rule {

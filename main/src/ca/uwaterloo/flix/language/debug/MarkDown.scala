@@ -22,7 +22,7 @@ object MarkDown {
     */
   def escape(s: String): String =
     s
-      .replaceAllLiterally("[", "\\[")
-      .replaceAllLiterally("]", "\\]")
+      .replace("[", "\\[")
+      .replace("]", "\\]")
 
 }
