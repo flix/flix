@@ -15,22 +15,22 @@ enum Dist {
 }
 
 instance LowerBound[Dist] {
-    def minValue(): Dist = Dist.Bot
+    pub def minValue(): Dist = Dist.Bot
 }
 
 instance Eq[Dist] {
-    def eq(x: Dist, y: Dist): Bool = match (x, y) {
+    pub def eq(x: Dist, y: Dist): Bool = match (x, y) {
         case (Top, Top) => true
         case (Dst(a), Dst(b)) => a == b
         case (Bot, Bot) => true
         case _ => false
     }
 
-    def neq(x: Dist, y: Dist): Bool = not (x == y)
+    pub def neq(x: Dist, y: Dist): Bool = not (x == y)
 }
 
 instance Hash[Dist] {
-    def hash(x: Dist): Int32 = match x {
+    pub def hash(x: Dist): Int32 = match x {
         case Top    => 0
         case Bot    => 1
         case Dst(n) => n + 2
@@ -38,7 +38,7 @@ instance Hash[Dist] {
 }
 
 instance PartialOrder[Dist] {
-    def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
+    pub def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
         case (_, Top) => true
         case (Bot, _) => true
         case (Dst(n1), Dst(n2)) => n1 >= n2
@@ -47,7 +47,7 @@ instance PartialOrder[Dist] {
 }
 
 instance JoinLattice[Dist] {
-    def leastUpperBound(x: Dist, y: Dist): Dist = match (x, y) {
+    pub def leastUpperBound(x: Dist, y: Dist): Dist = match (x, y) {
         case (Bot, _)           => y
         case (_, Bot)           => x
         case (Dst(n1), Dst(n2)) => Dst(Int32.min(n1, n2))
@@ -56,7 +56,7 @@ instance JoinLattice[Dist] {
 }
 
 instance MeetLattice[Dist] {
-    def greatestLowerBound(x: Dist, y: Dist): Dist = match (x, y) {
+    pub def greatestLowerBound(x: Dist, y: Dist): Dist = match (x, y) {
         case (Top, x) => x
         case (x, Top) => x
         case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))
@@ -65,7 +65,7 @@ instance MeetLattice[Dist] {
 }
 
 instance ToString[Dist] {
-    def toString(x: Dist): String = match x {
+    pub def toString(x: Dist): String = match x {
         case Top    => "Top"
         case Dst(n) => "Dst(${n})"
         case Bot    => "Bot"

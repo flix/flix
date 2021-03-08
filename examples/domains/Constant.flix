@@ -15,17 +15,17 @@ namespace Domain/Constant {
     }
 
     instance Eq[Constant] {
-        def eq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+        pub def eq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
             case (Top, Top)         => true
             case (Cst(x), Cst(y))   => x == y
             case (Bot, Bot)         => true
             case _                  => false
         }
-        def neq(e1: Constant, e2: Constant): Bool = not (e1 == e2)
+        pub def neq(e1: Constant, e2: Constant): Bool = not (e1 == e2)
     }
 
     instance Hash[Constant] {
-        def hash(x: Constant): Int32 = match x {
+        pub def hash(x: Constant): Int32 = match x {
             case Top    => 1
             case Bot    => 2
             case Cst(n) => n
@@ -279,23 +279,23 @@ namespace Domain/Constant {
     pub def lessEqual(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     instance LowerBound[Constant] {
-        def minValue(): Constant = Constant.Bot
+        pub def minValue(): Constant = Constant.Bot
     }
 
     instance PartialOrder[Constant] {
-        def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
+        pub def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
     }
 
     instance JoinLattice[Constant] {
-        def leastUpperBound(x: Constant, y: Constant): Constant = lub(x, y)
+        pub def leastUpperBound(x: Constant, y: Constant): Constant = lub(x, y)
     }
 
     instance MeetLattice[Constant] {
-        def greatestLowerBound(x: Constant, y: Constant): Constant = glb(x, y)
+        pub def greatestLowerBound(x: Constant, y: Constant): Constant = glb(x, y)
     }
 
     instance ToString[Constant] {
-        def toString(x: Constant): String = match x {
+        pub def toString(x: Constant): String = match x {
             case Top    => "Top"
             case Cst(n) => "Cst(${n})"
             case Bot    => "Bot"
