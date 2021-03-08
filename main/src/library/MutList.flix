@@ -22,25 +22,25 @@ pub enum MutList[a] {
 }
 
 instance ToString[MutList[a]] with [a : ToString] {
-    def toString(v: MutList[a]): String = {
+    pub def toString(v: MutList[a]): String = {
         let s = MutList.formatWith(x -> "${x}", ", ", v) as & Pure;
         "MutList#{${s}}"
     }
 }
 
 instance Functor[MutList] {
-    def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
+    pub def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
 }
 
 instance Copy[MutList[a]] {
-    def copy(v: MutList[a]): MutList[a] & e =
+    pub def copy(v: MutList[a]): MutList[a] & e =
         let MutList(a, l) = v;
         MutList(ref Copy.copy(deref a), ref (deref l)) as & e
 }
 
 instance Foldable[MutList] {
-    def foldLeft(f: (b, a) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldLeft(f, s, v) as & e
-    def foldRight(f: (a, b) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldRight(f, s, v) as & e
+    pub def foldLeft(f: (b, a) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldLeft(f, s, v) as & e
+    pub def foldRight(f: (a, b) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldRight(f, s, v) as & e
 }
 
 namespace MutList {

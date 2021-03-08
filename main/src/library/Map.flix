@@ -26,41 +26,41 @@ enum Map[k, v] {
 }
 
 instance ToString[Map[k, v]] with [k : ToString, v : ToString] {
-    def toString(m: Map[k, v]): String =
+    pub def toString(m: Map[k, v]): String =
         let s = Map.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m);
         "Map#{${String.dropRight(2, s)}}"
 }
 
 instance Hash[Map[k, v]] with [k : Hash, v : Hash] {
-    def hash(m: Map[k, v]): Int =
+    pub def hash(m: Map[k, v]): Int =
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
 
 instance Eq[Map[k, v]] with[k : Eq, k : Order, v : Eq] {
 
-    def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
+    pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
         Map.isSubmapOf(m1, m2) and Map.isSubmapOf(m2, m1)
 
-    def neq(m1: Map[k, v], m2: Map[k, v]): Bool = not (m1 == m2)
+    pub def neq(m1: Map[k, v], m2: Map[k, v]): Bool = not (m1 == m2)
 
 }
 
 instance Order[Map[k, v]] with [k : Order, v : Eq, v : Order] {
 
-    def less(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
+    pub def less(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
+    pub def lessEqual(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
+    pub def greater(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
+    pub def greaterEqual(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false

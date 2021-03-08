@@ -15,11 +15,11 @@
  */
 
 instance LowerBound[Bool] {
-    def minValue(): Bool = false
+    pub def minValue(): Bool = false
 }
 
 instance UpperBound[Bool] {
-    def maxValue(): Bool = true
+    pub def maxValue(): Bool = true
 }
 
 namespace Bool {
