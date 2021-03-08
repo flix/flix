@@ -74,28 +74,19 @@ namespace Choice {
     ///
     /// Returns `c1` if it is `Present(v)`. Otherwise returns `c2`.
     ///
-    pub def withDefault[s :# Type, b :# Bool, c :# Bool, d :# Bool, e :# Bool, f :# Bool]
-                       (c1: Choice[s, b, c], c2: Choice[s, d, e]): Choice[s, (b and d) or (c and f), (b and e) or c] =
+    pub def withDefault[s :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool, u :# Bool]
+                       (c1: Choice[s, a1, p1], c2: Choice[s, a2, p2]): Choice[s, (a1 and a2) or (p1 and u), p1 or (a1 and p2)] =
         choose* c1 {
             case Absent     => c2
             case Present(v) => Present(v)
         }
 
 // TODO
-//    ///
-//    /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
-//    ///
-//    @Time(1) @Space(1)
-//    pub def replace[a : Eq](x: a, y: a, o: Option[a]): Option[a] = match o {
-//        case None => o
-//        case Some(v) => Some(if (v == x) y else v)
-//    }
 //
 //    pub def filter(f: a -> Bool, o: Option[a]): Option[a] = match o {
 //        case None => None
 //        case Some(v) => if (f(v)) o else None
 //    }
-
 
 // TODO
 //     pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] & e = match o {
