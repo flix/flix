@@ -70,9 +70,9 @@ object InstanceError {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << Code(loc, "mismatched signature.") << NewLine
+      vt << "Mismatched signature '" << Red(sigSym.name) << "' required by class '" << Red(sigSym.clazz.name) << "'." << NewLine
       vt << NewLine
-      vt << "Mismatched signature '" << Red(sigSym.name) << "' declared in class '" << Red(sigSym.clazz.name) << "'." << NewLine
+      vt << Code(loc, "mismatched signature.") << NewLine
       vt << NewLine
       vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)}" << NewLine
       vt << s"Actual scheme:   ${FormatScheme.formatScheme(actual)}" << NewLine
