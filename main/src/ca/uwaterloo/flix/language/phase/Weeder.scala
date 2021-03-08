@@ -169,7 +169,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Unlawful))
         defs <- traverse(defs0)(visitDef)
         constrs = visitTypeConstraints(constrs0.getOrElse(Seq.empty))
-      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, loc))
+      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, clazz.loc))
 
   }
 

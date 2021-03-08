@@ -94,7 +94,9 @@ object InstanceError {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << Code(loc, s"The signature ${sig.name} is missing from the instance.")
+      vt << s"Missing implementation of '" << Red(sig.name) << "' required by class '" << Red(sig.clazz.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"missing implementation") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Add an implementation of the signature to the instance."
     }
