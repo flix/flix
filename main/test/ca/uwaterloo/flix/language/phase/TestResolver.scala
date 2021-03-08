@@ -166,7 +166,7 @@ class TestResolver extends FunSuite with TestUtils {
       s"""
          |namespace A {
          |  class Show[a] {
-         |    def show(x: a): String
+         |    pub def show(x: a): String
          |  }
          |}
          |
@@ -186,7 +186,7 @@ class TestResolver extends FunSuite with TestUtils {
          |
          |  namespace B/C {
          |    class Show[a] {
-         |      def show(x: a): String
+         |      pub def show(x: a): String
          |    }
          |  }
          |}
@@ -375,7 +375,7 @@ class TestResolver extends FunSuite with TestUtils {
       s"""
          |namespace A {
          |    class C[a] {
-         |        def f(x: a): a
+         |        pub def f(x: a): a
          |    }
          |}
          |
