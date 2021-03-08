@@ -230,6 +230,8 @@ object Lowering extends Phase[Root, Root] {
       Expression.Force(e, t, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
+      // TODO: Use stratification here or compute in solver?
+
       // TODO: Call into solver
       ???
 
@@ -289,25 +291,25 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc))
 
-    case Pattern.True(loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.True(loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.False(loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.False(loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.Char(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Char(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.Float32(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Float32(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.Float64(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Float64(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.Int8(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Int8(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.Int16(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Int16(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.Int32(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Int32(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.Int64(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.Int64(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.BigInt(lit, loc) => ??? // TODO: Translate to BodyTerm.Lit
+    case Pattern.BigInt(lit, loc) => mkUnsafeBox(Expression.BigInt(lit, loc))
 
     case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc))
 
