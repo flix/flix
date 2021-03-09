@@ -18,11 +18,4 @@ namespace Fixpoint/Ast {
         case Var(VarSym, SourceLocation)
         case Lit(v, SourceLocation)
     }
-
-    instance ToString[BodyTerm[v]] with [v : ToString] {
-        def toString(term: BodyTerm[v]): String = match term {
-            case BodyTerm.Var(varSym, _) => ToString.toString(varSym)
-            case BodyTerm.Lit(v, _) => ToString.toString(v)
-        }
-    }
 }
