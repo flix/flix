@@ -55,6 +55,9 @@ object Lowering extends Phase[Root, Root] {
     defn.copy(exp = e)
   }
 
+  /**
+    * Lowers the given expression `exp0`.
+    */
   private def visitExp(exp0: Expression): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
@@ -145,7 +148,7 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
       val es = visitExps(exps)
       val rs = rules.map(visitChoiceRule)
-      val t = visitType(t)
+      val t = visitType(tpe)
       Expression.Choose(es, rs, t, eff, loc)
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
@@ -354,9 +357,17 @@ object Lowering extends Phase[Root, Root] {
       ???
   }
 
+  /**
+    * Lowers the given list of expressions `exps`.
+    */
   private def visitExps(exps: List[Expression]): List[Expression] = exps.map(visitExp)
 
-  private def visitType(t: Type): Type = ???
+  private def visitType(t: Type): Type = t match {
+    case Type.Var(id, kind, rigidity, text) => ??? // TODO
+    case Type.Cst(tc, loc) => ??? // TODO
+    case Type.Lambda(tvar, tpe) => ??? // TODO
+    case Type.Apply(tpe1, tpe2) => ??? // TODO
+  }
 
   private def visitFormalParam(fparam: FormalParam): FormalParam = ???
 
@@ -379,15 +390,18 @@ object Lowering extends Phase[Root, Root] {
 
   private def visitSelectChannelRule(r: SelectChannelRule): SelectChannelRule = ???
 
-  private def visitPattern(p: Pattern): Pattern = ???
-
-  private def visitConstraint(c: Constraint): Expression = ???
+  private def visitConstraint(c: Constraint): Expression = c match {
+    case Constraint(_, head, body, loc) =>
+      ??? // TODO
+  }
 
   private def visitHeadPred(p: Predicate.Head): Expression = p match {
     case Head.Atom(pred, den, terms, tpe, loc) =>
-      ???
+      ??? // TODO
 
-    case Head.Union(exp, tpe, loc) => ???
+    case Head.Union(exp, tpe, loc) =>
+      // TODO: We need to come up with a different design for Union.
+      ???
   }
 
   private def visitBodyPred(p: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p match {
@@ -395,14 +409,16 @@ object Lowering extends Phase[Root, Root] {
       val p = visitPolarity(polarity, loc)
       val ts = terms.map(visitBodyTerm)
 
-      ???
+      ??? // TODO
     case Body.Guard(exp, loc) =>
-
-      ???
+      ??? // TODO
   }
 
   private def visitHeadTerm(e: Expression): Expression = ???
 
+  /**
+    * Lowers the given body term `p` (a subset of patterns).
+    */
   private def visitBodyTerm(p: Pattern): Expression = p match {
     case Pattern.Wild(tpe, loc) => ??? // TODO: Translate to ???
 
@@ -470,7 +486,7 @@ object Lowering extends Phase[Root, Root] {
   private def boxInt32(exp: Expression): Expression = {
     val loc = exp.loc
     val clazz = classOf[java.lang.Integer]
-    val method = clazz.getMethod("valueOf")
+    val method = clazz.getMethod("valueOf", Integer.TYPE)
     val tpe = Type.mkNative(clazz)
     val eff = Type.Pure
     Expression.InvokeStaticMethod(method, List(exp), tpe, eff, loc)
