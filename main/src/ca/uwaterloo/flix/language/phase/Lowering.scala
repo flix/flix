@@ -235,7 +235,10 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Ascribe(e, t, eff, loc)
 
-    case Expression.Cast(exp, tpe, eff, loc) => ???
+    case Expression.Cast(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Cast(e, t, eff, loc)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
 
@@ -249,9 +252,14 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ???
 
-    case Expression.GetStaticField(field, tpe, eff, loc) => ???
+    case Expression.GetStaticField(field, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      Expression.GetStaticField(field, t, eff, loc)
 
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) => ???
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.PutStaticField(field, e, t, eff, loc)
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
