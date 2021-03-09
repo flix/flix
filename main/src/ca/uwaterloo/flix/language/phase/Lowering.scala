@@ -43,14 +43,14 @@ object Lowering extends Phase[Root, Root] {
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Lowering") {
-    val defs = ParOps.parMap(root.defs.values, visitDef)
+    val defs = ParOps.parMap(root.defs.values, (d: Def) => visitDef(d)(root, flix))
 
     // TODO: Visit expressions in other parts of the AST (e.g. in classes and instances.)
 
     root.copy(defs = defs.map(kv => kv.sym -> kv).toMap).toSuccess
   }
 
-  private def visitDef(defn: Def): Def = {
+  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Def = {
     val e = visitExp(defn.exp)
     defn.copy(exp = e)
   }
@@ -58,7 +58,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression): Expression = exp0 match {
+  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
     case Expression.Null(_, _) => exp0
@@ -360,14 +360,14 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given list of expressions `exps`.
     */
-  private def visitExps(exps: List[Expression]): List[Expression] = exps.map(visitExp)
+  private def visitExps(exps: List[Expression])(implicit root: Root, flix: Flix): List[Expression] = exps.map(visitExp)
 
-  private def visitPat(pat0: Pattern): Pattern = ??? // TODO (Just need to replace types)
+  private def visitPat(pat0: Pattern)(implicit root: Root, flix: Flix): Pattern = ??? // TODO (Just need to replace types)
 
   /**
     * Lowers the given type `tpe0`.
     */
-  private def visitType(tpe0: Type): Type = tpe0 match {
+  private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = tpe0 match {
     case Type.Var(_, _, _, _) => tpe0
 
     case Type.Cst(tc, loc) => tc match {
@@ -391,7 +391,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given formal parameter `fparam0`.
     */
-  private def visitFormalParam(fparam0: FormalParam): FormalParam = fparam0 match {
+  private def visitFormalParam(fparam0: FormalParam)(implicit root: Root, flix: Flix): FormalParam = fparam0 match {
     case FormalParam(sym, mod, tpe, loc) =>
       val t = visitType(tpe)
       FormalParam(sym, mod, t, loc)
@@ -400,7 +400,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given choice rule `rule0`.
     */
-  private def visitChoiceRule(rule0: ChoiceRule): ChoiceRule = rule0 match {
+  private def visitChoiceRule(rule0: ChoiceRule)(implicit root: Root, flix: Flix): ChoiceRule = rule0 match {
     case ChoiceRule(pat, exp) =>
       val p = pat.map {
         case p@ChoicePattern.Wild(loc) => p
@@ -416,7 +416,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given catch rule `rule0`.
     */
-  private def visitCatchRule(rule0: CatchRule): CatchRule = rule0 match {
+  private def visitCatchRule(rule0: CatchRule)(implicit root: Root, flix: Flix): CatchRule = rule0 match {
     case CatchRule(sym, clazz, exp) =>
       val e = visitExp(exp)
       CatchRule(sym, clazz, e)
@@ -425,7 +425,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given match rule `rule0`.
     */
-  private def visitMatchRule(rule0: MatchRule): MatchRule = rule0 match {
+  private def visitMatchRule(rule0: MatchRule)(implicit root: Root, flix: Flix): MatchRule = rule0 match {
     case MatchRule(pat, guard, exp) =>
       val p = visitPat(pat)
       val g = visitExp(guard)
@@ -433,14 +433,25 @@ object Lowering extends Phase[Root, Root] {
       MatchRule(p, g, e)
   }
 
-  private def visitSelectChannelRule(r: SelectChannelRule): SelectChannelRule = ???
+  /**
+    * Lowers the given select channel rule `rule0`.
+    */
+  private def visitSelectChannelRule(rule0: SelectChannelRule)(implicit root: Root, flix: Flix): SelectChannelRule = rule0 match {
+    case SelectChannelRule(sym, chan, exp) =>
+      val c = visitExp(chan)
+      val e = visitExp(exp)
+      SelectChannelRule(sym, c, e)
+  }
 
-  private def visitConstraint(c: Constraint): Expression = c match {
+  private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
     case Constraint(_, head, body, loc) =>
+      val h = visitHeadPred(head)
+      val bs = body.map(visitBodyPred)
+      // TODO: Need a way to construct a list bs. Just need to foldRight over the Cons tag.
       ??? // TODO
   }
 
-  private def visitHeadPred(p: Predicate.Head): Expression = p match {
+  private def visitHeadPred(p: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p match {
     case Head.Atom(pred, den, terms, tpe, loc) =>
       ??? // TODO
 
@@ -462,7 +473,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given head term `exp0` (a subset of expressions).
     */
-  private def visitHeadTerm(exp0: Expression): Expression = exp0 match {
+  private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
     case Expression.Var(sym, _, _) => mkHeadVarTerm(sym)
 
     case Expression.Unit(loc) => ??? // TODO: Benjamin: Similar to the cases above.
@@ -497,7 +508,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given body term `pat0` (a subset of patterns).
     */
-  private def visitBodyTerm(pat0: Pattern): Expression = pat0 match {
+  private def visitBodyTerm(pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
     case Pattern.Wild(_, loc) => mkBodyWildTerm(loc)
 
     case Pattern.Var(sym, _, _) => mkBodyVarTerm(sym)
@@ -551,23 +562,23 @@ object Lowering extends Phase[Root, Root] {
 
   }
 
-  private def visitSourceLocation(loc: SourceLocation): Expression = ???
+  private def visitSourceLocation(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = ???
 
-  private def mkUnitTag(sym: Symbol.EnumSym, tag: String, tpe: Type, loc: SourceLocation): Expression = {
+  private def mkUnitTag(sym: Symbol.EnumSym, tag: String, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val innerExp = Expression.Unit(loc)
     Expression.Tag(sym, Name.Tag(tag, loc), innerExp, tpe, Type.Pure, loc)
   }
 
-  private def mkHeadVarTerm(sym: Symbol.VarSym): Expression = ??? // TODO
+  private def mkHeadVarTerm(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
-  private def mkBodyWildTerm(loc: SourceLocation): Expression = ??? // TODO
+  private def mkBodyWildTerm(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
-  private def mkBodyVarTerm(sym: Symbol.VarSym): Expression = ??? // TODO
+  private def mkBodyVarTerm(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
-  private def boxBool(exp: Expression): Expression = ??? // TODO
+  private def boxBool(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
   // TODO: Benjamin: Add other boxing operations.
-  private def boxInt32(exp: Expression): Expression = {
+  private def boxInt32(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     val loc = exp.loc
     val clazz = classOf[java.lang.Integer]
     val method = clazz.getMethod("valueOf", Integer.TYPE)
@@ -576,8 +587,8 @@ object Lowering extends Phase[Root, Root] {
     Expression.InvokeStaticMethod(method, List(exp), tpe, eff, loc)
   }
 
-  private def boxInt64(exp: Expression): Expression = ??? // TODO
+  private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
-  private def mkUnsafeBox(exp: Expression): Expression = ??? // TODO
+  private def mkUnsafeBox(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
 }
