@@ -244,13 +244,27 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ???
 
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ???
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val as = visitExps(args)
+      val t = visitType(tpe)
+      Expression.InvokeMethod(method, e, as, t, eff, loc)
 
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ???
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      val as = visitExps(args)
+      val t = visitType(tpe)
+      Expression.InvokeStaticMethod(method, as, t, eff, loc)
 
-    case Expression.GetField(field, exp, tpe, eff, loc) => ???
+    case Expression.GetField(field, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.GetField(field, e, t, eff, loc)
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ???
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.PutField(field, e1, e2, t, eff, loc)
 
     case Expression.GetStaticField(field, tpe, eff, loc) =>
       val t = visitType(tpe)
