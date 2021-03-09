@@ -369,8 +369,12 @@ object Lowering extends Phase[Root, Root] {
     case Type.Var(_, _, _, _) => tpe0
 
     case Type.Cst(tc, loc) => tc match {
-      case TypeConstructor.SchemaEmpty => ??? // TODO
-      case TypeConstructor.SchemaExtend(pred) => ??? // TODO
+      case TypeConstructor.SchemaEmpty =>
+        ??? // TODO: Use ConstraintType.
+
+      case TypeConstructor.SchemaExtend(pred) =>
+        ??? // TODO: Use ConstraintType.
+
       case _ => tpe0
     }
 
@@ -382,9 +386,19 @@ object Lowering extends Phase[Root, Root] {
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
-  private def visitFormalParam(fparam: FormalParam): FormalParam = ??? // TODO
+  /**
+    * Lowers the given formal parameter `fparam0`.
+    */
+  private def visitFormalParam(fparam0: FormalParam): FormalParam = fparam0 match {
+    case FormalParam(sym, mod, tpe, loc) =>
+      val t = visitType(tpe)
+      FormalParam(sym, mod, t, loc)
+  }
 
-  private def visitChoiceRule(r: ChoiceRule): ChoiceRule = r match {
+  /**
+    * Lowers the given choice rule `rule0`.
+    */
+  private def visitChoiceRule(rule0: ChoiceRule): ChoiceRule = rule0 match {
     case ChoiceRule(pat, exp) =>
       val p = pat.map {
         case p@ChoicePattern.Wild(loc) => p
@@ -493,9 +507,9 @@ object Lowering extends Phase[Root, Root] {
     Expression.Tag(sym, Name.Tag(tag, loc), innerExp, tpe, Type.Pure, loc)
   }
 
-  private def mkBodyWildTerm(loc: SourceLocation): Expression = ???
+  private def mkBodyWildTerm(loc: SourceLocation): Expression = ??? // TODO
 
-  private def mkBodyVarTerm(sym: Symbol.VarSym): Expression = ???
+  private def mkBodyVarTerm(sym: Symbol.VarSym): Expression = ??? // TODO
 
   private def boxBool(exp: Expression): Expression = ??? // TODO
 
