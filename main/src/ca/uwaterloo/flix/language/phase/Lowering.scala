@@ -433,9 +433,9 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given body term `p` (a subset of patterns).
     */
   private def visitBodyTerm(p: Pattern): Expression = p match {
-    case Pattern.Wild(tpe, loc) => ??? // TODO: Translate to ???
+    case Pattern.Wild(_, loc) => mkBodyWildTerm(loc)
 
-    case Pattern.Var(sym, tpe, loc) => ??? // TODO: Translate to BodyTerm.Var
+    case Pattern.Var(sym, _, _) => mkBodyVarTerm(sym)
 
     case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc))
 
@@ -492,6 +492,10 @@ object Lowering extends Phase[Root, Root] {
     val innerExp = Expression.Unit(loc)
     Expression.Tag(sym, Name.Tag(tag, loc), innerExp, tpe, Type.Pure, loc)
   }
+
+  private def mkBodyWildTerm(loc: SourceLocation): Expression = ???
+
+  private def mkBodyVarTerm(sym: Symbol.VarSym): Expression = ???
 
   private def boxBool(exp: Expression): Expression = ??? // TODO
 
