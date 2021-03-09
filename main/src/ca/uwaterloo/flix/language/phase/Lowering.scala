@@ -362,6 +362,8 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitExps(exps: List[Expression]): List[Expression] = exps.map(visitExp)
 
+  private def visitPat(pat0: Pattern): Pattern = ??? // TODO (Just need to replace types)
+
   /**
     * Lowers the given type `tpe0`.
     */
@@ -411,9 +413,25 @@ object Lowering extends Phase[Root, Root] {
       ChoiceRule(p, e)
   }
 
-  private def visitCatchRule(r: CatchRule): CatchRule = ??? // TODO
+  /**
+    * Lowers the given catch rule `rule0`.
+    */
+  private def visitCatchRule(rule0: CatchRule): CatchRule = rule0 match {
+    case CatchRule(sym, clazz, exp) =>
+      val e = visitExp(exp)
+      CatchRule(sym, clazz, e)
+  }
 
-  private def visitMatchRule(r: MatchRule): MatchRule = ??? // TODO
+  /**
+    * Lowers the given match rule `rule0`.
+    */
+  private def visitMatchRule(rule0: MatchRule): MatchRule = rule0 match {
+    case MatchRule(pat, guard, exp) =>
+      val p = visitPat(pat)
+      val g = visitExp(guard)
+      val e = visitExp(exp)
+      MatchRule(p, g, e)
+  }
 
   private def visitSelectChannelRule(r: SelectChannelRule): SelectChannelRule = ???
 
