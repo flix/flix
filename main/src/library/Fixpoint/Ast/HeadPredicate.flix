@@ -17,12 +17,4 @@ namespace Fixpoint/Ast {
     pub enum HeadPredicate[v] {
         case HeadAtom(PredSym, List[HeadTerm[v]], SourceLocation)
     }
-
-    instance ToString[HeadPredicate[v]] with [v : ToString] {
-        def toString(head: HeadPredicate[v]): String = match head {
-            case HeadAtom(predSym, terms, _) =>
-                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "${predSym}(${ts})"
-        }
-    }
 }

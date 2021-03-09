@@ -18,13 +18,4 @@ namespace Fixpoint/Ast {
     pub enum Constraint[v] {
         case Constraint(HeadPredicate[v], List[BodyPredicate[v]], SourceLocation)
     }
-
-    instance ToString[Constraint[v]] with [v : ToString] {
-        def toString(c: Constraint[v]): String = match c {
-            case Constraint(head, Nil, _) => ToString.toString(head)
-            case Constraint(head, body, _) =>
-                let atoms = List.map(ToString.toString, body) |> String.intercalate(", ");
-                "${head} :- ${atoms}"
-        }
-    }
 }

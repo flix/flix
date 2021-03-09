@@ -18,15 +18,4 @@ namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Polarity, List[BodyTerm[v]], SourceLocation)
     }
-
-    instance ToString[BodyPredicate[v]] with [v : ToString] {
-        def toString(body: BodyPredicate[v]): String = match body {
-            case BodyAtom(predSym, Positive, terms, _) =>
-                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "${predSym}(${ts})"
-            case BodyAtom(predSym, Negative, terms, _) =>
-                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "not ${predSym}(${ts})"
-        }
-    }
 }
