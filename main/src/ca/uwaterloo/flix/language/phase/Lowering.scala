@@ -466,7 +466,14 @@ object Lowering extends Phase[Root, Root] {
 
   private def boxBool(exp: Expression): Expression = ??? // TODO
 
-  private def boxInt32(exp: Expression): Expression = ??? // TODO
+  private def boxInt32(exp: Expression): Expression = {
+    val loc = exp.loc
+    val clazz = classOf[java.lang.Integer]
+    val method = clazz.getMethod("valueOf")
+    val tpe = Type.mkNative(clazz)
+    val eff = Type.Pure
+    Expression.InvokeStaticMethod(method, List(exp), tpe, eff, loc)
+  }
 
   private def boxInt64(exp: Expression): Expression = ??? // TODO
 
