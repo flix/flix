@@ -496,4 +496,20 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.UnlawfulSignature](result)
   }
+
+  test("Test.MultipleErrors.01") {
+    val input =
+      """
+        |lawless class Foo[a] {
+        |    pub def bar(): a
+        |}
+        |
+        |instance Foo[String] {
+        |    pub def qux(): Int32 = 2
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.MissingImplementation](result)
+    expectError[InstanceError.ExtraneousDefinition](result)
+  }
 }
