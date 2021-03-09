@@ -19,12 +19,4 @@ namespace Fixpoint/Ast {
         case Lit(v, SourceLocation)
         case App(v -> v, HeadTerm[v], SourceLocation)
     }
-
-    instance ToString[HeadTerm[v]] with [v : ToString] {
-        def toString(term: HeadTerm[v]): String = match term {
-            case HeadTerm.Var(varSym, _) => ToString.toString(varSym)
-            case HeadTerm.Lit(v, _) => ToString.toString(v)
-            case HeadTerm.App(_, t, _) => "f(${t})"
-        }
-    }
 }
