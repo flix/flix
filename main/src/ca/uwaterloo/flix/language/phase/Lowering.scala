@@ -152,11 +152,21 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.RecordEmpty(t, loc)
 
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ???
+    case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.RecordSelect(e, field, t, eff, loc)
 
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ???
+    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
+      val v = visitExp(value)
+      val r = visitExp(rest)
+      val t = visitType(tpe)
+      Expression.RecordExtend(field, v, r, t, eff, loc)
 
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ???
+    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
+      val r = visitExp(rest)
+      val t = visitType(tpe)
+      Expression.RecordRestrict(field, r, t, eff, loc)
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       val es = visitExps(elms)
