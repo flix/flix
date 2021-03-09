@@ -441,12 +441,45 @@ object Lowering extends Phase[Root, Root] {
       ??? // TODO
   }
 
-  private def visitHeadTerm(e: Expression): Expression = ???
+  /**
+    * Lowers the given head term `exp0` (a subset of expressions).
+    */
+  private def visitHeadTerm(exp0: Expression): Expression = exp0 match {
+    case Expression.Var(sym, _, _) => mkHeadVarTerm(sym)
+
+    case Expression.Unit(loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    case Expression.True(loc) => mkUnsafeBox(boxBool(Expression.True(loc)))
+
+    case Expression.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)))
+
+    case Expression.Char(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    case Expression.Float32(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    case Expression.Float64(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    case Expression.Int8(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    case Expression.Int16(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    case Expression.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)))
+
+    case Expression.Int64(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    case Expression.BigInt(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    case Expression.Str(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+
+    // TODO: Wrap other expressions in a function...
+
+    case _ => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+  }
 
   /**
-    * Lowers the given body term `p` (a subset of patterns).
+    * Lowers the given body term `pat0` (a subset of patterns).
     */
-  private def visitBodyTerm(p: Pattern): Expression = p match {
+  private def visitBodyTerm(pat0: Pattern): Expression = pat0 match {
     case Pattern.Wild(_, loc) => mkBodyWildTerm(loc)
 
     case Pattern.Var(sym, _, _) => mkBodyVarTerm(sym)
@@ -475,15 +508,15 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc))
 
-    case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.") // TODO: Support tags???
+    case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.") // TODO: Support tags???
 
-    case Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.")
+    case Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
-    case Pattern.Array(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.")
+    case Pattern.Array(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
-    case Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.")
+    case Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
-    case Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$p'.")
+    case Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
   }
 
   /**
@@ -506,6 +539,8 @@ object Lowering extends Phase[Root, Root] {
     val innerExp = Expression.Unit(loc)
     Expression.Tag(sym, Name.Tag(tag, loc), innerExp, tpe, Type.Pure, loc)
   }
+
+  private def mkHeadVarTerm(sym: Symbol.VarSym): Expression = ??? // TODO
 
   private def mkBodyWildTerm(loc: SourceLocation): Expression = ??? // TODO
 
