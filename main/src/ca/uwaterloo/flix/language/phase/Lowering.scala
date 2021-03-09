@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Def, Expression, FormalParam, Pattern, Predicate, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -138,7 +138,11 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Match(exp, rules, tpe, eff, loc) => ???
 
-    case Expression.Choose(exps, rules, tpe, eff, loc) => ???
+    case Expression.Choose(exps, rules, tpe, eff, loc) =>
+      val es = visitExps(exps)
+      val rs = rules.map(visitChoiceRule)
+      val t = visitType(t)
+      Expression.Choose(es, rs, t, eff, loc)
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -242,7 +246,10 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
 
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ???
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+      val as = visitExps(args)
+      val t = visitType(tpe)
+      Expression.InvokeConstructor(constructor, as, t, eff, loc)
 
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -340,6 +347,21 @@ object Lowering extends Phase[Root, Root] {
   private def visitType(t: Type): Type = ???
 
   private def visitFormalParam(fparam: FormalParam): FormalParam = ???
+
+  private def visitChoiceRule(r: ChoiceRule): ChoiceRule = r match {
+    case ChoiceRule(pat, exp) =>
+      val p = pat.map {
+        case p@ChoicePattern.Wild(loc) => p
+        case p@ChoicePattern.Absent(loc) => p
+        case ChoicePattern.Present(sym, tpe, loc) =>
+          val t = visitType(tpe)
+          ChoicePattern.Present(sym, t, loc)
+      }
+      val e = visitExp(exp)
+      ChoiceRule(p, e)
+  }
+
+  private def visitPattern(p: Pattern): Pattern = ???
 
   private def visitConstraint(c: Constraint): Expression = ???
 
