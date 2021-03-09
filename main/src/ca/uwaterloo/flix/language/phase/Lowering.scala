@@ -37,6 +37,8 @@ object Lowering extends Phase[Root, Root] {
   val SourceLocationSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
   val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
 
+  val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
+
   /**
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
@@ -218,11 +220,20 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Assign(e1, e2, t, eff, loc)
 
-    case Expression.Existential(fparam, exp, loc) => ???
+    case Expression.Existential(fparam, exp, loc) =>
+      val p = visitFormalParam(fparam)
+      val e = visitExp(exp)
+      Expression.Existential(p, e, loc)
 
-    case Expression.Universal(fparam, exp, loc) => ???
+    case Expression.Universal(fparam, exp, loc) =>
+      val p = visitFormalParam(fparam)
+      val e = visitExp(exp)
+      Expression.Universal(p, e, loc)
 
-    case Expression.Ascribe(exp, tpe, eff, loc) => ???
+    case Expression.Ascribe(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Ascribe(e, t, eff, loc)
 
     case Expression.Cast(exp, tpe, eff, loc) => ???
 
@@ -242,11 +253,21 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.PutStaticField(field, exp, tpe, eff, loc) => ???
 
-    case Expression.NewChannel(exp, tpe, eff, loc) => ???
+    case Expression.NewChannel(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.NewChannel(e, t, eff, loc)
 
-    case Expression.GetChannel(exp, tpe, eff, loc) => ???
+    case Expression.GetChannel(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.GetChannel(e, t, eff, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.PutChannel(e1, e2, t, eff, loc)
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
 
