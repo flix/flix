@@ -445,8 +445,8 @@ object Lowering extends Phase[Root, Root] {
   private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
     case Constraint(_, head, body, loc) =>
       val h = visitHeadPred(head)
-      val bs = body.map(visitBodyPred)
-      // TODO: Need a way to construct a list bs. Just need to foldRight over the Cons tag.
+      val bs = mkList(body.map(visitBodyPred))
+      // TODO: Apply the Constraint constructor.
       ??? // TODO
   }
 
@@ -561,7 +561,6 @@ object Lowering extends Phase[Root, Root] {
 
   }
 
-  private def visitSourceLocation(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = ???
 
   private def mkHeadVarTerm(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
     val s = mkVarSym(sym)
@@ -604,9 +603,24 @@ object Lowering extends Phase[Root, Root] {
     mkTag(sym, tag, exp, tpe, loc)
   }
 
+  private def mkList(exps: List[Expression]): Expression = {
+    // TODO: Foldright over cons.
+    ??? // TODO
+  }
 
   private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
   private def mkUnsafeBox(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
+  /**
+    * Lowers the given source location `loc`.
+    */
+  private def mkLoc(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val e1 = Expression.RecordEmpty(???, loc)
+    val e2 = Expression.RecordExtend(Name.Field("name", loc), Expression.Str(loc.source.format, loc), e1, ???, Type.Pure, loc)
+    val e3 = Expression.RecordExtend(Name.Field("beginLine", loc), Expression.Int32(loc.beginLine, loc), e2, ???, Type.Pure, loc)
+    // TODO: Benjamin: Rest of the fields.
+    e3
+  }
 
 }
