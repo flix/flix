@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -136,7 +136,11 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Stm(e1, e2, t, eff, loc)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => ???
+    case Expression.Match(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitMatchRule)
+      val t = visitType(tpe)
+      Expression.Match(e, rs, t, eff, loc)
 
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -244,7 +248,11 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Cast(e, t, eff, loc)
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitCatchRule)
+      val t = visitType(tpe)
+      Expression.TryCatch(e, rs, t, eff, loc)
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       val as = visitExps(args)
@@ -298,7 +306,11 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.PutChannel(e1, e2, t, eff, loc)
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+      val rs = rules.map(visitSelectChannelRule)
+      val d = default.map(visitExp)
+      val t = visitType(tpe)
+      Expression.SelectChannel(rs, d, tpe, t, loc)
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -360,6 +372,12 @@ object Lowering extends Phase[Root, Root] {
       val e = visitExp(exp)
       ChoiceRule(p, e)
   }
+
+  private def visitCatchRule(r: CatchRule): CatchRule = ???
+
+  private def visitMatchRule(r: MatchRule): MatchRule = ???
+
+  private def visitSelectChannelRule(r: SelectChannelRule): SelectChannelRule = ???
 
   private def visitPattern(p: Pattern): Pattern = ???
 
