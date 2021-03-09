@@ -332,7 +332,6 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
       // TODO: Use stratification here or compute in solver?
-
       // TODO: Call into solver
       ???
 
@@ -564,18 +563,27 @@ object Lowering extends Phase[Root, Root] {
 
   private def visitSourceLocation(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = ???
 
-  private def mkUnitTag(sym: Symbol.EnumSym, tag: String, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    val innerExp = Expression.Unit(loc)
-    Expression.Tag(sym, Name.Tag(tag, loc), innerExp, tpe, Type.Pure, loc)
+  private def mkHeadVarTerm(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
+    val s = mkVarSym(sym)
+    ??? // TODO
   }
 
-  private def mkHeadVarTerm(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  private def mkBodyWildTerm(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    ??? // TODO
+  }
 
-  private def mkBodyWildTerm(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = ??? // TODO
-
-  private def mkBodyVarTerm(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  private def mkBodyVarTerm(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
+    val s = mkVarSym(sym)
+    ??? // TODO
+  }
 
   private def boxBool(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
+  private def mkVarSym(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
+    val loc = sym.loc
+    val exp = Expression.Tuple(Nil, ???, ???, loc)
+    mkTag(VarSym, "VarSym", exp, ???, loc)
+  }
 
   // TODO: Benjamin: Add other boxing operations.
   private def boxInt32(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
@@ -586,6 +594,16 @@ object Lowering extends Phase[Root, Root] {
     val eff = Type.Pure
     Expression.InvokeStaticMethod(method, List(exp), tpe, eff, loc)
   }
+
+  private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, loc)
+  }
+
+  private def mkUnitTag(sym: Symbol.EnumSym, tag: String, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val exp = Expression.Unit(loc)
+    mkTag(sym, tag, exp, tpe, loc)
+  }
+
 
   private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
