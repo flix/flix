@@ -7,7 +7,7 @@ enum Tree[a] {
 
 /// An instance of ToString.
 instance ToString[Tree[a]] with [a: ToString] {
-    def toString(t: Tree[a]): String = match t {
+    pub def toString(t: Tree[a]): String = match t {
         case Leaf(v)    => "Leaf(${v})"
         case Node(l, r) => "Node(${l}, ${r})"
     }

@@ -296,4 +296,26 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MismatchedSuperClassTypeParameter](result)
   }
+
+  test("IllegalPrivateDeclaration.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
+  test("IllegalPrivateDeclaration.02") {
+    val input =
+      """
+        |instance C[Int] {
+        |    def f(): Int = 1
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
 }

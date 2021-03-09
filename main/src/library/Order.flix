@@ -105,35 +105,35 @@ namespace Order {
 
 instance Order[Unit] {
 
-    def less(x: Unit, y: Unit): Bool = false
-    def lessEqual(x: Unit, y: Unit): Bool = true
-    def greater(x: Unit, y: Unit): Bool = false
-    def greaterEqual(x: Unit, y: Unit): Bool = true
+    pub def less(x: Unit, y: Unit): Bool = false
+    pub def lessEqual(x: Unit, y: Unit): Bool = true
+    pub def greater(x: Unit, y: Unit): Bool = false
+    pub def greaterEqual(x: Unit, y: Unit): Bool = true
     pub def compare(x: Unit, y: Unit): Comparison = EqualTo
 
 }
 
 instance Order[Bool] {
 
-    def less(x: Bool, y: Bool): Bool = match (x <=> y) {
+    pub def less(x: Bool, y: Bool): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: Bool, y: Bool): Bool = match (x <=> y) {
+    pub def lessEqual(x: Bool, y: Bool): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: Bool, y: Bool): Bool = match (x <=> y) {
+    pub def greater(x: Bool, y: Bool): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: Bool, y: Bool): Bool = match (x <=> y) {
+    pub def greaterEqual(x: Bool, y: Bool): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
     }
-    def compare(x: Bool, y: Bool): Comparison = match (x, y) {
+    pub def compare(x: Bool, y: Bool): Comparison = match (x, y) {
         case (true, true) => EqualTo
         case (false, false) => EqualTo
         case (false, true) => LessThan
@@ -144,11 +144,11 @@ instance Order[Bool] {
 
 instance Order[Char] {
 
-    def less(x: Char, y: Char): Bool = $CHAR_LT$(x, y)
-    def lessEqual(x: Char, y: Char): Bool = $CHAR_LE$(x, y)
-    def greater(x: Char, y: Char): Bool = $CHAR_GT$(x, y)
-    def greaterEqual(x: Char, y: Char): Bool = $CHAR_GE$(x, y)
-    def compare(x: Char, y: Char): Comparison = match (x <= y, y <= x) {
+    pub def less(x: Char, y: Char): Bool = $CHAR_LT$(x, y)
+    pub def lessEqual(x: Char, y: Char): Bool = $CHAR_LE$(x, y)
+    pub def greater(x: Char, y: Char): Bool = $CHAR_GT$(x, y)
+    pub def greaterEqual(x: Char, y: Char): Bool = $CHAR_GE$(x, y)
+    pub def compare(x: Char, y: Char): Comparison = match (x <= y, y <= x) {
         case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
@@ -158,11 +158,11 @@ instance Order[Char] {
 
 instance Order[Float32] {
 
-    def less(x: Float32, y: Float32): Bool = $FLOAT32_LT$(x, y)
-    def lessEqual(x: Float32, y: Float32): Bool = $FLOAT32_LE$(x, y)
-    def greater(x: Float32, y: Float32): Bool = $FLOAT32_GT$(x, y)
-    def greaterEqual(x: Float32, y: Float32): Bool = $FLOAT32_GE$(x, y)
-    def compare(x: Float32, y: Float32): Comparison = match (x <= y, y <= x) {
+    pub def less(x: Float32, y: Float32): Bool = $FLOAT32_LT$(x, y)
+    pub def lessEqual(x: Float32, y: Float32): Bool = $FLOAT32_LE$(x, y)
+    pub def greater(x: Float32, y: Float32): Bool = $FLOAT32_GT$(x, y)
+    pub def greaterEqual(x: Float32, y: Float32): Bool = $FLOAT32_GE$(x, y)
+    pub def compare(x: Float32, y: Float32): Comparison = match (x <= y, y <= x) {
         case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
@@ -172,11 +172,11 @@ instance Order[Float32] {
 
 instance Order[Float64] {
 
-    def less(x: Float64, y: Float64): Bool = $FLOAT64_LT$(x, y)
-    def lessEqual(x: Float64, y: Float64): Bool = $FLOAT64_LE$(x, y)
-    def greater(x: Float64, y: Float64): Bool = $FLOAT64_GT$(x, y)
-    def greaterEqual(x: Float64, y: Float64): Bool = $FLOAT64_GE$(x, y)
-    def compare(x: Float64, y: Float64): Comparison = match (x <= y, y <= x) {
+    pub def less(x: Float64, y: Float64): Bool = $FLOAT64_LT$(x, y)
+    pub def lessEqual(x: Float64, y: Float64): Bool = $FLOAT64_LE$(x, y)
+    pub def greater(x: Float64, y: Float64): Bool = $FLOAT64_GT$(x, y)
+    pub def greaterEqual(x: Float64, y: Float64): Bool = $FLOAT64_GE$(x, y)
+    pub def compare(x: Float64, y: Float64): Comparison = match (x <= y, y <= x) {
         case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
@@ -186,11 +186,11 @@ instance Order[Float64] {
 
 instance Order[Int8] {
 
-    def less(x: Int8, y: Int8): Bool = $INT8_LT$(x, y)
-    def lessEqual(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
-    def greater(x: Int8, y: Int8): Bool = $INT8_GT$(x, y)
-    def greaterEqual(x: Int8, y: Int8): Bool = $INT8_GE$(x, y)
-    def compare(x: Int8, y: Int8): Comparison = match (x <= y, y <= x) {
+    pub def less(x: Int8, y: Int8): Bool = $INT8_LT$(x, y)
+    pub def lessEqual(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
+    pub def greater(x: Int8, y: Int8): Bool = $INT8_GT$(x, y)
+    pub def greaterEqual(x: Int8, y: Int8): Bool = $INT8_GE$(x, y)
+    pub def compare(x: Int8, y: Int8): Comparison = match (x <= y, y <= x) {
         case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
@@ -200,11 +200,11 @@ instance Order[Int8] {
 
 instance Order[Int16] {
 
-    def less(x: Int16, y: Int16): Bool = $INT16_LT$(x, y)
-    def lessEqual(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
-    def greater(x: Int16, y: Int16): Bool = $INT16_GT$(x, y)
-    def greaterEqual(x: Int16, y: Int16): Bool = $INT16_GE$(x, y)
-    def compare(x: Int16, y: Int16): Comparison = match (x <= y, y <= x) {
+    pub def less(x: Int16, y: Int16): Bool = $INT16_LT$(x, y)
+    pub def lessEqual(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
+    pub def greater(x: Int16, y: Int16): Bool = $INT16_GT$(x, y)
+    pub def greaterEqual(x: Int16, y: Int16): Bool = $INT16_GE$(x, y)
+    pub def compare(x: Int16, y: Int16): Comparison = match (x <= y, y <= x) {
         case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
@@ -214,11 +214,11 @@ instance Order[Int16] {
 
 instance Order[Int32] {
 
-    def less(x: Int32, y: Int32): Bool = $INT32_LT$(x, y)
-    def lessEqual(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
-    def greater(x: Int32, y: Int32): Bool = $INT32_GT$(x, y)
-    def greaterEqual(x: Int32, y: Int32): Bool = $INT32_GE$(x, y)
-    def compare(x: Int32, y: Int32): Comparison = match (x <= y, y <= x) {
+    pub def less(x: Int32, y: Int32): Bool = $INT32_LT$(x, y)
+    pub def lessEqual(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
+    pub def greater(x: Int32, y: Int32): Bool = $INT32_GT$(x, y)
+    pub def greaterEqual(x: Int32, y: Int32): Bool = $INT32_GE$(x, y)
+    pub def compare(x: Int32, y: Int32): Comparison = match (x <= y, y <= x) {
         case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
@@ -228,11 +228,11 @@ instance Order[Int32] {
 
 instance Order[Int64] {
 
-    def less(x: Int64, y: Int64): Bool = $INT64_LT$(x, y)
-    def lessEqual(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
-    def greater(x: Int64, y: Int64): Bool = $INT64_GT$(x, y)
-    def greaterEqual(x: Int64, y: Int64): Bool = $INT64_GE$(x, y)
-    def compare(x: Int64, y: Int64): Comparison = match (x <= y, y <= x) {
+    pub def less(x: Int64, y: Int64): Bool = $INT64_LT$(x, y)
+    pub def lessEqual(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
+    pub def greater(x: Int64, y: Int64): Bool = $INT64_GT$(x, y)
+    pub def greaterEqual(x: Int64, y: Int64): Bool = $INT64_GE$(x, y)
+    pub def compare(x: Int64, y: Int64): Comparison = match (x <= y, y <= x) {
         case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
@@ -242,11 +242,11 @@ instance Order[Int64] {
 
 instance Order[BigInt] {
 
-    def less(x: BigInt, y: BigInt): Bool = $BIGINT_LT$(x, y)
-    def lessEqual(x: BigInt, y: BigInt): Bool = $BIGINT_LE$(x, y)
-    def greater(x: BigInt, y: BigInt): Bool = $BIGINT_GT$(x, y)
-    def greaterEqual(x: BigInt, y: BigInt): Bool = $BIGINT_GE$(x, y)
-    def compare(x: BigInt, y: BigInt): Comparison = match (x <= y, y <= x) {
+    pub def less(x: BigInt, y: BigInt): Bool = $BIGINT_LT$(x, y)
+    pub def lessEqual(x: BigInt, y: BigInt): Bool = $BIGINT_LE$(x, y)
+    pub def greater(x: BigInt, y: BigInt): Bool = $BIGINT_GT$(x, y)
+    pub def greaterEqual(x: BigInt, y: BigInt): Bool = $BIGINT_GE$(x, y)
+    pub def compare(x: BigInt, y: BigInt): Comparison = match (x <= y, y <= x) {
         case (true, true) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
@@ -256,26 +256,26 @@ instance Order[BigInt] {
 
 instance Order[String] {
 
-    def less(x: String, y: String): Bool = match (x <=> y) {
+    pub def less(x: String, y: String): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: String, y: String): Bool = match (x <=> y) {
+    pub def lessEqual(x: String, y: String): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: String, y: String): Bool = match (x <=> y) {
+    pub def greater(x: String, y: String): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: String, y: String): Bool = match (x <=> y) {
+    pub def greaterEqual(x: String, y: String): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
     }
 
-    def compare(x: String, y: String): Comparison =
+    pub def compare(x: String, y: String): Comparison =
         import java.lang.String.compareTo(String);
         Order.fromInt(x.compareTo(y) as & Pure)
 
@@ -283,20 +283,20 @@ instance Order[String] {
 
 instance Order[(a1, a2)] with [a1 : Order, a2: Order] {
 
-    def less(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2), y: (a1, a2)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -305,7 +305,7 @@ instance Order[(a1, a2)] with [a1 : Order, a2: Order] {
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2), t2: (a1, a2)): Comparison =
+    pub def compare(t1: (a1, a2), t2: (a1, a2)): Comparison =
         use Order.thenCompare;
         let (x1, x2) = t1;
         let (y1, y2) = t2;
@@ -316,20 +316,20 @@ instance Order[(a1, a2)] with [a1 : Order, a2: Order] {
 
 instance Order[(a1, a2, a3)] with [a1 : Order, a2: Order, a3 : Order] {
 
-    def less(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2, a3), y: (a1, a2, a3)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -338,7 +338,7 @@ instance Order[(a1, a2, a3)] with [a1 : Order, a2: Order, a3 : Order] {
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3), t2: (a1, a2, a3)): Comparison =
+    pub def compare(t1: (a1, a2, a3), t2: (a1, a2, a3)): Comparison =
         use Order.thenCompare;
         let (x1, x2, x3) = t1;
         let (y1, y2, y3) = t2;
@@ -350,20 +350,20 @@ instance Order[(a1, a2, a3)] with [a1 : Order, a2: Order, a3 : Order] {
 
 instance Order[(a1, a2, a3, a4)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order] {
 
-    def less(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -372,7 +372,7 @@ instance Order[(a1, a2, a3, a4)] with [a1 : Order, a2: Order, a3 : Order, a4 : O
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Comparison =
+    pub def compare(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Comparison =
         use Order.thenCompare;
         let (x1, x2, x3, x4) = t1;
         let (y1, y2, y3, y4) = t2;
@@ -385,20 +385,20 @@ instance Order[(a1, a2, a3, a4)] with [a1 : Order, a2: Order, a3 : Order, a4 : O
 
 instance Order[(a1, a2, a3, a4, a5)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order] {
 
-    def less(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -407,7 +407,7 @@ instance Order[(a1, a2, a3, a4, a5)] with [a1 : Order, a2: Order, a3 : Order, a4
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Comparison =
+    pub def compare(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Comparison =
         use Order.thenCompare;
         let (x1, x2, x3, x4, x5) = t1;
         let (y1, y2, y3, y4, y5) = t2;
@@ -421,20 +421,20 @@ instance Order[(a1, a2, a3, a4, a5)] with [a1 : Order, a2: Order, a3 : Order, a4
 
 instance Order[(a1, a2, a3, a4, a5, a6)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order] {
 
-    def less(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -443,7 +443,7 @@ instance Order[(a1, a2, a3, a4, a5, a6)] with [a1 : Order, a2: Order, a3 : Order
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Comparison =
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Comparison =
         use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6) = t1;
         let (y1, y2, y3, y4, y5, y6) = t2;
@@ -458,20 +458,20 @@ instance Order[(a1, a2, a3, a4, a5, a6)] with [a1 : Order, a2: Order, a3 : Order
 
 instance Order[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order] {
 
-    def less(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -480,7 +480,7 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Order, a2: Order, a3 : O
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Comparison =
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Comparison =
         use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6, x7) = t1;
         let (y1, y2, y3, y4, y5, y6, y7) = t2;
@@ -496,20 +496,20 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Order, a2: Order, a3 : O
 
 instance Order[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order] {
 
-    def less(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -518,7 +518,7 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Order, a2: Order, a3
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Comparison =
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Comparison =
         use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6, x7, x8) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8) = t2;
@@ -535,20 +535,20 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Order, a2: Order, a3
 
 instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order, a9: Order] {
 
-    def less(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -557,7 +557,7 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Order, a2: Order
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Comparison =
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Comparison =
         use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9) = t2;
@@ -575,20 +575,20 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Order, a2: Order
 
 instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order, a9 : Order, a10 : Order] {
 
-    def less(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
+    pub def less(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
+    pub def lessEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
+    pub def greater(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
+    pub def greaterEqual(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -597,7 +597,7 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Order, a2: 
     ///
     /// Compares `t1` and `t2` lexicographically.
     ///
-    def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Comparison =
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Comparison =
         use Order.thenCompare;
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10) = t2;

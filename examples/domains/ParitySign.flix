@@ -25,8 +25,8 @@ namespace Domain/ParitySign {
     pub def equ(e1: ParitySign, e2: ParitySign): Bool = e1 == e2
 
     instance Eq[ParitySign] {
-        def eq(e1: ParitySign, e2: ParitySign): Bool = equ(e1, e2)
-        def neq(e1: ParitySign, e2: ParitySign): Bool = not equ(e1, e2)
+        pub def eq(e1: ParitySign, e2: ParitySign): Bool = equ(e1, e2)
+        pub def neq(e1: ParitySign, e2: ParitySign): Bool = not equ(e1, e2)
     }
 
     ///

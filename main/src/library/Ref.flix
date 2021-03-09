@@ -15,5 +15,5 @@
  */
 
 instance Copy[Ref[a]] {
-    def copy(x: Ref[a]): Ref[a] & e = (ref (deref x)) as & e
+    pub def copy(x: Ref[a]): Ref[a] & e = (ref (deref x)) as & e
 }

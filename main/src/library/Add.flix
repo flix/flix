@@ -25,35 +25,35 @@ pub lawless class Add[a] {
 }
 
 instance Add[Float32] {
-    def add(x: Float32, y: Float32): Float32 = $FLOAT32_ADD$(x, y)
+    pub def add(x: Float32, y: Float32): Float32 = $FLOAT32_ADD$(x, y)
 }
 
 instance Add[Float64] {
-    def add(x: Float64, y: Float64): Float64 = $FLOAT64_ADD$(x, y)
+    pub def add(x: Float64, y: Float64): Float64 = $FLOAT64_ADD$(x, y)
 }
 
 instance Add[Int8] {
-    def add(x: Int8, y: Int8): Int8 = $INT8_ADD$(x, y)
+    pub def add(x: Int8, y: Int8): Int8 = $INT8_ADD$(x, y)
 }
 
 instance Add[Int16] {
-    def add(x: Int16, y: Int16): Int16 = $INT16_ADD$(x, y)
+    pub def add(x: Int16, y: Int16): Int16 = $INT16_ADD$(x, y)
 }
 
 instance Add[Int32] {
-    def add(x: Int32, y: Int32): Int32 = $INT32_ADD$(x, y)
+    pub def add(x: Int32, y: Int32): Int32 = $INT32_ADD$(x, y)
 }
 
 instance Add[Int64] {
-    def add(x: Int64, y: Int64): Int64 = $INT64_ADD$(x, y)
+    pub def add(x: Int64, y: Int64): Int64 = $INT64_ADD$(x, y)
 }
 
 instance Add[BigInt] {
-    def add(x: BigInt, y: BigInt): BigInt = $BIGINT_ADD$(x, y)
+    pub def add(x: BigInt, y: BigInt): BigInt = $BIGINT_ADD$(x, y)
 }
 
 instance Add[String] {
-    def add(x: String, y: String): String =
+    pub def add(x: String, y: String): String =
         import java.lang.String.concat(String);
         x.concat(y) as & Pure
 }
