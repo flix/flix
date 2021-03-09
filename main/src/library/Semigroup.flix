@@ -25,9 +25,9 @@ pub lawless class Semigroup[a] {
 }
 
 instance Semigroup[Unit] {
-    def combine(_: Unit, _: Unit): Unit = ()
+    pub def combine(_: Unit, _: Unit): Unit = ()
 }
 
 instance Semigroup[String] {
-    def combine(x: String, y: String): String = x + y
+    pub def combine(x: String, y: String): String = x + y
 }

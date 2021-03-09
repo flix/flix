@@ -222,7 +222,7 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def get(): a
+        |    pub def get(): a
         |}
         |
         |instance C[Bool] {
@@ -236,11 +236,11 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def get(): a
+        |    pub def get(): a
         |}
         |
         |instance C[Bool] {
-        |    def get(_i: Int): Bool = false
+        |    pub def get(_i: Int): Bool = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -251,7 +251,7 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a): Bool
+        |    pub def f(x: a): Bool
         |}
         |
         |enum Box[a] {
@@ -259,7 +259,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Box[a]] {
-        |    def f[a: C](_x: Box[a]): Bool = false
+        |    pub def f[a: C](_x: Box[a]): Bool = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -295,13 +295,13 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f[b : D](x: b): a
+        |    pub def f[b : D](x: b): a
         |}
         |
         |class D[a]
         |
         |instance C[Bool] {
-        |    def f(x: b): Bool = false
+        |    pub def f(x: b): Bool = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -312,11 +312,11 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a, y: Int): Int
+        |    pub def f(x: a, y: Int): Int
         |}
         |
         |instance C[Bool] {
-        |    def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
+        |    pub def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -327,11 +327,11 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a, y: Int): Int & e
+        |    pub def f(x: a, y: Int): Int & e
         |}
         |
         |instance C[Bool] {
-        |    def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
+        |    pub def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -344,7 +344,7 @@ class TestInstances extends FunSuite with TestUtils {
         |class C[a]
         |
         |instance C[Bool] {
-        |    def get(): Bool = false
+        |    pub def get(): Bool = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -471,7 +471,7 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |  def f(): a
+        |  pub def f(): a
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

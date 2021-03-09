@@ -23,34 +23,34 @@ pub enum Nel[a] {
 }
 
 instance ToString[Nel[a]] with [a : ToString] {
-    def toString(l: Nel[a]): String = match l {
+    pub def toString(l: Nel[a]): String = match l {
         case Nel(x, xs) => "Nel(${x}, ${xs})"
     }
 }
 
 instance Hash[Nel[a]] with [a : Hash] {
-    def hash(l: Nel[a]): Int = match l {
+    pub def hash(l: Nel[a]): Int = match l {
         case Nel(x, xs) => 39119 + Hash.hash(xs) + Hash.hash(x)
     }
 }
 
 instance Eq[Nel[a]] with[a : Eq] {
 
-    def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
+    pub def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
         case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
     }
 
-    def neq(xs: Nel[a], ys: Nel[a]): Bool = not (xs == ys)
+    pub def neq(xs: Nel[a], ys: Nel[a]): Bool = not (xs == ys)
 
 }
 
 instance Functor[Nel] {
-    def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = Nel.map(f, xs)
+    pub def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = Nel.map(f, xs)
 }
 
 instance Foldable[Nel] {
-    def foldLeft(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldLeft(f, s, xs)
-    def foldRight(f: (a, b) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldRight(f, s, xs)
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldLeft(f, s, xs)
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldRight(f, s, xs)
 }
 
 namespace Nel {
