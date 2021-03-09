@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -362,14 +362,27 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitExps(exps: List[Expression]): List[Expression] = exps.map(visitExp)
 
-  private def visitType(t: Type): Type = t match {
-    case Type.Var(id, kind, rigidity, text) => ??? // TODO
-    case Type.Cst(tc, loc) => ??? // TODO
-    case Type.Lambda(tvar, tpe) => ??? // TODO
-    case Type.Apply(tpe1, tpe2) => ??? // TODO
+  /**
+    * Lowers the given type `tpe0`.
+    */
+  private def visitType(tpe0: Type): Type = tpe0 match {
+    case Type.Var(_, _, _, _) => tpe0
+
+    case Type.Cst(tc, loc) => tc match {
+      case TypeConstructor.SchemaEmpty => ??? // TODO
+      case TypeConstructor.SchemaExtend(pred) => ??? // TODO
+      case _ => tpe0
+    }
+
+    case Type.Apply(tpe1, tpe2) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      Type.Apply(t1, t2)
+
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
-  private def visitFormalParam(fparam: FormalParam): FormalParam = ???
+  private def visitFormalParam(fparam: FormalParam): FormalParam = ??? // TODO
 
   private def visitChoiceRule(r: ChoiceRule): ChoiceRule = r match {
     case ChoiceRule(pat, exp) =>
@@ -384,9 +397,9 @@ object Lowering extends Phase[Root, Root] {
       ChoiceRule(p, e)
   }
 
-  private def visitCatchRule(r: CatchRule): CatchRule = ???
+  private def visitCatchRule(r: CatchRule): CatchRule = ??? // TODO
 
-  private def visitMatchRule(r: MatchRule): MatchRule = ???
+  private def visitMatchRule(r: MatchRule): MatchRule = ??? // TODO
 
   private def visitSelectChannelRule(r: SelectChannelRule): SelectChannelRule = ???
 
