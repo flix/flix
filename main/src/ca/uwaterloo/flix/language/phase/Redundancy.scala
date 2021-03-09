@@ -50,6 +50,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       return root.toSuccess
     }
 
+    val instanceDefs = for {
+      instsPerClass <- root.instances.values
+      insts <- instsPerClass
+      defn <- insts.defs
+    } yield (defn.sym, defn)
+    // MATT WIP
+
     // Computes all used symbols in all defs (in parallel).
     val usedAll = ParOps.parAgg(root.defs, Used.empty)({
       case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
