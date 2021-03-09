@@ -414,15 +414,15 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)))
 
-    case Pattern.Char(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.Char(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Pattern.Float32(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.Float32(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Pattern.Float64(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.Float64(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Pattern.Int8(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.Int8(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Pattern.Int16(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.Int16(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
     case Pattern.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)))
 
@@ -466,6 +466,7 @@ object Lowering extends Phase[Root, Root] {
 
   private def boxBool(exp: Expression): Expression = ??? // TODO
 
+  // TODO: Benjamin: Add other boxing operations.
   private def boxInt32(exp: Expression): Expression = {
     val loc = exp.loc
     val clazz = classOf[java.lang.Integer]
@@ -476,8 +477,6 @@ object Lowering extends Phase[Root, Root] {
   }
 
   private def boxInt64(exp: Expression): Expression = ??? // TODO
-
-  // TODO and so forth
 
   private def mkUnsafeBox(exp: Expression): Expression = ??? // TODO
 
