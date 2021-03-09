@@ -392,9 +392,9 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc))
 
-    case Pattern.True(loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.True(loc) => mkUnsafeBox(boxBool(Expression.True(loc)))
 
-    case Pattern.False(loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)))
 
     case Pattern.Char(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
@@ -406,9 +406,9 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Int16(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
 
-    case Pattern.Int32(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)))
 
-    case Pattern.Int64(lit, loc) => ??? // TODO: Box to Object and then UnsafeBox.
+    case Pattern.Int64(lit, loc) => mkUnsafeBox(boxInt64(Expression.Int64(lit, loc)))
 
     case Pattern.BigInt(lit, loc) => mkUnsafeBox(Expression.BigInt(lit, loc))
 
@@ -445,6 +445,14 @@ object Lowering extends Phase[Root, Root] {
     val innerExp = Expression.Unit(loc)
     Expression.Tag(sym, Name.Tag(tag, loc), innerExp, tpe, Type.Pure, loc)
   }
+
+  private def boxBool(exp: Expression): Expression = ??? // TODO
+
+  private def boxInt32(exp: Expression): Expression = ??? // TODO
+
+  private def boxInt64(exp: Expression): Expression = ??? // TODO
+
+  // TODO and so forth
 
   private def mkUnsafeBox(exp: Expression): Expression = ??? // TODO
 
