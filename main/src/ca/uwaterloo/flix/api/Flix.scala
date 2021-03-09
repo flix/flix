@@ -165,6 +165,16 @@ class Flix {
 
     "UnsafeBox.flix" -> LocalResource.get("/src/library/UnsafeBox.flix"),
 
+    "Fixpoint/Ast/BodyPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyPredicate.flix"),
+    "Fixpoint/Ast/BodyTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyTerm.flix"),
+    "Fixpoint/Ast/Constraint.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Constraint.flix"),
+    "Fixpoint/Ast/HeadPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadPredicate.flix"),
+    "Fixpoint/Ast/HeadTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadTerm.flix"),
+    "Fixpoint/Ast/Polarity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Polarity.flix"),
+    "Fixpoint/Ast/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PredSym.flix"),
+    "Fixpoint/Ast/SourceLocation.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/SourceLocation.flix"),
+    "Fixpoint/Ast/VarSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/VarSym.flix"),
+
   )
 
   /**
@@ -322,6 +332,7 @@ class Flix {
 
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
+      Lowering |>
       Monomorph |>
       Simplifier |>
       ClosureConv |>
