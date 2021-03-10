@@ -99,13 +99,11 @@ object ParsedAst {
       *
       * @param sp1        the position of the first character in the declaration.
       * @param ident      the name of the law.
-      * @param tparams    the type parameters.
-      * @param fparamsOpt the value parameters.
-      * @param tpe        the declared type.
+      * @param fparams    the value parameters.
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Law(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
+    case class Law(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Enum Declaration.
