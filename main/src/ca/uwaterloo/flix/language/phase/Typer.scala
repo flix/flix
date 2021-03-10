@@ -172,7 +172,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       }
   }
 
-  // MATT docs
+  /**
+    * Performs type inference and reassembly on the given Spec `spec`.
+    */
   private def visitSpec(spec: ResolvedAst.Spec, root: ResolvedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
     case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, eff, loc) =>
       val annVal = visitAnnotations(ann0, root)
