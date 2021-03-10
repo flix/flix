@@ -27,15 +27,19 @@ namespace Choice {
     ///
     /// Asserts that `c` is `Absent`. Akin to a type ascription.
     ///
-    pub def assertAbsent(c: Choice[_, true, false]): Unit = choose c {
-        case Absent => ()
+    /// Always returns `true`.
+    ///
+    pub def assertAbsent(c: Choice[_, true, false]): Bool = choose c {
+        case Absent => true
     }
 
     ///
     /// Asserts that `c` is `Present`. Akin to a type ascription.
     ///
-    pub def assertPresent(c: Choice[_, false, true]): Unit = choose c {
-        case Present(_) => ()
+    /// Always returns `true`.
+    ///
+    pub def assertPresent(c: Choice[_, false, true]): Bool = choose c {
+        case Present(_) => true
     }
 
     ///
@@ -82,9 +86,7 @@ namespace Choice {
         }
 
     ///
-    /// Returns `Present(v)` if `c` is `Present(v)` and the predicate `f(v)` is true.
-    ///
-    /// Otherwise returns `None`.
+    /// Returns `Present(v)` if `c` is `Present(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
     ///
     /// The function `f` must be pure.
     ///
@@ -124,21 +126,6 @@ namespace Choice {
             case Present(v) => v
         }
 
-// TODO
-//    ///
-//    /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
-//    ///
-//    @Time(List.length(xs)) @Space(List.length(xs))
-//    pub def sequence(xs: List[Option[a]]): Option[List[a]] =
-//        sequenceHelper(xs, _ -> None, ys -> Some(ys))
-
-// TODO
-//    ///
-//    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
-//    ///
-//    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e =
-//        traverseHelper(f, xs, _ -> None, ys -> Some(ys))
-
     ///
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
     ///
@@ -146,34 +133,5 @@ namespace Choice {
         case Absent     => Present(v)
         case Present(_) => Absent
     }
-
-    ///
-    /// Returns `Present((v1, v2))` if `c1` is `Present(v1)` and `c2` is `Present(v2)`.
-    ///
-    /// Otherwise returns `None`.
-    ///
-    // TODO: Add type signature
-    pub def zip(): Unit =
-        let _f = (x, y) -> choose* (x, y) {
-            case (Absent, Absent)           => Absent
-            case (Absent, Present(_))       => Absent
-            case (Present(_), Absent)       => Absent
-            case (Present(v1), Present(v2)) => Present((v1, v2))
-        };
-        ()
-
-    ///
-    /// Returns `(Present(v1), Present(v2))` if `c` is `Present((v1, v2))`.
-    ///
-    /// Otherwise returns `(None, None)`.
-    ///
-    /// Note that `unzip` loses all information about absence and presence.
-    ///
-    pub def unzip[s :# Type, t :# Type, a :# Bool, p :# Bool]
-                 (c: Choice[(s, t), a, p]): (Choice[s, true, true], Choice[t, true, true]) =
-        choose c {
-            case Absent     => (Absent, Absent)
-            case Present(v) => (Present(fst(v)), Present(snd(v)))
-        }
 
 }

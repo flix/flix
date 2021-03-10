@@ -19,10 +19,10 @@ namespace TestChoice {
                 withDefault, filter, flatten, map, flatMap, invert};
 
     @test
-    def assertAbsent01(): Bool = assertAbsent(Absent) == ()
+    def assertAbsent01(): Bool = assertAbsent(Absent)
 
     @test
-    def assertPresent01(): Bool = assertPresent(Present(123)) == ()
+    def assertPresent01(): Bool = assertPresent(Present(123))
 
     @test
     def isAbsent01(): Bool = isAbsent(Absent)
@@ -49,16 +49,16 @@ namespace TestChoice {
     def getWithDefault02(): Bool = getWithDefault(Present(21), 42) == 21
 
     @test
-    def testWithDefault01(): Bool = unbox(withDefault(Present(123), Present(456))) == 123
+    def withDefault01(): Bool = unbox(withDefault(Present(123), Present(456))) == 123
 
     @test
-    def testWithDefault02(): Bool = unbox(withDefault(Absent, Present(456))) == 456
+    def withDefault02(): Bool = unbox(withDefault(Absent, Present(456))) == 456
 
     @test
-    def testWithDefault03(): Bool = unbox(withDefault(Present(123), Present(456))) == 123
+    def withDefault03(): Bool = unbox(withDefault(Present(123), Present(456))) == 123
 
     @test
-    def filter01(): Bool = assertAbsent(filter(_x -> true, Absent)) == ()
+    def filter01(): Bool = assertAbsent(filter(_x -> true, Absent))
 
     @test
     def filter02(): Bool = getWithDefault(filter(_ -> true, Present(21)), 42) == 21
@@ -73,10 +73,10 @@ namespace TestChoice {
     def filter05(): Bool = getWithDefault(filter(_ -> true, if (true) Present(123) else Absent), 42) == 123
 
     @test
-    def flatten01(): Bool = assertAbsent(flatten(Absent)) == ()
+    def flatten01(): Bool = assertAbsent(flatten(Absent))
 
     @test
-    def flatten02(): Bool = assertAbsent(flatten(Present(Absent))) == ()
+    def flatten02(): Bool = assertAbsent(flatten(Present(Absent)))
 
     @test
     def flatten03(): Bool = unbox(flatten(Present(Present(42)))) == 42
@@ -97,13 +97,13 @@ namespace TestChoice {
     def map03(): Bool = unbox(map(x -> x * 2, Present(42))) == 84
 
     @test
-    def flatMap01(): Bool = assertAbsent(flatMap(_x -> Absent, Absent)) == ()
+    def flatMap01(): Bool = assertAbsent(flatMap(_x -> Absent, Absent))
 
     @test
-    def flatMap02(): Bool = assertAbsent(flatMap(_x -> Absent, Present(42))) == ()
+    def flatMap02(): Bool = assertAbsent(flatMap(_x -> Absent, Present(42)))
 
     @test
-    def flatMap03(): Bool = assertAbsent(flatMap(_x -> Present(42), Absent)) == ()
+    def flatMap03(): Bool = assertAbsent(flatMap(_x -> Present(42), Absent))
 
     @test
     def flatMap04(): Bool = unbox(flatMap(x -> Present(x + 21), Present(21))) == 42
