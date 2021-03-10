@@ -95,37 +95,6 @@ namespace Choice {
             case Present(v) => if (f(v)) Present(v) else Absent
         }
 
-// TODO
-//     pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] & e = match o {
-//
-//    }
-
-    ///
-    /// Returns `v` if `c` is `Present(v)`. Otherwise returns `Absent`.
-    ///
-    pub def flatten[t :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool, u :# Bool]
-        (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, a2 or (a1 and p2), (a2 and u) or (p1 and p2)] =
-        choose* c {
-            case Absent     => Absent
-            case Present(v) => v
-        }
-
-
-// TODO
-//    ///
-//    /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
-//    ///
-//    @Time(List.length(xs)) @Space(List.length(xs))
-//    pub def sequence(xs: List[Option[a]]): Option[List[a]] =
-//        sequenceHelper(xs, _ -> None, ys -> Some(ys))
-
-// TODO
-//    ///
-//    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
-//    ///
-//    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e =
-//        traverseHelper(f, xs, _ -> None, ys -> Some(ys))
-
     ///
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
@@ -146,6 +115,37 @@ namespace Choice {
 //            case (Present(_), Absent)     => Absent
 //            case (Present(x), Present(y)) => Present(f(x, y))
 //        }
+
+
+// TODO
+//     pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] & e = match o {
+//
+//    }
+
+    ///
+    /// Returns `v` if `c` is `Present(v)`. Otherwise returns `Absent`.
+    ///
+    pub def flatten[t :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool, u :# Bool]
+        (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, a2 or (a1 and p2), (a2 and u) or (p1 and p2)] =
+        choose* c {
+            case Absent     => Absent
+            case Present(v) => v
+        }
+
+// TODO
+//    ///
+//    /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
+//    ///
+//    @Time(List.length(xs)) @Space(List.length(xs))
+//    pub def sequence(xs: List[Option[a]]): Option[List[a]] =
+//        sequenceHelper(xs, _ -> None, ys -> Some(ys))
+
+// TODO
+//    ///
+//    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
+//    ///
+//    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e =
+//        traverseHelper(f, xs, _ -> None, ys -> Some(ys))
 
     ///
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.

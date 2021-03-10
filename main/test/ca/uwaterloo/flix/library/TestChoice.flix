@@ -67,6 +67,12 @@ namespace TestChoice {
     def filter03(): Bool = getWithDefault(filter(_ -> false, Present(21)), 42) == 42
 
     @test
+    def filter04(): Bool = getWithDefault(filter(_ -> true, if (true) Absent else Present(123)), 42) == 42
+
+    @test
+    def filter05(): Bool = getWithDefault(filter(_ -> true, if (true) Present(123) else Absent), 42) == 123
+
+    @test
     def flatten01(): Bool = assertAbsent(flatten(Absent)) == ()
 
     @test
@@ -74,6 +80,12 @@ namespace TestChoice {
 
     @test
     def flatten03(): Bool = unbox(flatten(Present(Present(42)))) == 42
+
+    @test
+    def flatten04(): Bool = getWithDefault(if (true) Absent else Present(123), 42) == 42
+
+    @test
+    def flatten05(): Bool = getWithDefault(if (true) Present(123) else Absent, 42) == 123
 
     @test
     def map01(): Bool = isAbsent(map(x -> x, Absent))
