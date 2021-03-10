@@ -153,7 +153,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitDefn(defn: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
-      typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv) map {
+      typeCheckDecl(spec0, exp0, assumedTconstrs, isMain = sym.isMain, root, classEnv) map {
         case (spec, exp) => TypedAst.Def(sym, spec, exp)
       }
   }
@@ -163,7 +163,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitSig(sig: ResolvedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = sig match {
     case ResolvedAst.Sig(sym, spec0, Some(exp0)) =>
-      typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv) map {
+      typeCheckDecl(spec0, exp0, assumedTconstrs, isMain = false, root, classEnv) map {
         case (spec, exp) => TypedAst.Sig(sym, spec, Some(exp))
       }
     case ResolvedAst.Sig(sym, spec0, None) =>
@@ -204,7 +204,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDecl(spec0: ResolvedAst.Spec, exp0: ResolvedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
+  private def typeCheckDecl(spec0: ResolvedAst.Spec, exp0: ResolvedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], isMain: Boolean, root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, eff, loc) =>
 
       ///
@@ -214,8 +214,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (inferredConstrs, inferredTyp, inferredEff) <- inferExp(exp0, root)
       } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp))
 
-      // MATT need to do something about main here?
-      val declaredScheme = sc.copy(constraints = sc.constraints ++ assumedTconstrs)
+
+      val declaredScheme = if (isMain) {
+        // Case 1: This is the main function. Its type signature is fixed.
+        Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
+      } else {
+        // Case 2: Use the declared type.
+        sc.copy(constraints = sc.constraints ++ assumedTconstrs)
+      }
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
