@@ -55,10 +55,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       insts <- instsPerClass
       defn <- insts.defs
     } yield (defn.sym, defn)
-    // MATT WIP
+    // MATT clean up; syms are redundant here
 
     // Computes all used symbols in all defs (in parallel).
-    val usedAll = ParOps.parAgg(root.defs, Used.empty)({
+    val usedAll = ParOps.parAgg(instanceDefs ++ root.defs, Used.empty)({
       case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
     }, _ and _)
 

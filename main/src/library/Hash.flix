@@ -25,7 +25,7 @@ pub lawless class Hash[a] {
 }
 
 instance Hash[Unit] {
-    pub def hash(x: Unit): Int = 0
+    pub def hash(_x: Unit): Int = 0
 }
 
 instance Hash[Bool] {

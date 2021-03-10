@@ -25,7 +25,7 @@ pub lawless class ToString[a] {
 }
 
 instance ToString[Unit] {
-    pub def toString(x: Unit): String = "()"
+    pub def toString(_x: Unit): String = "()"
 }
 
 instance ToString[Bool] {

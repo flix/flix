@@ -32,8 +32,8 @@ pub lawless class Eq[a] {
 }
 
 instance Eq[Unit] {
-    pub def eq(x: Unit, y: Unit): Bool = true
-    pub def neq(x: Unit, y: Unit): Bool = false
+    pub def eq(_x: Unit, _y: Unit): Bool = true
+    pub def neq(_x: Unit, _y: Unit): Bool = false
 }
 
 instance Eq[Bool] {
