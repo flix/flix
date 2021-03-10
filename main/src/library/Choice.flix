@@ -27,15 +27,19 @@ namespace Choice {
     ///
     /// Asserts that `c` is `Absent`. Akin to a type ascription.
     ///
-    pub def assertAbsent(c: Choice[_, true, false]): Unit = choose c {
-        case Absent => ()
+    /// Always returns `true`.
+    ///
+    pub def assertAbsent(c: Choice[_, true, false]): Bool = choose c {
+        case Absent => true
     }
 
     ///
     /// Asserts that `c` is `Present`. Akin to a type ascription.
     ///
-    pub def assertPresent(c: Choice[_, false, true]): Unit = choose c {
-        case Present(_) => ()
+    /// Always returns `true`.
+    ///
+    pub def assertPresent(c: Choice[_, false, true]): Bool = choose c {
+        case Present(_) => true
     }
 
     ///
@@ -63,6 +67,37 @@ namespace Choice {
         }
 
     ///
+    /// Returns `v` if `o` is `Present(v).` Otherwise returns `d`.
+    ///
+    pub def getWithDefault(c: Choice[s, _, _], d: s): s =
+        choose c {
+            case Absent     => d
+            case Present(v) => v
+        }
+
+    ///
+    /// Returns `c1` if it is `Present(v)`. Otherwise returns `c2`.
+    ///
+    pub def withDefault[s :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool, u :# Bool]
+                       (c1: Choice[s, a1, p1], c2: Choice[s, a2, p2]): Choice[s, (a1 and a2) or (p1 and u), p1 or (a1 and p2)] =
+        choose* c1 {
+            case Absent     => c2
+            case Present(v) => Present(v)
+        }
+
+    ///
+    /// Returns `Present(v)` if `c` is `Present(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def filter[t :# Type, a :# Bool, p :# Bool, u :# Bool]
+                  (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a or p, (a and u) or p] =
+        choose* c {
+            case Absent     => Absent
+            case Present(v) => if (f(v)) Present(v) else Absent
+        }
+
+    ///
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
     pub def map[s :# Type, t :# Type, a :# Bool, p :# Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
@@ -72,16 +107,24 @@ namespace Choice {
         }
 
     ///
-    /// Returns `Present(f(v1, v2))` if `c1` is `Present(v1)` and `c2` is `Present(v2)`. Otherwise returns `Absent`.
+    /// Returns `f(v)` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-//    pub def map2[s1 :# Type, s2 :# Type, t :# Type, a1 :# Bool, a2 :# Bool, p1 :# Bool, p2 :# Bool]
-//                (f: (s1, s2) -> t, c1: Choice[s1, a1, p1], c2: Choice[s2, a2, p2]): Choice[t, a1 or a2, p1 and p2] =
-//        choose* (c1, c2) {
-//            case (Absent, Absent)         => Absent
-//            case (Absent, Present(_))     => Absent
-//            case (Present(_), Absent)     => Absent
-//            case (Present(x), Present(y)) => Present(f(x, y))
-//        }
+    pub def flatMap[s :# Type, t :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool, u :# Bool]
+                   (f: s -> Choice[t, a1, p1], c: Choice[s, a2, p2]): Choice[t, (a1 and p2) or a2, (a2 and u) or (p1 and p2)] =
+        choose* c {
+            case Absent     => Absent
+            case Present(v) => f(v)
+        }
+
+    ///
+    /// Returns `v` if `c` is `Present(v)`. Otherwise returns `Absent`.
+    ///
+    pub def flatten[t :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool, u :# Bool]
+        (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, a2 or (a1 and p2), (a2 and u) or (p1 and p2)] =
+        choose* c {
+            case Absent     => Absent
+            case Present(v) => v
+        }
 
     ///
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
