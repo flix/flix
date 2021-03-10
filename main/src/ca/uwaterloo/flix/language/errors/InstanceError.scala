@@ -58,21 +58,24 @@ object InstanceError {
   /**
     * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
     *
+    * @param sigSym   the mismatched signature
     * @param loc      the location of the definition
     * @param expected the scheme of the signature
     * @param actual   the scheme of the definition
     */
-  case class MismatchedSignatures(loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
+  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
     def summary: String = "Mismatched signature."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
+      vt << "Mismatched signature '" << Red(sigSym.name) << "' required by class '" << Red(sigSym.clazz.name) << "'." << NewLine
+      vt << NewLine
       vt << Code(loc, "mismatched signature.") << NewLine
       vt << NewLine
       vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)}" << NewLine
-      vt << s"Actual scheme: ${FormatScheme.formatScheme(actual)}" << NewLine
+      vt << s"Actual scheme:   ${FormatScheme.formatScheme(actual)}" << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Modify the definition to match the signature."
     }
@@ -91,7 +94,9 @@ object InstanceError {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << Code(loc, s"The signature ${sig.name} is missing from the instance.")
+      vt << s"Missing implementation of '" << Red(sig.name) << "' required by class '" << Red(sig.clazz.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"missing implementation") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Add an implementation of the signature to the instance."
     }

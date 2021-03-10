@@ -20,13 +20,13 @@
 opaque type MutMap[k, v] = Ref[Map[k, v]]
 
 instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
-    def toString(m: MutMap[k, v]): String =
+    pub def toString(m: MutMap[k, v]): String =
         let s = MutMap.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m) as & Pure;
         "MutMap#{${String.dropRight(2, s)}}"
 }
 
 instance Copy[MutMap[k, v]] {
-    def copy(m: MutMap[k, v]): MutMap[k, v] & e =
+    pub def copy(m: MutMap[k, v]): MutMap[k, v] & e =
         let MutMap(mm) = m;
         MutMap(ref (deref mm)) as & e
 }
