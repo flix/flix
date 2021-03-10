@@ -16,7 +16,7 @@
 namespace TestChoice {
 
     use Choice.{assertAbsent, assertPresent, isAbsent, isPresent, unbox, getWithDefault,
-                withDefault, filter, flatten, map, invert};
+                withDefault, filter, flatten, map, flatMap, invert};
 
     @test
     def assertAbsent01(): Bool = assertAbsent(Absent) == ()
@@ -95,6 +95,30 @@ namespace TestChoice {
 
     @test
     def map03(): Bool = unbox(map(x -> x * 2, Present(42))) == 84
+
+    @test
+    def flatMap01(): Bool = assertAbsent(flatMap(_x -> Absent, Absent)) == ()
+
+    @test
+    def flatMap02(): Bool = assertAbsent(flatMap(_x -> Absent, Present(42))) == ()
+
+    @test
+    def flatMap03(): Bool = assertAbsent(flatMap(_x -> Present(42), Absent)) == ()
+
+    @test
+    def flatMap04(): Bool = unbox(flatMap(x -> Present(x + 21), Present(21))) == 42
+
+    @test
+    def flatMap05(): Bool = getWithDefault(flatMap(x -> if (true) Absent else Present(x), Present(21)), 42) == 42
+
+    @test
+    def flatMap06(): Bool = getWithDefault(flatMap(x -> if (true) Present(x) else Absent, Present(21)), 42) == 21
+
+    @test
+    def flatMap07(): Bool = getWithDefault(flatMap(x -> Present(x), if (true) Absent else Present(21)), 42) == 42
+
+    @test
+    def flatMap08(): Bool = getWithDefault(flatMap(x -> Present(x), if (true) Present(21) else Absent), 42) == 21
 
     @test
     def invert01(): Bool = unbox(invert(Absent, 42)) == 42
