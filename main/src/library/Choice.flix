@@ -99,15 +99,16 @@ namespace Choice {
 //     pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] & e = match o {
 //
 //    }
-// TODO
-//    ///
-//    /// Returns `v` if `o` is `Some(v)`. Otherwise returns `None`.
-//    ///
-//    @Time(1) @Space(1)
-//    pub def flatten(o: Option[Option[a]]): Option[a] = match o {
-//        case None => None
-//        case Some(v) => v
-//    }
+
+    ///
+    /// Returns `v` if `c` is `Present(v)`. Otherwise returns `Absent`.
+    ///
+    pub def flatten[t :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool, u :# Bool]
+        (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, a2 or (a1 and p2), (a2 and u) or (p1 and p2)] =
+        choose* c {
+            case Absent     => Absent
+            case Present(v) => v
+        }
 
 
 // TODO

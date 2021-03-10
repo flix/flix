@@ -15,7 +15,8 @@
  */
 namespace TestChoice {
 
-    use Choice.{assertAbsent, assertPresent, isAbsent, isPresent, unbox, getWithDefault, withDefault, filter, map, invert};
+    use Choice.{assertAbsent, assertPresent, isAbsent, isPresent, unbox, getWithDefault,
+                withDefault, filter, flatten, map, invert};
 
     @test
     def assertAbsent01(): Bool = assertAbsent(Absent) == ()
@@ -64,6 +65,15 @@ namespace TestChoice {
 
     @test
     def filter03(): Bool = getWithDefault(filter(_ -> false, Present(21)), 42) == 42
+
+    @test
+    def flatten01(): Bool = assertAbsent(flatten(Absent)) == ()
+
+    @test
+    def flatten02(): Bool = assertAbsent(flatten(Present(Absent))) == ()
+
+    @test
+    def flatten03(): Bool = unbox(flatten(Present(Present(42)))) == 42
 
     @test
     def map01(): Bool = isAbsent(map(x -> x, Absent))
