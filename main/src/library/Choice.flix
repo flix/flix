@@ -81,12 +81,19 @@ namespace Choice {
             case Present(v) => Present(v)
         }
 
-// TODO
-//
-//    pub def filter(f: a -> Bool, o: Option[a]): Option[a] = match o {
-//        case None => None
-//        case Some(v) => if (f(v)) o else None
-//    }
+    ///
+    /// Returns `Present(v)` if `c` is `Present(v)` and the predicate `f(v)` is true.
+    ///
+    /// Otherwise returns `None`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def filter[t :# Type, a :# Bool, p :# Bool, u :# Bool]
+                  (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a or p, (a and u) or p] =
+        choose* c {
+            case Absent     => Absent
+            case Present(v) => if (f(v)) Present(v) else Absent
+        }
 
 // TODO
 //     pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] & e = match o {
