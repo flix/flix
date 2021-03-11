@@ -418,29 +418,40 @@ object GenExpression {
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-
+      // Get the tag info.
       val tagInfo = JvmOps.getTagInfo(tpe, tag.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
-      /*
-     If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
-     there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
-     a new one.
-     */
-      // Creating a new instance of the class
-      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-      visitor.visitInsn(DUP)
-      if (JvmOps.isUnitTag(tagInfo)) {
-        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
-          AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
+      ///
+      /// Special Case: A tag with a single argument: The unit argument.
+      ///
+      if (exp.tpe == MonoType.Unit) {
+        // Read the "unitInstance" field of the appropriate class.
+        val declaration = classType.name.toInternalName
+        val descriptor = classType.toDescriptor
+        visitor.visitFieldInsn(GETSTATIC, declaration, "unitInstance", descriptor)
       } else {
-        // Evaluating the single argument of the class constructor
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        /*
+       If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
+       there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
+       a new one.
+       */
+        // Creating a new instance of the class
+        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+        visitor.visitInsn(DUP)
+        if (JvmOps.isUnitTag(tagInfo)) {
+          visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+            AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+        } else {
+          // Evaluating the single argument of the class constructor
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        }
+        // Descriptor of the constructor
+        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+        // Calling the constructor of the class
+        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       }
-      // Descriptor of the constructor
-      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
-      // Calling the constructor of the class
-      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
@@ -1053,7 +1064,7 @@ object GenExpression {
       val lookupErrorLabel: Label = new Label()
       val completedLabel: Label = new Label()
       // Find the correct branch with a table switch
-      visitor.visitTableSwitchInsn(0, rules.length-1, lookupErrorLabel, labels:_*)
+      visitor.visitTableSwitchInsn(0, rules.length - 1, lookupErrorLabel, labels: _*)
 
       for ((rule, label) <- rules.zip(labels)) {
         visitor.visitLabel(label)
