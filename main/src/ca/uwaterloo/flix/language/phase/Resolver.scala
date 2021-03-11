@@ -205,17 +205,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
   def resolve(s0: NamedAst.Sig, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
-    case NamedAst.Sig(sym, NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc), exp0) =>
-      val fparam = fparams0.head
+    case NamedAst.Sig(sym, spec0, exp0) =>
+      val fparam = spec0.fparams.head
+
       for {
         fparamType <- lookupType(fparam.tpe, ns0, root)
-        fparams <- resolveFormalParams(fparams0, ns0, root)
-        tparams <- resolveTypeParams(tparams0, ns0, root)
-        ann <- traverse(ann0)(visitAnnotation(_, ns0, root))
-        scheme <- resolveScheme(sc0, ns0, root)
-        eff <- lookupType(eff0, ns0, root)
         exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), ns0, root))
-        spec = ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc)
+        spec <- resolve(spec0, ns0, root)
       } yield ResolvedAst.Sig(sym, spec, exp.headOption)
   }
 
@@ -223,19 +219,32 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
   def resolve(d0: NamedAst.Def, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
-    case NamedAst.Def(sym, NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc), exp0) =>
-      val fparam = fparams0.head
+    case NamedAst.Def(sym, spec0, exp0) =>
+      val fparam = spec0.fparams.head
 
       for {
         fparamType <- lookupType(fparam.tpe, ns0, root)
-        fparams <- resolveFormalParams(fparams0, ns0, root)
-        tparams <- resolveTypeParams(tparams0, ns0, root)
-        ann <- traverse(ann0)(visitAnnotation(_, ns0, root))
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, root)
-        scheme <- resolveScheme(sc0, ns0, root)
-        eff <- lookupType(eff0, ns0, root)
-        spec = ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc)
+        spec <- resolve(spec0, ns0, root)
       } yield ResolvedAst.Def(sym, spec, exp)
+  }
+
+  /**
+    * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
+    */
+  def resolve(s0: NamedAst.Spec, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
+
+      val fparamsVal = resolveFormalParams(fparams0, ns0, root)
+      val tparamsVal = resolveTypeParams(tparams0, ns0, root)
+      val annVal = traverse(ann0)(visitAnnotation(_, ns0, root))
+      val schemeVal = resolveScheme(sc0, ns0, root)
+      val effVal = lookupType(eff0, ns0, root)
+
+      mapN(fparamsVal, tparamsVal, annVal, schemeVal, effVal) {
+        case (fparams, tparams, ann, scheme, eff) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc)
+      }
   }
 
   /**
