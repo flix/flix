@@ -426,7 +426,13 @@ object GenExpression {
       ///
       /// Special Case: A tag with a single argument: The unit argument.
       ///
-      if (exp.tpe == MonoType.Unit) {
+      // TODO: This is a hack until the new and improved backend arrives.
+      val whitelistedEnums = List(
+        Symbol.mkEnumSym("Comparison"),
+        Symbol.mkEnumSym("RedBlackTree/RedBlackTree"),
+        Symbol.mkEnumSym("RedBlackTree/Color"),
+      )
+      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(enum)) {
         // Read the "unitInstance" field of the appropriate class.
         val declaration = classType.name.toInternalName
         val descriptor = classType.toDescriptor
