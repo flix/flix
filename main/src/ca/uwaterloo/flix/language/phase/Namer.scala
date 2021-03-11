@@ -102,8 +102,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                   case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
                     case Some(otherSig) =>
                       val name = sig.sym.name
-                      val loc1 = sig.loc
-                      val loc2 = otherSig.loc
+                      val loc1 = sig.spec.loc
+                      val loc2 = otherSig.spec.loc
                       Failure(LazyList(
                         // NB: We report an error at both source locations.
                         NameError.DuplicateDefOrSig(name, loc1, loc2),
@@ -148,7 +148,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case Some(defOrSig) =>
             // Case 2: Duplicate definition.
             val name = ident.name
-            val loc1 = defOrSig.loc
+            val loc1 = defOrSig.spec.loc
             val loc2 = ident.loc
             Failure(LazyList(
               // NB: We report an error at both source locations.
@@ -404,7 +404,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               mapN(annVal, schemeVal, tpeVal, expVal) {
                 case (as, sc, eff, exp) =>
                   val sym = Symbol.mkSigSym(classSym, ident)
-                  NamedAst.Sig(doc, as, mod, sym, tparams, fparams, exp.headOption, sc, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, eff, loc)
+                  NamedAst.Sig(sym, spec, exp.headOption)
               }
           }
       }
@@ -444,7 +445,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               mapN(annVal, expVal, schemeVal, tpeVal) {
                 case (as, e, sc, eff) =>
                   val sym = Symbol.mkDefnSym(ns0, ident)
-                  NamedAst.Def(doc, as, mod, sym, tparams, fparams, e, sc, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, eff, loc)
+                  NamedAst.Def(sym, spec, e)
               }
           }
       }
