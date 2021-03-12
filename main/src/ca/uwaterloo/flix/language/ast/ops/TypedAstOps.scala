@@ -390,6 +390,16 @@ object TypedAstOps {
     case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
   }
 
+  // MATT docs
+  // MATT also use this for Redundancy after that merges
+  def instanceDefsOf(root: Root): Iterable[Def] = {
+    for {
+      instsPerClass <- root.instances.values
+      inst <- instsPerClass
+      defn <- inst.defs
+    } yield defn
+  }
+
   /**
     * Returns `true` if the given annotations contains the [[Benchmark]] annotation.
     */

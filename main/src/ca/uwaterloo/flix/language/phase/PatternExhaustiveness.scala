@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
@@ -108,7 +109,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatternExhaustiveness") {
     for {
-      _ <- sequence(root.defs.map { case (_, v) => checkPats(v, root) })
+      _ <- traverseX(root.defs.values)(checkPats(_, root))
+      _ <- traverseX(TypedAstOps.instanceDefsOf(root))(checkPats(_, root))
     } yield {
       root
     }
