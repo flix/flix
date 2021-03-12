@@ -31,10 +31,10 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     * Validates instances and classes in the given AST root.
     */
   override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Instances") {
-    for {
-      _ <- visitInstances(root)
-      _ <- visitClasses(root)
-    } yield root
+    Validation.sequenceX(List(
+      visitInstances(root),
+      visitClasses(root)
+    )).map(_ => root)
   }
 
   /**
@@ -75,10 +75,10 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * Performs validations on a single class.
       */
     def visitClass(class0: TypedAst.Class): Validation[Unit, InstanceError] = {
-      for {
-        _ <- checkLawfulSuperClasses(class0)
-        _ <- checkLawApplication(class0)
-      } yield ()
+      Validation.sequenceX(List(
+        checkLawfulSuperClasses(class0),
+        checkLawApplication(class0)
+      ))
     }
 
     val results = ParOps.parMap(root.classes.values, visitClass)
@@ -166,21 +166,20 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
                 ().toSuccess
               } else {
                 // Case 2.2: the schemes do not match
-                InstanceError.MismatchedSignatures(defn.loc, expectedScheme, defn.declaredScheme).toFailure
+                InstanceError.MismatchedSignatures(sig.sym, defn.loc, expectedScheme, defn.declaredScheme).toFailure
               }
           }
       }
       // Step 2: check that there are no extra definitions
-      sigMatchVal.flatMap {
-        _ =>
-          Validation.traverseX(inst.defs) {
-            defn =>
-              clazz.signatures.find(_.sym.name == defn.sym.name) match {
-                case None => InstanceError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
-                case _ => ().toSuccess
-              }
+      val extraDefVal = Validation.traverseX(inst.defs) {
+        defn =>
+          clazz.signatures.find(_.sym.name == defn.sym.name) match {
+            case None => InstanceError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
+            case _ => ().toSuccess
           }
       }
+
+      Validation.sequenceX(List(sigMatchVal, extraDefVal))
     }
 
     /**
@@ -212,13 +211,14 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       val checks = insts.tails.toSeq
       Validation.traverseX(checks) {
         case inst :: unchecked =>
-          for {
-            _ <- checkSimple(inst)
-            _ <- Validation.traverse(unchecked)(checkOverlap(_, inst))
-            _ <- checkSigMatch(inst)
-            _ <- checkOrphan(inst)
-            _ <- checkSuperInstances(inst)
-          } yield ()
+          Validation.sequenceX(List(
+            checkSimple(inst),
+            Validation.traverse(unchecked)(checkOverlap(_, inst)),
+            checkSigMatch(inst),
+            checkOrphan(inst),
+            checkSuperInstances(inst),
+          ))
+
         case Nil => ().toSuccess
       }
     }

@@ -25,21 +25,21 @@ pub lawless class BitwiseNot[a] {
 }
 
 instance BitwiseNot[Int8] {
-    def not(x: Int8): Int8 = $INT8_NOT$(x)
+    pub def not(x: Int8): Int8 = $INT8_NOT$(x)
 }
 
 instance BitwiseNot[Int16] {
-    def not(x: Int16): Int16 = $INT16_NOT$(x)
+    pub def not(x: Int16): Int16 = $INT16_NOT$(x)
 }
 
 instance BitwiseNot[Int32] {
-    def not(x: Int32): Int32 = $INT32_NOT$(x)
+    pub def not(x: Int32): Int32 = $INT32_NOT$(x)
 }
 
 instance BitwiseNot[Int64] {
-    def not(x: Int64): Int64 = $INT64_NOT$(x)
+    pub def not(x: Int64): Int64 = $INT64_NOT$(x)
 }
 
 instance BitwiseNot[BigInt] {
-    def not(x: BigInt): BigInt = $BIGINT_NOT$(x)
+    pub def not(x: BigInt): BigInt = $BIGINT_NOT$(x)
 }

@@ -21,7 +21,7 @@ namespace Domain/Sign {
     }
 
     instance Eq[Sign] {
-        def eq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
+        pub def eq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
             case (Top, Top) => true
             case (Neg, Neg) => true
             case (Pos, Pos) => true
@@ -29,7 +29,7 @@ namespace Domain/Sign {
             case (Bot, Bot) => true
             case _          => false
         }
-        def neq(e1: Sign, e2: Sign): Bool = not (e1 == e2)
+        pub def neq(e1: Sign, e2: Sign): Bool = not (e1 == e2)
     }
 
     ///

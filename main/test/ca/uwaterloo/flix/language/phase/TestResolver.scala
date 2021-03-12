@@ -166,7 +166,7 @@ class TestResolver extends FunSuite with TestUtils {
       s"""
          |namespace A {
          |  class Show[a] {
-         |    def show(x: a): String
+         |    pub def show(x: a): String
          |  }
          |}
          |
@@ -186,7 +186,7 @@ class TestResolver extends FunSuite with TestUtils {
          |
          |  namespace B/C {
          |    class Show[a] {
-         |      def show(x: a): String
+         |      pub def show(x: a): String
          |    }
          |  }
          |}
@@ -218,7 +218,7 @@ class TestResolver extends FunSuite with TestUtils {
         |}
         |
         |namespace O {
-        |    class D[a] extends N.C[a]
+        |    class D[a] with N.C[a]
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -262,7 +262,7 @@ class TestResolver extends FunSuite with TestUtils {
         |    sealed class C[a]
         |
         |    namespace O {
-        |        class D[a] extends N.C[a]
+        |        class D[a] with N.C[a]
         |    }
         |}
         |""".stripMargin
@@ -375,7 +375,7 @@ class TestResolver extends FunSuite with TestUtils {
       s"""
          |namespace A {
          |    class C[a] {
-         |        def f(x: a): a
+         |        pub def f(x: a): a
          |    }
          |}
          |
@@ -965,7 +965,7 @@ class TestResolver extends FunSuite with TestUtils {
   }
 
   test("CyclicClassHierarchy.01") {
-    val input = "class A[a] extends A[a]"
+    val input = "class A[a] with A[a]"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.CyclicClassHierarchy](result)
   }
@@ -973,8 +973,8 @@ class TestResolver extends FunSuite with TestUtils {
   test("CyclicClassHierarchy.02") {
     val input =
       """
-        |class A[a] extends B[a]
-        |class B[a] extends A[a]
+        |class A[a] with B[a]
+        |class B[a] with A[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.CyclicClassHierarchy](result)
@@ -983,9 +983,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("CyclicClassHierarchy.03") {
     val input =
       """
-        |class A[a] extends B[a]
-        |class B[a] extends C[a]
-        |class C[a] extends A[a]
+        |class A[a] with B[a]
+        |class B[a] with C[a]
+        |class C[a] with A[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.CyclicClassHierarchy](result)
@@ -994,7 +994,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("CyclicClassHierarchy.04") {
     val input =
       """
-        |class A[a] extends A[a], B[a]
+        |class A[a] with A[a], B[a]
         |class B[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1004,8 +1004,8 @@ class TestResolver extends FunSuite with TestUtils {
   test("CyclicClassHierarchy.05") {
     val input =
       """
-        |class A[a] extends B[a]
-        |class B[a] extends A[a], C[a]
+        |class A[a] with B[a]
+        |class B[a] with A[a], C[a]
         |class C[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)

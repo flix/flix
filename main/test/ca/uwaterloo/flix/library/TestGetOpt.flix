@@ -31,7 +31,7 @@ namespace TestGetOpt {
     }
 
     instance Eq[Flag] {
-        def eq(x: Flag, y: Flag): Bool = match (x, y) {
+        pub def eq(x: Flag, y: Flag): Bool = match (x, y) {
             case (HiRes, HiRes)             => true
             case (Colour(x1), Colour(y1))   => x1 == y1
             case (Width(x1), Width(y1))     => x1 == y1
@@ -39,11 +39,11 @@ namespace TestGetOpt {
             case (_, _)                     => false
         }
 
-        def neq(x: Flag, y: Flag): Bool = not (x == y)
+        pub def neq(x: Flag, y: Flag): Bool = not (x == y)
     }
 
     instance ToString[Flag] {
-        def toString(x: Flag): String = match x {
+        pub def toString(x: Flag): String = match x {
             case HiRes      => "A"
             case Colour(x)  => "Colour(${x})"
             case Width(i)   => "Width('${i}')"

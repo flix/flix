@@ -15,14 +15,14 @@ namespace Domain/Parity {
     }
 
     instance Eq[Parity] {
-        def eq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
+        pub def eq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
             case (Top, Top)     => true
             case (Odd, Odd)     => true
             case (Even, Even)   => true
             case (Bot, Bot)     => true
             case _              => false
         }
-        def neq(e1: Parity, e2: Parity): Bool = not (e1 == e2)
+        pub def neq(e1: Parity, e2: Parity): Bool = not (e1 == e2)
     }
 
     ///

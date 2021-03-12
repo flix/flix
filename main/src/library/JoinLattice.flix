@@ -30,7 +30,7 @@ lawless class JoinLattice[a] {
 }
 
 instance JoinLattice[(a1, a2)] with [a1 : JoinLattice, a2 : JoinLattice] {
-    def leastUpperBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
+    pub def leastUpperBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
         case ((x1, x2), (y1, y2)) => (JoinLattice.leastUpperBound(x1, y1), JoinLattice.leastUpperBound(x2, y2))
     }
 }

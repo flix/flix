@@ -250,11 +250,11 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |instance C[Int] {
-        |    def foo(x: Int): String = "123"
+        |    pub def foo(x: Int): String = "123"
         |}
         |
         |instance C[Box[a]] with [a : C] {
-        |    def foo(x: Box[a]): String = match x {
+        |    pub def foo(x: Box[a]): String = match x {
         |        case Box(y) => C.foo(y)
         |    }
         |}
@@ -277,11 +277,11 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |instance C[Int] {
-        |    def foo(x: Int): String = "123"
+        |    pub def foo(x: Int): String = "123"
         |}
         |
         |instance C[Box[a]] with [a : C] {
-        |    def foo(x: Box[a]): String = match x {
+        |    pub def foo(x: Box[a]): String = match x {
         |        case Box(y) => C.foo(y)
         |    }
         |}
@@ -300,7 +300,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |instance C[Int] {
-        |    def foo(x: Int): Int = x
+        |    pub def foo(x: Int): Int = x
         |}
         |
         |def bar(x: a, y: Int): Int = C.foo(x) + C.foo(y)

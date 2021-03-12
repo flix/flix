@@ -25,21 +25,21 @@ pub lawless class BitwiseXor[a] {
 }
 
 instance BitwiseXor[Int8] {
-    def xor(x: Int8, y: Int8): Int8 = $INT8_XOR$(x, y)
+    pub def xor(x: Int8, y: Int8): Int8 = $INT8_XOR$(x, y)
 }
 
 instance BitwiseXor[Int16] {
-    def xor(x: Int16, y: Int16): Int16 = $INT16_XOR$(x, y)
+    pub def xor(x: Int16, y: Int16): Int16 = $INT16_XOR$(x, y)
 }
 
 instance BitwiseXor[Int32] {
-    def xor(x: Int32, y: Int32): Int32 = $INT32_XOR$(x, y)
+    pub def xor(x: Int32, y: Int32): Int32 = $INT32_XOR$(x, y)
 }
 
 instance BitwiseXor[Int64] {
-    def xor(x: Int64, y: Int64): Int64 = $INT64_XOR$(x, y)
+    pub def xor(x: Int64, y: Int64): Int64 = $INT64_XOR$(x, y)
 }
 
 instance BitwiseXor[BigInt] {
-    def xor(x: BigInt, y: BigInt): BigInt = $BIGINT_XOR$(x, y)
+    pub def xor(x: BigInt, y: BigInt): BigInt = $BIGINT_XOR$(x, y)
 }
