@@ -50,18 +50,24 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       return root.toSuccess
     }
 
+    // Computes all used symbols in all top-level defs (in parallel).
+    val usedTopDefs = ParOps.parAgg(root.defs, Used.empty)({
+      case (acc, (_, decl)) => acc and visitDef(decl)(root, flix)
+    }, _ and _)
+
+    // Find all instance defs
     val instanceDefs = for {
       instsPerClass <- root.instances.values
       insts <- instsPerClass
       defn <- insts.defs
     } yield defn
 
-    val topDefs = root.defs.values
-
-    // Computes all used symbols in all defs (in parallel).
-    val usedAll = ParOps.parAgg(topDefs ++ instanceDefs, Used.empty)({
+    // Compute all used symbols in all instance defs (in parallel).
+    val usedInstDefs = ParOps.parAgg(instanceDefs, Used.empty)({
       case (acc, decl) => acc and visitDef(decl)(root, flix)
     }, _ and _)
+
+    val usedAll = usedTopDefs and usedInstDefs
 
     // Check for unused symbols.
     val usedRes =
