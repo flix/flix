@@ -109,7 +109,7 @@ namespace Choice {
     ///
     /// Returns `f(v)` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-    pub def flatMap[s :# Type, t :# Type, a2 :# Bool, p2 :# Bool, a1 :# Bool, p1 :# Bool]
+    pub def flatMap[s :# Type, t :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool]
                    (f: s -> Choice[t, a2, p2], c: Choice[s, a1, p1]): Choice[t, a1 or (p1 and a2), p1 and p2] =
         choose* c {
             case Absent     => Absent
