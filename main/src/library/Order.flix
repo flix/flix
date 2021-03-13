@@ -105,11 +105,11 @@ namespace Order {
 
 instance Order[Unit] {
 
-    pub def less(x: Unit, y: Unit): Bool = false
-    pub def lessEqual(x: Unit, y: Unit): Bool = true
-    pub def greater(x: Unit, y: Unit): Bool = false
-    pub def greaterEqual(x: Unit, y: Unit): Bool = true
-    pub def compare(x: Unit, y: Unit): Comparison = EqualTo
+    pub def less(_x: Unit, _y: Unit): Bool = false
+    pub def lessEqual(_x: Unit, _y: Unit): Bool = true
+    pub def greater(_x: Unit, _y: Unit): Bool = false
+    pub def greaterEqual(_x: Unit, _y: Unit): Bool = true
+    pub def compare(_x: Unit, _y: Unit): Comparison = EqualTo
 
 }
 

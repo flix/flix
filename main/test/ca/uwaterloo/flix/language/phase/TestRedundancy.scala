@@ -860,4 +860,19 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
+  test("UnusedFormalParam.Instance.01") {
+    val input =
+      """
+        |lawless class C[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance C[Int] {
+        |    pub def f(x: Int): Int = 123
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
 }
