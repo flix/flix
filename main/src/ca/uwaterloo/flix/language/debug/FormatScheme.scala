@@ -29,7 +29,7 @@ object FormatScheme {
       if (sc.quantifiers.isEmpty)
         ""
       else
-        "∀(" + sc.quantifiers.map(FormatType.formatType).mkString(", ") + ")."
+        "∀(" + sc.quantifiers.map(FormatType.formatType).mkString(", ") + "). "
 
     val typePart = FormatType.formatType(sc.base)
 

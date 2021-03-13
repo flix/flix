@@ -48,11 +48,9 @@ object TypeError {
       vt << ">> The type scheme: '" << Red(FormatScheme.formatScheme(inferred)) << "' cannot be generalized to '" << Red(FormatScheme.formatScheme(declared)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unable to generalize the type scheme.") << NewLine
-      vt << "Possible fixes:" << NewLine
       vt << NewLine
-      vt << "  (1) The function is declared as too polymorphic. Remove some type variables." << NewLine
-      vt << "  (2) The expression body of the function is incorrect." << NewLine
-      vt << NewLine
+      vt << s"  Declared: " << Cyan(FormatScheme.formatScheme(declared)) << NewLine
+      vt << s"  Inferred: " << Magenta(FormatScheme.formatScheme(inferred)) << NewLine
       vt
     }
   }
