@@ -429,8 +429,8 @@ object GenExpression {
       // TODO: This is a hack until the new and improved backend arrives.
       val whitelistedEnums = List(
         Symbol.mkEnumSym("Comparison"),
-        Symbol.mkEnumSym("RedBlackTree/RedBlackTree"),
-        Symbol.mkEnumSym("RedBlackTree/Color"),
+        Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
+        Symbol.mkEnumSym("RedBlackTree.Color"),
       )
       if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(enum)) {
         // Read the "unitInstance" field of the appropriate class.
