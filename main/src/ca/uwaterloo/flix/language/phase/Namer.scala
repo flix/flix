@@ -1518,10 +1518,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getTypeParamsFromCases(tparams0: WeededAst.TypeParams, cases: List[WeededAst.Case], loc: SourceLocation, uenv0: UseEnv)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => Nil.toSuccess // TODO allow implicit tparams?
-      case WeededAst.TypeParams.Explicit(tparams) =>
-        mapN(getImplicitTypeParamsFromCases(cases, loc)) {
-          implicitTparams => getExplicitTypeParams(tparams, implicitTparams, uenv0)
-        }
+      case WeededAst.TypeParams.Explicit(tparams) => tparams.map(visitTparam(_, uenv0)).toSuccess // MATT this whole function may be redundant
     }
   }
 
@@ -1535,31 +1532,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           getImplicitTypeParamsFromFormalParams(fparams, tpe, loc, tenv)
         else
           Nil.toSuccess
-      case WeededAst.TypeParams.Explicit(tparams0) =>
-        mapN(getImplicitTypeParamsFromFormalParams(fparams, tpe, loc, tenv)) {
-          implicitTparams => getExplicitTypeParams(tparams0, implicitTparams, uenv)
-        }
+      case WeededAst.TypeParams.Explicit(tparams) => tparams.map(visitTparam(_, uenv)).toSuccess // MATT method redundant ?
     }
   }
 
-  /**
-    * Returns the explicit type parameters from the given type parameter names and implicit type parameters.
-    */
-  private def getExplicitTypeParams(tparams0: List[WeededAst.TypeParam], implicitTparams: List[NamedAst.TypeParam], uenv0: UseEnv)(implicit flix: Flix): List[NamedAst.TypeParam] = {
-    val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
-    tparams0.map {
-      case WeededAst.TypeParam(ident, kindOpt, classes) =>
-        val qualifiedClasses = classes.map(clazz => uenv0.typesAndClasses.getOrElse(clazz.ident.name, clazz))
-        val kind = kindOpt match {
-          // Case 1: Get the kind for each type variable from the implicit type params.
-          // Use a kind variable if not found; this will be caught later by redundancy checks.
-          case None => kindPerName.getOrElse(ident.name, Kind.freshVar())
-          // Case 2: The kind is explicitly available.
-          case Some(k) => k
-        }
-        val tvar = Type.freshVar(kind, text = Some(ident.name))
-        NamedAst.TypeParam(ident, tvar, qualifiedClasses, ident.loc)
-    }
+  // MATT docs
+  private def visitTparam(tparam: WeededAst.TypeParam, uenv0: UseEnv)(implicit flix: Flix): NamedAst.TypeParam = tparam match {
+    case WeededAst.TypeParam(ident, kindOpt, classes) =>
+      val qualifiedClasses = classes.map(clazz => uenv0.typesAndClasses.getOrElse(clazz.ident.name, clazz))
+      val kind = kindOpt.getOrElse(Kind.Star)
+      val tvar = Type.freshVar(kind, text = Some(ident.name))
+      NamedAst.TypeParam(ident, tvar, qualifiedClasses, ident.loc)
   }
 
   /**
@@ -1568,14 +1551,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
     val typeVarsWithKind = types.flatMap(freeVarsWithKind(_, Map.empty))
     freshTypeParamsWithKind(typeVarsWithKind, loc)
-  }
-
-  /**
-    * Returns the implicit type parameters constructed from the given enum cases.
-    */
-  private def getImplicitTypeParamsFromCases(cases: List[WeededAst.Case], loc: SourceLocation)(implicit flix: Flix): Validation[List[NamedAst.TypeParam], NameError] = {
-    // Infer the kind for each type variable in the cases.
-    getImplicitTypeParamsFromTypes(cases.map(_.tpe), loc)
   }
 
   /**
