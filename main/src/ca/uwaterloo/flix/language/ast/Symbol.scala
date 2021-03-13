@@ -321,9 +321,14 @@ object Symbol {
     override val hashCode: Int = 7 * clazz.hashCode + 11 * name.hashCode
 
     /**
+      * The namespace of the sig.
+      */
+    val namespace: List[String] = clazz.namespace :+ clazz.name
+
+    /**
       * Human readable representation.
       */
-    override def toString: String = if (clazz.namespace.isEmpty) name else clazz.namespace.mkString("/") + "." + name
+    override def toString: String = namespace.mkString("/") + "." + name
   }
 
   /**
