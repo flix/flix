@@ -133,7 +133,7 @@ namespace Test/Dec/Class {
             pub def f(x: a, y: a): Bool
 
             // TODO handle namespaces better
-            law reflexivity(): Bool = forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
+            law reflexivity: forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
         }
 
         instance C[Int] {
@@ -145,11 +145,11 @@ namespace Test/Dec/Class {
         lawless class C[a] {
             pub def f(): a
 
-            law l(): Bool = true
+            law l: forall (_x: a) . true
 
             pub def g(): a
 
-            law m(): Bool = true
+            law m: forall (_x: a) . true
         }
     }
 
