@@ -132,8 +132,7 @@ namespace Test/Dec/Class {
         class C[a] {
             pub def f(x: a, y: a): Bool
 
-            // TODO handle namespaces better
-            law reflexivity(): Bool = forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
+            law reflexivity(): Bool = forall (x: a, y: a) . f(x, y) == f(y, x)
         }
 
         instance C[Int] {
