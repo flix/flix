@@ -33,6 +33,9 @@ namespace TestUnsafeBox {
     @test
     def testBox05(): Bool = box(None: Option[Int32]) == box(None: Option[Int32])
 
+    @test
+    def testBox06(): Bool = "${box(1 :: 2 :: 3 :: Nil)}" == "1 :: 2 :: 3 :: Nil"
+
     // TODO: Why are the type annotations required below?
 
     @test
