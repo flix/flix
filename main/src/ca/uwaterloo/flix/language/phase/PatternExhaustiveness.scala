@@ -108,11 +108,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatternExhaustiveness") {
-    for {
-      _ <- traverseX(root.defs.values)(checkPats(_, root))
-      _ <- traverseX(TypedAstOps.instanceDefsOf(root))(checkPats(_, root))
-    } yield {
-      root
+    val defsVal = traverseX(root.defs.values)(checkPats(_, root))
+    val instanceDefsVal = traverseX(TypedAstOps.instanceDefsOf(root))(checkPats(_, root))
+
+    sequenceX(List(defsVal, instanceDefsVal)).map {
+      _ => root
     }
   }
 
