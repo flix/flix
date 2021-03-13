@@ -114,7 +114,7 @@ namespace IDE {
     instance Hash[Transformer] {
         pub def hash(x: Transformer): Int32 = match x {
             case BotTrans               => 1
-            case NonBotTrans(x, y, v)   => 3 * x + 7 * y + Hash.hash(v)
+            case NonBotTrans(y, z, v)   => 3 * y + 7 * z + Hash.hash(v)
         }
     }
 

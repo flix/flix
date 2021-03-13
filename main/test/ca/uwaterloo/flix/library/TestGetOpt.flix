@@ -45,7 +45,7 @@ namespace TestGetOpt {
     instance ToString[Flag] {
         pub def toString(x: Flag): String = match x {
             case HiRes      => "A"
-            case Colour(x)  => "Colour(${x})"
+            case Colour(y)  => "Colour(${y})"
             case Width(i)   => "Width('${i}')"
             case Height(i)  => "Height('${i}')"
         }
