@@ -138,7 +138,7 @@ instance Order[Bool] {
         case (false, false) => EqualTo
         case (false, true) => LessThan
         case (true, false) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
@@ -154,7 +154,7 @@ instance Order[Char] {
         case (false, false) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
@@ -170,7 +170,7 @@ instance Order[Float32] {
         case (false, false) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
@@ -186,7 +186,7 @@ instance Order[Float64] {
         case (false, false) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
@@ -202,7 +202,7 @@ instance Order[Int8] {
         case (false, false) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
@@ -218,7 +218,7 @@ instance Order[Int16] {
         case (false, false) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
@@ -234,7 +234,7 @@ instance Order[Int32] {
         case (false, false) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
@@ -250,7 +250,7 @@ instance Order[Int64] {
         case (false, false) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
@@ -266,7 +266,7 @@ instance Order[BigInt] {
         case (false, false) => EqualTo
         case (true, false) => LessThan
         case (false, true) => GreaterThan
-        case _ => EqualTo // TODO fix
+        case _ => EqualTo // TODO remove this case when PatternExhaustiveness is fixed
     }
 
 }
