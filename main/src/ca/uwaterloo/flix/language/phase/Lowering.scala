@@ -361,7 +361,67 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitExps(exps: List[Expression])(implicit root: Root, flix: Flix): List[Expression] = exps.map(visitExp)
 
-  private def visitPat(pat0: Pattern)(implicit root: Root, flix: Flix): Pattern = ??? // TODO (Just need to replace types)
+  /**
+    * Lowers the given pattern `pat0`.
+    */
+  private def visitPat(pat0: Pattern)(implicit root: Root, flix: Flix): Pattern = pat0 match {
+    case Pattern.Wild(tpe, loc) =>
+      val t = visitType(tpe)
+      Pattern.Wild(t, loc)
+
+    case Pattern.Var(sym, tpe, loc) =>
+      val t = visitType(tpe)
+      Pattern.Var(sym, t, loc)
+
+    case Pattern.Unit(_) => pat0
+
+    case Pattern.True(_) => pat0
+
+    case Pattern.False(_) => pat0
+
+    case Pattern.Char(_, _) => pat0
+
+    case Pattern.Float32(_, _) => pat0
+
+    case Pattern.Float64(_, _) => pat0
+
+    case Pattern.Int8(_, _) => pat0
+
+    case Pattern.Int16(_, _) => pat0
+
+    case Pattern.Int32(_, _) => pat0
+
+    case Pattern.Int64(_, _) => pat0
+
+    case Pattern.BigInt(_, _) => pat0
+
+    case Pattern.Str(_, _) => pat0
+
+    case Pattern.Tag(sym, tag, pat, tpe, loc) =>
+      val p = visitPat(pat)
+      val t = visitType(tpe)
+      Pattern.Tag(sym, tag, p, t, loc)
+
+    case Pattern.Tuple(elms, tpe, loc) =>
+      val es = elms.map(visitPat)
+      val t = visitType(tpe)
+      Pattern.Tuple(es, t, loc)
+
+    case Pattern.Array(elms, tpe, loc) =>
+      val es = elms.map(visitPat)
+      val t = visitType(tpe)
+      Pattern.Array(es, t, loc)
+
+    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
+      val es = elms.map(visitPat)
+      val t = visitType(tpe)
+      Pattern.ArrayTailSpread(es, sym, t, loc)
+
+    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
+      val es = elms.map(visitPat)
+      val t = visitType(tpe)
+      Pattern.ArrayHeadSpread(sym, es, t, loc)
+  }
 
   /**
     * Lowers the given type `tpe0`.
@@ -445,7 +505,7 @@ object Lowering extends Phase[Root, Root] {
   private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
     case Constraint(_, head, body, loc) =>
       val h = visitHeadPred(head)
-      val bs = mkList(body.map(visitBodyPred))
+      val bs = mkArray(body.map(visitBodyPred))
       // TODO: Apply the Constraint constructor.
       ??? // TODO
   }
@@ -558,7 +618,6 @@ object Lowering extends Phase[Root, Root] {
     case Polarity.Negative =>
       val (_, tpe) = Scheme.instantiate(root.enums(PolaritySym).sc, InstantiateMode.Flexible)
       mkUnitTag(PolaritySym, "Negative", tpe, loc)
-
   }
 
 
@@ -603,7 +662,7 @@ object Lowering extends Phase[Root, Root] {
     mkTag(sym, tag, exp, tpe, loc)
   }
 
-  private def mkList(exps: List[Expression]): Expression = {
+  private def mkArray(exps: List[Expression]): Expression = {
     // TODO: Foldright over cons.
     ??? // TODO
   }
