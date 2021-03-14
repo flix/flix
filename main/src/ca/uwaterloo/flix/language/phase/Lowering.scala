@@ -512,6 +512,7 @@ object Lowering extends Phase[Root, Root] {
     mkTag(DatalogSym, "Datalog", innerExp, mkDatalogType(), loc)
   }
 
+  // TODO: Move
   private def mkDatalogType(): Type = {
     ??? // TODO
   }
@@ -525,13 +526,26 @@ object Lowering extends Phase[Root, Root] {
   }
 
   private def visitHeadPred(p: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p match {
-    case Head.Atom(pred, den, terms, tpe, loc) =>
-      ??? // TODO
+    case Head.Atom(pred, den, terms, _, loc) =>
+      val sym = visitPredSym(pred)
+      val ts = mkArray(terms.map(visitHeadTerm))
+      val l = mkLoc(loc)
+
+      val innerExp = mkTuple(List(sym, ts, l))
+      mkTag(HeadPredicate, "HeadAtom", innerExp, mkHeadPredicateType(), loc)
 
     case Head.Union(exp, tpe, loc) =>
       // TODO: We need to come up with a different design for Union.
       ???
   }
+
+  // TODO: Move
+  private def visitPredSym(pred: Name.Pred): Expression = {
+    ??? // TODO
+  }
+
+  // TODO: Move
+  private def mkHeadPredicateType(): Type = ???
 
   private def visitBodyPred(p: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
