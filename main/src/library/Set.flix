@@ -324,9 +324,15 @@ namespace Set {
     ///
     /// Returns the union of `xs` and `ys`.
     ///
-    @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
+    @Time(Int32.min(size(xs), size(ys)) * Int32.log2(size(xs) + size(ys)))
+    @Space(Int32.min(size(xs), size(ys)) * Int32.log2(size(xs) + size(ys)))
     pub def union[a : Order](xs: Set[a], ys: Set[a]): Set[a] =
-        foldLeft((acc, x) -> insert(x, acc), xs, ys)
+        let Set(as) = xs;
+        let Set(bs) = ys;
+        if (RedBlackTree.height(as) < RedBlackTree.height(bs))
+            foldLeft((acc, x) -> insert(x, acc), ys, xs)
+        else
+            foldLeft((acc, y) -> insert(y, acc), xs, ys)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
