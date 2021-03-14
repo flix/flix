@@ -594,6 +594,8 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Str(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
+    case Expression.Ascribe(exp, _, _, _) => visitHeadTerm(exp)
+
     // TODO: Wrap other expressions in a function...
 
     case _ => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
@@ -671,6 +673,7 @@ object Lowering extends Phase[Root, Root] {
   }
 
   private def boxBool(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
 
   private def mkVarSym(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
     val loc = sym.loc
