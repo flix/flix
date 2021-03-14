@@ -646,6 +646,7 @@ object Lowering extends Phase[Root, Root] {
       mkUnitTag(PolaritySym, "Negative", tpe, loc)
   }
 
+
   /**
     * Constructs a `Fixpoint/Ast.Var` expression from the given variable symbol `sym`.
     */
@@ -653,7 +654,7 @@ object Lowering extends Phase[Root, Root] {
     val symExp = mkVarSym(sym, loc)
     val locExp = mkSourceLocation(sym.loc)
     val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    ??? // TODO
+    mkTag(HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
   }
 
   private def mkBodyWildTerm(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
@@ -732,14 +733,22 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Returns the type of `Fixpoint/Ast.PredSym`
+    * Returns the type `Fixpoint/Ast.PredSym`.
     */
   def mkPredSymType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(PredSym, Nil)
 
   /**
-    * Returns the type of `Fixpoint/Ast.VarSym`
+    * Returns the type `Fixpoint/Ast.VarSym`.
     */
   def mkVarSymType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(VarSym, Nil)
+
+  /**
+    * Returns the type of `Fixpoint/HeadTerm[UnsafeBox[##java.lang.Object]].`
+    */
+  def mkHeadTermType(): Type = {
+
+    ??? // TODO
+  }
 
   /**
     * Returns the type of `Fixpoint/Ast.SourceLocation`
