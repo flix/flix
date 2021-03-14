@@ -508,7 +508,7 @@ object Lowering extends Phase[Root, Root] {
     val facts = cs.filter(c => c.body.isEmpty).map(visitConstraint)
     val rules = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
 
-    val innerExp = mkTuple(List(mkArray(facts), mkArray(rules)))
+    val innerExp = mkTuple(List(mkArray(facts), mkArray(rules)), loc)
     mkTag(DatalogSym, "Datalog", innerExp, mkDatalogType(), loc)
   }
 
@@ -531,7 +531,7 @@ object Lowering extends Phase[Root, Root] {
       val ts = mkArray(terms.map(visitHeadTerm))
       val l = mkLoc(loc)
 
-      val innerExp = mkTuple(List(sym, ts, l))
+      val innerExp = mkTuple(List(sym, ts, l), loc)
       mkTag(HeadPredicate, "HeadAtom", innerExp, mkHeadPredicateType(), loc)
 
     case Head.Union(exp, tpe, loc) =>
@@ -546,12 +546,9 @@ object Lowering extends Phase[Root, Root] {
     case Name.Pred(sym, loc) =>
       val s = Expression.Str(sym, loc)
       val l = mkLoc(loc)
-      val innerExp = mkTuple(List(s, l))
+      val innerExp = mkTuple(List(s, l), loc)
       mkTag(PredSym, "PredSym", innerExp, mkPredSymType(), loc)
   }
-
-  // TODO: Move
-  def mkPredSymType(): Type = ???
 
 
   // TODO: Move
@@ -704,18 +701,10 @@ object Lowering extends Phase[Root, Root] {
     ??? // TODO
   }
 
-  private def mkTuple(exps: List[Expression]): Expression = {
-    ??? // TODO
-  }
-
   private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
   private def mkUnsafeBox(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
-  // TODO: Move
-  def mkLocType(): Type = {
-    ???
-  }
 
   /**
     * Translates the given [[SourceLocation]] to the Flix AST.
@@ -726,8 +715,27 @@ object Lowering extends Phase[Root, Root] {
     val beginCol = Expression.Int32(loc.beginCol, loc)
     val endLine = Expression.Int32(loc.endLine, loc)
     val endCol = Expression.Int32(loc.endCol, loc)
-    val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol))
-    mkTag(SourceLocationSym, "SourceLocation", innerExp, mkLocType(), loc)
+    val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol), loc)
+    mkTag(SourceLocationSym, "SourceLocation", innerExp, mkSourceLocationType(), loc)
+  }
+
+  /**
+    * Returns the type of `Fixpoint/Ast.PredSym`
+    */
+  def mkPredSymType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(PredSym, Nil)
+
+  /**
+    * Returns the type of `Fixpoint/Ast.SourceLocation`
+    */
+  def mkSourceLocationType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(SourceLocationSym, Nil)
+
+  /**
+    * Returns a pure tuple expression constructed from the given list of expressions `exps`.
+    */
+  private def mkTuple(exps: List[Expression], loc: SourceLocation): Expression = {
+    val tpe = Type.mkTuple(exps.map(_.tpe))
+    val eff = Type.Pure
+    Expression.Tuple(exps, tpe, eff, loc)
   }
 
 }
