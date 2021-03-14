@@ -462,4 +462,14 @@ namespace RedBlackTree {
         case _ => None
     }
 
+    ///
+    /// Returns the black height of `tree`.
+    ///
+    @Time(Int32.log2(size(tree))) @Space(1)
+    pub def blackHeight(tree: RedBlackTree[k, v]): Int32 = match tree {
+        case Node(Black, a, _, _, _) => 1 + blackHeight(a)
+        case Node(_, a, _, _, _) => blackHeight(a)
+        case _ => 0
+    }
+
 }
