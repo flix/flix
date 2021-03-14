@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
@@ -55,15 +56,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, (_, decl)) => acc and visitDef(decl)(root, flix)
     }, _ and _)
 
-    // Find all instance defs
-    val instanceDefs = for {
-      instsPerClass <- root.instances.values
-      inst <- instsPerClass
-      defn <- inst.defs
-    } yield defn
-
     // Compute all used symbols in all instance defs (in parallel).
-    val usedInstDefs = ParOps.parAgg(instanceDefs, Used.empty)({
+    val usedInstDefs = ParOps.parAgg(TypedAstOps.instanceDefsOf(root), Used.empty)({
       case (acc, decl) => acc and visitDef(decl)(root, flix)
     }, _ and _)
 
