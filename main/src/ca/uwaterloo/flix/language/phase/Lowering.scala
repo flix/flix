@@ -527,7 +527,7 @@ object Lowering extends Phase[Root, Root] {
 
   private def visitHeadPred(p: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p match {
     case Head.Atom(pred, den, terms, _, loc) =>
-      val sym = visitPredSym(pred)
+      val sym = mkPredSym(pred)
       val ts = mkArray(terms.map(visitHeadTerm))
       val l = mkLoc(loc)
 
@@ -539,10 +539,20 @@ object Lowering extends Phase[Root, Root] {
       ???
   }
 
-  // TODO: Move
-  private def visitPredSym(pred: Name.Pred): Expression = {
-    ??? // TODO
+  /**
+    * Translates the given [[Name.Pred]] to the Flix AST.
+    */
+  private def mkPredSym(pred: Name.Pred)(implicit root: Root, flix: Flix): Expression = pred match {
+    case Name.Pred(sym, loc) =>
+      val s = Expression.Str(sym, loc)
+      val l = mkLoc(loc)
+      val innerExp = mkTuple(List(s, l))
+      mkTag(PredSym, "PredSym", innerExp, mkPredSymType(), loc)
   }
+
+  // TODO: Move
+  def mkPredSymType(): Type = ???
+
 
   // TODO: Move
   private def mkHeadPredicateType(): Type = ???
@@ -702,15 +712,22 @@ object Lowering extends Phase[Root, Root] {
 
   private def mkUnsafeBox(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
+  // TODO: Move
+  def mkLocType(): Type = {
+    ???
+  }
+
   /**
-    * Lowers the given source location `loc`.
+    * Translates the given [[SourceLocation]] to the Flix AST.
     */
   private def mkLoc(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    val e1 = Expression.RecordEmpty(???, loc)
-    val e2 = Expression.RecordExtend(Name.Field("name", loc), Expression.Str(loc.source.format, loc), e1, ???, Type.Pure, loc)
-    val e3 = Expression.RecordExtend(Name.Field("beginLine", loc), Expression.Int32(loc.beginLine, loc), e2, ???, Type.Pure, loc)
-    // TODO: Benjamin: Rest of the fields.
-    e3
+    val name = Expression.Str(loc.source.format, loc)
+    val beginLine = Expression.Int32(loc.beginLine, loc)
+    val beginCol = Expression.Int32(loc.beginCol, loc)
+    val endLine = Expression.Int32(loc.endLine, loc)
+    val endCol = Expression.Int32(loc.endCol, loc)
+    val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol))
+    mkTag(SourceLocationSym, "SourceLocation", innerExp, mkLocType(), loc)
   }
 
 }
