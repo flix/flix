@@ -703,8 +703,10 @@ object Lowering extends Phase[Root, Root] {
 
   private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
+  /**
+    * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
+    */
   private def mkUnsafeBox(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
-
 
   /**
     * Translates the given [[SourceLocation]] to the Flix AST.
