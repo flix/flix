@@ -15,7 +15,6 @@
  */
 namespace Fixpoint/Ast {
     pub enum SourceLocation {
-        case Unknown,
-        case SourceLocation({name: String, beginLine: Int32, beginCol: Int32, endLine: Int32, endCol: Int32})
+        case SourceLocation(String, Int32, Int32, Int32, Int32)
     }
 }

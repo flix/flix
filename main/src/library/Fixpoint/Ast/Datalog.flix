@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 namespace Fixpoint/Ast {
-    pub enum BodyPredicate[v] {
-        case BodyAtom(PredSym, Polarity, Array[BodyTerm[v]], SourceLocation)
+    pub enum Datalog[v] {
+        case Datalog(Array[Constraint[v]], Array[Constraint[v]])
     }
 }
