@@ -529,7 +529,7 @@ object Lowering extends Phase[Root, Root] {
     case Head.Atom(pred, den, terms, _, loc) =>
       val sym = mkPredSym(pred)
       val ts = mkArray(terms.map(visitHeadTerm))
-      val l = mkLoc(loc)
+      val l = mkSourceLocation(loc)
 
       val innerExp = mkTuple(List(sym, ts, l), loc)
       mkTag(HeadPredicate, "HeadAtom", innerExp, mkHeadPredicateType(), loc)
@@ -557,7 +557,7 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given head term `exp0` (a subset of expressions).
     */
   private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
-    case Expression.Var(sym, _, _) => mkHeadVarTerm(sym)
+    case Expression.Var(sym, _, loc) => mkHeadVarTerm(sym, loc)
 
     case Expression.Unit(loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
@@ -646,9 +646,13 @@ object Lowering extends Phase[Root, Root] {
       mkUnitTag(PolaritySym, "Negative", tpe, loc)
   }
 
-
-  private def mkHeadVarTerm(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
-    val s = mkVarSym(sym, sym.loc)
+  /**
+    * Constructs a `Fixpoint/Ast.Var` expression from the given variable symbol `sym`.
+    */
+  private def mkHeadVarTerm(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val symExp = mkVarSym(sym, loc)
+    val locExp = mkSourceLocation(sym.loc)
+    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
     ??? // TODO
   }
 
@@ -669,7 +673,7 @@ object Lowering extends Phase[Root, Root] {
   private def mkPredSym(pred: Name.Pred)(implicit root: Root, flix: Flix): Expression = pred match {
     case Name.Pred(sym, loc) =>
       val nameExp = Expression.Str(sym, loc)
-      val locExp = mkLoc(loc)
+      val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
       mkTag(PredSym, "PredSym", innerExp, mkPredSymType(), loc)
   }
@@ -679,7 +683,7 @@ object Lowering extends Phase[Root, Root] {
     */
   private def mkVarSym(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val nameExp = Expression.Str(sym.text, loc)
-    val locExp = mkLoc(loc)
+    val locExp = mkSourceLocation(loc)
     val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
     mkTag(VarSym, "VarSym", innerExp, mkVarSymType(), loc)
   }
@@ -717,7 +721,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Translates the given [[SourceLocation]] to the Flix AST.
     */
-  private def mkLoc(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkSourceLocation(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val name = Expression.Str(loc.source.format, loc)
     val beginLine = Expression.Int32(loc.beginLine, loc)
     val beginCol = Expression.Int32(loc.beginCol, loc)
