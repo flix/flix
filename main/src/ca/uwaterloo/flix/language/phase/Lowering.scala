@@ -520,12 +520,10 @@ object Lowering extends Phase[Root, Root] {
     ??? // TODO
   }
 
-  def mkBodyPredType(): Type = ???
-
   private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
     case Constraint(_, head, body, loc) =>
       val h = visitHeadPred(head)
-      val bs = mkArray(body.map(visitBodyPred), mkBodyPredType(), loc)
+      val bs = mkArray(body.map(visitBodyPred), mkBodyPredicateType(), loc)
       // TODO: Apply the Constraint constructor.
       ??? // TODO
   }
@@ -553,7 +551,7 @@ object Lowering extends Phase[Root, Root] {
       val termsExp = mkArray(terms.map(visitBodyTerm), mkBodyTermType(), loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
-      mkTag(BodyPredicate, "BodyAtom", innerExp, mkBodyPredType(), loc)
+      mkTag(BodyPredicate, "BodyAtom", innerExp, mkBodyPredicateType(), loc)
 
     case Body.Guard(exp, loc) =>
       ??? // TODO
@@ -751,6 +749,15 @@ object Lowering extends Phase[Root, Root] {
     val objectType = Type.mkNative(AnyRef.getClass)
     val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
     Type.mkEnum(HeadPredicate, innerType :: Nil)
+  }
+
+  /**
+    * Returns the type `Fixpoint/Ast.BodyPredicate`.
+    */
+  private def mkBodyPredicateType(): Type = {
+    val objectType = Type.mkNative(AnyRef.getClass)
+    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    Type.mkEnum(BodyPredicate, innerType :: Nil)
   }
 
   /**
