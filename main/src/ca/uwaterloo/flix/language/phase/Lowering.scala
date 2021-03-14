@@ -501,6 +501,7 @@ object Lowering extends Phase[Root, Root] {
       SelectChannelRule(sym, c, e)
   }
 
+
   /**
     * Constructs a Datalog program value.
     */
@@ -508,7 +509,7 @@ object Lowering extends Phase[Root, Root] {
     val facts = cs.filter(c => c.body.isEmpty).map(visitConstraint)
     val rules = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
 
-    val innerExp = mkTuple(List(mkArray(facts), mkArray(rules)), loc)
+    val innerExp = mkTuple(List(mkArray(facts, mkConstraintType(), loc), mkArray(rules, mkConstraintType(), loc)), loc)
     mkTag(DatalogSym, "Datalog", innerExp, mkDatalogType(), loc)
   }
 
@@ -517,10 +518,12 @@ object Lowering extends Phase[Root, Root] {
     ??? // TODO
   }
 
+  def mkBodyPredType(): Type = ???
+
   private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
     case Constraint(_, head, body, loc) =>
       val h = visitHeadPred(head)
-      val bs = mkArray(body.map(visitBodyPred))
+      val bs = mkArray(body.map(visitBodyPred), mkBodyPredType(), loc)
       // TODO: Apply the Constraint constructor.
       ??? // TODO
   }
@@ -528,7 +531,7 @@ object Lowering extends Phase[Root, Root] {
   private def visitHeadPred(p: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p match {
     case Head.Atom(pred, den, terms, _, loc) =>
       val sym = mkPredSym(pred)
-      val ts = mkArray(terms.map(visitHeadTerm))
+      val ts = mkArray(terms.map(visitHeadTerm), mkHeadTermType(), loc)
       val l = mkSourceLocation(loc)
 
       val innerExp = mkTuple(List(sym, ts, l), loc)
@@ -539,9 +542,6 @@ object Lowering extends Phase[Root, Root] {
       ???
   }
 
-
-  // TODO: Move
-  private def mkHeadPredicateType(): Type = ???
 
   private def visitBodyPred(p: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
@@ -708,9 +708,6 @@ object Lowering extends Phase[Root, Root] {
     mkTag(sym, tag, exp, tpe, loc)
   }
 
-  private def mkArray(exps: List[Expression]): Expression = {
-    ??? // TODO
-  }
 
   private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
@@ -732,6 +729,18 @@ object Lowering extends Phase[Root, Root] {
     mkTag(SourceLocationSym, "SourceLocation", innerExp, mkSourceLocationType(), loc)
   }
 
+  // TODO
+  def mkConstraintType(): Type = ???
+
+  /**
+    * Returns the type `Fixpoint/Ast.HeadPredicate`.
+    */
+  private def mkHeadPredicateType(): Type = {
+    val objectType = Type.mkNative(AnyRef.getClass)
+    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    Type.mkEnum(HeadPredicate, innerType :: Nil)
+  }
+
   /**
     * Returns the type `Fixpoint/Ast.PredSym`.
     */
@@ -746,14 +755,23 @@ object Lowering extends Phase[Root, Root] {
     * Returns the type of `Fixpoint/HeadTerm[UnsafeBox[##java.lang.Object]].`
     */
   def mkHeadTermType(): Type = {
-
-    ??? // TODO
+    val objectType = Type.mkNative(AnyRef.getClass)
+    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    Type.mkEnum(HeadTerm, innerType :: Nil)
   }
 
   /**
     * Returns the type of `Fixpoint/Ast.SourceLocation`
     */
   def mkSourceLocationType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(SourceLocationSym, Nil)
+
+  /**
+    * Returns a pure array expression constructed from the given list of expressions `exps`.
+    */
+  private def mkArray(exps: List[Expression], tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val eff = Type.Pure
+    Expression.Tuple(exps, tpe, eff, loc)
+  }
 
   /**
     * Returns a pure tuple expression constructed from the given list of expressions `exps`.
