@@ -30,6 +30,7 @@ object Lowering extends Phase[Root, Root] {
   val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
   val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
   val ConstraintSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
+  val DatalogSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
   val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
   val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
   val PolaritySym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
@@ -330,10 +331,8 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Force(e, t, eff, loc)
 
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
-      // TODO: Use stratification here or compute in solver?
-      // TODO: Call into solver
-      ???
+    case Expression.FixpointConstraintSet(cs, _, _, loc) =>
+      mkDatalog(cs, loc)
 
     case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
       // TODO: Call into solver
@@ -502,6 +501,21 @@ object Lowering extends Phase[Root, Root] {
       SelectChannelRule(sym, c, e)
   }
 
+  /**
+    * Constructs a Datalog program value.
+    */
+  private def mkDatalog(cs: List[Constraint], loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val facts = cs.filter(c => c.body.isEmpty).map(visitConstraint)
+    val rules = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
+
+    val innerExp = mkTuple(List(mkArray(facts), mkArray(rules)))
+    mkTag(DatalogSym, "Datalog", innerExp, mkDatalogType(), loc)
+  }
+
+  private def mkDatalogType(): Type = {
+    ??? // TODO
+  }
+
   private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
     case Constraint(_, head, body, loc) =>
       val h = visitHeadPred(head)
@@ -663,7 +677,10 @@ object Lowering extends Phase[Root, Root] {
   }
 
   private def mkArray(exps: List[Expression]): Expression = {
-    // TODO: Foldright over cons.
+    ??? // TODO
+  }
+
+  private def mkTuple(exps: List[Expression]): Expression = {
     ??? // TODO
   }
 
