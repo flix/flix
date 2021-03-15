@@ -570,7 +570,11 @@ object Lowering extends Phase[Root, Root] {
     */
   @tailrec
   private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
-    case Expression.Var(sym, _, loc) => mkHeadVarTerm(sym, loc)
+    case Expression.Var(sym, _, loc) =>
+      val symExp = mkVarSym(sym, loc)
+      val locExp = mkSourceLocation(sym.loc)
+      val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
+      mkTag(HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
 
     case Expression.Unit(loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
@@ -607,9 +611,14 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given body term `pat0` (a subset of patterns).
     */
   private def visitBodyTerm(pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
-    case Pattern.Wild(_, loc) => mkBodyWildTerm(loc)
+    case Pattern.Wild(_, loc) =>
+      ??? // TODO
 
-    case Pattern.Var(sym, _, loc) => mkBodyVarTerm(sym, loc)
+    case Pattern.Var(sym, _, loc) =>
+      val symExp = mkVarSym(sym, loc)
+      val locExp = mkSourceLocation(sym.loc)
+      val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
+      mkTag(BodyTerm, "Var", innerExp, mkBodyTermType(), loc)
 
     case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc), loc)
 
@@ -658,34 +667,6 @@ object Lowering extends Phase[Root, Root] {
       val (_, tpe) = Scheme.instantiate(root.enums(PolaritySym).sc, InstantiateMode.Flexible)
       mkUnitTag(PolaritySym, "Negative", tpe, loc)
   }
-
-  /**
-    * Constructs a `Fixpoint/Ast/HeadTerm.Var` expression from the given variable symbol `sym`.
-    */
-  private def mkHeadVarTerm(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    val symExp = mkVarSym(sym, loc)
-    val locExp = mkSourceLocation(sym.loc)
-    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
-  }
-
-  /**
-    * Constructs a `Fixpoint/Ast/BodyTerm.Wild` expression from the given variable symbol `sym`.
-    */
-  private def mkBodyWildTerm(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    ??? // TODO
-  }
-
-  /**
-    * Constructs a `Fixpoint/Ast/BodyTerm.Var` expression from the given variable symbol `sym`.
-    */
-  private def mkBodyVarTerm(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    val symExp = mkVarSym(sym, loc)
-    val locExp = mkSourceLocation(sym.loc)
-    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(BodyTerm, "Var", innerExp, mkBodyTermType(), loc)
-  }
-
 
   /**
     * Translates the given [[Name.Pred]] to the Flix AST.
