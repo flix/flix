@@ -509,10 +509,13 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a Datalog program value.
     */
   private def mkDatalog(cs: List[Constraint], loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    val facts = cs.filter(c => c.body.isEmpty).map(visitConstraint)
-    val rules = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
+    val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraint)
+    val ruleExps = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
 
-    val innerExp = mkTuple(List(mkArray(facts, mkConstraintType(), loc), mkArray(rules, mkConstraintType(), loc)), loc)
+    val factArrayExp = mkArray(factExps, mkConstraintType(), loc)
+    val ruleArrayExp = mkArray(ruleExps, mkConstraintType(), loc)
+
+    val innerExp = mkTuple(List(factArrayExp, ruleArrayExp), loc)
     mkTag(DatalogSym, "Datalog", innerExp, mkDatalogType(), loc)
   }
 
@@ -818,7 +821,7 @@ object Lowering extends Phase[Root, Root] {
   private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val tpe = Type.mkArray(elmType)
     val eff = Type.Pure
-    Expression.Tuple(exps, tpe, eff, loc)
+    Expression.ArrayLit(exps, tpe, eff, loc)
   }
 
   /**
