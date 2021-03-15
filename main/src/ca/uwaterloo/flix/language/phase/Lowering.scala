@@ -79,6 +79,8 @@ object Lowering extends Phase[Root, Root] {
     lazy val SourceLocation: Type = Type.mkEnum(Symbols.SourceLocation, Nil)
     lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
     lazy val VarSym: Type = Type.mkEnum(Symbols.VarSym, Nil)
+    lazy val PredSym: Type = Type.mkEnum(Symbols.PredSym, Nil)
+    lazy val HeadTerm: Type = Type.mkEnum(Symbols.HeadTerm, UnsafeBox :: Nil)
 
     //
     // Function Types.
@@ -86,7 +88,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog)
     lazy val ComposeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
     lazy val EntailsType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Type.Bool)
-    lazy val ProjectType: Type = Type.mkPureUncurriedArrow(List(mkPredSymType(), Datalog), Datalog)
+    lazy val ProjectType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
   }
 
   /**
@@ -601,7 +603,7 @@ object Lowering extends Phase[Root, Root] {
   private def visitHeadPred(p: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p match {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
-      val termsExp = mkArray(terms.map(visitHeadTerm), mkHeadTermType(), loc)
+      val termsExp = mkArray(terms.map(visitHeadTerm), Types.HeadTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Symbols.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
@@ -683,14 +685,14 @@ object Lowering extends Phase[Root, Root] {
     val symExp = mkVarSym(sym, loc)
     val locExp = mkSourceLocation(sym.loc)
     val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(Symbols.HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
+    mkTag(Symbols.HeadTerm, "Var", innerExp, Types.HeadTerm, loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp0`.
     */
   private def mkHeadTermLit(exp0: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    mkTag(Symbols.HeadTerm, "Lit", exp0, mkHeadTermType(), loc)
+    mkTag(Symbols.HeadTerm, "Lit", exp0, Types.HeadTerm, loc)
   }
 
 
@@ -799,7 +801,7 @@ object Lowering extends Phase[Root, Root] {
       val nameExp = Expression.Str(sym, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
-      mkTag(Symbols.PredSym, "PredSym", innerExp, mkPredSymType(), loc)
+      mkTag(Symbols.PredSym, "PredSym", innerExp, Types.PredSym, loc)
   }
 
   /**
@@ -877,7 +879,7 @@ object Lowering extends Phase[Root, Root] {
   private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     // TODO: Use loc of exp?
     // TODO: Possibly call UnsafeBox.box(?)
-    val cmpType = Type.Cst(TypeConstructor.Enum(ComparisonSym, Kind.Star), loc)
+    val cmpType = Type.Cst(TypeConstructor.Enum(Symbols.Comparison, Kind.Star), loc)
     val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), cmpType)
     val cmpExp = Expression.Null(tpe, loc) // TODO: Dont use null, but pass the actual comparator
     val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
@@ -908,20 +910,6 @@ object Lowering extends Phase[Root, Root] {
     val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
     Type.mkEnum(Symbols.BodyPredicate, innerType :: Nil)
-  }
-
-  /**
-    * Returns the type `Fixpoint/Ast.PredSym`.
-    */
-  private def mkPredSymType(): Type = Type.mkEnum(Symbols.PredSym, Nil)
-
-  /**
-    * Returns the type of `Fixpoint/HeadTerm[UnsafeBox[##java.lang.Object]].`
-    */
-  private def mkHeadTermType(): Type = {
-    val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
-    Type.mkEnum(Symbols.HeadTerm, innerType :: Nil)
   }
 
   /**
