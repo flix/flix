@@ -542,7 +542,7 @@ object Lowering extends Phase[Root, Root] {
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(HeadPredicate, "HeadAtom", innerExp, mkHeadPredicateType(), loc)
 
-    case Head.Union(exp, tpe, loc) => ??? // TODO: Replace tags by another mechanism.
+    case Head.Union(exp, tpe, loc) => ??? // TODO: Replace by another mechanism.
   }
 
   /**
@@ -594,7 +594,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Ascribe(exp, _, _, _) => visitHeadTerm(exp)
 
-    // TODO: Wrap other expressions in a function...
+    // TODO: What to do about other expressions?
 
     case _ => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
   }
@@ -631,7 +631,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc))
 
-    case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.") // TODO: Support tags???
+    case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
     case Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
