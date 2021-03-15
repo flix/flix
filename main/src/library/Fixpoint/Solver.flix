@@ -1,4 +1,4 @@
-// TODO
+// TODO: Replace by real implementation
 
 namespace Fixpoint/Solver {
 
@@ -22,9 +22,7 @@ namespace Fixpoint/Solver {
         d
 
     pub def fold[v: Order, b](_d: Datalog[v], _p: PredSym, i: b, _f: (Array[v], b) -> b): b =
-        let _f = Console.printLine("Hello from project!") as & Pure;
+        let _f = Console.printLine("Hello from fold!") as & Pure;
         i
-
-    // TODO: toString etc.
 
 }
