@@ -40,6 +40,8 @@ object Lowering extends Phase[Root, Root] {
   val SourceLocationSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
   val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
 
+  // TODO: Remove parameter from UnsafeBox?
+
   val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
 
   /**
@@ -503,7 +505,6 @@ object Lowering extends Phase[Root, Root] {
       SelectChannelRule(sym, c, e)
   }
 
-
   /**
     * Constructs a Datalog program value.
     */
@@ -515,19 +516,21 @@ object Lowering extends Phase[Root, Root] {
     mkTag(DatalogSym, "Datalog", innerExp, mkDatalogType(), loc)
   }
 
-  // TODO: Move
-  private def mkDatalogType(): Type = {
-    ??? // TODO
-  }
-
+  /**
+    * Translates the given [[Constraint]] into the Flix AST.
+    */
   private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
     case Constraint(_, head, body, loc) =>
-      val h = visitHeadPred(head)
-      val bs = mkArray(body.map(visitBodyPred), mkBodyPredicateType(), loc)
-      // TODO: Apply the Constraint constructor.
-      ??? // TODO
+      val headExp = visitHeadPred(head)
+      val bodyExp = mkArray(body.map(visitBodyPred), mkBodyPredicateType(), loc)
+      val locExp = mkSourceLocation(loc)
+      val innerExp = mkTuple(headExp :: bodyExp :: locExp :: Nil, loc)
+      mkTag(ConstraintSym, "Constraint", innerExp, mkConstraintType(), loc)
   }
 
+  /**
+    * Translates the given [[Predicate.Head]] into the Flix AST.
+    */
   private def visitHeadPred(p: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p match {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
@@ -536,9 +539,7 @@ object Lowering extends Phase[Root, Root] {
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(HeadPredicate, "HeadAtom", innerExp, mkHeadPredicateType(), loc)
 
-    case Head.Union(exp, tpe, loc) =>
-      // TODO: We need to come up with a different design for Union.
-      ???
+    case Head.Union(exp, tpe, loc) => ??? // TODO: Replace tags by another mechanism.
   }
 
   /**
@@ -739,8 +740,23 @@ object Lowering extends Phase[Root, Root] {
     mkTag(SourceLocationSym, "SourceLocation", innerExp, mkSourceLocationType(), loc)
   }
 
-  // TODO
-  private def mkConstraintType(): Type = ???
+  /**
+    * Returns the type `Fixpoint/Ast.Datalog`.
+    */
+  private def mkDatalogType(): Type = {
+    val objectType = Type.mkNative(AnyRef.getClass)
+    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    Type.mkEnum(DatalogSym, innerType :: Nil)
+  }
+
+  /**
+    * Returns the type `Fixpoint/Ast.Constraint`.
+    */
+  private def mkConstraintType(): Type = {
+    val objectType = Type.mkNative(AnyRef.getClass)
+    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    Type.mkEnum(ConstraintSym, innerType :: Nil)
+  }
 
   /**
     * Returns the type `Fixpoint/Ast.HeadPredicate`.
