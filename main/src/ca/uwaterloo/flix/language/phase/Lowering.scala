@@ -33,13 +33,7 @@ object Lowering extends Phase[Root, Root] {
 
   // TODO: Add doc
 
-  lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
-
-  lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
-  lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
-
   // TODO: Remove parameter from UnsafeBox?
-  lazy val ComparisonSym: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
 
   object Defs {
     // TODO: Sort/rename
@@ -55,14 +49,23 @@ object Lowering extends Phase[Root, Root] {
   }
 
   object Symbols {
-    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
-    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
     lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
+    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
+
     lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
+    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
+
+    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
+    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
+
+    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
+    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
+
     lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
     lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
+
+    lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
-    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
   }
 
   object Types {
@@ -617,7 +620,7 @@ object Lowering extends Phase[Root, Root] {
       val termsExp = mkArray(terms.map(visitBodyTerm), Types.BodyTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
-      mkTag(BodyPredicate, "BodyAtom", innerExp, mkBodyPredicateType(), loc)
+      mkTag(Symbols.BodyPredicate, "BodyAtom", innerExp, mkBodyPredicateType(), loc)
 
     case Body.Guard(exp, loc) =>
       ??? // TODO: Add support for guards.
@@ -680,14 +683,14 @@ object Lowering extends Phase[Root, Root] {
     val symExp = mkVarSym(sym, loc)
     val locExp = mkSourceLocation(sym.loc)
     val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
+    mkTag(Symbols.HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp0`.
     */
   private def mkHeadTermLit(exp0: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    mkTag(HeadTerm, "Lit", exp0, mkHeadTermType(), loc)
+    mkTag(Symbols.HeadTerm, "Lit", exp0, mkHeadTermType(), loc)
   }
 
 
@@ -796,7 +799,7 @@ object Lowering extends Phase[Root, Root] {
       val nameExp = Expression.Str(sym, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
-      mkTag(PredSym, "PredSym", innerExp, mkPredSymType(), loc)
+      mkTag(Symbols.PredSym, "PredSym", innerExp, mkPredSymType(), loc)
   }
 
   /**
@@ -904,13 +907,13 @@ object Lowering extends Phase[Root, Root] {
   private def mkBodyPredicateType(): Type = {
     val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
-    Type.mkEnum(BodyPredicate, innerType :: Nil)
+    Type.mkEnum(Symbols.BodyPredicate, innerType :: Nil)
   }
 
   /**
     * Returns the type `Fixpoint/Ast.PredSym`.
     */
-  private def mkPredSymType(): Type = Type.mkEnum(PredSym, Nil)
+  private def mkPredSymType(): Type = Type.mkEnum(Symbols.PredSym, Nil)
 
   /**
     * Returns the type of `Fixpoint/HeadTerm[UnsafeBox[##java.lang.Object]].`
@@ -918,9 +921,8 @@ object Lowering extends Phase[Root, Root] {
   private def mkHeadTermType(): Type = {
     val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
-    Type.mkEnum(HeadTerm, innerType :: Nil)
+    Type.mkEnum(Symbols.HeadTerm, innerType :: Nil)
   }
-
 
   /**
     * Returns a pure array expression constructed from the given list of expressions `exps`.
