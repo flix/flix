@@ -566,18 +566,14 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Lowers the given head term `exp0` (a subset of expressions).
+    * Lowers the given head term `exp0` to a `Fixpoint/Ast.HeadTerm`.
     */
   @tailrec
   private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
-    case Expression.Var(sym, _, loc) =>
-      // TODO: Move to helper
-      val symExp = mkVarSym(sym, loc)
-      val locExp = mkSourceLocation(sym.loc)
-      val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-      mkTag(HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
+    case Expression.Var(sym, _, loc) => mkHeadTermVar(sym, loc)
 
-    case Expression.Unit(loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.Unit(loc) =>
+      mkHeadTermLit(mkUnsafeBox(exp0, loc), loc)
 
     case Expression.True(loc) =>
       mkHeadTermLit(mkUnsafeBox(boxBool(exp0), loc), loc)
@@ -585,31 +581,48 @@ object Lowering extends Phase[Root, Root] {
     case Expression.False(loc) =>
       mkHeadTermLit(mkUnsafeBox(boxBool(exp0), loc), loc)
 
-    case Expression.Char(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.Char(_, loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxChar(exp0), loc), loc)
 
-    case Expression.Float32(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.Float32(_, loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxFloat32(exp0), loc), loc)
 
-    case Expression.Float64(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.Float64(_, loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxFloat64(exp0), loc), loc)
 
-    case Expression.Int8(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.Int8(lit, loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxInt8(exp0), loc), loc)
 
-    case Expression.Int16(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.Int16(_, loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxInt16(exp0), loc), loc)
 
     case Expression.Int32(_, loc) =>
       mkHeadTermLit(mkUnsafeBox(boxInt32(exp0), loc), loc)
 
-    case Expression.Int64(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.Int64(_, loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxInt64(exp0), loc), loc)
 
-    case Expression.BigInt(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.BigInt(_, loc) =>
+      mkHeadTermLit(mkUnsafeBox(exp0, loc), loc)
 
     case Expression.Str(_, loc) =>
       mkHeadTermLit(mkUnsafeBox(exp0, loc), loc)
 
     case Expression.Ascribe(exp, _, _, _) => visitHeadTerm(exp)
 
-    // TODO: What to do about other expressions?
+    // TODO: Translate other expressions into function applications.
 
     case _ => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast.HeadTerm.Var` for the given variable symbol `sym`.
+    */
+  private def mkHeadTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val symExp = mkVarSym(sym, loc)
+    val locExp = mkSourceLocation(sym.loc)
+    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
+    mkTag(HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
   }
 
   /**
@@ -655,7 +668,8 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.BigInt(lit, loc) => mkUnsafeBox(Expression.BigInt(lit, loc), loc) // TODO: Must be wrap in lit.
 
-    case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc), loc) // TODO: Must be wrap in lit.
+    case Pattern.Str(lit, loc) =>
+      mkUnsafeBox(Expression.Str(lit, loc), loc) // TODO: Must be wrap in lit.
 
     case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
