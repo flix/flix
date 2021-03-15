@@ -41,7 +41,6 @@ object Lowering extends Phase[Root, Root] {
   lazy val PolaritySym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
   lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
   lazy val SourceLocationSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
-  lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
 
   // TODO: Remove parameter from UnsafeBox?
   lazy val ComparisonSym: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
@@ -63,6 +62,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
     lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
     lazy val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
+    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
   }
 
   object Types {
@@ -72,6 +72,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val Constraint: Type = Type.mkEnum(Symbols.Constraint, UnsafeBox :: Nil)
     lazy val Datalog: Type = Type.mkEnum(Symbols.Datalog, UnsafeBox :: Nil)
     lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
+    lazy val VarSym: Type = Type.mkEnum(Symbols.VarSym, Nil)
 
     //
     // Function Types.
@@ -802,7 +803,7 @@ object Lowering extends Phase[Root, Root] {
     val nameExp = Expression.Str(sym.text, loc)
     val locExp = mkSourceLocation(loc)
     val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
-    mkTag(VarSym, "VarSym", innerExp, mkVarSymType(), loc)
+    mkTag(Symbols.VarSym, "VarSym", innerExp, Types.VarSym, loc)
   }
 
   /**
@@ -917,11 +918,6 @@ object Lowering extends Phase[Root, Root] {
     * Returns the type `Fixpoint/Ast.PredSym`.
     */
   private def mkPredSymType(): Type = Type.mkEnum(PredSym, Nil)
-
-  /**
-    * Returns the type `Fixpoint/Ast.VarSym`.
-    */
-  private def mkVarSymType(): Type = Type.mkEnum(VarSym, Nil)
 
   /**
     * Returns the type of `Fixpoint/HeadTerm[UnsafeBox[##java.lang.Object]].`
