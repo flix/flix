@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -747,7 +747,7 @@ object Lowering extends Phase[Root, Root] {
     * Returns the type `Fixpoint/Ast.Datalog`.
     */
   private def mkDatalogType(): Type = {
-    val objectType = Type.mkNative(AnyRef.getClass)
+    val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
     Type.mkEnum(DatalogSym, innerType :: Nil)
   }
@@ -756,7 +756,7 @@ object Lowering extends Phase[Root, Root] {
     * Returns the type `Fixpoint/Ast.Constraint`.
     */
   private def mkConstraintType(): Type = {
-    val objectType = Type.mkNative(AnyRef.getClass)
+    val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
     Type.mkEnum(ConstraintSym, innerType :: Nil)
   }
@@ -765,7 +765,7 @@ object Lowering extends Phase[Root, Root] {
     * Returns the type `Fixpoint/Ast.HeadPredicate`.
     */
   private def mkHeadPredicateType(): Type = {
-    val objectType = Type.mkNative(AnyRef.getClass)
+    val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
     Type.mkEnum(HeadPredicate, innerType :: Nil)
   }
@@ -774,7 +774,7 @@ object Lowering extends Phase[Root, Root] {
     * Returns the type `Fixpoint/Ast.BodyPredicate`.
     */
   private def mkBodyPredicateType(): Type = {
-    val objectType = Type.mkNative(AnyRef.getClass)
+    val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
     Type.mkEnum(BodyPredicate, innerType :: Nil)
   }
@@ -793,7 +793,7 @@ object Lowering extends Phase[Root, Root] {
     * Returns the type of `Fixpoint/HeadTerm[UnsafeBox[##java.lang.Object]].`
     */
   private def mkHeadTermType(): Type = {
-    val objectType = Type.mkNative(AnyRef.getClass)
+    val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
     Type.mkEnum(HeadTerm, innerType :: Nil)
   }
@@ -802,7 +802,7 @@ object Lowering extends Phase[Root, Root] {
     * Returns the type of `Fixpoint/BodyTerm[UnsafeBox[##java.lang.Object]].`
     */
   private def mkBodyTermType(): Type = {
-    val objectType = Type.mkNative(AnyRef.getClass)
+    val objectType = Type.mkNative(classOf[java.lang.Object])
     val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
     Type.mkEnum(BodyTerm, innerType :: Nil)
   }
@@ -815,7 +815,8 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns a pure array expression constructed from the given list of expressions `exps`.
     */
-  private def mkArray(exps: List[Expression], tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val tpe = Type.mkArray(elmType)
     val eff = Type.Pure
     Expression.Tuple(exps, tpe, eff, loc)
   }
