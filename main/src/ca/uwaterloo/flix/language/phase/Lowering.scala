@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Symbol.ClassSym
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -32,11 +32,10 @@ import scala.annotation.tailrec
 object Lowering extends Phase[Root, Root] {
 
   // TODO: Add doc
-
   // TODO: Return validations?
   // TODO: Need implicits?
 
-  object Defs {
+  private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
     lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
     lazy val SubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.subsetOf")
@@ -51,7 +50,7 @@ object Lowering extends Phase[Root, Root] {
     }
   }
 
-  object Symbols {
+  private object Symbols {
     lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
     lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
 
@@ -71,7 +70,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
   }
 
-  object Types {
+  private object Types {
     //
     // Data Types
     //
@@ -108,9 +107,10 @@ object Lowering extends Phase[Root, Root] {
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Lowering") {
     val defs = ParOps.parMap(root.defs.values, (d: Def) => visitDef(d)(root, flix))
 
-    // TODO: Visit expressions in other parts of the AST (e.g. in classes and instances.)
+    // TODO: Matt: Visit classes and instances.
 
-    root.copy(defs = defs.map(kv => kv.sym -> kv).toMap).toSuccess
+    val newDefs = defs.map(kv => kv.sym -> kv).toMap
+    root.copy(defs = newDefs).toSuccess
   }
 
   /**
@@ -151,19 +151,29 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Str(_, _) => exp0
 
-    case Expression.Default(_, _) => exp0 // TODO: Types?
+    case Expression.Default(tpe, loc) =>
+      val t = visitType(tpe)
+      Expression.Default(t, loc)
 
-    case Expression.Wild(_, _) => exp0 // TODO: Types?
+    case Expression.Wild(tpe, loc) =>
+      val t = visitType(tpe)
+      Expression.Wild(t, loc)
 
     case Expression.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       Expression.Var(sym, t, loc)
 
-    case Expression.Def(_, _, _) => exp0 // TODO: Types?
+    case Expression.Def(sym, tpe, loc) =>
+      val t = visitType(tpe)
+      Expression.Def(sym, t, loc)
 
-    case Expression.Sig(_, _, _) => exp0 // TODO: Types?
+    case Expression.Sig(sym, tpe, loc) =>
+      val t = visitType(tpe)
+      Expression.Sig(sym, t, loc)
 
-    case Expression.Hole(_, _, _, _) => exp0 // TODO: Types?
+    case Expression.Hole(sym, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      Expression.Hole(sym, t, eff, loc)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
