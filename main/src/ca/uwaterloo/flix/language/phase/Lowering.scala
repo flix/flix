@@ -514,7 +514,6 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given type `tpe0`.
     */
-  // TODO: What is the right way to do this replacement?
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
     def visit(tpe: Type): Type = tpe match {
       case Type.Var(id, kind, rigidity, text) => kind match {
@@ -855,7 +854,8 @@ object Lowering extends Phase[Root, Root] {
   private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     // Construct the Order.compare symbol.
     val classSym = new ClassSym(Nil, "Order", loc)
-    val compareSym = Symbol.mkSigSym(classSym, mkIdent("compare"))
+    val compareIdent = Name.Ident(SourcePosition.Unknown, "compare", SourcePosition.Unknown)
+    val compareSym = Symbol.mkSigSym(classSym, compareIdent)
 
     // Construct the type of Order.compare.
     // TODO: This assumes we have instances for the boxed types, e.g. for java.lang.Integer.
@@ -941,11 +941,5 @@ object Lowering extends Phase[Root, Root] {
     val eff = Type.Pure
     Expression.Tuple(exps, tpe, eff, loc)
   }
-
-  /**
-    * Returns an identifier with the given `name`.
-    */
-  private def mkIdent(name: String): Name.Ident =
-    Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
 
 }
