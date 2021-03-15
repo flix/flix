@@ -41,7 +41,7 @@ object Lowering extends Phase[Root, Root] {
   val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
 
   // TODO: Remove parameter from UnsafeBox?
-
+  val ComparisonSym: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
   val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
 
   /**
@@ -439,6 +439,10 @@ object Lowering extends Phase[Root, Root] {
       case TypeConstructor.SchemaExtend(pred) =>
         ??? // TODO: Use ConstraintType.
 
+      case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type: '$tpe0'. Should have been replaced.")
+
+      case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type: '$tpe0'. Should have been replaced.")
+
       case _ => tpe0
     }
 
@@ -570,9 +574,9 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Unit(loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Expression.True(loc) => mkUnsafeBox(boxBool(Expression.True(loc)))
+    case Expression.True(loc) => mkUnsafeBox(boxBool(exp0), loc)
 
-    case Expression.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)))
+    case Expression.False(loc) => mkUnsafeBox(boxBool(exp0), loc)
 
     case Expression.Char(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
@@ -584,13 +588,13 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Int16(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Expression.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)))
+    case Expression.Int32(_, loc) => mkUnsafeBox(boxInt32(exp0), loc)
 
     case Expression.Int64(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
     case Expression.BigInt(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Expression.Str(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Expression.Str(_, loc) => mkUnsafeBox(exp0, loc)
 
     case Expression.Ascribe(exp, _, _, _) => visitHeadTerm(exp)
 
@@ -607,11 +611,11 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Var(sym, _, loc) => mkBodyVarTerm(sym, loc)
 
-    case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc))
+    case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc), loc)
 
-    case Pattern.True(loc) => mkUnsafeBox(boxBool(Expression.True(loc)))
+    case Pattern.True(loc) => mkUnsafeBox(boxBool(Expression.True(loc)), loc)
 
-    case Pattern.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)))
+    case Pattern.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)), loc)
 
     case Pattern.Char(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
@@ -623,13 +627,13 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Int16(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Pattern.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)))
+    case Pattern.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)), loc)
 
-    case Pattern.Int64(lit, loc) => mkUnsafeBox(boxInt64(Expression.Int64(lit, loc)))
+    case Pattern.Int64(lit, loc) => mkUnsafeBox(boxInt64(Expression.Int64(lit, loc)), loc)
 
-    case Pattern.BigInt(lit, loc) => mkUnsafeBox(Expression.BigInt(lit, loc))
+    case Pattern.BigInt(lit, loc) => mkUnsafeBox(Expression.BigInt(lit, loc), loc)
 
-    case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc))
+    case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc), loc)
 
     case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
@@ -706,6 +710,16 @@ object Lowering extends Phase[Root, Root] {
 
   private def boxBool(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
+  private def boxChar(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
+  private def boxFloat32(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
+  private def boxFloat64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
+  private def boxInt8(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
+  private def boxInt16(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
   // TODO: Benjamin: Add other boxing operations.
   private def boxInt32(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     val loc = exp.loc
@@ -717,7 +731,6 @@ object Lowering extends Phase[Root, Root] {
   }
 
   private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
-
 
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, loc)
@@ -731,7 +744,14 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
     */
-  private def mkUnsafeBox(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    // TODO: Possibly call UnsafeBox.box(?)
+    val cmpType = Type.Cst(TypeConstructor.Enum(ComparisonSym, Kind.Star), loc)
+    val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), cmpType)
+    val cmpExp = Expression.Null(tpe, loc) // TODO: Dont use null, but pass the actual comparator
+    val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
+    mkTag(VarSym, "VarSym", innerExp, mkVarSymType(), loc)
+  }
 
   /**
     * Translates the given [[SourceLocation]] to the Flix AST.
