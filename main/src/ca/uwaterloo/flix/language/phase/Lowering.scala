@@ -571,6 +571,7 @@ object Lowering extends Phase[Root, Root] {
   @tailrec
   private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
     case Expression.Var(sym, _, loc) =>
+      // TODO: Move to helper
       val symExp = mkVarSym(sym, loc)
       val locExp = mkSourceLocation(sym.loc)
       val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
@@ -578,9 +579,11 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Unit(loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Expression.True(loc) => mkUnsafeBox(boxBool(exp0), loc)
+    case Expression.True(loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxBool(exp0), loc), loc)
 
-    case Expression.False(loc) => mkUnsafeBox(boxBool(exp0), loc)
+    case Expression.False(loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxBool(exp0), loc), loc)
 
     case Expression.Char(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
@@ -592,13 +595,15 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Int16(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Expression.Int32(_, loc) => mkUnsafeBox(boxInt32(exp0), loc)
+    case Expression.Int32(_, loc) =>
+      mkHeadTermLit(mkUnsafeBox(boxInt32(exp0), loc), loc)
 
     case Expression.Int64(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
     case Expression.BigInt(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Expression.Str(_, loc) => mkUnsafeBox(exp0, loc)
+    case Expression.Str(_, loc) =>
+      mkHeadTermLit(mkUnsafeBox(exp0, loc), loc)
 
     case Expression.Ascribe(exp, _, _, _) => visitHeadTerm(exp)
 
@@ -608,23 +613,31 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
+    * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp0`.
+    */
+  private def mkHeadTermLit(exp0: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    mkTag(HeadTerm, "Lit", exp0, mkHeadTermType(), loc)
+  }
+
+  /**
     * Lowers the given body term `pat0` (a subset of patterns).
     */
   private def visitBodyTerm(pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
     case Pattern.Wild(_, loc) =>
-      ??? // TODO
+      ??? // TODO: Move to helper
 
     case Pattern.Var(sym, _, loc) =>
+      // TODO: Move to helper
       val symExp = mkVarSym(sym, loc)
       val locExp = mkSourceLocation(sym.loc)
       val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
       mkTag(BodyTerm, "Var", innerExp, mkBodyTermType(), loc)
 
-    case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc), loc)
+    case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc), loc) // TODO: Must be wrap in lit.
 
-    case Pattern.True(loc) => mkUnsafeBox(boxBool(Expression.True(loc)), loc)
+    case Pattern.True(loc) => mkUnsafeBox(boxBool(Expression.True(loc)), loc) // TODO: Must be wrap in lit.
 
-    case Pattern.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)), loc)
+    case Pattern.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)), loc) // TODO: Must be wrap in lit.
 
     case Pattern.Char(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
@@ -636,13 +649,13 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Int16(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
-    case Pattern.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)), loc)
+    case Pattern.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)), loc) // TODO: Must be wrap in lit.
 
-    case Pattern.Int64(lit, loc) => mkUnsafeBox(boxInt64(Expression.Int64(lit, loc)), loc)
+    case Pattern.Int64(lit, loc) => mkUnsafeBox(boxInt64(Expression.Int64(lit, loc)), loc) // TODO: Must be wrap in lit.
 
-    case Pattern.BigInt(lit, loc) => mkUnsafeBox(Expression.BigInt(lit, loc), loc)
+    case Pattern.BigInt(lit, loc) => mkUnsafeBox(Expression.BigInt(lit, loc), loc) // TODO: Must be wrap in lit.
 
-    case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc), loc)
+    case Pattern.Str(lit, loc) => mkUnsafeBox(Expression.Str(lit, loc), loc) // TODO: Must be wrap in lit.
 
     case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
@@ -731,7 +744,11 @@ object Lowering extends Phase[Root, Root] {
     val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), cmpType)
     val cmpExp = Expression.Null(tpe, loc) // TODO: Dont use null, but pass the actual comparator
     val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
-    mkTag(VarSym, "VarSym", innerExp, mkVarSymType(), loc)
+
+    val objectType = Type.mkNative(classOf[java.lang.Object])
+    val unsafeBoxType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+
+    mkTag(UnsafeBox, "UnsafeBox", innerExp, unsafeBoxType, loc)
   }
 
   /**
