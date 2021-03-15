@@ -18,9 +18,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.Symbol.ClassSym
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -91,6 +92,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val Polarity: Type = Type.mkEnum(Symbols.Polarity, Nil)
     lazy val SourceLocation: Type = Type.mkEnum(Symbols.SourceLocation, Nil)
 
+    lazy val Comparison: Type = Type.mkEnum(Symbols.Comparison, Nil)
     lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
 
     //
@@ -843,17 +845,18 @@ object Lowering extends Phase[Root, Root] {
     * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
     */
   private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    // TODO: Use loc of exp?
-    // TODO: Possibly call UnsafeBox.box(?)
-    val cmpType = Type.Cst(TypeConstructor.Enum(Symbols.Comparison, Kind.Star), loc)
-    val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), cmpType)
-    val cmpExp = Expression.Null(tpe, loc) // TODO: Dont use null, but pass the actual comparator
+    // Construct the Order.compare symbol.
+    val classSym = new ClassSym(Nil, "Order", loc)
+    val compareSym = Symbol.mkSigSym(classSym, mkIdent("compare"))
+
+    // Construct the type of Order.compare.
+    // TODO: This assumes we have instances for the boxed types, e.g. for java.lang.Integer.
+    val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), Types.Comparison)
+    val cmpExp = Expression.Sig(compareSym, tpe, loc)
+
+    // Construct the UnsafeBox.
     val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
-
-    val objectType = Type.mkNative(classOf[java.lang.Object])
-    val unsafeBoxType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
-
-    mkTag(Symbols.UnsafeBox, "UnsafeBox", innerExp, unsafeBoxType, loc)
+    mkTag(Symbols.UnsafeBox, "UnsafeBox", innerExp, Types.UnsafeBox, loc)
   }
 
   /**
@@ -930,5 +933,11 @@ object Lowering extends Phase[Root, Root] {
     val eff = Type.Pure
     Expression.Tuple(exps, tpe, eff, loc)
   }
+
+  /**
+    * Returns an identifier with the given `name`.
+    */
+  private def mkIdent(name: String): Name.Ident =
+    Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
 
 }
