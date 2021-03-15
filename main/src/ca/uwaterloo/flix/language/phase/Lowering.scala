@@ -38,9 +38,7 @@ object Lowering extends Phase[Root, Root] {
 
   lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
   lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
-  lazy val PolaritySym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
   lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
-  lazy val SourceLocationSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
 
   // TODO: Remove parameter from UnsafeBox?
   lazy val ComparisonSym: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
@@ -61,6 +59,8 @@ object Lowering extends Phase[Root, Root] {
   object Symbols {
     lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
     lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
+    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
+    lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
     lazy val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
     lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
   }
@@ -777,12 +777,12 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitPolarity(p: Ast.Polarity, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = p match {
     case Polarity.Positive =>
-      val (_, tpe) = Scheme.instantiate(root.enums(PolaritySym).sc, InstantiateMode.Flexible)
-      mkUnitTag(PolaritySym, "Positive", tpe, loc)
+      val (_, tpe) = Scheme.instantiate(root.enums(Symbols.Polarity).sc, InstantiateMode.Flexible)
+      mkUnitTag(Symbols.Polarity, "Positive", tpe, loc)
 
     case Polarity.Negative =>
-      val (_, tpe) = Scheme.instantiate(root.enums(PolaritySym).sc, InstantiateMode.Flexible)
-      mkUnitTag(PolaritySym, "Negative", tpe, loc)
+      val (_, tpe) = Scheme.instantiate(root.enums(Symbols.Polarity).sc, InstantiateMode.Flexible)
+      mkUnitTag(Symbols.Polarity, "Negative", tpe, loc)
   }
 
   /**
@@ -892,7 +892,7 @@ object Lowering extends Phase[Root, Root] {
     val endLine = Expression.Int32(loc.endLine, loc)
     val endCol = Expression.Int32(loc.endCol, loc)
     val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol), loc)
-    mkTag(SourceLocationSym, "SourceLocation", innerExp, mkSourceLocationType(), loc)
+    mkTag(Symbols.SourceLocation, "SourceLocation", innerExp, mkSourceLocationType(), loc)
   }
 
 
@@ -940,7 +940,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns the type of `Fixpoint/Ast.SourceLocation`
     */
-  private def mkSourceLocationType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(SourceLocationSym, Nil)
+  private def mkSourceLocationType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(Symbols.SourceLocation, Nil)
 
   /**
     * Returns a pure array expression constructed from the given list of expressions `exps`.
