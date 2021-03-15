@@ -5,15 +5,17 @@ namespace Fixpoint/Solver {
     use Fixpoint/Ast.Datalog;
     use Fixpoint/Ast.PredSym;
 
+    // Note: This is called without the stratification
+    // We should have a variant that takes an extra argument which is the stratification.
     pub def solve[v: Order](d: Datalog[v]): Datalog[v] =
         let _f = Console.printLine("Hello from solve!") as & Pure;
         d
 
-    pub def compose[v: Order](d1: Datalog[v], _d2: Datalog[v]): Datalog[v] =
+    pub def union[v: Order](d1: Datalog[v], _d2: Datalog[v]): Datalog[v] =
         let _f = Console.printLine("Hello from compose!") as & Pure;
         d1
 
-    pub def entails[v: Order](_d1: Datalog[v], _d2: Datalog[v]): Bool =
+    pub def subsetOf[v: Order](_d1: Datalog[v], _d2: Datalog[v]): Bool =
         let _f = Console.printLine("Hello from entails!") as & Pure;
         true
 
