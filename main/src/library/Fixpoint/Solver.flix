@@ -17,7 +17,7 @@ namespace Fixpoint/Solver {
         let _f = Console.printLine("Hello from entails!") as & Pure;
         true
 
-    pub def project[v: Order](d: Datalog[v], _p: PredSym): Datalog[v] =
+    pub def project[v: Order](_p: PredSym, d: Datalog[v]): Datalog[v] =
         let _f = Console.printLine("Hello from project!") as & Pure;
         d
 
