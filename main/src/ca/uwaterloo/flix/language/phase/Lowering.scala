@@ -393,8 +393,8 @@ object Lowering extends Phase[Root, Root] {
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-      // TODO: Call into solver
-      ???
+      // TODO: Replace FixpointFold with alternative.
+      throw InternalCompilerException("Deprecated Expression: FixpointFold")
   }
 
   /**
@@ -583,7 +583,8 @@ object Lowering extends Phase[Root, Root] {
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(HeadPredicate, "HeadAtom", innerExp, mkHeadPredicateType(), loc)
 
-    case Head.Union(exp, tpe, loc) => ??? // TODO: Replace by another mechanism.
+    case Head.Union(exp, tpe, loc) =>
+      throw InternalCompilerException("Deprecated Expression") // TODO: Replace Union with some alternative.
   }
 
   /**
@@ -599,7 +600,7 @@ object Lowering extends Phase[Root, Root] {
       mkTag(BodyPredicate, "BodyAtom", innerExp, mkBodyPredicateType(), loc)
 
     case Body.Guard(exp, loc) =>
-      ??? // TODO
+      ??? // TODO: Add support for guards.
   }
 
   /**
