@@ -103,17 +103,19 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Str(_, _) => exp0
 
-    case Expression.Default(_, _) => exp0
+    case Expression.Default(_, _) => exp0 // TODO: Types?
 
-    case Expression.Wild(_, _) => exp0
+    case Expression.Wild(_, _) => exp0 // TODO: Types?
 
-    case Expression.Var(_, _, _) => exp0
+    case Expression.Var(sym, tpe, loc) =>
+      val t = visitType(tpe)
+      Expression.Var(sym, t, loc)
 
-    case Expression.Def(_, _, _) => exp0
+    case Expression.Def(_, _, _) => exp0 // TODO: Types?
 
-    case Expression.Sig(_, _, _) => exp0
+    case Expression.Sig(_, _, _) => exp0 // TODO: Types?
 
-    case Expression.Hole(_, _, _, _) => exp0
+    case Expression.Hole(_, _, _, _) => exp0 // TODO: Types?
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
@@ -355,7 +357,7 @@ object Lowering extends Phase[Root, Root] {
       // TODO: Call into solver
       ???
 
-    case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
+    case Expression.FixpointSolve(exp, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Solve)
       val defExp = Expression.Def(defn.sym, Types.SolveType, loc)
       val argExps = visitExp(exp) :: Nil
@@ -445,32 +447,28 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given type `tpe0`.
     */
-  private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = tpe0 match {
-    case Type.Var(id, kind, rigidity, text) => kind match {
-      case Kind.Schema => Type.Var(id, Kind.Star, rigidity, text)
-      case _ => tpe0
+  // TODO: What is the right way to do this replacement?
+  private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
+    tpe0.kind match {
+      case Kind.Schema => mkDatalogType()
+      case _ =>
+        // TODO: Maybe wrap this in a local fun?
+        tpe0 match {
+          case Type.Var(id, kind, rigidity, text) => kind match {
+            case Kind.Schema => Type.Var(id, Kind.Star, rigidity, text)
+            case _ => tpe0
+          }
+
+          case Type.Cst(tc, loc) => tpe0
+
+          case Type.Apply(tpe1, tpe2) =>
+            val t1 = visitType(tpe1)
+            val t2 = visitType(tpe2)
+            Type.Apply(t1, t2)
+
+          case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+        }
     }
-
-    case Type.Cst(tc, loc) => tc match {
-      case TypeConstructor.SchemaEmpty =>
-        ??? // TODO: Use ConstraintType.
-
-      case TypeConstructor.SchemaExtend(pred) =>
-        ??? // TODO: Use ConstraintType.
-
-      case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type: '$tpe0'. Should have been replaced.")
-
-      case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type: '$tpe0'. Should have been replaced.")
-
-      case _ => tpe0
-    }
-
-    case Type.Apply(tpe1, tpe2) =>
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      Type.Apply(t1, t2)
-
-    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
   /**
