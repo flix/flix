@@ -616,7 +616,7 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.HeadTerm.Var` for the given variable symbol `sym`.
+    * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
     */
   private def mkHeadTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val symExp = mkVarSym(sym, loc)
@@ -632,6 +632,7 @@ object Lowering extends Phase[Root, Root] {
     mkTag(HeadTerm, "Lit", exp0, mkHeadTermType(), loc)
   }
 
+
   /**
     * Lowers the given body term `pat0` (a subset of patterns).
     */
@@ -640,11 +641,7 @@ object Lowering extends Phase[Root, Root] {
       ??? // TODO: Move to helper
 
     case Pattern.Var(sym, _, loc) =>
-      // TODO: Move to helper
-      val symExp = mkVarSym(sym, loc)
-      val locExp = mkSourceLocation(sym.loc)
-      val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-      mkTag(BodyTerm, "Var", innerExp, mkBodyTermType(), loc)
+      mkBodyTermVar(sym, loc)
 
     case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc), loc) // TODO: Must be wrap in lit.
 
@@ -671,6 +668,8 @@ object Lowering extends Phase[Root, Root] {
     case Pattern.Str(lit, loc) =>
       mkUnsafeBox(Expression.Str(lit, loc), loc) // TODO: Must be wrap in lit.
 
+    // TODO: What other expressions to support as body terms?
+
     case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
     case Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
@@ -680,6 +679,16 @@ object Lowering extends Phase[Root, Root] {
     case Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
     case Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast.BodyTerm.Var` from the given variable symbol `sym`.
+    */
+  def mkBodyTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val symExp = mkVarSym(sym, loc)
+    val locExp = mkSourceLocation(sym.loc)
+    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
+    mkTag(BodyTerm, "Var", innerExp, mkBodyTermType(), loc)
   }
 
   /**
