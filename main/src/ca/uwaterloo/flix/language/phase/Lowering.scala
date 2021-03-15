@@ -33,27 +33,25 @@ object Lowering extends Phase[Root, Root] {
 
   // TODO: Add doc
 
-  val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
-  val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
-  val ConstraintSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
-  val DatalogSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
-  val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
-  val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
-  val PolaritySym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
-  val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
-  val SourceLocationSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
-  val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
+  lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
+  lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
+
+  lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
+  lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
+  lazy val PolaritySym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
+  lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
+  lazy val SourceLocationSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
+  lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
 
   // TODO: Remove parameter from UnsafeBox?
-  val ComparisonSym: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
-  val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
+  lazy val ComparisonSym: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
 
   object Defs {
     // TODO: Sort/rename
-    val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
-    val Compose: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.compose")
-    val Entails: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.entails")
-    val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
+    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
+    lazy val Compose: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.compose")
+    lazy val Entails: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.entails")
+    lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
 
     def lookup(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): Def = root.defs.get(sym) match {
       case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?")
@@ -61,11 +59,27 @@ object Lowering extends Phase[Root, Root] {
     }
   }
 
+  object Symbols {
+    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
+    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
+    lazy val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
+  }
+
   object Types {
-    val SolveType: Type = Type.mkPureArrow(mkDatalogType(), mkDatalogType())
-    val ComposeType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkDatalogType()), mkDatalogType())
-    val EntailsType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkDatalogType()), Type.Bool)
-    val ProjectType: Type = Type.mkPureUncurriedArrow(List(mkPredSymType(), mkDatalogType()), mkDatalogType())
+    //
+    // Data Types
+    //
+    lazy val Constraint: Type = Type.mkEnum(Symbols.Constraint, UnsafeBox :: Nil)
+    lazy val Datalog: Type = Type.mkEnum(Symbols.Datalog, UnsafeBox :: Nil)
+    lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
+
+    //
+    // Function Types.
+    //
+    lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog)
+    lazy val ComposeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
+    lazy val EntailsType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Type.Bool)
+    lazy val ProjectType: Type = Type.mkPureUncurriedArrow(List(mkPredSymType(), Datalog), Datalog)
   }
 
   /**
@@ -370,21 +384,21 @@ object Lowering extends Phase[Root, Root] {
       val defn = Defs.lookup(Defs.Compose)
       val defExp = Expression.Def(defn.sym, Types.ComposeType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
-      val resultType = mkDatalogType()
+      val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointSolve(exp, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Solve)
       val defExp = Expression.Def(defn.sym, Types.SolveType, loc)
       val argExps = visitExp(exp) :: Nil
-      val resultType = mkDatalogType()
+      val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       val defn = Defs.lookup(Defs.Project)
       val defExp = Expression.Def(defn.sym, Types.ProjectType, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      val resultType = mkDatalogType()
+      val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
@@ -488,7 +502,7 @@ object Lowering extends Phase[Root, Root] {
     }
 
     if (tpe0.kind == Kind.Schema)
-      mkDatalogType()
+      Types.Datalog
     else
       visit(tpe0)
   }
@@ -555,11 +569,11 @@ object Lowering extends Phase[Root, Root] {
     val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraint)
     val ruleExps = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
 
-    val factArrayExp = mkArray(factExps, mkConstraintType(), loc)
-    val ruleArrayExp = mkArray(ruleExps, mkConstraintType(), loc)
+    val factArrayExp = mkArray(factExps, Types.Constraint, loc)
+    val ruleArrayExp = mkArray(ruleExps, Types.Constraint, loc)
 
     val innerExp = mkTuple(List(factArrayExp, ruleArrayExp), loc)
-    mkTag(DatalogSym, "Datalog", innerExp, mkDatalogType(), loc)
+    mkTag(Symbols.Datalog, "Datalog", innerExp, Types.Datalog, loc)
   }
 
   /**
@@ -571,7 +585,7 @@ object Lowering extends Phase[Root, Root] {
       val bodyExp = mkArray(body.map(visitBodyPred), mkBodyPredicateType(), loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(headExp :: bodyExp :: locExp :: Nil, loc)
-      mkTag(ConstraintSym, "Constraint", innerExp, mkConstraintType(), loc)
+      mkTag(Symbols.Constraint, "Constraint", innerExp, Types.Constraint, loc)
   }
 
   /**
@@ -862,9 +876,9 @@ object Lowering extends Phase[Root, Root] {
     val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
 
     val objectType = Type.mkNative(classOf[java.lang.Object])
-    val unsafeBoxType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    val unsafeBoxType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
 
-    mkTag(UnsafeBox, "UnsafeBox", innerExp, unsafeBoxType, loc)
+    mkTag(Symbols.UnsafeBox, "UnsafeBox", innerExp, unsafeBoxType, loc)
   }
 
   /**
@@ -880,30 +894,13 @@ object Lowering extends Phase[Root, Root] {
     mkTag(SourceLocationSym, "SourceLocation", innerExp, mkSourceLocationType(), loc)
   }
 
-  /**
-    * Returns the type `Fixpoint/Ast.Datalog`.
-    */
-  private def mkDatalogType(): Type = {
-    val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
-    Type.mkEnum(DatalogSym, innerType :: Nil)
-  }
-
-  /**
-    * Returns the type `Fixpoint/Ast.Constraint`.
-    */
-  private def mkConstraintType(): Type = {
-    val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
-    Type.mkEnum(ConstraintSym, innerType :: Nil)
-  }
 
   /**
     * Returns the type `Fixpoint/Ast.HeadPredicate`.
     */
   private def mkHeadPredicateType(): Type = {
     val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
     Type.mkEnum(HeadPredicate, innerType :: Nil)
   }
 
@@ -912,7 +909,7 @@ object Lowering extends Phase[Root, Root] {
     */
   private def mkBodyPredicateType(): Type = {
     val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
     Type.mkEnum(BodyPredicate, innerType :: Nil)
   }
 
@@ -931,7 +928,7 @@ object Lowering extends Phase[Root, Root] {
     */
   private def mkHeadTermType(): Type = {
     val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
     Type.mkEnum(HeadTerm, innerType :: Nil)
   }
 
@@ -940,7 +937,7 @@ object Lowering extends Phase[Root, Root] {
     */
   private def mkBodyTermType(): Type = {
     val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(UnsafeBox, objectType :: Nil)
+    val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
     Type.mkEnum(BodyTerm, innerType :: Nil)
   }
 
