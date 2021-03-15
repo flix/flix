@@ -33,15 +33,13 @@ object Lowering extends Phase[Root, Root] {
 
   // TODO: Add doc
 
-  // TODO: Remove parameter from UnsafeBox?
   // TODO: Return validations?
   // TODO: Need implicits?
 
   object Defs {
-    // TODO: Sort/rename
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
-    lazy val Compose: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.compose")
-    lazy val Entails: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.entails")
+    lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
+    lazy val SubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.subsetOf")
     lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
 
     /**
@@ -404,7 +402,7 @@ object Lowering extends Phase[Root, Root] {
       mkDatalog(cs, loc)
 
     case Expression.FixpointCompose(exp1, exp2, _, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Compose)
+      val defn = Defs.lookup(Defs.Union)
       val defExp = Expression.Def(defn.sym, Types.ComposeType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Types.Datalog
@@ -425,7 +423,7 @@ object Lowering extends Phase[Root, Root] {
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
-      val defn = Defs.lookup(Defs.Entails)
+      val defn = Defs.lookup(Defs.SubsetOf)
       val defExp = Expression.Def(defn.sym, Types.EntailsType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Type.Bool
