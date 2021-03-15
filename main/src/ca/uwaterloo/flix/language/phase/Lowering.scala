@@ -44,6 +44,19 @@ object Lowering extends Phase[Root, Root] {
   val ComparisonSym: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
   val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
 
+  object Defs {
+    val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
+
+    def lookup(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): Def = root.defs.get(sym) match {
+      case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?")
+      case Some(d) => d
+    }
+  }
+
+  object Types {
+    val SolveType: Type = Type.mkPureArrow(mkDatalogType(), mkDatalogType())
+  }
+
   /**
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
@@ -342,9 +355,12 @@ object Lowering extends Phase[Root, Root] {
       // TODO: Call into solver
       ???
 
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
-      // TODO: Call into solver
-      ???
+    case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
+      val defn = Defs.lookup(Defs.Solve)
+      val defExp = Expression.Def(defn.sym, Types.SolveType, loc)
+      val argExps = visitExp(exp) :: Nil
+      val resultType = mkDatalogType()
+      Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       // TODO: Call into solver
@@ -631,7 +647,6 @@ object Lowering extends Phase[Root, Root] {
   private def mkHeadTermLit(exp0: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     mkTag(HeadTerm, "Lit", exp0, mkHeadTermType(), loc)
   }
-
 
   /**
     * Lowers the given body term `pat0` (a subset of patterns).

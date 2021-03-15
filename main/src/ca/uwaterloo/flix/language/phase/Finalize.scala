@@ -572,13 +572,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Str => MonoType.Str
 
-          case TypeConstructor.Relation => MonoType.Relation(args)
-
-          case TypeConstructor.Lattice => MonoType.Lattice(args)
-
           case TypeConstructor.RecordEmpty => MonoType.RecordEmpty()
-
-          case TypeConstructor.SchemaEmpty => MonoType.SchemaEmpty()
 
           case TypeConstructor.Array => MonoType.Array(args.head)
 
@@ -588,7 +582,8 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
-          case TypeConstructor.Tag(sym, _) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+          case TypeConstructor.Tag(sym, _) =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
@@ -600,8 +595,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.RecordExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
 
-          case TypeConstructor.SchemaExtend(pred) => MonoType.SchemaExtend(pred.name, args.head, args(1))
-
           case TypeConstructor.True => MonoType.Unit
 
           case TypeConstructor.False => MonoType.Unit
@@ -611,6 +604,17 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           case TypeConstructor.And => MonoType.Unit
 
           case TypeConstructor.Or => MonoType.Unit
+
+          case TypeConstructor.Relation =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+          case TypeConstructor.Lattice =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+          case TypeConstructor.SchemaEmpty =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+          case TypeConstructor.SchemaExtend(pred) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
         }
     }
   }
