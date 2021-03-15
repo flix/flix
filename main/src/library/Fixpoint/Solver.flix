@@ -21,6 +21,10 @@ namespace Fixpoint/Solver {
         let _f = Console.printLine("Hello from project!") as & Pure;
         d
 
-    // TODO: FOLD
+    pub def fold[v: Order, b](_d: Datalog[v], _p: PredSym, i: b, _f: (Array[v], b) -> b): b =
+        let _f = Console.printLine("Hello from project!") as & Pure;
+        i
+
+    // TODO: toString etc.
 
 }
