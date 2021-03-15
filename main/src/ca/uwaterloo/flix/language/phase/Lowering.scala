@@ -803,17 +803,25 @@ object Lowering extends Phase[Root, Root] {
 
   private def boxInt16(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
-  // TODO: Benjamin: Add other boxing operations.
-  private def boxInt32(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
-    val loc = exp.loc
-    val clazz = classOf[java.lang.Integer]
-    val method = clazz.getMethod("valueOf", Integer.TYPE)
-    val tpe = Type.mkNative(clazz)
-    val eff = Type.Pure
-    Expression.InvokeStaticMethod(method, List(exp), tpe, eff, loc)
-  }
+  /**
+    * Boxes the given Int32 expression `e`.
+    */
+  private def boxInt32(e: Expression): Expression = boxExp(e, java.lang.Integer.TYPE, classOf[java.lang.Integer])
 
-  private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  /**
+    * Boxes the given Int64 expression `e`.
+    */
+  private def boxInt64(e: Expression): Expression = boxExp(e, java.lang.Long.TYPE, classOf[java.lang.Long])
+
+  /**
+    * Boxes the given expression `e` with primitive type `primitive` and boxed type `boxed`.
+    */
+  private def boxExp[T, S](e: Expression, primitive: Class[T], boxed: Class[S]): Expression = {
+    val m = boxed.getMethod("valueOf", primitive)
+    val tpe = Type.mkNative(boxed)
+    val eff = Type.Pure
+    Expression.InvokeStaticMethod(m, List(e), tpe, eff, e.loc)
+  }
 
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, loc)
