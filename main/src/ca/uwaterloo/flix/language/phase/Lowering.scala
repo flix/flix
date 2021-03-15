@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -34,6 +33,8 @@ object Lowering extends Phase[Root, Root] {
   // TODO: Add doc
 
   // TODO: Remove parameter from UnsafeBox?
+  // TODO: Return validations?
+  // TODO: Need implicits?
 
   object Defs {
     // TODO: Sort/rename
@@ -42,6 +43,9 @@ object Lowering extends Phase[Root, Root] {
     lazy val Entails: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.entails")
     lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
 
+    /**
+      * Returns the definition associated with the given symbol `sym`.
+      */
     def lookup(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): Def = root.defs.get(sym) match {
       case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?")
       case Some(d) => d
@@ -84,6 +88,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val PredSym: Type = Type.mkEnum(Symbols.PredSym, Nil)
     lazy val VarSym: Type = Type.mkEnum(Symbols.VarSym, Nil)
 
+    lazy val Polarity: Type = Type.mkEnum(Symbols.Polarity, Nil)
     lazy val SourceLocation: Type = Type.mkEnum(Symbols.SourceLocation, Nil)
 
     lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
@@ -108,11 +113,12 @@ object Lowering extends Phase[Root, Root] {
     root.copy(defs = defs.map(kv => kv.sym -> kv).toMap).toSuccess
   }
 
-  // TODO: Return validations?
-
-  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Def = {
-    val e = visitExp(defn.exp)
-    defn.copy(exp = e)
+  /**
+    * Lowers the given definition `defn0`.
+    */
+  private def visitDef(defn0: Def)(implicit root: Root, flix: Flix): Def = {
+    val e = visitExp(defn0.exp)
+    defn0.copy(exp = e)
   }
 
   /**
@@ -429,9 +435,9 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Lowers the given list of expressions `exps`.
+    * Lowers the given list of expressions `exps0`.
     */
-  private def visitExps(exps: List[Expression])(implicit root: Root, flix: Flix): List[Expression] = exps.map(visitExp)
+  private def visitExps(exps0: List[Expression])(implicit root: Root, flix: Flix): List[Expression] = exps0.map(visitExp)
 
   /**
     * Lowers the given pattern `pat0`.
@@ -578,7 +584,7 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Constructs a Datalog program value.
+    * Constructs a `Fixpoint/Ast.Datalog` value from the given list of Datalog constraints `cs`.
     */
   private def mkDatalog(cs: List[Constraint], loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraint)
@@ -592,9 +598,9 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Translates the given [[Constraint]] into the Flix AST.
+    * Lowers the given constraint `c0`.
     */
-  private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
+  private def visitConstraint(c0: Constraint)(implicit root: Root, flix: Flix): Expression = c0 match {
     case Constraint(_, head, body, loc) =>
       val headExp = visitHeadPred(head)
       val bodyExp = mkArray(body.map(visitBodyPred), Types.BodyPredicate, loc)
@@ -604,9 +610,9 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Translates the given [[Predicate.Head]] into the Flix AST.
+    * Lowers the given head predicate `p0`.
     */
-  private def visitHeadPred(p: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p match {
+  private def visitHeadPred(p0: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val termsExp = mkArray(terms.map(visitHeadTerm), Types.HeadTerm, loc)
@@ -619,9 +625,9 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Translates the given [[Predicate.Body]] to the Flix AST.
+    * Lowers the given body predicate `p0`.
     */
-  private def visitBodyPred(p: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p match {
+  private def visitBodyPred(p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val predSymExp = mkPredSym(pred)
       val polarityExp = mkPolarity(polarity, loc)
@@ -635,7 +641,7 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Lowers the given head term `exp0` to a `Fixpoint/Ast.HeadTerm`.
+    * Lowers the given head term `exp0`.
     */
   @tailrec
   private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
@@ -685,24 +691,7 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
-    */
-  private def mkHeadTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    val symExp = mkVarSym(sym, loc)
-    val locExp = mkSourceLocation(sym.loc)
-    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(Symbols.HeadTerm, "Var", innerExp, Types.HeadTerm, loc)
-  }
-
-  /**
-    * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp0`.
-    */
-  private def mkHeadTermLit(exp0: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    mkTag(Symbols.HeadTerm, "Lit", exp0, Types.HeadTerm, loc)
-  }
-
-  /**
-    * Lowers the given body term `pat0` (a subset of patterns).
+    * Lowers the given body term `pat0`.
     */
   private def visitBodyTerm(pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
     case Pattern.Wild(_, loc) =>
@@ -761,9 +750,26 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.BodyTerm.Wild`.
+    * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
     */
-  private def mkBodyTermWild(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkHeadTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val symExp = mkVarSym(sym)
+    val locExp = mkSourceLocation(sym.loc)
+    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
+    mkTag(Symbols.HeadTerm, "Var", innerExp, Types.HeadTerm, loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp`.
+    */
+  private def mkHeadTermLit(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    mkTag(Symbols.HeadTerm, "Lit", exp, Types.HeadTerm, loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast.BodyTerm.Wild` from the given source location `loc`.
+    */
+  private def mkBodyTermWild(loc: SourceLocation): Expression = {
     val innerExp = Expression.Unit(loc)
     mkTag(Symbols.BodyTerm, "Wild", innerExp, Types.BodyTerm, loc)
   }
@@ -771,8 +777,8 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Var` from the given variable symbol `sym`.
     */
-  private def mkBodyTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    val symExp = mkVarSym(sym, loc)
+  private def mkBodyTermVar(sym: Symbol.VarSym, loc: SourceLocation): Expression = {
+    val symExp = mkVarSym(sym)
     val locExp = mkSourceLocation(sym.loc)
     val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
     mkTag(Symbols.BodyTerm, "Var", innerExp, Types.BodyTerm, loc)
@@ -786,25 +792,22 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Translates a [[Polarity]] AST node to an expression.
+    * Constructs a `Fixpoint/Ast.Polarity` from the given polarity `p`.
     */
-  private def mkPolarity(p: Ast.Polarity, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = p match {
+  private def mkPolarity(p: Ast.Polarity, loc: SourceLocation): Expression = p match {
     case Polarity.Positive =>
-      // TODO: Refactor
-      val (_, tpe) = Scheme.instantiate(root.enums(Symbols.Polarity).sc, InstantiateMode.Flexible)
       val innerExp = Expression.Unit(loc)
-      mkTag(Symbols.Polarity, "Positive", innerExp, tpe, loc)
+      mkTag(Symbols.Polarity, "Positive", innerExp, Types.Polarity, loc)
 
     case Polarity.Negative =>
-      val (_, tpe) = Scheme.instantiate(root.enums(Symbols.Polarity).sc, InstantiateMode.Flexible)
       val innerExp = Expression.Unit(loc)
-      mkTag(Symbols.Polarity, "Negative", innerExp, tpe, loc)
+      mkTag(Symbols.Polarity, "Negative", innerExp, Types.Polarity, loc)
   }
 
   /**
-    * Translates the given [[Name.Pred]] to the Flix AST.
+    * Constructs a `Fixpoint/Ast.PredSym` from the given predicate `pred`.
     */
-  private def mkPredSym(pred: Name.Pred)(implicit root: Root, flix: Flix): Expression = pred match {
+  private def mkPredSym(pred: Name.Pred): Expression = pred match {
     case Name.Pred(sym, loc) =>
       val nameExp = Expression.Str(sym, loc)
       val locExp = mkSourceLocation(loc)
@@ -813,13 +816,27 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Translates the given [[Symbol.VarSym]] to the Flix AST.
+    * Constructs a `Fixpoint/Ast.VarSym` from the given variable symbol `sym`.
     */
-  private def mkVarSym(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkVarSym(sym: Symbol.VarSym): Expression = {
+    val loc = sym.loc
     val nameExp = Expression.Str(sym.text, loc)
     val locExp = mkSourceLocation(loc)
     val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
     mkTag(Symbols.VarSym, "VarSym", innerExp, Types.VarSym, loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast.SourceLocation` from the given source location `loc`.
+    */
+  private def mkSourceLocation(loc: SourceLocation): Expression = {
+    val name = Expression.Str(loc.source.format, loc)
+    val beginLine = Expression.Int32(loc.beginLine, loc)
+    val beginCol = Expression.Int32(loc.beginCol, loc)
+    val endLine = Expression.Int32(loc.endLine, loc)
+    val endCol = Expression.Int32(loc.endCol, loc)
+    val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol), loc)
+    mkTag(Symbols.SourceLocation, "SourceLocation", innerExp, Types.SourceLocation, loc)
   }
 
   /**
@@ -887,19 +904,6 @@ object Lowering extends Phase[Root, Root] {
     val tpe = Type.mkNative(boxed)
     val eff = Type.Pure
     Expression.InvokeStaticMethod(m, List(e), tpe, eff, e.loc)
-  }
-
-  /**
-    * Translates the given [[SourceLocation]] to the Flix AST.
-    */
-  private def mkSourceLocation(loc: SourceLocation): Expression = {
-    val name = Expression.Str(loc.source.format, loc)
-    val beginLine = Expression.Int32(loc.beginLine, loc)
-    val beginCol = Expression.Int32(loc.beginCol, loc)
-    val endLine = Expression.Int32(loc.endLine, loc)
-    val endCol = Expression.Int32(loc.endCol, loc)
-    val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol), loc)
-    mkTag(Symbols.SourceLocation, "SourceLocation", innerExp, Types.SourceLocation, loc)
   }
 
   /**
