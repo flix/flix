@@ -652,7 +652,6 @@ object Lowering extends Phase[Root, Root] {
       mkUnitTag(PolaritySym, "Negative", tpe, loc)
   }
 
-
   /**
     * Constructs a `Fixpoint/Ast/HeadTerm.Var` expression from the given variable symbol `sym`.
     */
@@ -663,6 +662,9 @@ object Lowering extends Phase[Root, Root] {
     mkTag(HeadTerm, "Var", innerExp, mkHeadTermType(), loc)
   }
 
+  /**
+    * Constructs a `Fixpoint/Ast/BodyTerm.Wild` expression from the given variable symbol `sym`.
+    */
   private def mkBodyWildTerm(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     ??? // TODO
   }
@@ -677,7 +679,6 @@ object Lowering extends Phase[Root, Root] {
     mkTag(BodyTerm, "Var", innerExp, mkBodyTermType(), loc)
   }
 
-  private def boxBool(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
   /**
     * Translates the given [[Name.Pred]] to the Flix AST.
@@ -700,6 +701,8 @@ object Lowering extends Phase[Root, Root] {
     mkTag(VarSym, "VarSym", innerExp, mkVarSymType(), loc)
   }
 
+  private def boxBool(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
   // TODO: Benjamin: Add other boxing operations.
   private def boxInt32(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     val loc = exp.loc
@@ -710,6 +713,9 @@ object Lowering extends Phase[Root, Root] {
     Expression.InvokeStaticMethod(method, List(exp), tpe, eff, loc)
   }
 
+  private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+
+
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, loc)
   }
@@ -718,9 +724,6 @@ object Lowering extends Phase[Root, Root] {
     val exp = Expression.Unit(loc)
     mkTag(sym, tag, exp, tpe, loc)
   }
-
-
-  private def boxInt64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
 
   /**
     * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
