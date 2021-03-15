@@ -72,15 +72,21 @@ object Lowering extends Phase[Root, Root] {
     //
     // Data Types
     //
-    lazy val BodyTerm: Type = Type.mkEnum(Symbols.BodyTerm, UnsafeBox :: Nil)
-    lazy val Constraint: Type = Type.mkEnum(Symbols.Constraint, UnsafeBox :: Nil)
     lazy val Datalog: Type = Type.mkEnum(Symbols.Datalog, UnsafeBox :: Nil)
+    lazy val Constraint: Type = Type.mkEnum(Symbols.Constraint, UnsafeBox :: Nil)
+
     lazy val HeadPredicate: Type = Type.mkEnum(Symbols.HeadPredicate, UnsafeBox :: Nil)
-    lazy val SourceLocation: Type = Type.mkEnum(Symbols.SourceLocation, Nil)
-    lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
-    lazy val VarSym: Type = Type.mkEnum(Symbols.VarSym, Nil)
-    lazy val PredSym: Type = Type.mkEnum(Symbols.PredSym, Nil)
+    lazy val BodyPredicate: Type = Type.mkEnum(Symbols.BodyPredicate, UnsafeBox :: Nil)
+
     lazy val HeadTerm: Type = Type.mkEnum(Symbols.HeadTerm, UnsafeBox :: Nil)
+    lazy val BodyTerm: Type = Type.mkEnum(Symbols.BodyTerm, UnsafeBox :: Nil)
+
+    lazy val PredSym: Type = Type.mkEnum(Symbols.PredSym, Nil)
+    lazy val VarSym: Type = Type.mkEnum(Symbols.VarSym, Nil)
+
+    lazy val SourceLocation: Type = Type.mkEnum(Symbols.SourceLocation, Nil)
+
+    lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
 
     //
     // Function Types.
@@ -591,7 +597,7 @@ object Lowering extends Phase[Root, Root] {
   private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): Expression = c match {
     case Constraint(_, head, body, loc) =>
       val headExp = visitHeadPred(head)
-      val bodyExp = mkArray(body.map(visitBodyPred), mkBodyPredicateType(), loc)
+      val bodyExp = mkArray(body.map(visitBodyPred), Types.BodyPredicate, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(headExp :: bodyExp :: locExp :: Nil, loc)
       mkTag(Symbols.Constraint, "Constraint", innerExp, Types.Constraint, loc)
@@ -618,11 +624,11 @@ object Lowering extends Phase[Root, Root] {
   private def visitBodyPred(p: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val predSymExp = mkPredSym(pred)
-      val polarityExp = visitPolarity(polarity, loc)
+      val polarityExp = mkPolarity(polarity, loc)
       val termsExp = mkArray(terms.map(visitBodyTerm), Types.BodyTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
-      mkTag(Symbols.BodyPredicate, "BodyAtom", innerExp, mkBodyPredicateType(), loc)
+      mkTag(Symbols.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case Body.Guard(exp, loc) =>
       ??? // TODO: Add support for guards.
@@ -694,7 +700,6 @@ object Lowering extends Phase[Root, Root] {
   private def mkHeadTermLit(exp0: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     mkTag(Symbols.HeadTerm, "Lit", exp0, Types.HeadTerm, loc)
   }
-
 
   /**
     * Lowers the given body term `pat0` (a subset of patterns).
@@ -783,8 +788,9 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Translates a [[Polarity]] AST node to an expression.
     */
-  private def visitPolarity(p: Ast.Polarity, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = p match {
+  private def mkPolarity(p: Ast.Polarity, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = p match {
     case Polarity.Positive =>
+      // TODO: Refactor
       val (_, tpe) = Scheme.instantiate(root.enums(Symbols.Polarity).sc, InstantiateMode.Flexible)
       mkUnitTag(Symbols.Polarity, "Positive", tpe, loc)
 
@@ -812,6 +818,23 @@ object Lowering extends Phase[Root, Root] {
     val locExp = mkSourceLocation(loc)
     val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
     mkTag(Symbols.VarSym, "VarSym", innerExp, Types.VarSym, loc)
+  }
+
+  /**
+    * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
+    */
+  private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    // TODO: Use loc of exp?
+    // TODO: Possibly call UnsafeBox.box(?)
+    val cmpType = Type.Cst(TypeConstructor.Enum(Symbols.Comparison, Kind.Star), loc)
+    val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), cmpType)
+    val cmpExp = Expression.Null(tpe, loc) // TODO: Dont use null, but pass the actual comparator
+    val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
+
+    val objectType = Type.mkNative(classOf[java.lang.Object])
+    val unsafeBoxType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
+
+    mkTag(Symbols.UnsafeBox, "UnsafeBox", innerExp, unsafeBoxType, loc)
   }
 
   /**
@@ -864,30 +887,15 @@ object Lowering extends Phase[Root, Root] {
     Expression.InvokeStaticMethod(m, List(e), tpe, eff, e.loc)
   }
 
+  // TODO: DOC
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, loc)
   }
 
+  // TODO: Remove
   private def mkUnitTag(sym: Symbol.EnumSym, tag: String, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val exp = Expression.Unit(loc)
     mkTag(sym, tag, exp, tpe, loc)
-  }
-
-  /**
-    * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
-    */
-  private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    // TODO: Use loc of exp?
-    // TODO: Possibly call UnsafeBox.box(?)
-    val cmpType = Type.Cst(TypeConstructor.Enum(Symbols.Comparison, Kind.Star), loc)
-    val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), cmpType)
-    val cmpExp = Expression.Null(tpe, loc) // TODO: Dont use null, but pass the actual comparator
-    val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
-
-    val objectType = Type.mkNative(classOf[java.lang.Object])
-    val unsafeBoxType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
-
-    mkTag(Symbols.UnsafeBox, "UnsafeBox", innerExp, unsafeBoxType, loc)
   }
 
   /**
@@ -901,15 +909,6 @@ object Lowering extends Phase[Root, Root] {
     val endCol = Expression.Int32(loc.endCol, loc)
     val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol), loc)
     mkTag(Symbols.SourceLocation, "SourceLocation", innerExp, Types.SourceLocation, loc)
-  }
-
-  /**
-    * Returns the type `Fixpoint/Ast.BodyPredicate`.
-    */
-  private def mkBodyPredicateType(): Type = {
-    val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
-    Type.mkEnum(Symbols.BodyPredicate, innerType :: Nil)
   }
 
   /**
