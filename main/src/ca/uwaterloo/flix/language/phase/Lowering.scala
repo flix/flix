@@ -51,6 +51,7 @@ object Lowering extends Phase[Root, Root] {
   object Defs {
     val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
     val Compose: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.compose")
+    val Entails: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.entails")
     val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
 
     def lookup(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): Def = root.defs.get(sym) match {
@@ -62,6 +63,7 @@ object Lowering extends Phase[Root, Root] {
   object Types {
     val SolveType: Type = Type.mkPureArrow(mkDatalogType(), mkDatalogType())
     val ComposeType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkDatalogType()), mkDatalogType())
+    val EntailsType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkDatalogType()), Type.Bool)
     val ProjectType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkPredSymType()), mkDatalogType())
   }
 
@@ -380,8 +382,11 @@ object Lowering extends Phase[Root, Root] {
       ???
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
-      // TODO: Call into solver
-      ???
+      val defn = Defs.lookup(Defs.Entails)
+      val defExp = Expression.Def(defn.sym, Types.EntailsType, loc)
+      val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
+      val resultType = Type.Bool
+      Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
       // TODO: Call into solver
