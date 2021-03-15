@@ -21,8 +21,6 @@ namespace Fixpoint/Solver {
         let _f = Console.printLine("Hello from project!") as & Pure;
         d
 
-    // TODO: Entails
-
     // TODO: FOLD
 
 }
