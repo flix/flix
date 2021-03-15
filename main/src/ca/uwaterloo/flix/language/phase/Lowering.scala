@@ -670,12 +670,13 @@ object Lowering extends Phase[Root, Root] {
     mkTag(HeadTerm, "Lit", exp0, mkHeadTermType(), loc)
   }
 
+
   /**
     * Lowers the given body term `pat0` (a subset of patterns).
     */
   private def visitBodyTerm(pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
     case Pattern.Wild(_, loc) =>
-      ??? // TODO: Move to helper
+      mkBodyTermWild(loc)
 
     case Pattern.Var(sym, _, loc) =>
       mkBodyTermVar(sym, loc)
@@ -716,6 +717,14 @@ object Lowering extends Phase[Root, Root] {
     case Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
     case Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast.BodyTerm.Wild`.
+    */
+  def mkBodyTermWild(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    val innerExp = Expression.Unit(loc)
+    mkTag(BodyTerm, "Wild", innerExp, mkBodyTermType(), loc)
   }
 
   /**
