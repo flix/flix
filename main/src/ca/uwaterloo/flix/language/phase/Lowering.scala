@@ -34,7 +34,6 @@ object Lowering extends Phase[Root, Root] {
   // TODO: Add doc
 
   lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
-  lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
 
   lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
   lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
@@ -56,6 +55,7 @@ object Lowering extends Phase[Root, Root] {
   }
 
   object Symbols {
+    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
     lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
     lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
     lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
@@ -69,9 +69,10 @@ object Lowering extends Phase[Root, Root] {
     //
     // Data Types
     //
+    lazy val BodyTerm: Type = Type.mkEnum(Symbols.BodyTerm, UnsafeBox :: Nil)
     lazy val Constraint: Type = Type.mkEnum(Symbols.Constraint, UnsafeBox :: Nil)
     lazy val Datalog: Type = Type.mkEnum(Symbols.Datalog, UnsafeBox :: Nil)
-    lazy val HeadPredicateType: Type = Type.mkEnum(Symbols.HeadPredicate, UnsafeBox :: Nil)
+    lazy val HeadPredicate: Type = Type.mkEnum(Symbols.HeadPredicate, UnsafeBox :: Nil)
     lazy val SourceLocation: Type = Type.mkEnum(Symbols.SourceLocation, Nil)
     lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
     lazy val VarSym: Type = Type.mkEnum(Symbols.VarSym, Nil)
@@ -600,7 +601,7 @@ object Lowering extends Phase[Root, Root] {
       val termsExp = mkArray(terms.map(visitHeadTerm), mkHeadTermType(), loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
-      mkTag(Symbols.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicateType, loc)
+      mkTag(Symbols.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
 
     case Head.Union(exp, tpe, loc) =>
       throw InternalCompilerException("Deprecated Expression") // TODO: Replace Union with some alternative.
@@ -613,7 +614,7 @@ object Lowering extends Phase[Root, Root] {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val predSymExp = mkPredSym(pred)
       val polarityExp = visitPolarity(polarity, loc)
-      val termsExp = mkArray(terms.map(visitBodyTerm), mkBodyTermType(), loc)
+      val termsExp = mkArray(terms.map(visitBodyTerm), Types.BodyTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(BodyPredicate, "BodyAtom", innerExp, mkBodyPredicateType(), loc)
@@ -754,7 +755,7 @@ object Lowering extends Phase[Root, Root] {
     */
   private def mkBodyTermWild(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val innerExp = Expression.Unit(loc)
-    mkTag(BodyTerm, "Wild", innerExp, mkBodyTermType(), loc)
+    mkTag(Symbols.BodyTerm, "Wild", innerExp, Types.BodyTerm, loc)
   }
 
   /**
@@ -764,14 +765,14 @@ object Lowering extends Phase[Root, Root] {
     val symExp = mkVarSym(sym, loc)
     val locExp = mkSourceLocation(sym.loc)
     val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(BodyTerm, "Var", innerExp, mkBodyTermType(), loc)
+    mkTag(Symbols.BodyTerm, "Var", innerExp, Types.BodyTerm, loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Lit` from the given expression `exp0`.
     */
   private def mkBodyTermLit(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
-    mkTag(BodyTerm, "Lit", exp0, mkBodyTermType(), exp0.loc)
+    mkTag(Symbols.BodyTerm, "Lit", exp0, Types.BodyTerm, exp0.loc)
   }
 
   /**
@@ -920,14 +921,6 @@ object Lowering extends Phase[Root, Root] {
     Type.mkEnum(HeadTerm, innerType :: Nil)
   }
 
-  /**
-    * Returns the type of `Fixpoint/BodyTerm[UnsafeBox[##java.lang.Object]].`
-    */
-  private def mkBodyTermType(): Type = {
-    val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
-    Type.mkEnum(BodyTerm, innerType :: Nil)
-  }
 
   /**
     * Returns a pure array expression constructed from the given list of expressions `exps`.
