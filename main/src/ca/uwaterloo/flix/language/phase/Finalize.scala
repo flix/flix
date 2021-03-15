@@ -75,21 +75,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       FinalAst.Enum(mod, sym, cases, tpe, loc)
   }
 
-  private def visitConstraint(constraint0: LiftedAst.Constraint, m: TopLevel)(implicit flix: Flix): FinalAst.Constraint = {
-    val head = visitHeadPredicate(constraint0.cparams, constraint0.head, m)
-    val body = constraint0.body.map(b => visitBodyPredicate(constraint0.cparams, b, m))
-    val cparams = constraint0.cparams.map {
-      case LiftedAst.ConstraintParam.HeadParam(sym, tpe0, loc) =>
-        val tpe = visitType(tpe0)
-        FinalAst.ConstraintParam.HeadParam(sym, tpe, loc)
-
-      case LiftedAst.ConstraintParam.RuleParam(sym, tpe0, loc) =>
-        val tpe = visitType(tpe0)
-        FinalAst.ConstraintParam.RuleParam(sym, tpe, loc)
-    }
-    FinalAst.Constraint(cparams, head, body, constraint0.loc)
-  }
-
   private def visitLatticeOps(lc: LiftedAst.LatticeOps, m: TopLevel)(implicit flix: Flix): FinalAst.LatticeOps = lc match {
     case LiftedAst.LatticeOps(tpe0, bot, equ, leq, lub, glb) =>
       val tpe = visitType(tpe0)
@@ -409,40 +394,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Force(e, t, loc)
 
-      case LiftedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
-        val cs = cs0.map(visitConstraint(_, m))
-        val t = visitType(tpe)
-        FinalAst.Expression.FixpointConstraintSet(cs, t, loc)
-
-      case LiftedAst.Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expression.FixpointCompose(e1, e2, t, loc)
-
-      case LiftedAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.FixpointSolve(e, stf, t, loc)
-
-      case LiftedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.FixpointProject(pred, e, t, loc)
-
-      case LiftedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expression.FixpointEntails(e1, e2, t, loc)
-
-      case LiftedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
-        val e1 = visit(exp1).asInstanceOf[FinalAst.Expression.Var]
-        val e2 = visit(exp2).asInstanceOf[FinalAst.Expression.Var]
-        val e3 = visit(exp3).asInstanceOf[FinalAst.Expression.Var]
-        val t = visitType(tpe)
-        FinalAst.Expression.FixpointFold(pred, e1, e2, e3, t, loc)
-
       case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.HoleError(sym, t, loc)
@@ -453,73 +404,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
     }
 
     visit(exp0)
-  }
-
-  private def visitHeadPredicate(cparams0: List[LiftedAst.ConstraintParam], head0: LiftedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = head0 match {
-    case LiftedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-      val ts = terms.map(t => visitHeadTerm(t, m))
-      val t = visitType(tpe)
-      FinalAst.Predicate.Head.Atom(pred, den, ts, t, loc)
-
-    case LiftedAst.Predicate.Head.Union(exp, tpe, loc) =>
-      val e = visitExp(exp, m)
-      val ts = cparams0.map(cparam => FinalAst.Term.Head.QuantVar(cparam.sym, visitType(cparam.tpe), cparam.loc))
-      val t = visitType(tpe)
-      FinalAst.Predicate.Head.Union(e, ts, t, loc)
-  }
-
-  private def visitBodyPredicate(cparams0: List[LiftedAst.ConstraintParam], body0: LiftedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = body0 match {
-    case LiftedAst.Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-      val ts = terms.map(t => visitBodyTerm(t, m))
-      val t = visitType(tpe)
-      FinalAst.Predicate.Body.Atom(pred, den, polarity, ts, t, loc)
-
-    case LiftedAst.Predicate.Body.Guard(exp, loc) =>
-      val e = visitExp(exp, m)
-      val ts = cparams0.map(cparam => FinalAst.Term.Body.QuantVar(cparam.sym, visitType(cparam.tpe), cparam.loc))
-      FinalAst.Predicate.Body.Guard(e, ts, loc)
-  }
-
-  private def visitHeadTerm(t0: LiftedAst.Term.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Head = t0 match {
-    case LiftedAst.Term.Head.QuantVar(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      FinalAst.Term.Head.QuantVar(sym, t, loc)
-
-    case LiftedAst.Term.Head.CapturedVar(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      FinalAst.Term.Head.CapturedVar(sym, t, loc)
-
-    case LiftedAst.Term.Head.Lit(lit, tpe, loc) =>
-      val t = visitType(tpe)
-      FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, loc, m), t, loc)
-
-    case LiftedAst.Term.Head.App(exp, args, tpe, loc) =>
-      val e = visitExp(exp, m)
-      val t = visitType(tpe)
-      FinalAst.Term.Head.App(e, args, t, loc)
-  }
-
-  private def visitBodyTerm(t0: LiftedAst.Term.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Body = t0 match {
-    case LiftedAst.Term.Body.Wild(tpe, loc) =>
-      val t = visitType(tpe)
-      FinalAst.Term.Body.Wild(t, loc)
-
-    case LiftedAst.Term.Body.QuantVar(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      FinalAst.Term.Body.QuantVar(sym, t, loc)
-
-    case LiftedAst.Term.Body.CapturedVar(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      FinalAst.Term.Body.CapturedVar(sym, t, loc)
-
-    case LiftedAst.Term.Body.Lit(lit, tpe, loc) =>
-      val t = visitType(tpe)
-      FinalAst.Term.Body.Lit(lit2symTemporaryToBeRemoved(lit, loc, m), t, loc)
-  }
-
-  private def visitAttribute(a0: LiftedAst.Attribute): FinalAst.Attribute = {
-    val tpe = visitType(a0.tpe)
-    FinalAst.Attribute(a0.name, tpe)
   }
 
   private def visitFormalParam(p0: LiftedAst.FormalParam): FinalAst.FormalParam = {
