@@ -27,7 +27,11 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
 
+// TODO: Add doc
+
 object Lowering extends Phase[Root, Root] {
+
+  // TODO: Add doc
 
   val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
   val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
@@ -46,6 +50,8 @@ object Lowering extends Phase[Root, Root] {
 
   object Defs {
     val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
+    val Compose: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.compose")
+    val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
 
     def lookup(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): Def = root.defs.get(sym) match {
       case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?")
@@ -55,6 +61,8 @@ object Lowering extends Phase[Root, Root] {
 
   object Types {
     val SolveType: Type = Type.mkPureArrow(mkDatalogType(), mkDatalogType())
+    val ComposeType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkDatalogType()), mkDatalogType())
+    val ProjectType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkPredSymType()), mkDatalogType())
   }
 
   /**
@@ -353,9 +361,12 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
 
-    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
-      // TODO: Call into solver
-      ???
+    case Expression.FixpointCompose(exp1, exp2, _, _, eff, loc) =>
+      val defn = Defs.lookup(Defs.Compose)
+      val defExp = Expression.Def(defn.sym, Types.ComposeType, loc)
+      val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
+      val resultType = mkDatalogType()
+      Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointSolve(exp, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Solve)
@@ -842,12 +853,12 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns the type `Fixpoint/Ast.PredSym`.
     */
-  private def mkPredSymType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(PredSym, Nil)
+  private def mkPredSymType(): Type = Type.mkEnum(PredSym, Nil)
 
   /**
     * Returns the type `Fixpoint/Ast.VarSym`.
     */
-  private def mkVarSymType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(VarSym, Nil)
+  private def mkVarSymType(): Type = Type.mkEnum(VarSym, Nil)
 
   /**
     * Returns the type of `Fixpoint/HeadTerm[UnsafeBox[##java.lang.Object]].`
