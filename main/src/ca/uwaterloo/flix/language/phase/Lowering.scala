@@ -79,6 +79,8 @@ object Lowering extends Phase[Root, Root] {
     root.copy(defs = defs.map(kv => kv.sym -> kv).toMap).toSuccess
   }
 
+  // TODO: Return validations?
+
   private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Def = {
     val e = visitExp(defn.exp)
     defn.copy(exp = e)
@@ -681,13 +683,17 @@ object Lowering extends Phase[Root, Root] {
     case Pattern.Var(sym, _, loc) =>
       mkBodyTermVar(sym, loc)
 
-    case Pattern.Unit(loc) => mkUnsafeBox(Expression.Unit(loc), loc) // TODO: Must be wrap in lit.
+    case Pattern.Unit(loc) =>
+      mkBodyTermLit(mkUnsafeBox(Expression.Unit(loc), loc))
 
-    case Pattern.True(loc) => mkUnsafeBox(boxBool(Expression.True(loc)), loc) // TODO: Must be wrap in lit.
+    case Pattern.True(loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxBool(Expression.True(loc)), loc))
 
-    case Pattern.False(loc) => mkUnsafeBox(boxBool(Expression.False(loc)), loc) // TODO: Must be wrap in lit.
+    case Pattern.False(loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxBool(Expression.False(loc)), loc))
 
-    case Pattern.Char(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Pattern.Char(lit, loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxChar(Expression.Char(lit, loc)), loc))
 
     case Pattern.Float32(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
 
@@ -722,7 +728,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Wild`.
     */
-  def mkBodyTermWild(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkBodyTermWild(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val innerExp = Expression.Unit(loc)
     mkTag(BodyTerm, "Wild", innerExp, mkBodyTermType(), loc)
   }
@@ -730,11 +736,18 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Var` from the given variable symbol `sym`.
     */
-  def mkBodyTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkBodyTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     val symExp = mkVarSym(sym, loc)
     val locExp = mkSourceLocation(sym.loc)
     val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
     mkTag(BodyTerm, "Var", innerExp, mkBodyTermType(), loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast.BodyTerm.Lit` from the given expression `exp0`.
+    */
+  private def mkBodyTermLit(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
+    mkTag(BodyTerm, "Lit", exp0, mkBodyTermType(), exp0.loc)
   }
 
   /**
@@ -808,6 +821,7 @@ object Lowering extends Phase[Root, Root] {
     * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
     */
   private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    // TODO: Use loc of exp?
     // TODO: Possibly call UnsafeBox.box(?)
     val cmpType = Type.Cst(TypeConstructor.Enum(ComparisonSym, Kind.Star), loc)
     val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), cmpType)
