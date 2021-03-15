@@ -792,11 +792,13 @@ object Lowering extends Phase[Root, Root] {
     case Polarity.Positive =>
       // TODO: Refactor
       val (_, tpe) = Scheme.instantiate(root.enums(Symbols.Polarity).sc, InstantiateMode.Flexible)
-      mkUnitTag(Symbols.Polarity, "Positive", tpe, loc)
+      val innerExp = Expression.Unit(loc)
+      mkTag(Symbols.Polarity, "Positive", innerExp, tpe, loc)
 
     case Polarity.Negative =>
       val (_, tpe) = Scheme.instantiate(root.enums(Symbols.Polarity).sc, InstantiateMode.Flexible)
-      mkUnitTag(Symbols.Polarity, "Negative", tpe, loc)
+      val innerExp = Expression.Unit(loc)
+      mkTag(Symbols.Polarity, "Negative", innerExp, tpe, loc)
   }
 
   /**
@@ -887,21 +889,10 @@ object Lowering extends Phase[Root, Root] {
     Expression.InvokeStaticMethod(m, List(e), tpe, eff, e.loc)
   }
 
-  // TODO: DOC
-  private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, loc)
-  }
-
-  // TODO: Remove
-  private def mkUnitTag(sym: Symbol.EnumSym, tag: String, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    val exp = Expression.Unit(loc)
-    mkTag(sym, tag, exp, tpe, loc)
-  }
-
   /**
     * Translates the given [[SourceLocation]] to the Flix AST.
     */
-  private def mkSourceLocation(loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkSourceLocation(loc: SourceLocation): Expression = {
     val name = Expression.Str(loc.source.format, loc)
     val beginLine = Expression.Int32(loc.beginLine, loc)
     val beginCol = Expression.Int32(loc.beginCol, loc)
@@ -914,10 +905,17 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns a pure array expression constructed from the given list of expressions `exps`.
     */
-  private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
     val tpe = Type.mkArray(elmType)
     val eff = Type.Pure
     Expression.ArrayLit(exps, tpe, eff, loc)
+  }
+
+  /**
+    * Returns a pure tag expression for the given `sym` and given `tag` with the given inner expression `exp`.
+    */
+  private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation): Expression = {
+    Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, loc)
   }
 
   /**
