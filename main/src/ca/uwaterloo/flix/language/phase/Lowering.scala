@@ -695,22 +695,29 @@ object Lowering extends Phase[Root, Root] {
     case Pattern.Char(lit, loc) =>
       mkBodyTermLit(mkUnsafeBox(boxChar(Expression.Char(lit, loc)), loc))
 
-    case Pattern.Float32(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Pattern.Float32(lit, loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxFloat32(Expression.Float32(lit, loc)), loc))
 
-    case Pattern.Float64(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Pattern.Float64(lit, loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxFloat64(Expression.Float64(lit, loc)), loc))
 
-    case Pattern.Int8(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Pattern.Int8(lit, loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxInt8(Expression.Int8(lit, loc)), loc))
 
-    case Pattern.Int16(lit, loc) => ??? // TODO: Benjamin: Similar to the cases above.
+    case Pattern.Int16(lit, loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxInt16(Expression.Int16(lit, loc)), loc))
 
-    case Pattern.Int32(lit, loc) => mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)), loc) // TODO: Must be wrap in lit.
+    case Pattern.Int32(lit, loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)), loc))
 
-    case Pattern.Int64(lit, loc) => mkUnsafeBox(boxInt64(Expression.Int64(lit, loc)), loc) // TODO: Must be wrap in lit.
+    case Pattern.Int64(lit, loc) =>
+      mkBodyTermLit(mkUnsafeBox(boxInt64(Expression.Int64(lit, loc)), loc))
 
-    case Pattern.BigInt(lit, loc) => mkUnsafeBox(Expression.BigInt(lit, loc), loc) // TODO: Must be wrap in lit.
+    case Pattern.BigInt(lit, loc) =>
+      mkBodyTermLit(mkUnsafeBox(Expression.BigInt(lit, loc), loc))
 
     case Pattern.Str(lit, loc) =>
-      mkUnsafeBox(Expression.Str(lit, loc), loc) // TODO: Must be wrap in lit.
+      mkBodyTermLit(mkUnsafeBox(Expression.Str(lit, loc), loc))
 
     // TODO: What other expressions to support as body terms?
 
