@@ -446,7 +446,10 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given type `tpe0`.
     */
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = tpe0 match {
-    case Type.Var(_, _, _, _) => tpe0
+    case Type.Var(id, kind, rigidity, text) => kind match {
+      case Kind.Schema => Type.Var(id, Kind.Star, rigidity, text)
+      case _ => tpe0
+    }
 
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.SchemaEmpty =>
