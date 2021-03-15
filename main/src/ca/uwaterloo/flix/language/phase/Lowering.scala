@@ -36,7 +36,6 @@ object Lowering extends Phase[Root, Root] {
   lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
   lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
 
-  lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
   lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
   lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
 
@@ -59,6 +58,7 @@ object Lowering extends Phase[Root, Root] {
   object Symbols {
     lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
     lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
+    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
     lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
     lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
     lazy val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
@@ -71,6 +71,8 @@ object Lowering extends Phase[Root, Root] {
     //
     lazy val Constraint: Type = Type.mkEnum(Symbols.Constraint, UnsafeBox :: Nil)
     lazy val Datalog: Type = Type.mkEnum(Symbols.Datalog, UnsafeBox :: Nil)
+    lazy val HeadPredicateType: Type = Type.mkEnum(Symbols.HeadPredicate, UnsafeBox :: Nil)
+    lazy val SourceLocation: Type = Type.mkEnum(Symbols.SourceLocation, Nil)
     lazy val UnsafeBox: Type = Type.mkEnum(Symbols.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
     lazy val VarSym: Type = Type.mkEnum(Symbols.VarSym, Nil)
 
@@ -598,7 +600,7 @@ object Lowering extends Phase[Root, Root] {
       val termsExp = mkArray(terms.map(visitHeadTerm), mkHeadTermType(), loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
-      mkTag(HeadPredicate, "HeadAtom", innerExp, mkHeadPredicateType(), loc)
+      mkTag(Symbols.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicateType, loc)
 
     case Head.Union(exp, tpe, loc) =>
       throw InternalCompilerException("Deprecated Expression") // TODO: Replace Union with some alternative.
@@ -892,17 +894,7 @@ object Lowering extends Phase[Root, Root] {
     val endLine = Expression.Int32(loc.endLine, loc)
     val endCol = Expression.Int32(loc.endCol, loc)
     val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol), loc)
-    mkTag(Symbols.SourceLocation, "SourceLocation", innerExp, mkSourceLocationType(), loc)
-  }
-
-
-  /**
-    * Returns the type `Fixpoint/Ast.HeadPredicate`.
-    */
-  private def mkHeadPredicateType(): Type = {
-    val objectType = Type.mkNative(classOf[java.lang.Object])
-    val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
-    Type.mkEnum(HeadPredicate, innerType :: Nil)
+    mkTag(Symbols.SourceLocation, "SourceLocation", innerExp, Types.SourceLocation, loc)
   }
 
   /**
@@ -936,11 +928,6 @@ object Lowering extends Phase[Root, Root] {
     val innerType = Type.mkEnum(Symbols.UnsafeBox, objectType :: Nil)
     Type.mkEnum(BodyTerm, innerType :: Nil)
   }
-
-  /**
-    * Returns the type of `Fixpoint/Ast.SourceLocation`
-    */
-  private def mkSourceLocationType()(implicit root: Root, flix: Flix): Type = Type.mkEnum(Symbols.SourceLocation, Nil)
 
   /**
     * Returns a pure array expression constructed from the given list of expressions `exps`.
