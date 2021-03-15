@@ -49,6 +49,7 @@ object Lowering extends Phase[Root, Root] {
   val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
 
   object Defs {
+    // TODO: Sort/rename
     val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
     val Compose: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.compose")
     val Entails: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.entails")
@@ -64,7 +65,7 @@ object Lowering extends Phase[Root, Root] {
     val SolveType: Type = Type.mkPureArrow(mkDatalogType(), mkDatalogType())
     val ComposeType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkDatalogType()), mkDatalogType())
     val EntailsType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkDatalogType()), Type.Bool)
-    val ProjectType: Type = Type.mkPureUncurriedArrow(List(mkDatalogType(), mkPredSymType()), mkDatalogType())
+    val ProjectType: Type = Type.mkPureUncurriedArrow(List(mkPredSymType(), mkDatalogType()), mkDatalogType())
   }
 
   /**
@@ -378,8 +379,11 @@ object Lowering extends Phase[Root, Root] {
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
-      // TODO: Call into solver
-      ???
+      val defn = Defs.lookup(Defs.Project)
+      val defExp = Expression.Def(defn.sym, Types.ProjectType, loc)
+      val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
+      val resultType = mkDatalogType()
+      Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
       val defn = Defs.lookup(Defs.Entails)
@@ -465,26 +469,26 @@ object Lowering extends Phase[Root, Root] {
     */
   // TODO: What is the right way to do this replacement?
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
-    tpe0.kind match {
-      case Kind.Schema => mkDatalogType()
-      case _ =>
-        // TODO: Maybe wrap this in a local fun?
-        tpe0 match {
-          case Type.Var(id, kind, rigidity, text) => kind match {
-            case Kind.Schema => Type.Var(id, Kind.Star, rigidity, text)
-            case _ => tpe0
-          }
+    def visit(tpe: Type): Type = tpe match {
+      case Type.Var(id, kind, rigidity, text) => kind match {
+        case Kind.Schema => Type.Var(id, Kind.Star, rigidity, text)
+        case _ => tpe0
+      }
 
-          case Type.Cst(tc, loc) => tpe0
+      case Type.Cst(tc, loc) => tpe0
 
-          case Type.Apply(tpe1, tpe2) =>
-            val t1 = visitType(tpe1)
-            val t2 = visitType(tpe2)
-            Type.Apply(t1, t2)
+      case Type.Apply(tpe1, tpe2) =>
+        val t1 = visitType(tpe1)
+        val t2 = visitType(tpe2)
+        Type.Apply(t1, t2)
 
-          case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
-        }
+      case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
+
+    if (tpe0.kind == Kind.Schema)
+      mkDatalogType()
+    else
+      visit(tpe0)
   }
 
   /**
