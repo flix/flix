@@ -791,17 +791,35 @@ object Lowering extends Phase[Root, Root] {
     mkTag(VarSym, "VarSym", innerExp, mkVarSymType(), loc)
   }
 
-  private def boxBool(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  /**
+    * Boxes the given Bool expression `e`.
+    */
+  private def boxBool(e: Expression): Expression = boxExp(e, java.lang.Boolean.TYPE, classOf[java.lang.Boolean])
 
-  private def boxChar(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  /**
+    * Boxes the given Char expression `e`.
+    */
+  private def boxChar(e: Expression): Expression = boxExp(e, java.lang.Character.TYPE, classOf[java.lang.Character])
 
-  private def boxFloat32(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  /**
+    * Boxes the given Float32 expression `e`.
+    */
+  private def boxFloat32(e: Expression): Expression = boxExp(e, java.lang.Float.TYPE, classOf[java.lang.Float])
 
-  private def boxFloat64(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  /**
+    * Boxes the given Float64 expression `e`.
+    */
+  private def boxFloat64(e: Expression): Expression = boxExp(e, java.lang.Double.TYPE, classOf[java.lang.Double])
 
-  private def boxInt8(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  /**
+    * Boxes the given Int8 expression `e`.
+    */
+  private def boxInt8(e: Expression): Expression = boxExp(e, java.lang.Byte.TYPE, classOf[java.lang.Byte])
 
-  private def boxInt16(exp: Expression)(implicit root: Root, flix: Flix): Expression = ??? // TODO
+  /**
+    * Boxes the given Int16 expression `e`.
+    */
+  private def boxInt16(e: Expression): Expression = boxExp(e, java.lang.Short.TYPE, classOf[java.lang.Short])
 
   /**
     * Boxes the given Int32 expression `e`.
