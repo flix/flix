@@ -862,6 +862,8 @@ object Lowering extends Phase[Root, Root] {
     val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), Types.Comparison)
     val cmpExp = Expression.Sig(compareSym, tpe, loc)
 
+    // TODO: Need the ToString instance.
+
     // Construct the UnsafeBox.
     val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
     mkTag(Symbols.UnsafeBox, "UnsafeBox", innerExp, Types.UnsafeBox, loc)

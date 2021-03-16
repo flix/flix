@@ -69,4 +69,15 @@ namespace UnsafeBox {
             case (UnsafeBox(v1, _, _), UnsafeBox(v2, _, _)) => box(f(v1 as a, v2 as b))
         }
 
+    // TODO: DOC
+    pub def lift1b[a](f: a -> Bool): UnsafeBox[Any] -> Bool =
+        match (UnsafeBox(v1, _, _)) -> {
+            f(v1 as a)
+        }
+
+    pub def lift2b[a, b](f: (a, b) -> Bool): (UnsafeBox[Any], UnsafeBox[Any]) -> Bool =
+        (x: UnsafeBox[Any], y: UnsafeBox[Any]) -> match (x, y) {
+            case (UnsafeBox(v1, _, _), UnsafeBox(v2, _, _)) => f(v1 as a, v2 as b)
+        }
+
 }
