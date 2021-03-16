@@ -59,14 +59,6 @@ public final class Solver {
         return ConstraintSystem.of(constraints);
     }
 
-    /**
-     * Solves the given constraint system `cs` with the given stratification `stf` and options `o`.
-     */
-    public static ConstraintSystem solve(ConstraintSystem cs, Stratification stf, Options o) {
-        ca.uwaterloo.flix.runtime.solver.Solver solver = new ca.uwaterloo.flix.runtime.solver.Solver(cs, stf, o);
-        ConstraintSystem result = solver.solve();
-        return result;
-    }
 
     /**
      * Returns `true` if all facts in `cs2` are included in `cs1`.
