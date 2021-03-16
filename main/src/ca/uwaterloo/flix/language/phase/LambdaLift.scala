@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.ConstraintParam
 import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.Validation
@@ -378,24 +377,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
       case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Force(e, tpe, loc)
-
-      case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
-        ??? // TODO
-
-      case SimplifiedAst.Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-        ??? // TODO
-
-      case SimplifiedAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
-        ??? // TODO
-
-      case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
-        ??? // TODO
-
-      case SimplifiedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-        ??? // TODO
-
-      case SimplifiedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
-        ??? // TODO
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         LiftedAst.Expression.HoleError(sym, tpe, loc)
