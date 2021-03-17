@@ -127,6 +127,19 @@ instance Boxable[Float64] {
     }
 }
 
+instance Boxable[BigInt] {
+    pub def box(x: BigInt): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as BigInt, o2 as BigInt);
+        let toString = o -> ToString.toString(o as BigInt);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): BigInt= match x {
+        case BoxedObject(v, _, _) => v as BigInt
+        case _                    => ?bug
+    }
+}
+
 instance Boxable[String] {
     pub def box(x: String): Boxed = {
         let value = x as ##java.lang.Object;
