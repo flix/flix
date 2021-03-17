@@ -857,6 +857,34 @@ object Lowering extends Phase[Root, Root] {
     mkTag(Enums.SourceLocation, "SourceLocation", innerExp, Types.SourceLocation, loc)
   }
 
+  // TODO: Update doc
+  /**
+    * Wraps the given expression `exp` with the given constraint parameters `cparams` in a lambda expression.
+    */
+  //  private def newLambdaWrapper(cparams: List[TypedAst.ConstraintParam], exp: TypedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
+  //    // Compute a mapping from the constraint parameters to fresh variable symbols.
+  //    val freshVars = cparams.map(cparam => cparam -> Symbol.freshVarSym(cparam.sym))
+  //
+  //    // Compute the formal parameters of the lambda.
+  //    val fparams = freshVars map {
+  //      case (cparam, newSym) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, cparam.tpe, cparam.loc)
+  //    }
+  //
+  //    // Compute the substitution.
+  //    val freshSubst = freshVars map {
+  //      case (cparam, newSym) => cparam.sym -> newSym
+  //    }
+  //
+  //    // Construct the body of the lambda.
+  //    val lambdaBody = substitute(visitExp(exp), freshSubst.toMap)
+  //
+  //    // Construct the function type.
+  //    val lambdaType = Type.mkPureUncurriedArrow(fparams.map(_.tpe), exp.tpe)
+  //
+  //    // Assemble the lambda.
+  //    SimplifiedAst.Expression.Lambda(fparams, lambdaBody, lambdaType, loc)
+  //  }
+
   /**
     * Returns the given expression `exp` in a box.
     */
