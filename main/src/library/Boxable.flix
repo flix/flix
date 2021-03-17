@@ -68,13 +68,43 @@ instance Boxable[Int8] {
     }
 }
 
-// TODO: ...
+instance Boxable[Int16] {
+    pub def box(x: Int16): Boxed = BoxedInt16(x)
+    pub def unbox(x: Boxed): Int16 = match x {
+        case BoxedInt16(v) => v
+        case _             => ?bug
+    }
+}
 
 instance Boxable[Int32] {
     pub def box(x: Int32): Boxed = BoxedInt32(x)
     pub def unbox(x: Boxed): Int32 = match x {
         case BoxedInt32(v) => v
         case _             => ?bug
+    }
+}
+
+instance Boxable[Int64] {
+    pub def box(x: Int64): Boxed = BoxedInt64(x)
+    pub def unbox(x: Boxed): Int64 = match x {
+        case BoxedInt64(v) => v
+        case _             => ?bug
+    }
+}
+
+instance Boxable[Float32] {
+    pub def box(x: Float32): Boxed = BoxedFloat32(x)
+    pub def unbox(x: Boxed): Float32 = match x {
+        case BoxedFloat32(v) => v
+        case _               => ?bug
+    }
+}
+
+instance Boxable[Float64] {
+    pub def box(x: Float64): Boxed = BoxedFloat64(x)
+    pub def unbox(x: Boxed): Float64 = match x {
+        case BoxedFloat64(v) => v
+        case _               => ?bug
     }
 }
 
@@ -90,5 +120,7 @@ instance Boxable[String] {
         case _                    => ?bug
     }
 }
+
+// TODO: Add types such as Option, List, etc.
 
 // TODO: It would be nice if we could derive instances for user-defined types.
