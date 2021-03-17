@@ -26,4 +26,33 @@ pub enum Boxed {
         ##java.lang.Object -> String)
 }
 
-// TODO: Add instances of order, tostring, eq, etc.
+instance Eq[Boxed] {
+
+    pub def eq(b1: Boxed, b2: Boxed): Bool = match (b1, b2) {
+        case (BoxedInt8(v1),    BoxedInt8(v2))                  => v1 == v2
+        case (BoxedInt16(v1),   BoxedInt16(v2))                 => v1 == v2
+        case (BoxedInt32(v1),   BoxedInt32(v2))                 => v1 == v2
+        case (BoxedInt64(v1),   BoxedInt64(v2))                 => v1 == v2
+        case (BoxedFloat32(v1), BoxedFloat32(v2))               => v1 == v2
+        case (BoxedFloat64(v1), BoxedFloat64(v2))               => v1 == v2
+        case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2) == EqualTo
+        case _ => ?bug
+    }
+
+    pub def neq(b1: Boxed, b2: Boxed): Bool = not (b1 == b2)
+
+}
+
+// TODO: Add Order instance.
+
+instance ToString[Boxed] {
+    pub def toString(b: Boxed): String = match b {
+        case BoxedInt8(v)           => ToString.toString(v)
+        case BoxedInt16(v)          => ToString.toString(v)
+        case BoxedInt32(v)          => ToString.toString(v)
+        case BoxedInt64(v)          => ToString.toString(v)
+        case BoxedFloat32(v)        => ToString.toString(v)
+        case BoxedFloat64(v)        => ToString.toString(v)
+        case BoxedObject(v, _, to)  => to(v)
+    }
+}
