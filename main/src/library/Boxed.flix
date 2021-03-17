@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 pub enum Boxed {
-    // TODO: Add Bool
-    // TODO: Add Char
+    case BoxedBool(Bool)
+    case BoxedChar(Char)
     case BoxedInt8(Int8)
     case BoxedInt16(Int16)
     case BoxedInt32(Int32)
@@ -31,6 +31,8 @@ pub enum Boxed {
 instance Eq[Boxed] {
 
     pub def eq(b1: Boxed, b2: Boxed): Bool = match (b1, b2) {
+        case (BoxedBool(v1),            BoxedBool(v2))          => v1 == v2
+        case (BoxedChar(v1),            BoxedChar(v2))          => v1 == v2
         case (BoxedInt8(v1),            BoxedInt8(v2))          => v1 == v2
         case (BoxedInt16(v1),           BoxedInt16(v2))         => v1 == v2
         case (BoxedInt32(v1),           BoxedInt32(v2))         => v1 == v2
@@ -48,6 +50,8 @@ instance Eq[Boxed] {
 instance Order[Boxed] {
 
     pub def compare(b1: Boxed, b2: Boxed): Comparison = match (b1, b2) {
+        case (BoxedBool(v1),            BoxedBool(v2))          => v1 <=> v2
+        case (BoxedChar(v1),            BoxedChar(v2))          => v1 <=> v2
         case (BoxedInt8(v1),            BoxedInt8(v2))          => v1 <=> v2
         case (BoxedInt16(v1),           BoxedInt16(v2))         => v1 <=> v2
         case (BoxedInt32(v1),           BoxedInt32(v2))         => v1 <=> v2
@@ -81,6 +85,8 @@ instance Order[Boxed] {
 
 instance ToString[Boxed] {
     pub def toString(b: Boxed): String = match b {
+        case BoxedBool(v)           => ToString.toString(v)
+        case BoxedChar(v)           => ToString.toString(v)
         case BoxedInt8(v)           => ToString.toString(v)
         case BoxedInt16(v)          => ToString.toString(v)
         case BoxedInt32(v)          => ToString.toString(v)

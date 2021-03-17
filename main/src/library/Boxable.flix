@@ -60,7 +60,24 @@ namespace Boxable {
 
 }
 
-// TODO: Unit, Bool, Char.
+// TODO: Unit
+
+
+instance Boxable[Bool] {
+    pub def box(x: Bool): Boxed = BoxedBool(x)
+    pub def unbox(x: Boxed): Bool = match x {
+        case BoxedBool(v) => v
+        case _            => ?bug
+    }
+}
+
+instance Boxable[Char] {
+    pub def box(x: Char): Boxed = BoxedChar(x)
+    pub def unbox(x: Boxed): Char = match x {
+        case BoxedChar(v) => v
+        case _            => ?bug
+    }
+}
 
 instance Boxable[Int8] {
     pub def box(x: Int8): Boxed = BoxedInt8(x)
