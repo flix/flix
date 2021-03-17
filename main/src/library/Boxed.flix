@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 pub enum Boxed {
+    // TODO: Add Bool
+    // TODO: Add Char
     case BoxedInt8(Int8)
     case BoxedInt16(Int16)
     case BoxedInt32(Int32)
