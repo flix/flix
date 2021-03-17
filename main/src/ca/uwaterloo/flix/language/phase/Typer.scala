@@ -2072,6 +2072,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
+      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
       PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
@@ -2084,6 +2085,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
     val classes = List(
+      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
       PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
