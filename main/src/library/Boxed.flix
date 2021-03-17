@@ -29,12 +29,12 @@ pub enum Boxed {
 instance Eq[Boxed] {
 
     pub def eq(b1: Boxed, b2: Boxed): Bool = match (b1, b2) {
-        case (BoxedInt8(v1),    BoxedInt8(v2))                  => v1 == v2
-        case (BoxedInt16(v1),   BoxedInt16(v2))                 => v1 == v2
-        case (BoxedInt32(v1),   BoxedInt32(v2))                 => v1 == v2
-        case (BoxedInt64(v1),   BoxedInt64(v2))                 => v1 == v2
-        case (BoxedFloat32(v1), BoxedFloat32(v2))               => v1 == v2
-        case (BoxedFloat64(v1), BoxedFloat64(v2))               => v1 == v2
+        case (BoxedInt8(v1),            BoxedInt8(v2))          => v1 == v2
+        case (BoxedInt16(v1),           BoxedInt16(v2))         => v1 == v2
+        case (BoxedInt32(v1),           BoxedInt32(v2))         => v1 == v2
+        case (BoxedInt64(v1),           BoxedInt64(v2))         => v1 == v2
+        case (BoxedFloat32(v1),         BoxedFloat32(v2))       => v1 == v2
+        case (BoxedFloat64(v1),         BoxedFloat64(v2))       => v1 == v2
         case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2) == EqualTo
         case _ => ?bug
     }
@@ -43,7 +43,39 @@ instance Eq[Boxed] {
 
 }
 
-// TODO: Add Order instance.
+instance Order[Boxed] {
+
+    pub def compare(o1: Boxed, o2: Boxed): Comparison = match (o1, o2) {
+        case (BoxedInt8(v1),            BoxedInt8(v2))           => v1 <=> v2
+        case (BoxedInt16(v1),           BoxedInt16(v2))         => v1 <=> v2
+        case (BoxedInt32(v1),           BoxedInt32(v2))         => v1 <=> v2
+        case (BoxedInt64(v1),           BoxedInt64(v2))         => v1 <=> v2
+        case (BoxedFloat32(v1),         BoxedFloat32(v2))       => v1 <=> v2
+        case (BoxedFloat64(v1),         BoxedFloat64(v2))       => v1 <=> v2
+        case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2)
+        case _                                                  => ?bug
+    }
+
+    pub def less(x: Boxed, y: Boxed): Bool = match (x <=> y) {
+        case LessThan => true
+        case _ => false
+    }
+    pub def lessEqual(x: Boxed, y: Boxed): Bool = match (x <=> y) {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+    pub def greater(x: Boxed, y: Boxed): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case _ => false
+    }
+    pub def greaterEqual(x: Boxed, y: Boxed): Bool = match (x <=> y) {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+
+}
 
 instance ToString[Boxed] {
     pub def toString(b: Boxed): String = match b {
