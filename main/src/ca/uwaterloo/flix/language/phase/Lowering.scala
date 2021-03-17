@@ -861,29 +861,41 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Wraps the given expression `exp` with the given constraint parameters `cparams` in a lambda expression.
     */
-  //  private def newLambdaWrapper(cparams: List[TypedAst.ConstraintParam], exp: TypedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
-  //    // Compute a mapping from the constraint parameters to fresh variable symbols.
-  //    val freshVars = cparams.map(cparam => cparam -> Symbol.freshVarSym(cparam.sym))
-  //
-  //    // Compute the formal parameters of the lambda.
-  //    val fparams = freshVars map {
-  //      case (cparam, newSym) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, cparam.tpe, cparam.loc)
-  //    }
-  //
-  //    // Compute the substitution.
-  //    val freshSubst = freshVars map {
-  //      case (cparam, newSym) => cparam.sym -> newSym
-  //    }
-  //
-  //    // Construct the body of the lambda.
-  //    val lambdaBody = substitute(visitExp(exp), freshSubst.toMap)
-  //
-  //    // Construct the function type.
-  //    val lambdaType = Type.mkPureUncurriedArrow(fparams.map(_.tpe), exp.tpe)
-  //
-  //    // Assemble the lambda.
-  //    SimplifiedAst.Expression.Lambda(fparams, lambdaBody, lambdaType, loc)
-  //  }
+  private def newLambdaWrapper(cparams: List[ConstraintParam], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    // TODO: Make this work.
+    // TODO: What to do about lambdas with only one argument?
+
+    // Compute a mapping from the constraint parameters to fresh variable symbols.
+    val freshVars = cparams.map(cparam => cparam -> Symbol.freshVarSym(cparam.sym))
+
+    // Compute the formal parameters of the lambda.
+    val fparams = freshVars map {
+      case (cparam, newSym) => FormalParam(newSym, Ast.Modifiers.Empty, cparam.tpe, cparam.loc)
+    }
+
+    // Compute the substitution.
+    val freshSubst = freshVars map {
+      case (cparam, newSym) => cparam.sym -> newSym
+    }
+
+    // Construct the body of the lambda.
+    val lambdaBody = substitute(visitExp(exp), freshSubst.toMap)
+
+    // Construct the function type.
+    val lambdaType = Type.mkPureUncurriedArrow(fparams.map(_.tpe), exp.tpe)
+
+    // Assemble the lambda.
+    ???
+    // TODO: Curry the lambdas (??)
+    // Expression.Lambda(fparams, lambdaBody, lambdaType, loc)
+  }
+
+
+  /**
+    * Returns a copy of the given expression `exp0` where every variable symbol has been replaced according to the given substitution `m`.
+    */
+  // TODO
+  def substitute(exp0: Expression, m: Map[Symbol.VarSym, Symbol.VarSym]): Expression = ??? // TODO
 
   /**
     * Returns the given expression `exp` in a box.
