@@ -45,7 +45,7 @@ instance Eq[Boxed] {
 
 instance Order[Boxed] {
 
-    pub def compare(o1: Boxed, o2: Boxed): Comparison = match (o1, o2) {
+    pub def compare(b1: Boxed, b2: Boxed): Comparison = match (b1, b2) {
         case (BoxedInt8(v1),            BoxedInt8(v2))          => v1 <=> v2
         case (BoxedInt16(v1),           BoxedInt16(v2))         => v1 <=> v2
         case (BoxedInt32(v1),           BoxedInt32(v2))         => v1 <=> v2
