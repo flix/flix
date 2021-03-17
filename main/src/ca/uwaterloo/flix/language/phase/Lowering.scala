@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Symbol.ClassSym
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -35,11 +35,15 @@ object Lowering extends Phase[Root, Root] {
   // TODO: Return validations?
   // TODO: Need implicits?
 
+  private val SL: SourcePosition = SourcePosition.Unknown
+
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
     lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
     lazy val SubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.subsetOf")
     lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
+
+    lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(Name.NName(SL, Nil, SL), Name.Ident(SL, "Boxable", SL)), Name.Ident(SL, "box", SL))
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -68,6 +72,7 @@ object Lowering extends Phase[Root, Root] {
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
+    lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
   }
 
   private object Types {
@@ -91,6 +96,8 @@ object Lowering extends Phase[Root, Root] {
 
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil)
     lazy val UnsafeBox: Type = Type.mkEnum(Enums.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
+    lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil)
+
 
     //
     // Function Types.
@@ -681,7 +688,7 @@ object Lowering extends Phase[Root, Root] {
       mkHeadTermLit(mkUnsafeBox(boxInt16(exp0), loc), loc)
 
     case Expression.Int32(_, loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxInt32(exp0), loc), loc)
+      mkHeadTermLit(boxExp(exp0), loc)
 
     case Expression.Int64(_, loc) =>
       mkHeadTermLit(mkUnsafeBox(boxInt64(exp0), loc), loc)
@@ -690,7 +697,7 @@ object Lowering extends Phase[Root, Root] {
       mkHeadTermLit(mkUnsafeBox(exp0, loc), loc)
 
     case Expression.Str(_, loc) =>
-      mkHeadTermLit(mkUnsafeBox(exp0, loc), loc)
+      mkHeadTermLit(boxExp(exp0), loc)
 
     case Expression.Ascribe(exp, _, _, _) => visitHeadTerm(exp)
 
@@ -849,6 +856,15 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
+    * Returns the given expression `exp` in a box.
+    */
+  private def boxExp(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
+    val loc = exp.loc
+    val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed)
+    Expression.Sig(Defs.Box, tpe, loc)
+  }
+
+  /**
     * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
     */
   private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
@@ -872,47 +888,47 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Boxes the given Bool expression `e`.
     */
-  private def boxBool(e: Expression): Expression = boxExp(e, java.lang.Boolean.TYPE, classOf[java.lang.Boolean])
+  private def boxBool(e: Expression): Expression = boxExpDeprec(e, java.lang.Boolean.TYPE, classOf[java.lang.Boolean])
 
   /**
     * Boxes the given Char expression `e`.
     */
-  private def boxChar(e: Expression): Expression = boxExp(e, java.lang.Character.TYPE, classOf[java.lang.Character])
+  private def boxChar(e: Expression): Expression = boxExpDeprec(e, java.lang.Character.TYPE, classOf[java.lang.Character])
 
   /**
     * Boxes the given Float32 expression `e`.
     */
-  private def boxFloat32(e: Expression): Expression = boxExp(e, java.lang.Float.TYPE, classOf[java.lang.Float])
+  private def boxFloat32(e: Expression): Expression = boxExpDeprec(e, java.lang.Float.TYPE, classOf[java.lang.Float])
 
   /**
     * Boxes the given Float64 expression `e`.
     */
-  private def boxFloat64(e: Expression): Expression = boxExp(e, java.lang.Double.TYPE, classOf[java.lang.Double])
+  private def boxFloat64(e: Expression): Expression = boxExpDeprec(e, java.lang.Double.TYPE, classOf[java.lang.Double])
 
   /**
     * Boxes the given Int8 expression `e`.
     */
-  private def boxInt8(e: Expression): Expression = boxExp(e, java.lang.Byte.TYPE, classOf[java.lang.Byte])
+  private def boxInt8(e: Expression): Expression = boxExpDeprec(e, java.lang.Byte.TYPE, classOf[java.lang.Byte])
 
   /**
     * Boxes the given Int16 expression `e`.
     */
-  private def boxInt16(e: Expression): Expression = boxExp(e, java.lang.Short.TYPE, classOf[java.lang.Short])
+  private def boxInt16(e: Expression): Expression = boxExpDeprec(e, java.lang.Short.TYPE, classOf[java.lang.Short])
 
   /**
     * Boxes the given Int32 expression `e`.
     */
-  private def boxInt32(e: Expression): Expression = boxExp(e, java.lang.Integer.TYPE, classOf[java.lang.Integer])
+  private def boxInt32(e: Expression): Expression = boxExpDeprec(e, java.lang.Integer.TYPE, classOf[java.lang.Integer])
 
   /**
     * Boxes the given Int64 expression `e`.
     */
-  private def boxInt64(e: Expression): Expression = boxExp(e, java.lang.Long.TYPE, classOf[java.lang.Long])
+  private def boxInt64(e: Expression): Expression = boxExpDeprec(e, java.lang.Long.TYPE, classOf[java.lang.Long])
 
   /**
     * Boxes the given expression `e` with primitive type `primitive` and boxed type `boxed`.
     */
-  private def boxExp[T, S](e: Expression, primitive: Class[T], boxed: Class[S]): Expression = {
+  private def boxExpDeprec[T, S](e: Expression, primitive: Class[T], boxed: Class[S]): Expression = {
     val m = boxed.getMethod("valueOf", primitive)
     val tpe = Type.mkNative(boxed)
     val eff = Type.Pure
