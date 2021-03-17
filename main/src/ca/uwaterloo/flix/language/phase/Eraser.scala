@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ErasedAst.PType._
-import ca.uwaterloo.flix.language.ast.ErasedAst.PRefType._
-import ca.uwaterloo.flix.language.ast.ErasedAst.{EType, PType, ERefType, PRefType}
-import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst, MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.{ERefType, EType, ErasedAst, FinalAst, MonoType, PRefType, PType, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -74,7 +73,7 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     */
   private def visitExp[T <: PType](exp0: FinalAst.Expression): ErasedAst.Expression[T] = exp0 match {
     case FinalAst.Expression.Unit(loc) => ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]]
-    case FinalAst.Expression.Null(tpe, loc) => ErasedAst.Expression.Null[PRefType.AnyObject](visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+    case FinalAst.Expression.Null(tpe, loc) => ErasedAst.Expression.Null[PRefType.PAnyObject](visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.True(loc) => ErasedAst.Expression.True(loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.False(loc) => (ErasedAst.Expression.False(loc)).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.Char(lit, loc) => ErasedAst.Expression.Char(lit, loc).asInstanceOf[ErasedAst.Expression[T]]

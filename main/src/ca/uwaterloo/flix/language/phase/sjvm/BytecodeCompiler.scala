@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Expression, PType => PT, EType => ET, PRefType => PRT, ERefType => ERT}
+import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
+import ca.uwaterloo.flix.language.ast.{PType => PT}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -75,7 +76,6 @@ object BytecodeCompiler {
       //      compileExp(exp) ~
       //      INVOKESPECIAL("class name", "constructor signature")
       WithSource[R](loc) ~ pushNull ~ ???
-    // TODO: what should happen here? how can an object be a JRef[T]?
 
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       // sym is unsafe. localvar stack + reg as types?
@@ -85,9 +85,9 @@ object BytecodeCompiler {
         compileExp(exp2)
 
     case Expression.ArrayLoad(base, index, tpe, loc) =>
-      WithSource[R](loc) ~[R ** PT.PReference[PRT.PArray[T]]]
-        compileExp(base) ~[R ** PT.PReference[PRT.PArray[T]] ** PT.PrimInt32]
-        compileExp(index) ~[R ** T]
+      WithSource[R](loc) ~
+        compileExp(base) ~
+        compileExp(index) ~
         XALoad(tpe)
 
     case Expression.ArrayStore(base, index, elm, tpe, loc) =>
@@ -100,33 +100,31 @@ object BytecodeCompiler {
 
     case Expression.ArrayLength(base, tpe, loc) =>
       WithSource[R](loc) ~
-//        compileExp(base) ~
-//        arrayLength
-      pushInt32(0)
+        compileExp(base) ~
+        arrayLength
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-//      WithSource[R](loc)        ~[R ** JArray[JType]]
-//        compileExp(base)        ~[R ** JObject]
-//        upCastArray                  ~[R ** JObject ** PrimInt32]
-//        compileExp(beginIndex)  ~[R ** JObject ** PrimInt32 ** PrimInt32]
-//        compileExp(endIndex)    ~[R ** JObject ** PrimInt32 ** PrimInt32]
-//        ISWAP                   ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
-//        DUP_X1                  ~[R ** JObject ** PrimInt32 ** PrimInt32]
-//        ISUB                    ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
-//        DUP                     ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JArray[JType]]
-//        XNEWARRAY(tpe)          ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
-//        upCastArray                  ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
-//        DUP2_X2_cat1_onCat1     ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32]
-//        ISWAP                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
-//        pushInt32(0)            ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
-//        ISWAP                   ~[R]
-        ???//systemArrayCopy ~ ???
-        //SWAP(???, ???)                        ~
-        //POP
+      //      WithSource[R](loc)        ~[R ** JArray[JType]]
+      //        compileExp(base)        ~[R ** JObject]
+      //        upCastArray                  ~[R ** JObject ** PrimInt32]
+      //        compileExp(beginIndex)  ~[R ** JObject ** PrimInt32 ** PrimInt32]
+      //        compileExp(endIndex)    ~[R ** JObject ** PrimInt32 ** PrimInt32]
+      //        ISWAP                   ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
+      //        DUP_X1                  ~[R ** JObject ** PrimInt32 ** PrimInt32]
+      //        ISUB                    ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
+      //        DUP                     ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JArray[JType]]
+      //        XNEWARRAY(tpe)          ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
+      //        upCastArray                  ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
+      //        DUP2_X2_cat1_onCat1     ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32]
+      //        ISWAP                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
+      //        pushInt32(0)            ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
+      //        ISWAP                   ~[R]
+      ??? //systemArrayCopy ~ ???
+      //SWAP(???, ???)                        ~
+      //POP
       // arraycopy : object int object int int
 
       ???
-    case Expression.ApplyClo(exp, args, tpe, loc) => ??? //WithSource[R](loc) ~ pushNull
     case _ => ???
   }
 

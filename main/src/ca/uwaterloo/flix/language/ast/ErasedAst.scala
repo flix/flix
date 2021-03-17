@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.ast.ErasedAst.PRefType._
-import ca.uwaterloo.flix.language.ast.ErasedAst.PType._
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -38,7 +38,7 @@ object ErasedAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, ErasedAst.Case], loc: SourceLocation)
 
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ErasedAst.Expression[PrimInt32]) {
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ErasedAst.Expression[PInt32]) {
     def loc: SourceLocation = defn.loc
   }
 
@@ -58,39 +58,39 @@ object ErasedAst {
 
     case class Null[S <: PRefType](tpe: EType[PReference[S]], loc: SourceLocation) extends ErasedAst.Expression[PReference[S]]
 
-    case class True(loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+    case class True(loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
       final val tpe = EType.Bool()
     }
 
-    case class False(loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+    case class False(loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
       final val tpe = EType.Bool()
     }
 
-    case class Char(lit: scala.Char, loc: SourceLocation) extends ErasedAst.Expression[PrimChar] {
+    case class Char(lit: scala.Char, loc: SourceLocation) extends ErasedAst.Expression[PChar] {
       final val tpe = EType.Char()
     }
 
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32] {
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends ErasedAst.Expression[PFloat32] {
       final val tpe = EType.Float32()
     }
 
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64] {
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends ErasedAst.Expression[PFloat64] {
       final val tpe = EType.Float64()
     }
 
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ErasedAst.Expression[PrimInt8] {
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ErasedAst.Expression[PInt8] {
       final val tpe = EType.Int8()
     }
 
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends ErasedAst.Expression[PrimInt16] {
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends ErasedAst.Expression[PInt16] {
       final val tpe = EType.Int16()
     }
 
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
       final val tpe = EType.Int32()
     }
 
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends ErasedAst.Expression[PrimInt64] {
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends ErasedAst.Expression[PInt64] {
       final val tpe = EType.Int64()
     }
 
@@ -104,13 +104,13 @@ object ErasedAst {
 
     case class Var[T <: PType](sym: Symbol.VarSym, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class ApplyClo[T <: PType](exp: ErasedAst.Expression[PReference[AnyObject]], args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplyClo[T <: PType](exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class ApplyDef[T <: PType](sym: Symbol.DefnSym, args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class ApplyCloTail[T <: PType](exp: ErasedAst.Expression[PReference[AnyObject]], args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplyCloTail[T <: PType](exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class ApplyDefTail[T <: PType](sym: Symbol.DefnSym, args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -121,7 +121,7 @@ object ErasedAst {
 
     case class Binary[T <: PType](sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression[PType], exp2: ErasedAst.Expression[PType], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class IfThenElse[T <: PType](exp1: ErasedAst.Expression[PrimInt32], exp2: ErasedAst.Expression[T], exp3: ErasedAst.Expression[T], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class IfThenElse[T <: PType](exp1: ErasedAst.Expression[PInt32], exp2: ErasedAst.Expression[T], exp3: ErasedAst.Expression[T], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class Branch[T <: PType](exp: ErasedAst.Expression[T], branches: Map[Symbol.LabelSym, ErasedAst.Expression[T]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -129,37 +129,37 @@ object ErasedAst {
 
     case class Let[T <: PType](sym: Symbol.VarSym, exp1: ErasedAst.Expression[PType], exp2: ErasedAst.Expression[T], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
-      final val tpe: EType[PrimInt32] = EType.Bool()
+    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
+      final val tpe: EType[PInt32] = EType.Bool()
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[PType], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[PType], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class Untag[T <: PType](sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[PReference[AnyObject]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class Untag[T <: PType](sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Index[T <: PType](base: ErasedAst.Expression[PReference[AnyObject]], offset: scala.Int, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class Index[T <: PType](base: ErasedAst.Expression[PReference[PAnyObject]], offset: scala.Int, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Tuple(elms: List[ErasedAst.Expression[PType]], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class Tuple(elms: List[ErasedAst.Expression[PType]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class RecordEmpty(tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class RecordEmpty(tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class RecordSelect[T <: PType](exp: ErasedAst.Expression[PReference[AnyObject]], field: Name.Field, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class RecordSelect[T <: PType](exp: ErasedAst.Expression[PReference[PAnyObject]], field: Name.Field, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class RecordExtend(field: Name.Field, value: ErasedAst.Expression[PType], rest: ErasedAst.Expression[PReference[AnyObject]], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class RecordExtend(field: Name.Field, value: ErasedAst.Expression[PType], rest: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class RecordRestrict(field: Name.Field, rest: ErasedAst.Expression[PReference[AnyObject]], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class RecordRestrict(field: Name.Field, rest: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
     case class ArrayLit[T <: PType](elms: List[ErasedAst.Expression[T]], tpe: EType[PReference[PArray[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PArray[T]]]
 
-    case class ArrayNew[T <: PType](elm: ErasedAst.Expression[T], len: ErasedAst.Expression[PrimInt32], tpe: EType[PReference[PArray[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PArray[T]]]
+    case class ArrayNew[T <: PType](elm: ErasedAst.Expression[T], len: ErasedAst.Expression[PInt32], tpe: EType[PReference[PArray[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PArray[T]]]
 
-    case class ArrayLoad[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], index: ErasedAst.Expression[PrimInt32], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ArrayLoad[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], index: ErasedAst.Expression[PInt32], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class ArrayStore[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], index: ErasedAst.Expression[PrimInt32], elm: ErasedAst.Expression[T], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
+    case class ArrayStore[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], index: ErasedAst.Expression[PInt32], elm: ErasedAst.Expression[T], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
-    case class ArrayLength[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], tpe: EType[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
+    case class ArrayLength[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], tpe: EType[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32]
 
-    case class ArraySlice[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], beginIndex: ErasedAst.Expression[PrimInt32], endIndex: ErasedAst.Expression[PrimInt32], tpe: EType[PReference[PArray[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PArray[T]]]
+    case class ArraySlice[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], beginIndex: ErasedAst.Expression[PInt32], endIndex: ErasedAst.Expression[PInt32], tpe: EType[PReference[PArray[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PArray[T]]]
 
     case class Ref[T <: PType](exp: ErasedAst.Expression[T], tpe: EType[PReference[PRef[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PRef[T]]]
 
@@ -167,11 +167,11 @@ object ErasedAst {
 
     case class Assign[T <: PType](exp1: ErasedAst.Expression[PReference[PRef[T]]], exp2: ErasedAst.Expression[T], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
-    case class Existential(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+    case class Existential(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
       final val tpe = EType.Bool()
     }
 
-    case class Universal(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+    case class Universal(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
       final val tpe = EType.Bool()
     }
 
@@ -179,21 +179,21 @@ object ErasedAst {
 
     case class TryCatch[T <: PType](exp: ErasedAst.Expression[T], rules: List[ErasedAst.CatchRule[T]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression[PType]], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression[PType]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class InvokeMethod[T <: PType](method: Method, exp: ErasedAst.Expression[PReference[AnyObject]], args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class InvokeMethod[T <: PType](method: Method, exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class InvokeStaticMethod[T <: PType](method: Method, args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class GetField[T <: PType](field: Field, exp: ErasedAst.Expression[PReference[AnyObject]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class GetField[T <: PType](field: Field, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class PutField(field: Field, exp1: ErasedAst.Expression[PReference[AnyObject]], exp2: ErasedAst.Expression[PType], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
+    case class PutField(field: Field, exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[PType], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
     case class GetStaticField[T <: PType](field: Field, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class PutStaticField(field: Field, exp: ErasedAst.Expression[PType], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
-    case class NewChannel[T <: PType](exp: ErasedAst.Expression[PrimInt32], tpe: EType[PReference[PChan[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PChan[T]]]
+    case class NewChannel[T <: PType](exp: ErasedAst.Expression[PInt32], tpe: EType[PReference[PChan[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PChan[T]]]
 
     case class GetChannel[T <: PType](exp: ErasedAst.Expression[PReference[PChan[T]]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -207,17 +207,17 @@ object ErasedAst {
 
     case class Force[T <: PType](exp: ErasedAst.Expression[PReference[PLazy[T]]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class FixpointConstraintSet(cs: List[ErasedAst.Constraint], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class FixpointConstraintSet(cs: List[ErasedAst.Constraint], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class FixpointCompose(exp1: ErasedAst.Expression[PReference[AnyObject]], exp2: ErasedAst.Expression[PReference[AnyObject]], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class FixpointCompose(exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class FixpointSolve(exp: ErasedAst.Expression[PReference[AnyObject]], stf: Ast.Stratification, tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class FixpointSolve(exp: ErasedAst.Expression[PReference[PAnyObject]], stf: Ast.Stratification, tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class FixpointProject(pred: Name.Pred, exp: ErasedAst.Expression[PReference[AnyObject]], tpe: EType[PReference[AnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[AnyObject]]
+    case class FixpointProject(pred: Name.Pred, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class FixpointEntails(exp1: ErasedAst.Expression[PReference[AnyObject]], exp2: ErasedAst.Expression[PReference[AnyObject]], tpe: EType[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32]
+    case class FixpointEntails(exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32]
 
-    case class FixpointFold[T <: PType](pred: Name.Pred, init: ErasedAst.Expression.Var[PReference[AnyObject]], f: ErasedAst.Expression.Var[PReference[AnyObject]], constraints: ErasedAst.Expression.Var[PReference[AnyObject]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class FixpointFold[T <: PType](pred: Name.Pred, init: ErasedAst.Expression.Var[PReference[PAnyObject]], f: ErasedAst.Expression.Var[PReference[PAnyObject]], constraints: ErasedAst.Expression.Var[PReference[PAnyObject]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class HoleError[T <: PType](sym: Symbol.HoleSym, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -239,7 +239,7 @@ object ErasedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, terms: List[ErasedAst.Term.Head], tpe: EType[PType], loc: SourceLocation) extends ErasedAst.Predicate.Head
 
-      case class Union(exp: ErasedAst.Expression[PReference[AnyObject]], terms: List[ErasedAst.Term.Head], tpe: EType[PType], loc: SourceLocation) extends ErasedAst.Predicate.Head
+      case class Union(exp: ErasedAst.Expression[PReference[PAnyObject]], terms: List[ErasedAst.Term.Head], tpe: EType[PType], loc: SourceLocation) extends ErasedAst.Predicate.Head
 
     }
 
@@ -249,7 +249,7 @@ object ErasedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[ErasedAst.Term.Body], tpe: EType[PType], loc: SourceLocation) extends ErasedAst.Predicate.Body
 
-      case class Guard(exp: ErasedAst.Expression[PrimInt32], terms: List[ErasedAst.Term.Body], loc: SourceLocation) extends ErasedAst.Predicate.Body
+      case class Guard(exp: ErasedAst.Expression[PInt32], terms: List[ErasedAst.Term.Body], loc: SourceLocation) extends ErasedAst.Predicate.Body
 
     }
 
@@ -269,7 +269,7 @@ object ErasedAst {
 
       case class Lit(sym: Symbol.DefnSym, tpe: EType[PType], loc: SourceLocation) extends ErasedAst.Term.Head
 
-      case class App(exp: ErasedAst.Expression[PReference[AnyObject]], args: List[Symbol.VarSym], tpe: EType[PType], loc: SourceLocation) extends ErasedAst.Term.Head
+      case class App(exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[Symbol.VarSym], tpe: EType[PType], loc: SourceLocation) extends ErasedAst.Term.Head
 
     }
 
@@ -315,210 +315,60 @@ object ErasedAst {
 
   case class FreeVar(sym: Symbol.VarSym, tpe: EType[PType])
 
-  case class BoxInt8(exp: ErasedAst.Expression[PrimInt8], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt8]] {
+  case class BoxInt8(exp: ErasedAst.Expression[PInt8], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt8]] {
     final val tpe = EType.Reference(ERefType.BoxedInt8())
   }
 
-  case class BoxInt16(exp: ErasedAst.Expression[PrimInt16], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt16]] {
+  case class BoxInt16(exp: ErasedAst.Expression[PInt16], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt16]] {
     final val tpe = EType.Reference(ERefType.BoxedInt16())
   }
 
-  case class BoxInt32(exp: ErasedAst.Expression[PrimInt32], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt32]] {
+  case class BoxInt32(exp: ErasedAst.Expression[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt32]] {
     final val tpe = EType.Reference(ERefType.BoxedInt32())
   }
 
-  case class BoxInt64(exp: ErasedAst.Expression[PrimInt64], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt64]] {
+  case class BoxInt64(exp: ErasedAst.Expression[PInt64], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt64]] {
     final val tpe = EType.Reference(ERefType.BoxedInt64())
   }
 
-  case class BoxChar(exp: ErasedAst.Expression[PrimChar], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedChar]] {
+  case class BoxChar(exp: ErasedAst.Expression[PChar], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedChar]] {
     final val tpe = EType.Reference(ERefType.BoxedChar())
   }
 
-  case class BoxFloat32(exp: ErasedAst.Expression[PrimFloat32], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedFloat32]] {
+  case class BoxFloat32(exp: ErasedAst.Expression[PFloat32], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedFloat32]] {
     final val tpe = EType.Reference(ERefType.BoxedFloat32())
   }
 
-  case class BoxFloat64(exp: ErasedAst.Expression[PrimFloat64], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedFloat64]] {
+  case class BoxFloat64(exp: ErasedAst.Expression[PFloat64], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedFloat64]] {
     final val tpe = EType.Reference(ERefType.BoxedFloat64())
   }
 
-  case class UnboxInt8(exp: ErasedAst.Expression[PReference[PBoxedInt8]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt8] {
+  case class UnboxInt8(exp: ErasedAst.Expression[PReference[PBoxedInt8]], loc: SourceLocation) extends ErasedAst.Expression[PInt8] {
     final val tpe = EType.Int8()
   }
 
-  case class UnboxInt16(exp: ErasedAst.Expression[PReference[PBoxedInt16]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt16] {
+  case class UnboxInt16(exp: ErasedAst.Expression[PReference[PBoxedInt16]], loc: SourceLocation) extends ErasedAst.Expression[PInt16] {
     final val tpe = EType.Int16()
   }
 
-  case class UnboxInt32(exp: ErasedAst.Expression[PReference[PBoxedInt32]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+  case class UnboxInt32(exp: ErasedAst.Expression[PReference[PBoxedInt32]], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
     final val tpe = EType.Int32()
   }
 
-  case class UnboxInt64(exp: ErasedAst.Expression[PReference[PBoxedInt64]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt64] {
+  case class UnboxInt64(exp: ErasedAst.Expression[PReference[PBoxedInt64]], loc: SourceLocation) extends ErasedAst.Expression[PInt64] {
     final val tpe = EType.Int64()
   }
 
-  case class UnboxChar(exp: ErasedAst.Expression[PReference[PBoxedChar]], loc: SourceLocation) extends ErasedAst.Expression[PrimChar] {
+  case class UnboxChar(exp: ErasedAst.Expression[PReference[PBoxedChar]], loc: SourceLocation) extends ErasedAst.Expression[PChar] {
     final val tpe = EType.Char()
   }
 
-  case class UnboxFloat32(exp: ErasedAst.Expression[PReference[PBoxedFloat32]], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32] {
+  case class UnboxFloat32(exp: ErasedAst.Expression[PReference[PBoxedFloat32]], loc: SourceLocation) extends ErasedAst.Expression[PFloat32] {
     final val tpe = EType.Float32()
   }
 
-  case class UnboxFloat64(exp: ErasedAst.Expression[PReference[PBoxedFloat64]], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64] {
+  case class UnboxFloat64(exp: ErasedAst.Expression[PReference[PBoxedFloat64]], loc: SourceLocation) extends ErasedAst.Expression[PFloat64] {
     final val tpe = EType.Float64()
-  }
-
-  sealed trait PType
-
-  sealed trait Cat1
-
-  sealed trait Cat2
-
-  // only exist at scala compile time, to help compiler writers
-  object PType {
-
-    sealed trait PrimInt8 extends PType with Cat1
-
-    sealed trait PrimInt16 extends PType with Cat1
-
-    sealed trait PrimInt32 extends PType with Cat1
-
-    sealed trait PrimInt64 extends PType with Cat2
-
-    sealed trait PrimChar extends PType with Cat1
-
-    sealed trait PrimFloat32 extends PType with Cat1
-
-    sealed trait PrimFloat64 extends PType with Cat2
-
-    sealed trait PReference[T <: PRefType] extends PType with Cat1
-
-  }
-
-  sealed trait PRefType
-
-  object PRefType {
-
-    sealed trait PBoxedBool extends PRefType
-
-    sealed trait PBoxedInt8 extends PRefType
-
-    sealed trait PBoxedInt16 extends PRefType
-
-    sealed trait PBoxedInt32 extends PRefType
-
-    sealed trait PBoxedInt64 extends PRefType
-
-    sealed trait PBoxedChar extends PRefType
-
-    sealed trait PBoxedFloat32 extends PRefType
-
-    sealed trait PBoxedFloat64 extends PRefType
-
-    sealed trait AnyObject extends PRefType
-
-    sealed trait PUnit extends PRefType
-
-    sealed trait PRef[T <: PType] extends PRefType
-
-    sealed trait PArray[T <: PType] extends PRefType
-
-    sealed trait PChan[T <: PType] extends PRefType
-
-    sealed trait PLazy[T <: PType] extends PRefType
-
-    sealed trait PStr extends PRefType
-
-    sealed trait PBigInt extends PRefType
-
-  }
-
-  // actual flix types
-  sealed trait EType[T <: PType]
-
-  object EType {
-
-    case class Bool() extends EType[PrimInt32]
-
-    case class Int8() extends EType[PrimInt8]
-
-    case class Int16() extends EType[PrimInt16]
-
-    case class Int32() extends EType[PrimInt32]
-
-    case class Int64() extends EType[PrimInt64]
-
-    case class Char() extends EType[PrimChar]
-
-    case class Float32() extends EType[PrimFloat32]
-
-    case class Float64() extends EType[PrimFloat64]
-
-    case class Reference[T <: PRefType](referenceType: ERefType[T]) extends EType[PReference[T]]
-
-  }
-
-
-  sealed trait ERefType[T <: PRefType]
-
-  object ERefType {
-
-    case class BoxedBool() extends ERefType[PBoxedBool]
-
-    case class BoxedInt8() extends ERefType[PBoxedInt8]
-
-    case class BoxedInt16() extends ERefType[PBoxedInt16]
-
-    case class BoxedInt32() extends ERefType[PBoxedInt32]
-
-    case class BoxedInt64() extends ERefType[PBoxedInt64]
-
-    case class BoxedChar() extends ERefType[PBoxedChar]
-
-    case class BoxedFloat32() extends ERefType[PBoxedFloat32]
-
-    case class BoxedFloat64() extends ERefType[PBoxedFloat64]
-
-    case class Unit() extends ERefType[PUnit]
-
-    case class Array[T <: PType](tpe: EType[T]) extends ERefType[PArray[T]]
-
-    case class Channel[T <: PType](tpe: EType[T]) extends ERefType[PChan[T]]
-
-    case class Lazy[T <: PType](tpe: EType[T]) extends ERefType[PLazy[T]]
-
-    case class Ref[T <: PType](tpe: EType[T]) extends ERefType[PRef[T]]
-
-    // TODO: Should be removed.
-    case class Var(id: Int) extends ERefType[AnyObject]
-
-    case class Tuple(elms: List[EType[PType]]) extends ERefType[AnyObject]
-
-    case class Enum(sym: Symbol.EnumSym, args: List[EType[PType]]) extends ERefType[AnyObject]
-
-    case class BigInt() extends ERefType[PBigInt]
-
-    case class Str() extends ERefType[PStr]
-
-    case class Arrow(args: List[EType[PType]], result: EType[PType]) extends ERefType[AnyObject]
-
-    case class RecordEmpty() extends ERefType[AnyObject]
-
-    case class RecordExtend(field: String, value: EType[PType], rest: EType[PReference[AnyObject]]) extends ERefType[AnyObject]
-
-    case class SchemaEmpty() extends ERefType[AnyObject]
-
-    case class SchemaExtend(name: String, tpe: EType[PType], rest: EType[PReference[AnyObject]]) extends ERefType[AnyObject]
-
-    case class Relation(tpes: List[EType[PType]]) extends ERefType[AnyObject]
-
-    case class Lattice(tpes: List[EType[PType]]) extends ERefType[AnyObject]
-
-    case class Native(clazz: Class[_]) extends ERefType[AnyObject]
-
   }
 
 }
