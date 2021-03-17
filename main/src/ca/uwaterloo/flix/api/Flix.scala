@@ -165,7 +165,6 @@ class Flix {
 
     "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
-    "UnsafeBox.flix" -> LocalResource.get("/src/library/UnsafeBox.flix"),
 
     "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
 
