@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.ErasedAst.{ErasedType, Expression, JType}
-import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
+import ca.uwaterloo.flix.language.ast.ErasedAst.{Expression, PType => PT, EType => ET, PRefType => PRT, ERefType => ERT}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -26,15 +25,17 @@ object BytecodeCompiler {
 
   sealed trait StackNil extends Stack
 
-  sealed case class StackCons[R <: Stack, T <: JType](rest: R, top: T) extends Stack
+  sealed case class StackCons[R <: Stack, T <: PT](rest: R, top: T) extends Stack
 
-  type **[R <: Stack, T <: JType] = StackCons[R, T]
+  type **[R <: Stack, T <: PT] = StackCons[R, T]
 
   sealed trait F[T]
 
-  def compileExp[R <: Stack, T <: JType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
-    case Expression.Unit(loc) =>
-      WithSource[R](loc) ~ pushUnit
+  def compileExp[R <: Stack, T <: PT](exp: Expression[T]): F[R] => F[R ** T] = exp match {
+    case e@Expression.Unit(loc) =>
+      WithSource[R](loc) ~[R ** PT.PReference[PRT.PUnit]]
+        pushUnit
+        //upCast2(e.tpe)
 
     case Expression.Null(tpe, loc) =>
       WithSource[R](loc) ~ pushNull
@@ -85,9 +86,9 @@ object BytecodeCompiler {
         compileExp(exp2)
 
     case Expression.ArrayLoad(base, index, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(base) ~
-        compileExp(index) ~
+      WithSource[R](loc) ~[R ** PT.PReference[PRT.PArray[T]]]
+        compileExp(base) ~[R ** PT.PReference[PRT.PArray[T]] ** PT.PrimInt32]
+        compileExp(index) ~[R ** T]
         XALoad(tpe)
 
     case Expression.ArrayStore(base, index, elm, tpe, loc) =>
@@ -100,25 +101,26 @@ object BytecodeCompiler {
 
     case Expression.ArrayLength(base, tpe, loc) =>
       WithSource[R](loc) ~
-        compileExp(base) ~
-        arrayLength
+//        compileExp(base) ~
+//        arrayLength
+      pushInt32(0)
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      WithSource[R](loc)        ~[R ** JArray[JType]]
-        compileExp(base)        ~[R ** JObject]
-        upCast                  ~[R ** JObject ** PrimInt32]
-        compileExp(beginIndex)  ~[R ** JObject ** PrimInt32 ** PrimInt32]
-        compileExp(endIndex)    ~[R ** JObject ** PrimInt32 ** PrimInt32]
-        ISWAP                   ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
-        DUP_X1                  ~[R ** JObject ** PrimInt32 ** PrimInt32]
-        ISUB                    ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
-        DUP                     ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JArray[JType]]
-        XNEWARRAY(tpe)          ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
-        upCast                  ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
-        DUP2_X2_cat1_onCat1     ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32]
-        ISWAP                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
-        pushInt32(0)            ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
-        ISWAP                   ~[R]
+//      WithSource[R](loc)        ~[R ** JArray[JType]]
+//        compileExp(base)        ~[R ** JObject]
+//        upCastArray                  ~[R ** JObject ** PrimInt32]
+//        compileExp(beginIndex)  ~[R ** JObject ** PrimInt32 ** PrimInt32]
+//        compileExp(endIndex)    ~[R ** JObject ** PrimInt32 ** PrimInt32]
+//        ISWAP                   ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
+//        DUP_X1                  ~[R ** JObject ** PrimInt32 ** PrimInt32]
+//        ISUB                    ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
+//        DUP                     ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JArray[JType]]
+//        XNEWARRAY(tpe)          ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
+//        upCastArray                  ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
+//        DUP2_X2_cat1_onCat1     ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32]
+//        ISWAP                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
+//        pushInt32(0)            ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
+//        ISWAP                   ~[R]
         ???//systemArrayCopy ~ ???
         //SWAP(???, ???)                        ~
         //POP
