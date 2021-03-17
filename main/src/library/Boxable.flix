@@ -55,6 +55,8 @@ instance Boxable[Int32] {
 
 // TODO: Just construct these automatically? Or demand them?
 
+// TODO: Add most common types.
+
 instance Boxable[String] {
     pub def box(x: String): Boxed = {
         let value = x as ##java.lang.Object;
@@ -67,3 +69,5 @@ instance Boxable[String] {
         case _                    => ?bug
     }
 }
+
+// TODO: User-defined instances.. Do anything automatically?

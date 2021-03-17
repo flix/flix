@@ -25,3 +25,5 @@ pub enum Boxed {
         (##java.lang.Object, ##java.lang.Object) -> Comparison,
         ##java.lang.Object -> String)
 }
+
+// TODO: Add instances of order, tostring, eq, etc.
