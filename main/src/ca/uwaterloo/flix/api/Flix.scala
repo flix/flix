@@ -16,20 +16,19 @@
 
 package ca.uwaterloo.flix.api
 
-import java.nio.charset.Charset
-import java.nio.file.{Files, Path, Paths}
-
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
-import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
+import java.nio.charset.Charset
+import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -97,7 +96,23 @@ class Flix {
     "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
 
     // String
-    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix")
+    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
+
+    // Boxable
+    "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
+    "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
+
+    "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
+    "Fixpoint/Ast/BodyPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyPredicate.flix"),
+    "Fixpoint/Ast/BodyTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyTerm.flix"),
+    "Fixpoint/Ast/Constraint.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Constraint.flix"),
+    "Fixpoint/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Datalog.flix"),
+    "Fixpoint/Ast/HeadPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadPredicate.flix"),
+    "Fixpoint/Ast/HeadTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadTerm.flix"),
+    "Fixpoint/Ast/Polarity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Polarity.flix"),
+    "Fixpoint/Ast/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PredSym.flix"),
+    "Fixpoint/Ast/SourceLocation.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/SourceLocation.flix"),
+    "Fixpoint/Ast/VarSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/VarSym.flix"),
   )
 
   /**
@@ -162,22 +177,6 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
-
-    "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
-    "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
-
-    "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
-
-    "Fixpoint/Ast/BodyPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyPredicate.flix"),
-    "Fixpoint/Ast/BodyTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyTerm.flix"),
-    "Fixpoint/Ast/Constraint.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Constraint.flix"),
-    "Fixpoint/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Datalog.flix"),
-    "Fixpoint/Ast/HeadPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadPredicate.flix"),
-    "Fixpoint/Ast/HeadTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadTerm.flix"),
-    "Fixpoint/Ast/Polarity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Polarity.flix"),
-    "Fixpoint/Ast/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PredSym.flix"),
-    "Fixpoint/Ast/SourceLocation.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/SourceLocation.flix"),
-    "Fixpoint/Ast/VarSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/VarSym.flix"),
 
   )
 
