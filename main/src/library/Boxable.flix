@@ -33,17 +33,42 @@ lawless class Boxable[a] {
 
 namespace Boxable {
 
+    ///
+    /// Lifts the given function `f` to operate on boxed values.
+    ///
     pub def lift1[a: Boxable, t: Boxable](f: a -> t): Boxed -> Boxed =
         (a: Boxed) -> box(f(unbox(a)))
 
+    ///
+    /// Lifts the given function `f` to operate on boxed values.
+    ///
+    pub def lift2[a: Boxable, b: Boxable, t: Boxable](f: (a, b) -> t): (Boxed, Boxed) -> Boxed =
+        (a: Boxed, b: Boxed) -> box(f(unbox(a), unbox(b)))
+
+    ///
+    /// Lifts the given Boolean-valued function `f` to operate on boxed values.
+    ///
     pub def lift1b[a: Boxable](f: a -> Bool): Boxed -> Bool =
         (a: Boxed) -> f(unbox(a))
 
+    ///
+    /// Lifts the given Boolean-valued function `f` to operate on boxed values.
+    ///
     pub def lift2b[a: Boxable, b: Boxable](f: (a, b) -> Bool): (Boxed, Boxed) -> Bool =
         (a: Boxed, b: Boxed) -> f(unbox(a), unbox(b))
 
 
 }
+
+instance Boxable[Int8] {
+    pub def box(x: Int8): Boxed = BoxedInt8(x)
+    pub def unbox(x: Boxed): Int8 = match x {
+        case BoxedInt8(v) => v
+        case _            => ?bug
+    }
+}
+
+// TODO: ...
 
 instance Boxable[Int32] {
     pub def box(x: Int32): Boxed = BoxedInt32(x)
@@ -52,10 +77,6 @@ instance Boxable[Int32] {
         case _             => ?bug
     }
 }
-
-// TODO: Just construct these automatically? Or demand them?
-
-// TODO: Add most common types.
 
 instance Boxable[String] {
     pub def box(x: String): Boxed = {
@@ -70,4 +91,4 @@ instance Boxable[String] {
     }
 }
 
-// TODO: User-defined instances.. Do anything automatically?
+// TODO: It would be nice if we could derive instances for user-defined types.
