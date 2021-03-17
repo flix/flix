@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
@@ -50,10 +51,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       return root.toSuccess
     }
 
-    // Computes all used symbols in all defs (in parallel).
-    val usedAll = ParOps.parAgg(root.defs, Used.empty)({
-      case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
+    // Computes all used symbols in all top-level defs (in parallel).
+    val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
+      case (acc, (_, decl)) => acc and visitDef(decl)(root, flix)
     }, _ and _)
+
+    // Compute all used symbols in all instance defs (in parallel).
+    val usedInstDefs = ParOps.parAgg(TypedAstOps.instanceDefsOf(root), Used.empty)({
+      case (acc, decl) => acc and visitDef(decl)(root, flix)
+    }, _ and _)
+
+    val usedAll = usedDefs and usedInstDefs
 
     // Check for unused symbols.
     val usedRes =

@@ -147,24 +147,24 @@ namespace Test/Exp/Fixpoint/Solve {
     }
 
     instance Eq[Option[a]] with [a : Eq] {
-        def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
+        pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
             case (None, None)           => true
             case (Some(v1), Some(v2))   => v1 == v2
             case _                      => false
         }
 
-        def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
+        pub def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
     }
 
     instance Hash[Option[a]] with [a : Hash] {
-        def hash(o: Option[a]): Int = match o {
+        pub def hash(o: Option[a]): Int = match o {
             case None       => 1046527
             case Some(x)    => 919 * Hash.hash(x)
         }
     }
 
     instance ToString[Option[a]] with [a : ToString] {
-        def toString(o: Option[a]): String = match o {
+        pub def toString(o: Option[a]): String = match o {
             case None       => "None"
             case Some(x)    => "Some(${x})"
         }
@@ -176,24 +176,24 @@ namespace Test/Exp/Fixpoint/Solve {
     }
 
     instance Eq[Result[t, e]] with [t : Eq, e : Eq] {
-        def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
+        pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
             case (Ok(v1), Ok(v2)) => v1 == v2
             case (Err(w1), Err(w2)) => w1 == w2
             case _ => false
         }
 
-        def neq(r1: Result[t, e], r2: Result[t, e]): Bool = not (r1 == r2)
+        pub def neq(r1: Result[t, e], r2: Result[t, e]): Bool = not (r1 == r2)
     }
 
     instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
-        def hash(r: Result[t, e]): Int = match r {
+        pub def hash(r: Result[t, e]): Int = match r {
             case Ok(v)  => 5381 + 113 * Hash.hash(v)
             case Err(v) => 5351 + 97 * Hash.hash(v)
         }
     }
 
     instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
-        def toString(r: Result[t, e]): String = ???
+        pub def toString(r: Result[t, e]): String = ???
     }
 
 }

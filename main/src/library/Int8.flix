@@ -15,11 +15,11 @@
  */
 
 instance LowerBound[Int8] {
-    def minValue(): Int8 = Int8.minValue()
+    pub def minValue(): Int8 = Int8.minValue()
 }
 
 instance UpperBound[Int8] {
-    def maxValue(): Int8 = Int8.maxValue()
+    pub def maxValue(): Int8 = Int8.maxValue()
 }
 
 namespace Int8 {

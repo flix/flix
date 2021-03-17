@@ -97,7 +97,7 @@ namespace RedBlackTree {
     ///
     @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
     pub def insert[k : Order, v](k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] =
-        insertWith((_, v1, _) -> v1, k, v, tree)
+        blacken(insertHelper(k, v, tree))
 
     ///
     /// Updates `tree` with `k -> f(k, v, v1)` if `k -> v1` is in `tree`.
@@ -296,6 +296,20 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Helper function for `insert`.
+    ///
+    def insertHelper[k : Order, v](k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
+        case Leaf => Node(Red, Leaf, k, v, Leaf)
+        case Node(color, a, k1, v1, b) =>
+            match k <=> k1 {
+                case LessThan => balance(Node(color, insertHelper(k, v, a), k1, v1, b))
+                case EqualTo => Node(color, a, k, v, b)
+                case GreaterThan => balance(Node(color, a, k1, v1, insertHelper(k, v, b)))
+            }
+        case _ => tree
+    }
+
+    ///
     /// Helper function for `insertWith`.
     ///
     def insertWithHelper[k : Order, v, e](f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e = match tree {
@@ -446,6 +460,16 @@ namespace RedBlackTree {
         case Node(_, _, k, v, Leaf) => Some((k, v))
         case Node(_, _, _, _, b) => maximum(b)
         case _ => None
+    }
+
+    ///
+    /// Returns the black height of `tree`.
+    ///
+    @Time(Int32.log2(size(tree))) @Space(1)
+    pub def blackHeight(tree: RedBlackTree[k, v]): Int32 = match tree {
+        case Node(Black, a, _, _, _) => 1 + blackHeight(a)
+        case Node(_, a, _, _, _) => blackHeight(a)
+        case _ => 0
     }
 
 }

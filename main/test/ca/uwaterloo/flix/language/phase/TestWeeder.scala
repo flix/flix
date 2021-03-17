@@ -280,7 +280,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |class A[a]
-        |class B[a] extends A[b]
+        |class B[a] with A[b]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MismatchedSuperClassTypeParameter](result)
@@ -291,9 +291,31 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |class A[a]
         |class B[a]
-        |class C[a] extends A[a], B[b]
+        |class C[a] with A[a], B[b]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MismatchedSuperClassTypeParameter](result)
+  }
+
+  test("IllegalPrivateDeclaration.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
+  test("IllegalPrivateDeclaration.02") {
+    val input =
+      """
+        |instance C[Int] {
+        |    def f(): Int = 1
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 }

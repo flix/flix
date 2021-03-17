@@ -19,7 +19,7 @@ use Core/Io/IOError.IOError;
 
 instance Eq[IOError] {
 
-    def eq(x: IOError, y: IOError): Bool = {
+    pub def eq(x: IOError, y: IOError): Bool = {
         use Core/Io/IOError.IOError.{ElementNotFound, FileNotFound, Generic, IllegalState, IncorrectBufferSize, MalformedZip, StreamClosed};
         match (x, y) {
             case (ElementNotFound(s1), ElementNotFound(s2)) => s1 == s2
@@ -33,7 +33,7 @@ instance Eq[IOError] {
         }
     }
 
-    def neq(x: IOError, y: IOError): Bool = not (x == y)
+    pub def neq(x: IOError, y: IOError): Bool = not (x == y)
 
 }
 

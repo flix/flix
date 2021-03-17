@@ -37,16 +37,16 @@ namespace Test/Term/Lit/List {
     }
 
     instance Eq[List[a]] with [a : Eq] {
-        def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+        pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
             case (Nil, Nil) => true
             case (x :: rs, y :: qs) => if (x != y) false else rs == qs
             case _ => false
         }
-        def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
+        pub def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
     }
 
     instance Hash[List[a]] with [a : Hash] {
-        def hash(xs: List[a]): Int =
+        pub def hash(xs: List[a]): Int =
             foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
     }
 
@@ -56,7 +56,7 @@ namespace Test/Term/Lit/List {
     }
 
     instance ToString[List[a]] with [a : ToString] {
-        def toString(xs: List[a]): String = ???
+        pub def toString(xs: List[a]): String = ???
     }
 
 }

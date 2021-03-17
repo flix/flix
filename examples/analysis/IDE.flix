@@ -19,21 +19,21 @@ namespace IDE {
     }
 
     instance LowerBound[Value] {
-        def minValue(): Value = Value.Bot
+        pub def minValue(): Value = Value.Bot
     }
 
     instance Eq[Value] {
-        def eq(x: Value, y: Value): Bool = match (x, y) {
+        pub def eq(x: Value, y: Value): Bool = match (x, y) {
             case (Top, Top) => true
             case (Cst(a), Cst(b)) => a == b
             case (Bot, Bot) => true
             case _ => false
         }
-        def neq(x: Value, y: Value): Bool = not (x == y)
+        pub def neq(x: Value, y: Value): Bool = not (x == y)
     }
 
     instance Hash[Value] {
-        def hash(x: Value): Int32 = match x {
+        pub def hash(x: Value): Int32 = match x {
             case Top    => 1
             case Bot    => 2
             case Cst(n) => n
@@ -41,7 +41,7 @@ namespace IDE {
     }
 
     instance PartialOrder[Value] {
-        def partialCompare(e1: Value, e2: Value): Bool = match (e1, e2) {
+        pub def partialCompare(e1: Value, e2: Value): Bool = match (e1, e2) {
             case (Value.Bot, _) => true
             case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2
             case (_, Value.Top) => true
@@ -50,7 +50,7 @@ namespace IDE {
     }
 
     instance JoinLattice[Value] {
-        def leastUpperBound(e1: Value, e2: Value): Value = match (e1, e2) {
+        pub def leastUpperBound(e1: Value, e2: Value): Value = match (e1, e2) {
             case (Value.Bot, x) => x
             case (x, Value.Bot) => x
             case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Top
@@ -59,7 +59,7 @@ namespace IDE {
     }
 
     instance MeetLattice[Value] {
-        def greatestLowerBound(e1: Value, e2: Value): Value = match (e1, e2) {
+        pub def greatestLowerBound(e1: Value, e2: Value): Value = match (e1, e2) {
             case (Value.Top, x) => x
             case (x, Value.Top) => x
             case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Bot
@@ -68,7 +68,7 @@ namespace IDE {
     }
 
     instance ToString[Value] {
-        def toString(x: Value): String = match x {
+        pub def toString(x: Value): String = match x {
             case Top    => "Top"
             case Cst(n) => "Cst(${n})"
             case Bot    => "Bot"
@@ -99,31 +99,31 @@ namespace IDE {
     }
 
     instance LowerBound[Transformer] {
-        def minValue(): Transformer = Transformer.BotTrans
+        pub def minValue(): Transformer = Transformer.BotTrans
     }
 
     instance Eq[Transformer] {
-        def eq(x: Transformer, y: Transformer): Bool = match (x, y) {
+        pub def eq(x: Transformer, y: Transformer): Bool = match (x, y) {
             case (BotTrans, BotTrans) => true
             case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
             case _ => false
         }
-        def neq(x: Transformer, y: Transformer): Bool = not (x == y)
+        pub def neq(x: Transformer, y: Transformer): Bool = not (x == y)
     }
 
     instance Hash[Transformer] {
-        def hash(x: Transformer): Int32 = match x {
+        pub def hash(x: Transformer): Int32 = match x {
             case BotTrans               => 1
-            case NonBotTrans(x, y, v)   => 3 * x + 7 * y + Hash.hash(v)
+            case NonBotTrans(y, z, v)   => 3 * y + 7 * z + Hash.hash(v)
         }
     }
 
     instance PartialOrder[Transformer] {
-        def partialCompare(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
+        pub def partialCompare(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
     }
 
     instance JoinLattice[Transformer] {
-        def leastUpperBound(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
+        pub def leastUpperBound(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
             case (Transformer.BotTrans, _) => t2
             case (_, Transformer.BotTrans) => t1
             case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
@@ -140,11 +140,11 @@ namespace IDE {
     }
 
     instance MeetLattice[Transformer] {
-        def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
+        pub def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
     }
 
     instance ToString[Transformer] {
-        def toString(x: Transformer): String = match x {
+        pub def toString(x: Transformer): String = match x {
             case BotTrans               => "BotTrans"
             case NonBotTrans(n, m, v)   => "NonBotTrans(${n}, ${m}, ${v})"
         }

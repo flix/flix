@@ -27,14 +27,14 @@ enum Result[t, e] {
 }
 
 instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
-    def toString(r: Result[t, e]): String = match r {
+    pub def toString(r: Result[t, e]): String = match r {
         case Ok(t)  => "Ok(${t})"
         case Err(e) => "Err(${e})"
     }
 }
 
 instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
-    def hash(r: Result[t, e]): Int = match r {
+    pub def hash(r: Result[t, e]): Int = match r {
         case Ok(v)  => 5381 + 113 * Hash.hash(v)
         case Err(v) => 5351 + 97 * Hash.hash(v)
     }
@@ -42,13 +42,13 @@ instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
 
 instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
 
-    def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
+    pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
         case (Ok(v1), Ok(v2)) => v1 == v2
         case (Err(w1), Err(w2)) => w1 == w2
         case _ => false
     }
 
-    def neq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
+    pub def neq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
         case (Ok(v1), Ok(v2)) => v1 != v2
         case (Err(w1), Err(w2)) => w1 != w2
         case _ => true
@@ -58,20 +58,20 @@ instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
 
 instance Order[Result[t, e]] with [t : Order, e : Order] {
 
-    def less(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
+    pub def less(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
+    pub def lessEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
+    pub def greater(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
+    pub def greaterEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -84,7 +84,7 @@ instance Order[Result[t, e]] with [t : Order, e : Order] {
     /// Returns EqualTo if `r1` is equal to `r2`.
     /// Returns GreaterThan if `r1` is greater than `r2`.
     ///
-    def compare(r1: Result[t, e], r2: Result[t, e]): Comparison = match (r1, r2) {
+    pub def compare(r1: Result[t, e], r2: Result[t, e]): Comparison = match (r1, r2) {
         case (Ok(v1), Ok(v2))   =>  v1 <=> v2
         case (Err(v1), Err(v2)) =>  v1 <=> v2
         case (Ok(_), Err(_))    =>  LessThan

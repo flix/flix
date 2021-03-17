@@ -20,20 +20,20 @@
 opaque type MutSet[t] = Ref[Set[t]]
 
 instance ToString[MutSet[a]] with [a : ToString] {
-    def toString(xs: MutSet[a]): String =
+    pub def toString(xs: MutSet[a]): String =
         let s = MutSet.foldRight((x, acc) -> "${x}, ${acc}", "", xs) as & Pure;
         "MutSet#{${String.dropRight(2, s)}}"
 }
 
 instance Copy[MutSet[a]] {
-    def copy(s: MutSet[a]): MutSet[a] & e =
+    pub def copy(s: MutSet[a]): MutSet[a] & e =
         let MutSet(ms) = s;
         MutSet(ref (deref ms)) as & e
 }
 
 instance Foldable[MutSet] {
-    def foldLeft(f: (b, a) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldLeft(f, i, s) as & e
-    def foldRight(f: (a, b) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldRight(f, i, s) as & e
+    pub def foldLeft(f: (b, a) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldLeft(f, i, s) as & e
+    pub def foldRight(f: (a, b) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldRight(f, i, s) as & e
 }
 
 namespace MutSet {

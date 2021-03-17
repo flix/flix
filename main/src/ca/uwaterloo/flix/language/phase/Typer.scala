@@ -108,11 +108,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
 
     def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-      case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws0, loc) =>
+      case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
         val tparams = getTypeParams(List(tparam))
         val tconstr = Ast.TypeConstraint(sym, tparam.tpe)
         for {
-          sigs <- Validation.traverse(signatures)(visitSig)
+          sigs <- Validation.traverse(sigs.values)(visitSig)
           laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
         } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc))
     }
@@ -393,7 +393,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
-        val sig = root.classes.flatMap(_._2.signatures).find(_.sym == sym).get
+        val sig = root.classes(sym.clazz).sigs(sym)
         val (tconstrs, sigType) = Scheme.instantiate(sig.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)

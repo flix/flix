@@ -391,6 +391,17 @@ object TypedAstOps {
   }
 
   /**
+    * Creates an iterable over all the instance defs in `root`.
+    */
+  def instanceDefsOf(root: Root): Iterable[Def] = {
+    for {
+      instsPerClass <- root.instances.values
+      inst <- instsPerClass
+      defn <- inst.defs
+    } yield defn
+  }
+
+  /**
     * Returns `true` if the given annotations contains the [[Benchmark]] annotation.
     */
   def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {

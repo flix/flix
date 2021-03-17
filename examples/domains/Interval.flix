@@ -21,13 +21,13 @@ namespace Domain/Interval {
     }
 
     instance Eq[Interval] {
-        def eq(e1: Interval, e2: Interval): Bool = match (e1, e2) {
+        pub def eq(e1: Interval, e2: Interval): Bool = match (e1, e2) {
             case (Top, Top)                     => true
             case (Range(x1, y1), Range(x2, y2)) => x1 == x2 and y1 == y2
             case (Bot, Bot)                     => true
             case _                              => false
         }
-        def neq(e1: Interval, e2: Interval): Bool = not (e1 == e2)
+        pub def neq(e1: Interval, e2: Interval): Bool = not (e1 == e2)
     }
 
     ///

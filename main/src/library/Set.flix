@@ -26,41 +26,41 @@ enum Set[t] {
 }
 
 instance ToString[Set[a]] with [a : ToString] {
-    def toString(xs: Set[a]): String =
+    pub def toString(xs: Set[a]): String =
         let s = Set.foldRight((x, acc) -> "${x}, ${acc}", "", xs);
         "Set#{${String.dropRight(2, s)}}"
 }
 
 instance Hash[Set[a]] with [a : Hash] {
-    def hash(xs: Set[a]): Int =
+    pub def hash(xs: Set[a]): Int =
         Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, xs)
 }
 
 instance Eq[Set[a]] with[a : Eq, a : Order] {
 
-    def eq(xs: Set[a], ys: Set[a]): Bool =
+    pub def eq(xs: Set[a], ys: Set[a]): Bool =
         Set.isSubsetOf(xs, ys) and Set.isSubsetOf(ys, xs)
 
-    def neq(xs: Set[a], ys: Set[a]): Bool = not (xs == ys)
+    pub def neq(xs: Set[a], ys: Set[a]): Bool = not (xs == ys)
 
 }
 
 instance Order[Set[a]] with [a : Order] {
 
-    def less(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
+    pub def less(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
         case LessThan => true
         case _ => false
     }
-    def lessEqual(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
+    pub def lessEqual(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
         case LessThan => true
         case EqualTo => true
         case _ => false
     }
-    def greater(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
+    pub def greater(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
         case GreaterThan => true
         case _ => false
     }
-    def greaterEqual(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
+    pub def greaterEqual(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
         case GreaterThan => true
         case EqualTo => true
         case _ => false
@@ -71,8 +71,8 @@ instance Order[Set[a]] with [a : Order] {
 }
 
 instance Foldable[Set] {
-    def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e = Set.foldLeft(f, s, xs)
-    def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e = Set.foldRight(f, s, xs)
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e = Set.foldLeft(f, s, xs)
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e = Set.foldRight(f, s, xs)
 }
 
 namespace Set {
@@ -324,9 +324,16 @@ namespace Set {
     ///
     /// Returns the union of `xs` and `ys`.
     ///
-    @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
+    @Time(Int32.min(size(xs), size(ys)) * Int32.log2(size(xs) + size(ys)))
+    @Space(Int32.min(size(xs), size(ys)) * Int32.log2(size(xs) + size(ys)))
     pub def union[a : Order](xs: Set[a], ys: Set[a]): Set[a] =
-        foldLeft((acc, x) -> insert(x, acc), xs, ys)
+        use RedBlackTree.{blackHeight, foldLeft, insert};
+        let Set(as) = xs;
+        let Set(bs) = ys;
+        if (blackHeight(as) < blackHeight(bs))
+            Set(foldLeft((acc, x, _) -> insert(x, (), acc), bs, as))
+        else
+            Set(foldLeft((acc, y, _) -> insert(y, (), acc), as, bs))
 
     ///
     /// Returns the intersection of `xs` and `ys`.

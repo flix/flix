@@ -30,7 +30,7 @@ namespace Test/Exp/Infix {
     }
 
     instance Divisible[Int] {
-        def div(x: Int, y: Int): Int = x / y
+        pub def div(x: Int, y: Int): Int = x / y
     }
 
 }
