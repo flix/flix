@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -122,7 +122,10 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitDef(defn0: Def)(implicit root: Root, flix: Flix): Def = {
     val e = visitExp(defn0.exp)
-    defn0.copy(exp = e)
+    val fs = defn0.fparams.map(visitFormalParam)
+    val dsc = visitScheme(defn0.declaredScheme)
+    val isc = visitScheme(defn0.inferredScheme)
+    defn0.copy(exp = e, fparams = fs, declaredScheme = dsc, inferredScheme = isc)
   }
 
   /**
@@ -513,6 +516,16 @@ object Lowering extends Phase[Root, Root] {
       val es = elms.map(visitPat)
       val t = visitType(tpe)
       Pattern.ArrayHeadSpread(sym, es, t, loc)
+  }
+
+  /**
+    * Lowers the given scheme `sc0`.
+    */
+  private def visitScheme(sc0: Scheme)(implicit root: Root, flix: Flix): Scheme = sc0 match {
+    case Scheme(quantifiers, constraints, base) =>
+      // TODO: What about constraints?
+      val b = visitType(base)
+      Scheme(quantifiers, constraints, b)
   }
 
   /**
