@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.Symbol.ClassSym
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoicePattern, ChoiceRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -71,7 +70,6 @@ object Lowering extends Phase[Root, Root] {
     lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
-    lazy val UnsafeBox: Symbol.EnumSym = Symbol.mkEnumSym("UnsafeBox")
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
   }
 
@@ -79,14 +77,14 @@ object Lowering extends Phase[Root, Root] {
     //
     // Data Types
     //
-    lazy val Datalog: Type = Type.mkEnum(Enums.Datalog, UnsafeBox :: Nil)
-    lazy val Constraint: Type = Type.mkEnum(Enums.Constraint, UnsafeBox :: Nil)
+    lazy val Datalog: Type = Type.mkEnum(Enums.Datalog, Boxed :: Nil)
+    lazy val Constraint: Type = Type.mkEnum(Enums.Constraint, Boxed :: Nil)
 
-    lazy val HeadPredicate: Type = Type.mkEnum(Enums.HeadPredicate, UnsafeBox :: Nil)
-    lazy val BodyPredicate: Type = Type.mkEnum(Enums.BodyPredicate, UnsafeBox :: Nil)
+    lazy val HeadPredicate: Type = Type.mkEnum(Enums.HeadPredicate, Boxed :: Nil)
+    lazy val BodyPredicate: Type = Type.mkEnum(Enums.BodyPredicate, Boxed :: Nil)
 
-    lazy val HeadTerm: Type = Type.mkEnum(Enums.HeadTerm, UnsafeBox :: Nil)
-    lazy val BodyTerm: Type = Type.mkEnum(Enums.BodyTerm, UnsafeBox :: Nil)
+    lazy val HeadTerm: Type = Type.mkEnum(Enums.HeadTerm, Boxed :: Nil)
+    lazy val BodyTerm: Type = Type.mkEnum(Enums.BodyTerm, Boxed :: Nil)
 
     lazy val PredSym: Type = Type.mkEnum(Enums.PredSym, Nil)
     lazy val VarSym: Type = Type.mkEnum(Enums.VarSym, Nil)
@@ -95,7 +93,6 @@ object Lowering extends Phase[Root, Root] {
     lazy val SourceLocation: Type = Type.mkEnum(Enums.SourceLocation, Nil)
 
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil)
-    lazy val UnsafeBox: Type = Type.mkEnum(Enums.UnsafeBox, Type.mkNative(classOf[java.lang.Object]) :: Nil)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil)
 
 
@@ -661,45 +658,47 @@ object Lowering extends Phase[Root, Root] {
     */
   @tailrec
   private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
-    case Expression.Var(sym, _, loc) => mkHeadTermVar(sym, loc)
+    case Expression.Var(sym, _, loc) =>
+      mkHeadTermVar(sym)
 
     case Expression.Unit(loc) =>
-      mkHeadTermLit(mkUnsafeBox(exp0, loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.True(loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxBool(exp0), loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.False(loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxBool(exp0), loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.Char(_, loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxChar(exp0), loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.Float32(_, loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxFloat32(exp0), loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.Float64(_, loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxFloat64(exp0), loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.Int8(lit, loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxInt8(exp0), loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.Int16(_, loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxInt16(exp0), loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.Int32(_, loc) =>
-      mkHeadTermLit(boxExp(exp0), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.Int64(_, loc) =>
-      mkHeadTermLit(mkUnsafeBox(boxInt64(exp0), loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.BigInt(_, loc) =>
-      mkHeadTermLit(mkUnsafeBox(exp0, loc), loc)
+      mkHeadTermLit(box(exp0))
 
     case Expression.Str(_, loc) =>
-      mkHeadTermLit(boxExp(exp0), loc)
+      mkHeadTermLit(box(exp0))
 
-    case Expression.Ascribe(exp, _, _, _) => visitHeadTerm(exp)
+    case Expression.Ascribe(exp, _, _, _) =>
+      visitHeadTerm(exp)
 
     // TODO: Translate other expressions into function applications.
 
@@ -714,43 +713,43 @@ object Lowering extends Phase[Root, Root] {
       mkBodyTermWild(loc)
 
     case Pattern.Var(sym, _, loc) =>
-      mkBodyTermVar(sym, loc)
+      mkBodyTermVar(sym)
 
     case Pattern.Unit(loc) =>
-      mkBodyTermLit(mkUnsafeBox(Expression.Unit(loc), loc))
+      mkBodyTermLit(box(Expression.Unit(loc)))
 
     case Pattern.True(loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxBool(Expression.True(loc)), loc))
+      mkBodyTermLit(box(Expression.True(loc)))
 
     case Pattern.False(loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxBool(Expression.False(loc)), loc))
+      mkBodyTermLit(box(Expression.False(loc)))
 
     case Pattern.Char(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxChar(Expression.Char(lit, loc)), loc))
+      mkBodyTermLit(box(Expression.Char(lit, loc)))
 
     case Pattern.Float32(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxFloat32(Expression.Float32(lit, loc)), loc))
+      mkBodyTermLit(box(Expression.Float32(lit, loc)))
 
     case Pattern.Float64(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxFloat64(Expression.Float64(lit, loc)), loc))
+      mkBodyTermLit(box(Expression.Float64(lit, loc)))
 
     case Pattern.Int8(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxInt8(Expression.Int8(lit, loc)), loc))
+      mkBodyTermLit(box(Expression.Int8(lit, loc)))
 
     case Pattern.Int16(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxInt16(Expression.Int16(lit, loc)), loc))
+      mkBodyTermLit(box(Expression.Int16(lit, loc)))
 
     case Pattern.Int32(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxInt32(Expression.Int32(lit, loc)), loc))
+      mkBodyTermLit(box(Expression.Int32(lit, loc)))
 
     case Pattern.Int64(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(boxInt64(Expression.Int64(lit, loc)), loc))
+      mkBodyTermLit(box(Expression.Int64(lit, loc)))
 
     case Pattern.BigInt(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(Expression.BigInt(lit, loc), loc))
+      mkBodyTermLit(box(Expression.BigInt(lit, loc)))
 
     case Pattern.Str(lit, loc) =>
-      mkBodyTermLit(mkUnsafeBox(Expression.Str(lit, loc), loc))
+      mkBodyTermLit(box(Expression.Str(lit, loc)))
 
     // TODO: What other expressions to support as body terms?
 
@@ -768,7 +767,8 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
     */
-  private def mkHeadTermVar(sym: Symbol.VarSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkHeadTermVar(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
+    val loc = sym.loc
     val symExp = mkVarSym(sym)
     val locExp = mkSourceLocation(sym.loc)
     val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
@@ -778,7 +778,8 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
-  private def mkHeadTermLit(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkHeadTermLit(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
+    val loc = exp.loc
     mkTag(Enums.HeadTerm, "Lit", exp, Types.HeadTerm, loc)
   }
 
@@ -793,7 +794,8 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Var` from the given variable symbol `sym`.
     */
-  private def mkBodyTermVar(sym: Symbol.VarSym, loc: SourceLocation): Expression = {
+  private def mkBodyTermVar(sym: Symbol.VarSym): Expression = {
+    val loc = sym.loc
     val symExp = mkVarSym(sym)
     val locExp = mkSourceLocation(sym.loc)
     val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
@@ -858,81 +860,10 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns the given expression `exp` in a box.
     */
-  private def boxExp(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
+  private def box(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed)
     Expression.Sig(Defs.Box, tpe, loc)
-  }
-
-  /**
-    * Returns the given expression `exp` wrapped in the `UnsafeBox` value.
-    */
-  private def mkUnsafeBox(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    // Construct the Order.compare symbol.
-    val classSym = new ClassSym(Nil, "Order", loc)
-    val compareIdent = Name.Ident(SourcePosition.Unknown, "compare", SourcePosition.Unknown)
-    val compareSym = Symbol.mkSigSym(classSym, compareIdent)
-
-    // Construct the type of Order.compare.
-    // TODO: This assumes we have instances for the boxed types, e.g. for java.lang.Integer.
-    val tpe = Type.mkPureUncurriedArrow(List(exp.tpe, exp.tpe), Types.Comparison)
-    val cmpExp = Expression.Sig(compareSym, tpe, loc)
-
-    // TODO: Need the ToString instance.
-
-    // Construct the UnsafeBox.
-    val innerExp = mkTuple(exp :: cmpExp :: Nil, loc)
-    mkTag(Enums.UnsafeBox, "UnsafeBox", innerExp, Types.UnsafeBox, loc)
-  }
-
-  /**
-    * Boxes the given Bool expression `e`.
-    */
-  private def boxBool(e: Expression): Expression = boxExpDeprec(e, java.lang.Boolean.TYPE, classOf[java.lang.Boolean])
-
-  /**
-    * Boxes the given Char expression `e`.
-    */
-  private def boxChar(e: Expression): Expression = boxExpDeprec(e, java.lang.Character.TYPE, classOf[java.lang.Character])
-
-  /**
-    * Boxes the given Float32 expression `e`.
-    */
-  private def boxFloat32(e: Expression): Expression = boxExpDeprec(e, java.lang.Float.TYPE, classOf[java.lang.Float])
-
-  /**
-    * Boxes the given Float64 expression `e`.
-    */
-  private def boxFloat64(e: Expression): Expression = boxExpDeprec(e, java.lang.Double.TYPE, classOf[java.lang.Double])
-
-  /**
-    * Boxes the given Int8 expression `e`.
-    */
-  private def boxInt8(e: Expression): Expression = boxExpDeprec(e, java.lang.Byte.TYPE, classOf[java.lang.Byte])
-
-  /**
-    * Boxes the given Int16 expression `e`.
-    */
-  private def boxInt16(e: Expression): Expression = boxExpDeprec(e, java.lang.Short.TYPE, classOf[java.lang.Short])
-
-  /**
-    * Boxes the given Int32 expression `e`.
-    */
-  private def boxInt32(e: Expression): Expression = boxExpDeprec(e, java.lang.Integer.TYPE, classOf[java.lang.Integer])
-
-  /**
-    * Boxes the given Int64 expression `e`.
-    */
-  private def boxInt64(e: Expression): Expression = boxExpDeprec(e, java.lang.Long.TYPE, classOf[java.lang.Long])
-
-  /**
-    * Boxes the given expression `e` with primitive type `primitive` and boxed type `boxed`.
-    */
-  private def boxExpDeprec[T, S](e: Expression, primitive: Class[T], boxed: Class[S]): Expression = {
-    val m = boxed.getMethod("valueOf", primitive)
-    val tpe = Type.mkNative(boxed)
-    val eff = Type.Pure
-    Expression.InvokeStaticMethod(m, List(e), tpe, eff, e.loc)
   }
 
   /**
