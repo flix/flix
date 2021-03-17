@@ -343,31 +343,31 @@ object ErasedAst {
     final val tpe = EType.Reference(ERefType.BoxedFloat64())
   }
 
-  case class UnboxInt8(exp: ErasedAst.Expression[PBoxedInt8], loc: SourceLocation) extends ErasedAst.Expression[PrimInt8] {
+  case class UnboxInt8(exp: ErasedAst.Expression[PReference[PBoxedInt8]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt8] {
     final val tpe = EType.Int8()
   }
 
-  case class UnboxInt16(exp: ErasedAst.Expression[PBoxedInt16], loc: SourceLocation) extends ErasedAst.Expression[PrimInt16] {
+  case class UnboxInt16(exp: ErasedAst.Expression[PReference[PBoxedInt16]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt16] {
     final val tpe = EType.Int16()
   }
 
-  case class UnboxInt32(exp: ErasedAst.Expression[PBoxedInt32], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
+  case class UnboxInt32(exp: ErasedAst.Expression[PReference[PBoxedInt32]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt32] {
     final val tpe = EType.Int32()
   }
 
-  case class UnboxInt64(exp: ErasedAst.Expression[PBoxedInt64], loc: SourceLocation) extends ErasedAst.Expression[PrimInt64] {
+  case class UnboxInt64(exp: ErasedAst.Expression[PReference[PBoxedInt64]], loc: SourceLocation) extends ErasedAst.Expression[PrimInt64] {
     final val tpe = EType.Int64()
   }
 
-  case class UnboxChar(exp: ErasedAst.Expression[PBoxedChar], loc: SourceLocation) extends ErasedAst.Expression[PrimChar] {
+  case class UnboxChar(exp: ErasedAst.Expression[PReference[PBoxedChar]], loc: SourceLocation) extends ErasedAst.Expression[PrimChar] {
     final val tpe = EType.Char()
   }
 
-  case class UnboxFloat32(exp: ErasedAst.Expression[PBoxedFloat32], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32] {
+  case class UnboxFloat32(exp: ErasedAst.Expression[PReference[PBoxedFloat32]], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat32] {
     final val tpe = EType.Float32()
   }
 
-  case class UnboxFloat64(exp: ErasedAst.Expression[PBoxedFloat64], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64] {
+  case class UnboxFloat64(exp: ErasedAst.Expression[PReference[PBoxedFloat64]], loc: SourceLocation) extends ErasedAst.Expression[PrimFloat64] {
     final val tpe = EType.Float64()
   }
 

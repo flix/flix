@@ -33,9 +33,8 @@ object BytecodeCompiler {
 
   def compileExp[R <: Stack, T <: PT](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case e@Expression.Unit(loc) =>
-      WithSource[R](loc) ~[R ** PT.PReference[PRT.PUnit]]
+      WithSource[R](loc) ~
         pushUnit
-        //upCast2(e.tpe)
 
     case Expression.Null(tpe, loc) =>
       WithSource[R](loc) ~ pushNull

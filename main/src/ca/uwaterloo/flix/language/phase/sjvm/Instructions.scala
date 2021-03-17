@@ -53,7 +53,7 @@ object Instructions {
 
   def pushUnit[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PUnit]] = ???
 
-  def pushNull[R <: Stack, S <: PRT]: F[R] => F[R ** PT.PReference[S]] = ???
+  def pushNull[R <: Stack, T <: PRT]: F[R] => F[R ** PT.PReference[T]] = ???
 
   def pushBool[R <: Stack](b: Boolean): F[R] => F[R ** PT.PrimInt32] = pushInt32(if (b) 1 else 0)
 
@@ -85,7 +85,7 @@ object Instructions {
 
   def DALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PrimFloat64]] ** PT.PrimInt32] => F[R ** PT.PrimFloat64] = ???
 
-  def AALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PReference[_]]] ** PT.PrimInt32] => F[R ** PT.PReference[_]] = ???
+  def AALoad[R <: Stack, T <: PRT]: F[R ** PT.PReference[PRT.PArray[PT.PReference[T]]] ** PT.PrimInt32] => F[R ** PT.PReference[T]] = ???
 
   def XALoad[R <: Stack, T <: PT](tpe: ET[T]): F[R ** PT.PReference[PRT.PArray[T]] ** PT.PrimInt32] => F[R ** T] = tpe match {
     case ET.Bool() | ET.Int32() => IALoad
@@ -95,7 +95,7 @@ object Instructions {
     case ET.Int8() => BALoad
     case ET.Int16() => SALoad
     case ET.Int64() => LALoad
-    case ET.Reference(o) => AALoad
+    case ET.Reference(_) => AALoad //todo: try pop pop pushunit
   }
 
   def BAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PrimInt8]] ** PT.PrimInt32 ** PT.PrimInt8] => F[R] = ???
@@ -112,8 +112,7 @@ object Instructions {
 
   def DAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PrimFloat64]] ** PT.PrimInt32 ** PT.PrimFloat64] => F[R] = ???
 
-  // todo: make [_] match
-  def AAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PReference[_]]] ** PT.PrimInt32 ** PT.PReference[_]] => F[R] = ???
+  def AAStore[R <: Stack, T <: PRT]: F[R ** PT.PReference[PRT.PArray[PT.PReference[T]]] ** PT.PrimInt32 ** PT.PReference[T]] => F[R] = ???
 
   def XAStore[R <: Stack, T <: PT](tpe: ET[T]): F[R ** PT.PReference[PRT.PArray[T]] ** PT.PrimInt32 ** T] => F[R] = tpe match {
     case ET.Char() => CAStore
@@ -141,7 +140,7 @@ object Instructions {
 
   def DStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PrimFloat64] => F[R] = ???
 
-  def AStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PReference[_]] => F[R] = ???
+  def AStore[R <: Stack, T <: PRT](sym: Symbol.VarSym): F[R ** PT.PReference[T]] => F[R] = ???
 
   def XStore[R <: Stack, T <: PT](sym: Symbol.VarSym, tpe: ET[T]): F[R ** T] => F[R] = tpe match {
     case ET.Char() => CStore(sym)
@@ -171,7 +170,7 @@ object Instructions {
 
   def LNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PrimInt64]]] = ???
 
-  def ANEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PReference[_]]]] = {
+  def ANEWARRAY[R <: Stack, T <: PRT]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PReference[T]]]] = {
     // from genExpression:
     // visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
     // should type be built?
@@ -195,7 +194,7 @@ object Instructions {
 
   def systemArrayCopy[R <: Stack]: F[R ** PT.PReference[PRT.AnyObject] ** PT.PrimInt32 ** PT.PReference[PRT.AnyObject] ** PT.PrimInt32 ** PT.PrimInt32] => F[R] = ???
 
-  def arrayLength[R <: Stack]: F[R ** PT.PReference[PRT.PArray[_]]] => F[R ** PT.PrimInt32] = ???
+  def arrayLength[R <: Stack, T <: PT]: F[R ** PT.PReference[PRT.PArray[T]]] => F[R ** PT.PrimInt32] = ???
 
   // also make void
   def defMakeFunction[R <: Stack, T <: PT](t: ET[T], x: F[R]): F[R ** T] = ???
