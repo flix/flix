@@ -131,12 +131,12 @@ class LangSuite extends Suites(
   //
   // Fixpoint.
   //
-  new FlixTest("Test.Exp.Fixpoint.Constraint", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
-  new FlixTest("Test.Exp.Fixpoint.Compose", "main/test/flix/Test.Exp.Fixpoint.Compose.flix"),
-  new FlixTest("Test.Exp.Fixpoint.Entails", "main/test/flix/Test.Exp.Fixpoint.Entails.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Constraint", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Fixpoint.Compose", "main/test/flix/Test.Exp.Fixpoint.Compose.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Fixpoint.Entails", "main/test/flix/Test.Exp.Fixpoint.Entails.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Fixpoint.Fold", "main/test/flix/Test.Exp.Fixpoint.Fold.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Fixpoint.Project", "main/test/flix/Test.Exp.Fixpoint.Project.flix"),
-  new FlixTest("Test.Exp.Fixpoint.Solve", "main/test/flix/Test.Exp.Fixpoint.Solve.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Project", "main/test/flix/Test.Exp.Fixpoint.Project.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Fixpoint.Solve", "main/test/flix/Test.Exp.Fixpoint.Solve.flix")(Options.TestWithLibrary),
 
   //
   // Force.
@@ -288,28 +288,28 @@ class LangSuite extends Suites(
   //
   // Predicate.
   //
-  new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix"),
-  new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix"),
-  new FlixTest("Test.Predicate.Nullary", "main/test/flix/Test.Predicate.Nullary.flix"),
-  new FlixTest("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix"),
+  new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Predicate.Nullary", "main/test/flix/Test.Predicate.Nullary.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix")(Options.TestWithLibrary),
 
   //
   // Stratified Negation.
   //
-  new FlixTest("Test.Stratification", "main/test/flix/Test.Stratification.flix"),
+  new FlixTest("Test.Stratification", "main/test/flix/Test.Stratification.flix")(Options.TestWithLibrary),
 
   //
   // Term.
   //
-  new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix"),
-  new FlixTest("Test.Term.Lit", "main/test/flix/Test.Term.Lit.flix"),
-  new FlixTest("Test.Term.Lit.List", "main/test/flix/Test.Term.Lit.List.flix"),
-  new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.Option.flix"),
-  new FlixTest("Test.Term.Lit.Result", "main/test/flix/Test.Term.Lit.Result.flix"),
+  new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Lit", "main/test/flix/Test.Term.Lit.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Lit.List", "main/test/flix/Test.Term.Lit.List.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.Option.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Lit.Result", "main/test/flix/Test.Term.Lit.Result.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit.Set", "main/test/flix/Test.Term.Lit.Set.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Var.CapturedVar", "main/test/flix/Test.Term.Var.CapturedVar.flix"),
-  new FlixTest("Test.Term.Var.QuantVar", "main/test/flix/Test.Term.Var.QuantVar.flix"),
-  new FlixTest("Test.Term.Var.WildVar", "main/test/flix/Test.Term.Var.WildVar.flix"),
+  new FlixTest("Test.Term.Var.CapturedVar", "main/test/flix/Test.Term.Var.CapturedVar.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Var.QuantVar", "main/test/flix/Test.Term.Var.QuantVar.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Var.WildVar", "main/test/flix/Test.Term.Var.WildVar.flix")(Options.TestWithLibrary),
 
   //
   // Type Alias.
