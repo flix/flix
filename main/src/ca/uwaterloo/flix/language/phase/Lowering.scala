@@ -683,6 +683,7 @@ object Lowering extends Phase[Root, Root] {
         mkHeadTermVar(sym)
 
       case _ =>
+        // Call TypedAstOps.freeVarsOf
         val quantifiedVars = Nil // TODO
 
         if (quantifiedVars.isEmpty) {
@@ -690,6 +691,8 @@ object Lowering extends Phase[Root, Root] {
           mkHeadTermLit(box(exp0))
         } else {
           // Case 3: Translate to application term.
+
+          // TODO: use TypedAstOps.substitute.
 
           ???
         }
