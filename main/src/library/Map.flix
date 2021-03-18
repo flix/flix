@@ -25,6 +25,19 @@ enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 
+instance Boxable[Map[k, v]] with [k: Eq, k: Order, k: ToString, v: Eq, v: Order, v: ToString] {
+    pub def box(x: Map[k, v]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Map[k, v], o2 as Map[k, v]);
+        let toString = o -> ToString.toString(o as Map[k, v]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Map[k, v] = match x {
+        case BoxedObject(v, _, _) => v as Map[k, v]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[Map[k, v]] with [k : ToString, v : ToString] {
     pub def toString(m: Map[k, v]): String =
         let s = Map.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m);
