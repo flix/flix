@@ -643,7 +643,7 @@ namespace Map {
     ///
     pub def query(p: k -> Comparison & e, m: Map[k, v]): List[(k, v)] & e =
         let Map(xs) = m;
-        RedBlackTree.queryWith(p, (k, v) -> (k, v), xs)
+        RedBlackTree.query(p, (k, v) -> (k, v), xs)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //

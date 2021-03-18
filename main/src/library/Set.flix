@@ -492,7 +492,16 @@ namespace Set {
     ///
     pub def query(p: a -> Comparison & e, xs: Set[a]): List[a] & e =
         let Set(es) = xs;
-        RedBlackTree.queryWith(p, (k, _) -> k, es)
+        RedBlackTree.query(p, (k, _) -> k, es)
+
+    ///
+    /// Applies `f` to all elements from the set `xs` where `p(x)` returns `EqualTo`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def queryWith(p: a -> Comparison & e, f: a ~> Unit, xs: Set[a]): Unit & Impure =
+        let Set(es) = xs;
+        RedBlackTree.queryWith(p, (k, _) -> f(k), es)
 
     ///
     /// Helper function for `range`.
