@@ -663,14 +663,9 @@ namespace MutList {
     /// Returns `v` as an array.
     ///
     pub def toArray(v: MutList[a]): Array[a] & Impure =
-        let l = length(v);
-        if (l == 0)
-            []
-        else {
-            let a = Array.new(get(0, v), l);
-            foreachWithIndex((x, i) -> a[l - i - 1] = x, v);
-            a
-        }
+        let MutList(a, _) = v;
+        shrink!(v);
+        deref a
 
     ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
