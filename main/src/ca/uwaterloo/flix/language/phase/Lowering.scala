@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, 
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import scala.annotation.tailrec
-
 // TODO: Add doc
 
 object Lowering extends Phase[Root, Root] {
@@ -39,7 +37,7 @@ object Lowering extends Phase[Root, Root] {
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
     lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
-    lazy val SubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.subsetOf")
+    lazy val IsSubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.isSubsetOf")
     lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
 
     lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(Name.NName(SL, Nil, SL), Name.Ident(SL, "Boxable", SL)), Name.Ident(SL, "box", SL))
@@ -440,7 +438,7 @@ object Lowering extends Phase[Root, Root] {
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
-      val defn = Defs.lookup(Defs.SubsetOf)
+      val defn = Defs.lookup(Defs.IsSubsetOf)
       val defExp = Expression.Def(defn.sym, Types.EntailsType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Type.Bool

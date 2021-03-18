@@ -15,7 +15,7 @@ namespace Fixpoint/Solver {
         let _f = Console.printLine("Hello from compose!") as & Pure;
         d1
 
-    pub def subsetOf[v: Order](_d1: Datalog[v], _d2: Datalog[v]): Bool =
+    pub def isSubsetOf[v: Order](_d1: Datalog[v], _d2: Datalog[v]): Bool =
         let _f = Console.printLine("Hello from entails!") as & Pure;
         true
 
