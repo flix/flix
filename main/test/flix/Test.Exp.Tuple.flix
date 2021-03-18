@@ -70,12 +70,6 @@ namespace Test/Exp/Tuple {
     def testRecordTuple02(): ({x: Int}, {x: Int}, {x: Int}) = ({x = 1}, {x = 2}, {x = 3})
 
     @test
-    def testSchemaTuple01(): (#{A(Int)}, #{B(Int)}) = (#{A(1).}, #{B(2).})
-
-    @test
-    def testSchemaTuple03(): (#{A(Int)}, #{B(Int)}, #{C(Int)}) = (#{A(1).}, #{B(2).}, #{C(3).})
-
-    @test
     def testTupleTuple01(): (Int, (Int, Int)) = (1, (2, 3))
 
     @test
