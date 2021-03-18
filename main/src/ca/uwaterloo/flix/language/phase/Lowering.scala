@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -669,56 +669,31 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given head term `exp0`.
     */
-  @tailrec
-  private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
-      // TODO: Three cases.
+  private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
+    //
+    // We need to consider three cases:
+    //
+    // Case 1: The expression is quantified variable. We translate it to a variable term.
+    // Case 2: The expression does not contain a quantified variable. We evaluate it to a (boxed) value.
+    // Case 3: The expression does contains quantified variables. We translate it to an application term.
+    //
+    exp0 match {
+      case Expression.Var(sym, _, loc) =>
+        // Case 1: Variable term.
+        mkHeadTermVar(sym)
 
-    case Expression.Var(sym, _, loc) =>
-      mkHeadTermVar(sym)
+      case _ =>
+        val quantifiedVars = Nil // TODO
 
-    case Expression.Unit(loc) =>
-      mkHeadTermLit(box(exp0))
+        if (quantifiedVars.isEmpty) {
+          // Case 2: Evaluate to (boxed) value.
+          mkHeadTermLit(box(exp0))
+        } else {
+          // Case 3: Translate to application term.
 
-    case Expression.True(loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.False(loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Char(_, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Float32(_, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Float64(_, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Int8(lit, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Int16(_, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Int32(_, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Int64(_, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.BigInt(_, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Str(_, loc) =>
-      mkHeadTermLit(box(exp0))
-
-    case Expression.Ascribe(exp, _, _, _) =>
-      visitHeadTerm(exp)
-
-    case _ =>
-      // TODO: Match on the type and use it to determien whether to box.
-      // TODO: Also deal with whether there are quan vars.
-      mkHeadTermLit(box(exp0))
+          ???
+        }
+    }
   }
 
   /**
