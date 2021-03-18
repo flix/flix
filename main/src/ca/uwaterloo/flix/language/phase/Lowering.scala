@@ -671,6 +671,8 @@ object Lowering extends Phase[Root, Root] {
     */
   @tailrec
   private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
+      // TODO: Three cases.
+
     case Expression.Var(sym, _, loc) =>
       mkHeadTermVar(sym)
 
@@ -713,9 +715,10 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Ascribe(exp, _, _, _) =>
       visitHeadTerm(exp)
 
-    // TODO: Translate other expressions into function applications.
-
-    case _ => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case _ =>
+      // TODO: Match on the type and use it to determien whether to box.
+      // TODO: Also deal with whether there are quan vars.
+      mkHeadTermLit(box(exp0))
   }
 
   /**
