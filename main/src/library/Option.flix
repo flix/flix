@@ -26,6 +26,19 @@ enum Option[t] {
     case Some(t)
 }
 
+instance Boxable[Option[t]] with [t: Order, t: ToString] {
+    pub def box(x: Option[t]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Option[t], o2 as Option[t]);
+        let toString = o -> ToString.toString(o as Option[t]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Option[t] = match x {
+        case BoxedObject(v, _, _) => v as Option[t]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[Option[a]] with [a : ToString] {
     pub def toString(o: Option[a]): String = match o {
         case None => "None"
