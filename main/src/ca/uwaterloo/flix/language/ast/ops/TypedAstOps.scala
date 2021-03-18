@@ -272,6 +272,16 @@ object TypedAstOps {
   }
 
   /**
+    * Returns all free variables in the given expression `exp0`.
+    */
+  // TODO:
+
+  /**
+    * Returns `exp0` with the given substitution applied.
+    */
+  // TODO
+
+  /**
     * Returns the free variables in the given pattern `pat0`.
     */
   def freeVarsOf(pat0: Pattern): Set[Symbol.VarSym] = binds(pat0).keySet
@@ -312,8 +322,6 @@ object TypedAstOps {
         case (macc, elm) => macc ++ binds(elm)
       }
       Map(sym -> tpe) ++ boundElms
-
-
   }
 
   /**
