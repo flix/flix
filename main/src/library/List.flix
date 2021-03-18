@@ -25,6 +25,19 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
+instance Boxable[List[t]] with [t: Order, t: ToString] {
+    pub def box(x: List[t]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as List[t], o2 as List[t]);
+        let toString = o -> ToString.toString(o as List[t]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): List[t] = match x {
+        case BoxedObject(v, _, _) => v as List[t]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[List[a]] with [a : ToString] {
     pub def toString(xs: List[a]): String =
         List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
