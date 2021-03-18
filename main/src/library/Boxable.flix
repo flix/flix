@@ -60,8 +60,15 @@ namespace Boxable {
 
 }
 
-// TODO: Unit
-
+instance Boxable[Unit] {
+    pub def box(x: Unit): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Unit, o2 as Unit);
+        let toString = o -> ToString.toString(o as Unit);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(_: Boxed): Unit = ()
+}
 
 instance Boxable[Bool] {
     pub def box(x: Bool): Boxed = BoxedBool(x)
@@ -134,7 +141,7 @@ instance Boxable[BigInt] {
         let toString = o -> ToString.toString(o as BigInt);
         BoxedObject(value, compare, toString)
     }
-    pub def unbox(x: Boxed): BigInt= match x {
+    pub def unbox(x: Boxed): BigInt = match x {
         case BoxedObject(v, _, _) => v as BigInt
         case _                    => ?bug
     }
