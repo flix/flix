@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint/Ast {
-    pub enum HeadPredicate[v] {
-        case HeadAtom(PredSym, Array[HeadTerm[v]], SourceLocation)
-    }
 
-    instance ToString[HeadPredicate[v]] with [v : ToString] {
-        pub def toString(head: HeadPredicate[v]): String =
-            use Fixpoint.commaSeparate;
-            match head {
-                case HeadAtom(predSym, terms, _) => "${predSym}(${commaSeparate(terms)})"
-            }
-    }
+namespace Fixpoint {
+    /// Helper function to implement ToString
+    pub def commaSeparate[v : ToString](a: Array[v]): String =
+        let toString = () -> {
+            let sb = StringBuilder.new();
+            Array.map(ToString.toString, a) |>
+            StringBuilder.intercalate!(sb, ", ");
+            StringBuilder.toString(sb)
+        };
+        toString() as & Pure
 }

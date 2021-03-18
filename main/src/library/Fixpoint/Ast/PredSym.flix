@@ -17,4 +17,41 @@ namespace Fixpoint/Ast {
     pub enum PredSym {
         case PredSym(String, SourceLocation)
     }
+
+    instance ToString[PredSym] {
+        pub def toString(predSym: PredSym): String = match predSym {
+            case PredSym(name, _) => name
+        }
+    }
+
+    instance Order[PredSym] {
+
+        pub def less(a: PredSym, b: PredSym): Bool = match a <=> b {
+            case LessThan => true
+            case _ => false
+        }
+
+        pub def lessEqual(a: PredSym, b: PredSym): Bool = match a <=> b {
+            case LessThan => true
+            case EqualTo => true
+            case _ => false
+        }
+
+        pub def greater(a: PredSym, b: PredSym): Bool = match a <=> b {
+            case GreaterThan => true
+            case _ => false
+        }
+
+        pub def greaterEqual(a: PredSym, b: PredSym): Bool = match a <=> b {
+            case GreaterThan => true
+            case EqualTo => true
+            case _ => false
+        }
+
+        pub def compare(a: PredSym, b: PredSym): Comparison = match (a,b) {
+            case (PredSym(s1, _), PredSym(s2, _)) => s1 <=> s2
+        }
+
+    }
+
 }

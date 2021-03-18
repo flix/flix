@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint/Ast {
-    pub enum HeadPredicate[v] {
-        case HeadAtom(PredSym, Array[HeadTerm[v]], SourceLocation)
+
+namespace Fixpoint/Ram {
+    pub enum RamTerm[v] {
+        case Lit(v)
+        case Attribute(RowVar, Int32)
+        case App(Array[v] -> v, Array[RamTerm[v]])
     }
 
-    instance ToString[HeadPredicate[v]] with [v : ToString] {
-        pub def toString(head: HeadPredicate[v]): String =
+    instance ToString[RamTerm[v]] with [v : ToString] {
+        pub def toString(term: RamTerm[v]): String =
             use Fixpoint.commaSeparate;
-            match head {
-                case HeadAtom(predSym, terms, _) => "${predSym}(${commaSeparate(terms)})"
+            match term {
+                case Lit(v) => ToString.toString(v)
+                case Attribute(var, index) => "${var}[${index}]"
+                case App(_, args) => "f(${commaSeparate(args)})"                
             }
     }
 }

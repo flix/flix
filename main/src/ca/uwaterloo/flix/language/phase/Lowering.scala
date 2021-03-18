@@ -39,7 +39,7 @@ object Lowering extends Phase[Root, Root] {
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
     lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
-    lazy val SubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.subsetOf")
+    lazy val SubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.isSubsetOf")
     lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
 
     lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(Name.NName(SL, Nil, SL), Name.Ident(SL, "Boxable", SL)), Name.Ident(SL, "box", SL))

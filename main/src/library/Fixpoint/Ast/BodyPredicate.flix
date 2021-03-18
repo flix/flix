@@ -17,8 +17,16 @@
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Polarity, Array[BodyTerm[v]], SourceLocation)
-        case Guard1(v -> Bool, BodyTerm[v], SourceLocation) // TODO
-        case Guard2((v, v) -> Bool, (BodyTerm[v], BodyTerm[v]), SourceLocation) // TODO
-        case Guard3((v, v, v) -> Bool, (BodyTerm[v], BodyTerm[v], BodyTerm[v]), SourceLocation) // TODO
+        case GuardAtom(Array[v] -> Bool, Array[BodyTerm[v]], SourceLocation)
+    }
+
+    instance ToString[BodyPredicate[v]] with [v : ToString] {
+        pub def toString(body: BodyPredicate[v]): String =
+            use Fixpoint.commaSeparate;
+            match body {
+                case BodyAtom(predSym, Positive, terms, _) => "${predSym}(${commaSeparate(terms)})"
+                case BodyAtom(predSym, Negative, terms, _) => "not ${predSym}(${commaSeparate(terms)})"
+                case GuardAtom(_, terms, _) => "if f(${commaSeparate(terms)})"
+            }
     }
 }
