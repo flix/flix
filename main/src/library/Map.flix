@@ -643,7 +643,16 @@ namespace Map {
     ///
     pub def query(p: k -> Comparison & e, m: Map[k, v]): List[(k, v)] & e =
         let Map(xs) = m;
-        RedBlackTree.queryWith(p, (k, v) -> (k, v), xs)
+        RedBlackTree.query(p, (k, v) -> (k, v), xs)
+
+    ///
+    /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
+        let Map(xs) = m;
+        RedBlackTree.queryWith(p, f, xs)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //

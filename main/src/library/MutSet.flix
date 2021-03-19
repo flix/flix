@@ -352,8 +352,17 @@ namespace MutSet {
     ///
     /// That is, the result is a list of all elements `x` where `p(x)` returns `Equal`.
     ///
-    pub def query(p: a -> Comparison, s: MutSet[a]): List[a] & Impure =
+    pub def query(p: a -> Comparison & e, s: MutSet[a]): List[a] & Impure =
         let MutSet(ms) = s;
         Set.query(p, deref ms)
+
+    ///
+    /// Applies `f` to all elements from the set `s` where `p(x)` returns `EqualTo`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def queryWith(p: a -> Comparison & e, f: a ~> Unit, s: MutSet[a]): Unit & Impure =
+        let MutSet(ms) = s;
+        Set.queryWith(p, f, deref ms)
 
 }
