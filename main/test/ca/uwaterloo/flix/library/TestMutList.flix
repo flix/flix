@@ -1345,4 +1345,26 @@ namespace TestMutList {
         let cmp = (x, y) -> if (x > y and x % 2 == 0) GreaterThan else LessThan;
         MutList.maximumBy(cmp, v) == Some(18)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+        Array.sameElements(MutList.toArray(Array.toMutList([1, 2, 3])), [1, 2, 3])
+
+    @test
+    def toArray02(): Bool & Impure =
+        let v = Array.toMutList([1, 2, 3]);
+        let a = MutList.toArray(v);
+        a[1] = 42;
+        MutList.get(1, v) == 2
+
+    @test
+    def toArray03(): Bool & Impure =
+        let v = Array.toMutList([1, 2, 3]);
+        MutList.pop!(v);
+        MutList.pop!(v);
+        Array.length(MutList.toArray(v)) == 1
+
 }
