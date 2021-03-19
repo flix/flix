@@ -443,4 +443,13 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.query(p, deref mm)
 
+    ///
+    /// Applies `f` to all key-value pairs `(k, v)` in the mutable map `m` where `p(k)` returns `EqualTo`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        Map.queryWith(p, f, deref mm)
+
 }
