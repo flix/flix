@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Polarity, Array[BodyTerm[v]], SourceLocation)
-        case Guard1(v -> Bool, BodyTerm[v], SourceLocation) // TODO
-        case Guard2((v, v) -> Bool, (BodyTerm[v], BodyTerm[v]), SourceLocation) // TODO
-        case Guard3((v, v, v) -> Bool, (BodyTerm[v], BodyTerm[v], BodyTerm[v]), SourceLocation) // TODO
+        case Guard1(v -> Bool, VarSym, SourceLocation)
+        case Guard2(v -> v -> Bool, VarSym, VarSym, SourceLocation)
+        case Guard3(v -> v -> v -> Bool, VarSym, VarSym, VarSym, SourceLocation)
+        case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
     }
 }
