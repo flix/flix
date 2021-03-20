@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, SpecialOperator, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.math.BigInteger
 import scala.collection.mutable
@@ -613,7 +613,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val defn = root.defs(sym)
 
       // Check if the function is non-polymorphic.
-      if (defn.tparams.isEmpty) {
+      if (defn.spec.tparams.isEmpty) {
         defn.sym
       } else {
         specializeDef(defn, tpe)
@@ -633,20 +633,35 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         inst =>
           inst.defs.find {
             defn =>
-              defn.sym.name == sig.sym.name && (
-                Unification.unifyTypes(defn.declaredScheme.base, tpe) match {
-                  case Result.Ok(_) => true
-                  case Result.Err(_) => false
-                }
-                )
+              defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe)
           }
       }
 
-      if (defns.size != 1) {
-        throw InternalCompilerException(s"Expected exactly one matching signature for '$sym', but found ${defns.size} signatures.")
+      (sig.impl, defns) match {
+        // Case 1: An instance implementation exists. Use it.
+        case (_, defn :: Nil) => specializeDef(defn, tpe)
+        // Case 2: No instance implementation, but a default implementation exists. Use it.
+        case (Some(impl), Nil) => specializeDef(sigToDef(sig.sym, sig.spec, impl), tpe)
+        // Case 3: Multiple matching defs. Should have been caught previously.
+        case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.")
+        // Case 4: No matching defs and no default. Should have been caught previously.
+        case (None, Nil) => throw InternalCompilerException(s"No default or matching definition found for '$sym'.")
       }
+    }
 
-      specializeDef(defns.head, tpe)
+    /**
+      * Converts a signature with an implementation into the equivalent definition.
+      */
+    def sigToDef(sigSym: Symbol.SigSym, spec: TypedAst.Spec, impl: TypedAst.Impl): TypedAst.Def = {
+      TypedAst.Def(sigSymToDefnSym(sigSym), spec, impl)
+    }
+
+    /**
+      * Converts a SigSym into the equivalent DefnSym.
+      */
+    def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
+      val ns = sigSym.clazz.namespace :+ sigSym.clazz.name
+      new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
     }
 
     /**
@@ -654,7 +669,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def specializeDef(defn: TypedAst.Def, tpe: Type): Symbol.DefnSym = {
       // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unifyTypes(defn.inferredScheme.base, tpe).get)
+      val subst = StrictSubstitution(Unification.unifyTypes(defn.impl.inferredScheme.base, tpe).get)
 
       // Check whether the function definition has already been specialized.
       def2def.get((defn.sym, tpe)) match {
@@ -815,7 +830,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      * Collect all non-parametric function definitions.
      */
     val nonParametricDefns = root.defs.filter {
-      case (_, defn) => defn.tparams.isEmpty
+      case (_, defn) => defn.spec.tparams.isEmpty
     }
 
     /*
@@ -826,13 +841,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val subst0 = StrictSubstitution(Substitution.empty)
 
       // Specialize the formal parameters to obtain fresh local variable symbols for them.
-      val (fparams, env0) = specializeFormalParams(defn.fparams, subst0)
+      val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0)
 
       // Specialize the body expression.
-      val body = specialize(defn.exp, env0, subst0)
+      val body = specialize(defn.impl.exp, env0, subst0)
 
       // Reassemble the definition.
-      specializedDefns.put(sym, defn.copy(fparams = fparams, exp = body))
+      specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
     }
 
     /*
@@ -865,14 +880,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         val (freshSym, defn, subst) = defQueue.dequeue()
 
         // Specialize the formal parameters and introduce fresh local variable symbols.
-        val (fparams, env0) = specializeFormalParams(defn.fparams, subst)
+        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
         // Specialize the body expression.
-        val specializedExp = specialize(defn.exp, env0, subst)
+        val specializedExp = specialize(defn.impl.exp, env0, subst)
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, inferredScheme = Scheme(Nil, List.empty, subst(defn.inferredScheme.base)), tparams = Nil)
+        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)
@@ -886,7 +901,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     root.defs.get(Symbol.Main) match {
       case None => // nop - no main.
       case Some(defn) =>
-        val typeArguments = defn.inferredScheme.base.typeArguments
+        val typeArguments = defn.impl.inferredScheme.base.typeArguments
         val resultType = typeArguments.last
       // TODO: Need toString instance on constraint systems etc.
       // mkToStringOp(resultType)

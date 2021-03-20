@@ -143,7 +143,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -1355,6 +1355,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("lawless")) ~ SP ~> ParsedAst.Modifier
     }
 
+    def Override: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(keyword("override")) ~ SP ~> ParsedAst.Modifier
+    }
+
     def Public: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("pub")) ~ SP ~> ParsedAst.Modifier
     }
@@ -1368,7 +1372,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawless | Public | Sealed | Unlawful
+      Inline | Lawless | Override | Public | Sealed | Unlawful
     }
 
     rule {

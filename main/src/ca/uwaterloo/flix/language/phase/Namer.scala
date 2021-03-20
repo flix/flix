@@ -102,8 +102,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                   case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
                     case Some(otherSig) =>
                       val name = sig.sym.name
-                      val loc1 = sig.loc
-                      val loc2 = otherSig.loc
+                      val loc1 = sig.spec.loc
+                      val loc2 = otherSig.spec.loc
                       Failure(LazyList(
                         // NB: We report an error at both source locations.
                         NameError.DuplicateDefOrSig(name, loc1, loc2),
@@ -148,7 +148,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case Some(defOrSig) =>
             // Case 2: Duplicate definition.
             val name = ident.name
-            val loc1 = defOrSig.loc
+            val loc1 = defOrSig.spec.loc
             val loc2 = ident.loc
             Failure(LazyList(
               // NB: We report an error at both source locations.
@@ -237,7 +237,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
         }
 
-      case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, tpe, eff, loc) =>
+      case _: WeededAst.Declaration.Sig =>
         throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
     }
   }
@@ -389,7 +389,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe, eff0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0), checkSigType(ident, classTparam, tpe, loc)) {
         case (tparams, _) =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
@@ -399,11 +399,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
               val tconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc))
               val schemeVal = getDefOrSigScheme(tparams, tpe, uenv0, tenv, List(tconstr), List(classTparam.tpe))
+              val expVal = traverse(exp0)(visitExp(_, env0, uenv0, tenv))
               val tpeVal = visitType(eff0, uenv0, tenv)
-              mapN(annVal, schemeVal, tpeVal) {
-                case (as, sc, eff) =>
+              mapN(annVal, schemeVal, tpeVal, expVal) {
+                case (as, sc, eff, exp) =>
                   val sym = Symbol.mkSigSym(classSym, ident)
-                  NamedAst.Sig(doc, as, mod, sym, tparams, fparams, sc, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, eff, loc)
+                  NamedAst.Sig(sym, spec, exp.headOption)
               }
           }
       }
@@ -443,7 +445,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               mapN(annVal, expVal, schemeVal, tpeVal) {
                 case (as, e, sc, eff) =>
                   val sym = Symbol.mkDefnSym(ns0, ident)
-                  NamedAst.Def(doc, as, mod, sym, tparams, fparams, e, sc, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, eff, loc)
+                  NamedAst.Def(sym, spec, e)
               }
           }
       }

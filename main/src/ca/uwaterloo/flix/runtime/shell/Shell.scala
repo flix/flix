@@ -295,7 +295,7 @@ class Shell(initialPaths: List[Path], options: Options) {
         // Construct a new virtual terminal.
         val vt = new VirtualTerminal
         prettyPrintDef(defn, vt)
-        vt << defn.doc.text
+        vt << defn.spec.doc.text
         vt << NewLine
 
         // Print the result to the terminal.
@@ -505,7 +505,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
     val namespace: List[String] = getNameSpace(ns)
     root.defs.foldLeft(Nil: List[Def]) {
-      case (xs, (s, defn)) if s.namespace == namespace && defn.mod.isPublic && !defn.mod.isSynthetic =>
+      case (xs, (s, defn)) if s.namespace == namespace && defn.spec.mod.isPublic && !defn.spec.mod.isSynthetic =>
         defn :: xs
       case (xs, _) => xs
     }
@@ -529,13 +529,13 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
     vt << Bold("def ") << Blue(defn.sym.name) << "("
-    if (defn.fparams.nonEmpty) {
-      vt << defn.fparams.head.sym.text << ": " << Cyan(FormatType.formatType(defn.fparams.head.tpe))
-      for (fparam <- defn.fparams.tail) {
+    if (defn.spec.fparams.nonEmpty) {
+      vt << defn.spec.fparams.head.sym.text << ": " << Cyan(FormatType.formatType(defn.spec.fparams.head.tpe))
+      for (fparam <- defn.spec.fparams.tail) {
         vt << ", " << fparam.sym.text << ": " << Cyan(FormatType.formatType(fparam.tpe))
       }
     }
-    vt << "): " << Cyan(FormatType.formatType(defn.inferredScheme.base.typeArguments.last)) << NewLine
+    vt << "): " << Cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)) << NewLine
   }
 
   /**

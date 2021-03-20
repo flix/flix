@@ -63,7 +63,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
       case TypedAst.Class(_, _, _, _, _, sigs, laws, _) =>
         val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
-          case (acc, TypedAst.Def(_, _, _, _, _, _, exp, _, _, _, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
+          case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
         }
         val unusedSigs = sigs.map(_.sym).toSet.removedAll(usedSigs)
         Validation.traverseX(unusedSigs) {
@@ -156,17 +156,24 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       // Step 1: check that each signature has an implementation.
       val sigMatchVal = Validation.traverseX(clazz.signatures) {
         sig =>
-          inst.defs.find(_.sym.name == sig.sym.name) match {
-            // Case 1: there is no definition with the same name
-            case None => InstanceError.MissingImplementation(sig.sym, inst.loc).toFailure
-            case Some(defn) =>
-              val expectedScheme = Scheme.partiallyInstantiate(sig.sc, clazz.tparam.tpe, inst.tpe)
-              if (Scheme.equal(expectedScheme, defn.declaredScheme, root.classEnv)) {
-                // Case 2.1: the schemes match. Success!
+          (inst.defs.find(_.sym.name == sig.sym.name), sig.impl) match {
+            // Case 1: there is no definition with the same name, and no default implementation
+            case (None, None) => InstanceError.MissingImplementation(sig.sym, inst.loc).toFailure
+            // Case 2: there is no definition with the same name, but there is a default implementation
+            case (None, Some(_)) => ().toSuccess
+            // Case 3: there is an implementation marked override, but no default implementation
+            case (Some(defn), None) if defn.spec.mod.isOverride => InstanceError.IllegalOverride(defn.sym, defn.spec.loc).toFailure
+            // Case 4: there is an overriding implementation, but no override modifier
+            case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => InstanceError.UnmarkedOverride(defn.sym, defn.spec.loc).toFailure
+            // Case 5: there is an implementation with the right modifier
+            case (Some(defn), _) =>
+              val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.tpe, inst.tpe)
+              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)) {
+                // Case 5.1: the schemes match. Success!
                 ().toSuccess
               } else {
-                // Case 2.2: the schemes do not match
-                InstanceError.MismatchedSignatures(sig.sym, defn.loc, expectedScheme, defn.declaredScheme).toFailure
+                // Case 5.2: the schemes do not match
+                InstanceError.MismatchedSignatures(sig.sym, defn.spec.loc, expectedScheme, defn.spec.declaredScheme).toFailure
               }
           }
       }
@@ -174,7 +181,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       val extraDefVal = Validation.traverseX(inst.defs) {
         defn =>
           clazz.signatures.find(_.sym.name == defn.sym.name) match {
-            case None => InstanceError.ExtraneousDefinition(defn.sym, defn.loc).toFailure
+            case None => InstanceError.ExtraneousDefinition(defn.sym, defn.spec.loc).toFailure
             case _ => ().toSuccess
           }
       }

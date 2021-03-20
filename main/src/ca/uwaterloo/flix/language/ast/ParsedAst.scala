@@ -89,9 +89,10 @@ object ParsedAst {
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
       * @param tpe        the declared type.
+      * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.

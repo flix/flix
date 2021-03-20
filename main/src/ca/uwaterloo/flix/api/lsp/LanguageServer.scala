@@ -292,7 +292,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       val main = Symbol.Main
       root.defs.get(main) match {
-        case Some(defn) if matchesUri(uri, defn.loc) =>
+        case Some(defn) if matchesUri(uri, defn.spec.loc) =>
           val loc = defn.sym.loc
           val cmd = Command("Run Main", "flix.cmdRunMain", Nil)
           CodeLens(Range.from(loc), Some(cmd)) :: Nil
@@ -311,7 +311,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       val result = mutable.ListBuffer.empty[CodeLens]
       for ((sym, defn) <- root.defs) {
-        if (matchesUri(uri, defn.loc) && defn.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
+        if (matchesUri(uri, defn.spec.loc) && defn.spec.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
           val loc = defn.sym.loc
           val cmd = Command("Run All Tests", "flix.cmdRunAllTests", Nil)
           result.addOne(CodeLens(Range.from(loc), Some(cmd)))
