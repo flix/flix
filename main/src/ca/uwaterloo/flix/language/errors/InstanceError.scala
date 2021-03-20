@@ -187,10 +187,10 @@ object InstanceError {
   /**
     * Error indicating a missing super class instance.
     *
-    * @param tpe the type for which the super class instance is missing.
-    * @param subClass the symbol of the sub class.
+    * @param tpe        the type for which the super class instance is missing.
+    * @param subClass   the symbol of the sub class.
     * @param superClass the symbol of the super class.
-    * @param loc the location where the error occurred.
+    * @param loc        the location where the error occurred.
     */
   case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Missing super class instance '$superClass'."
@@ -251,7 +251,7 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"unlawful signature")
       vt << NewLine
-      vt << Underline("Tip:") << s" Create a law for '${sym}' or mark the class as unlawful."
+      vt << Underline("Tip:") << s" Create a law for '$sym' or mark the class as unlawful."
     }
   }
 
@@ -273,7 +273,7 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"illegal override")
       vt << NewLine
-      vt << Underline("Tip:") << s" Remove the modifier."
+      vt << Underline("Tip:") << s" Remove the modifier." << NewLine
     }
   }
 
@@ -289,13 +289,12 @@ object InstanceError {
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unmarked override '" << Red(sym.name) << "'." << NewLine
+      vt << ">> Unmarked override of '" << Red(sym.name) << "'. This definition overrides a default implementation." << NewLine
       vt << NewLine
-      vt << ">> This definition overrides a default implementation."
+      vt << Code(loc, s"unmarked override")
       vt << NewLine
-      vt << Code(loc, s"illegal override")
-      vt << NewLine
-      vt << Underline("Tip:") << s" Either remove the definition or add the `override` modifier."
+      vt << Underline("Tip:") << s" Either add the `override` modifier or remove the definition." << NewLine
     }
   }
+
 }

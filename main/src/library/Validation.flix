@@ -44,8 +44,6 @@ instance Eq[Validation[t, e]] with[t : Eq, e : Eq] {
         case _ => false
     }
 
-    pub def neq(v1: Validation[t, e], v2: Validation[t, e]): Bool = not (v1 == v2)
-
 }
 
 namespace Validation {

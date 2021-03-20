@@ -25,7 +25,6 @@ namespace Domain/ConstantParity {
             case (Bot, Bot)         => true
             case _                  => false
         }
-        pub def neq(e1: ConstantParity, e2: ConstantParity): Bool = not (e1 == e2)
     }
 
     ///

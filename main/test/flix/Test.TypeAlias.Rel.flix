@@ -140,8 +140,6 @@ namespace Test/TypeAlias/Rel {
             case (Some(v1), Some(v2))   => v1 == v2
             case _                      => false
         }
-
-        pub def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
     }
 
     instance Hash[Option[a]] with [a : Hash] {
@@ -170,8 +168,6 @@ namespace Test/TypeAlias/Rel {
             case (Err(w1), Err(w2)) => w1 == w2
             case _ => false
         }
-
-        pub def neq(r1: Result[t, e], r2: Result[t, e]): Bool = not (r1 == r2)
     }
 
     instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
@@ -196,7 +192,6 @@ namespace Test/TypeAlias/Rel {
             case (x :: rs, y :: qs) => if (x != y) false else rs == qs
             case _ => false
         }
-        pub def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
     }
 
     instance Hash[List[a]] with [a : Hash] {

@@ -25,7 +25,6 @@ namespace Domain/Mod3 {
             case (Bot, Bot) => true
             case _          => false
         }
-        pub def neq(e1: Mod3, e2: Mod3): Bool = not (e1 == e2)
     }
 
     ///

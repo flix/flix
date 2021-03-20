@@ -41,19 +41,11 @@ instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
 }
 
 instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
-
     pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
         case (Ok(v1), Ok(v2)) => v1 == v2
         case (Err(w1), Err(w2)) => w1 == w2
         case _ => false
     }
-
-    pub def neq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
-        case (Ok(v1), Ok(v2)) => v1 != v2
-        case (Err(w1), Err(w2)) => w1 != w2
-        case _ => true
-    }
-
 }
 
 instance Order[Result[t, e]] with [t : Order, e : Order] {

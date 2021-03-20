@@ -27,63 +27,62 @@ pub lawless class Eq[a] {
     ///
     /// Returns `true` if and only if `x` is not equal to `y`.
     ///
-    pub def neq(x: a, y: a): Bool
+    pub def neq(x: a, y: a): Bool = not Eq.eq(x, y)
 
 }
 
 instance Eq[Unit] {
     pub def eq(_x: Unit, _y: Unit): Bool = true
-    pub def neq(_x: Unit, _y: Unit): Bool = false
 }
 
 instance Eq[Bool] {
     pub def eq(x: Bool, y: Bool): Bool = $BOOL_EQ$(x, y)
-    pub def neq(x: Bool, y: Bool): Bool = $BOOL_NEQ$(x, y)
+    pub override def neq(x: Bool, y: Bool): Bool = $BOOL_NEQ$(x, y)
 }
 
 instance Eq[Char] {
     pub def eq(x: Char, y: Char): Bool = $CHAR_EQ$(x, y)
-    pub def neq(x: Char, y: Char): Bool = $CHAR_NEQ$(x, y)
+    pub override def neq(x: Char, y: Char): Bool = $CHAR_NEQ$(x, y)
 }
 
 instance Eq[Float32] {
     pub def eq(x: Float32, y: Float32): Bool = $FLOAT32_EQ$(x, y)
-    pub def neq(x: Float32, y: Float32): Bool = $FLOAT32_NEQ$(x, y)
+    pub override def neq(x: Float32, y: Float32): Bool = $FLOAT32_NEQ$(x, y)
 }
 
 instance Eq[Float64] {
     pub def eq(x: Float64, y: Float64): Bool = $FLOAT64_EQ$(x, y)
-    pub def neq(x: Float64, y: Float64): Bool = $FLOAT64_NEQ$(x, y)
+    pub override def neq(x: Float64, y: Float64): Bool = $FLOAT64_NEQ$(x, y)
 }
 
 instance Eq[Int8] {
     pub def eq(x: Int8, y: Int8): Bool = $INT8_EQ$(x, y)
-    pub def neq(x: Int8, y: Int8): Bool = $INT8_NEQ$(x, y)
+    pub override def neq(x: Int8, y: Int8): Bool = $INT8_NEQ$(x, y)
 }
 
 instance Eq[Int16] {
     pub def eq(x: Int16, y: Int16): Bool = $INT16_EQ$(x, y)
-    pub def neq(x: Int16, y: Int16): Bool = $INT16_NEQ$(x, y)
+    pub override def neq(x: Int16, y: Int16): Bool = $INT16_NEQ$(x, y)
 }
 
 instance Eq[Int32] {
     pub def eq(x: Int32, y: Int32): Bool = $INT16_EQ$(x, y)
-    pub def neq(x: Int32, y: Int32): Bool = $INT16_NEQ$(x, y)
+    pub override def neq(x: Int32, y: Int32): Bool = $INT16_NEQ$(x, y)
 }
 
 instance Eq[Int64] {
     pub def eq(x: Int64, y: Int64): Bool = $INT64_EQ$(x, y)
-    pub def neq(x: Int64, y: Int64): Bool = $INT64_NEQ$(x, y)
+    pub override def neq(x: Int64, y: Int64): Bool = $INT64_NEQ$(x, y)
 }
 
 instance Eq[BigInt] {
     pub def eq(x: BigInt, y: BigInt): Bool = $BIGINT_EQ$(x, y)
-    pub def neq(x: BigInt, y: BigInt): Bool = $BIGINT_NEQ$(x, y)
+    pub override def neq(x: BigInt, y: BigInt): Bool = $BIGINT_NEQ$(x, y)
 }
 
 instance Eq[String] {
     pub def eq(x: String, y: String): Bool = $STRING_EQ$(x, y)
-    pub def neq(x: String, y: String): Bool = $STRING_NEQ$(x, y)
+    pub override def neq(x: String, y: String): Bool = $STRING_NEQ$(x, y)
 }
 
 instance Eq[(a1, a2)] with [a1 : Eq, a2 : Eq] {
@@ -92,8 +91,6 @@ instance Eq[(a1, a2)] with [a1 : Eq, a2 : Eq] {
         let (x1, x2) = t1;
         let (y1, y2) = t2;
             x1 == y1 and x2 == y2
-
-    pub def neq(t1: (a1, a2), t2: (a1, a2)): Bool = not (t1 == t2)
 
 }
 
@@ -104,8 +101,6 @@ instance Eq[(a1, a2, a3)] with [a1 : Eq, a2 : Eq, a3 : Eq] {
         let (y1, y2, y3) = t2;
             x1 == y1 and x2 == y2 and x3 == y3
 
-    pub def neq(t1: (a1, a2, a3), t2: (a1, a2, a3)): Bool = not (t1 == t2)
-
 }
 
 instance Eq[(a1, a2, a3, a4)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq] {
@@ -114,8 +109,6 @@ instance Eq[(a1, a2, a3, a4)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq] {
         let (x1, x2, x3, x4) = t1;
         let (y1, y2, y3, y4) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4
-
-    pub def neq(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Bool = not (t1 == t2)
 
 }
 
@@ -126,8 +119,6 @@ instance Eq[(a1, a2, a3, a4, a5)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 :
         let (y1, y2, y3, y4, y5) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5
 
-    pub def neq(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Bool = not (t1 == t2)
-
 }
 
 instance Eq[(a1, a2, a3, a4, a5, a6)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq] {
@@ -136,8 +127,6 @@ instance Eq[(a1, a2, a3, a4, a5, a6)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, 
         let (x1, x2, x3, x4, x5, x6) = t1;
         let (y1, y2, y3, y4, y5, y6) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6
-
-    pub def neq(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Bool = not (t1 == t2)
 
 }
 
@@ -148,8 +137,6 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : 
         let (y1, y2, y3, y4, y5, y6, y7) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7
 
-    pub def neq(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Bool = not (t1 == t2)
-
 }
 
 instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq, a7 : Eq, a8 : Eq] {
@@ -158,9 +145,6 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Eq, a2 : Eq, a3 : Eq, a
         let (x1, x2, x3, x4, x5, x6, x7, x8) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8
-
-    pub def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = not (t1 == t2)
-
 }
 
 instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq, a7 : Eq, a8 : Eq, a9 : Eq] {
@@ -170,8 +154,6 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Eq, a2 : Eq, a3 : E
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9
 
-    pub def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = not (t1 == t2)
-
 }
 
 instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq, a7 : Eq, a8 : Eq, a9 : Eq, a10 : Eq] {
@@ -180,7 +162,5 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Eq, a2 : Eq, a
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t1;
         let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10) = t2;
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10
-
-    pub def neq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = not (t1 == t2)
 
 }

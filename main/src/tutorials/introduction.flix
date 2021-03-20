@@ -54,7 +54,6 @@ instance Eq[Constant] {
         case (Bot, Bot) => true
         case _ => false
     }
-    pub def neq(x: Constant, y: Constant): Bool = not (x == y)
 }
 
 //

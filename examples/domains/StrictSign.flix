@@ -23,7 +23,6 @@ namespace Domain/StrictSign {
             case (Bot, Bot) => true
             case _          => false
         }
-        pub def neq(e1: Sign, e2: Sign): Bool = not (e1 == e2)
     }
 
     ///

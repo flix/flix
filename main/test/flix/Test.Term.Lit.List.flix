@@ -42,7 +42,6 @@ namespace Test/Term/Lit/List {
             case (x :: rs, y :: qs) => if (x != y) false else rs == qs
             case _ => false
         }
-        pub def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
     }
 
     instance Hash[List[a]] with [a : Hash] {

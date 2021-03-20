@@ -35,13 +35,9 @@ instance Hash[Nel[a]] with [a : Hash] {
 }
 
 instance Eq[Nel[a]] with[a : Eq] {
-
     pub def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
         case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
     }
-
-    pub def neq(xs: Nel[a], ys: Nel[a]): Bool = not (xs == ys)
-
 }
 
 instance Functor[Nel] {

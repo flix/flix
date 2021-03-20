@@ -22,7 +22,6 @@ namespace Domain/Parity {
             case (Bot, Bot)     => true
             case _              => false
         }
-        pub def neq(e1: Parity, e2: Parity): Bool = not (e1 == e2)
     }
 
     ///

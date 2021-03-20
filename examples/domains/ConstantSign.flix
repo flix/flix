@@ -25,7 +25,6 @@ namespace Domain/ConstantSign {
             case (Bot, Bot) => true
             case _ => false
         }
-        pub def neq(e1: ConstantSign, e2: ConstantSign): Bool = not (e1 == e2)
     }
 
     ///

@@ -152,8 +152,6 @@ namespace Test/Exp/Fixpoint/Solve {
             case (Some(v1), Some(v2))   => v1 == v2
             case _                      => false
         }
-
-        pub def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
     }
 
     instance Hash[Option[a]] with [a : Hash] {
@@ -181,8 +179,6 @@ namespace Test/Exp/Fixpoint/Solve {
             case (Err(w1), Err(w2)) => w1 == w2
             case _ => false
         }
-
-        pub def neq(r1: Result[t, e], r2: Result[t, e]): Bool = not (r1 == r2)
     }
 
     instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
