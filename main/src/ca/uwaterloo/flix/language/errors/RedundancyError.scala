@@ -323,4 +323,30 @@ object RedundancyError {
     }
   }
 
+  // MATT update docs and messages
+  /**
+    * An error raised to indicate that the given definition recurses unconditionally.
+    *
+    * @param sym the unconditionally recursive definition.
+    */
+  case class UnconditionalRecursionSig(sym: Symbol.SigSym) extends RedundancyError {
+    def summary: String = "Unconditional recursion."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unconditionally recursive definition '" << Red(sym.name) << "'. All branches will recurse indefinitely." << NewLine
+      vt << NewLine
+      vt << Code(sym.loc, "unconditional recursion.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Add a non-recursive branch to the definition." << NewLine
+      vt << NewLine
+      vt
+    }
+
+    def loc: SourceLocation = sym.loc
+  }
+
 }
