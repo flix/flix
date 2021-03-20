@@ -118,12 +118,31 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given definition `defn0`.
     */
-  private def visitDef(defn0: Def)(implicit root: Root, flix: Flix): Def = {
-    val e = visitExp(defn0.exp)
-    val fs = defn0.fparams.map(visitFormalParam)
-    val dsc = visitScheme(defn0.declaredScheme)
-    val isc = visitScheme(defn0.inferredScheme)
-    defn0.copy(exp = e, fparams = fs, declaredScheme = dsc, inferredScheme = isc)
+  private def visitDef(defn0: Def)(implicit root: Root, flix: Flix): Def =  defn0 match {
+    case Def(sym, spec0, impl0) =>
+      val spec = visitSpec(spec0)
+      val impl = visitImpl(impl0)
+      Def(sym, spec, impl)
+  }
+
+  /**
+    * Lowers the given `spec0`.
+    */
+  private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec= spec0 match {
+    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, eff, loc) =>
+      val fs = fparams.map(visitFormalParam)
+      val ds = visitScheme(declaredScheme)
+      Spec(doc, ann, mod, tparams, fs, ds, eff, loc)
+  }
+
+  /**
+    * Lowers the given `impl0`.
+    */
+  private def visitImpl(impl0: Impl)(implicit root: Root, flix: Flix): Impl = impl0 match {
+    case Impl(exp, inferredScheme) =>
+      val e = visitExp(exp)
+      val s = visitScheme(inferredScheme)
+      Impl(e, s)
   }
 
   /**
