@@ -26,7 +26,6 @@ namespace Domain/ParitySign {
 
     instance Eq[ParitySign] {
         pub def eq(e1: ParitySign, e2: ParitySign): Bool = equ(e1, e2)
-        pub def neq(e1: ParitySign, e2: ParitySign): Bool = not equ(e1, e2)
     }
 
     ///

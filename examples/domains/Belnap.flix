@@ -24,7 +24,6 @@ namespace Belnap {
             case (Bot, Bot)     => true
             case _              => false
         }
-        pub def neq(e1: Belnap, e2: Belnap): Bool = not (e1 == e2)
     }
 
     ///

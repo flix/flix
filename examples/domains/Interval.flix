@@ -27,7 +27,6 @@ namespace Domain/Interval {
             case (Bot, Bot)                     => true
             case _                              => false
         }
-        pub def neq(e1: Interval, e2: Interval): Bool = not (e1 == e2)
     }
 
     ///

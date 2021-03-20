@@ -23,7 +23,6 @@ instance Eq[Sign] {
         case (Bot, Bot) => true
         case _          => false
     }
-    pub def neq(x: Sign, y: Sign): Bool = not (x == y)
 }
 
 /// The hash on lattice elements.

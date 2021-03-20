@@ -21,7 +21,6 @@ namespace Domain/Constant {
             case (Bot, Bot)         => true
             case _                  => false
         }
-        pub def neq(e1: Constant, e2: Constant): Bool = not (e1 == e2)
     }
 
     instance Hash[Constant] {

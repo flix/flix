@@ -29,7 +29,6 @@ namespace IDE {
             case (Bot, Bot) => true
             case _ => false
         }
-        pub def neq(x: Value, y: Value): Bool = not (x == y)
     }
 
     instance Hash[Value] {
@@ -108,7 +107,6 @@ namespace IDE {
             case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
             case _ => false
         }
-        pub def neq(x: Transformer, y: Transformer): Bool = not (x == y)
     }
 
     instance Hash[Transformer] {

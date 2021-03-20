@@ -15,7 +15,6 @@
         case (Bottom, Bottom)       => true
         case _                      => false
     }
-    pub def neq(x: SULattice, y: SULattice): Bool = not (x == y)
   }
 
   instance Hash[SULattice] {

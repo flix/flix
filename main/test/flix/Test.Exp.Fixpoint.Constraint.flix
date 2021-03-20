@@ -83,8 +83,6 @@ namespace Test/Exp/Fixpoint/Constraint {
             case (Some(v1), Some(v2))   => v1 == v2
             case _                      => false
         }
-
-        pub def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
     }
 
     instance Hash[Option[a]] with [a : Hash] {

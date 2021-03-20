@@ -25,8 +25,6 @@ instance Eq[Dist] {
         case (Bot, Bot) => true
         case _ => false
     }
-
-    pub def neq(x: Dist, y: Dist): Bool = not (x == y)
 }
 
 instance Hash[Dist] {

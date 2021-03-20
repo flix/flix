@@ -23,7 +23,6 @@ namespace Domain/PrefixSuffix {
 
     instance Eq[PrefixSuffix] {
         pub def eq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = equ(e1, e2)
-        pub def neq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = not equ(e1, e2)
     }
 
     ///

@@ -187,7 +187,6 @@ namespace Test/Exp/Force {
             case (Both(x1, x2), Both(y1, y2)) => x1 == y1 and x2 == y2
             case _ => false
         }
-        pub def neq(p1: Poly[a, b], p2: Poly[a, b]): Bool = ???
     }
 
 }

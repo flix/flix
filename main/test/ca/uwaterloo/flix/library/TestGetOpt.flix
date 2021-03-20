@@ -38,8 +38,6 @@ namespace TestGetOpt {
             case (Height(x1), Height(y1))   => x1 == y1
             case (_, _)                     => false
         }
-
-        pub def neq(x: Flag, y: Flag): Bool = not (x == y)
     }
 
     instance ToString[Flag] {
