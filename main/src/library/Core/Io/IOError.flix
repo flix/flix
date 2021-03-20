@@ -18,7 +18,6 @@ use Core/Io/File.File;
 use Core/Io/IOError.IOError;
 
 instance Eq[IOError] {
-
     pub def eq(x: IOError, y: IOError): Bool = {
         use Core/Io/IOError.IOError.{ElementNotFound, FileNotFound, Generic, IllegalState, IncorrectBufferSize, MalformedZip, StreamClosed};
         match (x, y) {
@@ -32,9 +31,6 @@ instance Eq[IOError] {
             case _ => false
         }
     }
-
-    pub def neq(x: IOError, y: IOError): Bool = not (x == y)
-
 }
 
 namespace Core/Io/IOError {

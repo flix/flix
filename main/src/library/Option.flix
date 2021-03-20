@@ -41,15 +41,11 @@ instance Hash[Option[a]] with [a : Hash] {
 }
 
 instance Eq[Option[a]] with[a : Eq] {
-
     pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
         case (None, None) => true
         case (Some(v1), Some(v2)) => v1 == v2
         case _ => false
     }
-
-    pub def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
-
 }
 
 instance Order[Option[a]] with [a : Order] {

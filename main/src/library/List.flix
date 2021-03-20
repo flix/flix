@@ -36,15 +36,11 @@ instance Hash[List[a]] with [a : Hash] {
 }
 
 instance Eq[List[a]] with[a : Eq] {
-
     pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
         case (Nil, Nil) => true
         case (x :: rs, y :: qs) => if (x != y) false else rs == qs
         case _ => false
     }
-
-    pub def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
-
 }
 
 instance Order[List[a]] with [a : Order] {

@@ -21,14 +21,10 @@ pub enum Comparison {
 }
 
 instance Eq[Comparison] {
-
     pub def eq(x: Comparison, y: Comparison): Bool = match (x, y) {
         case (LessThan, LessThan) => true
         case (EqualTo, EqualTo) => true
         case (GreaterThan, GreaterThan) => true
         case _ => false
     }
-
-    pub def neq(x: Comparison, y: Comparison): Bool = not (x == y)
-
 }

@@ -37,12 +37,8 @@ instance Hash[Set[a]] with [a : Hash] {
 }
 
 instance Eq[Set[a]] with[a : Eq, a : Order] {
-
     pub def eq(xs: Set[a], ys: Set[a]): Bool =
         Set.isSubsetOf(xs, ys) and Set.isSubsetOf(ys, xs)
-
-    pub def neq(xs: Set[a], ys: Set[a]): Bool = not (xs == ys)
-
 }
 
 instance Order[Set[a]] with [a : Order] {

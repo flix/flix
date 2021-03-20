@@ -37,11 +37,8 @@ instance Hash[Map[k, v]] with [k : Hash, v : Hash] {
 }
 
 instance Eq[Map[k, v]] with[k : Eq, k : Order, v : Eq] {
-
     pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
         Map.isSubmapOf(m1, m2) and Map.isSubmapOf(m2, m1)
-
-    pub def neq(m1: Map[k, v], m2: Map[k, v]): Bool = not (m1 == m2)
 
 }
 

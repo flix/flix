@@ -21,8 +21,6 @@ instance Eq[UnsafeBox[a]] {
     pub def eq(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x, y) {
         case (UnsafeBox(v1, cmp, _), UnsafeBox(v2, _, _)) => cmp(v1, v2) == Comparison.EqualTo
     }
-
-    pub def neq(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = not (x == y)
 }
 
 instance Order[UnsafeBox[a]] {
