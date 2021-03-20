@@ -85,16 +85,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitSig(sig: Sig)(implicit root: Root, flix: Flix): Used = {
 
-    /**
-      * Checks for unused type parameters.
-      */
-    def checkUnusedTypeParameters(used: Used): Used = {
-      val unusedParams = sig.spec.tparams.collect {
-        case tparam if deadTypeVar(tparam.tpe, sig.spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
-      }
-      used ++ unusedParams
-    }
-
     // Compute the used symbols inside the definition.
     val usedExp = sig.impl match {
       case None => Used.empty
@@ -103,56 +93,93 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         visitExp(impl.exp, Env.of(recursionContext) ++ sig.spec.fparams.map(_.sym))
     }
 
-    // Check for unused type parameters and remove all variable symbols.
-    val usedAll = (usedExp and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
-    val usedAllWithUnconditionalRecursions = if (usedAll.unconditionallyRecurses) usedAll + UnconditionalRecursionSig(sig.sym) else usedAll
+    val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec, usedExp))
+    val unusedTypeParams = findUnusedTypeParamters(sig.spec)
+    val unconditionalRecursion = findUnconditionalRecursion(sig.sym, usedExp)
+
+    val usedAll = (usedExp ++
+      unusedFormalParams ++
+      unusedTypeParams ++
+      unconditionalRecursion).copy(varSyms = Set.empty)
 
     // Check if the expression contains holes.
     // If it does, we discard all unused local variable errors.
-    if (usedAllWithUnconditionalRecursions.holeSyms.isEmpty)
-      usedAllWithUnconditionalRecursions
+    if (usedAll.holeSyms.isEmpty)
+      usedAll
     else
-      usedAllWithUnconditionalRecursions.withoutUnusedVars
+      usedAll.withoutUnusedVars
   }
 
   /**
     * Checks for unused symbols in the given definition and returns all used symbols.
     */
   private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
-    /**
-      * Checks for unused formal parameters.
-      */
-    def checkUnusedFormalParameters(used: Used): Used = {
-      val unusedParams = defn.spec.fparams.collect {
-        case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
-      }
-      used ++ unusedParams
-    }
-
-    /**
-      * Checks for unused type parameters.
-      */
-    def checkUnusedTypeParameters(used: Used): Used = {
-      val unusedParams = defn.spec.tparams.collect {
-        case tparam if deadTypeVar(tparam.tpe, defn.spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
-      }
-      used ++ unusedParams
-    }
 
     // Compute the used symbols inside the definition.
     val recursionContext = RecursionContext.RecursableDef(defn.sym, arity(defn.spec))
     val usedExp = visitExp(defn.impl.exp, Env.of(recursionContext) ++ defn.spec.fparams.map(_.sym))
 
-    // Check for unused parameters and remove all variable symbols.
-    val usedAll = (usedExp and checkUnusedFormalParameters(usedExp) and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
-    val usedAllWithUnconditionalRecursions = if (usedAll.unconditionallyRecurses) usedAll + UnconditionalRecursion(defn.sym) else usedAll
+    val unusedFormalParams = findUnusedFormalParameters(defn.spec, usedExp)
+    val unusedTypeParams = findUnusedTypeParamters(defn.spec)
+    val unconditionalRecursion = findUnconditionalRecursion(defn.sym, usedExp)
+
+    val usedAll = (usedExp ++
+      unusedFormalParams ++
+      unusedTypeParams ++
+      unconditionalRecursion).copy(varSyms = Set.empty)
 
     // Check if the expression contains holes.
     // If it does, we discard all unused local variable errors.
-    if (usedAllWithUnconditionalRecursions.holeSyms.isEmpty)
-      usedAllWithUnconditionalRecursions
+    if (usedAll.holeSyms.isEmpty)
+      usedAll
     else
-      usedAllWithUnconditionalRecursions.withoutUnusedVars
+      usedAll.withoutUnusedVars
+  }
+
+  /**
+    * Finds unused formal parameters.
+    */
+  private def findUnusedFormalParameters(spec: Spec, used: Used): List[UnusedFormalParam] = {
+    spec.fparams.collect {
+      case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
+    }
+  }
+
+  /**
+    * Finds unused type parameters.
+    */
+  private def findUnusedTypeParamters(spec: Spec): List[UnusedTypeParam] = {
+    spec.tparams.collect {
+      case tparam if deadTypeVar(tparam.tpe, spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
+    }
+  }
+
+  // MATT docs
+  private def findUnconditionalRecursion(sig: Symbol.SigSym, used: Used): Option[RedundancyError] = {
+    if (used.unconditionallyRecurses) {
+      Some(UnconditionalRecursionSig(sig))
+    } else {
+      None
+    }
+  }
+
+  // MATT docs
+  private def findUnconditionalRecursion(defn: Symbol.DefnSym, used: Used): Option[RedundancyError] = {
+    if (used.unconditionallyRecurses) {
+      Some(UnconditionalRecursion(defn))
+    } else {
+      None
+    }
+  }
+
+  /**
+    * Checks for unused type parameters.
+    */
+  private def checkUnusedTypeParameters(spec: Spec, used: Used): Used = {
+    val unusedParams = spec.tparams.collect {
+      case tparam if deadTypeVar(tparam.tpe, spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
+    }
+    used ++ unusedParams
   }
 
   /**
