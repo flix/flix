@@ -33,7 +33,7 @@ object BytecodeCompiler {
   sealed trait F[T]
 
   def compileExp[R <: Stack, T <: PT](exp: Expression[T]): F[R] => F[R ** T] = exp match {
-    case e@Expression.Unit(loc) =>
+    case Expression.Unit(loc) =>
       WithSource[R](loc) ~
         pushUnit
 
