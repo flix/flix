@@ -43,8 +43,6 @@ instance Eq[Boxed] {
         case _ => ?bug
     }
 
-    pub def neq(b1: Boxed, b2: Boxed): Bool = not (b1 == b2)
-
 }
 
 instance Order[Boxed] {
@@ -60,25 +58,6 @@ instance Order[Boxed] {
         case (BoxedFloat64(v1),         BoxedFloat64(v2))       => v1 <=> v2
         case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2)
         case _                                                  => ?bug
-    }
-
-    pub def less(x: Boxed, y: Boxed): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    pub def lessEqual(x: Boxed, y: Boxed): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    pub def greater(x: Boxed, y: Boxed): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    pub def greaterEqual(x: Boxed, y: Boxed): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
     }
 
 }
