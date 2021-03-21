@@ -87,70 +87,70 @@ instance ToString[BigInt] {
         x.toString() as & Pure
 }
 
-instance ToString[(a1, a2)] with [a1 : ToString, a2 : ToString] {
+instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
     pub def toString(t: (a1, a2)): String = match t {
         case (x1, x2) =>
             "(${x1}, ${x2})"
     }
 }
 
-instance ToString[(a1, a2, a3)] with [a1 : ToString, a2 : ToString, a3 : ToString] {
+instance ToString[(a1, a2, a3)] with ToString[a1], ToString[a2], ToString[a3] {
     pub def toString(t: (a1, a2, a3)): String = match t {
         case (x1, x2, x3) =>
             "(${x1}, ${x2}, ${x3})"
     }
 }
 
-instance ToString[(a1, a2, a3, a4)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString] {
+instance ToString[(a1, a2, a3, a4)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4] {
     pub def toString(t: (a1, a2, a3, a4)): String = match t {
         case (x1, x2, x3, x4) =>
             "(${x1}, ${x2}, ${x3}, ${x4})"
     }
 }
 
-instance ToString[(a1, a2, a3, a4, a5)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString] {
+instance ToString[(a1, a2, a3, a4, a5)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5] {
     pub def toString(t: (a1, a2, a3, a4, a5)): String = match t {
         case (x1, x2, x3, x4, x5) =>
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5})"
     }
 }
 
-instance ToString[(a1, a2, a3, a4, a5, a6)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString] {
+instance ToString[(a1, a2, a3, a4, a5, a6)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6] {
     pub def toString(t: (a1, a2, a3, a4, a5, a6)): String = match t {
         case (x1, x2, x3, x4, x5, x6) =>
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6})"
     }
 }
 
-instance ToString[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString] {
+instance ToString[(a1, a2, a3, a4, a5, a6, a7)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7] {
     pub def toString(t: (a1, a2, a3, a4, a5, a6, a7)): String = match t {
         case (x1, x2, x3, x4, x5, x6, x7) =>
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7})"
     }
 }
 
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString] {
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8] {
     pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8)): String = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8) =>
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8})"
     }
 }
 
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString, a9 : ToString] {
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9] {
     pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): String = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9})"
     }
 }
 
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : ToString, a2 : ToString, a3 : ToString, a4 : ToString, a5 : ToString, a6 : ToString, a7 : ToString, a8 : ToString, a9 : ToString, a10 : ToString] {
+instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10] {
     pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): String = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10})"
     }
 }
 
-instance ToString[Array[a]] with [a : ToString] {
+instance ToString[Array[a]] with ToString[a] {
     pub def toString(a: Array[a]): String = ToStringOps.arrayToStringHelper(a, 0, "")
 }
 

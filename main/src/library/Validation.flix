@@ -22,21 +22,21 @@ pub enum Validation[t, e] {
     case Failure(Nel[e])
 }
 
-instance ToString[Validation[t, e]] with [t : ToString, e : ToString] {
+instance ToString[Validation[t, e]] with ToString[t], ToString[e] {
     pub def toString(x: Validation[t, e]): String = match x {
         case Success(t) => "Success(${t})"
         case Failure(e) => "Failure(${e})"
     }
 }
 
-instance Hash[Validation[t, e]] with [t : Hash, e : Hash] {
+instance Hash[Validation[t, e]] with Hash[t], Hash[e] {
     pub def hash(x: Validation[t, e]): Int = match x {
         case Success(v) => 5407 + 197 * Hash.hash(v)
         case Failure(v) => 5413 + 199 * Hash.hash(v)
     }
 }
 
-instance Eq[Validation[t, e]] with[t : Eq, e : Eq] {
+instance Eq[Validation[t, e]] withEq[t], Eq[e] {
 
     pub def eq(v1: Validation[t, e], v2: Validation[t, e]): Bool = match (v1, v2) {
         case (Success(t1), Success(t2)) => t1 == t2

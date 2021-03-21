@@ -26,21 +26,21 @@ enum Option[t] {
     case Some(t)
 }
 
-instance ToString[Option[a]] with [a : ToString] {
+instance ToString[Option[a]] with ToString[a] {
     pub def toString(o: Option[a]): String = match o {
         case None => "None"
         case Some(y) => "Some(${y})"
     }
 }
 
-instance Hash[Option[a]] with [a : Hash] {
+instance Hash[Option[a]] with Hash[a] {
     pub def hash(o: Option[a]): Int = match o {
         case Some(y) => 919 * Hash.hash(y)
         case None => 1046527
     }
 }
 
-instance Eq[Option[a]] with[a : Eq] {
+instance Eq[Option[a]] withEq[a] {
     pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
         case (None, None) => true
         case (Some(v1), Some(v2)) => v1 == v2
@@ -48,7 +48,7 @@ instance Eq[Option[a]] with[a : Eq] {
     }
 }
 
-instance Order[Option[a]] with [a : Order] {
+instance Order[Option[a]] with Order[a] {
 
     ///
     /// Returns the result of a three-way comparison between `o1` and `o2`.
