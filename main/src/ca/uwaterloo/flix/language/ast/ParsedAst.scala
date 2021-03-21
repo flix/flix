@@ -1456,7 +1456,7 @@ object ParsedAst {
   case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
 
   // MATT docs
-  case class TypeConstraint(sp1: SourcePosition, clazz: Name.QName, tparam: Name.Ident, sp2: SourcePosition)
+  case class TypeConstraint(sp1: SourcePosition, clazz: Name.QName, tparam: ParsedAst.Type, sp2: SourcePosition)
 
   /**
     * Formal Parameter.

@@ -35,7 +35,7 @@ object WeededAst {
     case class Namespace(name: Name.NName, uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     // TODO change laws to WeededAst.Law
-    case class Class(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[Name.QName], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[WeededAst.TypeConstraint], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -366,7 +366,7 @@ object WeededAst {
 
   case class ChoiceRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
 
-  case class TypeConstraint(clazz: Name.QName, tparam: Name.Ident)
+  case class TypeConstraint(clazz: Name.QName, tparam: WeededAst.Type.Var)
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
