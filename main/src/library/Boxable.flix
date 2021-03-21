@@ -57,6 +57,7 @@ namespace Boxable {
     pub def lift2b[a: Boxable, b: Boxable](f: (a, b) -> Bool): (Boxed, Boxed) -> Bool =
         (a: Boxed, b: Boxed) -> f(unbox(a), unbox(b))
 
+    // TODO: Add lifting functions up to arity 5 or 10
 
 }
 
