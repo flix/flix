@@ -325,9 +325,9 @@ object RedundancyError {
 
   // MATT update docs and messages
   /**
-    * An error raised to indicate that the given definition recurses unconditionally.
+    * An error raised to indicate that the given signature recurses unconditionally.
     *
-    * @param sym the unconditionally recursive definition.
+    * @param sym the unconditionally recursive signature.
     */
   case class UnconditionalSigRecursion(sym: Symbol.SigSym) extends RedundancyError {
     def summary: String = "Unconditional recursion."

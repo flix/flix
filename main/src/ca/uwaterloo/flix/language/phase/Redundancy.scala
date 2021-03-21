@@ -84,7 +84,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitSig(sig: Sig)(implicit root: Root, flix: Flix): Used = {
 
-    // Compute the used symbols inside the definition.
+    // Compute the used symbols inside the signature.
     val usedExp = sig.impl match {
       case None => Used.empty
       case Some(impl) =>
