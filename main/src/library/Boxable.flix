@@ -162,4 +162,6 @@ instance Boxable[String] {
 
 // TODO: Add types such as Option, List, etc.
 
+// TODO: Add tuples.
+
 // TODO: It would be nice if we could derive instances for user-defined types.
