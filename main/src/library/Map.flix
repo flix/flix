@@ -44,24 +44,6 @@ instance Eq[Map[k, v]] with[k : Eq, k : Order, v : Eq] {
 
 instance Order[Map[k, v]] with [k : Order, v : Eq, v : Order] {
 
-    pub def less(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    pub def lessEqual(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    pub def greater(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    pub def greaterEqual(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
     pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
         Map.toList(x) <=> Map.toList(y)
 

@@ -45,25 +45,6 @@ instance Eq[List[a]] with[a : Eq] {
 
 instance Order[List[a]] with [a : Order] {
 
-    pub def less(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    pub def lessEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    pub def greater(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    pub def greaterEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
-
     ///
     /// Compares `xs` and `ys` lexicographically.
     ///

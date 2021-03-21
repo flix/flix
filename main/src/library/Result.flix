@@ -50,25 +50,6 @@ instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
 
 instance Order[Result[t, e]] with [t : Order, e : Order] {
 
-    pub def less(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    pub def lessEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    pub def greater(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    pub def greaterEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
-
     ///
     /// Returns the result of a three-way comparison between `r1` and `r2`.
     ///

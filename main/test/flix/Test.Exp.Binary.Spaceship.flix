@@ -223,24 +223,6 @@ namespace Test/Exp/Binary/Spaceship {
 
     instance Order[Color] {
 
-        pub def less(x: Color, y: Color): Bool = match (x <=> y) {
-            case LessThan => true
-            case _ => false
-        }
-        pub def lessEqual(x: Color, y: Color): Bool = match (x <=> y) {
-            case LessThan => true
-            case EqualTo => true
-            case _ => false
-        }
-        pub def greater(x: Color, y: Color): Bool = match (x <=> y) {
-            case GreaterThan => true
-            case _ => false
-        }
-        pub def greaterEqual(x: Color, y: Color): Bool = match (x <=> y) {
-            case GreaterThan => true
-            case EqualTo => true
-            case _ => false
-        }
         pub def compare(c1: Color, c2: Color): Comparison = match (c1, c2) {
             case (Red, Red) => EqualTo
             case (Blu, Blu) => EqualTo

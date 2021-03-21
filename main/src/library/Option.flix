@@ -50,25 +50,6 @@ instance Eq[Option[a]] with[a : Eq] {
 
 instance Order[Option[a]] with [a : Order] {
 
-    pub def less(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    pub def lessEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    pub def greater(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    pub def greaterEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
-
     ///
     /// Returns the result of a three-way comparison between `o1` and `o2`.
     ///
