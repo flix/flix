@@ -994,4 +994,15 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnconditionalSigRecursion](result)
   }
 
+  test("UnusedFormalParam.Class.01") {
+    val input =
+      """
+        |pub lawless class C[a] {
+        |  pub def f(x: a): String = "Hello!"
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
 }
