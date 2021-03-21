@@ -19,22 +19,44 @@
 ///
 pub lawless class Order[a] {
 
-    /// Returns `true` if and only if `x < y`.
-    pub def less(x: a, y: a): Bool
-
-    /// Returns `true` if and only if `x <= y`.
-    pub def lessEqual(x: a, y: a): Bool
-
-    /// Returns `true` if and only if `x > y`.
-    pub def greater(x: a, y: a): Bool
-
-    /// Returns `true` if and only if `x >= y`.
-    pub def greaterEqual(x: a, y: a): Bool
-
     ///
     /// Returns `LessThan` if `x` < `y`, `Equal` if `x` == `y` or `GreaterThan` `if `x` > `y`.
     ///
     pub def compare(x: a, y: a): Comparison
+
+    ///
+    /// Returns `true` if and only if `x < y`.
+    ///
+    pub def less(x: a, y: a): Bool = match Order.compare(x, y) {
+        case LessThan   => true
+        case _          => false
+    }
+
+    ///
+    /// Returns `true` if and only if `x <= y`.
+    ///
+    pub def lessEqual(x: a, y: a): Bool = match Order.compare(x, y) {
+        case LessThan   => true
+        case EqualTo    => true
+        case _          => false
+    }
+
+    ///
+    /// Returns `true` if and only if `x > y`.
+    ///
+    pub def greater(x: a, y: a): Bool = match Order.compare(x, y) {
+        case GreaterThan    => true
+        case _              => false
+    }
+
+    ///
+    /// Returns `true` if and only if `x >= y`.
+    ///
+    pub def greaterEqual(x: a, y: a): Bool = match Order.compare(x, y) {
+        case GreaterThan    => true
+        case EqualTo        => true
+        case _              => false
+    }
 
 }
 
