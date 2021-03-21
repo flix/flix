@@ -40,7 +40,7 @@ instance Hash[Option[a]] with Hash[a] {
     }
 }
 
-instance Eq[Option[a]] withEq[a] {
+instance Eq[Option[a]] with Eq[a] {
     pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
         case (None, None) => true
         case (Some(v1), Some(v2)) => v1 == v2

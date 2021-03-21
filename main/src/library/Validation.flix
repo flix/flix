@@ -36,7 +36,7 @@ instance Hash[Validation[t, e]] with Hash[t], Hash[e] {
     }
 }
 
-instance Eq[Validation[t, e]] withEq[t], Eq[e] {
+instance Eq[Validation[t, e]] with Eq[t], Eq[e] {
 
     pub def eq(v1: Validation[t, e], v2: Validation[t, e]): Bool = match (v1, v2) {
         case (Success(t1), Success(t2)) => t1 == t2

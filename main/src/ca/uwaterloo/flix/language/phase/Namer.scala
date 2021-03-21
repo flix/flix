@@ -353,7 +353,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
       val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.tpe, tparam.loc))
       for {
-        superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv0, ns0))
+        superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
         laws <- traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.tpe)))
       } yield NamedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc)
