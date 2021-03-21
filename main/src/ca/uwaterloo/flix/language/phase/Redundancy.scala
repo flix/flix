@@ -79,7 +79,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     usedRes.toValidation(root)
   }
 
-  // MATT reduce duplication
   /**
     * Checks for unused symbols in the given signature and returns all used symbols.
     */
@@ -93,9 +92,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         visitExp(impl.exp, Env.of(recursionContext) ++ sig.spec.fparams.map(_.sym))
     }
 
+    // Check for unused parameters and remove all variable symbols.
     val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec, usedExp))
     val unusedTypeParams = findUnusedTypeParamters(sig.spec)
-    val unconditionalRecursion = findUnconditionalRecursion(sig.sym, usedExp)
+    val unconditionalRecursion = findUnconditionalSigRecursion(sig.sym, usedExp)
 
     val usedAll = (usedExp ++
       unusedFormalParams ++
@@ -121,8 +121,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     val unusedFormalParams = findUnusedFormalParameters(defn.spec, usedExp)
     val unusedTypeParams = findUnusedTypeParamters(defn.spec)
-    val unconditionalRecursion = findUnconditionalRecursion(defn.sym, usedExp)
+    val unconditionalRecursion = findUnconditionalDefRecursion(defn.sym, usedExp)
 
+    // Check for unused parameters and remove all variable symbols.
     val usedAll = (usedExp ++
       unusedFormalParams ++
       unusedTypeParams ++
@@ -154,32 +155,26 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  // MATT docs
-  private def findUnconditionalRecursion(sig: Symbol.SigSym, used: Used): Option[RedundancyError] = {
+  /**
+    * Creates an UnconditionalRecursion error if applicable to the sig.
+    */
+  private def findUnconditionalSigRecursion(sig: Symbol.SigSym, used: Used): Option[RedundancyError] = {
     if (used.unconditionallyRecurses) {
-      Some(UnconditionalRecursionSig(sig))
-    } else {
-      None
-    }
-  }
-
-  // MATT docs
-  private def findUnconditionalRecursion(defn: Symbol.DefnSym, used: Used): Option[RedundancyError] = {
-    if (used.unconditionallyRecurses) {
-      Some(UnconditionalRecursion(defn))
+      Some(UnconditionalSigRecursion(sig))
     } else {
       None
     }
   }
 
   /**
-    * Checks for unused type parameters.
+    * Creates an UnconditionalRecursion error if applicable to the def.
     */
-  private def checkUnusedTypeParameters(spec: Spec, used: Used): Used = {
-    val unusedParams = spec.tparams.collect {
-      case tparam if deadTypeVar(tparam.tpe, spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
+  private def findUnconditionalDefRecursion(defn: Symbol.DefnSym, used: Used): Option[RedundancyError] = {
+    if (used.unconditionallyRecurses) {
+      Some(UnconditionalDefRecursion(defn))
+    } else {
+      None
     }
-    used ++ unusedParams
   }
 
   /**
@@ -992,7 +987,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Describes the context where a def or sig call might be recursive.
     *
-    * Tracks the def or sig, its arity, and the number of applications made to allow for detection of [[UnconditionalRecursion]]
+    * Tracks the def or sig, its arity, and the number of applications made to allow for detection of [[UnconditionalDefRecursion]]
     */
   private sealed trait RecursionContext {
     /**

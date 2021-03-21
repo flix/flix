@@ -756,7 +756,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    f()
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    expectError[RedundancyError.UnconditionalDefRecursion](result)
   }
 
   test("UnconditionalRecursion.02") {
@@ -766,7 +766,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    foo(x, y)
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    expectError[RedundancyError.UnconditionalDefRecursion](result)
   }
 
   test("UnconditionalRecursion.03") {
@@ -778,7 +778,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    expectError[RedundancyError.UnconditionalDefRecursion](result)
   }
 
   test("UnconditionalRecursion.04") {
@@ -791,7 +791,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |        foo(7)
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    expectError[RedundancyError.UnconditionalDefRecursion](result)
   }
 
   test("UnconditionalRecursion.05") {
@@ -991,7 +991,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursionSig](result)
+    expectError[RedundancyError.UnconditionalSigRecursion](result)
   }
 
 }
