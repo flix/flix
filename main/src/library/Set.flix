@@ -43,24 +43,6 @@ instance Eq[Set[a]] with[a : Eq, a : Order] {
 
 instance Order[Set[a]] with [a : Order] {
 
-    pub def less(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    pub def lessEqual(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    pub def greater(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    pub def greaterEqual(x: Set[a], y: Set[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
     pub def compare(xs: Set[a], ys: Set[a]): Comparison =
         Set.toList(xs) <=> Set.toList(ys)
 

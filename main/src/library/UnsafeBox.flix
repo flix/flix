@@ -32,24 +32,6 @@ instance Order[UnsafeBox[a]] {
         case (UnsafeBox(v1, cmp, _), UnsafeBox(v2, _, _)) => cmp(v1, v2)
     }
 
-    pub def less(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    pub def lessEqual(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    pub def greater(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    pub def greaterEqual(x: UnsafeBox[a], y: UnsafeBox[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
 }
 
 instance ToString[UnsafeBox[a]] {

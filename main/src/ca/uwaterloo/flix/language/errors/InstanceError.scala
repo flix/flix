@@ -262,14 +262,14 @@ object InstanceError {
     * @param loc the location where the error occurred.
     */
   case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
-    override def summary: String = s"Illegal override '$sym'."
+    override def summary: String = s"Illegal override of '$sym'."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal override '" << Red(sym.name) << "'." << NewLine
+      vt << ">> Illegal override of '" << Red(sym.name) << "'." << NewLine
       vt << NewLine
-      vt << ">> Only signatures with default implementations can be overridden."
+      vt << ">> Only signatures with default implementations can be overridden." << NewLine
       vt << NewLine
       vt << Code(loc, s"illegal override")
       vt << NewLine
