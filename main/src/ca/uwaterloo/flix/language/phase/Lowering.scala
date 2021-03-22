@@ -923,10 +923,11 @@ object Lowering extends Phase[Root, Root] {
     * Lifts the given Boolean-valued lambda expression `exp0` with the given list of (param, type) pairs.
     */
   private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
+    if (params.size > 5) {
+      throw InternalCompilerException("Guards are currently limited to 5 free variables.")
+    }
 
-
-    // TODO: Allow for N <= 5.
-
+    // TODO: Doc and refactor.
 
     val loc = exp0.loc
 
@@ -934,22 +935,22 @@ object Lowering extends Phase[Root, Root] {
 
     val sym: Symbol.DefnSym = Symbol.mkDefnSym(s"Boxable.lift${n}b")
 
-      // Note: The argument is *curried* but the result is *NOT* curried.
+    // Note: The argument is *curried* but the result is *NOT* curried.
 
-      // The lift function takes a curried function (a -> b -> c -> Bool) and converts it to an
-      // uncurried, boxed version (Boxed, Boxed, Boxed) -> Bool.
+    // The lift function takes a curried function (a -> b -> c -> Bool) and converts it to an
+    // uncurried, boxed version (Boxed, Boxed, Boxed) -> Bool.
 
-      val lift2bType = Type.mkPureArrow(
-        Type.mkPureCurriedArrow(params.map(_._2), Type.Bool),
-        Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
-      )
-      val resultType = Type.mkPureUncurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+    val lift2bType = Type.mkPureArrow(
+      Type.mkPureCurriedArrow(params.map(_._2), Type.Bool),
+      Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+    )
+    val resultType = Type.mkPureUncurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
 
-      val defn = Expression.Def(sym, lift2bType, loc)
-      val args = List(exp0)
-      val tpe = Type.mkPureArrow(exp0.tpe, resultType)
-      val eff = Type.Pure
-      Expression.Apply(defn, args, tpe, eff, loc)
+    val defn = Expression.Def(sym, lift2bType, loc)
+    val args = List(exp0)
+    val tpe = Type.mkPureArrow(exp0.tpe, resultType)
+    val eff = Type.Pure
+    Expression.Apply(defn, args, tpe, eff, loc)
 
   }
 
