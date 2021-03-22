@@ -219,7 +219,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       Validation.traverseX(checks) {
         case inst :: unchecked =>
           // check that the instance is on a valid type, suppressing other errors if not
-          checkSimple(inst) map {
+          checkSimple(inst) flatMap {
             _ =>
               Validation.sequenceX(List(
                 Validation.traverse(unchecked)(checkOverlap(_, inst)),
