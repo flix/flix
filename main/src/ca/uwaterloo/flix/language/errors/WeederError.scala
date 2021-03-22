@@ -445,4 +445,23 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate an illegal type constraint parameter.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalTypeConstraintParameter(loc: SourceLocation) extends WeederError {
+    def summary: String = s"Illegal type constraint parameter."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal type constraint parameter." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal type constraint parameter") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Type constraint parameters can only be type variables."
+    }
+  }
+
 }

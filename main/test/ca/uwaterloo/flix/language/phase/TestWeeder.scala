@@ -297,4 +297,22 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalPrivateDeclaration](result)
   }
+
+  test("IllegalTypeConstraintParameter.01") {
+    val input =
+      """
+        |class C[a] with D[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
+  }
+
+  test("IllegalTypeConstraintParameter.02") {
+    val input =
+      """
+        |instance C[a] with D[Some[a]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
+  }
 }

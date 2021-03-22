@@ -2087,7 +2087,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
       visitType(tparam0) match {
         case tparam: WeededAst.Type.Var => WeededAst.TypeConstraint(clazz, tparam).toSuccess
-        case _ => ??? // MATT error: has to be tvar
+        case _ => WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
       }
   }
 
