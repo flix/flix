@@ -118,7 +118,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given definition `defn0`.
     */
-  private def visitDef(defn0: Def)(implicit root: Root, flix: Flix): Def =  defn0 match {
+  private def visitDef(defn0: Def)(implicit root: Root, flix: Flix): Def = defn0 match {
     case Def(sym, spec0, impl0) =>
       val spec = visitSpec(spec0)
       val impl = visitImpl(impl0)
@@ -128,7 +128,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given `spec0`.
     */
-  private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec= spec0 match {
+  private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec = spec0 match {
     case Spec(doc, ann, mod, tparams, fparams, declaredScheme, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
@@ -870,11 +870,18 @@ object Lowering extends Phase[Root, Root] {
 
   // TODO: Update doc
   /**
-    * Wraps the given expression `exp` with the given constraint parameters `cparams` in a lambda expression.
+    * Rewrites the given expression `exp0` to an expression of the form `((x', y', z') -> exp0[x -> x', y -> y', z -> z'])(x, y, z)`.
+    *
+    * That is the expression is wrapped in a lambda with new fresh variables and then it is applied.
     */
-  private def newLambdaWrapper(cparams: List[ConstraintParam], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkLambdaApply(cparams: List[ConstraintParam], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     // TODO: Make this work.
     // TODO: What to do about lambdas with only one argument?
+
+    // TODO: Compute the free variables inside `exp`.
+    // TODO: Rebind these variables to other variables.
+    // TODO: Introduce lambda.
+    // TODO: Invoke liftX or liftXb on this lambda.
 
     // Compute a mapping from the constraint parameters to fresh variable symbols.
     val freshVars = cparams.map(cparam => cparam -> Symbol.freshVarSym(cparam.sym))
@@ -890,7 +897,7 @@ object Lowering extends Phase[Root, Root] {
     }
 
     // Construct the body of the lambda.
-    val lambdaBody = substitute(visitExp(exp), freshSubst.toMap)
+    val lambdaBody = substExp(visitExp(exp), freshSubst.toMap)
 
     // Construct the function type.
     val lambdaType = Type.mkPureUncurriedArrow(fparams.map(_.tpe), exp.tpe)
@@ -900,13 +907,6 @@ object Lowering extends Phase[Root, Root] {
     // TODO: Curry the lambdas (??)
     // Expression.Lambda(fparams, lambdaBody, lambdaType, loc)
   }
-
-
-  /**
-    * Returns a copy of the given expression `exp0` where every variable symbol has been replaced according to the given substitution `m`.
-    */
-  // TODO
-  def substitute(exp0: Expression, m: Map[Symbol.VarSym, Symbol.VarSym]): Expression = ??? // TODO
 
   /**
     * Returns the given expression `exp` in a box.
@@ -940,6 +940,183 @@ object Lowering extends Phase[Root, Root] {
     val tpe = Type.mkTuple(exps.map(_.tpe))
     val eff = Type.Pure
     Expression.Tuple(exps, tpe, eff, loc)
+  }
+
+
+  // TODO: Move into TypedAstOps
+
+  /**
+    * Returns the free variables in the given expression `exp0`.
+    */
+  private def freeVars(exp0: Expression): Set[Symbol.VarSym] = exp0 match {
+    case Expression.Unit(_) => Set.empty
+
+    case Expression.Null(_, _) => Set.empty
+
+    case Expression.True(_) => Set.empty
+
+    case Expression.False(_) => Set.empty
+
+    case Expression.Char(_, _) => Set.empty
+
+    case Expression.Float32(_, _) => Set.empty
+
+    case Expression.Float64(_, _) => Set.empty
+
+    case Expression.Int8(_, _) => Set.empty
+
+    case Expression.Int16(_, _) => Set.empty
+
+    case Expression.Int32(_, _) => Set.empty
+
+    case Expression.Int64(_, _) => Set.empty
+
+    case Expression.BigInt(_, _) => Set.empty
+
+    case Expression.Str(_, _) => Set.empty
+
+    case Expression.Default(_, _) => Set.empty
+
+    case Expression.Wild(_, _) => Set.empty
+
+    case Expression.Var(sym, _, _) => Set(sym)
+
+    case Expression.Def(_, _, _) => Set.empty
+
+    case Expression.Sig(_, _, _) => Set.empty
+
+    case Expression.Hole(_, _, _, _) => Set.empty
+
+    case Expression.Lambda(fparam, exp, tpe, loc) => ??? // TODO
+
+    case Expression.Apply(exp, exps, _, _, _) =>
+      exps.foldLeft(freeVars(exp)) {
+        case (acc, exp) => freeVars(exp) ++ acc
+      }
+
+    case Expression.Unary(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
+    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLength(base, eff, loc) => ??? // TODO
+    case Expression.ArrayStore(base, index, elm, loc) => ??? // TODO
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.Existential(fparam, exp, loc) => ??? // TODO
+    case Expression.Universal(fparam, exp, loc) => ??? // TODO
+    case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ??? // TODO
+    case Expression.GetField(field, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Lazy(exp, tpe, loc) => ??? // TODO
+    case Expression.Force(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ??? // TODO
+    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+  }
+
+  // TODO: Move into TypedAstOps
+  private def substExp(exp0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
+    case Expression.Unit(loc) => ??? // TODO
+    case Expression.Null(tpe, loc) => ??? // TODO
+    case Expression.True(loc) => ??? // TODO
+    case Expression.False(loc) => ??? // TODO
+    case Expression.Char(lit, loc) => ??? // TODO
+    case Expression.Float32(lit, loc) => ??? // TODO
+    case Expression.Float64(lit, loc) => ??? // TODO
+    case Expression.Int8(lit, loc) => ??? // TODO
+    case Expression.Int16(lit, loc) => ??? // TODO
+    case Expression.Int32(lit, loc) => ??? // TODO
+    case Expression.Int64(lit, loc) => ??? // TODO
+    case Expression.BigInt(lit, loc) => ??? // TODO
+    case Expression.Str(lit, loc) => ??? // TODO
+    case Expression.Default(tpe, loc) => ??? // TODO
+    case Expression.Wild(tpe, loc) => ??? // TODO
+    case Expression.Var(sym, tpe, loc) => ??? // TODO
+    case Expression.Def(sym, tpe, loc) => ??? // TODO
+    case Expression.Sig(sym, tpe, loc) => ??? // TODO
+    case Expression.Hole(sym, tpe, eff, loc) => ??? // TODO
+    case Expression.Lambda(fparam, exp, tpe, loc) => ??? // TODO
+    case Expression.Apply(exp, exps, tpe, eff, loc) => ??? // TODO
+    case Expression.Unary(sop, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
+    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLength(base, eff, loc) => ??? // TODO
+    case Expression.ArrayStore(base, index, elm, loc) => ??? // TODO
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.Existential(fparam, exp, loc) => ??? // TODO
+    case Expression.Universal(fparam, exp, loc) => ??? // TODO
+    case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ??? // TODO
+    case Expression.GetField(field, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Lazy(exp, tpe, loc) => ??? // TODO
+    case Expression.Force(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ??? // TODO
+    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
   }
 
 }
