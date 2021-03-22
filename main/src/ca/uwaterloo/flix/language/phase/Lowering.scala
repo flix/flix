@@ -686,45 +686,7 @@ object Lowering extends Phase[Root, Root] {
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case Body.Guard(exp, loc) =>
-      // Construct the location expression.
-      val locExp = mkSourceLocation(loc)
-
-      // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
-      val fvs = freeVars(exp).toList
-
-      // Check that we have <= 5 free variables.
-      if (fvs.length > 5) {
-        throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
-      }
-
-      // Introduce a fresh variable for each free variable.
-      val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-        case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
-      }
-
-      // Substitute every symbol in `exp` for its fresh equivalent.
-      val freshExp = substExp(exp, freshVars)
-
-      // Curry `freshExp` in a lambda expression for each free variable.
-      val lambdaExp = fvs.foldLeft(freshExp) {
-        case (acc, (oldSym, tpe)) =>
-          val freshSym = freshVars(oldSym)
-          val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
-          val lambdaType = Type.mkPureArrow(tpe, acc.tpe)
-          Expression.Lambda(fparam, acc, lambdaType, loc)
-      }
-
-      // Lift the lambda expression to operate on boxed values.
-      val liftedExp = liftX(lambdaExp, fvs, Type.Bool)
-
-      // Compute the number of free variables.
-      val arity = fvs.length
-
-      // Construct the `Fixpoint.Ast/BodyPredicate` value.
-      val varExps = fvs.map(kv => mkVarSym(kv._1))
-      val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
-      mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
+    case Body.Guard(exp, loc) => mkGuardOrAppTerm(isGuard = true, exp, loc)
   }
 
   /**
@@ -919,6 +881,55 @@ object Lowering extends Phase[Root, Root] {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed)
     Expression.Sig(Defs.Box, tpe, loc)
+  }
+
+  /**
+    * Returns a `Fixpoint/Ast.BodyPredicate.GuardX` or `Fixpoint/Ast.Term.AppX`.
+    */
+  // TODO: Deal with the case where `exp` has no free variables.
+  private def mkGuardOrAppTerm(isGuard: Boolean, exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    // Construct the location expression.
+    val locExp = mkSourceLocation(loc)
+
+    // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
+    val fvs = freeVars(exp).toList
+
+    // Check that we have <= 5 free variables.
+    if (fvs.length > 5) {
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
+    }
+
+    // Introduce a fresh variable for each free variable.
+    val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+      case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+    }
+
+    // Substitute every symbol in `exp` for its fresh equivalent.
+    val freshExp = substExp(exp, freshVars)
+
+    // Curry `freshExp` in a lambda expression for each free variable.
+    val lambdaExp = fvs.foldLeft(freshExp) {
+      case (acc, (oldSym, tpe)) =>
+        val freshSym = freshVars(oldSym)
+        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
+        val lambdaType = Type.mkPureArrow(tpe, acc.tpe)
+        Expression.Lambda(fparam, acc, lambdaType, loc)
+    }
+
+    // Lift the lambda expression to operate on boxed values.
+    val liftedExp = liftX(lambdaExp, fvs, Type.Bool)
+
+    // Compute the number of free variables.
+    val arity = fvs.length
+
+    // Construct the `Fixpoint.Ast/BodyPredicate` value.
+    val varExps = fvs.map(kv => mkVarSym(kv._1))
+    val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+
+    if (isGuard)
+      mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
+    else
+      mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
   }
 
   /**
