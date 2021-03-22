@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -693,8 +693,10 @@ object Lowering extends Phase[Root, Root] {
       // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
       val fvs = freeVars(exp).toList
 
-      // TODO: Check N <= 5.
-      // TODO: How to support N=0?
+      // Check that we have <= 5 free variables.
+      if (fvs.length > 5) {
+        throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
+      }
 
       // Introduce a fresh variable for each free variable.
       val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
@@ -704,7 +706,7 @@ object Lowering extends Phase[Root, Root] {
       // Substitute every symbol in `exp` for its fresh equivalent.
       val freshExp = substExp(exp, freshVars)
 
-      // Wrap `exp1` in a curried lambda.
+      // Curry `freshExp` in a lambda expression for each free variable.
       val lambdaExp = fvs.foldLeft(freshExp) {
         case (acc, (oldSym, tpe)) =>
           val freshSym = freshVars(oldSym)
@@ -713,13 +715,13 @@ object Lowering extends Phase[Root, Root] {
           Expression.Lambda(fparam, acc, lambdaType, loc)
       }
 
-      // Compute the number of free variables.
-      val arity = fvs.length
-
       // Lift the lambda expression to operate on boxed values.
       val liftedExp = liftXb(lambdaExp, fvs)
 
-      // Construct the Guard Predicate.
+      // Compute the number of free variables.
+      val arity = fvs.length
+
+      // Construct the `Fixpoint.Ast/BodyPredicate` value.
       val varExps = fvs.map(kv => mkVarSym(kv._1))
       val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
@@ -923,35 +925,31 @@ object Lowering extends Phase[Root, Root] {
     * Lifts the given Boolean-valued lambda expression `exp0` with the given list of (param, type) pairs.
     */
   private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
-    if (params.size > 5) {
-      throw InternalCompilerException("Guards are currently limited to 5 free variables.")
-    }
-
-    // TODO: Doc and refactor.
-
-    val loc = exp0.loc
-
+    // Compute the liftXb symbol.
     val n = params.length
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${n}b")
 
-    val sym: Symbol.DefnSym = Symbol.mkDefnSym(s"Boxable.lift${n}b")
+    //
+    // The liftXb functions is of the form: a -> b -> c -> Bool and returns
+    // a function of the form (Boxed, Boxed, Boxed) -> Bool. That is, the function
+    // accepts a *curried* function and returns an *uncurried* function.
+    //
 
-    // Note: The argument is *curried* but the result is *NOT* curried.
+    // The type of the function argument, i.e. a -> b -> c -> Bool.
+    val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
 
-    // The lift function takes a curried function (a -> b -> c -> Bool) and converts it to an
-    // uncurried, boxed version (Boxed, Boxed, Boxed) -> Bool.
+    // The type of the returned function, i.e. (Boxed, Boxed, Boxed) -> Bool.
+    val returnType = Type.mkPureUncurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
 
-    val lift2bType = Type.mkPureArrow(
-      Type.mkPureCurriedArrow(params.map(_._2), Type.Bool),
-      Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
-    )
-    val resultType = Type.mkPureUncurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+    // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> ((Boxed, Boxed, Boxed) -> Bool).
+    val liftType = Type.mkPureArrow(argType, returnType)
 
-    val defn = Expression.Def(sym, lift2bType, loc)
+    // Construct a call to the liftXb function.
+    val defn = Expression.Def(sym, liftType, exp0.loc)
     val args = List(exp0)
-    val tpe = Type.mkPureArrow(exp0.tpe, resultType)
+    val tpe = returnType
     val eff = Type.Pure
-    Expression.Apply(defn, args, tpe, eff, loc)
-
+    Expression.Apply(defn, args, tpe, eff, exp0.loc)
   }
 
   /**
