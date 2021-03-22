@@ -686,7 +686,7 @@ object Lowering extends Phase[Root, Root] {
       val polarityExp = mkPolarity(polarity, loc)
       val termsExp = mkArray(terms.map(visitBodyTerm), Types.BodyTerm, loc)
       val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(predSymExp :: polarityExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case Body.Guard(exp, loc) =>
@@ -791,19 +791,19 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
     */
   private def mkHeadTermVar(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
-    val loc = sym.loc
     val symExp = mkVarSym(sym)
     val locExp = mkSourceLocation(sym.loc)
-    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(Enums.HeadTerm, "Var", innerExp, Types.HeadTerm, loc)
+    val innerExp = mkTuple(symExp :: locExp :: Nil, sym.loc)
+    mkTag(Enums.HeadTerm, "Var", innerExp, Types.HeadTerm, sym.loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
   private def mkHeadTermLit(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
-    val loc = exp.loc
-    mkTag(Enums.HeadTerm, "Lit", exp, Types.HeadTerm, loc)
+    val locExp = mkSourceLocation(exp.loc)
+    val innerExp = mkTuple(exp :: locExp :: Nil, exp.loc)
+    mkTag(Enums.HeadTerm, "Lit", innerExp, Types.HeadTerm, exp.loc)
   }
 
   /**
@@ -829,7 +829,9 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.BodyTerm.Lit` from the given expression `exp0`.
     */
   private def mkBodyTermLit(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
-    mkTag(Enums.BodyTerm, "Lit", exp0, Types.BodyTerm, exp0.loc)
+    val locExp = mkSourceLocation(exp0.loc)
+    val innerExp = mkTuple(exp0 :: locExp :: Nil, exp0.loc)
+    mkTag(Enums.BodyTerm, "Lit", innerExp, Types.BodyTerm, exp0.loc)
   }
 
   /**
