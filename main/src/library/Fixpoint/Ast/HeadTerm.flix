@@ -18,9 +18,9 @@ namespace Fixpoint/Ast {
         case Var(VarSym, SourceLocation)
         case Lit(v, SourceLocation)
         case App1(v -> v, VarSym, SourceLocation)
-        case App2(v -> v -> v, VarSym, VarSym, SourceLocation)
-        case App3(v -> v -> v -> v, VarSym, VarSym, VarSym, SourceLocation)
-        case App4(v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, SourceLocation)
-        case App5(v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App2((v, v) -> v, VarSym, VarSym, SourceLocation)
+        case App3((v, v, v) -> v, VarSym, VarSym, VarSym, SourceLocation)
+        case App4((v, v, v, v) -> v, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App5((v, v, v, v, v) -> v, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
     }
 }
