@@ -48,12 +48,6 @@ object Lowering extends Phase[Root, Root] {
     lazy val Lift4: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4")
     lazy val Lift5: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5")
 
-    lazy val Lift1b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1b")
-    lazy val Lift2b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2b")
-    lazy val Lift3b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift3b")
-    lazy val Lift4b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4b")
-    lazy val Lift5b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5b")
-
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -699,6 +693,9 @@ object Lowering extends Phase[Root, Root] {
       // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
       val fvs = freeVars(exp).toList
 
+      // TODO: Check N <= 5.
+      // TODO: How to support N=0?
+
       // Introduce a fresh variable for each free variable.
       val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
         case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
@@ -926,26 +923,34 @@ object Lowering extends Phase[Root, Root] {
     * Lifts the given Boolean-valued lambda expression `exp0` with the given list of (param, type) pairs.
     */
   private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
+
+
+    // TODO: Allow for N <= 5.
+
+
     val loc = exp0.loc
 
     val n = params.length
 
-    if (n == 2) {
+    val sym: Symbol.DefnSym = Symbol.mkDefnSym(s"Boxable.lift${n}b")
+
       // Note: The argument is *curried* but the result is *NOT* curried.
+
+      // The lift function takes a curried function (a -> b -> c -> Bool) and converts it to an
+      // uncurried, boxed version (Boxed, Boxed, Boxed) -> Bool.
+
       val lift2bType = Type.mkPureArrow(
         Type.mkPureCurriedArrow(params.map(_._2), Type.Bool),
-        Type.mkPureCurriedArrow(List(Types.Boxed, Types.Boxed), Type.Bool)
+        Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
       )
-      val resultType = Type.mkPureUncurriedArrow(List(Types.Boxed, Types.Boxed), Type.Bool)
+      val resultType = Type.mkPureUncurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
 
-      val defn = Expression.Def(Defs.Lift2b, lift2bType, loc)
+      val defn = Expression.Def(sym, lift2bType, loc)
       val args = List(exp0)
       val tpe = Type.mkPureArrow(exp0.tpe, resultType)
       val eff = Type.Pure
       Expression.Apply(defn, args, tpe, eff, loc)
-    } else {
-      ???
-    }
+
   }
 
   /**
