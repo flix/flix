@@ -59,7 +59,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     val definitionsVal = root.defsAndSigs.flatMap {
       case (ns0, defsAndSigs) => defsAndSigs.collect {
-        case (_, defn: NamedAst.Def) => resolve(defn, ns0, root) map {
+        case (_, defn: NamedAst.Def) => resolve(defn, None, ns0, root) map {
           case d => d.sym -> d
         }
         // Skip Sigs as they are handled under classes.
@@ -180,11 +180,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(c0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
       for {
-        tparams <- resolveTypeParams(List(tparam0), ns0, root)
+        tparams <- resolveTypeParams(List(tparam0), Some(sym), ns0, root)
         innerNs = Name.extendNName(ns0, sym.name)
         sigsList <- traverse(signatures)(resolve(_, innerNs, root))
         superClasses <- traverse(superClasses0)(lookupClassForImplementation(_, ns0, root))
-        laws <- traverse(laws0)(resolve(_, innerNs, root))
+        laws <- traverse(laws0)(resolve(_, Some(sym), innerNs, root))
         sigs = sigsList.map(sig => (sig.sym, sig)).toMap
       } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses.map(_.sym), sigs, laws, loc)
   }
@@ -196,9 +196,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
       for {
         clazz <- lookupClassForImplementation(clazz0, ns0, root)
+        innerNs = getNS(clazz.sym.namespace :+ clazz.sym.name)
         tpe <- lookupType(tpe0, ns0, root)
-        tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, ns0, root))
-        defs <- traverse(defs0)(resolve(_, ns0, root))
+        tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, Some(clazz.sym), ns0, root))
+        defs <- traverse(defs0)(resolve(_, Some(clazz.sym), innerNs, root))
       } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, ns0, loc)
   }
 
@@ -212,34 +213,34 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         fparamType <- lookupType(fparam.tpe, ns0, root)
         exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), ns0, root))
-        spec <- resolve(spec0, ns0, root)
+        spec <- resolve(spec0, Some(sym.clazz), ns0, root)
       } yield ResolvedAst.Sig(sym, spec, exp.headOption)
   }
 
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  def resolve(d0: NamedAst.Def, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
+  def resolve(d0: NamedAst.Def, classContext: Option[Symbol.ClassSym], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
     case NamedAst.Def(sym, spec0, exp0) =>
       val fparam = spec0.fparams.head
 
       for {
         fparamType <- lookupType(fparam.tpe, ns0, root)
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, root)
-        spec <- resolve(spec0, ns0, root)
+        spec <- resolve(spec0, classContext, ns0, root)
       } yield ResolvedAst.Def(sym, spec, exp)
   }
 
   /**
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
-  def resolve(s0: NamedAst.Spec, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
+  def resolve(s0: NamedAst.Spec, classContext: Option[Symbol.ClassSym], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
     case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
 
       val fparamsVal = resolveFormalParams(fparams0, ns0, root)
-      val tparamsVal = resolveTypeParams(tparams0, ns0, root)
+      val tparamsVal = resolveTypeParams(tparams0, classContext, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, ns0, root))
-      val schemeVal = resolveScheme(sc0, ns0, root)
+      val schemeVal = resolveScheme(sc0, classContext, ns0, root)
       val effVal = lookupType(eff0, ns0, root)
 
       mapN(fparamsVal, tparamsVal, annVal, schemeVal, effVal) {
@@ -252,7 +253,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
-    traverse(e0.tparams)(p => Params.resolve(p, ns0, root)).flatMap {
+    traverse(e0.tparams)(p => Params.resolve(p, None, ns0, root)).flatMap {
       tparams =>
         val tconstrs = tparams.flatMap(tparam => tparam.classes.map(clazz => Ast.TypeConstraint(clazz, tparam.tpe)))
         val casesVal = traverse(e0.cases) {
@@ -1038,9 +1039,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = {
+    def resolve(tparam0: NamedAst.TypeParam, classContext: Option[Symbol.ClassSym], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = {
       for {
-        classes <- sequence(tparam0.classes.map(lookupClass(_, ns0, root)))
+        classes <- sequence(tparam0.classes.map(lookupClass(_, classContext, ns0, root)))
         classSyms = classes.map(_.sym)
       } yield ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, classSyms, tparam0.loc)
     }
@@ -1057,25 +1058,25 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given type parameters `tparams0`.
     */
-  def resolveTypeParams(tparams0: List[NamedAst.TypeParam], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.TypeParam], ResolutionError] =
-    traverse(tparams0)(tparam => Params.resolve(tparam, ns0, root))
+  def resolveTypeParams(tparams0: List[NamedAst.TypeParam], classContext: Option[Symbol.ClassSym], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.TypeParam], ResolutionError] =
+    traverse(tparams0)(tparam => Params.resolve(tparam, classContext, ns0, root))
 
   /**
     * Performs name resolution on the given scheme `sc0`.
     */
-  def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, root: NamedAst.Root): Validation[Scheme, ResolutionError] = {
+  def resolveScheme(sc0: NamedAst.Scheme, classContext: Option[Symbol.ClassSym], ns0: Name.NName, root: NamedAst.Root): Validation[Scheme, ResolutionError] = {
     for {
       base <- lookupType(sc0.base, ns0, root)
-      tconstrs <- sequence(sc0.tconstrs.map(resolveTypeConstraint(_, ns0, root)))
+      tconstrs <- sequence(sc0.tconstrs.map(resolveTypeConstraint(_, classContext, ns0, root)))
     } yield Scheme(sc0.quantifiers, tconstrs, base)
   }
 
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = {
+  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, classContext: Option[Symbol.ClassSym], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = {
     for {
-      clazz <- lookupClass(tconstr0.clazz, ns0, root)
+      clazz <- lookupClass(tconstr0.clazz, classContext, ns0, root)
       tpe <- lookupType(tconstr0.arg, ns0, root)
     } yield Ast.TypeConstraint(clazz.sym, tpe)
   }
@@ -1099,7 +1100,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
+  def lookupClass(qname: Name.QName, classContext: Option[Symbol.ClassSym], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
+    // If we're inside the class or instance that we're trying to look up, just return it.
+    if (qname.isUnqualified && classContext.exists(sym => sym.name == qname.ident.name)) {
+      val ns = getNS(classContext.get.namespace)
+      return root.classes(ns)(classContext.get.name).toSuccess
+    }
+
     val classOpt = tryLookupClass(qname, ns0, root)
     classOpt match {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure

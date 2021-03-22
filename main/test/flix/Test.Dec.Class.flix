@@ -156,15 +156,21 @@ namespace Test/Dec/Class {
         lawless class C[a] {
             pub def f(): a
 
-            pub def g(): a = Test/Dec/Class/Test13/C.f()
+            pub def g(): a = f()
 
-            pub def h(): a = Test/Dec/Class/Test13/C.g()
+            pub def h(): a = g()
         }
 
         instance C[Int] {
             pub def f(): Int = 0
 
             override pub def h(): Int = 1
+        }
+
+        instance C[Bool] {
+            pub def f(): Bool = false
+
+            override pub def h(): Bool = f()
         }
 
         @test
