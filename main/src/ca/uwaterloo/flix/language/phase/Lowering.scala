@@ -686,7 +686,10 @@ object Lowering extends Phase[Root, Root] {
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case Body.Guard(exp, loc) => mkGuardOrAppTerm(isGuard = true, exp, loc)
+    case Body.Guard(exp, loc) =>
+      // TODO: need to only consider variables that are not bound by the local scope.
+      // See e.g. testGuardQuantAndCapturedVar02
+      mkGuardOrAppTerm(isGuard = true, exp, loc)
   }
 
   /**
