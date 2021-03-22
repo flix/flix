@@ -42,8 +42,12 @@ namespace Boxable {
     ///
     /// Lifts the given function `f` to operate on boxed values.
     ///
-    pub def lift2[a: Boxable, b: Boxable, t: Boxable](f: (a, b) -> t): (Boxed, Boxed) -> Boxed = // TODO: Curry
+    /// Note: Accepts a curried function, but returns a non-curried function.
+    ///
+    pub def lift2[a: Boxable, b: Boxable, t: Boxable](f: a -> b -> t): (Boxed, Boxed) -> Boxed =
         (a: Boxed, b: Boxed) -> box(f(unbox(a), unbox(b)))
+
+// TODO: Add for N up to 5
 
     ///
     /// Lifts the given Boolean-valued function `f` to operate on boxed values.
@@ -54,10 +58,12 @@ namespace Boxable {
     ///
     /// Lifts the given Boolean-valued function `f` to operate on boxed values.
     ///
-    pub def lift2b[a: Boxable, b: Boxable](f: a -> b -> Bool): Boxed -> Boxed -> Bool =
-        (a: Boxed) -> (b: Boxed) -> f(unbox(a), unbox(b))
+    /// Note: Accepts a curried function, but returns a non-curried function.
+    ///
+    pub def lift2b[a: Boxable, b: Boxable](f: a -> b -> Bool): (Boxed, Boxed) -> Bool =
+        (a: Boxed, b: Boxed) -> f(unbox(a), unbox(b))
 
-    // TODO: Add lifting functions up to arity 5 or 10
+    // TODO: Add for N up to 5
 
 }
 
