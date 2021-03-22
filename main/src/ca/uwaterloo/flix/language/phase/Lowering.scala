@@ -1049,7 +1049,8 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Hole(_, _, _, _) => Map.empty
 
-    case Expression.Lambda(fparam, exp, tpe, loc) => ??? // TODO
+    case Expression.Lambda(fparam, exp, _, _) =>
+      freeVars(exp) - fparam.sym
 
     case Expression.Apply(exp, exps, _, _, _) =>
       exps.foldLeft(freeVars(exp)) {
@@ -1067,8 +1068,15 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
     case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Tag(_, _, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Tuple(elms, _, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type] ) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
     case Expression.RecordEmpty(tpe, loc) => ??? // TODO
     case Expression.RecordSelect(exp, field, tpe, eff, loc) => ??? // TODO
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
