@@ -922,28 +922,26 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Lifts the given Boolean-valued lambda expression `exp0` with the given list of (param, type) pairs.
+    * Lifts the given lambda expression `exp0` with the given list of parameters `params`.
     */
   private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
     // Compute the liftXb symbol.
     val n = params.length
     val sym = Symbol.mkDefnSym(s"Boxable.lift${n}b")
 
-    // TODO: This is not right. It seems that the functions *are curried* in the result...
-
     //
-    // The liftXb functions is of the form: a -> b -> c -> Bool and returns
-    // a function of the form (Boxed, Boxed, Boxed) -> Bool. That is, the function
-    // accepts a *curried* function and returns an *uncurried* function.
+    // The liftX functions are of the form: a -> b -> c -> Bool and returns
+    // a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
+    // That is, the function accepts a *curried* function and returns a *curried* function.
     //
 
     // The type of the function argument, i.e. a -> b -> c -> Bool.
     val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
 
-    // The type of the returned function, i.e. (Boxed, Boxed, Boxed) -> Bool.
+    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Bool.
     val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
 
-    // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> ((Boxed, Boxed, Boxed) -> Bool).
+    // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
     val liftType = Type.mkPureArrow(argType, returnType)
 
     // Construct a call to the liftXb function.
