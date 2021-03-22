@@ -16,6 +16,7 @@
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Polarity, Array[BodyTerm[v]], SourceLocation)
+        case Guard0(Unit -> Bool, VarSym, SourceLocation)
         case Guard1(v -> Bool, VarSym, SourceLocation)
         case Guard2((v, v) -> Bool, VarSym, VarSym, SourceLocation)
         case Guard3((v, v, v) -> Bool, VarSym, VarSym, VarSym, SourceLocation)
