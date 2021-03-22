@@ -926,11 +926,11 @@ object Lowering extends Phase[Root, Root] {
     */
   private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
     // Compute the liftXb symbol.
-    val n = params.length
-    val sym = Symbol.mkDefnSym(s"Boxable.lift${n}b")
+    val arity = params.length
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${arity}b")
 
     //
-    // The liftX functions are of the form: a -> b -> c -> Bool and returns
+    // The liftXb functions are of the form: a -> b -> c -> Bool and returns
     // a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
     // That is, the function accepts a *curried* function and returns a *curried* function.
     //
