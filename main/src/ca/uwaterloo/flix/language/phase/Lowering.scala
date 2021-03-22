@@ -899,6 +899,19 @@ object Lowering extends Phase[Root, Root] {
       throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
     }
 
+    // Special case: No free variables.
+    if (fvs.isEmpty) {
+      // Construct a lambda that takes the unit argument.
+      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
+      val innerExp = Expression.Lambda(fparam, exp, tpe, loc)
+      // TODO: Refactor
+      return if (isGuard)
+        mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
+      else
+        mkTag(Enums.HeadTerm, s"App0", innerExp, Types.HeadTerm, loc)
+    }
+
     // Introduce a fresh variable for each free variable.
     val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
       case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
