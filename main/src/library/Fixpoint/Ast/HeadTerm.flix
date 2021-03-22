@@ -17,7 +17,7 @@ namespace Fixpoint/Ast {
     pub enum HeadTerm[v] {
         case Var(VarSym, SourceLocation)
         case Lit(v, SourceLocation)
-        case App0(Unit -> v, VarSym, SourceLocation)
+        case App0(Unit -> v, SourceLocation)
         case App1(v -> v, VarSym, SourceLocation)
         case App2((v, v) -> v, VarSym, VarSym, SourceLocation)
         case App3((v, v, v) -> v, VarSym, VarSym, VarSym, SourceLocation)
