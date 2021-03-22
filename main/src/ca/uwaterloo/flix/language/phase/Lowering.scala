@@ -929,6 +929,8 @@ object Lowering extends Phase[Root, Root] {
     val n = params.length
     val sym = Symbol.mkDefnSym(s"Boxable.lift${n}b")
 
+    // TODO: This is not right. It seems that the functions *are curried* in the result...
+
     //
     // The liftXb functions is of the form: a -> b -> c -> Bool and returns
     // a function of the form (Boxed, Boxed, Boxed) -> Bool. That is, the function
@@ -939,7 +941,7 @@ object Lowering extends Phase[Root, Root] {
     val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
 
     // The type of the returned function, i.e. (Boxed, Boxed, Boxed) -> Bool.
-    val returnType = Type.mkPureUncurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
 
     // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> ((Boxed, Boxed, Boxed) -> Bool).
     val liftType = Type.mkPureArrow(argType, returnType)
