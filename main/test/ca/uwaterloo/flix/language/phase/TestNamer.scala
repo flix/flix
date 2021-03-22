@@ -924,19 +924,19 @@ class TestNamer extends FunSuite with TestUtils {
   }
 
   test("UndefinedTypeVar.Instance.01") {
-    val input = "instance C[a] with [b : C]"
+    val input = "instance C[a] with C[b]"
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.02") {
-    val input = "instance C[(a, b)] with [c : D]"
+    val input = "instance C[(a, b)] with D[c]"
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.03") {
-    val input = "instance C[(a, b)] with [a : D, b : D, c : D]"
+    val input = "instance C[(a, b)] with D[a], D[b], D[c]"
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
