@@ -52,18 +52,40 @@ namespace Boxable {
     ///
     /// Lifts the given Boolean-valued function `f` to operate on boxed values.
     ///
-    pub def lift1b[a: Boxable](f: a -> Bool): Boxed -> Bool =
-        (a: Boxed) -> f(unbox(a))
+    pub def lift1b[t1: Boxable](f: t1 -> Bool): (Boxed) -> Bool =
+        (b1: Boxed) -> f(unbox(b1))
 
     ///
     /// Lifts the given Boolean-valued function `f` to operate on boxed values.
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    pub def lift2b[a: Boxable, b: Boxable](f: a -> b -> Bool): (Boxed, Boxed) -> Bool =
-        (a: Boxed, b: Boxed) -> f(unbox(a), unbox(b))
+    pub def lift2b[t1: Boxable, t2: Boxable](f: t1 -> t2 -> Bool): (Boxed, Boxed) -> Bool =
+        (b1: Boxed, b2: Boxed) -> f(unbox(b1), unbox(b2))
 
-    // TODO: Add for N up to 5
+    ///
+    /// Lifts the given Boolean-valued function `f` to operate on boxed values.
+    ///
+    /// Note: Accepts a curried function, but returns a non-curried function.
+    ///
+    pub def lift3b[t1: Boxable, t2: Boxable, t3: Boxable](f: t1 -> t2 -> t3 -> Bool): (Boxed, Boxed, Boxed) -> Bool =
+        (b1: Boxed, b2: Boxed, b3: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3))
+
+    ///
+    /// Lifts the given Boolean-valued function `f` to operate on boxed values.
+    ///
+    /// Note: Accepts a curried function, but returns a non-curried function.
+    ///
+    pub def lift4b[t1: Boxable, t2: Boxable, t3: Boxable, t4: Boxable](f: t1 -> t2 -> t3 -> t4 -> Bool): (Boxed, Boxed, Boxed, Boxed) -> Bool =
+        (b1: Boxed, b2: Boxed, b3: Boxed, b4: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3), unbox(b4))
+
+    ///
+    /// Lifts the given Boolean-valued function `f` to operate on boxed values.
+    ///
+    /// Note: Accepts a curried function, but returns a non-curried function.
+    ///
+    pub def lift5b[t1: Boxable, t2: Boxable, t3: Boxable, t4: Boxable, t5: Boxable](f: t1 -> t2 -> t3 -> t4 -> t5 -> Bool): (Boxed, Boxed, Boxed, Boxed, Boxed) -> Bool =
+        (b1: Boxed, b2: Boxed, b3: Boxed, b4: Boxed, b5: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3), unbox(b4), unbox(b5))
 
 }
 
