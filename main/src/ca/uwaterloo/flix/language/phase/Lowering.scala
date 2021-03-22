@@ -719,18 +719,13 @@ object Lowering extends Phase[Root, Root] {
       // Compute the number of free variables.
       val arity = fvs.length
 
-      // Construct the Guard body predicate.
-      if (arity == 2) {
-        // Lift the lambda expression to operate on boxed values.
-        val liftedExp = liftXb(lambdaExp, fvs.map(_._2))
+      // Lift the lambda expression to operate on boxed values.
+      val liftedExp = liftXb(lambdaExp, fvs)
 
-        // Construct the Guard Predicate.
-        val varExps = fvs.map(kv => mkVarSym(kv._1))
-        val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
-        mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
-      } else {
-        ???
-      }
+      // Construct the Guard Predicate.
+      val varExps = fvs.map(kv => mkVarSym(kv._1))
+      val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+      mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
   }
 
   /**
@@ -928,19 +923,20 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Lifts the given Boolean-valued lambda expression `exp0` with the given arity `n` to work on boxed values.
+    * Lifts the given Boolean-valued lambda expression `exp0` with the given list of (param, type) pairs.
     */
-  private def liftXb(exp0: Expression, argTypes: List[Type]): Expression = {
+  private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
     val loc = exp0.loc
 
-    val n = argTypes.length
+    val n = params.length
 
     if (n == 2) {
+      // Note: The argument is *curried* but the result is *NOT* curried.
       val lift2bType = Type.mkPureArrow(
-        Type.mkPureCurriedArrow(argTypes, Type.Bool),
+        Type.mkPureCurriedArrow(params.map(_._2), Type.Bool),
         Type.mkPureCurriedArrow(List(Types.Boxed, Types.Boxed), Type.Bool)
       )
-      val resultType = Type.mkPureCurriedArrow(List(Types.Boxed, Types.Boxed), Type.Bool)
+      val resultType = Type.mkPureUncurriedArrow(List(Types.Boxed, Types.Boxed), Type.Bool)
 
       val defn = Expression.Def(Defs.Lift2b, lift2bType, loc)
       val args = List(exp0)
