@@ -1073,7 +1073,7 @@ object Lowering extends Phase[Root, Root] {
       freeVars(exp)
 
     case Expression.Tuple(elms, _, _, _) =>
-      elms.foldLeft(Map.empty[Symbol.VarSym, Type] ) {
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
       }
 
@@ -1118,6 +1118,7 @@ object Lowering extends Phase[Root, Root] {
   }
 
   // TODO: Move into TypedAstOps
+  // TODO: Should this also refresh variables in tree??
   private def substExp(exp0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
@@ -1159,7 +1160,10 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Hole(_, _, _, _) => exp0
 
-    case Expression.Lambda(fparam, exp, tpe, loc) => ??? // TODO
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
+      val p = substFormalParam(fparam, subst)
+      val e = substExp(exp, subst)
+      Expression.Lambda(p, e, tpe, loc)
 
     case Expression.Apply(exp, exps, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1180,8 +1184,15 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
     case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Tag(sym, tag, e, tpe, eff, loc)
+
+    case Expression.Tuple(elms, tpe, eff, loc) =>
+      val es = elms.map(substExp(_, subst))
+      Expression.Tuple(es, tpe, eff, loc)
+
     case Expression.RecordEmpty(tpe, loc) => ??? // TODO
     case Expression.RecordSelect(exp, field, tpe, eff, loc) => ??? // TODO
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
@@ -1220,6 +1231,13 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+  }
+
+  // TODO: DOC
+  private def substFormalParam(fparam0: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam0 match {
+    case FormalParam(sym, mod, tpe, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      FormalParam(s, mod, tpe, loc)
   }
 
 }
