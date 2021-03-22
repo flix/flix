@@ -680,29 +680,44 @@ object Lowering extends Phase[Root, Root] {
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case Body.Guard(exp, loc) =>
-      // Compute the free variables in `exp`.
+      // Construct the location expression.
+      val locExp = mkSourceLocation(loc)
+
+      // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
       val fvs = freeVars(exp).toList
 
       // Introduce a fresh variable for each free variable.
       val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-        case (acc, oldSym) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+        case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
       }
 
       // Substitute every symbol in `exp` for its fresh equivalent.
       val freshExp = substExp(exp, freshVars)
 
       // Wrap `exp1` in a curried lambda.
-      val lambdaExp = freshVars.foldLeft(freshExp) {
-        case (acc, (_, freshSym)) =>
-          val paramType = ???
-          val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, ???, loc)
-          val tpe = ???
-          Expression.Lambda(fparam, acc, tpe, loc)
+      val lambdaExp = fvs.foldLeft(freshExp) {
+        case (acc, (oldSym, tpe)) =>
+          val freshSym = freshVars(oldSym)
+          val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
+          val lambdaType = Type.mkPureArrow(tpe, acc.tpe)
+          Expression.Lambda(fparam, acc, lambdaType, loc)
       }
 
-      // Construct the Guard body predicate.
+      // Compute the number of free variables.
+      val arity = fvs.length
 
-      ??? // TODO: Add support for guards.
+      // Construct the Guard body predicate.
+      if (arity == 2) {
+        // Lift the lambda expression to operate on boxed values.
+        val liftedExp = lambdaExp
+
+        // Construct the Guard Predicate.
+        val varExps = fvs.map(kv => mkVarSym(kv._1))
+        val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+        mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
+      } else {
+        ???
+      }
   }
 
   /**
@@ -930,44 +945,44 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns the free variables in the given expression `exp0`.
     */
-  private def freeVars(exp0: Expression): Set[Symbol.VarSym] = exp0 match {
-    case Expression.Unit(_) => Set.empty
+  private def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
+    case Expression.Unit(_) => Map.empty
 
-    case Expression.Null(_, _) => Set.empty
+    case Expression.Null(_, _) => Map.empty
 
-    case Expression.True(_) => Set.empty
+    case Expression.True(_) => Map.empty
 
-    case Expression.False(_) => Set.empty
+    case Expression.False(_) => Map.empty
 
-    case Expression.Char(_, _) => Set.empty
+    case Expression.Char(_, _) => Map.empty
 
-    case Expression.Float32(_, _) => Set.empty
+    case Expression.Float32(_, _) => Map.empty
 
-    case Expression.Float64(_, _) => Set.empty
+    case Expression.Float64(_, _) => Map.empty
 
-    case Expression.Int8(_, _) => Set.empty
+    case Expression.Int8(_, _) => Map.empty
 
-    case Expression.Int16(_, _) => Set.empty
+    case Expression.Int16(_, _) => Map.empty
 
-    case Expression.Int32(_, _) => Set.empty
+    case Expression.Int32(_, _) => Map.empty
 
-    case Expression.Int64(_, _) => Set.empty
+    case Expression.Int64(_, _) => Map.empty
 
-    case Expression.BigInt(_, _) => Set.empty
+    case Expression.BigInt(_, _) => Map.empty
 
-    case Expression.Str(_, _) => Set.empty
+    case Expression.Str(_, _) => Map.empty
 
-    case Expression.Default(_, _) => Set.empty
+    case Expression.Default(_, _) => Map.empty
 
-    case Expression.Wild(_, _) => Set.empty
+    case Expression.Wild(_, _) => Map.empty
 
-    case Expression.Var(sym, _, _) => Set(sym)
+    case Expression.Var(sym, tpe, _) => Map(sym -> tpe)
 
-    case Expression.Def(_, _, _) => Set.empty
+    case Expression.Def(_, _, _) => Map.empty
 
-    case Expression.Sig(_, _, _) => Set.empty
+    case Expression.Sig(_, _, _) => Map.empty
 
-    case Expression.Hole(_, _, _, _) => Set.empty
+    case Expression.Hole(_, _, _, _) => Map.empty
 
     case Expression.Lambda(fparam, exp, tpe, loc) => ??? // TODO
 
