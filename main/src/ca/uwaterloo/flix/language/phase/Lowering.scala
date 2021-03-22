@@ -680,6 +680,28 @@ object Lowering extends Phase[Root, Root] {
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case Body.Guard(exp, loc) =>
+      // Compute the free variables in `exp`.
+      val fvs = freeVars(exp).toList
+
+      // Introduce a fresh variable for each free variable.
+      val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+        case (acc, oldSym) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+      }
+
+      // Substitute every symbol in `exp` for its fresh equivalent.
+      val freshExp = substExp(exp, freshVars)
+
+      // Wrap `exp1` in a curried lambda.
+      val lambdaExp = freshVars.foldLeft(freshExp) {
+        case (acc, (_, freshSym)) =>
+          val paramType = ???
+          val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, ???, loc)
+          val tpe = ???
+          Expression.Lambda(fparam, acc, tpe, loc)
+      }
+
+      // Construct the Guard body predicate.
+
       ??? // TODO: Add support for guards.
   }
 
