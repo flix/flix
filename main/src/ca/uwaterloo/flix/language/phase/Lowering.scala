@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -716,7 +716,7 @@ object Lowering extends Phase[Root, Root] {
       }
 
       // Lift the lambda expression to operate on boxed values.
-      val liftedExp = liftXb(lambdaExp, fvs)
+      val liftedExp = liftX(lambdaExp, fvs, Type.Bool)
 
       // Compute the number of free variables.
       val arity = fvs.length
@@ -924,27 +924,30 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lifts the given lambda expression `exp0` with the given list of parameters `params`.
     */
-  private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
+  private def liftX(exp0: Expression, params: List[(Symbol.VarSym, Type)], resultType: Type): Expression = {
     // Compute the liftXb symbol.
     val arity = params.length
-    val sym = Symbol.mkDefnSym(s"Boxable.lift${arity}b")
+    val sym = resultType.typeConstructor match {
+      case Some(TypeConstructor.Bool) => Symbol.mkDefnSym(s"Boxable.lift${arity}b")
+      case _ => Symbol.mkDefnSym(s"Boxable.lift${arity}")
+    }
 
     //
-    // The liftXb functions are of the form: a -> b -> c -> Bool and returns
-    // a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
+    // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
+    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> `resultType`.
     // That is, the function accepts a *curried* function and returns a *curried* function.
     //
 
-    // The type of the function argument, i.e. a -> b -> c -> Bool.
+    // The type of the function argument, i.e. a -> b -> c -> `resultType`.
     val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
 
-    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Bool.
+    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> `resultType`.
     val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
 
-    // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
+    // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> `resultType`).
     val liftType = Type.mkPureArrow(argType, returnType)
 
-    // Construct a call to the liftXb function.
+    // Construct a call to the liftX function.
     val defn = Expression.Def(sym, liftType, exp0.loc)
     val args = List(exp0)
     val tpe = returnType
