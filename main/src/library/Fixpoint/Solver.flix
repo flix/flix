@@ -1,6 +1,6 @@
 // TODO: Replace by real implementation
 
-namespace Fixpoint/Solver {
+namespace Fixpoint {
 
     use Fixpoint/Ast.Datalog;
     use Fixpoint/Ast.PredSym;
