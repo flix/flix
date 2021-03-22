@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
@@ -70,6 +71,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
     lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
 
+    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Denotation")
     lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
     lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
 
@@ -93,6 +95,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val PredSym: Type = Type.mkEnum(Enums.PredSym, Nil)
     lazy val VarSym: Type = Type.mkEnum(Enums.VarSym, Nil)
 
+    lazy val Denotation: Type = Type.mkEnum(Enums.Denotation, Nil)
     lazy val Polarity: Type = Type.mkEnum(Enums.Polarity, Nil)
     lazy val SourceLocation: Type = Type.mkEnum(Enums.SourceLocation, Nil)
 
@@ -830,9 +833,22 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
+    * Constructs a `Fixpoint/Ast.Denotation` from the given denotation `d`.
+    */
+  private def mkDenotation(p: Denotation, loc: SourceLocation): Expression = p match {
+    case Relational =>
+      val innerExp = Expression.Unit(loc)
+      mkTag(Enums.Denotation, "Relational", innerExp, Types.Denotation, loc)
+
+    case Latticenal =>
+      val innerExp = Expression.Unit(loc)
+      mkTag(Enums.Denotation, "Latticenal", innerExp, Types.Denotation, loc)
+  }
+
+  /**
     * Constructs a `Fixpoint/Ast.Polarity` from the given polarity `p`.
     */
-  private def mkPolarity(p: Ast.Polarity, loc: SourceLocation): Expression = p match {
+  private def mkPolarity(p: Polarity, loc: SourceLocation): Expression = p match {
     case Polarity.Positive =>
       val innerExp = Expression.Unit(loc)
       mkTag(Enums.Polarity, "Positive", innerExp, Types.Polarity, loc)
