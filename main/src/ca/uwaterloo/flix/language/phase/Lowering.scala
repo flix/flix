@@ -868,46 +868,6 @@ object Lowering extends Phase[Root, Root] {
     mkTag(Enums.SourceLocation, "SourceLocation", innerExp, Types.SourceLocation, loc)
   }
 
-  // TODO: Update doc
-  /**
-    * Rewrites the given expression `exp0` to an expression of the form `((x', y', z') -> exp0[x -> x', y -> y', z -> z'])(x, y, z)`.
-    *
-    * That is the expression is wrapped in a lambda with new fresh variables and then it is applied.
-    */
-  private def mkLambdaApply(cparams: List[ConstraintParam], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    // TODO: Make this work.
-    // TODO: What to do about lambdas with only one argument?
-
-    // TODO: Compute the free variables inside `exp`.
-    // TODO: Rebind these variables to other variables.
-    // TODO: Introduce lambda.
-    // TODO: Invoke liftX or liftXb on this lambda.
-
-    // Compute a mapping from the constraint parameters to fresh variable symbols.
-    val freshVars = cparams.map(cparam => cparam -> Symbol.freshVarSym(cparam.sym))
-
-    // Compute the formal parameters of the lambda.
-    val fparams = freshVars map {
-      case (cparam, newSym) => FormalParam(newSym, Ast.Modifiers.Empty, cparam.tpe, cparam.loc)
-    }
-
-    // Compute the substitution.
-    val freshSubst = freshVars map {
-      case (cparam, newSym) => cparam.sym -> newSym
-    }
-
-    // Construct the body of the lambda.
-    val lambdaBody = substExp(visitExp(exp), freshSubst.toMap)
-
-    // Construct the function type.
-    val lambdaType = Type.mkPureUncurriedArrow(fparams.map(_.tpe), exp.tpe)
-
-    // Assemble the lambda.
-    ???
-    // TODO: Curry the lambdas (??)
-    // Expression.Lambda(fparams, lambdaBody, lambdaType, loc)
-  }
-
   /**
     * Returns the given expression `exp` in a box.
     */
@@ -1049,29 +1009,62 @@ object Lowering extends Phase[Root, Root] {
 
   // TODO: Move into TypedAstOps
   private def substExp(exp0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
-    case Expression.Unit(loc) => ??? // TODO
-    case Expression.Null(tpe, loc) => ??? // TODO
-    case Expression.True(loc) => ??? // TODO
-    case Expression.False(loc) => ??? // TODO
-    case Expression.Char(lit, loc) => ??? // TODO
-    case Expression.Float32(lit, loc) => ??? // TODO
-    case Expression.Float64(lit, loc) => ??? // TODO
-    case Expression.Int8(lit, loc) => ??? // TODO
-    case Expression.Int16(lit, loc) => ??? // TODO
-    case Expression.Int32(lit, loc) => ??? // TODO
-    case Expression.Int64(lit, loc) => ??? // TODO
-    case Expression.BigInt(lit, loc) => ??? // TODO
-    case Expression.Str(lit, loc) => ??? // TODO
-    case Expression.Default(tpe, loc) => ??? // TODO
-    case Expression.Wild(tpe, loc) => ??? // TODO
-    case Expression.Var(sym, tpe, loc) => ??? // TODO
-    case Expression.Def(sym, tpe, loc) => ??? // TODO
-    case Expression.Sig(sym, tpe, loc) => ??? // TODO
-    case Expression.Hole(sym, tpe, eff, loc) => ??? // TODO
+    case Expression.Unit(_) => exp0
+
+    case Expression.Null(_, _) => exp0
+
+    case Expression.True(_) => exp0
+
+    case Expression.False(_) => exp0
+
+    case Expression.Char(_, _) => exp0
+
+    case Expression.Float32(_, _) => exp0
+
+    case Expression.Float64(_, _) => exp0
+
+    case Expression.Int8(_, _) => exp0
+
+    case Expression.Int16(_, _) => exp0
+
+    case Expression.Int32(_, _) => exp0
+
+    case Expression.Int64(_, _) => exp0
+
+    case Expression.BigInt(_, _) => exp0
+
+    case Expression.Str(_, _) => exp0
+
+    case Expression.Default(_, _) => exp0
+
+    case Expression.Wild(_, _) => exp0
+
+    case Expression.Var(sym, tpe, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      Expression.Var(s, tpe, loc)
+
+    case Expression.Def(_, _, _) => exp0
+
+    case Expression.Sig(_, _, _) => exp0
+
+    case Expression.Hole(_, _, _, _) => exp0
+
     case Expression.Lambda(fparam, exp, tpe, loc) => ??? // TODO
-    case Expression.Apply(exp, exps, tpe, eff, loc) => ??? // TODO
-    case Expression.Unary(sop, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val es = exps.map(substExp(_, subst))
+      Expression.Apply(e, es, tpe, eff, loc)
+
+    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Unary(sop, e, tpe, eff, loc)
+
+    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Binary(sop, e1, e2, tpe, eff, loc)
+
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
     case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
