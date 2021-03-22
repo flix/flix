@@ -20,7 +20,7 @@ namespace Fixpoint/Ast {
         case Guard1(v -> Bool, VarSym, SourceLocation)
         case Guard2((v, v) -> Bool, VarSym, VarSym, SourceLocation)
         case Guard3((v, v, v) -> Bool, VarSym, VarSym, VarSym, SourceLocation)
-        case Guard4((v, v, v, v) -> v -> Bool, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case Guard4((v, v, v, v) -> Bool, VarSym, VarSym, VarSym, VarSym, SourceLocation)
         case Guard5((v, v, v, v, v) -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
     }
 }
