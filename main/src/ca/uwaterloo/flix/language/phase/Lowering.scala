@@ -36,9 +36,9 @@ object Lowering extends Phase[Root, Root] {
   private val SL: SourcePosition = SourcePosition.Unknown
 
   private object Defs {
-    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
-    lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
-    lazy val IsSubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.isSubsetOf")
+    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
+    lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
+    lazy val IsSubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.isSubsetOf")
     lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
 
     lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(Name.NName(SL, Nil, SL), Name.Ident(SL, "Boxable", SL)), Name.Ident(SL, "box", SL))
@@ -899,7 +899,8 @@ object Lowering extends Phase[Root, Root] {
   private def box(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed)
-    Expression.Sig(Defs.Box, tpe, loc)
+    val innerExp = Expression.Sig(Defs.Box, tpe, loc)
+    Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, loc)
   }
 
   /**
