@@ -42,6 +42,18 @@ object Lowering extends Phase[Root, Root] {
 
     lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(Name.NName(SL, Nil, SL), Name.Ident(SL, "Boxable", SL)), Name.Ident(SL, "box", SL))
 
+    lazy val Lift1: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1")
+    lazy val Lift2: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2")
+    lazy val Lift3: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift3")
+    lazy val Lift4: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4")
+    lazy val Lift5: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5")
+
+    lazy val Lift1b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1b")
+    lazy val Lift2b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2b")
+    lazy val Lift3b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift3b")
+    lazy val Lift4b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4b")
+    lazy val Lift5b: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5b")
+
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -101,6 +113,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val ComposeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
     lazy val EntailsType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Type.Bool)
     lazy val ProjectType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
+
   }
 
   /**
@@ -709,7 +722,7 @@ object Lowering extends Phase[Root, Root] {
       // Construct the Guard body predicate.
       if (arity == 2) {
         // Lift the lambda expression to operate on boxed values.
-        val liftedExp = lambdaExp
+        val liftedExp = liftXb(lambdaExp, fvs.map(_._2))
 
         // Construct the Guard Predicate.
         val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -912,6 +925,31 @@ object Lowering extends Phase[Root, Root] {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed)
     Expression.Sig(Defs.Box, tpe, loc)
+  }
+
+  /**
+    * Lifts the given Boolean-valued lambda expression `exp0` with the given arity `n` to work on boxed values.
+    */
+  private def liftXb(exp0: Expression, argTypes: List[Type]): Expression = {
+    val loc = exp0.loc
+
+    val n = argTypes.length
+
+    if (n == 2) {
+      val lift2bType = Type.mkPureArrow(
+        Type.mkPureCurriedArrow(argTypes, Type.Bool),
+        Type.mkPureCurriedArrow(List(Types.Boxed, Types.Boxed), Type.Bool)
+      )
+      val resultType = Type.mkPureCurriedArrow(List(Types.Boxed, Types.Boxed), Type.Bool)
+
+      val defn = Expression.Def(Defs.Lift2b, lift2bType, loc)
+      val args = List(exp0)
+      val tpe = Type.mkPureArrow(exp0.tpe, resultType)
+      val eff = Type.Pure
+      Expression.Apply(defn, args, tpe, eff, loc)
+    } else {
+      ???
+    }
   }
 
   /**
