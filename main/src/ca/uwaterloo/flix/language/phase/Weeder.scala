@@ -210,12 +210,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(formalsVal, expVal) {
         case (fs, exp) =>
-          val e = mkCurried(fs.tail, exp, loc)
           val ts = fs.map(_.tpe.get)
-          val t = mkCurriedArrow(ts, WeededAst.Type.True(loc), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc)
+          val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(loc), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc)
           val ann = Nil
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, WeededAst.TypeParams.Elided, fs.head :: Nil, e, t, WeededAst.Type.True(loc), loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, WeededAst.TypeParams.Elided, fs.head :: Nil, exp, tpe, WeededAst.Type.True(loc), loc))
       }
   }
 
