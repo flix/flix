@@ -941,6 +941,27 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.UndefinedTypeVar](result)
   }
 
+  test("UndefinedTypeVar.Class.01") {
+    val input =
+      """
+        |class A[a]
+        |class B[a] with A[b]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Class.02") {
+    val input =
+      """
+        |class A[a]
+        |class B[a]
+        |class C[a] with A[a], B[b]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
   test("MismatchedTypeParamKind.Explicit.01") {
     val input = "def f[o](g: Int -> o & o): Int = 123"
     val result = compile(input, DefaultOptions)

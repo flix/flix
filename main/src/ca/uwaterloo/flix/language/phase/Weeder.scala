@@ -122,23 +122,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
   }
 
-  // MATT use visitTypeConstraint instead
-  /**
-    * Checks each super class to ensure the type parameter name matches `tparam`.
-    */
-  private def visitSuperClasses(tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint]): Validation[List[Name.QName], WeederError] = {
-//    traverse(superClasses) {
-//      case ParsedAst.TypeConstraint(sp1, clazz, ident, sp2) =>
-//        if (ident.name == tparam.ident.name)
-//          clazz.toSuccess
-//        else {
-//          WeederError.MismatchedSuperClassTypeParameter(tparam.ident, ident, mkSL(sp1, sp2)).toFailure
-//          // MATT this turns into either bad type constraint or unknown tvar
-//        }
-//    }
-    ???
-  }
-
   /**
     * Performs weeding on the given sig declaration `s0`.
     */
