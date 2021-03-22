@@ -1455,7 +1455,14 @@ object ParsedAst {
     */
   case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
 
-  // MATT docs
+  /**
+    * A type constraint.
+    *
+    * @param sp1    the position of the first character in the type constraint.
+    * @param clazz  name of the class.
+    * @param tparam the name of the constrained type.
+    * @param sp2    the position of the last character in the type constraint.
+    */
   case class TypeConstraint(sp1: SourcePosition, clazz: Name.QName, tparam: ParsedAst.Type, sp2: SourcePosition)
 
   /**
