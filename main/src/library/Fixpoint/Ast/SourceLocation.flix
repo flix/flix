@@ -15,7 +15,7 @@
  */
 namespace Fixpoint/Ast {
     pub enum SourceLocation {
+        case Unknown,
         case SourceLocation(String, Int32, Int32, Int32, Int32)
-        case Unknown
     }
 }
