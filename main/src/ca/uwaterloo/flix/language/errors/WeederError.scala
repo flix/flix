@@ -464,4 +464,14 @@ object WeederError {
     }
   }
 
+  // MATT docs
+  case class IllegalTypeConstraint(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal type constraint."
+
+    def message: VirtualTerminal = {
+      new VirtualTerminal
+      // MATT fill in
+    }
+  }
+
 }

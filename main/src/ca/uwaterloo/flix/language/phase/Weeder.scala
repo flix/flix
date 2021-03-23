@@ -111,13 +111,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparam0, superClasses0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
-      val (tparams, tconstrs) = visitTypeParam(tparam0) // MATT disallow tconstrs here
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
       val sigs0 = lawsAndSigs.collect { case sig: ParsedAst.Declaration.Sig => sig }
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
         sigs <- traverse(sigs0)(visitSig)
         laws <- traverse(laws0)(visitLaw)
+        tparams <- visitUnconstrainedTypeParam(tparam0)
         superClasses <- traverse(superClasses0)(visitTypeConstraint)
       } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparams, superClasses, sigs.flatten, laws.flatten, loc))
   }
@@ -226,10 +226,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Enum(doc0, mods, sp1, ident, tparams0, cases, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val (tparams, tconstrs) = visitTypeParams(tparams0) // MATT disallow tconstrs here
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
-      modVal flatMap {
-        case mod =>
+      flatMapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           /*
            * Check for `DuplicateTag`.
            */
@@ -264,10 +264,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        */
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
-      modVal map {
-        case mod =>
-          val (tparams, tconstrs) = visitTypeParams(tparams0) // MATT disallow tconstrs here
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           val cases = Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(tpe0)))
           List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, cases, mkSL(sp1, sp2)))
       }
@@ -280,10 +280,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.TypeAlias(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
-      modVal map {
-        case mod =>
-          val (tparams, tconstrs) = visitTypeParams(tparams0) // MATT disallow tconstrs here
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           val tpe = visitType(tpe0)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, mkSL(sp1, sp2)))
       }
@@ -297,13 +297,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
       //
       // Rewrite the relation declaration to a type alias.
       //
-      modVal map {
-        case mod =>
-          val (tparams, tconstrs) = visitTypeParams(tparams0) // MATT disallow tconstrs here
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           val termTypes = attr.map(a => visitType(a.tpe))
           val tpe = WeededAst.Type.Relation(termTypes.toList, loc)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
@@ -318,13 +318,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
       //
       // Rewrite the lattice declaration to a type alias.
       //
-      modVal map {
-        case mod =>
-          val (tparams, tconstrs) = visitTypeParams(tparams0) // MATT disallow tconstrs here
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           val termTypes = attr.map(a => visitType(a.tpe))
           val tpe = WeededAst.Type.Lattice(termTypes.toList, loc)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
@@ -2068,6 +2068,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tvar = WeededAst.Type.Var(ident, ident.loc)
       val tconstrs = classes.map(WeededAst.TypeConstraint(_, tvar))
       (tparam, tconstrs.toList)
+  }
+
+  // MATT docs
+  private def visitUnconstrainedTypeParams(tparams0: ParsedAst.TypeParams): Validation[WeededAst.TypeParams, WeederError] = tparams0 match {
+    case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided.toSuccess
+    case ParsedAst.TypeParams.Explicit(tparams) =>
+      traverse(tparams)(visitUnconstrainedTypeParam) map {
+        tparams1 => WeededAst.TypeParams.Explicit(tparams1)
+      }
+  }
+
+  // MATT docs
+  private def visitUnconstrainedTypeParam(tparam0: ParsedAst.TypeParam): Validation[WeededAst.TypeParam, WeederError] = {
+    visitTypeParam(tparam0) match {
+      case (tparam, Nil) => tparam.toSuccess
+      case (_, _ :: _) => WeederError.IllegalTypeConstraint(tparam0.ident.loc).toFailure // MATT use tconstrs locations
+    }
   }
 
   /**
