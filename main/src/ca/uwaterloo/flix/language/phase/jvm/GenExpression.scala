@@ -714,70 +714,40 @@ object GenExpression {
       addSourceLine(visitor, loc)
       // We get the inner type of the array
       val jvmType = JvmOps.getErasedJvmType(base.tpe.asInstanceOf[MonoType.Array].tpe)
-
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
-      // base
-
       // Evaluating the 'startIndex'
       compileExpression(startIndex, visitor, currentClass, lenv0, entryPoint)
-      // base -> start
-
       // Evaluating the 'endIndex'
       compileExpression(endIndex, visitor, currentClass, lenv0, entryPoint)
-      // base -> start -> end
-
       // Swaps the startIndex and 'endIndex'
       visitor.visitInsn(SWAP)
-      // base -> end -> start
-
       // Duplicates the 'startIndex' two places down the stack
       visitor.visitInsn(DUP_X1)
-      // base -> start -> end -> start
-
       // Subtracts the 'startIndex' from the 'endIndex' (leaving the 'length' of the array)
       visitor.visitInsn(ISUB)
-      // base -> start -> length
-
       // Duplicates the 'length'
       visitor.visitInsn(DUP)
-      // base -> start -> length -> length
-
       // Instantiating a new array of type jvmType
       if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
       } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
-      // base -> start -> length -> newarray
-
       // Duplicates the 'array reference' and 'length' 4 places down the stack
       visitor.visitInsn(DUP2_X2)
-      // length -> newarray -> base -> start -> length -> newarray
-
       // Swaps the 'array reference' and 'length'
       visitor.visitInsn(SWAP)
-      // length -> newarray -> base -> start -> newarray -> length
-
       // Pushes 0 on top of stack
       visitor.visitInsn(ICONST_0)
-      // length -> newarray -> base -> start -> newarray -> length -> 0
-
       // Swaps 'length' and 0
       visitor.visitInsn(SWAP)
-      // length -> newarray -> base -> start -> newarray -> 0 -> length
-
       // Invoking the method to copy the source array to the destination array
       visitor.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V", false);
-      // length -> newarray
-
       // Swaps 'new array reference' and 'length'
       visitor.visitInsn(SWAP)
-      // newarray -> length
-
       // Pops the 'length' - leaving 'new array reference' top of stack
       visitor.visitInsn(POP)
-      // newarray
 
     case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging
