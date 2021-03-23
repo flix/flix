@@ -16,8 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
+import ca.uwaterloo.flix.language.ast.{PType, PRefType, EType, ERefType}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{PType => PT}
+import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.EType._
+import ca.uwaterloo.flix.language.ast.ERefType._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -26,13 +30,13 @@ object BytecodeCompiler {
 
   sealed trait StackNil extends Stack
 
-  sealed case class StackCons[R <: Stack, T <: PT](rest: R, top: T) extends Stack
+  sealed case class StackCons[R <: Stack, T <: PType](rest: R, top: T) extends Stack
 
-  type **[R <: Stack, T <: PT] = StackCons[R, T]
+  type **[R <: Stack, T <: PType] = StackCons[R, T]
 
   sealed trait F[T]
 
-  def compileExp[R <: Stack, T <: PT](exp: Expression[T]): F[R] => F[R ** T] = exp match {
+  def compileExp[R <: Stack, T <: PType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) =>
       WithSource[R](loc) ~
         pushUnit
@@ -68,14 +72,18 @@ object BytecodeCompiler {
       WithSource[R](loc) ~ pushInt64(lit)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      WithSource[R](loc) ~ compileExp(exp3)
+      WithSource[R](loc) ~
+        compileExp(exp3) ~
+        ???
 
-    case Expression.Ref(exp, tpe, loc) => ???
+    case Expression.Ref(exp, tpe, loc) =>
       //      NEW("class name") ~
       //      DUP ~
       //      compileExp(exp) ~
       //      INVOKESPECIAL("class name", "constructor signature")
-      WithSource[R](loc) ~ pushNull ~ ???
+      WithSource[R](loc) ~
+        pushNull ~
+        ???
 
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       // sym is unsafe. localvar stack + reg as types?
@@ -104,27 +112,23 @@ object BytecodeCompiler {
         arrayLength
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      //      WithSource[R](loc)        ~[R ** JArray[JType]]
-      //        compileExp(base)        ~[R ** JObject]
-      //        upCastArray                  ~[R ** JObject ** PrimInt32]
-      //        compileExp(beginIndex)  ~[R ** JObject ** PrimInt32 ** PrimInt32]
-      //        compileExp(endIndex)    ~[R ** JObject ** PrimInt32 ** PrimInt32]
-      //        ISWAP                   ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
-      //        DUP_X1                  ~[R ** JObject ** PrimInt32 ** PrimInt32]
-      //        ISUB                    ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32]
-      //        DUP                     ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JArray[JType]]
-      //        XNEWARRAY(tpe)          ~[R ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
-      //        upCastArray                  ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** PrimInt32 ** JObject]
-      //        DUP2_X2_cat1_onCat1     ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32]
-      //        ISWAP                   ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
-      //        pushInt32(0)            ~[R ** JObject ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32 ** JObject ** PrimInt32 ** PrimInt32]
-      //        ISWAP                   ~[R]
-      ??? //systemArrayCopy ~ ???
-      //SWAP(???, ???)                        ~
-      //POP
-      // arraycopy : object int object int int
+      WithSource[R](loc)        ~[R ** PReference[PArray[PType]]]
+        compileExp(base)        ~[R ** PReference[PArray[PType]] ** PInt32]
+        compileExp(beginIndex)  ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32]
+        compileExp(endIndex)    ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32]
+        SWAP                    ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32 ** PInt32]
+        DUP_X1                  ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32]
+        ISUB                    ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32 ** PInt32]
+        DUP                     ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32 ** PReference[PArray[PType]]]
+        XNEWARRAY(tpe)          ~[R ** PInt32 ** PReference[PArray[PType]] ** PReference[PArray[PType]] ** PInt32 ** PInt32 ** PReference[PArray[PType]]]
+        DUP2_X2_cat1_onCat1     ~[R ** PInt32 ** PReference[PArray[PType]] ** PReference[PArray[PType]] ** PInt32 ** PReference[PArray[PType]] ** PInt32]
+        SWAP                    ~[R ** PInt32 ** PReference[PArray[PType]] ** PReference[PArray[PType]] ** PInt32 ** PReference[PArray[PType]] ** PInt32 ** PInt32]
+        pushInt32(0)            ~[R ** PInt32 ** PReference[PArray[PType]] ** PReference[PArray[PType]] ** PInt32 ** PReference[PArray[PType]] ** PInt32 ** PInt32]
+        SWAP                    ~[R ** PInt32 ** PReference[PArray[PType]]]
+        systemArrayCopy         ~[R ** PReference[PArray[PType]] ** PInt32]
+        SWAP                    ~[R ** PReference[PArray[PType]]]
+        POP
 
-      ???
     case _ => ???
   }
 

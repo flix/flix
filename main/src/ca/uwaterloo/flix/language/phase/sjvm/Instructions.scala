@@ -25,7 +25,7 @@ object Instructions {
 
   // TODO: Mark unsafe functions
 
-  def ISWAP[R <: Stack, T1 <: PT with Cat1, T2 <: PT with Cat1]: F[R ** T2 ** T1] => F[R ** T1 ** T2] = ???
+  def SWAP[R <: Stack, T1 <: PT with Cat1, T2 <: PT with Cat1]: F[R ** T2 ** T1] => F[R ** T1 ** T2] = ???
 
   def NOP[R <: Stack]: F[R] => F[R] = x => x
 
@@ -151,30 +151,30 @@ object Instructions {
     case ET.Reference(_) => AStore(sym)
   }
 
-  def BOOLNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt32]]] = ???
+  def BOOLNEWARRAY[R <: Stack]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PInt32]]] = ???
 
-  def CNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PChar]]] = ???
+  def CNEWARRAY[R <: Stack]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PChar]]] = ???
 
-  def FNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PFloat32]]] = ???
+  def FNEWARRAY[R <: Stack]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PFloat32]]] = ???
 
-  def DNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PFloat64]]] = ???
+  def DNEWARRAY[R <: Stack]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PFloat64]]] = ???
 
-  def BNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt8]]] = ???
+  def BNEWARRAY[R <: Stack]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PInt8]]] = ???
 
-  def SNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt16]]] = ???
+  def SNEWARRAY[R <: Stack]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PInt16]]] = ???
 
-  def INEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt32]]] = ???
+  def INEWARRAY[R <: Stack]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PInt32]]] = ???
 
-  def LNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt64]]] = ???
+  def LNEWARRAY[R <: Stack]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PInt64]]] = ???
 
-  def ANEWARRAY[R <: Stack, T <: PRT]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PReference[T]]]] = {
+  def ANEWARRAY[R <: Stack, T <: PRT]: F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[PT.PReference[T]]]] = {
     // from genExpression:
     // visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
     // should type be built?
     ???
   }
 
-  def XNEWARRAY[R <: Stack, T <: PT](arrayType: ET[PT.PReference[PRT.PArray[T]]]): F[R] => F[R ** PT.PReference[PRT.PArray[T]]] = arrayType match {
+  def XNEWARRAY[R <: Stack, T <: PT](arrayType: ET[PT.PReference[PRT.PArray[T]]]): F[R ** PT.PInt32] => F[R ** PT.PReference[PRT.PArray[T]]] = arrayType match {
     case ET.Reference(ERT.Array(tpe)) => tpe match {
       case ET.Bool() => BOOLNEWARRAY
       case ET.Char() => CNEWARRAY
@@ -189,7 +189,7 @@ object Instructions {
     case _ => throw InternalCompilerException("unexpected non-array type")
   }
 
-  def systemArrayCopy[R <: Stack]: F[R ** PT.PReference[PRT.PAnyObject] ** PT.PInt32 ** PT.PReference[PRT.PAnyObject] ** PT.PInt32 ** PT.PInt32] => F[R] = ???
+  def systemArrayCopy[R <: Stack, S <: PRT]: F[R ** PT.PReference[S] ** PT.PInt32 ** PT.PReference[S] ** PT.PInt32 ** PT.PInt32] => F[R] = ???
 
   def arrayLength[R <: Stack, T <: PT]: F[R ** PT.PReference[PRT.PArray[T]]] => F[R ** PT.PInt32] = ???
 
