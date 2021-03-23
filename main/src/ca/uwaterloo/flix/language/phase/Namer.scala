@@ -628,7 +628,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expression.Choose(star, es, rs, loc)
+        case (es, rs) => NamedAst.Expression.Choose(star, es, rs, Type.freshVar(Kind.Star), loc)
       }
 
     case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>
