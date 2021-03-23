@@ -311,7 +311,7 @@ instance Order[String] {
 
 }
 
-instance Order[(a1, a2)] with [a1 : Order, a2: Order] {
+instance Order[(a1, a2)] with Order[a1], Order[a2] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -325,7 +325,7 @@ instance Order[(a1, a2)] with [a1 : Order, a2: Order] {
 
 }
 
-instance Order[(a1, a2, a3)] with [a1 : Order, a2: Order, a3 : Order] {
+instance Order[(a1, a2, a3)] with Order[a1], Order[a2], Order[a3] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -340,7 +340,7 @@ instance Order[(a1, a2, a3)] with [a1 : Order, a2: Order, a3 : Order] {
 
 }
 
-instance Order[(a1, a2, a3, a4)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order] {
+instance Order[(a1, a2, a3, a4)] with Order[a1], Order[a2], Order[a3], Order[a4] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -356,7 +356,7 @@ instance Order[(a1, a2, a3, a4)] with [a1 : Order, a2: Order, a3 : Order, a4 : O
 
 }
 
-instance Order[(a1, a2, a3, a4, a5)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order] {
+instance Order[(a1, a2, a3, a4, a5)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -373,7 +373,7 @@ instance Order[(a1, a2, a3, a4, a5)] with [a1 : Order, a2: Order, a3 : Order, a4
 
 }
 
-instance Order[(a1, a2, a3, a4, a5, a6)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order] {
+instance Order[(a1, a2, a3, a4, a5, a6)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -391,7 +391,7 @@ instance Order[(a1, a2, a3, a4, a5, a6)] with [a1 : Order, a2: Order, a3 : Order
 
 }
 
-instance Order[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order] {
+instance Order[(a1, a2, a3, a4, a5, a6, a7)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -410,7 +410,7 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Order, a2: Order, a3 : O
 
 }
 
-instance Order[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order] {
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -430,7 +430,7 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Order, a2: Order, a3
 
 }
 
-instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order, a9: Order] {
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8], Order[a9] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.
@@ -451,7 +451,7 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Order, a2: Order
 
 }
 
-instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Order, a2: Order, a3 : Order, a4 : Order, a5 : Order, a6 : Order, a7 : Order, a8 : Order, a9 : Order, a10 : Order] {
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8], Order[a9], Order[a10] {
 
     ///
     /// Compares `t1` and `t2` lexicographically.

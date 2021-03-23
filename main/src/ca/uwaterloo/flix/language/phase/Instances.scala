@@ -218,13 +218,16 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       val checks = insts.tails.toSeq
       Validation.traverseX(checks) {
         case inst :: unchecked =>
-          Validation.sequenceX(List(
-            checkSimple(inst),
-            Validation.traverse(unchecked)(checkOverlap(_, inst)),
-            checkSigMatch(inst),
-            checkOrphan(inst),
-            checkSuperInstances(inst),
-          ))
+          // check that the instance is on a valid type, suppressing other errors if not
+          checkSimple(inst) flatMap {
+            _ =>
+              Validation.sequenceX(List(
+                Validation.traverse(unchecked)(checkOverlap(_, inst)),
+                checkSigMatch(inst),
+                checkOrphan(inst),
+                checkSuperInstances(inst),
+              ))
+          }
 
         case Nil => ().toSuccess
       }

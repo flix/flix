@@ -249,7 +249,7 @@ instance ToString[Test/Exp/Interpolation.Color] {
         }
 }
 
-instance ToString[Test/Exp/Interpolation.Option[a]] with [a : ToString] {
+instance ToString[Test/Exp/Interpolation.Option[a]] with ToString[a] {
     pub def toString(o: Test/Exp/Interpolation.Option[a]): String =
         use Test/Exp/Interpolation.Option.None;
         use Test/Exp/Interpolation.Option.Some;
@@ -259,7 +259,7 @@ instance ToString[Test/Exp/Interpolation.Option[a]] with [a : ToString] {
         }
 }
 
-instance ToString[Test/Exp/Interpolation.Result[t, e]] with [t : ToString, e : ToString] {
+instance ToString[Test/Exp/Interpolation.Result[t, e]] with ToString[t], ToString[e] {
     pub def toString(r: Test/Exp/Interpolation.Result[t, e]): String =
         use Test/Exp/Interpolation.Result.Ok;
         use Test/Exp/Interpolation.Result.Err;

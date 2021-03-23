@@ -41,7 +41,7 @@ namespace Test/Dec/Class {
 
         class C[a]
 
-        instance C[List[a]] with [a : C]
+        instance C[List[a]] with C[a]
     }
 
     namespace Test06 {
@@ -57,7 +57,7 @@ namespace Test/Dec/Class {
             pub def f(x: Int): Bool = x == 0
         }
 
-        instance C[List[a]] with [a: C] {
+        instance C[List[a]] with C[a] {
             pub def f(x: List[a]): Bool = {
                 match x {
                     case Nil => true

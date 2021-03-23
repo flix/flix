@@ -422,7 +422,7 @@ class TestResolver extends FunSuite with TestUtils {
       """
         |class K[a]
         |
-        |instance K[a] with [a : U]
+        |instance K[a] with U[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedClass](result)
