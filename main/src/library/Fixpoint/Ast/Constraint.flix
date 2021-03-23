@@ -18,4 +18,16 @@ namespace Fixpoint/Ast {
     pub enum Constraint[v] {
         case Constraint(HeadPredicate[v], Array[BodyPredicate[v]], SourceLocation)
     }
+
+    instance ToString[Constraint[v]] with [v : ToString] {
+        pub def toString(c: Constraint[v]): String =
+            use Fixpoint.commaSeparate;
+            match c {
+                case Constraint(head, body, _) =>
+                    if (Array.length(body) == 0)
+                        "${head}."
+                    else
+                        "${head} :- ${commaSeparate(body)}."
+            }
+    }
 }
