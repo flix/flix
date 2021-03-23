@@ -16,7 +16,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Dec.Class", "main/test/flix/Test.Dec.Class.flix"),
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
   new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
-  new Ignore("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix"), // TODO
+  new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
