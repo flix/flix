@@ -15,9 +15,9 @@
  */
 namespace Fixpoint/Ast {
     pub enum BodyTerm[v] {
+        case Wild(SourceLocation)
         case Var(VarSym, SourceLocation)
         case Lit(v, SourceLocation)
-        case Wild(SourceLocation)
     }
 
     instance ToString[BodyTerm[v]] with ToString[v] {

@@ -309,7 +309,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Term.Lit.Set", "main/test/flix/Test.Term.Lit.Set.flix")(Options.TestWithLibrary),
   new Ignore("Test.Term.Var.CapturedVar", "main/test/flix/Test.Term.Var.CapturedVar.flix")(Options.TestWithLibrary), // TODO
   new FlixTest("Test.Term.Var.QuantVar", "main/test/flix/Test.Term.Var.QuantVar.flix")(Options.TestWithLibrary),
-  new Ignore("Test.Term.Var.WildVar", "main/test/flix/Test.Term.Var.WildVar.flix")(Options.TestWithLibrary), // TODO
+  new FlixTest("Test.Term.Var.WildVar", "main/test/flix/Test.Term.Var.WildVar.flix")(Options.TestWithLibrary), // TODO
 
   //
   // Type Alias.

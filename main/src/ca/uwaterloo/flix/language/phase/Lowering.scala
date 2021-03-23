@@ -812,7 +812,7 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.BodyTerm.Wild` from the given source location `loc`.
     */
   private def mkBodyTermWild(loc: SourceLocation): Expression = {
-    val innerExp = Expression.Unit(loc)
+    val innerExp = mkSourceLocation(loc)
     mkTag(Enums.BodyTerm, "Wild", innerExp, Types.BodyTerm, loc)
   }
 
