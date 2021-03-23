@@ -714,18 +714,15 @@ object Lowering extends Phase[Root, Root] {
         mkHeadTermVar(sym)
 
       case _ =>
-        // Call TypedAstOps.freeVarsOf
-        val quantifiedVars = Nil // TODO
+        // TODO: Remove bound variables.
+        val quantifiedVars = freeVars(exp0)
 
         if (quantifiedVars.isEmpty) {
           // Case 2: Evaluate to (boxed) value.
           mkHeadTermLit(box(exp0))
         } else {
           // Case 3: Translate to application term.
-
-          // TODO: use TypedAstOps.substitute.
-
-          ???
+          mkGuardOrAppTerm(isGuard = false, exp0, exp0.loc)
         }
     }
   }
@@ -954,7 +951,7 @@ object Lowering extends Phase[Root, Root] {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftX(lambdaExp, fvs, Type.Bool)
+    val liftedExp = liftX(lambdaExp, fvs, exp.tpe)
 
     // Compute the number of free variables.
     val arity = fvs.length
@@ -963,6 +960,7 @@ object Lowering extends Phase[Root, Root] {
     val varExps = fvs.map(kv => mkVarSym(kv._1))
     val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
 
+    // TODO: Ugly
     if (isGuard)
       mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
     else
