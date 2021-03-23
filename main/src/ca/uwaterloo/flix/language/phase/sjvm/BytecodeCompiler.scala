@@ -16,12 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.{PType, PRefType, EType, ERefType}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.PRefType._
-import ca.uwaterloo.flix.language.ast.EType._
-import ca.uwaterloo.flix.language.ast.ERefType._
+import ca.uwaterloo.flix.language.ast.PType
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -112,21 +108,21 @@ object BytecodeCompiler {
         arrayLength
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      WithSource[R](loc)        ~[R ** PReference[PArray[PType]]]
-        compileExp(base)        ~[R ** PReference[PArray[PType]] ** PInt32]
-        compileExp(beginIndex)  ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32]
-        compileExp(endIndex)    ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32]
-        SWAP                    ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32 ** PInt32]
-        DUP_X1                  ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32]
-        ISUB                    ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32 ** PInt32]
-        DUP                     ~[R ** PReference[PArray[PType]] ** PInt32 ** PInt32 ** PReference[PArray[PType]]]
-        XNEWARRAY(tpe)          ~[R ** PInt32 ** PReference[PArray[PType]] ** PReference[PArray[PType]] ** PInt32 ** PInt32 ** PReference[PArray[PType]]]
-        DUP2_X2_cat1_onCat1     ~[R ** PInt32 ** PReference[PArray[PType]] ** PReference[PArray[PType]] ** PInt32 ** PReference[PArray[PType]] ** PInt32]
-        SWAP                    ~[R ** PInt32 ** PReference[PArray[PType]] ** PReference[PArray[PType]] ** PInt32 ** PReference[PArray[PType]] ** PInt32 ** PInt32]
-        pushInt32(0)            ~[R ** PInt32 ** PReference[PArray[PType]] ** PReference[PArray[PType]] ** PInt32 ** PReference[PArray[PType]] ** PInt32 ** PInt32]
-        SWAP                    ~[R ** PInt32 ** PReference[PArray[PType]]]
-        systemArrayCopy         ~[R ** PReference[PArray[PType]] ** PInt32]
-        SWAP                    ~[R ** PReference[PArray[PType]]]
+      WithSource[R](loc) ~
+        compileExp(base) ~
+        compileExp(beginIndex) ~
+        compileExp(endIndex) ~
+        SWAP ~
+        DUP_X1 ~
+        ISUB ~
+        DUP ~
+        XNEWARRAY(tpe) ~
+        DUP2_X2_cat1_onCat1 ~
+        SWAP ~
+        pushInt32(0) ~
+        SWAP ~
+        systemArrayCopy ~
+        SWAP ~
         POP
 
     case _ => ???
