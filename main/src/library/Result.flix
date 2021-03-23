@@ -26,7 +26,7 @@ enum Result[t, e] {
     case Err(e)
 }
 
-instance Boxable[Result[t, e]] with [t: Order, t: ToString, e: Order, e: ToString] {
+instance Boxable[Result[t, e]] with Order[t], ToString[t], Order[e], ToString[e] {
     pub def box(x: Result[t, e]): Boxed = {
         let value = x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(o1 as Result[t, e], o2 as Result[t, e]);
@@ -39,21 +39,21 @@ instance Boxable[Result[t, e]] with [t: Order, t: ToString, e: Order, e: ToStrin
     }
 }
 
-instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
+instance ToString[Result[t, e]] with ToString[t], ToString[e] {
     pub def toString(r: Result[t, e]): String = match r {
         case Ok(t)  => "Ok(${t})"
         case Err(e) => "Err(${e})"
     }
 }
 
-instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
+instance Hash[Result[t, e]] with Hash[t], Hash[e] {
     pub def hash(r: Result[t, e]): Int = match r {
         case Ok(v)  => 5381 + 113 * Hash.hash(v)
         case Err(v) => 5351 + 97 * Hash.hash(v)
     }
 }
 
-instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
+instance Eq[Result[t, e]] with Eq[t], Eq[e] {
     pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
         case (Ok(v1), Ok(v2)) => v1 == v2
         case (Err(w1), Err(w2)) => w1 == w2
@@ -61,7 +61,7 @@ instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
     }
 }
 
-instance Order[Result[t, e]] with [t : Order, e : Order] {
+instance Order[Result[t, e]] with Order[t], Order[e] {
 
     ///
     /// Returns the result of a three-way comparison between `r1` and `r2`.

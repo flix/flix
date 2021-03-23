@@ -26,7 +26,7 @@ namespace Fixpoint/Ram {
         case App5(v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
     }
 
-    instance ToString[RamTerm[v]] with [v : ToString] {
+    instance ToString[RamTerm[v]] with ToString[v] {
         pub def toString(term: RamTerm[v]): String = match term {
             case Lit(v) => ToString.toString(v)
             case Attribute(var, index) => "${var}[${index}]"

@@ -21,7 +21,7 @@ namespace Fixpoint/Ram {
         case Project(Array[RamTerm[v]], RelSym)
     }
 
-    instance ToString[RelOp[v]] with [v : ToString] {
+    instance ToString[RelOp[v]] with ToString[v] {
         pub def toString(op: RelOp[v]): String =
             let nl = String.lineSeparator();
             match op {

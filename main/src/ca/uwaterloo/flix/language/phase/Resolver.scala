@@ -182,7 +182,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigsList <- traverse(signatures)(resolve(_, ns0, root))
-        superClasses <- traverse(superClasses0)(lookupClassForImplementation(_, ns0, root))
+        // ignore the parameter of the super class; we don't use it
+        superClasses <- traverse(superClasses0)(tconstr => lookupClassForImplementation(tconstr.clazz, ns0, root))
         laws <- traverse(laws0)(resolve(_, ns0, root))
         sigs = sigsList.map(sig => (sig.sym, sig)).toMap
       } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses.map(_.sym), sigs, laws, loc)

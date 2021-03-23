@@ -46,4 +46,17 @@ trait TestUtils {
         fail(s"Expected an error of type ${expected.getSimpleName}, but found ${actuals.mkString(", ")}.")
   }
 
+  /**
+    * Asserts that the validation does not contain a value of the parametric type `T`.
+    */
+  def rejectError[T](result: Validation[CompilationResult, CompilationError])(implicit classTag: ClassTag[T]): Unit = result match {
+    case Validation.Success(_) => ()
+    case Validation.Failure(errors) =>
+      val rejected = classTag.runtimeClass
+      val actuals = errors.map(_.getClass)
+
+      if (actuals.exists(rejected.isAssignableFrom(_)))
+        fail(s"Unexpected an error of type ${rejected.getSimpleName}.")
+  }
+
 }

@@ -19,8 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
+import ca.uwaterloo.flix.language.phase.Namer.visitType
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -350,9 +351,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparam = getTypeParamDefaultStar(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
-      val superClasses = superClasses0.map(getClass(_, uenv0))
       val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.tpe, tparam.loc))
       for {
+        superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
         laws <- traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.tpe)))
       } yield NamedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc)
@@ -367,22 +368,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         tparams <- getImplicitTypeParamsFromTypes(List(tpe0), loc) // MATT use better loc; add loc to WeededAst.Type trait?
         tenv = tenv0 ++ getTypeEnv(tparams)
         tpe <- visitType(tpe0, uenv0, tenv)
-        tconstrs <- traverse(tconstrs)(visitConstrainedType(_, uenv0, tenv, ns0))
+        tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))
         qualifiedClass = getClass(clazz, uenv0)
         instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe)
         defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.map(_.tpe)))
-      } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs.flatten, defs, loc)
+      } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
   }
 
+
   /**
-    * Performs naming on the given constrained type `tconstr`.
+    * Performs naming on the given type constraint `tconstr`.
     */
-  private def visitConstrainedType(tconstr: WeededAst.ConstrainedType, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[List[NamedAst.TypeConstraint], NameError] = tconstr match {
-    case WeededAst.ConstrainedType(tpe0, classes0) =>
-      for {
-        tpe <- visitType(tpe0, uenv0, tenv0)
-        classes = classes0.map(getClass(_, uenv0))
-      } yield classes.map(NamedAst.TypeConstraint(_, tpe))
+  private def visitTypeConstraint(tconstr: WeededAst.TypeConstraint, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
+    case WeededAst.TypeConstraint(clazz0, tparam0) =>
+      val clazz = getClass(clazz0, uenv0)
+      mapN(visitType(tparam0, uenv0, tenv0)) {
+        tparam => NamedAst.TypeConstraint(clazz, tparam)
+      }
   }
 
   /**

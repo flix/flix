@@ -25,7 +25,7 @@ enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]] with [t: Order, t: ToString] {
+instance Boxable[Set[t]] with Order[t], ToString[t] {
     pub def box(x: Set[t]): Boxed = {
         let value = x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(o1 as Set[t], o2 as Set[t]);
@@ -38,23 +38,23 @@ instance Boxable[Set[t]] with [t: Order, t: ToString] {
     }
 }
 
-instance ToString[Set[a]] with [a : ToString] {
+instance ToString[Set[a]] with ToString[a] {
     pub def toString(xs: Set[a]): String =
         let s = Set.foldRight((x, acc) -> "${x}, ${acc}", "", xs);
         "Set#{${String.dropRight(2, s)}}"
 }
 
-instance Hash[Set[a]] with [a : Hash] {
+instance Hash[Set[a]] with Hash[a] {
     pub def hash(xs: Set[a]): Int =
         Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, xs)
 }
 
-instance Eq[Set[a]] with[a : Eq, a : Order] {
+instance Eq[Set[a]] with Eq[a], Order[a] {
     pub def eq(xs: Set[a], ys: Set[a]): Bool =
         Set.isSubsetOf(xs, ys) and Set.isSubsetOf(ys, xs)
 }
 
-instance Order[Set[a]] with [a : Order] {
+instance Order[Set[a]] with Order[a] {
 
     pub def compare(xs: Set[a], ys: Set[a]): Comparison =
         Set.toList(xs) <=> Set.toList(ys)

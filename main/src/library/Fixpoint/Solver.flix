@@ -20,6 +20,23 @@ use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
 
+// TODO: The following tests have been commented and should be fixed an incommented.
+// Test.Dec.RelAlias
+// Test.Exp.Fixpoint.Fold
+// Test.Predicate.Filter
+// Test.Predicate.Guard
+// Test.Predicate.Union
+// Test.Term.Apply
+// Test.Term.Var.CapturedVar
+// Test.Term.Var.WildVar
+// fixpoint-computations-on-lattices
+// TestConstant
+// IFDS
+// IDE
+// SUOpt
+// FloydWarshall
+// TestIntroduction
+
 namespace Fixpoint {
     pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] = match d {
         case Datalog(_, rules) =>

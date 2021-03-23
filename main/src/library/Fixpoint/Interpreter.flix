@@ -19,7 +19,7 @@ use Fixpoint/Ast.PredSym;
 use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint.Tuple;
 
-instance Order[Tuple[v]] with [v : Order] {
+instance Order[Tuple[v]] with Order[v] {
     pub def compare(a: Tuple[v], b: Tuple[v]): Comparison = compareHelper(a, b, 0) as & Pure
 }
 

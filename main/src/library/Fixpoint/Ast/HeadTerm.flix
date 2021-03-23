@@ -25,7 +25,7 @@ namespace Fixpoint/Ast {
         case App5(v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
     }
 
-    instance ToString[HeadTerm[v]] with [v : ToString] {
+    instance ToString[HeadTerm[v]] with ToString[v] {
         pub def toString(term: HeadTerm[v]): String = match term {
             case HeadTerm.Var(varSym, _) => "${varSym}"
             case HeadTerm.Lit(v, _) => "${v}"
