@@ -314,7 +314,7 @@ class LangSuite extends Suites(
   //
   // Type Alias.
   //
-  new Ignore("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibrary), // TODO
+  new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibrary),
 
   //
   // Unused.
