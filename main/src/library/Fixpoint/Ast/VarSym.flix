@@ -17,4 +17,16 @@ namespace Fixpoint/Ast {
     pub enum VarSym {
         case VarSym(String, SourceLocation)
     }
+
+    instance ToString[VarSym] {
+        pub def toString(varSym: VarSym): String = match varSym {
+            case VarSym(name, _) => name
+        }
+    }
+
+    instance Order[VarSym] {
+        pub def compare(a: VarSym, b: VarSym): Comparison = match (a,b) {
+            case (VarSym(s1, _), VarSym(s2, _)) => s1 <=> s2
+        }
+    }
 }
