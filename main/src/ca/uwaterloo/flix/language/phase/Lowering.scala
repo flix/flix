@@ -928,8 +928,8 @@ object Lowering extends Phase[Root, Root] {
       // Construct a lambda that takes the unit argument.
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
-      val innerExp = Expression.Lambda(fparam, exp, tpe, loc)
-      // TODO: Refactor
+      val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
+      val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
       return if (isGuard)
         mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
       else
