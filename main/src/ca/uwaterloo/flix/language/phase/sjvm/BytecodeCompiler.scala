@@ -47,7 +47,8 @@ object BytecodeCompiler {
       WithSource[R](loc) ~ pushBool(false)
 
     case Expression.Char(lit, loc) =>
-      WithSource[R](loc) ~ pushChar(lit)
+      WithSource[R](loc) ~
+        pushChar(lit)
 
     case Expression.Float32(lit, loc) =>
       WithSource[R](loc) ~ pushFloat32(lit)
