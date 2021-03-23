@@ -159,17 +159,12 @@ instance Order[Char] {
     pub override def greaterEqual(x: Char, y: Char): Bool = $CHAR_GE$(x, y)
 
     pub def compare(x: Char, y: Char): Comparison =
-        if (x <= y) {
-            if (y <= x)
-                EqualTo
-            else
-                LessThan
-        } else {
-            if (y <= x)
-                GreaterThan
-            else
-                EqualTo
-        }
+        if ($CHAR_LT$(x, y))
+            LessThan
+        else if ($CHAR_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
 
 }
 
@@ -184,17 +179,12 @@ instance Order[Float32] {
     pub override def greaterEqual(x: Float32, y: Float32): Bool = $FLOAT32_GE$(x, y)
 
     pub def compare(x: Float32, y: Float32): Comparison =
-        if (x <= y) {
-            if (y <= x)
-                EqualTo
-            else
-                LessThan
-        } else {
-            if (y <= x)
-                GreaterThan
-            else
-                EqualTo
-        }
+        if ($FLOAT32_LT$(x, y))
+            LessThan
+        else if ($FLOAT32_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
 
 }
 
@@ -209,17 +199,12 @@ instance Order[Float64] {
     pub override def greaterEqual(x: Float64, y: Float64): Bool = $FLOAT64_GE$(x, y)
 
     pub def compare(x: Float64, y: Float64): Comparison =
-        if (x <= y) {
-            if (y <= x)
-                EqualTo
-            else
-                LessThan
-        } else {
-            if (y <= x)
-                GreaterThan
-            else
-                EqualTo
-        }
+        if ($FLOAT64_LT$(x, y))
+            LessThan
+        else if ($FLOAT64_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
 
 }
 
@@ -234,17 +219,12 @@ instance Order[Int8] {
     pub override def greaterEqual(x: Int8, y: Int8): Bool = $INT8_GE$(x, y)
 
     pub def compare(x: Int8, y: Int8): Comparison =
-        if (x <= y) {
-            if (y <= x)
-                EqualTo
-            else
-                LessThan
-        } else {
-            if (y <= x)
-                GreaterThan
-            else
-                EqualTo
-        }
+        if ($INT8_LT$(x, y))
+            LessThan
+        else if ($INT8_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
 
 }
 
@@ -259,17 +239,12 @@ instance Order[Int16] {
     pub override def greaterEqual(x: Int16, y: Int16): Bool = $INT16_GE$(x, y)
 
     pub def compare(x: Int16, y: Int16): Comparison =
-        if (x <= y) {
-            if (y <= x)
-                EqualTo
-            else
-                LessThan
-        } else {
-            if (y <= x)
-                GreaterThan
-            else
-                EqualTo
-        }
+        if ($INT16_LT$(x, y))
+            LessThan
+        else if ($INT16_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
 
 }
 
@@ -284,17 +259,12 @@ instance Order[Int32] {
     pub override def greaterEqual(x: Int32, y: Int32): Bool = $INT32_GE$(x, y)
 
     pub def compare(x: Int32, y: Int32): Comparison =
-        if (x <= y) {
-            if (y <= x)
-                EqualTo
-            else
-                LessThan
-        } else {
-            if (y <= x)
-                GreaterThan
-            else
-                EqualTo
-        }
+        if ($INT32_LT$(x, y))
+            LessThan
+        else if ($INT32_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
 
 }
 
@@ -309,17 +279,12 @@ instance Order[Int64] {
     pub override def greaterEqual(x: Int64, y: Int64): Bool = $INT64_GE$(x, y)
 
     pub def compare(x: Int64, y: Int64): Comparison =
-        if (x <= y) {
-            if (y <= x)
-                EqualTo
-            else
-                LessThan
-        } else {
-            if (y <= x)
-                GreaterThan
-            else
-                EqualTo
-        }
+        if ($INT64_LT$(x, y))
+            LessThan
+        else if ($INT64_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
 
 }
 
@@ -334,17 +299,12 @@ instance Order[BigInt] {
     pub override def greaterEqual(x: BigInt, y: BigInt): Bool = $BIGINT_GE$(x, y)
 
     pub def compare(x: BigInt, y: BigInt): Comparison =
-        if (x <= y) {
-            if (y <= x)
-                EqualTo
-            else
-                LessThan
-        } else {
-            if (y <= x)
-                GreaterThan
-            else
-                EqualTo
-        }
+        if ($BIGINT_LT$(x, y))
+            LessThan
+        else if ($BIGINT_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
 
 }
 
