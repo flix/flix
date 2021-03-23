@@ -2070,7 +2070,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       (tparam, tconstrs.toList)
   }
 
-  // MATT docs
+  /**
+    * Weeds the given type parameters `tparams0`, returning an error if there are constraints.
+    */
   private def visitUnconstrainedTypeParams(tparams0: ParsedAst.TypeParams): Validation[WeededAst.TypeParams, WeederError] = tparams0 match {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided.toSuccess
     case ParsedAst.TypeParams.Explicit(tparams) =>
@@ -2079,7 +2081,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
   }
 
-  // MATT docs
+  /**
+    * Weeds the given type param `tparam`, returning an error if there are constraints.
+    */
   private def visitUnconstrainedTypeParam(tparam0: ParsedAst.TypeParam): Validation[WeededAst.TypeParam, WeederError] = {
     visitTypeParam(tparam0) match {
       case (tparam, Nil) => tparam.toSuccess
