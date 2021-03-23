@@ -85,7 +85,7 @@ instance Eq[String] {
     pub override def neq(x: String, y: String): Bool = $STRING_NEQ$(x, y)
 }
 
-instance Eq[(a1, a2)] with [a1 : Eq, a2 : Eq] {
+instance Eq[(a1, a2)] with Eq[a1], Eq[a2] {
 
     pub def eq(t1: (a1, a2), t2: (a1, a2)): Bool =
         let (x1, x2) = t1;
@@ -94,7 +94,7 @@ instance Eq[(a1, a2)] with [a1 : Eq, a2 : Eq] {
 
 }
 
-instance Eq[(a1, a2, a3)] with [a1 : Eq, a2 : Eq, a3 : Eq] {
+instance Eq[(a1, a2, a3)] with Eq[a1], Eq[a2], Eq[a3] {
 
     pub def eq(t1: (a1, a2, a3), t2: (a1, a2, a3)): Bool =
         let (x1, x2, x3) = t1;
@@ -103,7 +103,7 @@ instance Eq[(a1, a2, a3)] with [a1 : Eq, a2 : Eq, a3 : Eq] {
 
 }
 
-instance Eq[(a1, a2, a3, a4)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq] {
+instance Eq[(a1, a2, a3, a4)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4] {
 
     pub def eq(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Bool =
         let (x1, x2, x3, x4) = t1;
@@ -112,7 +112,7 @@ instance Eq[(a1, a2, a3, a4)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq] {
 
 }
 
-instance Eq[(a1, a2, a3, a4, a5)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq] {
+instance Eq[(a1, a2, a3, a4, a5)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5] {
 
     pub def eq(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Bool =
         let (x1, x2, x3, x4, x5) = t1;
@@ -121,7 +121,7 @@ instance Eq[(a1, a2, a3, a4, a5)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 :
 
 }
 
-instance Eq[(a1, a2, a3, a4, a5, a6)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq] {
+instance Eq[(a1, a2, a3, a4, a5, a6)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6] {
 
     pub def eq(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Bool =
         let (x1, x2, x3, x4, x5, x6) = t1;
@@ -130,7 +130,7 @@ instance Eq[(a1, a2, a3, a4, a5, a6)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, 
 
 }
 
-instance Eq[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq, a7 : Eq] {
+instance Eq[(a1, a2, a3, a4, a5, a6, a7)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7] {
 
     pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Bool =
         let (x1, x2, x3, x4, x5, x6, x7) = t1;
@@ -139,7 +139,7 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : 
 
 }
 
-instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq, a7 : Eq, a8 : Eq] {
+instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8] {
 
     pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool =
         let (x1, x2, x3, x4, x5, x6, x7, x8) = t1;
@@ -147,7 +147,7 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Eq, a2 : Eq, a3 : Eq, a
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8
 }
 
-instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq, a7 : Eq, a8 : Eq, a9 : Eq] {
+instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8], Eq[a9] {
 
     pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool =
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t1;
@@ -156,7 +156,7 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Eq, a2 : Eq, a3 : E
 
 }
 
-instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Eq, a2 : Eq, a3 : Eq, a4 : Eq, a5 : Eq, a6 : Eq, a7 : Eq, a8 : Eq, a9 : Eq, a10 : Eq] {
+instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8], Eq[a9], Eq[a10] {
 
     pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool =
         let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t1;

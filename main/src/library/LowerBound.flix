@@ -24,39 +24,39 @@ pub lawless class LowerBound[a] {
     pub def minValue(): a
 }
 
-instance LowerBound[(a1, a2)] with [a1 : LowerBound, a2 : LowerBound] {
+instance LowerBound[(a1, a2)] with LowerBound[a1], LowerBound[a2] {
     pub def minValue(): (a1, a2) = (LowerBound.minValue(), LowerBound.minValue())
 }
 
-instance LowerBound[(a1, a2, a3)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound] {
+instance LowerBound[(a1, a2, a3)] with LowerBound[a1], LowerBound[a2], LowerBound[a3] {
     pub def minValue(): (a1, a2, a3) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
 
-instance LowerBound[(a1, a2, a3, a4)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound, a4 : LowerBound] {
+instance LowerBound[(a1, a2, a3, a4)] with LowerBound[a1], LowerBound[a2], LowerBound[a3], LowerBound[a4] {
     pub def minValue(): (a1, a2, a3, a4) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
 
-instance LowerBound[(a1, a2, a3, a4, a5)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound, a4 : LowerBound, a5 : LowerBound] {
+instance LowerBound[(a1, a2, a3, a4, a5)] with LowerBound[a1], LowerBound[a2], LowerBound[a3], LowerBound[a4], LowerBound[a5] {
     pub def minValue(): (a1, a2, a3, a4, a5) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
 
-instance LowerBound[(a1, a2, a3, a4, a5, a6)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound, a4 : LowerBound, a5 : LowerBound, a6 : LowerBound] {
+instance LowerBound[(a1, a2, a3, a4, a5, a6)] with LowerBound[a1], LowerBound[a2], LowerBound[a3], LowerBound[a4], LowerBound[a5], LowerBound[a6] {
     pub def minValue(): (a1, a2, a3, a4, a5, a6) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
 
-instance LowerBound[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound, a4 : LowerBound, a5 : LowerBound, a6 : LowerBound, a7 : LowerBound] {
+instance LowerBound[(a1, a2, a3, a4, a5, a6, a7)] with LowerBound[a1], LowerBound[a2], LowerBound[a3], LowerBound[a4], LowerBound[a5], LowerBound[a6], LowerBound[a7] {
     pub def minValue(): (a1, a2, a3, a4, a5, a6, a7) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
 
-instance LowerBound[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound, a4 : LowerBound, a5 : LowerBound, a6 : LowerBound, a7 : LowerBound, a8 : LowerBound] {
+instance LowerBound[(a1, a2, a3, a4, a5, a6, a7, a8)] with LowerBound[a1], LowerBound[a2], LowerBound[a3], LowerBound[a4], LowerBound[a5], LowerBound[a6], LowerBound[a7], LowerBound[a8] {
     pub def minValue(): (a1, a2, a3, a4, a5, a6, a7, a8) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
 
-instance LowerBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound, a4 : LowerBound, a5 : LowerBound, a6 : LowerBound, a7 : LowerBound, a8 : LowerBound, a9 : LowerBound] {
+instance LowerBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with LowerBound[a1], LowerBound[a2], LowerBound[a3], LowerBound[a4], LowerBound[a5], LowerBound[a6], LowerBound[a7], LowerBound[a8], LowerBound[a9] {
     pub def minValue(): (a1, a2, a3, a4, a5, a6, a7, a8, a9) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
 
-instance LowerBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : LowerBound, a2 : LowerBound, a3 : LowerBound, a4 : LowerBound, a5 : LowerBound, a6 : LowerBound, a7 : LowerBound, a8 : LowerBound, a9 : LowerBound, a10 : LowerBound] {
+instance LowerBound[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with LowerBound[a1], LowerBound[a2], LowerBound[a3], LowerBound[a4], LowerBound[a5], LowerBound[a6], LowerBound[a7], LowerBound[a8], LowerBound[a9], LowerBound[a10] {
     pub def minValue(): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = (LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue(), LowerBound.minValue())
 }
 

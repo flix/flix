@@ -89,26 +89,26 @@ instance Hash[BigInt] {
         hashCode(x) as & Pure
 }
 
-instance Hash[(a1, a2)] with [a1 : Hash, a2 : Hash] {
+instance Hash[(a1, a2)] with Hash[a1], Hash[a2] {
     pub def hash(t: (a1, a2)): Int = match t {
         case (x1, x2) => 2 * 3 * Hash.hash(x1) + 5 * Hash.hash(x2)
     }
 }
 
-instance Hash[(a1, a2, a3)] with [a1 : Hash, a2 : Hash, a3 : Hash] {
+instance Hash[(a1, a2, a3)] with Hash[a1], Hash[a2], Hash[a3] {
     pub def hash(t: (a1, a2, a3)): Int = match t {
         case (x1, x2, x3) => 3 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3)
     }
 }
 
-instance Hash[(a1, a2, a3, a4)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash] {
+instance Hash[(a1, a2, a3, a4)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4] {
     pub def hash(t: (a1, a2, a3, a4)): Int = match t {
         case (x1, x2, x3, x4) =>
             4 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
     }
 }
 
-instance Hash[(a1, a2, a3, a4, a5)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash] {
+instance Hash[(a1, a2, a3, a4, a5)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5] {
     pub def hash(t: (a1, a2, a3, a4, a5)): Int = match t {
         case (x1, x2, x3, x4, x5) =>
             5 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
@@ -116,7 +116,7 @@ instance Hash[(a1, a2, a3, a4, a5)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : 
     }
 }
 
-instance Hash[(a1, a2, a3, a4, a5, a6)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash] {
+instance Hash[(a1, a2, a3, a4, a5, a6)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6] {
     pub def hash(t: (a1, a2, a3, a4, a5, a6)): Int = match t {
         case (x1, x2, x3, x4, x5, x6) =>
             6 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
@@ -124,7 +124,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6)] with [a1 : Hash, a2 : Hash, a3 : Hash, a
     }
 }
 
-instance Hash[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash] {
+instance Hash[(a1, a2, a3, a4, a5, a6, a7)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7] {
     pub def hash(t: (a1, a2, a3, a4, a5, a6, a7)): Int = match t {
         case (x1, x2, x3, x4, x5, x6, x7) =>
             7 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
@@ -132,7 +132,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6, a7)] with [a1 : Hash, a2 : Hash, a3 : Has
     }
 }
 
-instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash] {
+instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8] {
     pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8)): Int = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8) =>
             8 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
@@ -140,7 +140,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8)] with [a1 : Hash, a2 : Hash, a3 :
     }
 }
 
-instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash, a9 : Hash] {
+instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8], Hash[a9] {
     pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Int = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
             9 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
@@ -149,7 +149,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with [a1 : Hash, a2 : Hash, 
     }
 }
 
-instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with [a1 : Hash, a2 : Hash, a3 : Hash, a4 : Hash, a5 : Hash, a6 : Hash, a7 : Hash, a8 : Hash, a9 : Hash, a10 : Hash] {
+instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8], Hash[a9], Hash[a10] {
     pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Int = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
             10 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)

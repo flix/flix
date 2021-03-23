@@ -118,21 +118,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
         sigs <- traverse(sigs0)(visitSig)
         laws <- traverse(laws0)(visitLaw)
-        superClasses <- visitSuperClasses(tparam0, superClasses0)
+        superClasses <- traverse(superClasses0)(visitTypeConstraint)
       } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
-  }
-
-  /**
-    * Checks each super class to ensure the type parameter name matches `tparam`.
-    */
-  private def visitSuperClasses(tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.SuperClass]): Validation[List[Name.QName], WeederError] = {
-    traverse(superClasses) {
-      case ParsedAst.SuperClass(sp1, clazz, ident, sp2) =>
-        if (ident.name == tparam.ident.name)
-          clazz.toSuccess
-        else
-          WeederError.MismatchedSuperClassTypeParameter(tparam.ident, ident, mkSL(sp1, sp2)).toFailure
-    }
   }
 
   /**
@@ -169,7 +156,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Unlawful))
         defs <- traverse(defs0)(visitInstanceDef)
-        constrs = visitTypeConstraints(constrs0.getOrElse(Seq.empty))
+        constrs <- traverse(constrs0.getOrElse(Seq.empty))(visitTypeConstraint)
       } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, clazz.loc))
 
   }
@@ -2094,12 +2081,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Weeds the given type constraints `constraints0`.
+    * Weeds the given type constraint `tconstr`.
     */
-  private def visitTypeConstraints(constraints0: Seq[ParsedAst.ConstrainedType]): List[WeededAst.ConstrainedType] = {
-    constraints0.map {
-      case ParsedAst.ConstrainedType(sp1, tpe, classes, sp2) => WeededAst.ConstrainedType(visitType(tpe), classes.toList)
-    }.toList
+  private def visitTypeConstraint(tconstr: ParsedAst.TypeConstraint): Validation[WeededAst.TypeConstraint, WeederError] = tconstr match {
+    case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
+      visitType(tparam0) match {
+        case tparam: WeededAst.Type.Var => WeededAst.TypeConstraint(clazz, tparam).toSuccess
+        case _ => WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
+      }
   }
 
   /**

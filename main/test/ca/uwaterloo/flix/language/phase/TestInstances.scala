@@ -542,4 +542,24 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.UnmarkedOverride](result)
   }
+
+  test("Test.ComplexErrorSuppressesOtherErrors.01") {
+    val input =
+      """
+        |class C[a] {
+        |  pub def f(x: a): Bool
+        |}
+        |
+        |instance C[Box[String]] {
+        |  pub def g(_x: Box[String]): Bool = false
+        |}
+        |
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.ComplexInstanceType](result)
+    rejectError[InstanceError.ExtraneousDefinition](result)
+  }
 }

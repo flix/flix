@@ -19,7 +19,7 @@
 ///
 opaque type MutSet[t] = Ref[Set[t]]
 
-instance ToString[MutSet[a]] with [a : ToString] {
+instance ToString[MutSet[a]] with ToString[a] {
     pub def toString(xs: MutSet[a]): String =
         let s = MutSet.foldRight((x, acc) -> "${x}, ${acc}", "", xs) as & Pure;
         "MutSet#{${String.dropRight(2, s)}}"

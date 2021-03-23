@@ -253,7 +253,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def foo(x: Int): String = "123"
         |}
         |
-        |instance C[Box[a]] with [a : C] {
+        |instance C[Box[a]] with C[a] {
         |    pub def foo(x: Box[a]): String = match x {
         |        case Box(y) => C.foo(y)
         |    }
@@ -280,7 +280,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def foo(x: Int): String = "123"
         |}
         |
-        |instance C[Box[a]] with [a : C] {
+        |instance C[Box[a]] with C[a] {
         |    pub def foo(x: Box[a]): String = match x {
         |        case Box(y) => C.foo(y)
         |    }

@@ -146,7 +146,7 @@ namespace Test/Exp/Fixpoint/Solve {
         case Some(t)
     }
 
-    instance Eq[Option[a]] with [a : Eq] {
+    instance Eq[Option[a]] with Eq[a] {
         pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
             case (None, None)           => true
             case (Some(v1), Some(v2))   => v1 == v2
@@ -154,14 +154,14 @@ namespace Test/Exp/Fixpoint/Solve {
         }
     }
 
-    instance Hash[Option[a]] with [a : Hash] {
+    instance Hash[Option[a]] with Hash[a] {
         pub def hash(o: Option[a]): Int = match o {
             case None       => 1046527
             case Some(x)    => 919 * Hash.hash(x)
         }
     }
 
-    instance ToString[Option[a]] with [a : ToString] {
+    instance ToString[Option[a]] with ToString[a] {
         pub def toString(o: Option[a]): String = match o {
             case None       => "None"
             case Some(x)    => "Some(${x})"
@@ -173,7 +173,7 @@ namespace Test/Exp/Fixpoint/Solve {
         case Err(e)
     }
 
-    instance Eq[Result[t, e]] with [t : Eq, e : Eq] {
+    instance Eq[Result[t, e]] with Eq[t], Eq[e] {
         pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
             case (Ok(v1), Ok(v2)) => v1 == v2
             case (Err(w1), Err(w2)) => w1 == w2
@@ -181,14 +181,14 @@ namespace Test/Exp/Fixpoint/Solve {
         }
     }
 
-    instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
+    instance Hash[Result[t, e]] with Hash[t], Hash[e] {
         pub def hash(r: Result[t, e]): Int = match r {
             case Ok(v)  => 5381 + 113 * Hash.hash(v)
             case Err(v) => 5351 + 97 * Hash.hash(v)
         }
     }
 
-    instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
+    instance ToString[Result[t, e]] with ToString[t], ToString[e] {
         pub def toString(r: Result[t, e]): String = ???
     }
 

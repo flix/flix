@@ -25,17 +25,17 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
-instance ToString[List[a]] with [a : ToString] {
+instance ToString[List[a]] with ToString[a] {
     pub def toString(xs: List[a]): String =
         List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
 }
 
-instance Hash[List[a]] with [a : Hash] {
+instance Hash[List[a]] with Hash[a] {
     pub def hash(xs: List[a]): Int =
         List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
 }
 
-instance Eq[List[a]] with[a : Eq] {
+instance Eq[List[a]] with Eq[a] {
     pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
         case (Nil, Nil) => true
         case (x :: rs, y :: qs) => if (x != y) false else rs == qs
@@ -43,7 +43,7 @@ instance Eq[List[a]] with[a : Eq] {
     }
 }
 
-instance Order[List[a]] with [a : Order] {
+instance Order[List[a]] with Order[a] {
 
     ///
     /// Compares `xs` and `ys` lexicographically.
