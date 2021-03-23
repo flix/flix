@@ -27,14 +27,6 @@ instance Eq[Dist] {
     }
 }
 
-instance Hash[Dist] {
-    pub def hash(x: Dist): Int32 = match x {
-        case Top    => 0
-        case Bot    => 1
-        case Dst(n) => n + 2
-    }
-}
-
 instance PartialOrder[Dist] {
     pub def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
         case (_, Top) => true

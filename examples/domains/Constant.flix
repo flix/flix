@@ -23,14 +23,6 @@ namespace Domain/Constant {
         }
     }
 
-    instance Hash[Constant] {
-        pub def hash(x: Constant): Int32 = match x {
-            case Top    => 1
-            case Bot    => 2
-            case Cst(n) => n
-        }
-    }
-
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
