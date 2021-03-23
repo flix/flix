@@ -410,10 +410,11 @@ object Indexer {
     * Returns a reverse index for the given type parameter `tparam0`.
     */
   private def visitTypeParam(tparam0: TypeParam): Index = tparam0 match {
-    case TypeParam(_, _, classes, _) =>
-      tparam0.classes.foldLeft(Index.empty) {
-        case (acc, sym) => acc ++ Index.useOf(sym, tparam0.loc)
-      }
+    case TypeParam(_, _, _) =>
+//      tparam0.classes.foldLeft(Index.empty) {
+//        case (acc, sym) => acc ++ Index.useOf(sym, tparam0.loc)
+//      }
+      ??? // MATT
   }
 
   /**
