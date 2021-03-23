@@ -1038,12 +1038,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
-      // MATT disable
-    def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = {
-      for {
-        classes <- sequence(tparam0.classes.map(lookupClass(_, ns0, root)))
-        classSyms = classes.map(_.sym)
-      } yield ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, tparam0.loc)
+    def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
+        case NamedAst.TypeParam(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
     }
 
   }

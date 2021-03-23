@@ -374,6 +374,6 @@ object WeededAst {
 
   case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
 
-  case class TypeParam(ident: Name.Ident, kind: Option[Kind], classes: List[Name.QName])
+  case class TypeParam(ident: Name.Ident, kind: Option[Kind], classes: List[Name.QName]) // MATT remove classes
 
 }

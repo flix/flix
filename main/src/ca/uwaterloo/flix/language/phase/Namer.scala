@@ -1514,7 +1514,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getTypeParamDefaultStar(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam(ident, kind, classes) =>
-      NamedAst.TypeParam(ident, Type.freshVar(kind.getOrElse(Kind.Star), text = Some(ident.name)), classes, ident.loc)
+      NamedAst.TypeParam(ident, Type.freshVar(kind.getOrElse(Kind.Star), text = Some(ident.name)), ident.loc)
   }
 
   /**
@@ -1554,7 +1554,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {
       case WeededAst.TypeParam(ident, kindOpt, classes) =>
-        val qualifiedClasses = classes.map(clazz => uenv0.typesAndClasses.getOrElse(clazz.ident.name, clazz))
         val kind = kindOpt match {
           // Case 1: Get the kind for each type variable from the implicit type params.
           // Use a kind variable if not found; this will be caught later by redundancy checks.
@@ -1563,7 +1562,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case Some(k) => k
         }
         val tvar = Type.freshVar(kind, text = Some(ident.name))
-        NamedAst.TypeParam(ident, tvar, qualifiedClasses, ident.loc)
+        NamedAst.TypeParam(ident, tvar, ident.loc)
     }
   }
 
@@ -1640,7 +1639,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               case _ => kind
             }
             val tvar = Type.freshVar(kind1, text = Some(id.name)) // use the kind we validated from the parameter context
-            NamedAst.TypeParam(id, tvar, Nil, loc) // use the id of the first occurrence of a tparam with this name
+            NamedAst.TypeParam(id, tvar, loc) // use the id of the first occurrence of a tparam with this name
         }
     }
   }
@@ -1663,7 +1662,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
         // We use a kind variable since we do not know the kind of the type variable.
         val tvar = Type.freshVar(Kind.freshVar(), text = Some(name))
-        NamedAst.TypeParam(ident, tvar, Nil, loc)
+        NamedAst.TypeParam(ident, tvar, loc)
     }
   }
 
@@ -1691,8 +1690,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     for {
       t <- visitType(tpe, uenv0, tenv0)
       tparams = tparams0.map(_.tpe)
-      tconstrs = tparams0.flatMap(tparam => tparam.classes.map(NamedAst.TypeConstraint(_, NamedAst.Type.Var(tparam.tpe, tparam.loc))))
-    } yield NamedAst.Scheme(tparams ++ addedQuantifiers, tconstrs0 ++ tconstrs, t)
+      // MATT will likely need to add back in some tconstrs here
+    } yield NamedAst.Scheme(tparams ++ addedQuantifiers, tconstrs0, t)
   }
 
   /**
