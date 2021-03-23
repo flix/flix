@@ -19,7 +19,7 @@ namespace Fixpoint/Ast {
         case Datalog(Array[Constraint[v]], Array[Constraint[v]])
     }
 
-    instance ToString[Datalog[v]] with [v : ToString] {
+    instance ToString[Datalog[v]] with ToString[v] {
         pub def toString(cs: Datalog[v]): String =
             let toString = match Datalog(facts, rules) -> {
                 let sb = StringBuilder.new();

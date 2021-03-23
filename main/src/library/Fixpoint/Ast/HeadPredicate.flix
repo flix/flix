@@ -18,7 +18,7 @@ namespace Fixpoint/Ast {
         case HeadAtom(PredSym, Array[HeadTerm[v]], SourceLocation)
     }
 
-    instance ToString[HeadPredicate[v]] with [v : ToString] {
+    instance ToString[HeadPredicate[v]] with ToString[v] {
         pub def toString(head: HeadPredicate[v]): String =
             use Fixpoint.commaSeparate;
             match head {

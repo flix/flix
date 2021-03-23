@@ -36,7 +36,7 @@ namespace Fixpoint/Ram {
         }
     }
 
-    instance ToString[RamStmt[v]] with [v : ToString] {
+    instance ToString[RamStmt[v]] with ToString[v] {
         pub def toString(stmt: RamStmt[v]): String =
             let nl = String.lineSeparator();
             match stmt {

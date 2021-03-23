@@ -19,7 +19,7 @@ namespace Fixpoint/Ast {
         case Constraint(HeadPredicate[v], Array[BodyPredicate[v]], SourceLocation)
     }
 
-    instance ToString[Constraint[v]] with [v : ToString] {
+    instance ToString[Constraint[v]] with ToString[v] {
         pub def toString(c: Constraint[v]): String =
             use Fixpoint.commaSeparate;
             match c {

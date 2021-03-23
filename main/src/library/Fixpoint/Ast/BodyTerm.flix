@@ -20,7 +20,7 @@ namespace Fixpoint/Ast {
         case Wild(SourceLocation)
     }
 
-    instance ToString[BodyTerm[v]] with [v : ToString] {
+    instance ToString[BodyTerm[v]] with ToString[v] {
         pub def toString(term: BodyTerm[v]): String = match term {
             case BodyTerm.Var(varSym, _) => ToString.toString(varSym)
             case BodyTerm.Lit(v, _) => ToString.toString(v)

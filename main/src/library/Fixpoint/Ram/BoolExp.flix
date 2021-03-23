@@ -27,7 +27,7 @@ namespace Fixpoint/Ram {
         case Guard5(v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
     }
 
-    instance ToString[BoolExp[v]] with [v : ToString] {
+    instance ToString[BoolExp[v]] with ToString[v] {
         pub def toString(exp: BoolExp[v]): String =
             use Fixpoint.commaSeparate;
             match exp {

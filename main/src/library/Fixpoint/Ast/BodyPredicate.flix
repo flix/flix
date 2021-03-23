@@ -25,7 +25,7 @@ namespace Fixpoint/Ast {
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
     }
 
-    instance ToString[BodyPredicate[v]] with [v : ToString] {
+    instance ToString[BodyPredicate[v]] with ToString[v] {
         pub def toString(body: BodyPredicate[v]): String =
             use Fixpoint.commaSeparate;
             match body {
