@@ -149,7 +149,7 @@ namespace Test/Dec/Class {
 
             pub def g(): a
 
-            law m: forall (_x: a) . true
+            law m: forall[a](_x: a) . true
         }
     }
 
