@@ -254,7 +254,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
     traverse(e0.tparams)(p => Params.resolve(p, ns0, root)).flatMap {
       tparams =>
-        val tconstrs = tparams.flatMap(tparam => tparam.classes.map(clazz => Ast.TypeConstraint(clazz, tparam.tpe)))
+        val tconstrs = Nil
         val casesVal = traverse(e0.cases) {
           case (name, NamedAst.Case(enum, tag, tpe)) =>
             for {
@@ -1038,11 +1038,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
+      // MATT disable
     def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = {
       for {
         classes <- sequence(tparam0.classes.map(lookupClass(_, ns0, root)))
         classSyms = classes.map(_.sym)
-      } yield ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, classSyms, tparam0.loc)
+      } yield ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, tparam0.loc)
     }
 
   }
