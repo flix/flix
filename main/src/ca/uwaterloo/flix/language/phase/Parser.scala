@@ -182,7 +182,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ UnconstrainedTypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ ConstrainedTypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -260,6 +260,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    // MATT unify the two; kill unconstrained
     def ConstrainedTypeParam: Rule1[ParsedAst.TypeParam] = rule {
       SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ zeroOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.TypeParam
     }
