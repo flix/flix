@@ -694,7 +694,7 @@ object Lowering extends Phase[Root, Root] {
     case Body.Guard(exp, loc) =>
       // TODO: need to only consider variables that are not bound by the local scope.
       // See e.g. testGuardQuantAndCapturedVar02
-      mkGuardOrAppTerm(isGuard = true, exp, loc)
+      mkGuard(exp, loc)
   }
 
   /**
@@ -722,7 +722,7 @@ object Lowering extends Phase[Root, Root] {
           mkHeadTermLit(box(exp0))
         } else {
           // Case 3: Translate to application term.
-          mkGuardOrAppTerm(isGuard = false, exp0, exp0.loc)
+          mkAppTerm(exp0, exp0.loc)
         }
     }
   }
@@ -905,17 +905,22 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Returns a `Fixpoint/Ast.BodyPredicate.GuardX` or `Fixpoint/Ast.Term.AppX`.
+    * Returns a `Fixpoint/Ast.BodyPredicate.GuardX`.
+    *
+    * mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
-  private def mkGuardOrAppTerm(isGuard: Boolean, exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkGuard(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     // Construct the location expression.
     val locExp = mkSourceLocation(loc)
 
     // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
     val fvs = freeVars(exp).toList
 
+    // Compute the number of free variables.
+    val arity = fvs.length
+
     // Check that we have <= 5 free variables.
-    if (fvs.length > 5) {
+    if (arity > 5) {
       throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
     }
 
@@ -926,10 +931,7 @@ object Lowering extends Phase[Root, Root] {
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
-      return if (isGuard)
-        mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
-      else
-        mkTag(Enums.HeadTerm, s"App0", innerExp, Types.HeadTerm, loc)
+      return mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
     }
 
     // Introduce a fresh variable for each free variable.
@@ -952,18 +954,66 @@ object Lowering extends Phase[Root, Root] {
     // Lift the lambda expression to operate on boxed values.
     val liftedExp = liftXb(lambdaExp, fvs)
 
+    // Construct the `Fixpoint.Ast/BodyPredicate` value.
+    val varExps = fvs.map(kv => mkVarSym(kv._1))
+    val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+    mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
+  }
+
+  /**
+    * Returns a `Fixpoint/Ast.Term.AppX`.
+    *
+    * Note: mkGuard and mkAppTerm are similar and should probably be maintained together.
+    */
+  private def mkAppTerm(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    // Construct the location expression.
+    val locExp = mkSourceLocation(loc)
+
+    // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
+    val fvs = freeVars(exp).toList
+
     // Compute the number of free variables.
     val arity = fvs.length
+
+    // Check that we have <= 5 free variables.
+    if (arity > 5) {
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
+    }
+
+    // Special case: No free variables.
+    if (fvs.isEmpty) {
+      // Construct a lambda that takes the unit argument.
+      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
+      val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
+      val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
+      return mkTag(Enums.HeadTerm, s"App0", innerExp, Types.HeadTerm, loc)
+    }
+
+    // Introduce a fresh variable for each free variable.
+    val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+      case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+    }
+
+    // Substitute every symbol in `exp` for its fresh equivalent.
+    val freshExp = substExp(exp, freshVars)
+
+    // Curry `freshExp` in a lambda expression for each free variable.
+    val lambdaExp = fvs.foldLeft(freshExp) {
+      case (acc, (oldSym, tpe)) =>
+        val freshSym = freshVars(oldSym)
+        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
+        val lambdaType = Type.mkPureArrow(tpe, acc.tpe)
+        Expression.Lambda(fparam, acc, lambdaType, loc)
+    }
+
+    // Lift the lambda expression to operate on boxed values.
+    val liftedExp = liftXb(lambdaExp, fvs)
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
     val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
-
-    // TODO: Ugly
-    if (isGuard)
-      mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
-    else
-      mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
+    mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
   }
 
   /**
