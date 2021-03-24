@@ -1287,7 +1287,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               (chanConstrs, chanType, _) <- visitExp(chan)
               (valueConstrs, valueType, _) <- visitExp(value)
               (bodyConstrs, bodyType, _) <- visitExp(body)
-              // TODO: Should I unify something here?
+              _ <- unifyTypeM(chanType, Type.mkChannel(valueType), value.loc)
               resultCon = chanConstrs ++ valueConstrs ++ bodyConstrs
               resultTyp = bodyType
               resultEff = Type.Impure
