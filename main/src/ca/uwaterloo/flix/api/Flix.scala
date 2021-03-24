@@ -64,6 +64,9 @@ class Flix {
     * The core library *must* be present for any program to compile.
     */
   private val coreLibrary = List(
+    // Prelude
+    "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
+
     // Comparison
     "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
 
@@ -125,7 +128,6 @@ class Flix {
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
-    "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
