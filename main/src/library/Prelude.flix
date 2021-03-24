@@ -107,48 +107,55 @@ pub def space(_f: a -> Int32): Int32 = 1
 ///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
 ///
-law commutative[a, b : Eq](f: (a, a) -> b): Bool =
-    ∀(x: a, y: a). f(x, y) == f(y, x)
+    // TODO change to class law
+//law commutative[a, b : Eq](f: (a, a) -> b): Bool =
+//    ∀(x: a, y: a). f(x, y) == f(y, x)
 
 ///
 /// The associative law asserts that for a binary operator `f` the result of `f(x, f(y, z))` is equal to `f(f(x, y), z)`.
 ///
-law associative[a : Eq](f: (a, a) -> a): Bool =
-    ∀(x: a, y: a, z: a). f(x, f(y, z)) == f(f(x, y), z)
+    // TODO change to class law
+//law associative[a : Eq](f: (a, a) -> a): Bool =
+//    ∀(x: a, y: a, z: a). f(x, f(y, z)) == f(f(x, y), z)
 
 ///
 /// The reflexivity law asserts that any element is less than or equal to itself.
 ///
-law reflexive(⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
+    // TODO change to class law
+//law reflexive(⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
 
 ///
 /// The anti-symmetry law asserts that if `x` is less than or equal to `y` and vice versa then the
 /// two elements must be equal.
 ///
-law antiSymmetric[e : Eq](⊑: (e, e) -> Bool): Bool =
-    use Bool.{∧, →};
-    ∀(x: e, y: e). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y)
+    // TODO change to class law
+//law antiSymmetric[e : Eq](⊑: (e, e) -> Bool): Bool =
+//    use Bool.{∧, →};
+//    ∀(x: e, y: e). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y)
 
 ///
 /// The transitivity law asserts that if `x` less than or equal to `y` and `y` is less than or equal
 /// to `z` then `x` must be less than or equal to `z`.
 ///
-law transitive(⊑: (e, e) -> Bool): Bool =
-    use Bool.{∧, →};
-    ∀(x: e, y: e, z: e). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z)
+    // TODO change to class law
+//law transitive(⊑: (e, e) -> Bool): Bool =
+//    use Bool.{∧, →};
+//    ∀(x: e, y: e, z: e). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z)
 
 ///
 /// The non-negative law asserts that the co-domain of `h` is non-negative.
 ///
-law nonNegative(h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
+    // TODO change to class law
+//law nonNegative(h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
 
 ///
 /// The decreasing law asserts that if an element `x` is strictly less than an element `y` then
 /// the height assigned to `x` is stricty greater than the height assigned to `y`.
 ///
-law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool =
-    use Bool.{∧, →};
-    ∀(x: e, y: e). (x ⊑ y ∧ not equ(x, y)) → (h(x) > h(y))
+    // TODO change to class law
+//law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool =
+//    use Bool.{∧, →};
+//    ∀(x: e, y: e). (x ⊑ y ∧ not equ(x, y)) → (h(x) > h(y))
 
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.

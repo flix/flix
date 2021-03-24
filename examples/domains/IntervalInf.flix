@@ -36,7 +36,7 @@ namespace Domain/IntervalInf {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-   #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
+//   #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     def leq(e1: IntervalInf, e2: IntervalInf): Bool = match (e1, e2) {
         case (Bot, _)                       => true
         case (Range(b1, e1), Range(b2, e2)) => b2 <= b1 and e1 <= e2
@@ -51,7 +51,7 @@ namespace Domain/IntervalInf {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #upperBound #leastUpperBound #commutative /* slow #associative */
+//    #upperBound #leastUpperBound #commutative /* slow #associative */
     def lub(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
         case (Bot, x)                       => x
         case (x, Bot)                       => x
@@ -68,7 +68,7 @@ namespace Domain/IntervalInf {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #lowerBound #greatestLowerBound #commutative /* slow #associative */
+//    #lowerBound #greatestLowerBound #commutative /* slow #associative */
     def glb(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
         case (Top, x)                       => x
         case (x, Top)                       => x
@@ -92,8 +92,8 @@ namespace Domain/IntervalInf {
     ///
     /// Over-approximates integer `increment`.
     ///
-    #safe1(x -> x + 1ii)
-    #strict1 #monotone1
+//    #safe1(x -> x + 1ii)
+//    #strict1 #monotone1
     def inc(e: IntervalInf): IntervalInf = match e {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b + 1ii, e + 1ii))
@@ -105,8 +105,8 @@ namespace Domain/IntervalInf {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    #safe1(x -> x - 1ii)
-    #strict1 #monotone1
+//    #safe1(x -> x - 1ii)
+//    #strict1 #monotone1
     def dec(e: IntervalInf): IntervalInf = match e {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
@@ -118,8 +118,8 @@ namespace Domain/IntervalInf {
     ///
     /// Over-approximates integer `addition`.
     ///
-    #safe2((x, y) -> x + y)
-    #strict2 #monotone2 #commutative
+//    #safe2((x, y) -> x + y)
+//    #strict2 #monotone2 #commutative
     def plus(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
@@ -148,8 +148,8 @@ namespace Domain/IntervalInf {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-    #safe2((x, y) -> x * y)
-    #strict2  #monotone2 /**/ /* slow? #commutative */
+//    #safe2((x, y) -> x * y)
+//    #strict2  #monotone2 /**/ /* slow? #commutative */
     def times(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
@@ -167,8 +167,8 @@ namespace Domain/IntervalInf {
     /**
       * Over-approximates `equal`.
       */
-    #safeBelnap2((x, y) -> x == y)
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
+//    #safeBelnap2((x, y) -> x == y)
+//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
     def eq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
@@ -189,15 +189,15 @@ namespace Domain/IntervalInf {
     /**
       * Over-approximates `not equal`.
       */
-    #safeBelnap2((x, y) -> x != y)
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
+//    #safeBelnap2((x, y) -> x != y)
+//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
     def neq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
-   #safeBelnap2((x, y) -> x < y)
-   #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
+//   #safeBelnap2((x, y) -> x < y)
+//   #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
     def less(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
@@ -220,7 +220,7 @@ namespace Domain/IntervalInf {
     /**
       * Over-approximates `less than or equal`.
       */
-    #safeBelnap2((x, y) -> x <= y)
+//    #safeBelnap2((x, y) -> x <= y)
     //#Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 // TODO
     def lessEqual(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
@@ -229,85 +229,85 @@ namespace Domain/IntervalInf {
     // Specialized Laws
     // ------------------------------------------------------------------------
 
-    law reflexive(⊑: (IntervalInf, IntervalInf) -> Bool): Bool =
-        ∀(x: IntervalInf). norm(x) ⊑ norm(x)
+//    law reflexive(⊑: (IntervalInf, IntervalInf) -> Bool): Bool =
+//        ∀(x: IntervalInf). norm(x) ⊑ norm(x)
 
-    law antiSymmetric(⊑: (IntervalInf, IntervalInf) -> Bool): Bool =
-        ∀(x: IntervalInf, y: IntervalInf). ((norm(x) ⊑ norm(y)) ∧ (norm(y) ⊑ norm(x))) → (norm(x) == norm(y))
+//    law antiSymmetric(⊑: (IntervalInf, IntervalInf) -> Bool): Bool =
+//        ∀(x: IntervalInf, y: IntervalInf). ((norm(x) ⊑ norm(y)) ∧ (norm(y) ⊑ norm(x))) → (norm(x) == norm(y))
 
-    law transitive(⊑: (IntervalInf, IntervalInf) -> Bool): Bool =
-        ∀(x: IntervalInf, y: IntervalInf, z: IntervalInf). ((norm(x) ⊑ norm(y)) ∧ (norm(y) ⊑ norm(z))) → (norm(x) ⊑ norm(z))
+//    law transitive(⊑: (IntervalInf, IntervalInf) -> Bool): Bool =
+//        ∀(x: IntervalInf, y: IntervalInf, z: IntervalInf). ((norm(x) ⊑ norm(y)) ∧ (norm(y) ⊑ norm(z))) → (norm(x) ⊑ norm(z))
 
-    law upperBound(⊔: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
-        let ⊑ = leq;
-            ∀(x: IntervalInf, y: IntervalInf).
-                (norm(x) ⊑ (norm(x) ⊔ norm(y))) ∧ (norm(y) ⊑ (norm(x) ⊔ norm(y)))
+//    law upperBound(⊔: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
+//        let ⊑ = leq;
+//            ∀(x: IntervalInf, y: IntervalInf).
+//                (norm(x) ⊑ (norm(x) ⊔ norm(y))) ∧ (norm(y) ⊑ (norm(x) ⊔ norm(y)))
 
-    law leastUpperBound(⊔: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
-        let ⊑ = leq;
-            ∀(x: IntervalInf, y: IntervalInf, z: IntervalInf).
-                ((norm(x) ⊑ norm(z)) ∧ (norm(y) ⊑ norm(z))) → ((norm(x) ⊔ norm(y)) ⊑ norm(z))
+//    law leastUpperBound(⊔: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
+//        let ⊑ = leq;
+//            ∀(x: IntervalInf, y: IntervalInf, z: IntervalInf).
+//                ((norm(x) ⊑ norm(z)) ∧ (norm(y) ⊑ norm(z))) → ((norm(x) ⊔ norm(y)) ⊑ norm(z))
 
-    law lowerBound(⊓: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
-        let ⊑ = leq;
-            ∀(x: IntervalInf, y: IntervalInf).
-                ((norm(x) ⊓ norm(y)) ⊑ norm(x)) ∧ ((norm(x) ⊓ norm(y)) ⊑ norm(y))
+//    law lowerBound(⊓: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
+//        let ⊑ = leq;
+//            ∀(x: IntervalInf, y: IntervalInf).
+//                ((norm(x) ⊓ norm(y)) ⊑ norm(x)) ∧ ((norm(x) ⊓ norm(y)) ⊑ norm(y))
 
-    law greatestLowerBound(⊓: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
-        let ⊑ = leq;
-            ∀(x: IntervalInf, y: IntervalInf, z: IntervalInf).
-                    ((norm(z) ⊑ norm(x)) ∧ (norm(z) ⊑ norm(y))) → (norm(z) ⊑ (norm(x) ⊓ norm(y)))
+//    law greatestLowerBound(⊓: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
+//        let ⊑ = leq;
+//            ∀(x: IntervalInf, y: IntervalInf, z: IntervalInf).
+//                    ((norm(z) ⊑ norm(x)) ∧ (norm(z) ⊑ norm(y))) → (norm(z) ⊑ (norm(x) ⊓ norm(y)))
 
-    law leastElement(⊑: (IntervalInf, IntervalInf) -> Bool, ⊥: IntervalInf): Bool =
-        ∀(x: IntervalInf). ⊥ ⊑ norm(x)
+//    law leastElement(⊑: (IntervalInf, IntervalInf) -> Bool, ⊥: IntervalInf): Bool =
+//        ∀(x: IntervalInf). ⊥ ⊑ norm(x)
 
-    law greatestElement(⊑: (IntervalInf, IntervalInf) -> Bool, ⊤: IntervalInf): Bool =
-        ∀(x: IntervalInf). norm(x) ⊑ ⊤
+//    law greatestElement(⊑: (IntervalInf, IntervalInf) -> Bool, ⊤: IntervalInf): Bool =
+//        ∀(x: IntervalInf). norm(x) ⊑ ⊤
 
-    law associative(f: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
-        ∀(x: IntervalInf, y: IntervalInf, z: IntervalInf).
-                f(norm(x), f(norm(y), norm(z))) == f(f(norm(x), norm(y)), norm(z))
+//    law associative(f: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
+//        ∀(x: IntervalInf, y: IntervalInf, z: IntervalInf).
+//                f(norm(x), f(norm(y), norm(z))) == f(f(norm(x), norm(y)), norm(z))
 
-    law commutative(f: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
-        ∀(x: IntervalInf, y: IntervalInf).
-            f(norm(x), norm(y)) == f(norm(y), norm(x))
+//    law commutative(f: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
+//        ∀(x: IntervalInf, y: IntervalInf).
+//            f(norm(x), norm(y)) == f(norm(y), norm(x))
 
-    law strict1(f: IntervalInf -> IntervalInf): Bool =
-        f(Bot) == Bot
+//    law strict1(f: IntervalInf -> IntervalInf): Bool =
+//        f(Bot) == Bot
 
-    law strict2(f: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
-        f(Bot, Bot) == Bot
+//    law strict2(f: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
+//        f(Bot, Bot) == Bot
 
-    law monotone1(f: IntervalInf -> IntervalInf): Bool =
-        let ⊑ = leq;
-            ∀(x: IntervalInf, y: IntervalInf).
-                (norm(x) ⊑ norm(y)) → (f(norm(x)) ⊑ f(norm(y)))
+//    law monotone1(f: IntervalInf -> IntervalInf): Bool =
+//        let ⊑ = leq;
+//            ∀(x: IntervalInf, y: IntervalInf).
+//                (norm(x) ⊑ norm(y)) → (f(norm(x)) ⊑ f(norm(y)))
 
-    law monotone2(f: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
-        let ⊑ = leq;
-            ∀(x1: IntervalInf, x2: IntervalInf, y1: IntervalInf, y2: IntervalInf).
-                    ((norm(x1) ⊑ norm(y1)) ∧ (norm(x2) ⊑ norm(y2))) → (f(norm(x1), norm(x2)) ⊑ f(norm(y1), norm(y2)))
+//    law monotone2(f: (IntervalInf, IntervalInf) -> IntervalInf): Bool =
+//        let ⊑ = leq;
+//            ∀(x1: IntervalInf, x2: IntervalInf, y1: IntervalInf, y2: IntervalInf).
+//                    ((norm(x1) ⊑ norm(y1)) ∧ (norm(x2) ⊑ norm(y2))) → (f(norm(x1), norm(x2)) ⊑ f(norm(y1), norm(y2)))
 
-    law safe1(fa: IntervalInf -> IntervalInf, fc: BigInt -> BigInt): Bool =
-        ∀(x: BigInt). alpha(fc(x)) `leq` fa(alpha(x))
+//    law safe1(fa: IntervalInf -> IntervalInf, fc: BigInt -> BigInt): Bool =
+//        ∀(x: BigInt). alpha(fc(x)) `leq` fa(alpha(x))
 
-    law safe2(fa: (IntervalInf, IntervalInf) -> IntervalInf, fc: (BigInt, BigInt) -> BigInt): Bool =
-        ∀(x: BigInt, y: BigInt). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+//    law safe2(fa: (IntervalInf, IntervalInf) -> IntervalInf, fc: (BigInt, BigInt) -> BigInt): Bool =
+//        ∀(x: BigInt, y: BigInt). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
 
     // ------------------------------------------------------------------------
     // Specialized Laws for IntervalInf/Belnap.
     // ------------------------------------------------------------------------
 
-    law commutativeBelnap(f: (IntervalInf, IntervalInf) -> Belnap.Belnap): Bool =
-        ∀(x: IntervalInf, y: IntervalInf).
-            f(norm(x), norm(y)) == f(norm(y), norm(x))
+//    law commutativeBelnap(f: (IntervalInf, IntervalInf) -> Belnap.Belnap): Bool =
+//        ∀(x: IntervalInf, y: IntervalInf).
+//            f(norm(x), norm(y)) == f(norm(y), norm(x))
 
-    law monotoneBelnap2(f: (IntervalInf, IntervalInf) -> Belnap.Belnap): Bool =
-        let ⊑ = leq;
-            ∀(x1: IntervalInf, x2: IntervalInf, y1: IntervalInf, y2: IntervalInf).
-                    ((norm(x1) ⊑ norm(y1)) ∧ (norm(x2) ⊑ norm(y2))) → (f(norm(x1), norm(x2)) `Belnap.leq` f(norm(y1), norm(y2)))
+//    law monotoneBelnap2(f: (IntervalInf, IntervalInf) -> Belnap.Belnap): Bool =
+//        let ⊑ = leq;
+//            ∀(x1: IntervalInf, x2: IntervalInf, y1: IntervalInf, y2: IntervalInf).
+//                    ((norm(x1) ⊑ norm(y1)) ∧ (norm(x2) ⊑ norm(y2))) → (f(norm(x1), norm(x2)) `Belnap.leq` f(norm(y1), norm(y2)))
 
-    law safeBelnap2(fa: (IntervalInf, IntervalInf) -> Belnap.Belnap, fc: (BigInt, BigInt) -> Bool): Bool =
-        ∀(x: BigInt, y: BigInt). Belnap.alpha(fc(x, y)) `Belnap.leq` fa(alpha(x), alpha(y))
+//    law safeBelnap2(fa: (IntervalInf, IntervalInf) -> Belnap.Belnap, fc: (BigInt, BigInt) -> Bool): Bool =
+//        ∀(x: BigInt, y: BigInt). Belnap.alpha(fc(x, y)) `Belnap.leq` fa(alpha(x), alpha(y))
 
 }
