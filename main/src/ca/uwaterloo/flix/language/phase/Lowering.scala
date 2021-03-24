@@ -1191,17 +1191,40 @@ object Lowering extends Phase[Root, Root] {
         case (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLength(base, eff, loc) => ??? // TODO
-    case Expression.ArrayStore(base, index, elm, loc) => ??? // TODO
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ??? // TODO
-    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordEmpty(_, _) => Map.empty
+
+    case Expression.RecordSelect(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+      freeVars(value) ++ freeVars(rest)
+
+    case Expression.RecordRestrict(_, rest, _, _, _) =>
+      freeVars(rest)
+
+    case Expression.ArrayLit(elms, _, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.ArrayNew(elm, len, _, _, _) =>
+      freeVars(elm) ++ freeVars(len)
+
+    case Expression.ArrayLoad(base, index, _, _, _) =>
+      freeVars(base) ++ freeVars(index)
+
+    case Expression.ArrayLength(base, _, _) =>
+      freeVars(base)
+
+    case Expression.ArrayStore(base, index, elm, _) =>
+      freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
+      freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+
+    case Expression.Ref(exp, _, _, _) =>
+      freeVars(exp)
+
     case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
     case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.Existential(fparam, exp, loc) => ??? // TODO
