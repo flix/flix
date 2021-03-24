@@ -82,6 +82,18 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
 
 ///
+/// Returns `true` if `x` implies `y` logically holds.
+///
+@Time(1) @Space(1)
+pub def ==>(x: Bool, y: Bool): Bool = not x or y
+
+///
+/// Returns true if `x` implies `y` and vise versa.
+///
+@Time(1) @Space(1)
+pub def <==>(x: Bool, y: Bool): Bool = x == y
+
+///
 /// Unsafely converts `x` to a string using Java's built-in toString.
 ///
 pub def unsafeToString(x: a): String =
@@ -160,4 +172,4 @@ pub def space(_f: a -> Int32): Int32 = 1
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.
 ///
-def ===(_x: a, _y: a): Bool = panic("meta-programming construct")
+pub def ===(_x: a, _y: a): Bool = panic("meta-programming construct")
