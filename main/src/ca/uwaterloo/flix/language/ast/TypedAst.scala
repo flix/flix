@@ -438,8 +438,6 @@ object TypedAst {
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
 
-//  case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
-
   sealed trait SelectChannelRule
 
   object SelectChannelRule {

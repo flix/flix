@@ -372,8 +372,6 @@ object WeededAst {
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
 
-//  case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
-
   sealed trait SelectChannelRule
 
   object SelectChannelRule {
