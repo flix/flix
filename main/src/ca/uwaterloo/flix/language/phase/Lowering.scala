@@ -907,7 +907,6 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns a `Fixpoint/Ast.BodyPredicate.GuardX` or `Fixpoint/Ast.Term.AppX`.
     */
-  // TODO: Deal with the case where `exp` has no free variables.
   private def mkGuardOrAppTerm(isGuard: Boolean, exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     // Construct the location expression.
     val locExp = mkSourceLocation(loc)
@@ -951,7 +950,7 @@ object Lowering extends Phase[Root, Root] {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftX(lambdaExp, fvs, exp.tpe)
+    val liftedExp = liftXb(lambdaExp, fvs)
 
     // Compute the number of free variables.
     val arity = fvs.length
@@ -969,18 +968,16 @@ object Lowering extends Phase[Root, Root] {
 
   /**
     * Lifts the given lambda expression `exp0` with the given list of parameters `params`.
+    *
+    * Note: liftX and liftXb are similar and should probably be maintained together.
     */
   private def liftX(exp0: Expression, params: List[(Symbol.VarSym, Type)], resultType: Type): Expression = {
     // Compute the liftXb symbol.
-    val arity = params.length
-    val sym = resultType.typeConstructor match {
-      case Some(TypeConstructor.Bool) => Symbol.mkDefnSym(s"Boxable.lift${arity}b")
-      case _ => Symbol.mkDefnSym(s"Boxable.lift${arity}")
-    }
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${params.length}")
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
-    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> `resultType`.
+    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Boxed`.
     // That is, the function accepts a *curried* function and returns a *curried* function.
     //
 
@@ -988,17 +985,43 @@ object Lowering extends Phase[Root, Root] {
     val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
 
     // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> `resultType`.
-    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Types.Boxed)
 
-    // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> `resultType`).
+    // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> Boxed).
     val liftType = Type.mkPureArrow(argType, returnType)
 
     // Construct a call to the liftX function.
     val defn = Expression.Def(sym, liftType, exp0.loc)
-    val args = List(exp0)
-    val tpe = returnType
-    val eff = Type.Pure
-    Expression.Apply(defn, args, tpe, eff, exp0.loc)
+    Expression.Apply(defn, List(exp0), returnType, Type.Pure, exp0.loc)
+  }
+
+  /**
+    * Lifts the given Boolean-valued lambda expression `exp0` with the given list of parameters `params`.
+    *
+    * Note: liftX and liftXb are similar and should probably be maintained together.
+    */
+  private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
+    // Compute the liftXb symbol.
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${params.length}b")
+
+    //
+    // The liftX family of functions are of the form: a -> b -> c -> Bool and
+    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
+    // That is, the function accepts a *curried* function and returns a *curried* function.
+    //
+
+    // The type of the function argument, i.e. a -> b -> c -> Bool.
+    val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
+
+    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Bool.
+    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+
+    // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
+    val liftType = Type.mkPureArrow(argType, returnType)
+
+    // Construct a call to the liftXb function.
+    val defn = Expression.Def(sym, liftType, exp0.loc)
+    Expression.Apply(defn, List(exp0), returnType, Type.Pure, exp0.loc)
   }
 
   /**
