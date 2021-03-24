@@ -379,7 +379,10 @@ object TypedAstOps {
     case Expression.NewChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expression.GetChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
+    case Expression.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => rule match {
+        case SelectChannelRule.SelectGet(_, chan, exp) => sigSymsOf(chan) ++ sigSymsOf(exp)
+        case SelectChannelRule.SelectPut(chan, value, exp) => sigSymsOf(chan) ++ sigSymsOf(value) ++ sigSymsOf(exp)
+      }).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _) => sigSymsOf(exp)
