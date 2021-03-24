@@ -1008,7 +1008,7 @@ object Lowering extends Phase[Root, Root] {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftXb(lambdaExp, fvs)
+    val liftedExp = liftX(lambdaExp, fvs, exp.tpe)
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -1032,9 +1032,9 @@ object Lowering extends Phase[Root, Root] {
     //
 
     // The type of the function argument, i.e. a -> b -> c -> `resultType`.
-    val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
+    val argType = Type.mkPureCurriedArrow(params.map(_._2), resultType)
 
-    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> `resultType`.
+    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Boxed.
     val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Types.Boxed)
 
     // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> Boxed).
@@ -1100,11 +1100,10 @@ object Lowering extends Phase[Root, Root] {
   }
 
 
-  // TODO: Move into TypedAstOps
-
   /**
     * Returns the free variables in the given expression `exp0`.
     */
+  // TODO: Move into TypedAstOps
   private def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
     case Expression.Unit(_) => Map.empty
 
@@ -1212,8 +1211,9 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
   }
 
-  // TODO: Move into TypedAstOps
+
   // TODO: Should this also refresh variables in tree??
+  // TODO: Move into TypedAstOps
   private def substExp(exp0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
