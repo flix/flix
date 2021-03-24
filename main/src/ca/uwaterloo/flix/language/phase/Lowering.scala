@@ -686,7 +686,7 @@ object Lowering extends Phase[Root, Root] {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val predSymExp = mkPredSym(pred)
       val polarityExp = mkPolarity(polarity, loc)
-      val termsExp = mkArray(terms.map(visitBodyTerm), Types.BodyTerm, loc)
+      val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: polarityExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
@@ -711,8 +711,13 @@ object Lowering extends Phase[Root, Root] {
     exp0 match {
       case Expression.Var(sym, _, loc) =>
         // Case 1: Variable term.
-        // TODO: Need to consider whether it is captured...
-        mkHeadTermVar(sym)
+        if (isQuantifiedVar(cparams0, sym)) {
+          // TODO: Actual variable term
+          mkHeadTermVar(sym)
+        } else {
+          // TODO: lexically capture variable.
+          mkHeadTermLit(box(exp0))
+        }
 
       case _ =>
         // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
@@ -745,14 +750,18 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given body term `pat0`.
     */
-  private def visitBodyTerm(pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
+  private def visitBodyTerm(cparams0: List[ConstraintParam], pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
     case Pattern.Wild(_, loc) =>
       mkBodyTermWild(loc)
 
-    case Pattern.Var(sym, _, loc) =>
-      // TODO: Need to consider whether it is captured...
-      // TODO: Need cparams
-      mkBodyTermVar(sym)
+    case Pattern.Var(sym, tpe, loc) =>
+      if (isQuantifiedVar(cparams0, sym)) {
+        // TODO: Actual variable term
+        mkBodyTermVar(sym)
+      } else {
+        // TODO lexically bound variable.
+        mkBodyTermLit(box(Expression.Var(sym, tpe, loc)))
+      }
 
     case Pattern.Unit(loc) =>
       mkBodyTermLit(box(Expression.Unit(loc)))
