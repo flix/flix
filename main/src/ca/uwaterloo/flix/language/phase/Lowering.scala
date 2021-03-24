@@ -1296,7 +1296,12 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Stm(e1, e2, tpe, eff, loc)
+
     case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
     case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
 
@@ -1308,8 +1313,12 @@ object Lowering extends Phase[Root, Root] {
       val es = elms.map(substExp(_, subst))
       Expression.Tuple(es, tpe, eff, loc)
 
-    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordEmpty(_, _) => exp0
+
+    case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.RecordSelect(e, field, tpe, eff, loc)
+
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
     case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
     case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
