@@ -710,7 +710,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -882,7 +882,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
-          resultTyp <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
+          resultTypes <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
+          resultTyp <- unifyTypeM(tvar, resultTypes, loc)
           resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
@@ -1549,7 +1550,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Choose(_, exps, rules, loc) =>
+      case ResolvedAst.Expression.Choose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
           case ResolvedAst.ChoiceRule(pat0, exp) =>
@@ -1560,7 +1561,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             }
             TypedAst.ChoiceRule(pat, visitExp(exp, subst0))
         }
-        val tpe = rs.head.exp.tpe
+        val tpe = subst0(tvar)
         val eff = Type.mkAnd(rs.map(_.exp.eff))
         TypedAst.Expression.Choose(es, rs, tpe, eff, loc)
 
