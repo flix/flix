@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.{ErasedAst, PType}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, PRefType, EType, ERefType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -139,15 +139,30 @@ object BytecodeCompiler {
         SWAP ~
         POP
 
-    case Expression.Ref(exp, tpe, loc) =>
-      WithSource[R](loc) ~
-//        ??? ~[R ** PReference[PRef[T]] ** PReference[PRef[T]]]
-//        DUP ~[R ** PReference[PRef[T]] ** PReference[PRef[T]] ** PType]
-//        compileExp(exp) ~[R ** PReference[PRef[T]]]
-        ???
+    case Expression.Ref(exp, tpe, loc) => ???
+    //      WithSource[R](loc) ~
+    //        tempNewRef ~
+    //        DUP ~
+    //        compileExp(exp) ~
+    //        tempConstructor
 
-    case Expression.Deref(exp, tpe, loc) => ???
+    // new - dup - constructor - compile(exp) - setValue
+    // newRef(etype) // constructs name
+    // no methods, just mutate value field (PUTFIELD/GETFIELD)
+
+    case Expression.Deref(exp, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        // TODO: Fix temp strings
+        GETFIELD("Temp ref name based on tpe", "Temp name of the ref field", tpe)
+
     case Expression.Assign(exp1, exp2, tpe, loc) => ???
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        PUTFIELD("Temp ref name based on tpe", "Temp name of the ref field", exp2.tpe) ~
+        pushUnit
+
     case Expression.Existential(fparam, exp, loc) => ???
     case Expression.Universal(fparam, exp, loc) => ???
     case Expression.Cast(exp, tpe, loc) => ???

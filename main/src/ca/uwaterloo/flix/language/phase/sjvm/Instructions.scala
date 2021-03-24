@@ -33,7 +33,14 @@ object Instructions {
 
   def NOP[R <: Stack]: F[R] => F[R] = x => x
 
-  def POP[R <: Stack, T <: PType]: F[R ** T] => F[R] = ???
+  def GETFIELD[R <: Stack, T <: PType](className: String, fieldName: String, fieldType: EType[T]): F[R ** PReference[PRef[T]]] => F[R ** T] = ???
+
+  def PUTFIELD[R <: Stack, T <: PType](className: String, fieldName: String, fieldType: EType[T]): F[R ** PReference[PRef[T]] ** T] => F[R] = ???
+
+  // TODO: What should happen here
+  ///def RETURN[R <: Stack]: F[R] => R[???] =>
+
+  def POP[R <: Stack, T <: PType with Cat1]: F[R ** T] => F[R] = ???
 
   def DUP_X1[R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]: F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = ???
 
@@ -72,6 +79,29 @@ object Instructions {
   def pushFloat64[R <: Stack](n: Double): F[R] => F[R ** PFloat64] = ???
 
   def pushChar[R <: Stack](c: scala.Char): F[R] => F[R ** PChar] = ???
+
+  // TODO: unsafe index
+  def ALOAD[R <: Stack, T <: PRefType](index: Int): F[R] => F[R ** PReference[T]] = ???
+
+  def FLOAD[R <: Stack](index: Int): F[R] => F[R ** PFloat32] = ???
+
+  def DLOAD[R <: Stack](index: Int): F[R] => F[R ** PFloat64] = ???
+
+  def ILOAD[R <: Stack](index: Int): F[R] => F[R ** PInt32] = ???
+
+  def LLOAD[R <: Stack](index: Int): F[R] => F[R ** PInt64] = ???
+
+  def XLOAD[R <: Stack, T <: PType](tpe: EType[T], index: Int): F[R] => F[R ** T] = tpe match {
+    case Bool() => ???
+    case Int8() => ???
+    case Int16() => ???
+    case Int32() => ILOAD(index)
+    case Int64() => LLOAD(index)
+    case Char() => ???
+    case Float32() => FLOAD(index)
+    case Float64() => DLOAD(index)
+    case Reference(_) => ALOAD(index)
+  }
 
   def BALoad[R <: Stack]: F[R ** PReference[PArray[PInt8]] ** PInt32] => F[R ** PInt8] = ???
 
