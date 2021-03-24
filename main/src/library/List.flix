@@ -25,53 +25,30 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
-instance ToString[List[a]] with [a : ToString] {
-    def toString(xs: List[a]): String =
+instance ToString[List[a]] with ToString[a] {
+    pub def toString(xs: List[a]): String =
         List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
 }
 
-instance Hash[List[a]] with [a : Hash] {
-    def hash(xs: List[a]): Int =
+instance Hash[List[a]] with Hash[a] {
+    pub def hash(xs: List[a]): Int =
         List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
 }
 
-instance Eq[List[a]] with[a : Eq] {
-
-    def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+instance Eq[List[a]] with Eq[a] {
+    pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
         case (Nil, Nil) => true
         case (x :: rs, y :: qs) => if (x != y) false else rs == qs
         case _ => false
     }
-
-    def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
-
 }
 
-instance Order[List[a]] with [a : Order] {
-
-    def less(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    def lessEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    def greater(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    def greaterEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
+instance Order[List[a]] with Order[a] {
 
     ///
     /// Compares `xs` and `ys` lexicographically.
     ///
-    def compare(xs: List[a], ys: List[a]): Comparison = match (xs, ys) {
+    pub def compare(xs: List[a], ys: List[a]): Comparison = match (xs, ys) {
         case (_ :: _, Nil) => GreaterThan
         case (Nil, Nil) => EqualTo
         case (Nil, _ :: _) => LessThan
@@ -83,12 +60,12 @@ instance Order[List[a]] with [a : Order] {
 }
 
 instance Functor[List] {
-    def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
+    pub def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
 }
 
 instance Foldable[List] {
-    def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = List.foldLeft(f, s, xs)
-    def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = List.foldRight(f, s, xs)
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = List.foldLeft(f, s, xs)
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = List.foldRight(f, s, xs)
 }
 
 namespace List {

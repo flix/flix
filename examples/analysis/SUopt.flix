@@ -5,21 +5,20 @@
   }
 
   instance LowerBound[SULattice] {
-    def minValue(): SULattice = SULattice.Bottom
+    pub def minValue(): SULattice = SULattice.Bottom
   }
 
   instance Eq[SULattice] {
-    def eq(x: SULattice, y: SULattice): Bool = match (x, y) {
+    pub def eq(x: SULattice, y: SULattice): Bool = match (x, y) {
         case (Top, Top)             => true
         case (Single(a), Single(b)) => a == b
         case (Bottom, Bottom)       => true
         case _                      => false
     }
-    def neq(x: SULattice, y: SULattice): Bool = not (x == y)
   }
 
   instance Hash[SULattice] {
-    def hash(x: SULattice): Int32 = match x {
+    pub def hash(x: SULattice): Int32 = match x {
         case Top       => 1
         case Bottom    => 2
         case Single(s) => Hash.hash(s)
@@ -27,7 +26,7 @@
   }
 
   instance PartialOrder[SULattice] {
-    def partialCompare(x: SULattice, y: SULattice): Bool = match (x, y) {
+    pub def partialCompare(x: SULattice, y: SULattice): Bool = match (x, y) {
         case (SULattice.Bottom, _) => true
         case (_, SULattice.Top) => true
         case (SULattice.Single(s1), SULattice.Single(s2)) => s1 == s2
@@ -36,7 +35,7 @@
   }
 
   instance JoinLattice[SULattice] {
-    def leastUpperBound(x: SULattice, y: SULattice): SULattice = match (x, y) {
+    pub def leastUpperBound(x: SULattice, y: SULattice): SULattice = match (x, y) {
         case (SULattice.Bottom, _)                          => y
         case (_, SULattice.Bottom)                          => x
         case (SULattice.Single(s1), SULattice.Single(s2))   => if (s1 == s2) SULattice.Single(s1) else SULattice.Top
@@ -45,7 +44,7 @@
   }
 
   instance MeetLattice[SULattice] {
-    def greatestLowerBound(x: SULattice, y: SULattice): SULattice = match (x, y) {
+    pub def greatestLowerBound(x: SULattice, y: SULattice): SULattice = match (x, y) {
         case (SULattice.Top, _) => y
         case (_, SULattice.Top) => x
         case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
@@ -54,7 +53,7 @@
   }
 
   instance ToString[SULattice] {
-    def toString(x: SULattice): String = match x {
+    pub def toString(x: SULattice): String = match x {
         case Top        => "Top"
         case Single(n)  => "Single(${n})"
         case Bottom     => "Bottom"

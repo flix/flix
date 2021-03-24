@@ -1,10 +1,26 @@
+/*
+ * Copyright 2020-2021 Jonathan Lindegaard Starup
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ErasedAst.JType._
-import ca.uwaterloo.flix.language.ast.ErasedAst.{ErasedType, JType}
-import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst, MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.{ERefType, EType, ErasedAst, FinalAst, MonoType, PRefType, PType, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -19,9 +35,9 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
         }
         k -> ErasedAst.Enum(mod, sym, cases, loc)
     }
-    val latticeOps: Map[ErasedType[JType], ErasedAst.LatticeOps] = root.latticeOps.map { case (k, v) => visitTpe[JType](k) -> visitLatticeOps(v) }
+    val latticeOps: Map[EType[PType], ErasedAst.LatticeOps] = root.latticeOps.map { case (k, v) => visitTpe[PType](k) -> visitLatticeOps(v) }
     val properties = root.properties.map { p => visitProperty(p) }
-    val specialOps = root.specialOps.map { case (k1, m) => k1 -> m.map[ErasedType[JType], Symbol.DefnSym] { case (k2, v) => visitTpe[JType](k2) -> v } }
+    val specialOps = root.specialOps.map { case (k1, m) => k1 -> m.map[EType[PType], Symbol.DefnSym] { case (k2, v) => visitTpe[PType](k2) -> v } }
     val reachable = root.reachable
 
     val actualTransformation = ErasedAst.Root(defns, enums, latticeOps, properties, specialOps, reachable, root.sources).toSuccess
@@ -47,17 +63,17 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     */
   private def visitDef(def0: FinalAst.Def): ErasedAst.Def = {
     val fs = def0.formals.map(visitFormalParam)
-    val exp = visitExp[JType](def0.exp)
-    val tpe = visitTpe[JType](def0.tpe)
+    val exp = visitExp[PType](def0.exp)
+    val tpe = visitTpe[PType](def0.tpe)
     ErasedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, tpe, def0.loc)
   }
 
   /**
     * Translates the given expression `exp0` to the ErasedAst.
     */
-  private def visitExp[T <: JType](exp0: FinalAst.Expression): ErasedAst.Expression[T] = exp0 match {
+  private def visitExp[T <: PType](exp0: FinalAst.Expression): ErasedAst.Expression[T] = exp0 match {
     case FinalAst.Expression.Unit(loc) => ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]]
-    case FinalAst.Expression.Null(tpe, loc) => ErasedAst.Expression.Null(visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+    case FinalAst.Expression.Null(tpe, loc) => ErasedAst.Expression.Null[PRefType.PAnyObject](visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.True(loc) => ErasedAst.Expression.True(loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.False(loc) => (ErasedAst.Expression.False(loc)).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.Char(lit, loc) => ErasedAst.Expression.Char(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
@@ -104,7 +120,7 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     case FinalAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
       ErasedAst.Expression.Untag(sym, tag, visitExp(exp), visitTpe(tpe), loc)
     case FinalAst.Expression.Index(base, offset, tpe, loc) =>
-      val e: ErasedAst.Expression[JType] = ErasedAst.Expression.Index(visitExp[JObject](base), offset, visitTpe(tpe), loc)
+      val e: ErasedAst.Expression[PType] = ErasedAst.Expression.Index(visitExp(base), offset, visitTpe(tpe), loc)
       ErasedAst.Expression.Cast(e, visitTpe(tpe), loc)
     case FinalAst.Expression.Tuple(elms, tpe, loc) =>
       ErasedAst.Expression.Tuple(elms.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
@@ -117,23 +133,23 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     case FinalAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
       ErasedAst.Expression.RecordRestrict(field, visitExp(rest), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.ArrayLit(elms, tpe, loc) =>
-      ErasedAst.Expression.ArrayLit(elms.map(visitExp[JType]), visitTpe[JArray[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.ArrayLit(elms.map(visitExp[PType]), visitTpe[PReference[PArray[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-      ErasedAst.Expression.ArrayNew(visitExp[JType](elm), visitExp(len), visitTpe[JArray[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.ArrayNew(visitExp[PType](elm), visitExp(len), visitTpe[PReference[PArray[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-      ErasedAst.Expression.ArrayLoad(visitExp[JArray[T]](base), visitExp(index), visitTpe(tpe), loc)
+      ErasedAst.Expression.ArrayLoad(visitExp[PReference[PArray[T]]](base), visitExp(index), visitTpe(tpe), loc)
     case FinalAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-      ErasedAst.Expression.ArrayStore(visitExp[JArray[JType]](base), visitExp(index), visitExp(elm), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.ArrayStore(visitExp[PReference[PArray[PType]]](base), visitExp(index), visitExp(elm), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.ArrayLength(base, tpe, loc) =>
-      ErasedAst.Expression.ArrayLength(visitExp[JArray[JType]](base), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.ArrayLength(visitExp[PReference[PArray[PType]]](base), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      ErasedAst.Expression.ArraySlice(visitExp[JArray[JType]](base), visitExp(beginIndex), visitExp(endIndex), visitTpe[JArray[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.ArraySlice(visitExp[PReference[PArray[PType]]](base), visitExp(beginIndex), visitExp(endIndex), visitTpe[PReference[PArray[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      ErasedAst.Expression.Ref(visitExp(exp), visitTpe[JRef[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.Ref(visitExp(exp), visitTpe[PReference[PRef[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.Deref(exp, tpe, loc) =>
       ErasedAst.Expression.Deref(visitExp(exp), visitTpe(tpe), loc)
     case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.Assign(visitExp[JRef[JType]](exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.Assign(visitExp[PReference[PRef[PType]]](exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.Existential(fparam, exp, loc) =>
       val FinalAst.FormalParam(sym, tpe) = fparam
       ErasedAst.Expression.Existential(ErasedAst.FormalParam(sym, visitTpe(tpe)), visitExp(exp), loc).asInstanceOf[ErasedAst.Expression[T]]
@@ -162,11 +178,11 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
       ErasedAst.Expression.PutStaticField(field, visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
-      ErasedAst.Expression.NewChannel(visitExp(exp), visitTpe[JChan[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.NewChannel(visitExp(exp), visitTpe[PReference[PChan[T]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
       ErasedAst.Expression.GetChannel(visitExp(exp), visitTpe(tpe), loc)
     case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.PutChannel(visitExp[JChan[JType]](exp1), visitExp(exp2), visitTpe[JChan[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.PutChannel(visitExp[PReference[PChan[PType]]](exp1), visitExp(exp2), visitTpe[PReference[PChan[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.SelectChannel(rules, default, tpe, loc) =>
       val newRules = rules.map { case FinalAst.SelectChannelRule(sym, chan, exp) =>
         ErasedAst.SelectChannelRule[T](sym, visitExp(chan), visitExp(exp))
@@ -175,7 +191,7 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     case FinalAst.Expression.Spawn(exp, tpe, loc) =>
       ErasedAst.Expression.Spawn(visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-      ErasedAst.Expression.Lazy(visitExp(exp), visitTpe[JLazy[JType]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.Lazy(visitExp(exp), visitTpe[PReference[PLazy[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.Force(exp, tpe, loc) =>
       ErasedAst.Expression.Force(visitExp(exp), visitTpe(tpe), loc)
     case FinalAst.Expression.FixpointConstraintSet(cs, tpe, loc) =>
@@ -190,7 +206,7 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     case FinalAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       ErasedAst.Expression.FixpointEntails(visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
     case FinalAst.Expression.FixpointFold(pred, init, f, constraints, tpe, loc) =>
-      def visitVar[TT <: JType](v: FinalAst.Expression.Var): ErasedAst.Expression.Var[TT] =
+      def visitVar[TT <: PType](v: FinalAst.Expression.Var): ErasedAst.Expression.Var[TT] =
         visitExp(v).asInstanceOf[ErasedAst.Expression.Var[TT]]
 
       ErasedAst.Expression.FixpointFold(pred, visitVar(init), visitVar(f), visitVar(constraints), visitTpe(tpe), loc)
@@ -279,32 +295,49 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
   /**
     * Translates the type 'tpe' to the ErasedType.
     */
-  private def visitTpe[T <: JType](tpe: MonoType): ErasedType[T] = (tpe match {
-    case MonoType.Unit => ErasedType.Unit()
-    case MonoType.Bool => ErasedType.Bool()
-    case MonoType.Char => ErasedType.Char()
-    case MonoType.Float32 => ErasedType.Float32()
-    case MonoType.Float64 => ErasedType.Float64()
-    case MonoType.Int8 => ErasedType.Int8()
-    case MonoType.Int16 => ErasedType.Int16()
-    case MonoType.Int32 => ErasedType.Int32()
-    case MonoType.Int64 => ErasedType.Int64()
-    case MonoType.BigInt => ErasedType.BigInt()
-    case MonoType.Str => ErasedType.Str()
-    case MonoType.Array(tpe) => ErasedType.Array(visitTpe(tpe))
-    case MonoType.Channel(tpe) => ErasedType.Channel(visitTpe(tpe))
-    case MonoType.Lazy(tpe) => ErasedType.Lazy(visitTpe(tpe))
-    case MonoType.Ref(tpe) => ErasedType.Ref(visitTpe(tpe))
-    case MonoType.Tuple(elms) => ErasedType.Tuple(elms.map(visitTpe))
-    case MonoType.Enum(sym, args) => ErasedType.Enum(sym, args.map(visitTpe))
-    case MonoType.Arrow(args, result) => ErasedType.Arrow(args.map(visitTpe), visitTpe(result))
-    case MonoType.RecordEmpty() => ErasedType.RecordEmpty()
-    case MonoType.RecordExtend(field, value, rest) => ErasedType.RecordExtend(field, visitTpe(value), visitTpe(rest))
-    case MonoType.SchemaEmpty() => ErasedType.SchemaEmpty()
-    case MonoType.SchemaExtend(name, tpe, rest) => ErasedType.SchemaExtend(name, visitTpe(tpe), visitTpe(rest))
-    case MonoType.Relation(tpes) => ErasedType.Relation(tpes.map(visitTpe))
-    case MonoType.Lattice(tpes) => ErasedType.Lattice(tpes.map(visitTpe))
-    case MonoType.Native(clazz) => ErasedType.Native(clazz)
-    case MonoType.Var(id) => ErasedType.Var(id)
-  }).asInstanceOf[ErasedType[T]]
+  private def visitTpe[T <: PType](tpe: MonoType): EType[T] = (tpe match {
+    case MonoType.Unit => EType.Reference(ERefType.Unit())
+    case MonoType.Bool => EType.Bool()
+    case MonoType.Char => EType.Char()
+    case MonoType.Float32 => EType.Float32()
+    case MonoType.Float64 => EType.Float64()
+    case MonoType.Int8 => EType.Int8()
+    case MonoType.Int16 => EType.Int16()
+    case MonoType.Int32 => EType.Int32()
+    case MonoType.Int64 => EType.Int64()
+    case MonoType.BigInt =>
+      EType.Reference(ERefType.BigInt())
+    case MonoType.Str =>
+      EType.Reference(ERefType.Str())
+    case MonoType.Array(tpe) =>
+      EType.Reference(ERefType.Array[PType](visitTpe[PType](tpe)))
+    case MonoType.Channel(tpe) =>
+      EType.Reference(ERefType.Channel(visitTpe(tpe)))
+    case MonoType.Lazy(tpe) =>
+      EType.Reference(ERefType.Lazy(visitTpe(tpe)))
+    case MonoType.Ref(tpe) =>
+      EType.Reference(ERefType.Ref(visitTpe(tpe)))
+    case MonoType.Tuple(elms) =>
+      EType.Reference(ERefType.Tuple(elms.map(visitTpe)))
+    case MonoType.Enum(sym, args) =>
+      EType.Reference(ERefType.Enum(sym, args.map(visitTpe)))
+    case MonoType.Arrow(args, result) =>
+      EType.Reference(ERefType.Arrow(args.map(visitTpe), visitTpe(result)))
+    case MonoType.RecordEmpty() =>
+      EType.Reference(ERefType.RecordEmpty())
+    case MonoType.RecordExtend(field, value, rest) =>
+      EType.Reference(ERefType.RecordExtend(field, visitTpe(value), visitTpe(rest)))
+    case MonoType.SchemaEmpty() =>
+      EType.Reference(ERefType.SchemaEmpty())
+    case MonoType.SchemaExtend(name, tpe, rest) =>
+      EType.Reference(ERefType.SchemaExtend(name, visitTpe(tpe), visitTpe(rest)))
+    case MonoType.Relation(tpes) =>
+      EType.Reference(ERefType.Relation(tpes.map(visitTpe)))
+    case MonoType.Lattice(tpes) =>
+      EType.Reference(ERefType.Lattice(tpes.map(visitTpe)))
+    case MonoType.Native(clazz) =>
+      EType.Reference(ERefType.Native(clazz))
+    case MonoType.Var(id) =>
+      EType.Reference(ERefType.Var(id))
+  }).asInstanceOf[EType[T]]
 }

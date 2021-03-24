@@ -267,7 +267,7 @@ object TypedAstOps {
 
     // Visit every definition.
     root.defs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-      case (macc, (sym, defn)) => macc ++ visitExp(defn.exp, getEnvFromParams(defn.fparams))
+      case (macc, (sym, defn)) => macc ++ visitExp(defn.impl.exp, getEnvFromParams(defn.spec.fparams))
     }
   }
 
@@ -388,6 +388,17 @@ object TypedAstOps {
     case Expression.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointEntails(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+  }
+
+  /**
+    * Creates an iterable over all the instance defs in `root`.
+    */
+  def instanceDefsOf(root: Root): Iterable[Def] = {
+    for {
+      instsPerClass <- root.instances.values
+      inst <- instsPerClass
+      defn <- inst.defs
+    } yield defn
   }
 
   /**

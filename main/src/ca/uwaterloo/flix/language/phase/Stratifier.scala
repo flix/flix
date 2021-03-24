@@ -77,8 +77,8 @@ object Stratifier extends Phase[Root, Root] {
     * Performs stratification of the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache): Validation[Def, CompilationError] =
-    visitExp(def0.exp) map {
-      case e => def0.copy(exp = e)
+    visitExp(def0.impl.exp) map {
+      case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
 
   /**
@@ -406,7 +406,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns the dependency graph of the given definition `def0`.
     */
-  private def dependencyGraphOfDef(def0: Def): DependencyGraph = dependencyGraphOfExp(def0.exp)
+  private def dependencyGraphOfDef(def0: Def): DependencyGraph = dependencyGraphOfExp(def0.impl.exp)
 
   /**
     * Returns the dependency graph of the given expression `exp0`.

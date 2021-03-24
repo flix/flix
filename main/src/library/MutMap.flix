@@ -19,14 +19,14 @@
 ///
 opaque type MutMap[k, v] = Ref[Map[k, v]]
 
-instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
-    def toString(m: MutMap[k, v]): String =
+instance ToString[MutMap[k, v]] with ToString[k], ToString[v] {
+    pub def toString(m: MutMap[k, v]): String =
         let s = MutMap.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m) as & Pure;
         "MutMap#{${String.dropRight(2, s)}}"
 }
 
 instance Copy[MutMap[k, v]] {
-    def copy(m: MutMap[k, v]): MutMap[k, v] & e =
+    pub def copy(m: MutMap[k, v]): MutMap[k, v] & e =
         let MutMap(mm) = m;
         MutMap(ref (deref mm)) as & e
 }
@@ -442,5 +442,14 @@ namespace MutMap {
     pub def query(p: k -> Comparison, m: MutMap[k, v]): List[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.query(p, deref mm)
+
+    ///
+    /// Applies `f` to all key-value pairs `(k, v)` in the mutable map `m` where `p(k)` returns `EqualTo`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        Map.queryWith(p, f, deref mm)
 
 }

@@ -98,21 +98,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitClasses(root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
 
-    def visitSig(sig: ResolvedAst.Sig): Validation[TypedAst.Sig, TypeError] = sig match {
-      case ResolvedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, sc, eff, loc) =>
-        val tparams = getTypeParams(tparams0)
-        val fparams = getFormalParams(fparams0, Substitution.empty)
-        for {
-          ann <- visitAnnotations(ann0, root)
-        } yield TypedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
-    }
-
     def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-      case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws0, loc) =>
+      case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
         val tparams = getTypeParams(List(tparam))
         val tconstr = Ast.TypeConstraint(sym, tparam.tpe)
         for {
-          sigs <- Validation.traverse(signatures)(visitSig)
+          sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
           laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
         } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc))
     }
@@ -160,10 +151,40 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Performs type inference and reassembly on the given definition `defn`.
     */
-  private def visitDefn(defn: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] =
-    typeCheckDef(defn, assumedTconstrs, root, classEnv) map {
-      case (defn, _) => defn
-    }
+  private def visitDefn(defn: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
+    case ResolvedAst.Def(sym, spec0, exp0) =>
+      typeCheckDecl(spec0, exp0, assumedTconstrs, isMain = sym.isMain, root, classEnv) map {
+        case (spec, exp) => TypedAst.Def(sym, spec, exp)
+      }
+  }
+
+  /**
+    * Performs type inference and reassembly on the given signature `sig`.
+    */
+  private def visitSig(sig: ResolvedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = sig match {
+    case ResolvedAst.Sig(sym, spec0, Some(exp0)) =>
+      typeCheckDecl(spec0, exp0, assumedTconstrs, isMain = false, root, classEnv) map {
+        case (spec, exp) => TypedAst.Sig(sym, spec, Some(exp))
+      }
+    case ResolvedAst.Sig(sym, spec0, None) =>
+      visitSpec(spec0, root, Substitution.empty) map {
+        spec => TypedAst.Sig(sym, spec, None)
+      }
+  }
+
+  /**
+    * Performs type inference and reassembly on the given Spec `spec`.
+    */
+  private def visitSpec(spec: ResolvedAst.Spec, root: ResolvedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
+    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, eff, loc) =>
+      val annVal = visitAnnotations(ann0, root)
+      val tparams = getTypeParams(tparams0)
+      val fparams = getFormalParams(fparams0, subst)
+      Validation.mapN(annVal) {
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, eff, loc)
+      }
+
+  }
 
   /**
     * Performs type inference and reassembly on all definitions in the given AST root.
@@ -185,8 +206,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Def, Substitution), TypeError] = defn0 match {
-    case ResolvedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, declaredEff, loc) =>
+  private def typeCheckDecl(spec0: ResolvedAst.Spec, exp0: ResolvedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], isMain: Boolean, root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
+    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, eff, loc) =>
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -195,10 +216,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (inferredConstrs, inferredTyp, inferredEff) <- inferExp(exp0, root)
       } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp))
 
-      ///
-      /// Add assumptions to the declared scheme.
-      ///
-      val declaredScheme = if (sym.isMain) {
+
+      val declaredScheme = if (isMain) {
         // Case 1: This is the main function. Its type signature is fixed.
         Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
       } else {
@@ -253,8 +272,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
               val exp = reassembleExp(exp0, root, subst)
-              val tparams = getTypeParams(tparams0)
-              val fparams = getFormalParams(fparams0, subst)
+              val specVal = visitSpec(spec0, root, subst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.
@@ -265,17 +283,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
               ///
               val inferredScheme = Scheme(inferredType.typeVars.toList, inferredConstrs, inferredType)
 
-              ///
-              /// Infer types for annotations.
-              ///
-              val annVal = visitAnnotations(ann, root)
-
-              ///
-              /// Reassemble everything.
-              ///
-              Validation.mapN(annVal) {
-                case as =>
-                  (TypedAst.Def(doc, as, mod, sym, tparams, fparams, exp, sc, inferredScheme, declaredEff, loc), subst)
+              specVal map {
+                spec => (spec, TypedAst.Impl(exp, inferredScheme))
               }
 
             case Err(e) => Validation.Failure(LazyList(e))
@@ -386,15 +395,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs, defType) = Scheme.instantiate(defn.sc, InstantiateMode.Flexible)
+        val (tconstrs, defType) = Scheme.instantiate(defn.spec.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
         } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
-        val sig = root.classes.flatMap(_._2.signatures).find(_.sym == sym).get
-        val (tconstrs, sigType) = Scheme.instantiate(sig.sc, InstantiateMode.Flexible)
+        val sig = root.classes(sym.clazz).sigs(sym)
+        val (tconstrs, sigType) = Scheme.instantiate(sig.spec.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
         } yield (tconstrs, resultTyp, Type.Pure)
@@ -701,7 +710,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -873,7 +882,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
-          resultTyp <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
+          resultTypes <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
+          resultTyp <- unifyTypeM(tvar, resultTypes, loc)
           resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
@@ -1550,7 +1560,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Choose(_, exps, rules, loc) =>
+      case ResolvedAst.Expression.Choose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
           case ResolvedAst.ChoiceRule(pat0, exp) =>
@@ -1561,7 +1571,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             }
             TypedAst.ChoiceRule(pat, visitExp(exp, subst0))
         }
-        val tpe = rs.head.exp.tpe
+        val tpe = subst0(tvar)
         val eff = Type.mkAnd(rs.map(_.exp.eff))
         TypedAst.Expression.Choose(es, rs, tpe, eff, loc)
 

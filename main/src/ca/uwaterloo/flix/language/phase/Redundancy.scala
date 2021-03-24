@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
@@ -50,10 +51,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       return root.toSuccess
     }
 
-    // Computes all used symbols in all defs (in parallel).
-    val usedAll = ParOps.parAgg(root.defs, Used.empty)({
-      case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
+    // Computes all used symbols in all top-level defs (in parallel).
+    val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
+      case (acc, (_, decl)) => acc and visitDef(decl)(root, flix)
     }, _ and _)
+
+    // Compute all used symbols in all instance defs (in parallel).
+    val usedInstDefs = ParOps.parAgg(TypedAstOps.instanceDefsOf(root), Used.empty)({
+      case (acc, decl) => acc and visitDef(decl)(root, flix)
+    }, _ and _)
+
+    val usedAll = usedDefs and usedInstDefs
 
     // Check for unused symbols.
     val usedRes =
@@ -73,7 +81,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Checks for unused formal parameters.
       */
     def checkUnusedFormalParameters(used: Used): Used = {
-      val unusedParams = defn.fparams.collect {
+      val unusedParams = defn.spec.fparams.collect {
         case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
       }
       used ++ unusedParams
@@ -83,15 +91,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Checks for unused type parameters.
       */
     def checkUnusedTypeParameters(used: Used): Used = {
-      val unusedParams = defn.tparams.collect {
-        case tparam if deadTypeVar(tparam.tpe, defn.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
+      val unusedParams = defn.spec.tparams.collect {
+        case tparam if deadTypeVar(tparam.tpe, defn.spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
       }
       used ++ unusedParams
     }
 
     // Compute the used symbols inside the definition.
     val recursionContext = RecursionContext.Recursable(defn.sym, arity(defn))
-    val usedExp = visitExp(defn.exp, Env.of(recursionContext) ++ defn.fparams.map(_.sym))
+    val usedExp = visitExp(defn.impl.exp, Env.of(recursionContext) ++ defn.spec.fparams.map(_.sym))
 
     // Check for unused parameters and remove all variable symbols.
     val usedAll = (usedExp and checkUnusedFormalParameters(usedExp) and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
@@ -108,7 +116,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Finds the arity of the Def.
     */
-  private def arity(defn: Def): Int = defn.fparams.size
+  private def arity(defn: Def): Int = defn.spec.fparams.size
 
   /**
     * Checks for unused definition symbols.
@@ -663,9 +671,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
-    !isTest(decl.ann) &&
-      !isLint(decl.ann) &&
-      !decl.mod.isPublic &&
+    !isTest(decl.spec.ann) &&
+      !isLint(decl.spec.ann) &&
+      !decl.spec.mod.isPublic &&
       !decl.sym.isMain &&
       !decl.sym.name.startsWith("_") &&
       !used.defSyms.contains(decl.sym) &&

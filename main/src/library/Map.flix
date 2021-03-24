@@ -25,46 +25,25 @@ enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 
-instance ToString[Map[k, v]] with [k : ToString, v : ToString] {
-    def toString(m: Map[k, v]): String =
+instance ToString[Map[k, v]] with ToString[k], ToString[v] {
+    pub def toString(m: Map[k, v]): String =
         let s = Map.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m);
         "Map#{${String.dropRight(2, s)}}"
 }
 
-instance Hash[Map[k, v]] with [k : Hash, v : Hash] {
-    def hash(m: Map[k, v]): Int =
+instance Hash[Map[k, v]] with Hash[k], Hash[v] {
+    pub def hash(m: Map[k, v]): Int =
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
 
-instance Eq[Map[k, v]] with[k : Eq, k : Order, v : Eq] {
-
-    def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
+instance Eq[Map[k, v]] with Eq[k], Order[k], Eq[v] {
+    pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
         Map.isSubmapOf(m1, m2) and Map.isSubmapOf(m2, m1)
-
-    def neq(m1: Map[k, v], m2: Map[k, v]): Bool = not (m1 == m2)
 
 }
 
-instance Order[Map[k, v]] with [k : Order, v : Eq, v : Order] {
+instance Order[Map[k, v]] with Order[k], Eq[v], Order[v] {
 
-    def less(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    def lessEqual(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    def greater(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    def greaterEqual(x: Map[k, v], y: Map[k, v]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
     pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
         Map.toList(x) <=> Map.toList(y)
 
@@ -643,7 +622,16 @@ namespace Map {
     ///
     pub def query(p: k -> Comparison & e, m: Map[k, v]): List[(k, v)] & e =
         let Map(xs) = m;
-        RedBlackTree.queryWith(p, (k, v) -> (k, v), xs)
+        RedBlackTree.query(p, (k, v) -> (k, v), xs)
+
+    ///
+    /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
+        let Map(xs) = m;
+        RedBlackTree.queryWith(p, f, xs)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //

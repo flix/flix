@@ -143,7 +143,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -222,11 +222,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def OptSuperClasses = rule {
-        optional(optWS ~ keyword("extends") ~ optWS ~ oneOrMore(SuperClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.SuperClass]]) => o.getOrElse(Seq.empty))
-      }
-
-      def SuperClass = rule {
-        SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Names.Variable ~ optWS ~ "]" ~ SP ~> ParsedAst.SuperClass
+        optional(optWS ~ keyword("with") ~ optWS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
       }
 
       def EmptyBody = rule {
@@ -242,13 +238,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Instance: Rule1[ParsedAst.Declaration] = {
-      def TypeConstraint: Rule1[ParsedAst.ConstrainedType] = rule {
-        SP ~ Types.Var ~ oneOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.ConstrainedType
-      }
+    def TypeConstraint: Rule1[ParsedAst.TypeConstraint] = rule {
+      SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.TypeConstraint
+    }
 
+    def Instance: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optional(optWS ~ keyword("with") ~ optWS ~ "[" ~ optWS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]")
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optional(optWS ~ keyword("with") ~ optWS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS))
       }
 
       def EmptyBody = rule {
@@ -1359,6 +1355,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("lawless")) ~ SP ~> ParsedAst.Modifier
     }
 
+    def Override: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(keyword("override")) ~ SP ~> ParsedAst.Modifier
+    }
+
     def Public: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("pub")) ~ SP ~> ParsedAst.Modifier
     }
@@ -1372,7 +1372,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawless | Public | Sealed | Unlawful
+      Inline | Lawless | Override | Public | Sealed | Unlawful
     }
 
     rule {

@@ -18,7 +18,7 @@ lawless class PartialOrder[a] {
     ///
     /// Returns `true` if `x` is smaller equal to `y`.
     ///
-    def partialCompare(x: a, y: a): Bool
+    pub def partialCompare(x: a, y: a): Bool
     // TODO This should not return a Boolean, but instead perform a three-way comparison.
 
 }

@@ -38,7 +38,7 @@ object Safety extends Phase[Root, Root] {
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def): List[CompilationError] = visitExp(def0.exp)
+  private def visitDef(def0: TypedAst.Def): List[CompilationError] = visitExp(def0.impl.exp)
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.

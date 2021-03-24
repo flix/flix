@@ -26,52 +26,29 @@ enum Option[t] {
     case Some(t)
 }
 
-instance ToString[Option[a]] with [a : ToString] {
-    def toString(o: Option[a]): String = match o {
+instance ToString[Option[a]] with ToString[a] {
+    pub def toString(o: Option[a]): String = match o {
         case None => "None"
         case Some(y) => "Some(${y})"
     }
 }
 
-instance Hash[Option[a]] with [a : Hash] {
-    def hash(o: Option[a]): Int = match o {
+instance Hash[Option[a]] with Hash[a] {
+    pub def hash(o: Option[a]): Int = match o {
         case Some(y) => 919 * Hash.hash(y)
         case None => 1046527
     }
 }
 
-instance Eq[Option[a]] with[a : Eq] {
-
-    def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
+instance Eq[Option[a]] with Eq[a] {
+    pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
         case (None, None) => true
         case (Some(v1), Some(v2)) => v1 == v2
         case _ => false
     }
-
-    def neq(xs: Option[a], ys: Option[a]): Bool = not (xs == ys)
-
 }
 
-instance Order[Option[a]] with [a : Order] {
-
-    def less(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    def lessEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    def greater(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    def greaterEqual(x: Option[a], y: Option[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
+instance Order[Option[a]] with Order[a] {
 
     ///
     /// Returns the result of a three-way comparison between `o1` and `o2`.
@@ -80,7 +57,7 @@ instance Order[Option[a]] with [a : Order] {
     /// Returns EqualTo if `o1` is equal to `o2`.
     /// Returns GreaterThan if `o1` is greater than `o2`.
     ///
-    def compare(o1: Option[a], o2: Option[a]): Comparison = match (o1, o2) {
+    pub def compare(o1: Option[a], o2: Option[a]): Comparison = match (o1, o2) {
         case (None, None)           => EqualTo
         case (None, _)              => LessThan
         case (Some(v1), Some(v2))   => v1 <=> v2
@@ -90,12 +67,12 @@ instance Order[Option[a]] with [a : Order] {
 }
 
 instance Functor[Option] {
-    def map(f: a -> b & e, o: Option[a]): Option[b] & e = Option.map(f, o)
+    pub def map(f: a -> b & e, o: Option[a]): Option[b] & e = Option.map(f, o)
 }
 
 instance Foldable[Option] {
-    def foldLeft(f: (b, a) -> b & e, s: b, o: Option[a]): b & e = Option.foldLeft(f, s, o)
-    def foldRight(f: (a, b) -> b & e, s: b, o: Option[a]): b & e = Option.foldRight(f, o, s)
+    pub def foldLeft(f: (b, a) -> b & e, s: b, o: Option[a]): b & e = Option.foldLeft(f, s, o)
+    pub def foldRight(f: (a, b) -> b & e, s: b, o: Option[a]): b & e = Option.foldRight(f, o, s)
 }
 
 namespace Option {

@@ -235,6 +235,11 @@ object Ast {
     def isLawless: Boolean = mod contains Modifier.Lawless
 
     /**
+      * Returns `true` if these modifiers contain the override modifier.
+      */
+    def isOverride: Boolean = mod contains Modifier.Override
+
+    /**
       * Returns `true` if these modifiers contain the public modifier.
       */
     def isPublic: Boolean = mod contains Modifier.Public
@@ -272,6 +277,11 @@ object Ast {
       * The lawless modifier.
       */
     case object Lawless extends Modifier
+
+    /**
+      * The override modifier.
+      */
+    case object Override extends Modifier
 
     /**
       * The public modifier.

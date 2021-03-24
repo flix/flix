@@ -426,23 +426,41 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a mismatched super class type parameter.
+    * An error raised to indicate an illegal private declaration.
     *
-    * @param subTparam   the name of the sub class's tparam
-    * @param superTparam the name of the super class's tparam
-    * @param loc         the location where the error occurred.
+    * @param ident the name of the declaration.
+    * @param loc   the location where the error occurred.
     */
-  case class MismatchedSuperClassTypeParameter(subTparam: Name.Ident, superTparam: Name.Ident, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Mismatched class type parameter '${superTparam.name}''"
+  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Illegal private declaration '${ident.name}'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Mismatched class type parameter '" << Red(superTparam.name) << "'." << NewLine
+      vt << ">> Illegal private declaration '" << Red(ident.name) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "mismatched class type parameter.") << NewLine
+      vt << Code(loc, "illegal private declaration") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Change the superclass type parameter to '${subTparam.name}'."
+      vt << Underline("Tip:") << s" Mark the declaration as 'pub'."
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal type constraint parameter.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalTypeConstraintParameter(loc: SourceLocation) extends WeederError {
+    def summary: String = s"Illegal type constraint parameter."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal type constraint parameter." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal type constraint parameter") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Type constraint parameters can only be type variables."
     }
   }
 

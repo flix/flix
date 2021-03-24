@@ -33,3 +33,5 @@ By adding your name to this document, you agree to release all your contribution
 - [Thomas Søe Plougsgaard](https://github.com/plougsgaard)
 - [Oskar Haarklou Veileborg](https://github.com/BarrensZeppelin)
 - [Justin Fargnoli](https://github.com/justinfargnoli)
+- [Benjamin Dahse](https://github.com/bdahse)
+- [J. Ryan Stinnett](https://github.com/jryans)

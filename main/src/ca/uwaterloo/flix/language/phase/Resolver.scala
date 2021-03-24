@@ -181,9 +181,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
       for {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
-        sigs <- traverse(signatures)(resolve(_, ns0, root))
-        superClasses <- traverse(superClasses0)(lookupClassForImplementation(_, ns0, root))
+        sigsList <- traverse(signatures)(resolve(_, ns0, root))
+        // ignore the parameter of the super class; we don't use it
+        superClasses <- traverse(superClasses0)(tconstr => lookupClassForImplementation(tconstr.clazz, ns0, root))
         laws <- traverse(laws0)(resolve(_, ns0, root))
+        sigs = sigsList.map(sig => (sig.sym, sig)).toMap
       } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses.map(_.sym), sigs, laws, loc)
   }
 
@@ -204,32 +206,46 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
   def resolve(s0: NamedAst.Sig, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
-    case NamedAst.Sig(doc, ann0, mod, sym, tparams0, fparams0, sc0, eff0, loc) =>
+    case NamedAst.Sig(sym, spec0, exp0) =>
+      val fparam = spec0.fparams.head
+
       for {
-        fparams <- resolveFormalParams(fparams0, ns0, root)
-        tparams <- resolveTypeParams(tparams0, ns0, root)
-        ann <- traverse(ann0)(visitAnnotation(_, ns0, root))
-        scheme <- resolveScheme(sc0, ns0, root)
-        eff <- lookupType(eff0, ns0, root)
-      } yield ResolvedAst.Sig(doc, ann, mod, sym, tparams, fparams, scheme, eff, loc)
+        fparamType <- lookupType(fparam.tpe, ns0, root)
+        exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), ns0, root))
+        spec <- resolve(spec0, ns0, root)
+      } yield ResolvedAst.Sig(sym, spec, exp.headOption)
   }
 
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
   def resolve(d0: NamedAst.Def, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
-    case NamedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, sc0, eff0, loc) =>
-      val fparam = fparams0.head
+    case NamedAst.Def(sym, spec0, exp0) =>
+      val fparam = spec0.fparams.head
 
       for {
         fparamType <- lookupType(fparam.tpe, ns0, root)
-        fparams <- resolveFormalParams(fparams0, ns0, root)
-        tparams <- resolveTypeParams(tparams0, ns0, root)
-        ann <- traverse(ann)(visitAnnotation(_, ns0, root))
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, root)
-        scheme <- resolveScheme(sc0, ns0, root)
-        eff <- lookupType(eff0, ns0, root)
-      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
+        spec <- resolve(spec0, ns0, root)
+      } yield ResolvedAst.Def(sym, spec, exp)
+  }
+
+  /**
+    * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
+    */
+  def resolve(s0: NamedAst.Spec, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
+
+      val fparamsVal = resolveFormalParams(fparams0, ns0, root)
+      val tparamsVal = resolveTypeParams(tparams0, ns0, root)
+      val annVal = traverse(ann0)(visitAnnotation(_, ns0, root))
+      val schemeVal = resolveScheme(sc0, ns0, root)
+      val effVal = lookupType(eff0, ns0, root)
+
+      mapN(fparamsVal, tparamsVal, annVal, schemeVal, effVal) {
+        case (fparams, tparams, ann, scheme, eff) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc)
+      }
   }
 
   /**
@@ -321,7 +337,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def visitDef(defn: NamedAst.Def, tvar: Type.Var, loc: SourceLocation): ResolvedAst.Expression = {
         // Find the arity of the function definition.
-        val arity = defn.fparams.length
+        val arity = defn.spec.fparams.length
 
         // Create the fresh fparams
         val fparams = mkFreshFparams(arity, loc)
@@ -338,7 +354,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def visitSig(sig: NamedAst.Sig, tvar: Type.Var, loc: SourceLocation): ResolvedAst.Expression = {
         // Find the arity of the function definition.
-        val arity = sig.fparams.length
+        val arity = sig.spec.fparams.length
 
         // Create the fresh fparams
         val fparams = mkFreshFparams(arity, loc)
@@ -369,7 +385,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Resolve the application expression, applying `defn` to `exps`.
         */
       def visitApplyDef(app: NamedAst.Expression.Apply, defn: NamedAst.Def, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
-        if (defn.fparams.length == exps.length) {
+        if (defn.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
           for {
             es <- traverse(exps)(visit(_, tenv0))
@@ -387,7 +403,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Resolve the application expression, applying `sig` to `exps`.
         */
       def visitApplySig(app: NamedAst.Expression.Apply, sig: NamedAst.Sig, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
-        if (sig.fparams.length == exps.length) {
+        if (sig.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
           for {
             es <- traverse(exps)(visit(_, tenv0))
@@ -528,7 +544,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, loc)
 
-        case NamedAst.Expression.Choose(star, exps, rules, loc) =>
+        case NamedAst.Expression.Choose(star, exps, rules, tvar, loc) =>
           val expsVal = traverse(exps)(visit(_, tenv0))
           val rulesVal = traverse(rules) {
             case NamedAst.ChoiceRule(pat0, exp0) =>
@@ -542,7 +558,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               }
           }
           mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, loc)
+            case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, tvar, loc)
           }
 
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
@@ -1133,13 +1149,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case Some(defn@NamedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)) =>
+      case Some(defn: NamedAst.Def) =>
         if (isDefAccessible(defn, ns0)) {
           defn.toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-      case Some(sig@NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)) =>
+      case Some(sig: NamedAst.Sig) =>
         if (isSigAccessible(sig, ns0)) {
           sig.toSuccess
         } else {
@@ -1535,7 +1551,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     //
     // Check if the definition is marked public.
     //
-    if (defn0.mod.isPublic)
+    if (defn0.spec.mod.isPublic)
       return true
 
     //
@@ -1564,7 +1580,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     //
     // Check if the definition is marked public.
     //
-    if (sig0.mod.isPublic) // MATT check instance availability instead?
+    if (sig0.spec.mod.isPublic) // MATT check instance availability instead?
       return true
 
     //

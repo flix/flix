@@ -81,7 +81,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
       }
 
-    case d: ParsedAst.Declaration.Def => visitDef(d)
+    case d: ParsedAst.Declaration.Def => visitTopDef(d)
 
     case d: ParsedAst.Declaration.Law => visitLaw(d)
 
@@ -101,8 +101,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Instance => visitInstance(d)
 
-    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
-      throw InternalCompilerException(s"Unexpected declaration")
+    case _: ParsedAst.Declaration.Sig => throw InternalCompilerException(s"Unexpected declaration")
   }
 
   /**
@@ -119,28 +118,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
         sigs <- traverse(sigs0)(visitSig)
         laws <- traverse(laws0)(visitLaw)
-        superClasses <- visitSuperClasses(tparam0, superClasses0)
+        superClasses <- traverse(superClasses0)(visitTypeConstraint)
       } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
-  }
-
-  /**
-    * Checks each super class to ensure the type parameter name matches `tparam`.
-    */
-  private def visitSuperClasses(tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.SuperClass]): Validation[List[Name.QName], WeederError] = {
-    traverse(superClasses) {
-      case ParsedAst.SuperClass(sp1, clazz, ident, sp2) =>
-        if (ident.name == tparam.ident.name)
-          clazz.toSuccess
-        else
-          WeederError.MismatchedSuperClassTypeParameter(tparam.ident, ident, mkSL(sp1, sp2)).toFailure
-    }
   }
 
   /**
     * Performs weeding on the given sig declaration `s0`.
     */
   private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
-    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, sp2) =>
+    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
@@ -148,13 +134,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
+      val expVal = Validation.traverse(exp0)(visitExp)
 
-      mapN(annVal, modVal, formalsVal, effVal) {
-        case (as, mod, fparams, eff) =>
-          val ts = fparams.map(_.tpe.get)
-          val tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, tpe, eff, loc))
-      }
+      for {
+        res <- sequenceT(annVal, modVal, formalsVal, effVal, expVal)
+        (as, mod, fparams, eff, exp) = res
+        _ <- requirePublic(mod, ident)
+        ts = fparams.map(_.tpe.get)
+        tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, eff, loc))
   }
 
   /**
@@ -167,32 +155,47 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tpe = visitType(tpe0)
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Unlawful))
-        defs <- traverse(defs0)(visitDef)
-        constrs = visitTypeConstraints(constrs0.getOrElse(Seq.empty))
-      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, loc))
+        defs <- traverse(defs0)(visitInstanceDef)
+        constrs <- traverse(constrs0.getOrElse(Seq.empty))(visitTypeConstraint)
+      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, clazz.loc))
 
+  }
+
+  /**
+    * Performs weeding on the given top-level def declaration `d0`.
+    */
+  private def visitTopDef(d0: ParsedAst.Declaration.Def)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = {
+    visitDef(d0, Set(Ast.Modifier.Public, Ast.Modifier.Inline), requiresPublic = false)
+  }
+
+  /**
+    * Performs weeding on the given instance def declaration `d0`.
+    */
+  private def visitInstanceDef(d0: ParsedAst.Declaration.Def)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = {
+    visitDef(d0, Set(Ast.Modifier.Public, Ast.Modifier.Inline, Ast.Modifier.Override), requiresPublic = true)
   }
 
   /**
     * Performs weeding on the given def declaration `d0`.
     */
-  private def visitDef(d0: ParsedAst.Declaration.Def)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
+  private def visitDef(d0: ParsedAst.Declaration.Def, legalModifiers: Set[Ast.Modifier], requiresPublic: Boolean)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
     case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
+      val modVal = visitModifiers(mods, legalModifiers)
       val expVal = visitExp(exp0)
       val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
 
-      mapN(annVal, modVal, formalsVal, expVal, effVal) {
-        case (as, mod, fparams, exp, eff) =>
-          val ts = fparams.map(_.tpe.get)
-          val tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, loc))
-      }
+      for {
+        res <- sequenceT(annVal, modVal, formalsVal, expVal, effVal)
+        (as, mod, fparams, exp, eff) = res
+        _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
+        ts = fparams.map(_.tpe.get)
+        tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, loc))
   }
 
   /**
@@ -1746,6 +1749,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val modifier = m.name match {
       case "inline" => Ast.Modifier.Inline
       case "lawless" => Ast.Modifier.Lawless
+      case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
       case "unlawful" => Ast.Modifier.Unlawful
@@ -1759,6 +1763,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       modifier.toSuccess
     else
       IllegalModifier(mkSL(m.sp1, m.sp2)).toFailure
+  }
+
+  /**
+    * Returns an error if `public` is not among the modifiers in `mods`.
+    */
+  private def requirePublic(mods: Ast.Modifiers, ident: Name.Ident): Validation[Unit, WeederError] = {
+    if (mods.isPublic) {
+      ().toSuccess
+    } else {
+      WeederError.IllegalPrivateDeclaration(ident, ident.loc).toFailure
+    }
   }
 
   /**
@@ -2070,12 +2085,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Weeds the given type constraints `constraints0`.
+    * Weeds the given type constraint `tconstr`.
     */
-  private def visitTypeConstraints(constraints0: Seq[ParsedAst.ConstrainedType]): List[WeededAst.ConstrainedType] = {
-    constraints0.map {
-      case ParsedAst.ConstrainedType(sp1, tpe, classes, sp2) => WeededAst.ConstrainedType(visitType(tpe), classes.toList)
-    }.toList
+  private def visitTypeConstraint(tconstr: ParsedAst.TypeConstraint): Validation[WeededAst.TypeConstraint, WeederError] = tconstr match {
+    case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
+      visitType(tparam0) match {
+        case tparam: WeededAst.Type.Var => WeededAst.TypeConstraint(clazz, tparam).toSuccess
+        case _ => WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
+      }
   }
 
   /**

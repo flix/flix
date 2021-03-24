@@ -29,8 +29,8 @@ lawless class MeetLattice[a] {
 
 }
 
-instance MeetLattice[(a1, a2)] with [a1 : MeetLattice, a2 : MeetLattice] {
-    def greatestLowerBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
+instance MeetLattice[(a1, a2)] with MeetLattice[a1], MeetLattice[a2] {
+    pub def greatestLowerBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
         case ((x1, x2), (y1, y2)) => (MeetLattice.greatestLowerBound(x1, y1), MeetLattice.greatestLowerBound(x2, y2))
     }
 }

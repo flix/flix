@@ -18,7 +18,7 @@ namespace Test/Dec/Class {
         }
 
         instance X[Int] {
-            def f(x: Int): Bool = x == 0
+            pub def f(x: Int): Bool = x == 0
         }
 
         pub def g(x: Int): Bool = Test/Dec/Class/Test03/X.f(x)
@@ -41,7 +41,7 @@ namespace Test/Dec/Class {
 
         class C[a]
 
-        instance C[List[a]] with [a : C]
+        instance C[List[a]] with C[a]
     }
 
     namespace Test06 {
@@ -54,11 +54,11 @@ namespace Test/Dec/Class {
         }
 
         instance C[Int] {
-            def f(x: Int): Bool = x == 0
+            pub def f(x: Int): Bool = x == 0
         }
 
-        instance C[List[a]] with [a: C] {
-            def f(x: List[a]): Bool = {
+        instance C[List[a]] with C[a] {
+            pub def f(x: List[a]): Bool = {
                 match x {
                     case Nil => true
                     case _ => false
@@ -85,7 +85,7 @@ namespace Test/Dec/Class {
         }
 
         instance F[Option] {
-            def map(f: a -> b, x: Option[a]): Option[b] = match x {
+            pub def map(f: a -> b, x: Option[a]): Option[b] = match x {
                 case None => None
                 case Some(y) => Some(f(y))
             }
@@ -98,11 +98,11 @@ namespace Test/Dec/Class {
         }
 
         instance Eff[Pure] {
-            def isPure(f: a -> b): Bool = true
+            pub def isPure(_f: a -> b): Bool = true
         }
 
         instance Eff[Impure] {
-            def isPure(f: a ~> b): Bool = false
+            pub def isPure(_f: a ~> b): Bool = false
         }
     }
 
@@ -111,12 +111,12 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        lawless class D[a] extends C[a]
+        lawless class D[a] with C[a]
 
-        lawless class E[a] extends D[a]
+        lawless class E[a] with D[a]
 
         instance C[Int] {
-            def f(_x: Int): Bool = true
+            pub def f(_x: Int): Bool = true
         }
 
         instance D[Int]
@@ -137,7 +137,7 @@ namespace Test/Dec/Class {
         }
 
         instance C[Int] {
-            def f(_x: Int, _y: Int): Bool = true
+            pub def f(_x: Int, _y: Int): Bool = true
         }
     }
 
@@ -151,6 +151,31 @@ namespace Test/Dec/Class {
 
             law m(): Bool = true
         }
+    }
+
+    namespace Test13 {
+        lawless class C[a] {
+            pub def f(): a
+
+            pub def g(): a = Test/Dec/Class/Test13/C.f()
+
+            pub def h(): a = Test/Dec/Class/Test13/C.g()
+        }
+
+        instance C[Int] {
+            pub def f(): Int = 0
+
+            override pub def h(): Int = 1
+        }
+
+        @test
+        def testSigOverride01(): Bool = Test/Dec/Class/Test13/C.f() == 0
+
+        @test
+        def testSigOverride02(): Bool = Test/Dec/Class/Test13/C.g() == 0
+
+        @test
+        def testSigOverride03(): Bool = Test/Dec/Class/Test13/C.h() == 1
     }
 
     pub enum List[a] {

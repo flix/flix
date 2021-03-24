@@ -41,27 +41,26 @@ enum Constant {
 }
 
 instance LowerBound[Constant] {
-    def minValue(): Constant = Constant.Bot
+    pub def minValue(): Constant = Constant.Bot
 }
 
 //
 // We define equality of two lattice elements by structural equality.
 //
 instance Eq[Constant] {
-    def eq(x: Constant, y: Constant): Bool = match (x, y) {
+    pub def eq(x: Constant, y: Constant): Bool = match (x, y) {
         case (Top, Top) => true
         case (Cst(a), Cst(b)) => a == b
         case (Bot, Bot) => true
         case _ => false
     }
-    def neq(x: Constant, y: Constant): Bool = not (x == y)
 }
 
 //
 // We define a simple hash function for lattice elements:
 //
 instance Hash[Constant] {
-    def hash(x: Constant): Int32 = match x {
+    pub def hash(x: Constant): Int32 = match x {
         case Top    => 1
         case Bot    => 2
         case Cst(n) => n
@@ -73,7 +72,7 @@ instance Hash[Constant] {
 // This is straightforward with pattern matching on the arguments:
 //
 instance PartialOrder[Constant] {
-    def partialCompare(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+    pub def partialCompare(e1: Constant, e2: Constant): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
         case (_, Top)           => true
@@ -85,7 +84,7 @@ instance PartialOrder[Constant] {
 // Then it's on to the least upper bound:
 //
 instance JoinLattice[Constant] {
-    def leastUpperBound(x: Constant, y: Constant): Constant = match (x, y) {
+    pub def leastUpperBound(x: Constant, y: Constant): Constant = match (x, y) {
         case (Bot, _)           => y
         case (_, Bot)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2) x else Top
@@ -97,7 +96,7 @@ instance JoinLattice[Constant] {
 // ... and the greatest lower bound:
 //
 instance MeetLattice[Constant] {
-    def greatestLowerBound(e1: Constant, e2: Constant): Constant = match (e1, e2) {
+    pub def greatestLowerBound(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
@@ -109,7 +108,7 @@ instance MeetLattice[Constant] {
 // We need an instance of ToString for pretty printing:
 //
 instance ToString[Constant] {
-    def toString(x: Constant): String = match x {
+    pub def toString(x: Constant): String = match x {
         case Top    => "Top"
         case Cst(n) => "Cst(${n})"
         case Bot    => "Bot"

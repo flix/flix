@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
@@ -107,22 +108,25 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatternExhaustiveness") {
-    for {
-      _ <- sequence(root.defs.map { case (_, v) => checkPats(v, root) })
-    } yield {
-      root
+    val defsVal = traverseX(root.defs.values)(defn => checkPats(defn.impl, root))
+    val instanceDefsVal = traverseX(TypedAstOps.instanceDefsOf(root))(defn => checkPats(defn.impl, root))
+    // Only need to check sigs with implementations
+    val sigsVal = traverseX(root.sigs.values.flatMap(_.impl))(checkPats(_, root))
+
+    sequenceX(List(defsVal, instanceDefsVal, sigsVal)).map {
+      _ => root
     }
   }
 
   /**
-    * Check that all patterns in a Declaration are exhaustive
+    * Check that all patterns in an implementation are exhaustive
     *
-    * @param tast The expression to check
+    * @param impl The implementation to check
     * @param root The AST root
     */
-  def checkPats(tast: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, CompilationError] = for {
-    _ <- Expressions.checkPats(tast.exp, root)
-  } yield tast
+  def checkPats(impl: TypedAst.Impl, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Impl, CompilationError] = for {
+    _ <- Expressions.checkPats(impl.exp, root)
+  } yield impl
 
   object Expressions {
     /**

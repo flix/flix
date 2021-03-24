@@ -17,7 +17,7 @@ namespace Domain/ConstantSign {
     }
 
     instance Eq[ConstantSign] {
-        def eq(e1: ConstantSign, e2: ConstantSign): Bool = match (e1, e2) {
+        pub def eq(e1: ConstantSign, e2: ConstantSign): Bool = match (e1, e2) {
             case (Top, Top) => true
             case (Neg, Neg) => true
             case (Pos, Pos) => true
@@ -25,7 +25,6 @@ namespace Domain/ConstantSign {
             case (Bot, Bot) => true
             case _ => false
         }
-        def neq(e1: ConstantSign, e2: ConstantSign): Bool = not (e1 == e2)
     }
 
     ///

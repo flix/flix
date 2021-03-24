@@ -265,4 +265,44 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
+  test("Pattern.Instance.01") {
+    val input =
+      """
+        |enum E {
+        |    case E1
+        |    case E2
+        |}
+        |
+        |lawless class C[a] {
+        |    pub def f(x: a): Int
+        |}
+        |
+        |instance C[E] {
+        |    pub def f(x: E): Int = match x {
+        |        case E1 => 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Class.01") {
+    val input =
+      """
+        |enum E {
+        |    case E1
+        |    case E2
+        |}
+        |
+        |lawless class C[a] {
+        |    pub def f(_x: a): Int = match E1 {
+        |        case E1 => 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
 }

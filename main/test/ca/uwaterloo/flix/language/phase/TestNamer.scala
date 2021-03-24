@@ -134,8 +134,8 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a): Int
-        |    def f(x: a): Bool
+        |    pub def f(x: a): Int
+        |    pub def f(x: a): Bool
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -146,9 +146,9 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a): Int
-        |    def f(x: a): Bool
-        |    def f(x: Int): a
+        |    pub def f(x: a): Int
+        |    pub def f(x: a): Bool
+        |    pub def f(x: Int): a
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -159,11 +159,11 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |class A[a] {
-         |  def f(x: a): Int
+         |  pub def f(x: a): Int
          |}
          |
          |namespace A {
-         |  def f(): Int = 21
+         |  pub def f(): Int = 21
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -180,7 +180,7 @@ class TestNamer extends FunSuite with TestUtils {
          |namespace A {
          |  namespace B {
          |    class C[a] {
-         |      def f(x: a): Int
+         |      pub def f(x: a): Int
          |    }
          |  }
          |}
@@ -198,7 +198,7 @@ class TestNamer extends FunSuite with TestUtils {
          |
          |namespace A {
          |  class C[a] {
-         |    def f(x: a): Int
+         |    pub def f(x: a): Int
          |  }
          |}
        """.stripMargin
@@ -924,19 +924,40 @@ class TestNamer extends FunSuite with TestUtils {
   }
 
   test("UndefinedTypeVar.Instance.01") {
-    val input = "instance C[a] with [b : C]"
+    val input = "instance C[a] with C[b]"
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.02") {
-    val input = "instance C[(a, b)] with [c : D]"
+    val input = "instance C[(a, b)] with D[c]"
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.03") {
-    val input = "instance C[(a, b)] with [a : D, b : D, c : D]"
+    val input = "instance C[(a, b)] with D[a], D[b], D[c]"
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Class.01") {
+    val input =
+      """
+        |class A[a]
+        |class B[a] with A[b]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Class.02") {
+    val input =
+      """
+        |class A[a]
+        |class B[a]
+        |class C[a] with A[a], B[b]
+        |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
@@ -1121,7 +1142,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(): Bool
+        |    pub def f(): Bool
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1132,9 +1153,9 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(): a
+        |    pub def f(): a
         |
-        |    def g(): Bool
+        |    pub def g(): Bool
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1145,9 +1166,9 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: {y : a}): {y : Bool}
+        |    pub def f(x: {y : a}): {y : Bool}
         |
-        |    def g(x: {y : Bool}): Bool
+        |    pub def g(x: {y : Bool}): Bool
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1158,11 +1179,11 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(): a
+        |    pub def f(): a
         |
-        |    def g(): Bool
+        |    pub def g(): Bool
         |
-        |    def h(): a
+        |    pub def h(): a
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1173,11 +1194,11 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(): Int
+        |    pub def f(): Int
         |
-        |    def g(): String
+        |    pub def g(): String
         |
-        |    def h(): a
+        |    pub def h(): a
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

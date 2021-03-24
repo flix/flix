@@ -54,7 +54,7 @@ namespace StringBuilder {
     pub def appendChar!(sb: StringBuilder, c: Char): Unit & Impure =
         import java.lang.StringBuilder.append(Char);
         let StringBuilder(msb) = sb;
-        msb.append(c); 
+        msb.append(c);
         ()
 
     ///

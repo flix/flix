@@ -89,9 +89,10 @@ object ParsedAst {
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
       * @param tpe        the declared type.
+      * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -193,7 +194,7 @@ object ParsedAst {
       * @param lawsAndSigs  the signatures and laws of the class.
       * @param sp2          the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.SuperClass], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
@@ -206,7 +207,7 @@ object ParsedAst {
       * @param defs  the definitions of the instance.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Option[Seq[ParsedAst.ConstrainedType]], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Option[Seq[ParsedAst.TypeConstraint]], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
@@ -1454,27 +1455,15 @@ object ParsedAst {
     */
   case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
 
-
   /**
-    * Context Bound on a type.
+    * A type constraint.
     *
-    * @param sp1     the position of the first character in the context bound.
-    * @param tpe     the type being bound
-    * @param classes the bounding classes.
-    * @param sp2     the position of the last character in the context bound.
+    * @param sp1    the position of the first character in the type constraint.
+    * @param clazz  name of the class.
+    * @param tparam the name of the constrained type.
+    * @param sp2    the position of the last character in the type constraint.
     */
-  case class ConstrainedType(sp1: SourcePosition, tpe: ParsedAst.Type, classes: Seq[Name.QName], sp2: SourcePosition)
-
-
-  /**
-    * Super class.
-    *
-    * @param sp1    the position of the first character in the super class.
-    * @param clazz  the super class.
-    * @param tparam the type parameter.
-    * @param sp2    the position of the last character in the super class.
-    */
-  case class SuperClass(sp1: SourcePosition, clazz: Name.QName, tparam: Name.Ident, sp2: SourcePosition)
+  case class TypeConstraint(sp1: SourcePosition, clazz: Name.QName, tparam: ParsedAst.Type, sp2: SourcePosition)
 
   /**
     * Formal Parameter.

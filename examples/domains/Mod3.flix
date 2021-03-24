@@ -17,7 +17,7 @@ namespace Domain/Mod3 {
     }
 
     instance Eq[Mod3] {
-        def eq(e1: Mod3, e2: Mod3): Bool = match (e1, e2) {
+        pub def eq(e1: Mod3, e2: Mod3): Bool = match (e1, e2) {
             case (Top, Top) => true
             case (Zer, Zer) => true
             case (One, One) => true
@@ -25,7 +25,6 @@ namespace Domain/Mod3 {
             case (Bot, Bot) => true
             case _          => false
         }
-        def neq(e1: Mod3, e2: Mod3): Bool = not (e1 == e2)
     }
 
     ///

@@ -17,7 +17,7 @@ namespace Domain/ConstantParity {
     }
 
     instance Eq[ConstantParity] {
-        def eq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
+        pub def eq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
             case (Top, Top)         => true
             case (Odd, Odd)         => true
             case (Even, Even)       => true
@@ -25,7 +25,6 @@ namespace Domain/ConstantParity {
             case (Bot, Bot)         => true
             case _                  => false
         }
-        def neq(e1: ConstantParity, e2: ConstantParity): Bool = not (e1 == e2)
     }
 
     ///

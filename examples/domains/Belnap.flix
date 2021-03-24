@@ -17,14 +17,13 @@ namespace Belnap {
     }
 
     instance Eq[Belnap] {
-        def eq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) {
+        pub def eq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) {
             case (Top, Top)     => true
             case (True, True)   => true
             case (False, False) => true
             case (Bot, Bot)     => true
             case _              => false
         }
-        def neq(e1: Belnap, e2: Belnap): Bool = not (e1 == e2)
     }
 
     ///

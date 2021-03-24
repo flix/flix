@@ -276,24 +276,43 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
-  test("MismatchedSuperClassTypeParameter.01") {
+  test("IllegalPrivateDeclaration.01") {
     val input =
       """
-        |class A[a]
-        |class B[a] extends A[b]
+        |class C[a] {
+        |    def f(): a
+        |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[WeederError.MismatchedSuperClassTypeParameter](result)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 
-  test("MismatchedSuperClassTypeParameter.02") {
+  test("IllegalPrivateDeclaration.02") {
     val input =
       """
-        |class A[a]
-        |class B[a]
-        |class C[a] extends A[a], B[b]
+        |instance C[Int] {
+        |    def f(): Int = 1
+        |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[WeederError.MismatchedSuperClassTypeParameter](result)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
+  test("IllegalTypeConstraintParameter.01") {
+    val input =
+      """
+        |class C[a] with D[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
+  }
+
+  test("IllegalTypeConstraintParameter.02") {
+    val input =
+      """
+        |instance C[a] with D[Some[a]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 }

@@ -19,21 +19,21 @@
 ///
 opaque type MutSet[t] = Ref[Set[t]]
 
-instance ToString[MutSet[a]] with [a : ToString] {
-    def toString(xs: MutSet[a]): String =
+instance ToString[MutSet[a]] with ToString[a] {
+    pub def toString(xs: MutSet[a]): String =
         let s = MutSet.foldRight((x, acc) -> "${x}, ${acc}", "", xs) as & Pure;
         "MutSet#{${String.dropRight(2, s)}}"
 }
 
 instance Copy[MutSet[a]] {
-    def copy(s: MutSet[a]): MutSet[a] & e =
+    pub def copy(s: MutSet[a]): MutSet[a] & e =
         let MutSet(ms) = s;
         MutSet(ref (deref ms)) as & e
 }
 
 instance Foldable[MutSet] {
-    def foldLeft(f: (b, a) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldLeft(f, i, s) as & e
-    def foldRight(f: (a, b) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldRight(f, i, s) as & e
+    pub def foldLeft(f: (b, a) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldLeft(f, i, s) as & e
+    pub def foldRight(f: (a, b) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldRight(f, i, s) as & e
 }
 
 namespace MutSet {
@@ -352,8 +352,17 @@ namespace MutSet {
     ///
     /// That is, the result is a list of all elements `x` where `p(x)` returns `Equal`.
     ///
-    pub def query(p: a -> Comparison, s: MutSet[a]): List[a] & Impure =
+    pub def query(p: a -> Comparison & e, s: MutSet[a]): List[a] & Impure =
         let MutSet(ms) = s;
         Set.query(p, deref ms)
+
+    ///
+    /// Applies `f` to all elements from the set `s` where `p(x)` returns `EqualTo`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def queryWith(p: a -> Comparison & e, f: a ~> Unit, s: MutSet[a]): Unit & Impure =
+        let MutSet(ms) = s;
+        Set.queryWith(p, f, deref ms)
 
 }

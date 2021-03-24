@@ -25,21 +25,21 @@ pub lawless class BitwiseOr[a] {
 }
 
 instance BitwiseOr[Int8] {
-    def or(x: Int8, y: Int8): Int8 = $INT8_OR$(x, y)
+    pub def or(x: Int8, y: Int8): Int8 = $INT8_OR$(x, y)
 }
 
 instance BitwiseOr[Int16] {
-    def or(x: Int16, y: Int16): Int16 = $INT16_OR$(x, y)
+    pub def or(x: Int16, y: Int16): Int16 = $INT16_OR$(x, y)
 }
 
 instance BitwiseOr[Int32] {
-    def or(x: Int32, y: Int32): Int32 = $INT32_OR$(x, y)
+    pub def or(x: Int32, y: Int32): Int32 = $INT32_OR$(x, y)
 }
 
 instance BitwiseOr[Int64] {
-    def or(x: Int64, y: Int64): Int64 = $INT64_OR$(x, y)
+    pub def or(x: Int64, y: Int64): Int64 = $INT64_OR$(x, y)
 }
 
 instance BitwiseOr[BigInt] {
-    def or(x: BigInt, y: BigInt): BigInt = $BIGINT_OR$(x, y)
+    pub def or(x: BigInt, y: BigInt): BigInt = $BIGINT_OR$(x, y)
 }
