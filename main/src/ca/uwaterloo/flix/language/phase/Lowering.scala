@@ -656,9 +656,9 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given constraint `c0`.
     */
   private def visitConstraint(c0: Constraint)(implicit root: Root, flix: Flix): Expression = c0 match {
-    case Constraint(_, head, body, loc) =>
-      val headExp = visitHeadPred(head)
-      val bodyExp = mkArray(body.map(visitBodyPred), Types.BodyPredicate, loc)
+    case Constraint(cparams, head, body, loc) =>
+      val headExp = visitHeadPred(cparams, head)
+      val bodyExp = mkArray(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(headExp :: bodyExp :: locExp :: Nil, loc)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
@@ -667,10 +667,10 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given head predicate `p0`.
     */
-  private def visitHeadPred(p0: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p0 match {
+  private def visitHeadPred(cparams0: List[ConstraintParam], p0: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
-      val termsExp = mkArray(terms.map(visitHeadTerm), Types.HeadTerm, loc)
+      val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
@@ -682,7 +682,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given body predicate `p0`.
     */
-  private def visitBodyPred(p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
+  private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val predSymExp = mkPredSym(pred)
       val polarityExp = mkPolarity(polarity, loc)
@@ -691,16 +691,16 @@ object Lowering extends Phase[Root, Root] {
       val innerExp = mkTuple(predSymExp :: polarityExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case Body.Guard(exp, loc) =>
-      // TODO: need to only consider variables that are not bound by the local scope.
-      // See e.g. testGuardQuantAndCapturedVar02
-      mkGuard(exp, loc)
+    case Body.Guard(exp0, loc) =>
+      // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+      val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
+      mkGuard(quantifiedFreeVars, exp0, loc)
   }
 
   /**
     * Lowers the given head term `exp0`.
     */
-  private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
+  private def visitHeadTerm(cparams0: List[ConstraintParam], exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
     //
     // We need to consider three cases:
     //
@@ -711,21 +711,36 @@ object Lowering extends Phase[Root, Root] {
     exp0 match {
       case Expression.Var(sym, _, loc) =>
         // Case 1: Variable term.
+        // TODO: Need to consider whether it is captured...
         mkHeadTermVar(sym)
 
       case _ =>
-        // TODO: Remove bound variables.
-        val quantifiedVars = freeVars(exp0)
+        // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+        val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
 
-        if (quantifiedVars.isEmpty) {
+        if (quantifiedFreeVars.isEmpty) {
           // Case 2: Evaluate to (boxed) value.
+          // TODO: Is this case needed?
           mkHeadTermLit(box(exp0))
         } else {
           // Case 3: Translate to application term.
-          mkAppTerm(exp0, exp0.loc)
+          mkAppTerm(quantifiedFreeVars, exp0, exp0.loc)
         }
     }
   }
+
+  // TODO: Move
+  // TODO: DOC
+  private def quantifiedVars(cparams0: List[ConstraintParam], exp0: Expression): List[(Symbol.VarSym, Type)] = {
+    freeVars(exp0).toList.filter {
+      case (sym, _) => isQuantifiedVar(cparams0, sym)
+    }
+  }
+
+  // TODO: Move
+  // TODO: DOC
+  private def isQuantifiedVar(cparams0: List[ConstraintParam], sym: Symbol.VarSym): Boolean =
+    cparams0.exists(p => p.sym == sym)
 
   /**
     * Lowers the given body term `pat0`.
@@ -735,6 +750,8 @@ object Lowering extends Phase[Root, Root] {
       mkBodyTermWild(loc)
 
     case Pattern.Var(sym, _, loc) =>
+      // TODO: Need to consider whether it is captured...
+      // TODO: Need cparams
       mkBodyTermVar(sym)
 
     case Pattern.Unit(loc) =>
@@ -909,12 +926,9 @@ object Lowering extends Phase[Root, Root] {
     *
     * mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
-  private def mkGuard(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     // Construct the location expression.
     val locExp = mkSourceLocation(loc)
-
-    // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
-    val fvs = freeVars(exp).toList
 
     // Compute the number of free variables.
     val arity = fvs.length
@@ -965,12 +979,9 @@ object Lowering extends Phase[Root, Root] {
     *
     * Note: mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
-  private def mkAppTerm(exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     // Construct the location expression.
     val locExp = mkSourceLocation(loc)
-
-    // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
-    val fvs = freeVars(exp).toList
 
     // Compute the number of free variables.
     val arity = fvs.length
