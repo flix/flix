@@ -1225,18 +1225,30 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Ref(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.Deref(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
     case Expression.Existential(fparam, exp, loc) => ??? // TODO
     case Expression.Universal(fparam, exp, loc) => ??? // TODO
-    case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Ascribe(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Cast(exp, _, _, _) =>
+      freeVars(exp)
+
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.GetField(field, exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
+
     case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
     case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
     case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
