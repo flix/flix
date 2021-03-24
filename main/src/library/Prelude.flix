@@ -172,4 +172,4 @@ pub def space(_f: a -> Int32): Int32 = 1
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.
 ///
-def ===(_x: a, _y: a): Bool = panic("meta-programming construct")
+pub def ===(_x: a, _y: a): Bool = panic("meta-programming construct")
