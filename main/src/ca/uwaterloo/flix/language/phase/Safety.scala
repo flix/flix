@@ -197,7 +197,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
       val rs = rules.foldLeft(Nil: List[CompilationError]) {
-        case (acc, SelectChannelRule(sym, chan, body)) => acc ::: visitExp(chan) ::: visitExp(body)
+        case (acc, SelectChannelRule.SelectGet(sym, chan, body)) => acc ::: visitExp(chan) ::: visitExp(body)
+        case (acc, SelectChannelRule.SelectPut(chan, value, body)) => acc ::: visitExp(chan) ::: visitExp(value) ::: visitExp(body)
       }
 
       val d = default.map(visitExp).getOrElse(Nil)
