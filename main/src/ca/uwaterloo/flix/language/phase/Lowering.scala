@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, 
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
+import scala.annotation.tailrec
+
 // TODO: Add doc
 
 object Lowering extends Phase[Root, Root] {
@@ -1338,11 +1340,59 @@ object Lowering extends Phase[Root, Root] {
 
   }
 
-  private def freeVars(p: Pattern): Set[Symbol.VarSym] = ??? // TODO
+  /**
+    * Returns the free variables in the given pattern `pat0`.
+    */
+  private def freeVars(pat0: Pattern): Set[Symbol.VarSym] = pat0 match {
+    case Pattern.Wild(_, _) => Set.empty
+    case Pattern.Var(sym, _, _) => Set(sym)
+    case Pattern.Unit(_) => Set.empty
+    case Pattern.True(_) => Set.empty
+    case Pattern.False(_) => Set.empty
+    case Pattern.Char(_, _) => Set.empty
+    case Pattern.Float32(_, _) => Set.empty
+    case Pattern.Float64(_, _) => Set.empty
+    case Pattern.Int8(_, _) => Set.empty
+    case Pattern.Int16(_, _) => Set.empty
+    case Pattern.Int32(_, _) => Set.empty
+    case Pattern.Int64(_, _) => Set.empty
+    case Pattern.BigInt(_, _) => Set.empty
+    case Pattern.Str(_, _) => Set.empty
+    case Pattern.Tag(_, _, pat, _, _) => freeVars(pat)
+    case Pattern.Tuple(elms, _, _) =>
+      elms.foldLeft(Set.empty[Symbol.VarSym]) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
 
-  private def freeVars(p: ChoicePattern): Set[Symbol.VarSym] = ??? // TODO
+    case Pattern.Array(elms, _, _) =>
+      elms.foldLeft(Set.empty[Symbol.VarSym]) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
 
-  private def freeVars(c: Constraint): Map[Symbol.VarSym, Type] = c match {
+    case Pattern.ArrayTailSpread(elms, sym, _, _) =>
+      elms.foldLeft(Set(sym)) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
+
+    case Pattern.ArrayHeadSpread(sym, elms, _, _) =>
+      elms.foldLeft(Set(sym)) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
+  }
+
+  /**
+    * Returns the free variables in the given pattern `pat0`.
+    */
+  private def freeVars(pat0: ChoicePattern): Set[Symbol.VarSym] = pat0 match {
+    case ChoicePattern.Wild(_) => Set.empty
+    case ChoicePattern.Absent(_) => Set.empty
+    case ChoicePattern.Present(sym, _, _) => Set(sym)
+  }
+
+  /**
+    * Returns the free variables in the given constraint `constraint0`.
+    */
+  private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
     case Constraint(cparams, head, body, loc) => ??? // TODO
   }
 
