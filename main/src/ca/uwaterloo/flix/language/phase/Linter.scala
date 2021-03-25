@@ -211,7 +211,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
         rules.foldLeft(default.map(visitExp(_, lint0)).getOrElse(Nil)) {
-          case (acc, SelectChannelRule(_, chan, body)) => visitExp(chan, lint0) ::: visitExp(body, lint0) ::: acc
+          case (acc, SelectChannelRule.SelectGet(_, chan, body)) => visitExp(chan, lint0) ::: visitExp(body, lint0) ::: acc
+          case (acc, SelectChannelRule.SelectPut(chan, value, body)) => visitExp(chan, lint0) ::: visitExp(value, lint0) ::: visitExp(body, lint0) ::: acc
         }
 
       case Expression.Spawn(exp, _, _, _) => visitExp(exp, lint0)
@@ -905,7 +906,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
         val d = default.map(apply)
         val rs = rules.map {
-          case SelectChannelRule(sym, chan, body) => SelectChannelRule(apply(sym), apply(chan), apply(body))
+          case SelectChannelRule.SelectGet(sym, chan, body) => SelectChannelRule.SelectGet(apply(sym), apply(chan), apply(body))
+          case SelectChannelRule.SelectPut(chan, value, body) => SelectChannelRule.SelectPut(apply(chan), apply(value), apply(body))
         }
         Expression.SelectChannel(rs, d, tpe, eff, loc)
 
