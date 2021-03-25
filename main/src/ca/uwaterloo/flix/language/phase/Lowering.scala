@@ -1224,10 +1224,25 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.Ref(e, tpe, eff, loc)
 
-    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.Existential(fparam, exp, loc) => ??? // TODO
-    case Expression.Universal(fparam, exp, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Deref(e, tpe, eff, loc)
+
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Assign(e1, e2, tpe, eff, loc)
+
+    case Expression.Existential(fparam, exp, loc) =>
+      val f = substFormalParam(fparam, subst)
+      val e = substExp(exp, subst)
+      Expression.Existential(f, e, loc)
+
+    case Expression.Universal(fparam, exp, loc) =>
+      val f = substFormalParam(fparam, subst)
+      val e = substExp(exp, subst)
+      Expression.Universal(f, e, loc)
+
     case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
     case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
