@@ -1219,7 +1219,11 @@ object Lowering extends Phase[Root, Root] {
     case Expression.ArrayLength(base, eff, loc) => ??? // TODO
     case Expression.ArrayStore(base, index, elm, loc) => ??? // TODO
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ??? // TODO
-    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Ref(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Ref(e, tpe, eff, loc)
+
     case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
     case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.Existential(fparam, exp, loc) => ??? // TODO
@@ -1238,15 +1242,34 @@ object Lowering extends Phase[Root, Root] {
     case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
-    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Lazy(exp, tpe, loc) => ??? // TODO
-    case Expression.Force(exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Spawn(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Spawn(e, tpe, eff, loc)
+
+    case Expression.Lazy(exp, tpe, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Lazy(e, tpe, loc)
+
+    case Expression.Force(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Force(e, tpe, eff, loc)
+
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ??? // TODO
     case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => ??? // TODO
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ??? // TODO
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.FixpointEntails(e1, e2, tpe, eff, loc)
+
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
   }
 
   // TODO: DOC
