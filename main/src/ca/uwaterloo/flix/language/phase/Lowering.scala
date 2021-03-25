@@ -22,17 +22,29 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-// TODO: Add doc
+/**
+  * This phase translates AST expressions related to the Datalog subset of the
+  * language into `Fixpoint/Ast` values (which are ordinary Flix values).
+  * This allows the Datalog engine to be implemented as an ordinary Flix program.
+  *
+  * In addition to translating expressions, types must also be translated from
+  * Schema types to enum types.
+  *
+  * Finally, values must be boxed using the Boxable.
+  */
+
+// TODO: Long-term improvements:
+// - Allow arbitrary expressions as body terms.
+// - Use Validation everywhere.
 
 object Lowering extends Phase[Root, Root] {
 
   // TODO: Add doc
-  // TODO: Return validations?
-  // TODO: Need implicits?
+
 
   private val SL: SourcePosition = SourcePosition.Unknown
 
@@ -744,10 +756,10 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Var(sym, tpe, loc) =>
       if (isQuantifiedVar(sym, cparams0)) {
-        // TODO: Actual variable term
+        // Case 1: Quantified variable.
         mkBodyTermVar(sym)
       } else {
-        // TODO lexically bound variable.
+        // Case 2: Lexically bound variable *expression*.
         mkBodyTermLit(box(Expression.Var(sym, tpe, loc)))
       }
 
@@ -786,8 +798,6 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Str(lit, loc) =>
       mkBodyTermLit(box(Expression.Str(lit, loc)))
-
-    // TODO: What other expressions to support as body terms?
 
     case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
