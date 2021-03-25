@@ -1213,11 +1213,17 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
     case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
+
     case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
+
     case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
+
     case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
+
     case Expression.ArrayLength(base, eff, loc) => ??? // TODO
+
     case Expression.ArrayStore(base, index, elm, loc) => ??? // TODO
+
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ??? // TODO
 
     case Expression.Ref(exp, tpe, eff, loc) =>
@@ -1243,8 +1249,14 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.Universal(f, e, loc)
 
-    case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Ascribe(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Ascribe(e, tpe, eff, loc)
+
+    case Expression.Cast(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Cast(e, tpe, eff, loc)
+
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
@@ -1253,9 +1265,20 @@ object Lowering extends Phase[Root, Root] {
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
     case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
+
+    case Expression.NewChannel(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.NewChannel(e, tpe, eff, loc)
+
+    case Expression.GetChannel(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.GetChannel(e, tpe, eff, loc)
+
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.PutChannel(e1, e2, tpe, eff, loc)
+
     case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
