@@ -1124,7 +1124,7 @@ object Lowering extends Phase[Root, Root] {
 
   // TODO: Move into TypedAstOps
   /**
-    * Returns the given expression `exp0` with the given substitution `subst` applied to it.
+    * Applies the given substitution `subst` to the given expression `exp0`.
     */
   private def substExp(exp0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
     case Expression.Unit(_) => exp0
@@ -1350,7 +1350,9 @@ object Lowering extends Phase[Root, Root] {
       Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
   }
 
-  // TODO: DOC
+  /**
+    * Applies the given substitution `subst` to the given formal param `fparam0`.
+    */
   private def substFormalParam(fparam0: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam0 match {
     case FormalParam(sym, mod, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
