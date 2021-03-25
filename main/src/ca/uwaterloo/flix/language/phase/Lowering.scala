@@ -1234,15 +1234,30 @@ object Lowering extends Phase[Root, Root] {
       val es = elms.map(substExp(_, subst))
       Expression.ArrayLit(es, tpe, eff, loc)
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+      val e = substExp(elm, subst)
+      val l = substExp(len, subst)
+      Expression.ArrayNew(e, l, tpe, eff, loc)
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+      val b = substExp(base, subst)
+      val i = substExp(index, subst)
+      Expression.ArrayLoad(b, i, tpe, eff, loc)
 
-    case Expression.ArrayLength(base, eff, loc) => ??? // TODO
+    case Expression.ArrayLength(base, eff, loc) =>
+      val b = substExp(base, subst)
+      Expression.ArrayLength(b, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, loc) => ??? // TODO
+    case Expression.ArrayStore(base, index, elm, loc) =>
+      val b = substExp(base, subst)
+      val i = substExp(index, subst)
+      Expression.ArrayStore(b, i, elm, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ??? // TODO
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      val b = substExp(base, subst)
+      val bi = substExp(beginIndex, subst)
+      val ei = substExp(endIndex, subst)
+      Expression.ArraySlice(b, bi, ei, tpe, loc)
 
     case Expression.Ref(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
