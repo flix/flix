@@ -1186,9 +1186,19 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Match(exp, rules, _, _, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat)
+      }
 
-    case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Choose(exps, rules, _, _, _) =>
+      val es = exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+      val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, ChoiceRule(pats, exp)) => acc ++ (freeVars(exp) -- pats.flatMap(freeVars))
+      }
+      es ++ rs
 
     case Expression.Tag(_, _, exp, _, _, _) =>
       freeVars(exp)
@@ -1250,9 +1260,20 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Cast(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
+      }
+
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      args.foldLeft(freeVars(exp)) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
 
     case Expression.InvokeStaticMethod(_, args, _, _, _) =>
       args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -1316,6 +1337,10 @@ object Lowering extends Phase[Root, Root] {
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
   }
+
+  private def freeVars(p: Pattern): Set[Symbol.VarSym] = ??? // TODO
+
+  private def freeVars(p: ChoicePattern): Set[Symbol.VarSym] = ??? // TODO
 
   private def freeVars(c: Constraint): Map[Symbol.VarSym, Type] = c match {
     case Constraint(cparams, head, body, loc) => ??? // TODO
