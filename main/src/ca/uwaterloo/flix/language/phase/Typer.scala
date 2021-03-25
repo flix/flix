@@ -75,19 +75,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Creates a class environment from a ClassSym-Instance multimap.
+    * Creates a class environment from a the classes and instances in the root.
     */
-  private def mkClassEnv(classes: Map[Symbol.ClassSym, ResolvedAst.Class], instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]]): Map[Symbol.ClassSym, Ast.ClassContext] = {
-    instances.map {
-      case (classSym, instances) =>
+  private def mkClassEnv(classes0: Map[Symbol.ClassSym, ResolvedAst.Class], instances0: Map[Symbol.ClassSym, List[ResolvedAst.Instance]]): Map[Symbol.ClassSym, Ast.ClassContext] = {
+    classes0.map {
+      case (classSym, clazz) =>
+        val instances = instances0.getOrElse(classSym, Nil)
         val envInsts = instances.map {
           case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
         }
-        val superClasses = classes.get(classSym) match {
-          case Some(ResolvedAst.Class(_, _, _, _, superClasses, _, _, _)) => superClasses
-          case None => throw InternalCompilerException(s"Unexpected unrecognized class $classSym")
-        }
-        (classSym, Ast.ClassContext(superClasses, envInsts))
+        (classSym, Ast.ClassContext(clazz.superClasses, envInsts))
     }
   }
 

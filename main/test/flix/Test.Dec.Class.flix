@@ -178,6 +178,18 @@ namespace Test/Dec/Class {
         def testSigOverride03(): Bool = Test/Dec/Class/Test13/C.h() == 1
     }
 
+    namespace Test14 {
+        lawless class C[a] {
+            pub def c(x: a): Int
+        }
+
+        lawless class D[a] with C[a] {
+            pub def d(x: a): Int
+        }
+
+        pub def f[a : D](x: a): Int = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
