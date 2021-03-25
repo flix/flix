@@ -1393,8 +1393,19 @@ object Lowering extends Phase[Root, Root] {
     * Returns the free variables in the given constraint `constraint0`.
     */
   private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
-    case Constraint(cparams, head, body, loc) => ??? // TODO
+    case Constraint(cparams0, head, body, _) =>
+      (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.sym)
   }
+
+  /**
+    * Returns the free variables in the given head predicate `head0`.
+    */
+  private def freeVars(head0: Predicate.Head): Map[Symbol.VarSym, Type] = ???
+
+  /**
+    * Returns the free variables in the given body predicate `body0`.
+    */
+  private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = ???
 
 
   // TODO: Should this also refresh variables in tree??
