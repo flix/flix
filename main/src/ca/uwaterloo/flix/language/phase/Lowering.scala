@@ -1253,27 +1253,72 @@ object Lowering extends Phase[Root, Root] {
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ??? // TODO
 
-    case Expression.GetField(field, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.GetField(_, exp, _, _, _) =>
+      freeVars(exp)
 
-    case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
-    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Lazy(exp, tpe, loc) => ??? // TODO
-    case Expression.Force(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ??? // TODO
-    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      Map.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.NewChannel(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.GetChannel(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.SelectChannel(rules, default, _, _, _) =>
+      val d = default.map(freeVars).getOrElse(Map.empty)
+      rules.foldLeft(d) {
+        case (acc, SelectChannelRule(sym, chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
+      }
+
+    case Expression.Spawn(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Lazy(exp, _, _) =>
+      freeVars(exp)
+
+    case Expression.Force(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+      cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, c) => acc ++ freeVars(c)
+      }
+
+    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointProject(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
+  }
+
+  private def freeVars(c: Constraint): Map[Symbol.VarSym, Type] = c match {
+    case Constraint(cparams, head, body, loc) => ??? // TODO
   }
 
 
