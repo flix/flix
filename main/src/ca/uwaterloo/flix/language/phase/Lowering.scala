@@ -1400,7 +1400,14 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Returns the free variables in the given head predicate `head0`.
     */
-  private def freeVars(head0: Predicate.Head): Map[Symbol.VarSym, Type] = ???
+  private def freeVars(head0: Predicate.Head): Map[Symbol.VarSym, Type] = head0 match {
+    case Head.Atom(_, _, terms, _, _) =>
+      terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Head.Union(exp, _, _) => freeVars(exp)
+  }
 
   /**
     * Returns the free variables in the given body predicate `body0`.
