@@ -26,8 +26,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, 
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import scala.annotation.tailrec
-
 // TODO: Add doc
 
 object Lowering extends Phase[Root, Root] {
@@ -714,7 +712,7 @@ object Lowering extends Phase[Root, Root] {
     exp0 match {
       case Expression.Var(sym, _, loc) =>
         // Case 1: Variable term.
-        if (isQuantifiedVar(cparams0, sym)) {
+        if (isQuantifiedVar(sym, cparams0)) {
           // TODO: Actual variable term
           mkHeadTermVar(sym)
         } else {
@@ -737,19 +735,6 @@ object Lowering extends Phase[Root, Root] {
     }
   }
 
-  // TODO: Move
-  // TODO: DOC
-  private def quantifiedVars(cparams0: List[ConstraintParam], exp0: Expression): List[(Symbol.VarSym, Type)] = {
-    TypedAstOps.freeVars(exp0).toList.filter {
-      case (sym, _) => isQuantifiedVar(cparams0, sym)
-    }
-  }
-
-  // TODO: Move
-  // TODO: DOC
-  private def isQuantifiedVar(cparams0: List[ConstraintParam], sym: Symbol.VarSym): Boolean =
-    cparams0.exists(p => p.sym == sym)
-
   /**
     * Lowers the given body term `pat0`.
     */
@@ -758,7 +743,7 @@ object Lowering extends Phase[Root, Root] {
       mkBodyTermWild(loc)
 
     case Pattern.Var(sym, tpe, loc) =>
-      if (isQuantifiedVar(cparams0, sym)) {
+      if (isQuantifiedVar(sym, cparams0)) {
         // TODO: Actual variable term
         mkBodyTermVar(sym)
       } else {
@@ -1121,6 +1106,27 @@ object Lowering extends Phase[Root, Root] {
     val eff = Type.Pure
     Expression.Tuple(exps, tpe, eff, loc)
   }
+
+  /**
+    * Return a list of quantified variables in the given expression `exp0`.
+    *
+    * A variable is quantified (i.e. *NOT* lexically bound) if it occurs in the expression `exp0`
+    * but not in the constraint params `cparams0` of the constraint.
+    */
+  private def quantifiedVars(cparams0: List[ConstraintParam], exp0: Expression): List[(Symbol.VarSym, Type)] = {
+    TypedAstOps.freeVars(exp0).toList.filter {
+      case (sym, _) => isQuantifiedVar(sym, cparams0)
+    }
+  }
+
+  /**
+    * Returns `true` if the given variable symbol `sym` is a quantified variable according to the given constraint params `cparams0`.
+    *
+    * That is, the variable symbol is *NOT* lexically bound.
+    */
+  private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[ConstraintParam]): Boolean =
+    cparams0.exists(p => p.sym == sym)
+
 
   // TODO: Move into TypedAstOps
   /**
