@@ -1177,10 +1177,17 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.Let(sym, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
     case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+
     case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
 
     case Expression.Tag(_, _, exp, _, _, _) =>
@@ -1231,8 +1238,11 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.Existential(fparam, exp, loc) => ??? // TODO
-    case Expression.Universal(fparam, exp, loc) => ??? // TODO
+    case Expression.Existential(fparam, exp, _) =>
+      freeVars(exp) - fparam.sym
+
+    case Expression.Universal(fparam, exp, _) =>
+      freeVars(exp) - fparam.sym
 
     case Expression.Ascribe(exp, _, _, _) =>
       freeVars(exp)
