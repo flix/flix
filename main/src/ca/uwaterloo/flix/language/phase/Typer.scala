@@ -2074,7 +2074,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val classes = List(
       PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
     )
     classes.map(Ast.TypeConstraint(_, tpe))
@@ -2087,7 +2086,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val classes = List(
       PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),

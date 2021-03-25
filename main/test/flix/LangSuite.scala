@@ -1,6 +1,6 @@
 package flix
 
-import ca.uwaterloo.flix.util.{FlixTest, Options}
+import ca.uwaterloo.flix.util.{Ignore, FlixTest, Options}
 import org.scalatest.Suites
 
 class LangSuite extends Suites(
@@ -16,7 +16,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Dec.Class", "main/test/flix/Test.Dec.Class.flix"),
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
   new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
-  // TODO new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix"),
+  new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
@@ -134,7 +134,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Fixpoint.Constraint", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Fixpoint.Compose", "main/test/flix/Test.Exp.Fixpoint.Compose.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Fixpoint.Entails", "main/test/flix/Test.Exp.Fixpoint.Entails.flix")(Options.TestWithLibrary),
-  // TODO new FlixTest("Test.Exp.Fixpoint.Fold", "main/test/flix/Test.Exp.Fixpoint.Fold.flix")(Options.TestWithLibrary),
+  new Ignore("Test.Exp.Fixpoint.Fold", "main/test/flix/Test.Exp.Fixpoint.Fold.flix")(Options.TestWithLibrary), // TODO
   new FlixTest("Test.Exp.Fixpoint.Project", "main/test/flix/Test.Exp.Fixpoint.Project.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Fixpoint.Solve", "main/test/flix/Test.Exp.Fixpoint.Solve.flix")(Options.TestWithLibrary),
 
@@ -288,10 +288,10 @@ class LangSuite extends Suites(
   //
   // Predicate.
   //
-  // TODO new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix")(Options.TestWithLibrary),
-  // TODO new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix")(Options.TestWithLibrary),
+  new Ignore("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix")(Options.TestWithLibrary), // TODO
   new FlixTest("Test.Predicate.Nullary", "main/test/flix/Test.Predicate.Nullary.flix")(Options.TestWithLibrary),
-  // TODO new FlixTest("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix")(Options.TestWithLibrary),
+  new Ignore("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix")(Options.TestWithLibrary), // TODO
 
   //
   // Stratified Negation.
@@ -301,20 +301,20 @@ class LangSuite extends Suites(
   //
   // Term.
   //
-  // TODO new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit", "main/test/flix/Test.Term.Lit.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit.List", "main/test/flix/Test.Term.Lit.List.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.Option.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit.Result", "main/test/flix/Test.Term.Lit.Result.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit.Set", "main/test/flix/Test.Term.Lit.Set.flix")(Options.TestWithLibrary),
-  // TODO new FlixTest("Test.Term.Var.CapturedVar", "main/test/flix/Test.Term.Var.CapturedVar.flix")(Options.TestWithLibrary),
+  new Ignore("Test.Term.Var.CapturedVar", "main/test/flix/Test.Term.Var.CapturedVar.flix")(Options.TestWithLibrary), // TODO
   new FlixTest("Test.Term.Var.QuantVar", "main/test/flix/Test.Term.Var.QuantVar.flix")(Options.TestWithLibrary),
-  // TODO new FlixTest("Test.Term.Var.WildVar", "main/test/flix/Test.Term.Var.WildVar.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Var.WildVar", "main/test/flix/Test.Term.Var.WildVar.flix")(Options.TestWithLibrary), // TODO
 
   //
   // Type Alias.
   //
-  // TODO new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibrary),
 
   //
   // Unused.

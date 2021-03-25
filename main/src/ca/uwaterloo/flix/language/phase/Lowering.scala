@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, 
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
+import scala.annotation.tailrec
+
 // TODO: Add doc
 
 object Lowering extends Phase[Root, Root] {
@@ -656,9 +658,9 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given constraint `c0`.
     */
   private def visitConstraint(c0: Constraint)(implicit root: Root, flix: Flix): Expression = c0 match {
-    case Constraint(_, head, body, loc) =>
-      val headExp = visitHeadPred(head)
-      val bodyExp = mkArray(body.map(visitBodyPred), Types.BodyPredicate, loc)
+    case Constraint(cparams, head, body, loc) =>
+      val headExp = visitHeadPred(cparams, head)
+      val bodyExp = mkArray(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(headExp :: bodyExp :: locExp :: Nil, loc)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
@@ -667,10 +669,10 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given head predicate `p0`.
     */
-  private def visitHeadPred(p0: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p0 match {
+  private def visitHeadPred(cparams0: List[ConstraintParam], p0: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
-      val termsExp = mkArray(terms.map(visitHeadTerm), Types.HeadTerm, loc)
+      val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
@@ -682,25 +684,25 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Lowers the given body predicate `p0`.
     */
-  private def visitBodyPred(p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
+  private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val predSymExp = mkPredSym(pred)
       val polarityExp = mkPolarity(polarity, loc)
-      val termsExp = mkArray(terms.map(visitBodyTerm), Types.BodyTerm, loc)
+      val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: polarityExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case Body.Guard(exp, loc) =>
-      // TODO: need to only consider variables that are not bound by the local scope.
-      // See e.g. testGuardQuantAndCapturedVar02
-      mkGuardOrAppTerm(isGuard = true, exp, loc)
+    case Body.Guard(exp0, loc) =>
+      // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+      val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
+      mkGuard(quantifiedFreeVars, exp0, loc)
   }
 
   /**
     * Lowers the given head term `exp0`.
     */
-  private def visitHeadTerm(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
+  private def visitHeadTerm(cparams0: List[ConstraintParam], exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
     //
     // We need to consider three cases:
     //
@@ -711,34 +713,57 @@ object Lowering extends Phase[Root, Root] {
     exp0 match {
       case Expression.Var(sym, _, loc) =>
         // Case 1: Variable term.
-        mkHeadTermVar(sym)
+        if (isQuantifiedVar(cparams0, sym)) {
+          // TODO: Actual variable term
+          mkHeadTermVar(sym)
+        } else {
+          // TODO: lexically capture variable.
+          mkHeadTermLit(box(exp0))
+        }
 
       case _ =>
-        // Call TypedAstOps.freeVarsOf
-        val quantifiedVars = Nil // TODO
+        // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+        val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
 
-        if (quantifiedVars.isEmpty) {
+        if (quantifiedFreeVars.isEmpty) {
           // Case 2: Evaluate to (boxed) value.
+          // TODO: Is this case needed?
           mkHeadTermLit(box(exp0))
         } else {
           // Case 3: Translate to application term.
-
-          // TODO: use TypedAstOps.substitute.
-
-          ???
+          mkAppTerm(quantifiedFreeVars, exp0, exp0.loc)
         }
     }
   }
 
+  // TODO: Move
+  // TODO: DOC
+  private def quantifiedVars(cparams0: List[ConstraintParam], exp0: Expression): List[(Symbol.VarSym, Type)] = {
+    freeVars(exp0).toList.filter {
+      case (sym, _) => isQuantifiedVar(cparams0, sym)
+    }
+  }
+
+  // TODO: Move
+  // TODO: DOC
+  private def isQuantifiedVar(cparams0: List[ConstraintParam], sym: Symbol.VarSym): Boolean =
+    cparams0.exists(p => p.sym == sym)
+
   /**
     * Lowers the given body term `pat0`.
     */
-  private def visitBodyTerm(pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
+  private def visitBodyTerm(cparams0: List[ConstraintParam], pat0: Pattern)(implicit root: Root, flix: Flix): Expression = pat0 match {
     case Pattern.Wild(_, loc) =>
       mkBodyTermWild(loc)
 
-    case Pattern.Var(sym, _, loc) =>
-      mkBodyTermVar(sym)
+    case Pattern.Var(sym, tpe, loc) =>
+      if (isQuantifiedVar(cparams0, sym)) {
+        // TODO: Actual variable term
+        mkBodyTermVar(sym)
+      } else {
+        // TODO lexically bound variable.
+        mkBodyTermLit(box(Expression.Var(sym, tpe, loc)))
+      }
 
     case Pattern.Unit(loc) =>
       mkBodyTermLit(box(Expression.Unit(loc)))
@@ -812,7 +837,7 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.BodyTerm.Wild` from the given source location `loc`.
     */
   private def mkBodyTermWild(loc: SourceLocation): Expression = {
-    val innerExp = Expression.Unit(loc)
+    val innerExp = mkSourceLocation(loc)
     mkTag(Enums.BodyTerm, "Wild", innerExp, Types.BodyTerm, loc)
   }
 
@@ -908,18 +933,19 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Returns a `Fixpoint/Ast.BodyPredicate.GuardX` or `Fixpoint/Ast.Term.AppX`.
+    * Returns a `Fixpoint/Ast.BodyPredicate.GuardX`.
+    *
+    * mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
-  // TODO: Deal with the case where `exp` has no free variables.
-  private def mkGuardOrAppTerm(isGuard: Boolean, exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+  private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     // Construct the location expression.
     val locExp = mkSourceLocation(loc)
 
-    // Compute the free variables in `exp` (and convert to list to ensure stable iteration order).
-    val fvs = freeVars(exp).toList
+    // Compute the number of free variables.
+    val arity = fvs.length
 
     // Check that we have <= 5 free variables.
-    if (fvs.length > 5) {
+    if (arity > 5) {
       throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
     }
 
@@ -928,12 +954,9 @@ object Lowering extends Phase[Root, Root] {
       // Construct a lambda that takes the unit argument.
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
-      val innerExp = Expression.Lambda(fparam, exp, tpe, loc)
-      // TODO: Refactor
-      return if (isGuard)
-        mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
-      else
-        mkTag(Enums.HeadTerm, s"App0", innerExp, Types.HeadTerm, loc)
+      val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
+      val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
+      return mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
     }
 
     // Introduce a fresh variable for each free variable.
@@ -954,53 +977,123 @@ object Lowering extends Phase[Root, Root] {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftX(lambdaExp, fvs, Type.Bool)
-
-    // Compute the number of free variables.
-    val arity = fvs.length
+    val liftedExp = liftXb(lambdaExp, fvs)
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
     val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+    mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
+  }
 
-    if (isGuard)
-      mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
-    else
-      mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
+  /**
+    * Returns a `Fixpoint/Ast.Term.AppX`.
+    *
+    * Note: mkGuard and mkAppTerm are similar and should probably be maintained together.
+    */
+  private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    // Construct the location expression.
+    val locExp = mkSourceLocation(loc)
+
+    // Compute the number of free variables.
+    val arity = fvs.length
+
+    // Check that we have <= 5 free variables.
+    if (arity > 5) {
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
+    }
+
+    // Special case: No free variables.
+    if (fvs.isEmpty) {
+      // Construct a lambda that takes the unit argument.
+      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
+      val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
+      val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
+      return mkTag(Enums.HeadTerm, s"App0", innerExp, Types.HeadTerm, loc)
+    }
+
+    // Introduce a fresh variable for each free variable.
+    val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+      case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+    }
+
+    // Substitute every symbol in `exp` for its fresh equivalent.
+    val freshExp = substExp(exp, freshVars)
+
+    // Curry `freshExp` in a lambda expression for each free variable.
+    val lambdaExp = fvs.foldLeft(freshExp) {
+      case (acc, (oldSym, tpe)) =>
+        val freshSym = freshVars(oldSym)
+        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
+        val lambdaType = Type.mkPureArrow(tpe, acc.tpe)
+        Expression.Lambda(fparam, acc, lambdaType, loc)
+    }
+
+    // Lift the lambda expression to operate on boxed values.
+    val liftedExp = liftX(lambdaExp, fvs, exp.tpe)
+
+    // Construct the `Fixpoint.Ast/BodyPredicate` value.
+    val varExps = fvs.map(kv => mkVarSym(kv._1))
+    val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+    mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
   }
 
   /**
     * Lifts the given lambda expression `exp0` with the given list of parameters `params`.
+    *
+    * Note: liftX and liftXb are similar and should probably be maintained together.
     */
   private def liftX(exp0: Expression, params: List[(Symbol.VarSym, Type)], resultType: Type): Expression = {
     // Compute the liftXb symbol.
-    val arity = params.length
-    val sym = resultType.typeConstructor match {
-      case Some(TypeConstructor.Bool) => Symbol.mkDefnSym(s"Boxable.lift${arity}b")
-      case _ => Symbol.mkDefnSym(s"Boxable.lift${arity}")
-    }
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${params.length}")
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
-    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> `resultType`.
+    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Boxed`.
     // That is, the function accepts a *curried* function and returns a *curried* function.
     //
 
     // The type of the function argument, i.e. a -> b -> c -> `resultType`.
-    val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
+    val argType = Type.mkPureCurriedArrow(params.map(_._2), resultType)
 
-    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> `resultType`.
-    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Boxed.
+    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Types.Boxed)
 
-    // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> `resultType`).
+    // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> Boxed).
     val liftType = Type.mkPureArrow(argType, returnType)
 
     // Construct a call to the liftX function.
     val defn = Expression.Def(sym, liftType, exp0.loc)
-    val args = List(exp0)
-    val tpe = returnType
-    val eff = Type.Pure
-    Expression.Apply(defn, args, tpe, eff, exp0.loc)
+    Expression.Apply(defn, List(exp0), returnType, Type.Pure, exp0.loc)
+  }
+
+  /**
+    * Lifts the given Boolean-valued lambda expression `exp0` with the given list of parameters `params`.
+    *
+    * Note: liftX and liftXb are similar and should probably be maintained together.
+    */
+  private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
+    // Compute the liftXb symbol.
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${params.length}b")
+
+    //
+    // The liftX family of functions are of the form: a -> b -> c -> Bool and
+    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
+    // That is, the function accepts a *curried* function and returns a *curried* function.
+    //
+
+    // The type of the function argument, i.e. a -> b -> c -> Bool.
+    val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
+
+    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Bool.
+    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+
+    // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
+    val liftType = Type.mkPureArrow(argType, returnType)
+
+    // Construct a call to the liftXb function.
+    val defn = Expression.Def(sym, liftType, exp0.loc)
+    Expression.Apply(defn, List(exp0), returnType, Type.Pure, exp0.loc)
   }
 
   /**
@@ -1029,11 +1122,10 @@ object Lowering extends Phase[Root, Root] {
   }
 
 
-  // TODO: Move into TypedAstOps
-
   /**
     * Returns the free variables in the given expression `exp0`.
     */
+  // TODO: Move into TypedAstOps
   private def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
     case Expression.Unit(_) => Map.empty
 
@@ -1087,11 +1179,28 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
-    case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Let(sym, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.Match(exp, rules, _, _, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat)
+      }
+
+    case Expression.Choose(exps, rules, _, _, _) =>
+      val es = exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+      val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, ChoiceRule(pats, exp)) => acc ++ (freeVars(exp) -- pats.flatMap(freeVars))
+      }
+      es ++ rs
 
     case Expression.Tag(_, _, exp, _, _, _) =>
       freeVars(exp)
@@ -1101,48 +1210,206 @@ object Lowering extends Phase[Root, Root] {
         case (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLength(base, eff, loc) => ??? // TODO
-    case Expression.ArrayStore(base, index, elm, loc) => ??? // TODO
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ??? // TODO
-    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.Existential(fparam, exp, loc) => ??? // TODO
-    case Expression.Universal(fparam, exp, loc) => ??? // TODO
-    case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ??? // TODO
-    case Expression.GetField(field, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
-    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Lazy(exp, tpe, loc) => ??? // TODO
-    case Expression.Force(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ??? // TODO
-    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordEmpty(_, _) => Map.empty
+
+    case Expression.RecordSelect(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+      freeVars(value) ++ freeVars(rest)
+
+    case Expression.RecordRestrict(_, rest, _, _, _) =>
+      freeVars(rest)
+
+    case Expression.ArrayLit(elms, _, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.ArrayNew(elm, len, _, _, _) =>
+      freeVars(elm) ++ freeVars(len)
+
+    case Expression.ArrayLoad(base, index, _, _, _) =>
+      freeVars(base) ++ freeVars(index)
+
+    case Expression.ArrayLength(base, _, _) =>
+      freeVars(base)
+
+    case Expression.ArrayStore(base, index, elm, _) =>
+      freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
+      freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+
+    case Expression.Ref(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Deref(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.Existential(fparam, exp, _) =>
+      freeVars(exp) - fparam.sym
+
+    case Expression.Universal(fparam, exp, _) =>
+      freeVars(exp) - fparam.sym
+
+    case Expression.Ascribe(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Cast(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
+      }
+
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      args.foldLeft(freeVars(exp)) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      Map.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.NewChannel(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.GetChannel(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.SelectChannel(rules, default, _, _, _) =>
+      val d = default.map(freeVars).getOrElse(Map.empty)
+      rules.foldLeft(d) {
+        case (acc, SelectChannelRule(sym, chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
+      }
+
+    case Expression.Spawn(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Lazy(exp, _, _) =>
+      freeVars(exp)
+
+    case Expression.Force(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+      cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, c) => acc ++ freeVars(c)
+      }
+
+    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointProject(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
   }
 
-  // TODO: Move into TypedAstOps
+  /**
+    * Returns the free variables in the given pattern `pat0`.
+    */
+  private def freeVars(pat0: Pattern): Set[Symbol.VarSym] = pat0 match {
+    case Pattern.Wild(_, _) => Set.empty
+    case Pattern.Var(sym, _, _) => Set(sym)
+    case Pattern.Unit(_) => Set.empty
+    case Pattern.True(_) => Set.empty
+    case Pattern.False(_) => Set.empty
+    case Pattern.Char(_, _) => Set.empty
+    case Pattern.Float32(_, _) => Set.empty
+    case Pattern.Float64(_, _) => Set.empty
+    case Pattern.Int8(_, _) => Set.empty
+    case Pattern.Int16(_, _) => Set.empty
+    case Pattern.Int32(_, _) => Set.empty
+    case Pattern.Int64(_, _) => Set.empty
+    case Pattern.BigInt(_, _) => Set.empty
+    case Pattern.Str(_, _) => Set.empty
+    case Pattern.Tag(_, _, pat, _, _) => freeVars(pat)
+    case Pattern.Tuple(elms, _, _) =>
+      elms.foldLeft(Set.empty[Symbol.VarSym]) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
+
+    case Pattern.Array(elms, _, _) =>
+      elms.foldLeft(Set.empty[Symbol.VarSym]) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
+
+    case Pattern.ArrayTailSpread(elms, sym, _, _) =>
+      elms.foldLeft(Set(sym)) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
+
+    case Pattern.ArrayHeadSpread(sym, elms, _, _) =>
+      elms.foldLeft(Set(sym)) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
+  }
+
+  /**
+    * Returns the free variables in the given pattern `pat0`.
+    */
+  private def freeVars(pat0: ChoicePattern): Set[Symbol.VarSym] = pat0 match {
+    case ChoicePattern.Wild(_) => Set.empty
+    case ChoicePattern.Absent(_) => Set.empty
+    case ChoicePattern.Present(sym, _, _) => Set(sym)
+  }
+
+  /**
+    * Returns the free variables in the given constraint `constraint0`.
+    */
+  private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
+    case Constraint(cparams0, head, body, _) =>
+      (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.sym)
+  }
+
+  /**
+    * Returns the free variables in the given head predicate `head0`.
+    */
+  private def freeVars(head0: Predicate.Head): Map[Symbol.VarSym, Type] = ???
+
+  /**
+    * Returns the free variables in the given body predicate `body0`.
+    */
+  private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = ???
+
+
   // TODO: Should this also refresh variables in tree??
+  // TODO: Move into TypedAstOps
   private def substExp(exp0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
@@ -1205,7 +1472,12 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Stm(e1, e2, tpe, eff, loc)
+
     case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
     case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
 
@@ -1217,8 +1489,12 @@ object Lowering extends Phase[Root, Root] {
       val es = elms.map(substExp(_, subst))
       Expression.Tuple(es, tpe, eff, loc)
 
-    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordEmpty(_, _) => exp0
+
+    case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.RecordSelect(e, field, tpe, eff, loc)
+
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
     case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
     case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
