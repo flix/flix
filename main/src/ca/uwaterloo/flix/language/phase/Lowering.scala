@@ -1291,12 +1291,19 @@ object Lowering extends Phase[Root, Root] {
       Expression.Cast(e, tpe, eff, loc)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
+
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.GetField(field, exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
+
     case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
+
     case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
