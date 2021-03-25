@@ -1186,8 +1186,17 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Let(s, e1, e2, tpe, eff, loc)
+
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
     case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
@@ -1195,6 +1204,7 @@ object Lowering extends Phase[Root, Root] {
       Expression.Stm(e1, e2, tpe, eff, loc)
 
     case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+
     case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
@@ -1211,10 +1221,18 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.RecordSelect(e, field, tpe, eff, loc)
 
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
+      val v = substExp(value, subst)
+      val r = substExp(rest, subst)
+      Expression.RecordExtend(field, v, r, tpe, eff, loc)
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
+      val r = substExp(rest, subst)
+      Expression.RecordRestrict(field, r, tpe, eff, loc)
+
+    case Expression.ArrayLit(elms, tpe, eff, loc) =>
+      val es = elms.map(substExp(_, subst))
+      Expression.ArrayLit(es, tpe, eff, loc)
 
     case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
 
