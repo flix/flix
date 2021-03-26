@@ -139,15 +139,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
     def LawOrSig: Rule1[ParsedAst.Declaration.LawOrSig] = rule {
@@ -182,24 +182,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ UnconstrainedTypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
     def OpaqueType: Rule1[ParsedAst.Declaration.OpaqueType] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("opaque") ~ WS ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ ConstrainedTypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
+      Documentation ~ Modifiers ~ SP ~ keyword("opaque") ~ WS ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
     }
 
     def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ ConstrainedTypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("rel") ~ WS ~ Names.Predicate ~ optWS ~ ConstrainedTypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Relation
+      Documentation ~ Modifiers ~ SP ~ keyword("rel") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Relation
     }
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("lat") ~ WS ~ Names.Predicate ~ optWS ~ ConstrainedTypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Lattice
+      Documentation ~ Modifiers ~ SP ~ keyword("lat") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Lattice
     }
 
     def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
@@ -218,7 +218,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ ConstrainedTypeParam ~ optWS ~ "]" ~ OptSuperClasses
+        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ OptSuperClasses
       }
 
       def OptSuperClasses = rule {
@@ -230,7 +230,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = rule {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.LawOrSig).separatedBy(WS) ~ optWS  ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.LawOrSig).separatedBy(WS) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -260,26 +260,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def ConstrainedTypeParam: Rule1[ParsedAst.TypeParam] = rule {
+    def TypeParam: Rule1[ParsedAst.TypeParam] = rule {
       SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ zeroOrMore(optWS ~ ":" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.TypeParam
     }
 
-    def ConstrainedTypeParams: Rule1[ParsedAst.TypeParams] = {
+    def TypeParams: Rule1[ParsedAst.TypeParams] = {
       rule {
-        optional("[" ~ optWS ~ oneOrMore(ConstrainedTypeParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.TypeParam]]) => o match {
-          case None => ParsedAst.TypeParams.Elided
-          case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
-        })
-      }
-    }
-
-    def UnconstrainedTypeParam: Rule1[ParsedAst.TypeParam] = rule {
-      SP ~ Names.Variable ~ optional(optWS ~ ":#" ~ optWS ~ Kind) ~ push(Nil) ~ SP ~> ParsedAst.TypeParam
-    }
-
-    def UnconstrainedTypeParams: Rule1[ParsedAst.TypeParams] = {
-      rule {
-        optional("[" ~ optWS ~ oneOrMore(UnconstrainedTypeParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.TypeParam]]) => o match {
+        optional("[" ~ optWS ~ oneOrMore(TypeParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.TypeParam]]) => o match {
           case None => ParsedAst.TypeParams.Elided
           case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
         })
@@ -1021,12 +1008,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     // TODO: We should only allow one variant of these.
     def Existential: Rule1[ParsedAst.Expression.Existential] = rule {
-      SP ~ ("∃" | keyword("exists")) ~ optWS ~ Declarations.ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Existential
+      SP ~ ("∃" | keyword("exists")) ~ optWS ~ Declarations.TypeParams ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Existential
     }
 
     // TODO: We should only allow one variant of these.
     def Universal: Rule1[ParsedAst.Expression.Universal] = rule {
-      SP ~ ("∀" | keyword("forall")) ~ optWS ~ Declarations.ConstrainedTypeParams ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
+      SP ~ ("∀" | keyword("forall")) ~ optWS ~ Declarations.TypeParams ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
     }
 
   }

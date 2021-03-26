@@ -54,26 +54,20 @@ object Indexer {
     val idx2 = def0.spec.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    val idx3 = def0.spec.tparams.foldLeft(Index.empty) {
-      case (acc, tparam) => acc ++ visitTypeParam(tparam)
-    }
-    val idx4 = visitScheme(def0.spec.declaredScheme, def0.spec.loc)
-    idx0 ++ idx1 ++ idx2 ++ idx3 ++ idx4
+    val idx3 = visitScheme(def0.spec.declaredScheme, def0.spec.loc)
+    idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
   /**
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, Spec(_, _, _, tparams, fparams, _, _, _), _) =>
+    case Sig(_, Spec(_, _, _, _, fparams, _, _, _), _) =>
       val idx1 = Index.occurrenceOf(sig0)
       val idx2 = fparams.foldLeft(Index.empty) {
         case (acc, fparam) => acc ++ visitFormalParam(fparam)
       }
-      val idx3 = tparams.foldLeft(Index.empty) {
-        case (acc, tparam) => acc ++ visitTypeParam(tparam)
-      }
-      idx1 ++ idx2 ++ idx3
+      idx1 ++ idx2
   }
 
   /**
@@ -404,16 +398,6 @@ object Indexer {
   private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
     case FormalParam(_, _, tpe, _) =>
       Index.occurrenceOf(fparam0) ++ visitType(tpe)
-  }
-
-  /**
-    * Returns a reverse index for the given type parameter `tparam0`.
-    */
-  private def visitTypeParam(tparam0: TypeParam): Index = tparam0 match {
-    case TypeParam(_, _, classes, _) =>
-      tparam0.classes.foldLeft(Index.empty) {
-        case (acc, sym) => acc ++ Index.useOf(sym, tparam0.loc)
-      }
   }
 
   /**

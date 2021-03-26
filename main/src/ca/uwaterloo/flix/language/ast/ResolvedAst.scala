@@ -307,6 +307,6 @@ object ResolvedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: Type.Var, classes: List[Symbol.ClassSym], loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
 
 }

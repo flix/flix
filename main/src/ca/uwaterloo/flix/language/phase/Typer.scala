@@ -2118,7 +2118,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns the typed version of the given type parameters `tparams0`.
     */
   private def getTypeParams(tparams0: List[ResolvedAst.TypeParam]): List[TypedAst.TypeParam] = tparams0.map {
-    case ResolvedAst.TypeParam(name, tpe, classes, loc) => TypedAst.TypeParam(name, tpe, classes, loc)
+    case ResolvedAst.TypeParam(name, tpe, loc) => TypedAst.TypeParam(name, tpe, loc)
   }
 
   /**

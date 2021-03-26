@@ -111,15 +111,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparam0, superClasses0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
-      val tparam = visitTypeParam(tparam0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
       val sigs0 = lawsAndSigs.collect { case sig: ParsedAst.Declaration.Sig => sig }
       for {
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
         sigs <- traverse(sigs0)(visitSig)
         laws <- traverse(laws0)(visitLaw)
+        tparams <- visitUnconstrainedTypeParam(tparam0)
         superClasses <- traverse(superClasses0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
+      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparams, superClasses, sigs.flatten, laws.flatten, loc))
   }
 
   /**
@@ -131,7 +131,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
-      val tparams = visitTypeParams(tparams0)
+      val (tparams, tconstrs) = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
       val expVal = Validation.traverse(exp0)(visitExp)
@@ -142,7 +142,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         _ <- requirePublic(mod, ident)
         ts = fparams.map(_.tpe.get)
         tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
-      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, eff, loc))
+      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, eff, tconstrs, loc))
   }
 
   /**
@@ -185,7 +185,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers)
       val expVal = visitExp(exp0)
-      val tparams = visitTypeParams(tparams0)
+      val (tparams, tconstrs) = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
 
@@ -195,7 +195,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
         ts = fparams.map(_.tpe.get)
         tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
-      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, loc))
+      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, loc))
   }
 
   /**
@@ -208,14 +208,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val annVal = visitAnnotationOrProperty(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
       val expVal = visitExp(exp0)
-      val tparams = visitTypeParams(tparams0)
+      val (tparams, tconstrs) = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
 
       mapN(annVal, modVal, formalsVal, expVal) {
         case (ann, mod, fs, exp) =>
           val ts = fs.map(_.tpe.get)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(loc), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, WeededAst.Type.True(loc), loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, WeededAst.Type.True(loc), tconstrs, loc))
       }
   }
 
@@ -226,10 +226,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Enum(doc0, mods, sp1, ident, tparams0, cases, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = visitTypeParams(tparams0)
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
-      modVal flatMap {
-        case mod =>
+      flatMapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           /*
            * Check for `DuplicateTag`.
            */
@@ -264,10 +264,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        */
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
-      modVal map {
-        case mod =>
-          val tparams = visitTypeParams(tparams0)
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           val cases = Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(tpe0)))
           List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, cases, mkSL(sp1, sp2)))
       }
@@ -280,10 +280,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.TypeAlias(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
-      modVal map {
-        case mod =>
-          val tparams = visitTypeParams(tparams0)
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           val tpe = visitType(tpe0)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, mkSL(sp1, sp2)))
       }
@@ -297,13 +297,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
       //
       // Rewrite the relation declaration to a type alias.
       //
-      modVal map {
-        case mod =>
-          val tparams = visitTypeParams(tparams0)
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           val termTypes = attr.map(a => visitType(a.tpe))
           val tpe = WeededAst.Type.Relation(termTypes.toList, loc)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
@@ -318,14 +318,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = visitTypeParams(tparams0)
+      val tparamsVal = visitUnconstrainedTypeParams(tparams0)
 
       //
       // Rewrite the lattice declaration to a type alias.
       //
-      modVal map {
-        case mod =>
-          val tparams = visitTypeParams(tparams0)
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
           val termTypes = attr.map(a => visitType(a.tpe))
           val tpe = WeededAst.Type.Lattice(termTypes.toList, loc)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
@@ -2052,20 +2051,44 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given type parameters `tparams0`.
     */
-  private def visitTypeParams(tparams0: ParsedAst.TypeParams): WeededAst.TypeParams = tparams0 match {
-    case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided
+  private def visitTypeParams(tparams0: ParsedAst.TypeParams): (WeededAst.TypeParams, List[WeededAst.TypeConstraint]) = tparams0 match {
+    case ParsedAst.TypeParams.Elided => (WeededAst.TypeParams.Elided, Nil)
     case ParsedAst.TypeParams.Explicit(tparams) =>
-      val tparams1 = tparams.map(visitTypeParam)
-      WeededAst.TypeParams.Explicit(tparams1)
+      val (tparams1, tconstrs) = tparams.map(visitTypeParam).unzip
+      (WeededAst.TypeParams.Explicit(tparams1), tconstrs.flatten)
   }
 
   /**
     * Weeds the given type param `tparam`.
     */
-  private def visitTypeParam(tparam: ParsedAst.TypeParam): WeededAst.TypeParam = tparam match {
+  private def visitTypeParam(tparam0: ParsedAst.TypeParam): (WeededAst.TypeParam, List[WeededAst.TypeConstraint]) = tparam0 match {
     case ParsedAst.TypeParam(sp1, ident, kind, classes, sp2) =>
       val k = kind.map(visitKind)
-      WeededAst.TypeParam(ident, k, classes.toList)
+      val tparam = WeededAst.TypeParam(ident, k)
+      val tvar = WeededAst.Type.Var(ident, ident.loc)
+      val tconstrs = classes.map(WeededAst.TypeConstraint(_, tvar))
+      (tparam, tconstrs.toList)
+  }
+
+  /**
+    * Weeds the given type parameters `tparams0`, returning an error if there are constraints.
+    */
+  private def visitUnconstrainedTypeParams(tparams0: ParsedAst.TypeParams): Validation[WeededAst.TypeParams, WeederError] = tparams0 match {
+    case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided.toSuccess
+    case ParsedAst.TypeParams.Explicit(tparams) =>
+      traverse(tparams)(visitUnconstrainedTypeParam) map {
+        tparams1 => WeededAst.TypeParams.Explicit(tparams1)
+      }
+  }
+
+  /**
+    * Weeds the given type param `tparam`, returning an error if there are constraints.
+    */
+  private def visitUnconstrainedTypeParam(tparam0: ParsedAst.TypeParam): Validation[WeededAst.TypeParam, WeederError] = {
+    visitTypeParam(tparam0) match {
+      case (tparam, Nil) => tparam.toSuccess
+      case (_, _ :: _) => WeederError.IllegalTypeConstraint(tparam0.ident.loc).toFailure // MATT use tconstrs locations
+    }
   }
 
   /**
@@ -2381,6 +2404,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val tparams = WeededAst.TypeParams.Explicit(Nil)
     val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_args", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
+    // Type constraints for the generated main.
+    val tconstrs = Nil
+
     // Collect all the constraints into a single constraint set.
     val innerExp = WeededAst.Expression.FixpointConstraintSet(cs, loc)
 
@@ -2397,7 +2423,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val tpe = mkArrow(argType, resultEff, Int32Type, loc)
 
     // Construct the declaration.
-    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, resultEff, loc)
+    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, resultEff, tconstrs, loc)
 
     // Construct an AST root that contains the main declaration.
     WeededAst.Root(Nil, List(decl), loc)
