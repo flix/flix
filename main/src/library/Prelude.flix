@@ -101,10 +101,28 @@ pub def unsafeToString(x: a): String =
     toString(x as ##java.lang.Object) as & Pure
 
 ///
-/// Panics (crashes) the current process with the given message `m`.
+/// Crashes the current process with the given message `m`.
 ///
-@Time(1) @Space(1)
-pub def panic(_m: String): a = ?panic
+pub def bug!(m: String): a =
+    let f = () -> {
+        import get java.lang.System:err as getErr;
+        import java.io.PrintStream.println(String);
+        import java.lang.String.repeat(Int32);
+        let prt = s -> getErr().println(s);
+        prt(repeat("*", 80));
+        prt("**") ;
+        prt("**  BUG: ${m}") ;
+        prt("**") ;
+        prt(repeat("*", 80));
+        prt("")
+    };
+    let _ = f() as & Pure;
+    ?panic
+
+///
+/// Asserts that this expression is unreachable. Crashes if not.
+///
+pub def unreachable!(): a = bug!("Reached unreachable expression.")
 
 ///
 /// Meta-programming facility to express the time complexity of a function `f`.
@@ -172,4 +190,4 @@ pub def space(_f: a -> Int32): Int32 = 1
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.
 ///
-pub def ===(_x: a, _y: a): Bool = panic("meta-programming construct")
+pub def ===(_x: a, _y: a): Bool = bug!("meta-programming construct")
