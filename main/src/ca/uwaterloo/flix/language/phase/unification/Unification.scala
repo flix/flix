@@ -275,10 +275,10 @@ object Unification {
         case Result.Err(UnificationError.MismatchedKinds(kind1, kind2)) =>
           Err(TypeError.MismatchedKinds(type1, type2, kind1, kind2, loc))
 
-        case Result.Err(err@UnificationError.NoMatchingInstance(_, _)) =>
+        case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err")
 
-        case Result.Err(err@UnificationError.MultipleMatchingInstances(_, _)) =>
+        case Result.Err(err: UnificationError.MultipleMatchingInstances) =>
           throw InternalCompilerException(s"Unexpected unification error: $err")
       }
     }

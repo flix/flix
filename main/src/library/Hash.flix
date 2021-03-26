@@ -22,6 +22,8 @@ pub lawless class Hash[a] {
     /// Returns a hash value for the given x.
     ///
     pub def hash(x: a): Int
+
+    // TODO: Add a law that hash is consistent with equals.
 }
 
 instance Hash[Unit] {

@@ -371,7 +371,7 @@ object NamedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, classes: List[Name.QName], loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
 
   case class TypeConstraint(clazz: Name.QName, arg: NamedAst.Type)
 
