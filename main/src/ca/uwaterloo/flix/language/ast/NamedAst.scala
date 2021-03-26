@@ -379,7 +379,7 @@ object NamedAst {
 
   }
 
-  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, classes: List[Name.QName], loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
 
   case class TypeConstraint(clazz: Name.QName, arg: NamedAst.Type)
 

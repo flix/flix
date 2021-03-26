@@ -285,9 +285,9 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> No instance of class '" << Red(clazz.toString) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << ">> No instance of class '" << Red(clazz.toString) << "' for type " << Red(FormatType.formatType(tpe)) << "." << NewLine
       vt << NewLine
-      vt << Code(loc, "no instance found") << NewLine
+      vt << Code(loc, s"no instance of class '${clazz.toString}' for type ${FormatType.formatType(tpe)}") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Add an instance for the type." << NewLine
     }
