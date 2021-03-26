@@ -291,8 +291,10 @@ object Indexer {
     case Expression.SelectChannel(rules, default, _, _, _) =>
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = rules.foldLeft(Index.empty) {
-        case (index, SelectChannelRule(sym, chan, body)) =>
+        case (index, SelectChannelRule.SelectGet(sym, chan, body)) =>
           index ++ Index.occurrenceOf(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(body)
+        case (index, SelectChannelRule.SelectPut(chan, value, body)) =>
+          index ++ visitExp(chan) ++ visitExp(value) ++ visitExp(body)
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
