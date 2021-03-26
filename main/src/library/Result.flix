@@ -26,6 +26,19 @@ enum Result[t, e] {
     case Err(e)
 }
 
+instance Boxable[Result[t, e]] with Order[t], ToString[t], Order[e], ToString[e] {
+    pub def box(x: Result[t, e]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Result[t, e], o2 as Result[t, e]);
+        let toString = o -> ToString.toString(o as Result[t, e]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Result[t, e] = match x {
+        case BoxedObject(v, _, _) => v as Result[t, e]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[Result[t, e]] with ToString[t], ToString[e] {
     pub def toString(r: Result[t, e]): String = match r {
         case Ok(t)  => "Ok(${t})"

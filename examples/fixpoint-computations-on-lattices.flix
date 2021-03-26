@@ -25,17 +25,6 @@ instance Eq[Sign] {
     }
 }
 
-/// The hash on lattice elements.
-instance Hash[Sign] {
-    pub def hash(x: Sign): Int32 = match x {
-        case Top => 1
-        case Neg => 2
-        case Zer => 3
-        case Pos => 4
-        case Bot => 5
-    }
-}
-
 /// The partial order relation on the lattice elements.
 instance PartialOrder[Sign] {
     pub def partialCompare(x: Sign, y: Sign): Bool = match (x, y) {
