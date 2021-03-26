@@ -1074,7 +1074,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     for {
       clazz <- lookupClass(tconstr0.clazz, ns0, root)
       tpe <- lookupType(tconstr0.arg, ns0, root)
-    } yield Ast.TypeConstraint(clazz.sym, tpe)
+    } yield Ast.TypeConstraint(clazz.sym, tpe, SourceLocation.Unknown)
   }
 
   /**
