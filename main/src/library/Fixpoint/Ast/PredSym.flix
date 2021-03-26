@@ -24,6 +24,13 @@ namespace Fixpoint/Ast {
         }
     }
 
+    instance Eq[PredSym] {
+        pub def eq(x: PredSym, y: PredSym): Bool = match x <=> y {
+            case EqualTo => true
+            case _ => false
+        }
+    }
+
     instance Order[PredSym] {
         pub def compare(a: PredSym, b: PredSym): Comparison = match (a,b) {
             case (PredSym(s1, _), PredSym(s2, _)) => s1 <=> s2

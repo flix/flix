@@ -23,7 +23,7 @@ use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard0, Guard1, Guard2, Guard3, Guard4
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
-    pub def compile[v : ToString](cs: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match cs {
+    def compile[v : ToString](cs: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match cs {
         case Datalog(facts, rules) =>
             let evalFacts = Array.fold(Array.map(compileRule, facts)) as & Pure;
             let evalStrata =

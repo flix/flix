@@ -19,6 +19,7 @@ use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
+use Fixpoint/Ast.mkDepGraph;
 
 // TODO: The following tests have been commented and should be fixed an incommented.
 // Test.Dec.RelAlias
@@ -38,13 +39,10 @@ use Fixpoint/Ast.PredSym.PredSym;
 // TestIntroduction
 
 namespace Fixpoint {
-    pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] = match d {
-        case Datalog(_, rules) =>
-             // TODO: compute stratification
-            predicatesOf(rules) |>
-            Set.foldRight(p -> Map.insert(p, 0), Map#{}) |>
-            solveWithStratification(d)
-    }
+    pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] =
+        mkDepGraph(d) |>
+        stratify |>
+        solveWithStratification(d)
 
     pub def solveWithStratification[v : Order : Eq : ToString](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] =
         (compile(d, stf) |>
