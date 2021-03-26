@@ -33,9 +33,11 @@ object Instructions {
 
   def NOP[R <: Stack]: F[R] => F[R] = x => x
 
-  def GETFIELD[R <: Stack, T <: PType](className: String, fieldName: String, fieldType: EType[T]): F[R ** PReference[PRef[T]]] => F[R ** T] = ???
+  def GETFIELD[R <: Stack, T <: PType](className: String, fieldName: String, fieldType: EType[T]): F[R ** PReference[PRef[T]]] => F[R ** PReference[PAnyObject]] = ???
 
   def PUTFIELD[R <: Stack, T <: PType](className: String, fieldName: String, fieldType: EType[T]): F[R ** PReference[PRef[T]] ** T] => F[R] = ???
+
+  def CAST[R <: Stack, T <: PRefType]: F[R ** PReference[PAnyObject]] => F[R ** PReference[T]] = ???
 
   // TODO: What should happen here
   ///def RETURN[R <: Stack]: F[R] => R[???] =>

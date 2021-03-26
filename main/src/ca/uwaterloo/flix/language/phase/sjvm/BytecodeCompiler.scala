@@ -154,7 +154,8 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         compileExp(exp) ~
         // TODO: Fix temp strings
-        GETFIELD("Temp ref name based on tpe", "Temp name of the ref field", tpe)
+        GETFIELD("Temp ref name based on tpe", "Temp name of the ref field", tpe) ~
+        CAST
 
     case Expression.Assign(exp1, exp2, tpe, loc) => ???
       WithSource[R](loc) ~
