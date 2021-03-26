@@ -40,7 +40,7 @@ namespace Fixpoint {
     type alias SearchEnv[v] = Array[Tuple[v]]
 
     pub def interpret[v : Order : Eq : ToString](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure =
-        let _ = if (enablePrintRAMBeforeSolve()) Unsafe.println(stmt) else stmt;
+        let _ = notifyPreInterpret(stmt);
         let db = MutMap.empty();
         evalStmt(db, stmt);
         toImmutable(db)

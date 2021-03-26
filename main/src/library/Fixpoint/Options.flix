@@ -20,17 +20,11 @@ namespace Fixpoint {
     ///
     pub def enableParallelEvaluation(): Bool = true
 
+    // TODO: Add more options.
+
     ///
     /// Prints the Datalog program before the fixpoint computation.
     ///
-    pub def enablePrintBeforeSolve(): Bool = false
-
-    ///
-    /// Prints the RAM program before the fixpoint computation.
-    ///
-    pub def enablePrintRAMBeforeSolve(): Bool = false
-
-
-    // TODO: Add more.
+    pub def enableDebugging(): Bool = true
 
 }
