@@ -46,7 +46,15 @@ use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 ///             project x into a
 namespace Fixpoint {
     pub def hoistStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
-        case RamStmt.Insert(op) => hoistOp(op, Set#{}) |> fst |> RamStmt.Insert
+        case RamStmt.Insert(op) =>
+            let (innerOp, ground) = hoistOp(op, Set#{});
+            match innerOp {
+                case RelOp.Search(var, relSym, where, body) =>
+                     RelOp.Search(var, relSym, where ::: ground, body) |>
+                     RamStmt.Insert
+                case RelOp.Query(_) => RamStmt.Insert(innerOp)
+                case RelOp.Project(_) => RamStmt.Insert(innerOp)
+            }
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
