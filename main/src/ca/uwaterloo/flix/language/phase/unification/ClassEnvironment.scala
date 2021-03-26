@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -105,9 +105,9 @@ object ClassEnvironment {
     }
 
     tconstrGroups match {
-      case Nil => UnificationError.NoMatchingInstance(tconstr).toFailure
+      case Nil => UnificationError.NoMatchingInstance(tconstr.sym, tconstr.arg).toFailure
       case tconstrs :: Nil => tconstrs.toSuccess
-      case _ :: _ :: _ => UnificationError.MultipleMatchingInstances(tconstr).toFailure
+      case _ :: _ :: _ => UnificationError.MultipleMatchingInstances(tconstr.sym, tconstr.arg).toFailure
     }
   }
 
@@ -132,7 +132,7 @@ object ClassEnvironment {
     // There may be duplicates, but this will terminate since super classes must be acyclic.
     tconstr :: directSupers.flatMap {
       // recurse on the superclasses of each direct superclass
-      superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg, SourceLocation.Unknown), classEnv)
+      superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg), classEnv)
     }
   }
 

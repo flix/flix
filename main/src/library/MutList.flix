@@ -32,6 +32,12 @@ instance Functor[MutList] {
     pub def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
 }
 
+instance Copy[MutList[a]] {
+    pub def copy(v: MutList[a]): MutList[a] & e =
+        let MutList(a, l) = v;
+        MutList(ref Copy.copy(deref a), ref (deref l)) as & e
+}
+
 instance Foldable[MutList] {
     pub def foldLeft(f: (b, a) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldLeft(f, s, v) as & e
     pub def foldRight(f: (a, b) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldRight(f, s, v) as & e

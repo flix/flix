@@ -16,20 +16,19 @@
 
 package ca.uwaterloo.flix.api
 
-import java.nio.charset.Charset
-import java.nio.file.{Files, Path, Paths}
-
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
-import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
+import java.nio.charset.Charset
+import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -64,9 +63,6 @@ class Flix {
     * The core library *must* be present for any program to compile.
     */
   private val coreLibrary = List(
-    // Prelude
-    "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
-
     // Comparison
     "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
 
@@ -90,6 +86,7 @@ class Flix {
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
     "Drop.flix" -> LocalResource.get("/src/library/Drop.flix"),
+    "Copy.flix" -> LocalResource.get("/src/library/Copy.flix"),
 
     // Lattices
     "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
@@ -99,7 +96,11 @@ class Flix {
     "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
 
     // String
-    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix")
+    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
+
+    // Boxable
+    "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
+    "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
   )
 
   /**
@@ -127,10 +128,12 @@ class Flix {
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
+    "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
+    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
 
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
@@ -163,8 +166,33 @@ class Flix {
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
 
-    "Unsafe.flix" -> LocalResource.get("/src/library/Unsafe.flix"),
-    "UnsafeBox.flix" -> LocalResource.get("/src/library/UnsafeBox.flix"),
+    "Fixpoint/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Compiler.flix"),
+    "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
+    "Fixpoint/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint/Interpreter.flix"),
+    "Fixpoint/Lowering.flix" -> LocalResource.get("/src/library/Fixpoint/Lowering.flix"),
+    "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
+    "Fixpoint/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Stratifier.flix"),
+    "Fixpoint/ToString.flix" -> LocalResource.get("/src/library/Fixpoint/ToString.flix"),
+
+    "Fixpoint/Ast/BodyPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyPredicate.flix"),
+    "Fixpoint/Ast/BodyTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyTerm.flix"),
+    "Fixpoint/Ast/Constraint.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Constraint.flix"),
+    "Fixpoint/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Datalog.flix"),
+    "Fixpoint/Ast/Denotation.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Denotation.flix"),
+    "Fixpoint/Ast/HeadPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadPredicate.flix"),
+    "Fixpoint/Ast/HeadTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadTerm.flix"),
+    "Fixpoint/Ast/Polarity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Polarity.flix"),
+    "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
+    "Fixpoint/Ast/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PredSym.flix"),
+    "Fixpoint/Ast/SourceLocation.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/SourceLocation.flix"),
+    "Fixpoint/Ast/VarSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/VarSym.flix"),
+
+    "Fixpoint/Ram/BoolExp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/BoolExp.flix"),
+    "Fixpoint/Ram/RamStmt.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamStmt.flix"),
+    "Fixpoint/Ram/RamTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamTerm.flix"),
+    "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
+    "Fixpoint/Ram/RelSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelSym.flix"),
+    "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
   )
 
@@ -323,6 +351,7 @@ class Flix {
 
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
+      Lowering |>
       Monomorph |>
       Simplifier |>
       ClosureConv |>

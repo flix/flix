@@ -25,6 +25,19 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
+instance Boxable[List[t]] with Order[t], ToString[t] {
+    pub def box(x: List[t]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as List[t], o2 as List[t]);
+        let toString = o -> ToString.toString(o as List[t]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): List[t] = match x {
+        case BoxedObject(v, _, _) => v as List[t]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[List[a]] with ToString[a] {
     pub def toString(xs: List[a]): String =
         List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
@@ -276,7 +289,7 @@ namespace List {
         case Nil => s :: Nil
         case x :: rs => match scanRight(f, s, rs) {
             case y :: ys => f(x, y) :: y :: ys
-            case _ => unreachable!()
+            case _ => panic("unreachable")
         }
     }
 
@@ -429,7 +442,7 @@ namespace List {
     def at(i: Int32, xs: List[a]): a = match (i, xs) {
         case (0, x :: _) => x
         case (p, _ :: rs) => at(p - 1, rs)
-        case _ => unreachable!()
+        case _ => panic("unreachable")
     }
 
     ///
@@ -519,7 +532,7 @@ namespace List {
     def applyListHelper(xs: List[a], ys: List[List[a]]): List[List[a]] = match (xs, ys) {
         case (Nil, Nil) => Nil
         case (x :: rs, y :: qs) => (x :: y) :: applyListHelper(rs, qs)
-        case _ => unreachable!()
+        case _ => panic("unreachable")
     }
 
 

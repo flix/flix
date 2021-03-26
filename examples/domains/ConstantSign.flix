@@ -30,7 +30,7 @@ namespace Domain/ConstantSign {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-//    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
+    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     pub def leq(e1: ConstantSign, e2: ConstantSign): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
@@ -45,7 +45,7 @@ namespace Domain/ConstantSign {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-//    #upperBound #leastUpperBound #commutative #associative
+    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
         case (Bot, x)           => x
         case (x, Bot)           => x
@@ -67,7 +67,7 @@ namespace Domain/ConstantSign {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-//    #lowerBound #greatestLowerBound #commutative #associative
+    #lowerBound #greatestLowerBound #commutative #associative
     pub def glb(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
@@ -86,7 +86,7 @@ namespace Domain/ConstantSign {
     ///
     /// The lattice height function.
     ///
-//    #nonNegative
+    #nonNegative
     pub def height(e: ConstantSign): BigInt = match e {
         case Top    => 0ii
         case Neg    => 1ii
@@ -103,8 +103,8 @@ namespace Domain/ConstantSign {
     ///
     /// Over-approximates integer `increment`.
     ///
-//    #safe1(x -> x + 1ii)
-//    #strict1 #monotone1
+    #safe1(x -> x + 1ii)
+    #strict1 #monotone1
     pub def inc(e: ConstantSign): ConstantSign = match e {
         case Bot    => Bot
         case Cst(n) => Cst(n + 1ii)
@@ -116,8 +116,8 @@ namespace Domain/ConstantSign {
     ///
     /// Over-approximates integer `decrement`.
     ///
-//    #safe1(x -> x - 1ii)
-//    #strict1 #monotone1
+    #safe1(x -> x - 1ii)
+    #strict1 #monotone1
     pub def dec(e: ConstantSign): ConstantSign = match e {
         case Bot    => Bot
         case Cst(n) => Cst(n - 1ii)
@@ -129,8 +129,8 @@ namespace Domain/ConstantSign {
     ///
     /// Over-approximates integer `addition`.
     ///
-//    #safe2((x, y) -> x + y)
-//    #strict2 #monotone2 #commutative
+    #safe2((x, y) -> x + y)
+    #strict2 #monotone2 #commutative
     pub def plus(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -147,8 +147,8 @@ namespace Domain/ConstantSign {
     ///
     /// Over-approximates integer `subtraction`.
     ///
-//    #safe2((x, y) -> x - y)
-//    #strict2 #monotone2
+    #safe2((x, y) -> x - y)
+    #strict2 #monotone2
     pub def minus(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -165,8 +165,8 @@ namespace Domain/ConstantSign {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-//    #safe2((x, y) -> x * y)
-//    #strict2 #monotone2 #commutative #associative
+    #safe2((x, y) -> x * y)
+    #strict2 #monotone2 #commutative #associative
     pub def times(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -187,10 +187,10 @@ namespace Domain/ConstantSign {
     ///
     /// Over-approximates `equal`.
     ///
-//    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
+    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    #commutative
     pub def eq(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
@@ -205,18 +205,18 @@ namespace Domain/ConstantSign {
     ///
     /// Over-approximates `not equal`.
     ///
-//    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
+    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    #commutative
     pub def neq(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-//    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def less(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
@@ -231,37 +231,37 @@ namespace Domain/ConstantSign {
     ///
     /// Over-approximates `less than or equal`.
     ///
-//    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     //
     // ## Specialized Laws
     //
 
-//    law upperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.leastUpperBound1(leq, lub)
+    law upperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-//    law leastUpperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.leastUpperBound2(leq, lub)
+    law leastUpperBound(lub: (ConstantSign, ConstantSign) -> ConstantSign): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-//    law lowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound1(leq, glb)
+    law lowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-//    law greatestLowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound2(leq, glb)
+    law greatestLowerBound(glb: (ConstantSign, ConstantSign) -> ConstantSign): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
-//    law leastElement(leq: (ConstantSign, ConstantSign) -> Bool, bot: ConstantSign): Bool = Bounded.leastElement(bot, leq)
+    law leastElement(leq: (ConstantSign, ConstantSign) -> Bool, bot: ConstantSign): Bool = Bounded.leastElement(bot, leq)
 
-//    law greatestElement(leq: (ConstantSign, ConstantSign) -> Bool, top: ConstantSign): Bool = Bounded.greatestElement(top, leq)
+    law greatestElement(leq: (ConstantSign, ConstantSign) -> Bool, top: ConstantSign): Bool = Bounded.greatestElement(top, leq)
 
-//    law strict1(f: ConstantSign -> ConstantSign): Bool = Bounded.strict1(f, Bot, Bot)
+    law strict1(f: ConstantSign -> ConstantSign): Bool = Bounded.strict1(f, Bot, Bot)
 
-//    law strict2(f: (ConstantSign, ConstantSign) -> ConstantSign): Bool = Bounded.strict2(f, Bot, Bot, Bot)
+    law strict2(f: (ConstantSign, ConstantSign) -> ConstantSign): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-//    law monotone1(f: ConstantSign -> ConstantSign): Bool = PartialOrder.monotone1(f, leq, leq)
+    law monotone1(f: ConstantSign -> ConstantSign): Bool = PartialOrder.monotone1(f, leq, leq)
 
-//    law monotone2(f: (ConstantSign, ConstantSign) -> ConstantSign): Bool = PartialOrder.monotone2(f, leq, leq, leq)
+    law monotone2(f: (ConstantSign, ConstantSign) -> ConstantSign): Bool = PartialOrder.monotone2(f, leq, leq, leq)
 
-//    law safe1(fa: ConstantSign -> ConstantSign, fc: BigInt -> BigInt): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
+    law safe1(fa: ConstantSign -> ConstantSign, fc: BigInt -> BigInt): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-//    law safe2(fa: (ConstantSign, ConstantSign) -> ConstantSign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
+    law safe2(fa: (ConstantSign, ConstantSign) -> ConstantSign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

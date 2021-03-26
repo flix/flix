@@ -107,15 +107,17 @@ object UnificationError {
   /**
     * A unification error resulting from a type constraint with no matching instance.
     *
-    * @param tconstr the type constraint.
+    * @param clazz the class of the type constraint
+    * @param tpe the type of the type constraint
     */
-  case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError
+  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type) extends UnificationError
 
   /**
     * A unification error resulting from multiple matching instances.
     *
-    * @param tconstr the type constraint.
+    * @param clazz the class of the type constraint
+    * @param tpe the type of the type constraint
     */
-  case class MultipleMatchingInstances(tconstr: Ast.TypeConstraint) extends UnificationError
+  case class MultipleMatchingInstances(clazz: Symbol.ClassSym, tpe: Type) extends UnificationError
 
 }

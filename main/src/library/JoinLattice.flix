@@ -43,17 +43,15 @@ namespace JoinLattice {
     /// The law asserts that the least upper bound operator returns
     //  an element that is greater than or equal to each of its arguments.
     ///
-    // TODO change to class law
-//    law leastUpperBound1[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
-//        ∀(x: e, y: e). (x ⊑ (x ⊔ y)) and (y ⊑ (x ⊔ y))
+    law leastUpperBound1[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
+        ∀(x: e, y: e). (x ⊑ (x ⊔ y)) and (y ⊑ (x ⊔ y))
 
     ///
     /// The law asserts that the least upper bound operator returns
     /// the smallest element that is larger than its two arguments.
     ///
-    // TODO change to class law
-//    law leastUpperBound2[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
-//        let implies = (x, y) -> (not x) or y;
-//        ∀(x: e, y: e, z: e). ((x ⊑ z) and (y ⊑ z)) `implies` ((x ⊔ y) ⊑ z)
+    law leastUpperBound2[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
+        let implies = (x, y) -> (not x) or y;
+        ∀(x: e, y: e, z: e). ((x ⊑ z) and (y ⊑ z)) `implies` ((x ⊔ y) ⊑ z)
 
 }

@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Law, Lint, Test}
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
@@ -91,7 +92,7 @@ object TypedAstOps {
         }
         val m2 = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (acc, ChoiceRule(pat, exp)) =>
-            val env1 = (pat.zip(exps)).foldLeft(Map.empty[Symbol.VarSym, Type]) {
+            val env1 = pat.zip(exps).foldLeft(Map.empty[Symbol.VarSym, Type]) {
               case (acc, (ChoicePattern.Wild(_), exp)) => acc
               case (acc, (ChoicePattern.Absent(_), exp)) => acc
               case (acc, (ChoicePattern.Present(sym, _, _), exp)) => acc + (sym -> exp.tpe)
@@ -312,8 +313,6 @@ object TypedAstOps {
         case (macc, elm) => macc ++ binds(elm)
       }
       Map(sym -> tpe) ++ boundElms
-
-
   }
 
   /**
@@ -383,7 +382,7 @@ object TypedAstOps {
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ (sigSymsOf(exp2))
+    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointEntails(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -428,5 +427,297 @@ object TypedAstOps {
   def isTest(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Test]
   }
+
+  /**
+    * Returns the free variables in the given expression `exp0`.
+    */
+  def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
+    case Expression.Unit(_) => Map.empty
+
+    case Expression.Null(_, _) => Map.empty
+
+    case Expression.True(_) => Map.empty
+
+    case Expression.False(_) => Map.empty
+
+    case Expression.Char(_, _) => Map.empty
+
+    case Expression.Float32(_, _) => Map.empty
+
+    case Expression.Float64(_, _) => Map.empty
+
+    case Expression.Int8(_, _) => Map.empty
+
+    case Expression.Int16(_, _) => Map.empty
+
+    case Expression.Int32(_, _) => Map.empty
+
+    case Expression.Int64(_, _) => Map.empty
+
+    case Expression.BigInt(_, _) => Map.empty
+
+    case Expression.Str(_, _) => Map.empty
+
+    case Expression.Default(_, _) => Map.empty
+
+    case Expression.Wild(_, _) => Map.empty
+
+    case Expression.Var(sym, tpe, _) => Map(sym -> tpe)
+
+    case Expression.Def(_, _, _) => Map.empty
+
+    case Expression.Sig(_, _, _) => Map.empty
+
+    case Expression.Hole(_, _, _, _) => Map.empty
+
+    case Expression.Lambda(fparam, exp, _, _) =>
+      freeVars(exp) - fparam.sym
+
+    case Expression.Apply(exp, exps, _, _, _) =>
+      exps.foldLeft(freeVars(exp)) {
+        case (acc, exp) => freeVars(exp) ++ acc
+      }
+
+    case Expression.Unary(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.Let(sym, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.Match(exp, rules, _, _, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat).keys
+      }
+
+    case Expression.Choose(exps, rules, _, _, _) =>
+      val es = exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+      val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, ChoiceRule(pats, exp)) => acc ++ (freeVars(exp) -- pats.flatMap(freeVars))
+      }
+      es ++ rs
+
+    case Expression.Tag(_, _, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Tuple(elms, _, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.RecordEmpty(_, _) => Map.empty
+
+    case Expression.RecordSelect(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+      freeVars(value) ++ freeVars(rest)
+
+    case Expression.RecordRestrict(_, rest, _, _, _) =>
+      freeVars(rest)
+
+    case Expression.ArrayLit(elms, _, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.ArrayNew(elm, len, _, _, _) =>
+      freeVars(elm) ++ freeVars(len)
+
+    case Expression.ArrayLoad(base, index, _, _, _) =>
+      freeVars(base) ++ freeVars(index)
+
+    case Expression.ArrayLength(base, _, _) =>
+      freeVars(base)
+
+    case Expression.ArrayStore(base, index, elm, _) =>
+      freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
+      freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+
+    case Expression.Ref(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Deref(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.Existential(fparam, exp, _) =>
+      freeVars(exp) - fparam.sym
+
+    case Expression.Universal(fparam, exp, _) =>
+      freeVars(exp) - fparam.sym
+
+    case Expression.Ascribe(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Cast(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
+      }
+
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      args.foldLeft(freeVars(exp)) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => acc ++ freeVars(exp)
+      }
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      Map.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.NewChannel(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.GetChannel(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.SelectChannel(rules, default, _, _, _) =>
+      val d = default.map(freeVars).getOrElse(Map.empty)
+      rules.foldLeft(d) {
+        case (acc, SelectChannelRule(sym, chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
+      }
+
+    case Expression.Spawn(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Lazy(exp, _, _) =>
+      freeVars(exp)
+
+    case Expression.Force(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+      cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, c) => acc ++ freeVars(c)
+      }
+
+    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointProject(_, exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
+  }
+
+  /**
+    * Returns the free variables in the given pattern `pat0`.
+    */
+  private def freeVars(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
+    case Pattern.Wild(_, _) => Map.empty
+    case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
+    case Pattern.Unit(_) => Map.empty
+    case Pattern.True(_) => Map.empty
+    case Pattern.False(_) => Map.empty
+    case Pattern.Char(_, _) => Map.empty
+    case Pattern.Float32(_, _) => Map.empty
+    case Pattern.Float64(_, _) => Map.empty
+    case Pattern.Int8(_, _) => Map.empty
+    case Pattern.Int16(_, _) => Map.empty
+    case Pattern.Int32(_, _) => Map.empty
+    case Pattern.Int64(_, _) => Map.empty
+    case Pattern.BigInt(_, _) => Map.empty
+    case Pattern.Str(_, _) => Map.empty
+    case Pattern.Tag(_, _, pat, _, _) => freeVars(pat)
+    case Pattern.Tuple(elms, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
+
+    case Pattern.Array(elms, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
+
+    case Pattern.ArrayTailSpread(elms, sym, _, _) => ??? // TODO
+
+    case Pattern.ArrayHeadSpread(sym, elms, _, _) => ??? // TODO
+  }
+
+  /**
+    * Returns the free variables in the given pattern `pat0`.
+    */
+  private def freeVars(pat0: ChoicePattern): Set[Symbol.VarSym] = pat0 match {
+    case ChoicePattern.Wild(_) => Set.empty
+    case ChoicePattern.Absent(_) => Set.empty
+    case ChoicePattern.Present(sym, _, _) => Set(sym)
+  }
+
+  /**
+    * Returns the free variables in the given constraint `constraint0`.
+    */
+  private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
+    case Constraint(cparams0, head, body, _) =>
+      (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.sym)
+  }
+
+  /**
+    * Returns the free variables in the given head predicate `head0`.
+    */
+  private def freeVars(head0: Predicate.Head): Map[Symbol.VarSym, Type] = head0 match {
+    case Head.Atom(_, _, terms, _, _) =>
+      terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, term) => acc ++ freeVars(term)
+      }
+
+    case Head.Union(exp, _, _) => freeVars(exp)
+  }
+
+  /**
+    * Returns the free variables in the given body predicate `body0`.
+    */
+  private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = body0 match {
+    case Body.Atom(_, _, _, terms, _, _) =>
+      terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, term) => acc ++ freeVars(term)
+      }
+    case Body.Guard(exp, _) => freeVars(exp)
+  }
+
 
 }

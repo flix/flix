@@ -31,14 +31,6 @@ namespace IDE {
         }
     }
 
-    instance Hash[Value] {
-        pub def hash(x: Value): Int32 = match x {
-            case Top    => 1
-            case Bot    => 2
-            case Cst(n) => n
-        }
-    }
-
     instance PartialOrder[Value] {
         pub def partialCompare(e1: Value, e2: Value): Bool = match (e1, e2) {
             case (Value.Bot, _) => true
@@ -106,13 +98,6 @@ namespace IDE {
             case (BotTrans, BotTrans) => true
             case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
             case _ => false
-        }
-    }
-
-    instance Hash[Transformer] {
-        pub def hash(x: Transformer): Int32 = match x {
-            case BotTrans               => 1
-            case NonBotTrans(y, z, v)   => 3 * y + 7 * z + Hash.hash(v)
         }
     }
 

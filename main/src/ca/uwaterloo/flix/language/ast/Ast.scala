@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.nio.file.Path
-import java.util.Objects
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -423,15 +422,7 @@ object Ast {
   /**
     * Represents that the type `arg` must belong to class `sym`.
     */
-  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type, loc: SourceLocation) {
-    override def equals(o: Any): Boolean = o match {
-      case that: TypeConstraint =>
-        this.sym == that.sym && this.arg == that.arg
-      case _ => false
-    }
-
-    override def hashCode(): Int = Objects.hash(sym, arg)
-  }
+  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type)
 
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.

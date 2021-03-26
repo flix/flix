@@ -47,17 +47,15 @@ namespace MeetLattice {
     /// The lower bound law asserts that the greatest lower bound operator returns an element that
     /// is less than or equal to each of its arguments.
     ///
-    // TODO change to class law
-//    law greatestLowerBound1[e](⊑: (e, e) -> Bool, ⊓: (e, e) -> e): Bool =
-//        ∀(x: e, y: e). ((x ⊓ y) ⊑ x) and ((x ⊓ y) ⊑ y)
+    law greatestLowerBound1[e](⊑: (e, e) -> Bool, ⊓: (e, e) -> e): Bool =
+        ∀(x: e, y: e). ((x ⊓ y) ⊑ x) and ((x ⊓ y) ⊑ y)
 
     ///
     /// The greatest lower bound law asserts that the greatest lower bound operator returns the
     /// largest element that is smaller than its two arguments.
     ///
-    // TODO change to class law
-//    law greatestLowerBound2[e](⊑: (e, e) -> Bool, ⊓: (e, e) -> e): Bool =
-//        let implies = (x, y) -> (not x) or y;
-//        ∀(x: e, y: e, z: e). ((z ⊑ x) and (z ⊑ y)) `implies` (z ⊑ (x ⊓ y))
+    law greatestLowerBound2[e](⊑: (e, e) -> Bool, ⊓: (e, e) -> e): Bool =
+        let implies = (x, y) -> (not x) or y;
+        ∀(x: e, y: e, z: e). ((z ⊑ x) and (z ⊑ y)) `implies` (z ⊑ (x ⊓ y))
 
 }

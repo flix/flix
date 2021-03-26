@@ -91,7 +91,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitDef(defn0: Def): JObject = {
     // Compute the type parameters.
     val tparams = defn0.spec.tparams.map {
-      case TypeParam(ident, tpe, loc) => JObject(List(
+      case TypeParam(ident, tpe, classes, loc) => JObject(List(
         JField("name", JString(ident.name))
       ))
     }

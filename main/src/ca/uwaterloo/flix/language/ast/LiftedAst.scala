@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.Ast.Source
 
 object LiftedAst {
 
@@ -200,18 +200,6 @@ object LiftedAst {
 
     case class Force(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class FixpointConstraintSet(cs: List[LiftedAst.Constraint], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class FixpointCompose(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class FixpointSolve(exp: LiftedAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class FixpointProject(pred: Name.Pred, exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class FixpointEntails(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class FixpointFold(pred: Name.Pred, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, exp3: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
-
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
@@ -220,87 +208,7 @@ object LiftedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: LiftedAst.Expression, exp: LiftedAst.Expression)
 
-  sealed trait Predicate {
-    def loc: SourceLocation
-  }
-
-  object Predicate {
-
-    sealed trait Head extends LiftedAst.Predicate
-
-    object Head {
-
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[LiftedAst.Term.Head], tpe: Type, loc: SourceLocation) extends LiftedAst.Predicate.Head
-
-      case class Union(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Predicate.Head
-
-    }
-
-    sealed trait Body extends LiftedAst.Predicate
-
-    object Body {
-
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[LiftedAst.Term.Body], tpe: Type, loc: SourceLocation) extends LiftedAst.Predicate.Body
-
-      case class Guard(exp: LiftedAst.Expression, loc: SourceLocation) extends LiftedAst.Predicate.Body
-
-    }
-
-  }
-
-  object Term {
-
-    sealed trait Head
-
-    object Head {
-
-      case class QuantVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Term.Head
-
-      case class CapturedVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Term.Head
-
-      case class Lit(lit: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Term.Head
-
-      case class App(exp: LiftedAst.Expression, args: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends LiftedAst.Term.Head
-
-    }
-
-    sealed trait Body
-
-    object Body {
-
-      case class Wild(tpe: Type, loc: SourceLocation) extends LiftedAst.Term.Body
-
-      case class QuantVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Term.Body
-
-      case class CapturedVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Term.Body
-
-      case class Lit(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Term.Body
-
-    }
-
-  }
-
-  case class Attribute(name: String, tpe: Type)
-
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
-
-  case class Constraint(cparams: List[LiftedAst.ConstraintParam], head: LiftedAst.Predicate.Head, body: List[LiftedAst.Predicate.Body], loc: SourceLocation)
-
-  sealed trait ConstraintParam {
-    def sym: Symbol.VarSym
-
-    def tpe: Type
-
-    def loc: SourceLocation
-  }
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.ConstraintParam
-
-  }
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: LiftedAst.Expression)
 

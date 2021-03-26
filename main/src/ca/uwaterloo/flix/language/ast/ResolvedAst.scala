@@ -109,7 +109,7 @@ object ResolvedAst {
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Choose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Choose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -307,6 +307,6 @@ object ResolvedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: Type.Var, classes: List[Symbol.ClassSym], loc: SourceLocation)
 
 }

@@ -133,7 +133,7 @@ namespace Test/Dec/Class {
             pub def f(x: a, y: a): Bool
 
             // TODO handle namespaces better
-            law reflexivity: forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
+            law reflexivity(): Bool = forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
         }
 
         instance C[Int] {
@@ -145,11 +145,11 @@ namespace Test/Dec/Class {
         lawless class C[a] {
             pub def f(): a
 
-            law l: forall (_x: a) . true
+            law l(): Bool = true
 
             pub def g(): a
 
-            law m: forall[a](_x: a) . true
+            law m(): Bool = true
         }
     }
 
@@ -176,18 +176,6 @@ namespace Test/Dec/Class {
 
         @test
         def testSigOverride03(): Bool = Test/Dec/Class/Test13/C.h() == 1
-    }
-
-    namespace Test14 {
-        lawless class C[a] {
-            pub def c(x: a): Int
-        }
-
-        lawless class D[a] with C[a] {
-            pub def d(x: a): Int
-        }
-
-        pub def f[a : D](x: a): Int = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
     }
 
     pub enum List[a] {

@@ -106,9 +106,9 @@ object Scheme {
     val newBase = baseType.map(visitTvar)
 
     val newConstrs = sc.constraints.map {
-      case Ast.TypeConstraint(sym, tpe0, loc) =>
+      case Ast.TypeConstraint(sym, tpe0) =>
         val tpe = tpe0.map(visitTvar)
-        Ast.TypeConstraint(sym, tpe, loc)
+        Ast.TypeConstraint(sym, tpe)
     }
 
     (newConstrs, newBase)
