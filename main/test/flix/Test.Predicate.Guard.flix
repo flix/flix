@@ -44,7 +44,7 @@ namespace Test/Predicate/Guard {
 
     @test
     def testGuardConst08(): Bool =
-        let c = R(1, 1) :- if isEmpty(Nil).;
+        let c = R(1, 1) :- if List.isEmpty(Nil).;
         let r = solve c;
         r |= R(1, 1).
 
@@ -86,14 +86,14 @@ namespace Test/Predicate/Guard {
     @test
     def testGuardQuantVar06(): Bool =
         let f = #{ A(1). A(2). B(1). B(2). };
-        let c = R(x, y) :- if exists(z -> z != 1, x :: y :: Nil), A(x), B(y).;
+        let c = R(x, y) :- if List.exists(z -> z != 1, x :: y :: Nil), A(x), B(y).;
         let r = solve f <+> c;
         r |= R(2, 2).
 
     @test
     def testGuardQuantVar07(): Bool =
         let f = #{ A(1). A(2). B(1). B(2). };
-        let c = R(x, y) :- if exists(z -> z == x + 1, x :: y :: Nil), A(x), B(y).;
+        let c = R(x, y) :- if List.exists(z -> z == x + 1, x :: y :: Nil), A(x), B(y).;
         let r = solve f <+> c;
         r |= R(1, 2).
 
@@ -162,23 +162,8 @@ namespace Test/Predicate/Guard {
     def testGuardQuantAndCapturedVar03(): Bool =
         let k = 1;
         let f = #{ A(1). A(2). B(1). B(2). };
-        let c = R(x, y) :- if exists(z -> z == k, x :: k :: y :: Nil), A(x), B(y).;
+        let c = R(x, y) :- if List.exists(z -> z == k, x :: k :: y :: Nil), A(x), B(y).;
         let r = solve f <+> c;
         (r |= R(1, 1).) and (r |= R(1, 2).)
-
-    enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
-    }
-
-    def isEmpty(xs: List[a]): Bool = match xs {
-        case Nil => true
-        case _ => false
-    }
-
-    def exists(f: a -> Bool, xs: List[a]): Bool = match xs {
-        case Nil => false
-        case x :: rs => if (f(x)) true else exists(f, rs)
-    }
 
 }

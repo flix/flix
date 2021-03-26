@@ -205,18 +205,6 @@ object FinalAst {
 
     case class Force(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointConstraintSet(cs: List[FinalAst.Constraint], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class FixpointCompose(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class FixpointSolve(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class FixpointProject(pred: Name.Pred, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class FixpointEntails(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class FixpointFold(pred: Name.Pred, init: FinalAst.Expression.Var, f: FinalAst.Expression.Var, constraints: FinalAst.Expression.Var, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class HoleError(sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class MatchError(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
@@ -225,89 +213,9 @@ object FinalAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)
 
-  sealed trait Predicate {
-    def loc: SourceLocation
-  }
-
-  object Predicate {
-
-    sealed trait Head extends FinalAst.Predicate
-
-    object Head {
-
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
-
-      case class Union(exp: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
-
-    }
-
-    sealed trait Body extends FinalAst.Predicate
-
-    object Body {
-
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Body
-
-      case class Guard(exp: FinalAst.Expression, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
-
-    }
-
-  }
-
-  object Term {
-
-    sealed trait Head {
-      def tpe: MonoType
-    }
-
-    object Head {
-
-      case class QuantVar(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Head
-
-      case class CapturedVar(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Head
-
-      case class Lit(sym: Symbol.DefnSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Head
-
-      case class App(exp: FinalAst.Expression, args: List[Symbol.VarSym], tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Head
-
-    }
-
-    sealed trait Body {
-      def tpe: MonoType
-    }
-
-    object Body {
-
-      case class Wild(tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Body
-
-      case class QuantVar(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Body
-
-      case class CapturedVar(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Body
-
-      case class Lit(sym: Symbol.DefnSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Body
-
-    }
-
-  }
-
-  case class Attribute(name: String, tpe: MonoType)
-
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
-
-  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
-
-  sealed trait ConstraintParam {
-    def sym: Symbol.VarSym
-  }
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.ConstraintParam
-
-  }
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
 
