@@ -21,19 +21,30 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import scala.annotation.tailrec
+/**
+  * This phase translates AST expressions related to the Datalog subset of the
+  * language into `Fixpoint/Ast` values (which are ordinary Flix values).
+  * This allows the Datalog engine to be implemented as an ordinary Flix program.
+  *
+  * In addition to translating expressions, types must also be translated from
+  * Schema types to enum types.
+  *
+  * Finally, values must be boxed using the Boxable.
+  */
 
-// TODO: Add doc
+// TODO: Long-term improvements:
+// - Allow arbitrary expressions as body terms.
+// - Use Validation everywhere.
 
 object Lowering extends Phase[Root, Root] {
 
   // TODO: Add doc
-  // TODO: Return validations?
-  // TODO: Need implicits?
+
 
   private val SL: SourcePosition = SourcePosition.Unknown
 
@@ -713,7 +724,7 @@ object Lowering extends Phase[Root, Root] {
     exp0 match {
       case Expression.Var(sym, _, loc) =>
         // Case 1: Variable term.
-        if (isQuantifiedVar(cparams0, sym)) {
+        if (isQuantifiedVar(sym, cparams0)) {
           // TODO: Actual variable term
           mkHeadTermVar(sym)
         } else {
@@ -736,19 +747,6 @@ object Lowering extends Phase[Root, Root] {
     }
   }
 
-  // TODO: Move
-  // TODO: DOC
-  private def quantifiedVars(cparams0: List[ConstraintParam], exp0: Expression): List[(Symbol.VarSym, Type)] = {
-    freeVars(exp0).toList.filter {
-      case (sym, _) => isQuantifiedVar(cparams0, sym)
-    }
-  }
-
-  // TODO: Move
-  // TODO: DOC
-  private def isQuantifiedVar(cparams0: List[ConstraintParam], sym: Symbol.VarSym): Boolean =
-    cparams0.exists(p => p.sym == sym)
-
   /**
     * Lowers the given body term `pat0`.
     */
@@ -757,11 +755,11 @@ object Lowering extends Phase[Root, Root] {
       mkBodyTermWild(loc)
 
     case Pattern.Var(sym, tpe, loc) =>
-      if (isQuantifiedVar(cparams0, sym)) {
-        // TODO: Actual variable term
+      if (isQuantifiedVar(sym, cparams0)) {
+        // Case 1: Quantified variable.
         mkBodyTermVar(sym)
       } else {
-        // TODO lexically bound variable.
+        // Case 2: Lexically bound variable *expression*.
         mkBodyTermLit(box(Expression.Var(sym, tpe, loc)))
       }
 
@@ -800,8 +798,6 @@ object Lowering extends Phase[Root, Root] {
 
     case Pattern.Str(lit, loc) =>
       mkBodyTermLit(box(Expression.Str(lit, loc)))
-
-    // TODO: What other expressions to support as body terms?
 
     case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
@@ -1121,295 +1117,31 @@ object Lowering extends Phase[Root, Root] {
     Expression.Tuple(exps, tpe, eff, loc)
   }
 
+  /**
+    * Return a list of quantified variables in the given expression `exp0`.
+    *
+    * A variable is quantified (i.e. *NOT* lexically bound) if it occurs in the expression `exp0`
+    * but not in the constraint params `cparams0` of the constraint.
+    */
+  private def quantifiedVars(cparams0: List[ConstraintParam], exp0: Expression): List[(Symbol.VarSym, Type)] = {
+    TypedAstOps.freeVars(exp0).toList.filter {
+      case (sym, _) => isQuantifiedVar(sym, cparams0)
+    }
+  }
 
   /**
-    * Returns the free variables in the given expression `exp0`.
+    * Returns `true` if the given variable symbol `sym` is a quantified variable according to the given constraint params `cparams0`.
+    *
+    * That is, the variable symbol is *NOT* lexically bound.
     */
+  private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[ConstraintParam]): Boolean =
+    cparams0.exists(p => p.sym == sym)
+
+
   // TODO: Move into TypedAstOps
-  private def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
-    case Expression.Unit(_) => Map.empty
-
-    case Expression.Null(_, _) => Map.empty
-
-    case Expression.True(_) => Map.empty
-
-    case Expression.False(_) => Map.empty
-
-    case Expression.Char(_, _) => Map.empty
-
-    case Expression.Float32(_, _) => Map.empty
-
-    case Expression.Float64(_, _) => Map.empty
-
-    case Expression.Int8(_, _) => Map.empty
-
-    case Expression.Int16(_, _) => Map.empty
-
-    case Expression.Int32(_, _) => Map.empty
-
-    case Expression.Int64(_, _) => Map.empty
-
-    case Expression.BigInt(_, _) => Map.empty
-
-    case Expression.Str(_, _) => Map.empty
-
-    case Expression.Default(_, _) => Map.empty
-
-    case Expression.Wild(_, _) => Map.empty
-
-    case Expression.Var(sym, tpe, _) => Map(sym -> tpe)
-
-    case Expression.Def(_, _, _) => Map.empty
-
-    case Expression.Sig(_, _, _) => Map.empty
-
-    case Expression.Hole(_, _, _, _) => Map.empty
-
-    case Expression.Lambda(fparam, exp, _, _) =>
-      freeVars(exp) - fparam.sym
-
-    case Expression.Apply(exp, exps, _, _, _) =>
-      exps.foldLeft(freeVars(exp)) {
-        case (acc, exp) => freeVars(exp) ++ acc
-      }
-
-    case Expression.Unary(_, exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.Let(sym, exp1, exp2, _, _, _) =>
-      (freeVars(exp1) ++ freeVars(exp2)) - sym
-
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-
-    case Expression.Stm(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.Match(exp, rules, _, _, _) =>
-      rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat)
-      }
-
-    case Expression.Choose(exps, rules, _, _, _) =>
-      val es = exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, exp) => acc ++ freeVars(exp)
-      }
-      val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, ChoiceRule(pats, exp)) => acc ++ (freeVars(exp) -- pats.flatMap(freeVars))
-      }
-      es ++ rs
-
-    case Expression.Tag(_, _, exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.Tuple(elms, _, _, _) =>
-      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, exp) => acc ++ freeVars(exp)
-      }
-
-    case Expression.RecordEmpty(_, _) => Map.empty
-
-    case Expression.RecordSelect(exp, _, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.RecordExtend(_, value, rest, _, _, _) =>
-      freeVars(value) ++ freeVars(rest)
-
-    case Expression.RecordRestrict(_, rest, _, _, _) =>
-      freeVars(rest)
-
-    case Expression.ArrayLit(elms, _, _, _) =>
-      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, exp) => acc ++ freeVars(exp)
-      }
-
-    case Expression.ArrayNew(elm, len, _, _, _) =>
-      freeVars(elm) ++ freeVars(len)
-
-    case Expression.ArrayLoad(base, index, _, _, _) =>
-      freeVars(base) ++ freeVars(index)
-
-    case Expression.ArrayLength(base, _, _) =>
-      freeVars(base)
-
-    case Expression.ArrayStore(base, index, elm, _) =>
-      freeVars(base) ++ freeVars(index) ++ freeVars(elm)
-
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
-      freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
-
-    case Expression.Ref(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.Deref(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.Assign(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.Existential(fparam, exp, _) =>
-      freeVars(exp) - fparam.sym
-
-    case Expression.Universal(fparam, exp, _) =>
-      freeVars(exp) - fparam.sym
-
-    case Expression.Ascribe(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.Cast(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
-      rules.foldLeft(freeVars(exp)) {
-        case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
-      }
-
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
-      args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, exp) => acc ++ freeVars(exp)
-      }
-
-    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-      args.foldLeft(freeVars(exp)) {
-        case (acc, exp) => acc ++ freeVars(exp)
-      }
-
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-      args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, exp) => acc ++ freeVars(exp)
-      }
-
-    case Expression.GetField(_, exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.GetStaticField(_, _, _, _) =>
-      Map.empty
-
-    case Expression.PutStaticField(_, exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.NewChannel(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.GetChannel(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.PutChannel(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.SelectChannel(rules, default, _, _, _) =>
-      val d = default.map(freeVars).getOrElse(Map.empty)
-      rules.foldLeft(d) {
-        case (acc, SelectChannelRule(sym, chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
-      }
-
-    case Expression.Spawn(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.Lazy(exp, _, _) =>
-      freeVars(exp)
-
-    case Expression.Force(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
-      cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, c) => acc ++ freeVars(c)
-      }
-
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.FixpointSolve(exp, _, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.FixpointProject(_, exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-
-  }
-
   /**
-    * Returns the free variables in the given pattern `pat0`.
+    * Applies the given substitution `subst` to the given expression `exp0`.
     */
-  private def freeVars(pat0: Pattern): Set[Symbol.VarSym] = pat0 match {
-    case Pattern.Wild(_, _) => Set.empty
-    case Pattern.Var(sym, _, _) => Set(sym)
-    case Pattern.Unit(_) => Set.empty
-    case Pattern.True(_) => Set.empty
-    case Pattern.False(_) => Set.empty
-    case Pattern.Char(_, _) => Set.empty
-    case Pattern.Float32(_, _) => Set.empty
-    case Pattern.Float64(_, _) => Set.empty
-    case Pattern.Int8(_, _) => Set.empty
-    case Pattern.Int16(_, _) => Set.empty
-    case Pattern.Int32(_, _) => Set.empty
-    case Pattern.Int64(_, _) => Set.empty
-    case Pattern.BigInt(_, _) => Set.empty
-    case Pattern.Str(_, _) => Set.empty
-    case Pattern.Tag(_, _, pat, _, _) => freeVars(pat)
-    case Pattern.Tuple(elms, _, _) =>
-      elms.foldLeft(Set.empty[Symbol.VarSym]) {
-        case (acc, pat) => acc ++ freeVars(pat)
-      }
-
-    case Pattern.Array(elms, _, _) =>
-      elms.foldLeft(Set.empty[Symbol.VarSym]) {
-        case (acc, pat) => acc ++ freeVars(pat)
-      }
-
-    case Pattern.ArrayTailSpread(elms, sym, _, _) =>
-      elms.foldLeft(Set(sym)) {
-        case (acc, pat) => acc ++ freeVars(pat)
-      }
-
-    case Pattern.ArrayHeadSpread(sym, elms, _, _) =>
-      elms.foldLeft(Set(sym)) {
-        case (acc, pat) => acc ++ freeVars(pat)
-      }
-  }
-
-  /**
-    * Returns the free variables in the given pattern `pat0`.
-    */
-  private def freeVars(pat0: ChoicePattern): Set[Symbol.VarSym] = pat0 match {
-    case ChoicePattern.Wild(_) => Set.empty
-    case ChoicePattern.Absent(_) => Set.empty
-    case ChoicePattern.Present(sym, _, _) => Set(sym)
-  }
-
-  /**
-    * Returns the free variables in the given constraint `constraint0`.
-    */
-  private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
-    case Constraint(cparams0, head, body, _) =>
-      (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.sym)
-  }
-
-  /**
-    * Returns the free variables in the given head predicate `head0`.
-    */
-  private def freeVars(head0: Predicate.Head): Map[Symbol.VarSym, Type] = ???
-
-  /**
-    * Returns the free variables in the given body predicate `body0`.
-    */
-  private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = ???
-
-
-  // TODO: Should this also refresh variables in tree??
-  // TODO: Move into TypedAstOps
   private def substExp(exp0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
@@ -1470,8 +1202,17 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Let(s, e1, e2, tpe, eff, loc)
+
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
     case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
@@ -1479,6 +1220,7 @@ object Lowering extends Phase[Root, Root] {
       Expression.Stm(e1, e2, tpe, eff, loc)
 
     case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+
     case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
@@ -1495,45 +1237,138 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.RecordSelect(e, field, tpe, eff, loc)
 
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLength(base, eff, loc) => ??? // TODO
-    case Expression.ArrayStore(base, index, elm, loc) => ??? // TODO
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ??? // TODO
-    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.Existential(fparam, exp, loc) => ??? // TODO
-    case Expression.Universal(fparam, exp, loc) => ??? // TODO
-    case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
+      val v = substExp(value, subst)
+      val r = substExp(rest, subst)
+      Expression.RecordExtend(field, v, r, tpe, eff, loc)
+
+    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
+      val r = substExp(rest, subst)
+      Expression.RecordRestrict(field, r, tpe, eff, loc)
+
+    case Expression.ArrayLit(elms, tpe, eff, loc) =>
+      val es = elms.map(substExp(_, subst))
+      Expression.ArrayLit(es, tpe, eff, loc)
+
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+      val e = substExp(elm, subst)
+      val l = substExp(len, subst)
+      Expression.ArrayNew(e, l, tpe, eff, loc)
+
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+      val b = substExp(base, subst)
+      val i = substExp(index, subst)
+      Expression.ArrayLoad(b, i, tpe, eff, loc)
+
+    case Expression.ArrayLength(base, eff, loc) =>
+      val b = substExp(base, subst)
+      Expression.ArrayLength(b, eff, loc)
+
+    case Expression.ArrayStore(base, index, elm, loc) =>
+      val b = substExp(base, subst)
+      val i = substExp(index, subst)
+      Expression.ArrayStore(b, i, elm, loc)
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      val b = substExp(base, subst)
+      val bi = substExp(beginIndex, subst)
+      val ei = substExp(endIndex, subst)
+      Expression.ArraySlice(b, bi, ei, tpe, loc)
+
+    case Expression.Ref(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Ref(e, tpe, eff, loc)
+
+    case Expression.Deref(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Deref(e, tpe, eff, loc)
+
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Assign(e1, e2, tpe, eff, loc)
+
+    case Expression.Existential(fparam, exp, loc) =>
+      val f = substFormalParam(fparam, subst)
+      val e = substExp(exp, subst)
+      Expression.Existential(f, e, loc)
+
+    case Expression.Universal(fparam, exp, loc) =>
+      val f = substFormalParam(fparam, subst)
+      val e = substExp(exp, subst)
+      Expression.Universal(f, e, loc)
+
+    case Expression.Ascribe(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Ascribe(e, tpe, eff, loc)
+
+    case Expression.Cast(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Cast(e, tpe, eff, loc)
+
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
+
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.GetField(field, exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
+
     case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
+
     case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
+
+    case Expression.NewChannel(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.NewChannel(e, tpe, eff, loc)
+
+    case Expression.GetChannel(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.GetChannel(e, tpe, eff, loc)
+
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.PutChannel(e1, e2, tpe, eff, loc)
+
     case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
-    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Lazy(exp, tpe, loc) => ??? // TODO
-    case Expression.Force(exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Spawn(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Spawn(e, tpe, eff, loc)
+
+    case Expression.Lazy(exp, tpe, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Lazy(e, tpe, loc)
+
+    case Expression.Force(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Force(e, tpe, eff, loc)
+
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ??? // TODO
     case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => ??? // TODO
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ??? // TODO
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ??? // TODO
+
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.FixpointEntails(e1, e2, tpe, eff, loc)
+
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
   }
 
-  // TODO: DOC
+  /**
+    * Applies the given substitution `subst` to the given formal param `fparam0`.
+    */
   private def substFormalParam(fparam0: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam0 match {
     case FormalParam(sym, mod, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
