@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
@@ -301,9 +301,14 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         } yield tast
 
         case Expression.SelectChannel(rules, default, _, _, _) => for {
-          _ <- sequence(rules.map(r => {
-            checkPats(r.chan, root)
-            checkPats(r.exp, root)
+          _ <- sequence(rules.map({
+            case SelectChannelRule.SelectGet(_, chan, exp) =>
+              checkPats(chan, root)
+              checkPats(exp, root)
+            case SelectChannelRule.SelectPut(chan, value, exp) =>
+              checkPats(chan, root)
+              checkPats(value, root)
+              checkPats(exp, root)
           }))
           _ <- default match {
             case Some(exp) => checkPats(exp, root)
