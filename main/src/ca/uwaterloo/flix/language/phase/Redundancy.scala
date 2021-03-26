@@ -482,7 +482,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       val rulesUsed = rules map {
-        case SelectChannelRule(sym, chan, body) =>
+        case SelectChannelRule.SelectGet(sym, chan, body) =>
           // Extend the environment with the symbol.
           val env1 = env0 + sym
 
@@ -498,6 +498,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
             (chanUsed and bodyUsed and shadowedVar) - sym + UnusedVarSym(sym)
           else
             (chanUsed and bodyUsed and shadowedVar) - sym
+        case SelectChannelRule.SelectPut(chan, value, body) =>
+          // Visit the channel and body expressions.
+          val chanUsed = visitExp(chan, env0)
+          val valueUsed = visitExp(value, env0)
+          val bodyUsed = visitExp(body, env0)
+
+          (chanUsed and valueUsed and bodyUsed)
       }
 
       rulesUsed.foldLeft(defaultUsed) {
