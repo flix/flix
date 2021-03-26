@@ -195,7 +195,6 @@ class Flix {
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Unsafe.flix" -> LocalResource.get("/src/library/Unsafe.flix"),
-    "UnsafeBox.flix" -> LocalResource.get("/src/library/UnsafeBox.flix"),
 
   )
 
