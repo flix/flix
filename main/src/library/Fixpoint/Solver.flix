@@ -45,13 +45,15 @@ namespace Fixpoint {
         solveWithStratification(d)
 
     pub def solveWithStratification[v : Order : Eq : ToString](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] =
-        let _ = if (enablePrintBeforeSolve()) Unsafe.println(d) else d;
-        (compile(d, stf) |>
+        let _ = notifyPreSolve(d, stf);
+        let model = (compile(d, stf) |>
          hoistStmt |>
          queryStmt |>
          lowerStmt |>
          interpret |>
-         toAst) as & Pure
+         toAst) as & Pure;
+         let _ = notifyPostSolve(model);
+         model
 
     pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
