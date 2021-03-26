@@ -24,7 +24,14 @@ namespace Fixpoint {
     /// Compute a stratification (if one exists) with Ullman's algorithm.
     def stratifyHelper(g: PrecedenceGraph, stf: Map[PredSym, Int32]): Map[PredSym, Int32] = match g {
         case PrecedenceGraph(xs) =>
+            // The number of strata is bounded by the number of predicates
+            // which is bounded by the number of edges in the precedence graph.
             let maxStratum = Set.size(xs);
+            // Visit every edge and ensure the following:
+            // 1. If (body, head) is a positive edge, then body belongs to a lower stratum
+            // or the same stratum as head.
+            // 2. If (body, head) is a negative edge, then body belongs to a strictly lower stratum
+            // than head.
             let newStf = Set.foldLeft(acc -> edge -> match edge {
                 case PositiveEdge(bodySym, headSym) =>
                     let bodyStratum = Map.getWithDefault(bodySym, 0, acc);
@@ -38,13 +45,16 @@ namespace Fixpoint {
                     let headStratum = Map.getWithDefault(headSym, 0, acc);
                     if (bodyStratum >= headStratum)
                         let newHeadStratum = bodyStratum + 1;
+                        // If there are more strata than edges,
+                        // the precedence graph must contain a negative cycle!
                         if (newHeadStratum > maxStratum)
-                            ???
+                            ??? // TODO: use bug! when it arrives
                         else
                             Map.insert(headSym, newHeadStratum, acc)
                     else
                         Map.insertWith(Int32.max, headSym, 0, acc)
             }, stf, xs);
+            // Check if property 1 and 2 now holds for all edges.
             if (newStf == stf)
                 stf
             else
