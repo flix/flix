@@ -107,12 +107,13 @@ pub def bug!(m: String): a =
     let f = () -> {
         import get java.lang.System:err as getErr;
         import java.io.PrintStream.println(String);
+        import java.lang.String.repeat(Int32);
         let prt = s -> getErr().println(s);
-        prt(String.repeat("*", 80));
+        prt(repeat("*", 80));
         prt("**") ;
         prt("**  BUG: ${m}") ;
         prt("**") ;
-        prt(String.repeat("*", 80));
+        prt(repeat("*", 80));
         prt("")
     };
     let _ = f() as & Pure;
