@@ -63,6 +63,9 @@ class Flix {
     * The core library *must* be present for any program to compile.
     */
   private val coreLibrary = List(
+    // Prelude
+    "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
+
     // Comparison
     "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
 
@@ -86,7 +89,6 @@ class Flix {
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
     "Drop.flix" -> LocalResource.get("/src/library/Drop.flix"),
-    "Copy.flix" -> LocalResource.get("/src/library/Copy.flix"),
 
     // Lattices
     "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
@@ -128,12 +130,10 @@ class Flix {
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
-    "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
-    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
 
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
@@ -165,7 +165,7 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
-
+    
     "Fixpoint/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Compiler.flix"),
     "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
     "Fixpoint/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint/Interpreter.flix"),
@@ -193,6 +193,9 @@ class Flix {
     "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
     "Fixpoint/Ram/RelSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelSym.flix"),
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
+
+    "Unsafe.flix" -> LocalResource.get("/src/library/Unsafe.flix"),
+    "UnsafeBox.flix" -> LocalResource.get("/src/library/UnsafeBox.flix"),
 
   )
 

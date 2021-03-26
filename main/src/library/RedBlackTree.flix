@@ -392,7 +392,7 @@ namespace RedBlackTree {
         case Node(c, a, k1, v1, b) =>
             let (k3, v3, e) = minDelete(a);
             (k3, v3, rotate(Node(c, e, k1, v1, b)))
-        case _ => panic("impossible")
+        case _ => unreachable!()
     }
 
     ///

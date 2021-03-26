@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 Esben Bjerre
+ *  Copyright 2021 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,13 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+namespace Unsafe {
 
-///
-/// A type class for duplicable elements.
-///
-pub lawless class Copy[a] {
     ///
-    /// Returns a shallow copy of `x`.
+    /// Converts `x` to a string and unsafely prints it to standard out.
     ///
-    pub def copy(x: a): a & e
+    pub def print[a: ToString](x: a): a =
+        let _ = (x |> ToString.toString |> Console.print) as & Pure;
+        x
+
+    ///
+    /// Converts `x` to a string and unsafely prints it to standard out followed by a new line.
+    ///
+    pub def println[a: ToString](x: a): a =
+        let _ = (x |> ToString.toString |> Console.printLine) as & Pure;
+        x
+
 }

@@ -75,19 +75,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Creates a class environment from a ClassSym-Instance multimap.
+    * Creates a class environment from a the classes and instances in the root.
     */
-  private def mkClassEnv(classes: Map[Symbol.ClassSym, ResolvedAst.Class], instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]]): Map[Symbol.ClassSym, Ast.ClassContext] = {
-    instances.map {
-      case (classSym, instances) =>
+  private def mkClassEnv(classes0: Map[Symbol.ClassSym, ResolvedAst.Class], instances0: Map[Symbol.ClassSym, List[ResolvedAst.Instance]]): Map[Symbol.ClassSym, Ast.ClassContext] = {
+    classes0.map {
+      case (classSym, clazz) =>
+        val instances = instances0.getOrElse(classSym, Nil)
         val envInsts = instances.map {
           case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
         }
-        val superClasses = classes.get(classSym) match {
-          case Some(ResolvedAst.Class(_, _, _, _, superClasses, _, _, _)) => superClasses
-          case None => throw InternalCompilerException(s"Unexpected unrecognized class $classSym")
-        }
-        (classSym, Ast.ClassContext(superClasses, envInsts))
+        (classSym, Ast.ClassContext(clazz.superClasses, envInsts))
     }
   }
 
@@ -101,7 +98,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
       case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
         val tparams = getTypeParams(List(tparam))
-        val tconstr = Ast.TypeConstraint(sym, tparam.tpe)
+        val tconstr = Ast.TypeConstraint(sym, tparam.tpe, loc)
         for {
           sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
           laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
@@ -257,7 +254,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                 case Validation.Success(_) => // noop
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
-                    case UnificationError.NoMatchingInstance(clazz, tpe) => TypeError.NoMatchingInstance(clazz, tpe, loc)
+                    case UnificationError.NoMatchingInstance(tconstr) =>
+                      TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
@@ -395,17 +393,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs, defType) = Scheme.instantiate(defn.spec.sc, InstantiateMode.Flexible)
+        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
+          tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs, sigType) = Scheme.instantiate(sig.spec.sc, InstantiateMode.Flexible)
+        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
+          tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
@@ -710,7 +710,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
+      case ResolvedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -882,7 +882,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
-          resultTyp <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
+          resultTypes <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
+          resultTyp <- unifyTypeM(tvar, resultTypes, loc)
           resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
@@ -1549,7 +1550,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Choose(_, exps, rules, loc) =>
+      case ResolvedAst.Expression.Choose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
           case ResolvedAst.ChoiceRule(pat0, exp) =>
@@ -1560,7 +1561,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
             }
             TypedAst.ChoiceRule(pat, visitExp(exp, subst0))
         }
-        val tpe = rs.head.exp.tpe
+        val tpe = subst0(tvar)
         val eff = Type.mkAnd(rs.map(_.exp.eff))
         TypedAst.Expression.Choose(es, rs, tpe, eff, loc)
 
@@ -1981,7 +1982,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = getTermTypeClassConstraints(den, termTypes, root)
+        tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -2019,7 +2020,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
-        tconstrs = getTermTypeClassConstraints(den, termTypes, root)
+        tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
 
     //
@@ -2060,29 +2061,29 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Returns the type class constraints for the given term types `ts` with the given denotation `den`.
     */
-  private def getTermTypeClassConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root): List[Ast.TypeConstraint] = den match {
+  private def getTermTypeClassConstraints(den: Ast.Denotation, ts: List[Type], root: ResolvedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = den match {
     case Denotation.Relational =>
-      ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root))
+      ts.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root, loc))
     case Denotation.Latticenal =>
-      ts.init.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root)) ::: mkTypeClassConstraintsForLatticeTerm(ts.last, root)
+      ts.init.flatMap(mkTypeClassConstraintsForRelationalTerm(_, root, loc)) ::: mkTypeClassConstraintsForLatticeTerm(ts.last, root, loc)
   }
 
   /**
     * Constructs the type class constraints for the given relational term type `tpe`.
     */
-  private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+  private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
       PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
       PredefinedClasses.lookupClassSym("ToString", root),
     )
-    classes.map(Ast.TypeConstraint(_, tpe))
+    classes.map(Ast.TypeConstraint(_, tpe, loc))
   }
 
   /**
     * Constructs the type class constraints for the given lattice term type `tpe`.
     */
-  private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root): List[Ast.TypeConstraint] = {
+  private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
       PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
@@ -2092,7 +2093,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       PredefinedClasses.lookupClassSym("JoinLattice", root),
       PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
-    classes.map(Ast.TypeConstraint(_, tpe))
+    classes.map(Ast.TypeConstraint(_, tpe, loc))
   }
 
   /**
@@ -2120,7 +2121,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns the typed version of the given type parameters `tparams0`.
     */
   private def getTypeParams(tparams0: List[ResolvedAst.TypeParam]): List[TypedAst.TypeParam] = tparams0.map {
-    case ResolvedAst.TypeParam(name, tpe, classes, loc) => TypedAst.TypeParam(name, tpe, classes, loc)
+    case ResolvedAst.TypeParam(name, tpe, loc) => TypedAst.TypeParam(name, tpe, loc)
   }
 
   /**

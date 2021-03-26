@@ -547,7 +547,7 @@ namespace Map {
                                         case None => m
                                         case Some(w) => insert(k, w, m)
                                     }
-                                    case None => panic("unreachable")
+                                    case None => unreachable!()
                                 }
                              else m;
         foldRightWithKey(g, diff, m2)

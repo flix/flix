@@ -254,7 +254,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
     traverse(e0.tparams)(p => Params.resolve(p, ns0, root)).flatMap {
       tparams =>
-        val tconstrs = tparams.flatMap(tparam => tparam.classes.map(clazz => Ast.TypeConstraint(clazz, tparam.tpe)))
+        val tconstrs = Nil
         val casesVal = traverse(e0.cases) {
           case (name, NamedAst.Case(enum, tag, tpe)) =>
             for {
@@ -544,7 +544,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, loc)
 
-        case NamedAst.Expression.Choose(star, exps, rules, loc) =>
+        case NamedAst.Expression.Choose(star, exps, rules, tvar, loc) =>
           val expsVal = traverse(exps)(visit(_, tenv0))
           val rulesVal = traverse(rules) {
             case NamedAst.ChoiceRule(pat0, exp0) =>
@@ -558,7 +558,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               }
           }
           mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, loc)
+            case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, tvar, loc)
           }
 
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
@@ -1038,11 +1038,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = {
-      for {
-        classes <- sequence(tparam0.classes.map(lookupClass(_, ns0, root)))
-        classSyms = classes.map(_.sym)
-      } yield ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, classSyms, tparam0.loc)
+    def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
+        case NamedAst.TypeParam(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
     }
 
   }
@@ -1077,7 +1074,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     for {
       clazz <- lookupClass(tconstr0.clazz, ns0, root)
       tpe <- lookupType(tconstr0.arg, ns0, root)
-    } yield Ast.TypeConstraint(clazz.sym, tpe)
+    } yield Ast.TypeConstraint(clazz.sym, tpe, SourceLocation.Unknown)
   }
 
   /**

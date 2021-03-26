@@ -9,8 +9,9 @@ namespace TotalOrder {
      * or `y` is less than or equal to `x`, i.e. every pair of elements must
      * be mutually comparable.
      */
-    law totality[e](⊑: (e, e) -> Bool): Bool =
-        use Bool.∨;
-        ∀(x: e, y: e). (x ⊑ y) ∨ (y ⊑ x)
+    // TODO change to class law
+//    law totality[e](⊑: (e, e) -> Bool): Bool =
+//        use Bool.∨;
+//        ∀(x: e, y: e). (x ⊑ y) ∨ (y ⊑ x)
 
 }
