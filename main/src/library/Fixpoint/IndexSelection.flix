@@ -45,13 +45,36 @@ use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 ///         do
 ///             project x into a
 namespace Fixpoint {
-    pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
+    pub def hoistStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
         case RamStmt.Insert(op) =>
-            let (innerOp, ground) = queryOp(op, Set#{});
-            if (List.isEmpty(ground))
-                RamStmt.Insert(innerOp)
-            else
-                RamStmt.Insert(RelOp.If(ground, innerOp))
+            let (innerOp, ground) = hoistOp(op, Set#{});
+            match innerOp {
+                case RelOp.Search(var, relSym, where, body) =>
+                     RelOp.Search(var, relSym, where ::: ground, body) |>
+                     RamStmt.Insert
+                case RelOp.Query(_) => RamStmt.Insert(innerOp)
+                case RelOp.Project(_) => RamStmt.Insert(innerOp)
+            }
+        case RamStmt.Merge(_, _) => stmt
+        case RamStmt.Assign(_, _) => stmt
+        case RamStmt.Purge(_) => stmt
+        case RamStmt.Seq(xs) => RamStmt.Seq(List.map(hoistStmt, xs))
+        case RamStmt.Until(test, body) => RamStmt.Until(test, hoistStmt(body))
+        case RamStmt.Comment(_) => stmt
+    }
+
+    def hoistOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
+        case RelOp.Search(var, relSym, where, body) =>
+            let (innerOp, innerGround) = hoistOp(body, Set.insert(var, freeVars));
+            let (ground, rest) = List.partition(isExpGround(freeVars), where ::: innerGround);
+            let search = RelOp.Search(var, relSym, rest, innerOp);
+            (search, ground)
+        case RelOp.Query(_, _, _, _, _) => (op, Nil)
+        case RelOp.Project(_, _) => (op, Nil)
+    }
+
+    pub def queryStmt[v : ToString](stmt: RamStmt[v]): RamStmt[v] = match stmt {
+        case RamStmt.Insert(op) => RamStmt.Insert(queryOp(op))
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
@@ -60,19 +83,17 @@ namespace Fixpoint {
         case RamStmt.Comment(_) => stmt
     }
 
-    def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
-        case RelOp.Search(var, relSym, body) =>
+    def queryOp[v : ToString](op: RelOp[v]): RelOp[v] = match op {
+        case RelOp.Search(var, relSym, where, body) =>
             use Fixpoint/Ram.BoolExp.Eq;
             use Fixpoint/Ram.RamTerm.{Attribute, Lit};
-            let (innerOp, innerGround) = queryOp(body, Set.insert(var, freeVars));
-            let (ground, notGround) = List.partition(isExpGround(freeVars), innerGround);
             let (attributeQuery, rest1) =
                 List.partition(exp -> match exp {
                     case Eq(Attribute(row1, _), Attribute(row2, _)) =>
                         row1 != row2 and row1 == var
                     case Eq(Attribute(row, _), Lit(_)) => row == var
                     case _ => false
-                }, notGround);
+                }, where);
             let (prefixQuery, rest2) =
                 List.sortWith(x -> y -> match (x, y) {
                     case (Eq(Attribute(_, index1), _), Eq(Attribute(_, index2), _)) =>
@@ -80,30 +101,15 @@ namespace Fixpoint {
                 }, attributeQuery) |>
                 List.mapWithIndex(x -> i -> (x, i)) |>
                 List.partition(match (Eq(Attribute(_, index), _), i) -> index == i) |>
-                // finally project away the left-hand side and the index.
-                match (query, rest) ->
-                    (List.map(match (Eq(_, rhs), _) -> rhs, query), List.map(fst, rest));
-            let test = rest1 ::: rest2;
+                match (prefixQuery, rest) ->
+                    (List.map(match (Eq(_, rhs), _) -> rhs, prefixQuery), List.map(fst, rest));
             if (List.isEmpty(prefixQuery))
-                if (List.isEmpty(test))
-                    let search = RelOp.Search(var, relSym, innerOp);
-                    (search, ground)
-                else
-                    let search = RelOp.Search(var, relSym, RelOp.If(test, innerOp));
-                    (search, ground)
+                RelOp.Search(var, relSym, where, queryOp(body))
             else
                 let query = List.toArray(prefixQuery) as & Pure;
-                if (List.isEmpty(test))
-                    let search = RelOp.Query(var, relSym, query, innerOp);
-                    (search, ground)
-                else
-                    let search = RelOp.Query(var, relSym, query, RelOp.If(test, innerOp));
-                    (search, ground)
-        case RelOp.Query(_) => (op, Nil)
-        case RelOp.Project(_) => (op, Nil)
-        case RelOp.If(test, body) =>
-            let (innerOp, innerGround) = queryOp(body, freeVars);
-            (innerOp, test ::: innerGround)
+                RelOp.Query(var, relSym, query, rest1 ::: rest2, queryOp(body))
+        case RelOp.Query(_, _, _, _, _) => op
+        case RelOp.Project(_, _) => op
     }
 
     /// An expression is ground if all its terms are ground.

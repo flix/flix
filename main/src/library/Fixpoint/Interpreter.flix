@@ -23,7 +23,7 @@ instance Order[Tuple[v]] with Order[v] {
     pub def compare(a: Tuple[v], b: Tuple[v]): Comparison = compareHelper(a, b, 0) as & Pure
 }
 
-def compareHelper[v](a: Array[v], b: Array[v], i: Int32): Comparison & Impure with Order[v] =
+def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & Impure =
     if (i < Array.length(a)) {
         let cmp = a[i] <=> b[i];
         if (cmp == EqualTo)
@@ -39,8 +39,7 @@ namespace Fixpoint {
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Array[Tuple[v]]
 
-    pub def interpret[v](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure with Eq[v], Order[v], ToString[v] =
-        let _ = notifyPreInterpret(stmt);
+    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure =
         let db = MutMap.empty();
         evalStmt(db, stmt);
         toImmutable(db)
@@ -51,7 +50,7 @@ namespace Fixpoint {
             case _ => acc
         }, Map#{}, db)
 
-    def evalStmt[v](db: Database[v], stmt: RamStmt[v]): Unit & Impure with Eq[v], Order[v] = match stmt {
+    def evalStmt[v : Order : Eq](db: Database[v], stmt: RamStmt[v]): Unit & Impure = match stmt {
         case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
         case RamStmt.Merge(src, dst) =>
             db |>
@@ -63,7 +62,7 @@ namespace Fixpoint {
         case RamStmt.Purge(relSym) => MutMap.remove!(relSym, db)
         case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
         case RamStmt.Until(test, body) =>
-            if (evalBoolExp(db, [], test)) {
+            if (List.forall(evalBoolExp(db, []) as BoolExp[v] -> Bool, test)) {
                 ()
             } else {
                 evalStmt(db, body);
@@ -73,40 +72,41 @@ namespace Fixpoint {
     }
 
     def allocEnv(depth: Int32, relOp: RelOp[v]): SearchEnv[v] & Impure = match relOp {
-        case RelOp.Search(_, _, body) => allocEnv(depth + 1, body)
-        case RelOp.Query(_, _, _, body) => allocEnv(depth + 1, body)
+        case RelOp.Search(_, _, _, body) => allocEnv(depth + 1, body)
+        case RelOp.Query(_, _, _, _, body) => allocEnv(depth + 1, body)
         case RelOp.Project(_) => Array.new([], depth)
-        case RelOp.If(_, then) => allocEnv(depth, then)
     }
 
-    def evalOp[v](db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure with Eq[v], Order[v] =
+    def evalOp[v : Order : Eq](db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure =
         match op {
-            case RelOp.Search(RowVar.Index(i), relSym, body) =>
+            case RelOp.Search(RowVar.Index(i), relSym, where, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
                 MutSet.foreach(row -> {
                     env[i] = row;
-                    evalOp(db, env, body)
+                    if (List.forall(evalBoolExp(db, env) as BoolExp[v] -> Bool, where)) {
+                        evalOp(db, env, body)
+                    } else {
+                        ()
+                    }
                 })
-            case RelOp.Query(RowVar.Index(i), relSym, query, body) =>
+            case RelOp.Query(RowVar.Index(i), relSym, query, where, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
                 MutSet.queryWith(evalQuery(env, 0, query), row -> {
                     env[i] = row;
-                    evalOp(db, env, body)
+                    if (List.forall(evalBoolExp(db, env) as BoolExp[v] -> Bool, where)) {
+                        evalOp(db, env, body)
+                    } else {
+                        ()
+                    }
                 })
             case RelOp.Project(terms, relSym) =>
                 let tuple = Array.map(evalTerm(env), terms);
                 MutMap.getOrElsePut!(relSym, MutSet.empty(), db) |>
                 MutSet.add!(tuple)
-            case RelOp.If(test, then) =>
-                if (evalBoolExp(db, env, test)) {
-                    evalOp(db, env, then)
-                } else {
-                    ()
-                }
             case _ => ()
         }
 
-    def evalQuery[v](env: SearchEnv[v], i: Int32, query: Array[RamTerm[v]], tuple: Tuple[v]): Comparison with Order[v] =
+    def evalQuery[v : Order](env: SearchEnv[v], i: Int32, query: Array[RamTerm[v]], tuple: Tuple[v]): Comparison =
         if (i >= Array.length(query))
             EqualTo
         else match (tuple[i] as & Pure) <=> evalTerm(env, query[i] as & Pure) {
@@ -114,8 +114,8 @@ namespace Fixpoint {
             case cmp => cmp
         }
 
-    def evalBoolExp[v](db: Database[v], env: SearchEnv[v], es: List[BoolExp[v]]): Bool with Eq[v], Order[v] =
-        List.forall(exp -> match exp {
+    def evalBoolExp[v : Order : Eq](db: Database[v], env: SearchEnv[v], exp: BoolExp[v]): Bool & Impure =
+        match exp {
             case BoolExp.Empty(relSym) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |> MutSet.isEmpty
             case BoolExp.NotMemberOf(terms, relSym) => match MutMap.get(relSym, db) {
@@ -153,7 +153,7 @@ namespace Fixpoint {
                 let v4 = evalTerm(env, t4);
                 let v5 = evalTerm(env, t5);
                 f(v1)(v2)(v3)(v4)(v5)
-        } as & Pure, es)
+        }
 
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {
         case RamTerm.Lit(v) => v

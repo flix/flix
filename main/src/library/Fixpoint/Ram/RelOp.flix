@@ -16,33 +16,36 @@
 
 namespace Fixpoint/Ram {
     pub enum RelOp[v] {
-        case Search(RowVar, RelSym, RelOp[v])
-        case Query(RowVar, RelSym, Array[RamTerm[v]], RelOp[v])
+        case Search(RowVar, RelSym, List[BoolExp[v]], RelOp[v])
+        case Query(RowVar, RelSym, Array[RamTerm[v]], List[BoolExp[v]], RelOp[v])
         case Project(Array[RamTerm[v]], RelSym)
-        case If(List[BoolExp[v]], RelOp[v])
     }
 
     instance ToString[RelOp[v]] with ToString[v] {
         pub def toString(op: RelOp[v]): String =
-            use Fixpoint.commaSeparate;
             let nl = String.lineSeparator();
             match op {
-                case Search(var, relSym, body) =>
-                    "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
-                case Query(var, relSym, prefixQuery, body) =>
+                case Search(var, relSym, where, body) =>
+                    if (List.isEmpty(where))
+                        "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
+                    else
+                        let cond = List.map(ToString.toString, where) |> String.intercalate(" Λ ");
+                        "search ${var} ∈ ${relSym} where${nl}${String.indent(4, "${cond}")}do${nl}${String.indent(4, "${body}")}end"
+                case Query(var, relSym, prefixQuery, where, body) =>
                     let query =
                         List.mapWithIndex(term -> i -> {
                             ToString.toString(BoolExp.Eq(RamTerm.Attribute(var, i), term))
                         }, Array.toList(prefixQuery) as & Pure) |>
                         String.intercalate(" ∧ ");
-                    "query {${var} ∈ ${relSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
+                    if (List.isEmpty(where))
+                        "query {${var} ∈ ${relSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
+                    else
+                        let cond = List.map(ToString.toString, where) |> String.intercalate(" Λ ");
+                        "query {${var} ∈ ${relSym} | ${query}} where${nl}${String.indent(4, "${cond}")}do${nl}${String.indent(4, "${body}")}end"
                 case Project(terms, relSym) =>
-                    "project (${commaSeparate(terms)}) into ${relSym}"
-                case If(test, then) =>
-                    let tst =
-                        List.map(ToString.toString, test) |>
-                        String.intercalate(" ∧ ");
-                    "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
+                    let ts = Array.toList(terms) as & Pure;
+                    let tuple = List.map(ToString.toString, ts) |> String.intercalate(", ");
+                    "project (${tuple}) into ${relSym}"
             }
     }
 }

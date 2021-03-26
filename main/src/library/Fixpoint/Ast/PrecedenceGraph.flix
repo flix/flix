@@ -30,9 +30,9 @@ namespace Fixpoint/Ast {
     }
 
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
-        case (HeadAtom(headSym, _, _, _), BodyAtom(bodySym, _, Positive, _, _)) =>
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, Positive, _, _)) =>
             PrecedenceGraph(Set#{PositiveEdge(bodySym, headSym)})
-        case (HeadAtom(headSym, _, _, _), BodyAtom(bodySym, _, Negative, _, _)) =>
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, Negative, _, _)) =>
             PrecedenceGraph(Set#{NegativeEdge(bodySym, headSym)})
         case _ => PrecedenceGraph(Set#{})
     }
