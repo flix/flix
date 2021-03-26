@@ -215,7 +215,9 @@ object Main {
       }
     } catch {
       case ex: FlixError =>
-        Console.println(ex.getMessage)
+        Console.err.println(ex.getMessage)
+        Console.err.println()
+        ex.printStackTrace()
         System.exit(1)
     }
 
