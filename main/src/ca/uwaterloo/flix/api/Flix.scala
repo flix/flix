@@ -163,6 +163,7 @@ class Flix {
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
 
+    "Unsafe.flix" -> LocalResource.get("/src/library/Unsafe.flix"),
     "UnsafeBox.flix" -> LocalResource.get("/src/library/UnsafeBox.flix"),
 
   )
