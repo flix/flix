@@ -98,7 +98,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     def visitClass(clazz: ResolvedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
       case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
         val tparams = getTypeParams(List(tparam))
-        val tconstr = Ast.TypeConstraint(sym, tparam.tpe)
+        val tconstr = Ast.TypeConstraint(sym, tparam.tpe, loc)
         for {
           sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
           laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
@@ -254,7 +254,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
                 case Validation.Success(_) => // noop
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
-                    case UnificationError.NoMatchingInstance(clazz, tpe) => TypeError.NoMatchingInstance(clazz, tpe, loc)
+                    case UnificationError.NoMatchingInstance(tconstr) =>
+                      TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
@@ -392,17 +393,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs, defType) = Scheme.instantiate(defn.spec.sc, InstantiateMode.Flexible)
+        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
+          tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs, sigType) = Scheme.instantiate(sig.spec.sc, InstantiateMode.Flexible)
+        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
+          tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
@@ -2074,7 +2077,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
     )
-    classes.map(Ast.TypeConstraint(_, tpe))
+    classes.map(Ast.TypeConstraint(_, tpe, SourceLocation.Unknown))
   }
 
   /**
@@ -2090,7 +2093,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       PredefinedClasses.lookupClassSym("JoinLattice", root),
       PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
-    classes.map(Ast.TypeConstraint(_, tpe))
+    classes.map(Ast.TypeConstraint(_, tpe, SourceLocation.Unknown))
   }
 
   /**

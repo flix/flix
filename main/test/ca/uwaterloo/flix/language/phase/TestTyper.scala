@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
@@ -224,6 +225,10 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.NoMatchingInstance](result)
+    result match {
+      case Validation.Success(t) =>
+      case Validation.Failure(errors) => errors.foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
+    }
   }
 
   test("TestLeq.Class.02") {

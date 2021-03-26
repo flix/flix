@@ -422,7 +422,13 @@ object Ast {
   /**
     * Represents that the type `arg` must belong to class `sym`.
     */
-  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type)
+  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type, loc: SourceLocation) {
+    override def equals(o: Any): Boolean = o match {
+      case that: TypeConstraint =>
+        this.sym == that.sym && this.arg == that.arg
+      case _ => false
+    }
+  }
 
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
