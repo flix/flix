@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.nio.file.Path
+import java.util.Objects
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -428,6 +429,8 @@ object Ast {
         this.sym == that.sym && this.arg == that.arg
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(sym, arg)
   }
 
   /**

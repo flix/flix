@@ -322,6 +322,26 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.NoMatchingInstance](result)
   }
 
+  test("NoMatchingInstance.Relation.01") {
+    val input =
+      """
+        |pub enum E {
+        |   case E1
+        |}
+        |
+        |rel R(e: E)
+        |
+        |pub def f(): Bool = {
+        |   let _x = #{
+        |     R(E1).
+        |   };
+        |   true
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.NoMatchingInstance](result)
+  }
+
   test("TestChoose.Arity1.01") {
     val input =
       """
