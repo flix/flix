@@ -29,7 +29,6 @@ pub enum Boxed {
 }
 
 instance Eq[Boxed] {
-
     pub def eq(b1: Boxed, b2: Boxed): Bool = match (b1, b2) {
         case (BoxedBool(v1),            BoxedBool(v2))          => v1 == v2
         case (BoxedChar(v1),            BoxedChar(v2))          => v1 == v2
@@ -42,11 +41,9 @@ instance Eq[Boxed] {
         case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2) == EqualTo
         case _ => ?bug
     }
-
 }
 
 instance Order[Boxed] {
-
     pub def compare(b1: Boxed, b2: Boxed): Comparison = match (b1, b2) {
         case (BoxedBool(v1),            BoxedBool(v2))          => v1 <=> v2
         case (BoxedChar(v1),            BoxedChar(v2))          => v1 <=> v2
@@ -59,7 +56,6 @@ instance Order[Boxed] {
         case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2)
         case _                                                  => ?bug
     }
-
 }
 
 instance ToString[Boxed] {

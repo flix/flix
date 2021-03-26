@@ -45,6 +45,7 @@ namespace Fixpoint {
         solveWithStratification(d)
 
     pub def solveWithStratification[v : Order : Eq : ToString](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] =
+        let _ = if (enablePrintBeforeSolve()) Unsafe.println(d) else d;
         (compile(d, stf) |>
          hoistStmt |>
          queryStmt |>
@@ -73,6 +74,19 @@ namespace Fixpoint {
     pub def foldRight[v : Order, b](d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b =
         let Datalog(facts, _) = project(p, d);
         Array.foldRight(factToTuple >> f, i, facts) as & Pure
+
+    ///
+    /// Unsafely casts and prints the given Datalog program `d`.
+    ///
+    pub def unsafePrint(d: a): a =
+        let _ = Unsafe.println(unsafeCast(d));
+        d
+
+    ///
+    /// Unsafely casts the given value `d` to a Datalog program.
+    ///
+    pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
+
 
     def factToTuple(fact: Constraint[v]): Array[v] = match fact {
         case Constraint(HeadAtom(_, terms, _), _, _) => Array.map(t -> match t {

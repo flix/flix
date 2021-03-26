@@ -39,7 +39,8 @@ namespace Fixpoint {
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Array[Tuple[v]]
 
-    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure =
+    pub def interpret[v : Order : Eq : ToString](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure =
+        let _ = if (enablePrintRAMBeforeSolve()) Unsafe.println(stmt) else stmt;
         let db = MutMap.empty();
         evalStmt(db, stmt);
         toImmutable(db)
