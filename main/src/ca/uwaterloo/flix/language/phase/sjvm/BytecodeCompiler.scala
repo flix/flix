@@ -137,12 +137,15 @@ object BytecodeCompiler {
         SWAP ~
         POP
 
-    case Expression.Ref(exp, tpe, loc) => ???
-    //      WithSource[R](loc) ~
-    //        tempNewRef ~
-    //        DUP ~
-    //        compileExp(exp) ~
-    //        tempConstructor
+    case Expression.Ref(exp, tpe, loc) =>
+      WithSource[R](loc) ~
+        NEW("temp string of ref based on tpe") ~
+        DUP ~
+        //        tempNewRef ~
+        //        DUP ~
+        //        compileExp(exp) ~
+        //        tempConstructor
+        SCAFFOLD
 
     // new - dup - constructor - compile(exp) - setValue
     // newRef(etype) // constructs name
