@@ -209,7 +209,7 @@ object ParsedAst {
       * @param defs  the definitions of the instance.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Option[Seq[ParsedAst.TypeConstraint]], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 

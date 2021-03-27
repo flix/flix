@@ -218,11 +218,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ OptSuperClasses
-      }
-
-      def OptSuperClasses = rule {
-        optional(optWS ~ keyword("with") ~ optWS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
+        Documentation ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ OptTypeConstraintList
       }
 
       def EmptyBody = rule {
@@ -242,9 +238,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.TypeConstraint
     }
 
+    def OptTypeConstraintList: Rule1[Seq[ParsedAst.TypeConstraint]] = rule {
+      optional(optWS ~ keyword("with") ~ optWS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
+    }
+
     def Instance: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optional(optWS ~ keyword("with") ~ optWS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS))
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ OptTypeConstraintList
       }
 
       def EmptyBody = rule {
