@@ -40,21 +40,11 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    val latticesOps = root.latticeOps.map {
-      case (k, v) => visitType(k) -> visitLatticeOps(v, m)
-    }
-
     val properties = root.properties.map(p => visitProperty(p, m))
-
-    val specialOps = root.specialOps.map {
-      case (op, ops) => op -> ops.map {
-        case (tpe, sym) => visitType(tpe) -> sym
-      }
-    }
 
     val reachable = root.reachable
 
-    FinalAst.Root(defs ++ m, enums, latticesOps, properties, specialOps, reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, properties, reachable, root.sources).toSuccess
   }
 
   private def visitDef(def0: LiftedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -73,12 +63,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       }
       val tpe = visitType(tpe0)
       FinalAst.Enum(mod, sym, cases, tpe, loc)
-  }
-
-  private def visitLatticeOps(lc: LiftedAst.LatticeOps, m: TopLevel)(implicit flix: Flix): FinalAst.LatticeOps = lc match {
-    case LiftedAst.LatticeOps(tpe0, bot, equ, leq, lub, glb) =>
-      val tpe = visitType(tpe0)
-      FinalAst.LatticeOps(tpe, bot, equ, leq, lub, glb)
   }
 
   private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {

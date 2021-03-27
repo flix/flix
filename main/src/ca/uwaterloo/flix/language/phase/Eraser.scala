@@ -35,12 +35,10 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
         }
         k -> ErasedAst.Enum(mod, sym, cases, loc)
     }
-    val latticeOps: Map[EType[PType], ErasedAst.LatticeOps] = root.latticeOps.map { case (k, v) => visitTpe[PType](k) -> visitLatticeOps(v) }
     val properties = root.properties.map { p => visitProperty(p) }
-    val specialOps = root.specialOps.map { case (k1, m) => k1 -> m.map[EType[PType], Symbol.DefnSym] { case (k2, v) => visitTpe[PType](k2) -> v } }
     val reachable = root.reachable
 
-    val actualTransformation = ErasedAst.Root(defns, enums, latticeOps, properties, specialOps, reachable, root.sources).toSuccess
+    val actualTransformation = ErasedAst.Root(defns, enums, properties, reachable, root.sources).toSuccess
     root.toSuccess
   }
 
@@ -184,14 +182,6 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       ErasedAst.Expression.HoleError(sym, visitTpe(tpe), loc)
     case FinalAst.Expression.MatchError(tpe, loc) =>
       ErasedAst.Expression.MatchError(visitTpe(tpe), loc)
-  }
-
-  /**
-    * Translates the given `lattice0` to the ErasedAst.
-    */
-  private def visitLatticeOps(lattice0: FinalAst.LatticeOps): ErasedAst.LatticeOps = lattice0 match {
-    case FinalAst.LatticeOps(tpe, bot, equ, leq, lub, glb) =>
-      ErasedAst.LatticeOps(visitTpe(tpe), bot, equ, leq, lub, glb)
   }
 
   /**

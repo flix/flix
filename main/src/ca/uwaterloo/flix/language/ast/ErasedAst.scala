@@ -26,9 +26,7 @@ object ErasedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
                   enums: Map[Symbol.EnumSym, ErasedAst.Enum],
-                  latticeOps: Map[EType[PType], ErasedAst.LatticeOps],
                   properties: List[ErasedAst.Property],
-                  specialOps: Map[SpecialOperator, Map[EType[PType], Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 

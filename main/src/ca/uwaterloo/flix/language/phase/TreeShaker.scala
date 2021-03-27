@@ -80,20 +80,6 @@ object TreeShaker extends Phase[Root, Root] {
       }
     }
 
-    //
-    // (c) A function that appears as a lattice operator.
-    //
-    for (LatticeOps(_, bot, equ, leq, lub, glb) <- root.latticeOps.values) {
-      reachable = reachable + bot + equ + leq + lub + glb
-    }
-
-    //
-    // (d) A function that appears as a special operator.
-    //
-    for (syms <- root.specialOps.values) {
-      reachable = reachable ++ syms.values
-    }
-
     reachable
   }
 
