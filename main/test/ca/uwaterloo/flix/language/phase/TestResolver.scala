@@ -171,7 +171,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
          |
          |namespace B {
-         |  def g[a: A.Show](x: a): Int = ???
+         |  def g[a has A.Show](x: a): Int = ???
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -182,7 +182,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f[a: A/B/C.Show](x: a): Int = ???
+         |  def f[a has A/B/C.Show](x: a): Int = ???
          |
          |  namespace B/C {
          |    class Show[a] {
@@ -400,7 +400,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedClass.02") {
     val input =
       """
-        |def f[a: C](x: a): a = x
+        |def f[a has C](x: a): a = x
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedClass](result)
@@ -411,7 +411,7 @@ class TestResolver extends FunSuite with TestUtils {
       """
         |class K[a]
         |
-        |def f[a : K : U](x: a): a = x
+        |def f[a has K has U](x: a): a = x
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedClass](result)

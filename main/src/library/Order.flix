@@ -90,7 +90,7 @@ namespace Order {
     ///
     /// Returns the minimum of `x` and `y`.
     ///
-    pub def min[a : Order](x: a, y: a): a = match (x <=> y) {
+    pub def min[a has Order](x: a, y: a): a = match (x <=> y) {
         case GreaterThan => y
         case _ => x
     }
@@ -104,7 +104,7 @@ namespace Order {
     ///
     /// Returns the maximum of `x` and `y`.
     ///
-    pub def max[a : Order](x: a, y: a): a = match (x <=> y) {
+    pub def max[a has Order](x: a, y: a): a = match (x <=> y) {
         case LessThan => y
         case _ => x
     }

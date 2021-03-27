@@ -50,13 +50,13 @@ namespace UnsafeBox {
     ///
     /// Boxes the given value `x`.
     ///
-    pub def box[a: Order : ToString](x: a): UnsafeBox[Any] =
+    pub def box[a has Order has ToString](x: a): UnsafeBox[Any] =
         UnsafeBox(x, Order.compare, ToString.toString) as UnsafeBox[Any]
 
     ///
     /// Lifts the given function `f` to one on boxed values.
     ///
-    pub def lift1[a, t : Order : ToString](f: a -> t): UnsafeBox[Any] -> UnsafeBox[Any] =
+    pub def lift1[a, t has Order has ToString](f: a -> t): UnsafeBox[Any] -> UnsafeBox[Any] =
         match (UnsafeBox(v1, _, _)) -> {
             box(f(v1 as a))
         }
@@ -64,7 +64,7 @@ namespace UnsafeBox {
     ///
     /// Lifts the given function `f` to one on boxed values.
     ///
-    pub def lift2[a, b, t : Order : ToString](f: (a, b) -> t): (UnsafeBox[Any], UnsafeBox[Any]) -> UnsafeBox[Any] =
+    pub def lift2[a, b, t has Order has ToString](f: (a, b) -> t): (UnsafeBox[Any], UnsafeBox[Any]) -> UnsafeBox[Any] =
         (x: UnsafeBox[Any], y: UnsafeBox[Any]) -> match (x, y) {
             case (UnsafeBox(v1, _, _), UnsafeBox(v2, _, _)) => box(f(v1 as a, v2 as b))
         }

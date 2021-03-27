@@ -192,7 +192,7 @@ namespace Test/Def/Generalization {
             case Present(_) => 2
         }
 
-    pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+    pub enum Choice[a, _isAbsent : Bool, _isPresent : Bool] {
         case Absent
         case Present(a)
     }

@@ -319,7 +319,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalTypeConstraint.01") {
     val input =
       """
-        |enum CBox[a: C] {
+        |enum CBox[a has C] {
         |    case CBox(a)
         |}
         |""".stripMargin
@@ -330,7 +330,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalTypeConstraint.02") {
     val input =
       """
-        |opaque type Box[a: C] = a
+        |opaque type Box[a has C] = a
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalTypeConstraint](result)
@@ -339,7 +339,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalTypeConstraint.03") {
     val input =
       """
-        |type alias Box[a: C] = a
+        |type alias Box[a has C] = a
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalTypeConstraint](result)
@@ -348,7 +348,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalTypeConstraint.04") {
     val input =
       """
-        |class C[a: D]
+        |class C[a has D]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalTypeConstraint](result)
@@ -357,16 +357,16 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalTypeConstraint.05") {
     val input =
       """
-        |rel R[a: D](x: a)
+        |rel R[a has D](x: a)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalTypeConstraint](result)
   }
 
-  test("IllegalTypeConstructor.06") {
+  test("IllegalTypeConstraint.06") {
     val input =
       """
-        |lat L[a: D](x: a, y: Int)
+        |lat L[a has D](x: a, y: Int)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[WeederError.IllegalTypeConstraint](result)

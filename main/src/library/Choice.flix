@@ -17,7 +17,7 @@
 /**
  * The Choice data type.
  */
-pub enum Choice[a, _isAbsent :# Bool, _isPresent :# Bool] {
+pub enum Choice[a, _isAbsent : Bool, _isPresent : Bool] {
     case Absent
     case Present(a)
 }
@@ -78,7 +78,7 @@ namespace Choice {
     ///
     /// Returns `c1` if it is `Present(v)`. Otherwise returns `c2`.
     ///
-    pub def withDefault[s :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool]
+    pub def withDefault[s : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
                        (c1: Choice[s, a1, p1], c2: Choice[s, a2, p2]): Choice[s, a1 and a2, p1 or (a1 and p2)] =
         choose* c1 {
             case Absent     => c2
@@ -90,7 +90,7 @@ namespace Choice {
     ///
     /// The function `f` must be pure.
     ///
-    pub def filter[t :# Type, a :# Bool, p :# Bool]
+    pub def filter[t : Type, a : Bool, p : Bool]
                   (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a or p, p] =
         choose* c {
             case Absent     => Absent
@@ -100,7 +100,7 @@ namespace Choice {
     ///
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-    pub def map[s :# Type, t :# Type, a :# Bool, p :# Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
+    pub def map[s : Type, t : Type, a : Bool, p : Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
         choose* c {
             case Absent     => Absent
             case Present(x) => Present(f(x))
@@ -109,7 +109,7 @@ namespace Choice {
     ///
     /// Returns `f(v)` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-    pub def flatMap[s :# Type, t :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool]
+    pub def flatMap[s : Type, t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
                    (f: s -> Choice[t, a2, p2], c: Choice[s, a1, p1]): Choice[t, a1 or (p1 and a2), p1 and p2] =
         choose* c {
             case Absent     => Absent
@@ -119,7 +119,7 @@ namespace Choice {
     ///
     /// Returns `v` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-    pub def flatten[t :# Type, a1 :# Bool, p1 :# Bool, a2 :# Bool, p2 :# Bool]
+    pub def flatten[t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
         (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, (a1 and p2) or a2, p1 and p2] =
         choose* c {
             case Absent     => Absent
@@ -129,7 +129,7 @@ namespace Choice {
     ///
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
     ///
-    pub def invert[s :# Type, a :# Bool, p :# Bool](c: Choice[s, a, p], v: s): Choice[s, p, a] = choose* c {
+    pub def invert[s : Type, a : Bool, p : Bool](c: Choice[s, a, p], v: s): Choice[s, p, a] = choose* c {
         case Absent     => Present(v)
         case Present(_) => Absent
     }

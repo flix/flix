@@ -39,7 +39,7 @@ namespace Monoid {
     /// Returns the result of applying `combine` to all the elements of list `xs`,
     /// using `empty` as the initial value.
     ///
-    pub def combineAll[a: Monoid](xs: List[a]): a =
+    pub def combineAll[a has Monoid](xs: List[a]): a =
         List.foldLeft((ac, x) -> combine(ac, x), Monoid.empty(), xs)
 
 }

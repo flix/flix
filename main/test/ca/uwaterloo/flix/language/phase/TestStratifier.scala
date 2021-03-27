@@ -85,7 +85,7 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.05") {
     val input =
       """
-        |pub def f[t: Eq : Hash : ToString](): #{A(t), B(t), C(t), X(t)} = #{
+        |pub def f[t has Eq has Hash has ToString](): #{A(t), B(t), C(t), X(t)} = #{
         |  C(c) :- X(c), not A(c).
         |  A(c) :- B(c), C(c).
         |}
@@ -97,7 +97,7 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.06") {
     val input =
       """
-        |pub def f[t: Eq : Hash : ToString](): #{A(t), B(t), X(t)} = #{
+        |pub def f[t has Eq has Hash has ToString](): #{A(t), B(t), X(t)} = #{
         |  A(c) :- X(c), not A(c).
         |  B(c) :- X(c), not B(c).
         |}
