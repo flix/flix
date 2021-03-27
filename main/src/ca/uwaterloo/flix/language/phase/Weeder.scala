@@ -1375,13 +1375,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointFold(sp1, ident, init, f, constraints, sp2) =>
-      val loc = mkSL(sp1, sp2)
-
-      mapN(visitExp(init), visitExp(f), visitExp(constraints)) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.FixpointFold(Name.mkPred(ident), e1, e2, e3, loc)
-      }
   }
 
 
@@ -2281,7 +2274,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
-    case ParsedAst.Expression.FixpointFold(sp1, _, _, _, _, _) => sp1
   }
 
   /**

@@ -1392,28 +1392,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp = Type.Bool
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tvar, loc) =>
-        //
-        // exp3 : #{P : a | c}    init : b   exp2 : a' -> b -> b
-        // where a' is the tuple reification of relation a
-        // ---------------------------------------------------
-        // fold P exp1 exp2 exp3 : b
-        //
-        val freshPredicateNameTypeVar = Type.freshVar(Kind.Star ->: Kind.Star)
-        val tupleType = Type.freshVar(Kind.Star)
-        val restRow = Type.freshVar(Kind.Schema)
-        for {
-          (constrs1, initType, eff1) <- visitExp(exp1)
-          (constrs2, fType, eff2) <- visitExp(exp2)
-          (constrs3, constraintsType, eff3) <- visitExp(exp3)
-          // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          constraintsType2 <- unifyTypeM(constraintsType, Type.mkSchemaExtend(pred, Type.Apply(freshPredicateNameTypeVar, tupleType), restRow), loc)
-          // f is of type tupleType -> initType -> initType. It cannot have any effect.
-          fType2 <- unifyTypeM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
-          resultTyp <- unifyTypeM(tvar, initType, loc) // the result of the fold is the same type as init
-          resultEff = Type.mkAnd(eff1, eff2, eff3)
-        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
     }
 
     /**
@@ -1795,12 +1773,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, loc) =>
-        val e1 = visitExp(init, subst0)
-        val e2 = visitExp(f, subst0)
-        val e3 = visitExp(constraints, subst0)
-        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
-        TypedAst.Expression.FixpointFold(pred, e1, e2, e3, subst0(tvar), eff, loc)
     }
 
     /**

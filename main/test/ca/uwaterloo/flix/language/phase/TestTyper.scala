@@ -161,22 +161,6 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo(): Int = {
         |  let b = "b";
-        |  let c = "c";
-        |  let d = "d";
-        |  fold A b c d
-        |}
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[TypeError](result) // TODO use more specific error once TypeError logic is more defined
-  }
-
-  test("TestMismatchedKinds.07") {
-    val input =
-      """
-        |rel A(a: Int)
-        |
-        |def foo(): Int = {
-        |  let b = "b";
         |  project A b
         |}
         |""".stripMargin

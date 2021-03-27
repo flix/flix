@@ -350,12 +350,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp2, root)
           } yield tast
 
-        case Expression.FixpointFold(_, exp1, exp2, exp3, tpe, eff, loc) =>
-          for {
-            _ <- checkPats(exp1, root)
-            _ <- checkPats(exp2, root)
-            _ <- checkPats(exp3, root)
-          } yield tast
       }
     }
 

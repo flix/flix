@@ -487,10 +487,6 @@ object Lowering extends Phase[Root, Root] {
       val argExps = arg1 :: arg2 :: Nil
       val resultType = Type.Bool
       Expression.Apply(defExp, argExps, resultType, eff, loc)
-
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-      // TODO: Replace FixpointFold with alternative.
-      throw InternalCompilerException("Deprecated Expression: FixpointFold")
   }
 
   /**
@@ -1389,12 +1385,6 @@ object Lowering extends Phase[Root, Root] {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       Expression.FixpointEntails(e1, e2, tpe, eff, loc)
-
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      val e3 = substExp(exp3, subst)
-      Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
   }
 
   /**

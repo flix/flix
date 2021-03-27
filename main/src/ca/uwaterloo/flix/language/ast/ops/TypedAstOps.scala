@@ -231,8 +231,6 @@ object TypedAstOps {
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
     }
 
     /**
@@ -386,7 +384,6 @@ object TypedAstOps {
     case Expression.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointEntails(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
   }
 
   /**
@@ -639,9 +636,6 @@ object TypedAstOps {
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
   }
 
