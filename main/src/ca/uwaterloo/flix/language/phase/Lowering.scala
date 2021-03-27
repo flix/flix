@@ -1221,7 +1221,14 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
 
-    case Expression.Choose(exps, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Choose(exps, rules, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      val rs = rules map {
+        case ChoiceRule(pat, exp) =>
+          // TODO: Substitute in patterns?
+          ChoiceRule(pat, substExp(exp, subst))
+      }
+      Expression.Choose(es, rs, tpe, eff, loc)
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1308,19 +1315,33 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
 
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+      val as = args.map(substExp(_, subst))
+      Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
 
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val as = args.map(substExp(_, subst))
+      Expression.InvokeMethod(method, e, as, tpe, eff, loc)
 
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ??? // TODO
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      val as = args.map(substExp(_, subst))
+      Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
 
-    case Expression.GetField(field, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.GetField(field, exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.GetField(field, e, tpe, eff, loc)
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.PutField(field, e1, e2, tpe, eff, loc)
 
-    case Expression.GetStaticField(field, tpe, eff, loc) => ??? // TODO
+    case Expression.GetStaticField(field, tpe, eff, loc) => exp0
 
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.PutStaticField(field, e, tpe, eff, loc)
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1350,9 +1371,19 @@ object Lowering extends Phase[Root, Root] {
       Expression.Force(e, tpe, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ??? // TODO
-    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ??? // TODO
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.FixpointCompose(e1, e2, stf, tpe, eff, loc)
+
+    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.FixpointSolve(e, stf, tpe, eff, loc)
+
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.FixpointProject(pred, e, tpe, eff, loc)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

@@ -24,9 +24,7 @@ object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
                   enums: Map[Symbol.EnumSym, FinalAst.Enum],
-                  latticeOps: Map[MonoType, FinalAst.LatticeOps],
                   properties: List[FinalAst.Property],
-                  specialOps: Map[SpecialOperator, Map[MonoType, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -39,8 +37,6 @@ object FinalAst {
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: FinalAst.Expression) {
     def loc: SourceLocation = defn.loc
   }
-
-  case class LatticeOps(tpe: MonoType, bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
   sealed trait Expression {
     def tpe: MonoType

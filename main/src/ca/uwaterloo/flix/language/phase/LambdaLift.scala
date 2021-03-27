@@ -47,10 +47,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
       case (sym, enum0) => sym -> visitEnum(enum0)
     }
 
-    val newLatticeOps = root.latticeOps.map {
-      case (tpe, latticeOp) => tpe -> visitLatticeOp(latticeOp)
-    }
-
     val newProperties = root.properties.map {
       property => liftProperty(property, m)
     }
@@ -58,9 +54,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
     LiftedAst.Root(
       newDefs ++ m,
       newEnums,
-      newLatticeOps,
       newProperties,
-      root.specialOps,
       root.reachable,
       root.sources
     ).toSuccess
@@ -86,14 +80,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         case (tag, SimplifiedAst.Case(_, _, tpeDeprecated, loc)) => tag -> LiftedAst.Case(sym, tag, tpeDeprecated, loc)
       }
       LiftedAst.Enum(mod, sym, cs, tpeDeprecated, loc)
-  }
-
-  /**
-    * Translates the given simplified lattice op `op0` into a lifted lattice op.
-    */
-  private def visitLatticeOp(op0: SimplifiedAst.LatticeOps): LiftedAst.LatticeOps = op0 match {
-    case SimplifiedAst.LatticeOps(tpe, bot, equ, leq, lub, glb) =>
-      LiftedAst.LatticeOps(tpe, bot, equ, leq, lub, glb)
   }
 
   /**
