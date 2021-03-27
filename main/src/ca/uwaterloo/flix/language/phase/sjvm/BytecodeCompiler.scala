@@ -17,9 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.PRefType._
-import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, PRefType, EType, ERefType}
+import ca.uwaterloo.flix.language.ast.{EType, ErasedAst, PType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -153,9 +151,13 @@ object BytecodeCompiler {
     case Expression.Deref(exp, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        // TODO: Fix temp strings
-        GETFIELD("Temp ref name based on tpe", "Temp name of the ref field", tpe) ~
-        CAST
+        (tpe match {
+          // TODO: Fix temp strings
+          case EType.Reference(_) =>
+            GETGENERICFIELD("Temp ref name based on tpe", "Temp name of the ref field") ~
+              CAST
+          case _ => GETFIELD("Temp ref name based on tpe", "Temp name of the ref field", tpe)
+        })
 
     case Expression.Assign(exp1, exp2, tpe, loc) => ???
       WithSource[R](loc) ~
