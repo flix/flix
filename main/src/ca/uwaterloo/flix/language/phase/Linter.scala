@@ -226,8 +226,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.FixpointEntails(exp1, exp2, tpe, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
-
       case _ => Nil
     }
 
@@ -534,9 +532,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
-
-    case (Expression.FixpointFold(pred1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(pred2, exp21, exp22, exp23, _, _, _)) if pred1 == pred2 =>
-      unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case _ => None
 
@@ -941,12 +936,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
-
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        val e3 = apply(exp3)
-        Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

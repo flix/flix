@@ -444,11 +444,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           Expression.FixpointEntails(e1, e2, subst0(tpe), eff, loc)
 
-        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          val e3 = visitExp(exp3, env0)
-          Expression.FixpointFold(pred, e1, e2, e3, subst0(tpe), eff, loc)
       }
 
       /**
