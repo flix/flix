@@ -17,9 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.PRefType.PRef
-import ca.uwaterloo.flix.language.ast.PType.{PInt32, PReference}
-import ca.uwaterloo.flix.language.ast.{EType, ErasedAst, PType}
+import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, EType, ErasedAst, PType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -140,7 +138,7 @@ object BytecodeCompiler {
         POP
 
     case Expression.Ref(exp, tpe, loc) =>
-      WithSource[R](loc) ~[R ** T] // note: this explicit type is necessary
+      WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
         NEW("Temp ref name based on tpe") ~
         DUP ~
         INVOKESPECIAL("Temp ref name based on tpe", "temp descriptor fields") ~

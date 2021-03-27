@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-sealed trait PType extends Cat1
+sealed trait PType
 
 sealed trait Cat1
 
@@ -40,6 +40,8 @@ object PType {
   sealed trait PFloat64 extends PType with Cat2
 
   sealed trait PReference[T <: PRefType] extends PType with Cat1
+
+  sealed trait PVoid extends PType
 
 }
 
