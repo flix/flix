@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-sealed trait PType
+sealed trait PType extends Cat1
 
 sealed trait Cat1
 

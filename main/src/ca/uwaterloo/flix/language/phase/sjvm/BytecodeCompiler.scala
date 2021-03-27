@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
+import ca.uwaterloo.flix.language.ast.PRefType.PRef
+import ca.uwaterloo.flix.language.ast.PType.{PInt32, PReference}
 import ca.uwaterloo.flix.language.ast.{EType, ErasedAst, PType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
@@ -138,18 +140,13 @@ object BytecodeCompiler {
         POP
 
     case Expression.Ref(exp, tpe, loc) =>
-      WithSource[R](loc) ~
-        NEW("temp string of ref based on tpe") ~
+      WithSource[R](loc) ~[R ** T] // note: this explicit type is necessary
+        NEW("Temp ref name based on tpe") ~
         DUP ~
-        //        tempNewRef ~
-        //        DUP ~
-        //        compileExp(exp) ~
-        //        tempConstructor
-        SCAFFOLD
-
-    // new - dup - constructor - compile(exp) - setValue
-    // newRef(etype) // constructs name
-    // no methods, just mutate value field (PUTFIELD/GETFIELD)
+        INVOKESPECIAL("Temp ref name based on tpe", "temp descriptor fields") ~
+        DUP ~
+        compileExp(exp) ~
+        PUTFIELD("Temp ref name based on tpe", "Temp name of the ref field", exp.tpe)
 
     case Expression.Deref(exp, tpe, loc) =>
       WithSource[R](loc) ~
