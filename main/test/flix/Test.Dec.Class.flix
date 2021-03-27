@@ -190,6 +190,14 @@ namespace Test/Dec/Class {
         pub def f[a : D](x: a): Int = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
     }
 
+    namespace Test15 {
+        lawless class C[a]
+
+        lawless class D[a]
+
+        pub def f(x: a, y: b): Bool with C[a], D[b] = ???
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
