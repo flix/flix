@@ -45,16 +45,18 @@ object Lowering extends Phase[Root, Root] {
 
   // TODO: Add doc
 
-
+  // TODO: Maybe better to have real source locations??
   private val SL: SourcePosition = SourcePosition.Unknown
+  private val RootNS: Name.NName = Name.NName(SL, Nil, SL)
+
+  // TODO: Accept source locations.
+  private def mkIdent(s: String): Name.Ident = Name.Ident(SL, s, SL)
 
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
     lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val IsSubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.isSubsetOf")
     lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
-
-    lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(Name.NName(SL, Nil, SL), Name.Ident(SL, "Boxable", SL)), Name.Ident(SL, "box", SL))
 
     lazy val Lift1: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1")
     lazy val Lift2: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2")
@@ -90,6 +92,18 @@ object Lowering extends Phase[Root, Root] {
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
+  }
+
+  private object Sigs {
+    lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("Boxable")), mkIdent("box"))
+
+    def mkBot(loc: SourceLocation): Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("LowerBound")), mkIdent("minValue"))
+
+    def mkLeq(loc: SourceLocation): Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("PartialOrder")), mkIdent("partialCompare"))
+
+    def mkLub(loc: SourceLocation): Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("JoinLattice")), mkIdent("leastUpperBound"))
+
+    def mkGlb(loc: SourceLocation): Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("MeetLattice")), mkIdent("greatestLowerBound"))
   }
 
   private object Types {
@@ -679,7 +693,7 @@ object Lowering extends Phase[Root, Root] {
   private def visitHeadPred(cparams0: List[ConstraintParam], p0: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
-      val denotationExp = mkDenotation(den, loc)
+      val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val locExp = mkSourceLocation(loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: locExp :: Nil, loc)
@@ -695,7 +709,7 @@ object Lowering extends Phase[Root, Root] {
   private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val predSymExp = mkPredSym(pred)
-      val denotationExp = mkDenotation(den, loc)
+      val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
       val locExp = mkSourceLocation(loc)
@@ -856,17 +870,32 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.Denotation` from the given denotation `d`.
+    * Constructs a `Fixpoint/Ast.Denotation` from the given denotation `d` and type `tpeOpt`
+    * (which must be the optional type of the last term).
     */
-  private def mkDenotation(p: Denotation, loc: SourceLocation): Expression = p match {
+  private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation): Expression = d match {
     case Relational =>
       val innerExp = Expression.Unit(loc)
       mkTag(Enums.Denotation, "Relational", innerExp, Types.Denotation, loc)
 
     case Latticenal =>
-      // TODO: Lattice components
-      val innerExp = Expression.Unit(loc)
-      mkTag(Enums.Denotation, "Latticenal", innerExp, Types.Denotation, loc)
+      tpeOpt match {
+        case None => throw InternalCompilerException("Unexpected nullary lattice predicate.")
+        case Some(tpe) =>
+          val botTpe = Type.mkPureArrow(Type.Unit, tpe)
+          val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
+          val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+          val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
+
+          // TODO: liftX and liftXb assumes that given expression is curried. But that is not true for these sigs.
+          val botExp = liftX(Expression.Sig(Sigs.mkBot(loc), botTpe, loc), List(Type.Unit), tpe)
+          val leqExp = liftXb(Expression.Sig(Sigs.mkLeq(loc), leqTpe, loc), List(tpe, tpe))
+          val lubExp = liftX(Expression.Sig(Sigs.mkLub(loc), lubTpe, loc), List(tpe, tpe), tpe)
+          val glbExp = liftX(Expression.Sig(Sigs.mkGlb(loc), glbTpe, loc), List(tpe, tpe), tpe)
+
+          val innerExp = mkTuple(List(botExp, leqExp, lubExp, glbExp), loc)
+          mkTag(Enums.Denotation, "Latticenal", innerExp, Types.Denotation, loc)
+      }
   }
 
   /**
@@ -923,7 +952,7 @@ object Lowering extends Phase[Root, Root] {
   private def box(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed)
-    val innerExp = Expression.Sig(Defs.Box, tpe, loc)
+    val innerExp = Expression.Sig(Sigs.Box, tpe, loc)
     Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, loc)
   }
 
@@ -972,7 +1001,7 @@ object Lowering extends Phase[Root, Root] {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftXb(lambdaExp, fvs)
+    val liftedExp = liftXb(lambdaExp, fvs.map(_._2))
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -1025,7 +1054,7 @@ object Lowering extends Phase[Root, Root] {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftX(lambdaExp, fvs, exp.tpe)
+    val liftedExp = liftX(lambdaExp, fvs.map(_._2), exp.tpe)
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -1034,13 +1063,13 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Lifts the given lambda expression `exp0` with the given list of parameters `params`.
+    * Lifts the given lambda expression `exp0` with the given argument types `argTypes`.
     *
     * Note: liftX and liftXb are similar and should probably be maintained together.
     */
-  private def liftX(exp0: Expression, params: List[(Symbol.VarSym, Type)], resultType: Type): Expression = {
+  private def liftX(exp0: Expression, argTypes: List[Type], resultType: Type): Expression = {
     // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Boxable.lift${params.length}")
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${argTypes.length}")
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
@@ -1049,10 +1078,10 @@ object Lowering extends Phase[Root, Root] {
     //
 
     // The type of the function argument, i.e. a -> b -> c -> `resultType`.
-    val argType = Type.mkPureCurriedArrow(params.map(_._2), resultType)
+    val argType = Type.mkPureCurriedArrow(argTypes, resultType)
 
     // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Boxed.
-    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Types.Boxed)
+    val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Boxed), Types.Boxed)
 
     // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> Boxed).
     val liftType = Type.mkPureArrow(argType, returnType)
@@ -1063,13 +1092,13 @@ object Lowering extends Phase[Root, Root] {
   }
 
   /**
-    * Lifts the given Boolean-valued lambda expression `exp0` with the given list of parameters `params`.
+    * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
     *
     * Note: liftX and liftXb are similar and should probably be maintained together.
     */
-  private def liftXb(exp0: Expression, params: List[(Symbol.VarSym, Type)]): Expression = {
+  private def liftXb(exp0: Expression, argTypes: List[Type]): Expression = {
     // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Boxable.lift${params.length}b")
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${argTypes.length}b")
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> Bool and
@@ -1078,10 +1107,10 @@ object Lowering extends Phase[Root, Root] {
     //
 
     // The type of the function argument, i.e. a -> b -> c -> Bool.
-    val argType = Type.mkPureCurriedArrow(params.map(_._2), Type.Bool)
+    val argType = Type.mkPureCurriedArrow(argTypes, Type.Bool)
 
     // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Bool.
-    val returnType = Type.mkPureCurriedArrow(params.map(_ => Types.Boxed), Type.Bool)
+    val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Boxed), Type.Bool)
 
     // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
     val liftType = Type.mkPureArrow(argType, returnType)
