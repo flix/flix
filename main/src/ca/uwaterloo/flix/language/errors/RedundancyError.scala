@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -293,6 +293,14 @@ object RedundancyError {
     }
 
     def loc: SourceLocation = sym.loc
+  }
+
+  // MATT docs
+  // MATT test tconstr1 locations to make sure they're reasonable
+  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant type constraint."
+
+    def message: VirtualTerminal = new VirtualTerminal() // MATT message
   }
 
 }

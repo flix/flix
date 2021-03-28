@@ -49,6 +49,14 @@ object ClassEnvironment {
   }
 
   /**
+    * Returns true iff type constraint `tconstr1` entails tconstr2 under class environment `classEnv`.
+    */
+  def entails(tconstr1: Ast.TypeConstraint, tconstr2: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext]): Boolean = {
+    val superClasses = bySuper(tconstr1, classEnv)
+    superClasses.contains(tconstr2)
+  }
+
+  /**
     * Removes the type constraints which are entailed by the others in the list.
     */
   private def simplify(tconstrs0: List[Ast.TypeConstraint], classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): List[Ast.TypeConstraint] = {
@@ -123,7 +131,7 @@ object ClassEnvironment {
     * - `t : C` (because `C` is a super class of `B`, and transitively a super class of `A`)
     *
     */
-  private def bySuper(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): List[Ast.TypeConstraint] = {
+  private def bySuper(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext]): List[Ast.TypeConstraint] = {
 
     // Get the classes that are directly superclasses of the class in `tconstr`
     val directSupers = classEnv.get(tconstr.sym).map(_.superClasses).getOrElse(Nil)

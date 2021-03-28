@@ -20,9 +20,10 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
+import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -167,6 +168,39 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
   }
+
+  // MATT docs
+  private def checkRedundantTypeConstraints()(implicit root: Root): List[RedundancyError] = {
+    def findRedundantTypeConstraints(tconstrs: List[Ast.TypeConstraint]): List[RedundancyError] = {
+      for {
+        (tconstr1, i1) <- tconstrs.zipWithIndex
+        (tconstr2, i2) <- tconstrs.zipWithIndex
+        if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
+      } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc) // MATT good loc?
+    }
+
+    val instErrors = root.instances.values.flatten.flatMap {
+      inst => findRedundantTypeConstraints(inst.tconstrs)
+    }
+
+    val defErrors = root.defs.values.flatMap {
+      defn => findRedundantTypeConstraints(defn.spec.declaredScheme.constraints)
+    }
+
+    val classErrors = root.classes.values.flatMap {
+      clazz =>
+        // MATT use real type constraints instead of superclass list
+        val tconstrs = clazz.superClasses.map(sym => Ast.TypeConstraint(sym, clazz.tparam.tpe, SourceLocation.Unknown))
+        findRedundantTypeConstraints(tconstrs)
+    }
+
+    val sigErrors = root.sigs.values.flatMap {
+      sig => findRedundantTypeConstraints(sig.spec.declaredScheme.constraints)
+    }
+
+    (instErrors ++ defErrors ++ classErrors ++ sigErrors).toList
+  }
+
 
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
