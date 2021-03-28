@@ -80,50 +80,41 @@ object GenRefClasses {
   /**
    * Generating constructor for the class `classType` with value of type `cellType`
    */
-  def genConstructor[T <: PType](refElement: EType[T], /*classType: JvmType.Reference, cellType: JvmType, */ visitor: ClassWriter)(implicit root: Root, flix: Flix): F[StackNil] => F[StackNil] = {
-    //val iLoad = AsmOps.getLoadInstruction(cellType)
-    //val initMethod = ???//visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(cellType), JvmType.Void), null, null)
-    //initMethod.visitCode()
+  //  def genConstructor(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter )(implicit root: Root, flix: Flix): ??? = {
+  def genConstructor[T <: PType](refElement: EType[T]): F[StackNil] => F[StackNil] = {
     ALOAD[StackNil, PRefType.PRef[T]](0) ~
-      //    initMethod.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-      //??? ~
-      ALOAD[StackNil ** PReference[PRefType.PRef[T]], PRefType.PRef[T]](0) ~
-      XLOAD(refElement, 1) ~
-    //    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "value", cellType.toDescriptor)
-    ???
-    //    initMethod.visitInsn(RETURN)
-    //    initMethod.visitMaxs(2, 2)
-    //    initMethod.visitEnd()
+      INVOKESPECIAL("class string of Object", "temp constructor () => V)")
+      ??? // RETURN
   }
 
-  //
-  //  /**
-  //    * Generating `getValue` method for the class `classType` with value of type `cellType`
-  //    */
-  //  def genGetValue(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
-  //    val iRet = AsmOps.getReturnInstruction(cellType)
-  //    val getValue = visitor.visitMethod(ACC_PUBLIC, "getValue", AsmOps.getMethodDescriptor(Nil, cellType), null, null)
-  //    getValue.visitCode()
-  //    getValue.visitVarInsn(ALOAD, 0)
-  //    getValue.visitFieldInsn(GETFIELD, classType.name.toInternalName, "value", cellType.toDescriptor)
-  //    getValue.visitInsn(iRet)
-  //    getValue.visitMaxs(1, 1)
-  //    getValue.visitEnd()
-  //  }
-  //
-  //  /**
-  //    * Generating `setValue` method for the class `classType` with value of type `cellType`
-  //    */
-  //  def genSetValue(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
-  //    val iLoad = AsmOps.getLoadInstruction(cellType)
-  //    val setValue = visitor.visitMethod(ACC_PUBLIC, "setValue", AsmOps.getMethodDescriptor(List(cellType), JvmType.Void), null, null)
-  //    setValue.visitCode()
-  //    setValue.visitVarInsn(ALOAD, 0)
-  //    setValue.visitVarInsn(iLoad, 1)
-  //    setValue.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "value", cellType.toDescriptor)
-  //    setValue.visitInsn(RETURN)
-  //    setValue.visitMaxs(2, 2)
-  //    setValue.visitEnd()
-  //  }
+//
+//  /**
+//    * Generating `getValue` method for the class `classType` with value of type `cellType`
+//    */
+//  def genGetValue(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+//    val iRet = AsmOps.getReturnInstruction(cellType)
+//    val getValue = visitor.visitMethod(ACC_PUBLIC, "getValue", AsmOps.getMethodDescriptor(Nil, cellType), null, null)
+//    getValue.visitCode()
+//    getValue.visitVarInsn(ALOAD, 0)
+//    getValue.visitFieldInsn(GETFIELD, classType.name.toInternalName, "value", cellType.toDescriptor)
+//    getValue.visitInsn(iRet)
+//    getValue.visitMaxs(1, 1)
+//    getValue.visitEnd()
+//  }
+//
+//  /**
+//    * Generating `setValue` method for the class `classType` with value of type `cellType`
+//    */
+//  def genSetValue(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+//    val iLoad = AsmOps.getLoadInstruction(cellType)
+//    val setValue = visitor.visitMethod(ACC_PUBLIC, "setValue", AsmOps.getMethodDescriptor(List(cellType), JvmType.Void), null, null)
+//    setValue.visitCode()
+//    setValue.visitVarInsn(ALOAD, 0)
+//    setValue.visitVarInsn(iLoad, 1)
+//    setValue.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "value", cellType.toDescriptor)
+//    setValue.visitInsn(RETURN)
+//    setValue.visitMaxs(2, 2)
+//    setValue.visitEnd()
+//  }
 
 }

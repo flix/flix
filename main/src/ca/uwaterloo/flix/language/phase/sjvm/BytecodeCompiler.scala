@@ -150,7 +150,6 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         compileExp(exp) ~
         (tpe match {
-          // TODO: Fix temp strings
           case EType.Reference(_) =>
             GETGENERICFIELD("Temp ref name based on tpe", "Temp name of the ref field") ~
               CAST
@@ -175,7 +174,10 @@ object BytecodeCompiler {
     case Expression.PutField(field, exp1, exp2, tpe, loc) => ???
     case Expression.GetStaticField(field, tpe, loc) => ???
     case Expression.PutStaticField(field, exp, tpe, loc) => ???
-    case Expression.NewChannel(exp, tpe, loc) => ???
+    case Expression.NewChannel(exp, tpe, loc) =>
+      WithSource[R](loc) ~
+        pushNull
+
     case Expression.GetChannel(exp, tpe, loc) => ???
     case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
     case Expression.SelectChannel(rules, default, tpe, loc) => ???
