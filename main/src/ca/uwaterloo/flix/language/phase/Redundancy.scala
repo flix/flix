@@ -68,7 +68,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedRes =
       checkUnusedDefs(usedAll)(root) and
         checkUnusedEnumsAndTags(usedAll)(root) and
-        checkUnusedTypeParamsEnums()(root)
+        checkUnusedTypeParamsEnums()(root) ++
+        checkRedundantTypeConstraints()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -175,6 +176,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       for {
         (tconstr1, i1) <- tconstrs.zipWithIndex
         (tconstr2, i2) <- tconstrs.zipWithIndex
+        // don't compare a constraint against itself
         if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
       } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc) // MATT good loc?
     }
