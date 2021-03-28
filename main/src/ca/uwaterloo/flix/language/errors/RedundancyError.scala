@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -29,6 +30,8 @@ trait RedundancyError extends CompilationError {
 }
 
 object RedundancyError {
+
+  private implicit val audience: Audience = Audience.External
 
   /**
     * An error raised to indicate that the variable symbol `sym` is hidden.
@@ -295,12 +298,30 @@ object RedundancyError {
     def loc: SourceLocation = sym.loc
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate a redundant type constraint.
+    *
+    * @param entailingTconstr the tconstr that entails the other.
+    * @param redundantTconstr the tconstr that is made redundant by the other.
+    * @param loc              the location where the error occured.
+    */
   // MATT test tconstr1 locations to make sure they're reasonable
   case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Redundant type constraint."
 
-    def message: VirtualTerminal = new VirtualTerminal() // MATT message
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Type constraint '" << Red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "' is entailed by type constraint '" << Red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "redundant type constraint.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Remove the type constraint." << NewLine
+      vt << NewLine
+      vt
+    }
   }
 
 }
