@@ -492,12 +492,14 @@ object Instructions {
   // also make void
   def defMakeFunction
   [R <: Stack, T <: PType]
-  (t: EType[T], x: F[R]):
-  F[R ** T] =
+  (x: F[R], t: EType[T]):
+  F[R ** T] = {
+    //todo where is this string stored
+    EType.toInternalName(t)
     ???
+  }
 
-  def foo = defMakeFunction(Int32(), defMakeFunction(Int32(), null))
-
+  def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, Int32()), Int32())
 
   implicit class ComposeOps[A, B](f: F[A] => F[B]) {
     def ~[C](that: F[B] => F[C]): F[A] => F[C] = ???
