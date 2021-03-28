@@ -62,7 +62,7 @@ namespace Fixpoint {
 
     /// Compile rule into a join loop.
     def compileRule[v : ToString](rule: Constraint[v]): RamStmt[v] = match rule {
-        case Constraint(HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
+        case Constraint(HeadAtom(PredSym(headPred, _), _, headTerms, _), body, _) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
             let join = joinTerms(env, augBody);
@@ -70,7 +70,7 @@ namespace Fixpoint {
             let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
             let insert =
                 Array.foldRight(match (atom, rowVar) -> match (isLast, acc) -> match atom {
-                    case BodyAtom(PredSym(pred, _), Polarity.Positive, _, _) =>
+                    case BodyAtom(PredSym(pred, _), _, Polarity.Positive, _, _) =>
                         if (isLast)
                             (false, RelOp.Search(rowVar, RelSym.Full(pred), join, acc))
                         else
@@ -84,7 +84,7 @@ namespace Fixpoint {
     }
 
     def compileRuleIncr[v : ToString](rule: Constraint[v]): RamStmt[v] = match rule {
-        case Constraint(HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
+        case Constraint(HeadAtom(PredSym(headPred, _), _, headTerms, _), body, _) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
             let join = joinTerms(env, augBody);
@@ -93,7 +93,7 @@ namespace Fixpoint {
             /// Compile rule into an incremental join loop where delta designates the focused atom.
             let compile = delta ->
                 Array.foldRight(match (atom, rowVar) -> match (isLast, acc) -> match atom {
-                    case BodyAtom(PredSym(pred, _), Polarity.Positive, _, _) =>
+                    case BodyAtom(PredSym(pred, _), _, Polarity.Positive, _, _) =>
                         let relSym = if (rowVar == delta) {
                             RelSym.Delta(pred)
                         } else {
@@ -110,7 +110,7 @@ namespace Fixpoint {
                 snd |>
                 RamStmt.Insert;
             let positiveAtoms = Array.filter(match (atom, _) -> match atom {
-                case BodyAtom(_, Polarity.Positive, _, _) => true
+                case BodyAtom(_, _, Polarity.Positive, _, _) => true
                 case _ => false
             }, augBody) as & Pure;
             let deltas = Array.fold(Array.map(match (_, rowVar) -> compile(rowVar), positiveAtoms)) as & Pure;
@@ -152,7 +152,7 @@ namespace Fixpoint {
     /// Augment body atoms with row variables.
     def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar)] =
         Array.mapWithIndex(atom -> i -> match atom {
-            case BodyAtom(predSym, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
+            case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body) as & Pure
 
@@ -160,7 +160,7 @@ namespace Fixpoint {
     /// corresponding to a positive atom where the variable is a term.
     def unifyVars(body: Array[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] =
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
-            case BodyAtom(_, Polarity.Positive, terms, _) =>
+            case BodyAtom(_, _, Polarity.Positive, terms, _) =>
                 Array.mapWithIndex(term -> j -> match term {
                     case BodyTerm.Var(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
                     case BodyTerm.Lit(_, _) => Map#{}
@@ -180,13 +180,13 @@ namespace Fixpoint {
                 case BodyTerm.Wild(_) => RamTerm.Attribute(rowVar, j)
             };
             match atom {
-                case BodyAtom(_, Polarity.Positive, terms, _) =>
+                case BodyAtom(_, _, Polarity.Positive, terms, _) =>
                     Array.mapWithIndex(term -> j -> {
                         let ramTerm = compileBodyTerm(term, j);
                         BoolExp.Eq(RamTerm.Attribute(rowVar, j), ramTerm)
                     }, terms) |>
                     Array.foldRight(x -> xs -> x :: xs, acc)
-                case BodyAtom(PredSym(pred, _), Polarity.Negative, terms, _) =>
+                case BodyAtom(PredSym(pred, _), _, Polarity.Negative, terms, _) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     BoolExp.NotMemberOf(ramTerms, RelSym.Full(pred)) :: acc
                 case Guard0(f, _) =>
@@ -220,13 +220,13 @@ namespace Fixpoint {
 
     /// Restrict a constraint system to those constraints whose head predicate belongs to the given domain.
     def restrict(cs: Array[Constraint[v]], domain: Set[PredSym]): Array[Constraint[v]] =
-        let headPred = match Constraint(HeadAtom(headSym, _, _), _, _) -> headSym;
+        let headPred = match Constraint(HeadAtom(headSym, _, _, _), _, _) -> headSym;
         let memberOf = xs -> x -> Set.memberOf(x, xs);
         Array.filter(headPred >> memberOf(domain), cs) as & Pure
 
     /// Return the set of predicates of the given constraint system.
     def predicatesOf(cs: Array[Constraint[v]]): Set[PredSym] =
-        Array.foldRight(match Constraint(HeadAtom(headPred, _, _), _, _) -> Set.insert(headPred), Set#{}, cs) as & Pure
+        Array.foldRight(match Constraint(HeadAtom(headPred, _, _, _), _, _) -> Set.insert(headPred), Set#{}, cs) as & Pure
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a
