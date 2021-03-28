@@ -679,9 +679,10 @@ object Lowering extends Phase[Root, Root] {
   private def visitHeadPred(cparams0: List[ConstraintParam], p0: Predicate.Head)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
+      val denotationExp = mkDenotation(den, loc)
       val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(predSymExp :: termsExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
 
     case Head.Union(exp, tpe, loc) =>
@@ -694,10 +695,11 @@ object Lowering extends Phase[Root, Root] {
   private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       val predSymExp = mkPredSym(pred)
+      val denotationExp = mkDenotation(den, loc)
       val polarityExp = mkPolarity(polarity, loc)
       val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
       val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(predSymExp :: polarityExp :: termsExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: termsExp :: locExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case Body.Guard(exp0, loc) =>
@@ -862,6 +864,7 @@ object Lowering extends Phase[Root, Root] {
       mkTag(Enums.Denotation, "Relational", innerExp, Types.Denotation, loc)
 
     case Latticenal =>
+      // TODO: Lattice components
       val innerExp = Expression.Unit(loc)
       mkTag(Enums.Denotation, "Latticenal", innerExp, Types.Denotation, loc)
   }

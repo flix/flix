@@ -16,6 +16,7 @@
 
 use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym};
 use Fixpoint/Ast.Datalog.Datalog;
+use Fixpoint/Ast.Denotation.Relational;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
@@ -91,7 +92,7 @@ namespace Fixpoint {
 
 
     def factToTuple(fact: Constraint[v]): Array[v] = match fact {
-        case Constraint(HeadAtom(_, terms, _), _, _) => Array.map(t -> match t {
+        case Constraint(HeadAtom(_, _, terms, _), _, _) => Array.map(t -> match t {
             case HeadTerm.Lit(v, _) => v
             case _ => ?bug
         }, terms) as & Pure
@@ -99,12 +100,13 @@ namespace Fixpoint {
 
     def tupleToFact(p: String, tuple: Array[v]): Constraint[v] =
         use Fixpoint/Ast.SourceLocation.Unknown;
+        let denotation = Relational; // TODO
         let terms = Array.map(v -> HeadTerm.Lit(v, Unknown), tuple) as & Pure;
-        Constraint(HeadAtom(PredSym(p, Unknown), terms, Unknown), [], Unknown) as & Pure
+        Constraint(HeadAtom(PredSym(p, Unknown), denotation, terms, Unknown), [], Unknown) as & Pure
 
     def toDatabase[v : Order](facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] =
         Array.foldRight(c -> match c {
-            case Constraint(HeadAtom(PredSym(pred, _), _, _), _, _) =>
+            case Constraint(HeadAtom(PredSym(pred, _), _, _, _), _, _) =>
                 Map.insertWith(Set.union, pred, Set#{factToTuple(c)})
         }, Map#{}, facts) as & Pure
 
