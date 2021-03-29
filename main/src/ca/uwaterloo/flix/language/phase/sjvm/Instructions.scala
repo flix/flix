@@ -47,10 +47,27 @@ object Instructions {
     ???
 
   // NATIVE
-  def GETFIELD
+  def XGETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String, fieldType: EType[T1]):
   F[R ** PReference[T2]] => F[R ** T1] =
+    fieldType match {
+      case Bool() =>  ???
+      case Int8() => ???
+      case Int16() => ???
+      case Int32() => ???
+      case Int64() => ???
+      case Char() => ???
+      case Float32() => ???
+      case Float64() => ???
+      case Reference(referenceType) => ???
+    }
+
+  // NATIVE
+  def GetInt32Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String, fieldType: EType[T1]):
+  F[R ** PReference[T2]] => F[R ** PInt32] =
     ???
 
   // NATIVE

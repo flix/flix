@@ -153,7 +153,7 @@ object BytecodeCompiler {
           case EType.Reference(_) =>
             GETGENERICFIELD("Temp ref name based on tpe", "Temp name of the ref field") ~
               CAST
-          case _ => GETFIELD("Temp ref name based on tpe", "Temp name of the ref field", tpe)
+          case _ => XGETFIELD("Temp ref name based on tpe", "Temp name of the ref field", tpe)
         })
 
     case Expression.Assign(exp1, exp2, tpe, loc) => ???
