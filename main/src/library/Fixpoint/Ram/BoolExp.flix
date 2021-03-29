@@ -34,12 +34,12 @@ namespace Fixpoint/Ram {
                 case Empty(relSym) => "${relSym} = ∅"
                 case NotMemberOf(terms, relSym) => "(${commaSeparate(terms)}) ∉ ${relSym}"
                 case Eq(lhs, rhs) => "${lhs} = ${rhs}"
-                case Guard0(_) => "if f()"
-                case Guard1(_, v) => "if f(${v})"
-                case Guard2(_, v1, v2) => "if f(${v1}, ${v2})"
-                case Guard3(_, v1, v2, v3) => "if f(${v1}, ${v2}, ${v3})"
-                case Guard4(_, v1, v2, v3, v4) => "if f(${v1}, ${v2}, ${v3}, ${v4})"
-                case Guard5(_, v1, v2, v3, v4, v5) => "if f(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case Guard0(_) => "f?()"
+                case Guard1(_, v) => "f?(${v})"
+                case Guard2(_, v1, v2) => "f?(${v1}, ${v2})"
+                case Guard3(_, v1, v2, v3) => "f?(${v1}, ${v2}, ${v3})"
+                case Guard4(_, v1, v2, v3, v4) => "f?(${v1}, ${v2}, ${v3}, ${v4})"
+                case Guard5(_, v1, v2, v3, v4, v5) => "f?(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
             }
     }
 }

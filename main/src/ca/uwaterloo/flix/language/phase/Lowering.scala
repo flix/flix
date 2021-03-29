@@ -992,8 +992,8 @@ object Lowering extends Phase[Root, Root] {
     val freshExp = substExp(exp, freshVars)
 
     // Curry `freshExp` in a lambda expression for each free variable.
-    val lambdaExp = fvs.foldLeft(freshExp) {
-      case (acc, (oldSym, tpe)) =>
+    val lambdaExp = fvs.foldRight(freshExp) {
+      case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
         val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe)
@@ -1045,8 +1045,8 @@ object Lowering extends Phase[Root, Root] {
     val freshExp = substExp(exp, freshVars)
 
     // Curry `freshExp` in a lambda expression for each free variable.
-    val lambdaExp = fvs.foldLeft(freshExp) {
-      case (acc, (oldSym, tpe)) =>
+    val lambdaExp = fvs.foldRight(freshExp) {
+      case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
         val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe)

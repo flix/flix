@@ -32,19 +32,19 @@ namespace Fixpoint {
 
     def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] =
         match op {
-            case RelOp.Search(var, relSym, where, body) =>
+            case RelOp.Search(var, relSym, body) =>
                 let newVar = RowVar.Index(depth);
                 let newVars = Map.insert(var, newVar, rowVars);
-                let newWhere = List.map(lowerExp(newVars), where);
-                RelOp.Search(newVar, relSym, newWhere, lowerOp(body, newVars, depth + 1))
-            case RelOp.Query(var, relSym, prefixQuery, where, body) =>
+                RelOp.Search(newVar, relSym, lowerOp(body, newVars, depth + 1))
+            case RelOp.Query(var, relSym, prefixQuery, body) =>
                 let newVar = RowVar.Index(depth);
                 let newVars = Map.insert(var, newVar, rowVars);
                 let newQuery = Array.map(lowerTerm(rowVars), prefixQuery) as & Pure;
-                let newWhere = List.map(lowerExp(newVars), where);
-                RelOp.Query(newVar, relSym, newQuery, newWhere, lowerOp(body, newVars, depth + 1))
+                RelOp.Query(newVar, relSym, newQuery, lowerOp(body, newVars, depth + 1))
             case RelOp.Project(terms, relSym) =>
                  RelOp.Project(Array.map(lowerTerm(rowVars), terms), relSym) as & Pure
+            case RelOp.If(test, then) =>
+                 RelOp.If(List.map(lowerExp(rowVars), test), lowerOp(then, rowVars, depth))
         }
 
     def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] =
