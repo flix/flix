@@ -170,7 +170,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Checks for redundant type constraints in the given `root`.
+    */
   private def checkRedundantTypeConstraints()(implicit root: Root): List[RedundancyError] = {
     def findRedundantTypeConstraints(tconstrs: List[Ast.TypeConstraint]): List[RedundancyError] = {
       for {
