@@ -80,32 +80,32 @@ object ERefType {
 
   // todo
   def toInternalName[T <: PRefType](e: ERefType[T]): String = e match {
-    case BoxedBool() => ???
-    case BoxedInt8() => ???
-    case BoxedInt16() => ???
-    case BoxedInt32() => ???
-    case BoxedInt64() => ???
-    case BoxedChar() => ???
-    case BoxedFloat32() => ???
-    case BoxedFloat64() => ???
+    case BoxedBool() => "???"
+    case BoxedInt8() => "???"
+    case BoxedInt16() => "???"
+    case BoxedInt32() => "???"
+    case BoxedInt64() => "???"
+    case BoxedChar() => "???"
+    case BoxedFloat32() => "???"
+    case BoxedFloat64() => "???"
     case Unit() => "flix/runtime/value/Unit"
-    case Array(tpe) => ???
-    case Channel(tpe) => ???
-    case Lazy(tpe) => ???
+    case Array(tpe) => "???"
+    case Channel(tpe) => "???"
+    case Lazy(tpe) => "???"
     case Ref(tpe) => "Ref$" + tpe.erasedType
-    case Var(id) => ???
-    case Tuple(elms) => ???
-    case Enum(sym, args) => ???
-    case BigInt() => ???
-    case Str() => ???
-    case Arrow(args, result) => ???
-    case RecordEmpty() => ???
-    case RecordExtend(field, value, rest) => ???
-    case SchemaEmpty() => ???
-    case SchemaExtend(name, tpe, rest) => ???
-    case Relation(tpes) => ???
-    case Lattice(tpes) => ???
-    case Native(clazz) => ???
+    case Var(id) => "???"
+    case Tuple(elms) => "???"
+    case Enum(sym, args) => "???"
+    case BigInt() => "???"
+    case Str() => "???"
+    case Arrow(args, result) => "???"
+    case RecordEmpty() => "???"
+    case RecordExtend(field, value, rest) => "???"
+    case SchemaEmpty() => "???"
+    case SchemaExtend(name, tpe, rest) => "???"
+    case Relation(tpes) => "???"
+    case Lattice(tpes) => "???"
+    case Native(clazz) => "???"
   }
 
   case class BoxedBool() extends ERefType[PBoxedBool]
