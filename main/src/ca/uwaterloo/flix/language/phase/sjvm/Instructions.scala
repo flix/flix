@@ -40,13 +40,6 @@ object Instructions {
     x => x
 
   // NATIVE
-  def GETGENERICFIELD
-  [R <: Stack, T <: PRefType]
-  (className: String, fieldName: String):
-  F[R ** PReference[T]] => F[R ** PReference[PAnyObject]] =
-    ???
-
-  // NATIVE
   def XGETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String, fieldType: EType[T1]):
@@ -171,8 +164,10 @@ object Instructions {
   // NATIVE
   def pushUnit
   [R <: Stack]:
-  F[R] => F[R ** PReference[PUnit]] =
+  F[R] => F[R ** PReference[PUnit]] = {
     ???
+    // flix/runtime/value/Unit
+  }
 
   // NATIVE
   def pushNull

@@ -202,13 +202,16 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       ErasedAst.Expression.ArraySlice(visitExp[PReference[PArray[PType]]](base), visitExp(beginIndex), visitExp(endIndex), visitTpe[PReference[PArray[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      ErasedAst.Expression.Ref(visitExp(exp), visitTpe[PReference[PRef[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      val tpe0 = visitTpe[PReference[PRef[PType]]](tpe)
+      ErasedAst.Expression.Ref(visitExp(exp), tpe0.toInternalName, tpe0, loc).asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Deref(exp, tpe, loc) =>
-      ErasedAst.Expression.Deref(visitExp(exp), visitTpe(tpe), loc)
+      val tpe0 = visitTpe[T](tpe)
+      ErasedAst.Expression.Deref(visitExp(exp), tpe0.toInternalName, tpe0, loc)
 
     case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.Assign(visitExp[PReference[PRef[PType]]](exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+      val tpe0 = visitTpe[PReference[PUnit]](tpe)
+      ErasedAst.Expression.Assign(visitExp[PReference[PRef[PType]]](exp1), visitExp(exp2), tpe0.toInternalName, tpe0, loc).asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Existential(fparam, exp, loc) =>
       val FinalAst.FormalParam(sym, tpe) = fparam

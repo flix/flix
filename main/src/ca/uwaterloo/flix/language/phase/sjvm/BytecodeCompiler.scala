@@ -137,30 +137,25 @@ object BytecodeCompiler {
         SWAP ~
         POP
 
-    case Expression.Ref(exp, tpe, loc) =>
+    case Expression.Ref(exp, className, tpe, loc) =>
       WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
-        NEW("Temp ref name based on tpe") ~
+        NEW(className) ~
         DUP ~
-        INVOKESPECIAL("Temp ref name based on tpe", "temp descriptor fields") ~
+        INVOKESPECIAL(className, "()V)") ~
         DUP ~
         compileExp(exp) ~
-        PUTFIELD("Temp ref name based on tpe", "Temp name of the ref field", exp.tpe)
+        PUTFIELD(className, "value", exp.tpe)
 
-    case Expression.Deref(exp, tpe, loc) =>
+    case Expression.Deref(exp, className, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        (tpe match {
-          case EType.Reference(_) =>
-            GETGENERICFIELD("Temp ref name based on tpe", "Temp name of the ref field") ~
-              CAST
-          case _ => XGETFIELD("Temp ref name based on tpe", "Temp name of the ref field", tpe)
-        })
+        XGETFIELD(className, "value", tpe)
 
-    case Expression.Assign(exp1, exp2, tpe, loc) => ???
+    case Expression.Assign(exp1, exp2, className, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
-        PUTFIELD("Temp ref name based on tpe", "Temp name of the ref field", exp2.tpe) ~
+        PUTFIELD(className, "value", exp2.tpe) ~
         pushUnit
 
     case Expression.Existential(fparam, exp, loc) => ???

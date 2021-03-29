@@ -41,8 +41,6 @@ object PType {
 
   sealed trait PReference[T <: PRefType] extends PType with Cat1
 
-  sealed trait PVoid extends PType
-
 }
 
 sealed trait PRefType
