@@ -1,35 +1,39 @@
 namespace Test/Term/Lit/List {
 
     @test
-    def test01(): #{ R(List[Int]) } =
-        let x = R(Nil).;
-        solve x
+    def testLitList01(): Bool =
+        let p = #{
+            A(Nil: List[Int32]).
+            B(Nil: List[Int32]).
+            R(x) :- A(x), B(x).
+        };
+        (solve p) |= #{ R(Nil). }
 
     @test
-    def test02(): #{ R(List[Int]) } =
-        let x = R(1 :: Nil).;
-        solve x
+    def testLitList02(): Bool =
+        let p = #{
+            A(Nil: List[String]).
+            B(Nil: List[String]).
+            R(x) :- A(x), B(x).
+        };
+        (solve p) |= #{ R(Nil). }
 
     @test
-    def test03(): #{ R(List[Int]) } =
-        let x = R(Nil).;
-        let y = R(1 :: Nil).;
-        solve x <+> y
+    def testLitList03(): Bool =
+        let p = #{
+            A(1 :: 2 :: Nil).
+            B(1 :: 2 :: Nil).
+            R(x) :- A(x), B(x).
+        };
+        (solve p) |= #{ R(1 :: 2 :: Nil). }
 
     @test
-    def test04(): #{ R(List[Int]) } =
-        let x = R(Nil).;
-        let y = R(1 :: Nil).;
-        let z = R(1 :: 2 :: Nil).;
-        solve x <+> y <+> z
-
-    @test
-    def test05(): #{ R(List[Int]) } =
-        let x = R(Nil).;
-        let y = R(1 :: Nil).;
-        let z = R(1 :: 2 :: Nil).;
-        let w = R(1 :: 2 :: 3 :: Nil).;
-        solve x <+> y <+> z <+> w
+    def testLitList04(): Bool =
+        let p = #{
+            A("hello" :: "world" :: Nil).
+            B("hello" :: "world" :: Nil).
+            R(x) :- A(x), B(x).
+        };
+        (solve p) |= #{ R("hello" :: "world" :: Nil). }
 
 }
-
