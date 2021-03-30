@@ -471,7 +471,7 @@ namespace Map {
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
-    pub def unionWithKey[k, v, e](f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+    pub def unionWithKey[k, v, e](f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e with Order[k] =
         use RedBlackTree.{blackHeight, foldRight, insertWith};
         let Map(xs) = m1;
         let Map(ys) = m2;
