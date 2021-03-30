@@ -33,7 +33,7 @@ namespace Test/Dec/Class {
             pub def g(x: a): Bool
         }
 
-        pub def h[a has C has D](x: a): Bool = Test/Dec/Class/Test04/C.f(x) and Test/Dec/Class/Test04/D.g(x)
+        pub def h[a](x: a): Bool with C[a], D[a] = Test/Dec/Class/Test04/C.f(x) and Test/Dec/Class/Test04/D.g(x)
     }
 
     namespace Test05 {
@@ -72,7 +72,7 @@ namespace Test/Dec/Class {
     namespace Test07 {
         use Test/Dec/Class/Test06.C;
 
-        pub def g[a has C](x: a): a = x
+        pub def g[a](x: a): a with C[a] = x
     }
 
     namespace Test08 {
@@ -123,9 +123,9 @@ namespace Test/Dec/Class {
 
         instance E[Int]
 
-        pub def g[a has D](x: a): Bool = Test/Dec/Class/Test10/C.f(x)
+        pub def g[a](x: a): Bool with D[a] = Test/Dec/Class/Test10/C.f(x)
 
-        pub def h[a has E](x: a): Bool = Test/Dec/Class/Test10/C.f(x)
+        pub def h[a](x: a): Bool with E[a] = Test/Dec/Class/Test10/C.f(x)
     }
 
     namespace Test11 {
@@ -187,7 +187,7 @@ namespace Test/Dec/Class {
             pub def d(x: a): Int
         }
 
-        pub def f[a has D](x: a): Int = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
+        pub def f[a](x: a): Int with D[a] = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
     }
 
     namespace Test15 {

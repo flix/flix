@@ -121,14 +121,14 @@ namespace Nel {
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def memberOf[a has Eq](a: a, xs: Nel[a]): Bool = match xs {
+    pub def memberOf[a](a: a, xs: Nel[a]): Bool with Eq[a] = match xs {
         case Nel(h, l) => h == a or List.memberOf(a, l)
     }
 
     ///
     /// Finds the smallest element of `xs` according to the `Order` on `a`.
     ///
-    pub def minimum[a has Order](xs: Nel[a]): a =
+    pub def minimum[a](xs: Nel[a]): a with Order[a] =
         reduceLeft(Order.min, xs)
 
     ///
@@ -140,7 +140,7 @@ namespace Nel {
     ///
     /// Finds the largest element of `xs` according to the `Order` on `a`.
     ///
-    pub def maximum[a has Order](xs: Nel[a]): a =
+    pub def maximum[a](xs: Nel[a]): a with Order[a] =
         reduceLeft(Order.max, xs)
 
     ///
@@ -227,7 +227,7 @@ namespace Nel {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace[a has Eq](x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace[a](x: a, y: a, xs: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.
@@ -267,7 +267,7 @@ namespace Nel {
     ///
     /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold[a has Monoid](xs: Nel[a]): a = Foldable.fold(xs)
+    pub def fold[a](xs: Nel[a]): a with Monoid[a] = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -290,7 +290,7 @@ namespace Nel {
     ///
     /// Applies `combine` to all elements in `xs` until a single value is obtained.
     ///
-    pub def reduce[a has Semigroup](xs: Nel[a]): a = match xs {
+    pub def reduce[a](xs: Nel[a]): a with Semigroup[a] = match xs {
         case Nel(h, l) => Foldable.foldLeft((acc, x) -> Semigroup.combine(acc, x), h, l)
     }
 

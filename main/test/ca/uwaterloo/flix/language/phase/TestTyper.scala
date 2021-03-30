@@ -316,7 +316,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def foo(x: a): Int
         |}
         |
-        |def bar[a has C, b](x: a, y: b): Int = C.foo(x) + C.foo(y)
+        |def bar[a, b](x: a, y: b): Int with C[a] = C.foo(x) + C.foo(y)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.NoMatchingInstance](result)
