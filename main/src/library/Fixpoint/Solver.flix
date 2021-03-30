@@ -21,29 +21,12 @@ use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
 
-// TODO: The following tests have been commented and should be fixed an incommented.
-// Test.Dec.RelAlias
-// Test.Exp.Fixpoint.Fold
-// Test.Predicate.Filter
-// Test.Predicate.Guard
-// Test.Predicate.Union
-// Test.Term.Apply
-// Test.Term.Var.CapturedVar
-// Test.Term.Var.WildVar
-// fixpoint-computations-on-lattices
-// TestConstant
-// IFDS
-// IDE
-// SUOpt
-// FloydWarshall
-// TestIntroduction
-
 namespace Fixpoint {
-    pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] =
+    pub def solve[v](d: Datalog[v]): Datalog[v] with Eq[v], Order[v], ToString[v] =
         stratify(d) |>
         solveWithStratification(d)
 
-    pub def solveWithStratification[v : Order : Eq : ToString](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] =
+    pub def solveWithStratification[v](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Eq[v], Order[v], ToString[v]  =
         let _ = notifyPreSolve(d, stf);
         let model = (compile(d, stf) |>
          queryStmt |>
@@ -58,7 +41,7 @@ namespace Fixpoint {
             Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2)) as & Pure
     }
 
-    pub def isSubsetOf[v : Order](d1: Datalog[v], d2: Datalog[v]): Bool = match (d1, d2) {
+    pub def isSubsetOf[v](d1: Datalog[v], d2: Datalog[v]): Bool with Order[v] = match (d1, d2) {
         case (Datalog(edb1, _), Datalog(edb2, _)) =>
             let db1 = toDatabase(edb1);
             let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
@@ -71,7 +54,7 @@ namespace Fixpoint {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
 
-    pub def foldRight[v : Order, b](d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b =
+    pub def foldRight[v, b](d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b with Order[v] =
         let Datalog(facts, _) = project(p, d);
         Array.foldRight(factToTuple >> f, i, facts) as & Pure
 
@@ -101,7 +84,7 @@ namespace Fixpoint {
         let terms = Array.map(v -> HeadTerm.Lit(v, Unknown), tuple) as & Pure;
         Constraint(HeadAtom(PredSym(p, Unknown), denotation, terms, Unknown), [], Unknown) as & Pure
 
-    def toDatabase[v : Order](facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] =
+    def toDatabase[v](facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] with Order[v] =
         Array.foldRight(c -> match c {
             case Constraint(HeadAtom(PredSym(pred, _), _, _, _), _, _) =>
                 Map.insertWith(Set.union, pred, Set#{factToTuple(c)})

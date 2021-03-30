@@ -23,7 +23,7 @@ use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard0, Guard1, Guard2, Guard3, Guard4
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
-    def compile[v : ToString](cs: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match cs {
+    def compile[v](cs: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] with ToString[v] = match cs {
         case Datalog(facts, rules) =>
             let evalFacts = Array.fold(Array.map(compileRule, facts)) as & Pure;
             let evalStrata =
@@ -36,7 +36,7 @@ namespace Fixpoint {
 
     /// Compile all rules to be computed in a stratum to RAM
     /// by using semi-naive evaluation as a code generator.
-    def compileStratum[v : ToString](stratum: Array[Constraint[v]]): RamStmt[v] =
+    def compileStratum[v](stratum: Array[Constraint[v]]): RamStmt[v] with ToString[v] =
         let fold = f -> xs -> Set.foldRight(x -> Monoid.combine(f(x)), Monoid.empty(), xs);
         let idb = predicatesOf(stratum);
         let eval = Array.fold(Array.map(compileRule, stratum)) as & Pure;
@@ -61,7 +61,7 @@ namespace Fixpoint {
         List.fold(eval :: mergeDelta :: fixpoint :: Nil)
 
     /// Compile rule into a join loop.
-    def compileRule[v : ToString](rule: Constraint[v]): RamStmt[v] = match rule {
+    def compileRule[v](rule: Constraint[v]): RamStmt[v] with ToString[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred, _), _, headTerms, _), body, _) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
@@ -80,7 +80,7 @@ namespace Fixpoint {
             List.fold(comment :: insert :: Nil)
     }
 
-    def compileRuleIncr[v : ToString](rule: Constraint[v]): RamStmt[v] = match rule {
+    def compileRuleIncr[v](rule: Constraint[v]): RamStmt[v] with ToString[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred, _), _, headTerms, _), body, _) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
