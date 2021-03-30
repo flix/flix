@@ -1,41 +1,32 @@
 namespace Test/Term/Lit/Result {
 
     @test
-    def test01(): #{ R(Result[Int, String]) } =
-        let x = R(Ok(123)).;
-        solve x
+    def testLitResult01(): Bool =
+        let p = #{
+            A(Ok(123): Result[Int32, Int32]).
+            B(Ok(123): Result[Int32, Int32]).
+            R(x) :- A(x), B(x).
+        };
+        (solve p) |= #{ R(Ok(123)). }
 
     @test
-    def test02(): #{ R(Result[Int, String]) } =
-        let x = R(Err("hello world!")).;
-        solve x
+    def testLitResult02(): Bool =
+        let p = #{
+            A(Ok("Hello World"): Result[String, Int32]).
+            B(Ok("Hello World"): Result[String, Int32]).
+            R(x) :- A(x), B(x).
+        };
+        (solve p) |= #{ R(Ok("Hello World")). }
 
     @test
-    def test03(): #{ R(Result[Int, String]) } =
-        let x = R(Ok(123)).;
-        let y = R(Err("hello world!")).;
-        solve x <+> y
-
-    @test
-    def test04(): #{ R(Result[Int, String]) } =
-        let x = R(Ok(123)).;
-        let y = R(Ok(456)).;
-        let z = R(Err("hello world!")).;
-        solve x <+> y <+> z
-
-    @test
-    def test05(): #{ R(Result[Int, String]) } =
-        let x = R(Ok(123)).;
-        let y = R(Err("hello world!")).;
-        let z = R(Err("Goodbye world!")).;
-        solve x <+> y <+> z
-
-    @test
-    def test06(): #{ R(Result[Int, String]) } =
-        let x = R(Ok(123)).;
-        let y = R(Ok(456)).;
-        let z = R(Err("hello world!")).;
-        let w = R(Err("Goodbye world!")).;
-        solve x <+> y <+> z <+> w
+    def testLitResult03(): Bool =
+        let p = #{
+            A(Ok(123)).
+            B(Ok(123)).
+            A(Err(456)).
+            B(Err(456)).
+            R(x) :- A(x), B(x).
+        };
+        (solve p) |= #{ R(Ok(123)). }
 
 }

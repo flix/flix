@@ -301,12 +301,11 @@ class LangSuite extends Suites(
   // Term.
   //
   new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix")(Options.TestWithLibrary),
-
   new FlixTest("Test.Term.Lit", "main/test/flix/Test.Term.Lit.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Lit.Result", "main/test/flix/Test.Term.Lit.Result.flix")(Options.TestWithLibrary),
 
   new FlixTest("Test.Term", List(
     "main/test/flix/Test.Term.Lit.Option.flix",
+    "main/test/flix/Test.Term.Lit.Result.flix",
     "main/test/flix/Test.Term.Lit.List.flix",
     "main/test/flix/Test.Term.Lit.Set.flix",
     "main/test/flix/Test.Term.Var.CapturedVar.flix",
