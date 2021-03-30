@@ -29,8 +29,16 @@ namespace Fixpoint/Ast {
         pub def toString(body: BodyPredicate[v]): String =
             use Fixpoint.commaSeparate;
             match body {
-                case BodyAtom(predSym, _, Positive, terms, _) => "${predSym}(${commaSeparate(terms)})" //TODO: denotation
-                case BodyAtom(predSym, _, Negative, terms, _) => "not ${predSym}(${commaSeparate(terms)})" //TODO: denotation
+                case BodyAtom(predSym, Relational, Positive, terms, _) => "${predSym}(${commaSeparate(terms)})"
+                case BodyAtom(predSym, Relational, Negative, terms, _) => "not ${predSym}(${commaSeparate(terms)})"
+                case BodyAtom(predSym, Latticenal(_), polarity, terms, _) =>
+                    let len = Array.length(terms) as & Pure;
+                    let k = terms[0..len-1] as & Pure;
+                    let l = terms[len-1] as & Pure;
+                    match polarity {
+                        case Positive => "${predSym}(${commaSeparate(k)}; ${l})"
+                        case Negative => "not ${predSym}(${commaSeparate(k)}; ${l})"
+                    }
                 case Guard0(_) => "f?()"
                 case Guard1(_, v, _) => "f?(${v})"
                 case Guard2(_, v1, v2, _) => "f?(${v1}, ${v2})"

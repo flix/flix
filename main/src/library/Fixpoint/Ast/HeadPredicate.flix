@@ -22,7 +22,12 @@ namespace Fixpoint/Ast {
         pub def toString(head: HeadPredicate[v]): String =
             use Fixpoint.commaSeparate;
             match head {
-                case HeadAtom(predSym, _, terms, _) => "${predSym}(${commaSeparate(terms)})" // TODO: Denotation
+                case HeadAtom(predSym, Relational, terms, _) => "${predSym}(${commaSeparate(terms)})"
+                case HeadAtom(predSym, Latticenal(_), terms, _) =>
+                    let len = Array.length(terms) as & Pure;
+                    let k = terms[0..len-1] as & Pure;
+                    let l = terms[len-1] as & Pure;
+                    "${predSym}(${commaSeparate(k)}; ${l})"
             }
     }
 }
