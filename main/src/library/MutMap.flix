@@ -30,7 +30,7 @@ namespace MutMap {
     ///
     /// Returns `true` if and only if `m` is the empty map.
     ///
-    pub def isEmpty[k, v](m: MutMap[k, v]): Bool & Impure with Eq[k] =
+    pub def isEmpty(m: MutMap[k, v]): Bool & Impure =
         let MutMap(mm) = m;
         Map.isEmpty(deref mm)
 
