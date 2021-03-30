@@ -213,9 +213,35 @@ instance Boxable[String] {
     }
 }
 
-// TODO: Add Tuples
+instance Boxable[(a, b)] with Order[a], Order[b], ToString[a], ToString[b] {
+    pub def box(x: (a, b)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b), o2 as (a, b));
+        let toString = o -> ToString.toString(o as (a, b));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b) = match x {
+        case BoxedObject(v, _, _) => v as (a, b)
+        case _                    => ?bug
+    }
+}
 
-// TODO: Add Option
-// TODO: Add List
-// TODO: Add Nel
-// TODO: Add Set/Map
+instance Boxable[(a, b, c)] with Order[a], Order[b], Order[c], ToString[a], ToString[b], ToString[c] {
+    pub def box(x: (a, b, c)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c), o2 as (a, b, c));
+        let toString = o -> ToString.toString(o as (a, b, c));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c)
+        case _                    => ?bug
+    }
+}
+
+// TODO: Benj: Add for Tuples 3, 4, 5.
+
+// TODO: Benj: Add Option
+// TODO: Benj: Add List
+// TODO: Benj: Add Nel
+// TODO: Benj: Add Set/Map
