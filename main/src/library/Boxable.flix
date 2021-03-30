@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be boxed.
 ///
-lawless class Boxable[a] {
+lawless class Boxable[a] with Eq[a], Order[a], ToString[a] {
 
     ///
     /// Boxes the given `x`.
@@ -213,7 +213,7 @@ instance Boxable[String] {
     }
 }
 
-instance Boxable[(a, b)] with Order[a], Order[b], ToString[a], ToString[b] {
+instance Boxable[(a, b)] with Boxable[a], Boxable[b] {
     pub def box(x: (a, b)): Boxed = {
         let value = x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(o1 as (a, b), o2 as (a, b));
@@ -226,7 +226,7 @@ instance Boxable[(a, b)] with Order[a], Order[b], ToString[a], ToString[b] {
     }
 }
 
-instance Boxable[(a, b, c)] with Order[a], Order[b], Order[c], ToString[a], ToString[b], ToString[c] {
+instance Boxable[(a, b, c)] with Boxable[a], Boxable[b], Boxable[c] {
     pub def box(x: (a, b, c)): Boxed = {
         let value = x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(o1 as (a, b, c), o2 as (a, b, c));
