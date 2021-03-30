@@ -1454,10 +1454,9 @@ object ParsedAst {
     * @param sp1     the position of the first character in the type parameter.
     * @param ident   the type variable being bound
     * @param kind    the optional kind of the type variable.
-    * @param classes the bounding classes.
     * @param sp2     the position of the last character in the type parameter.
     */
-  case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], classes: Seq[Name.QName], sp2: SourcePosition)
+  case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], sp2: SourcePosition)
 
   /**
     * A type constraint.

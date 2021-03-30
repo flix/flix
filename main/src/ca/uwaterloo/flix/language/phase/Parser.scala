@@ -261,7 +261,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def TypeParam: Rule1[ParsedAst.TypeParam] = rule {
-      SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ zeroOrMore(optWS ~ "has" ~ optWS ~ Names.QualifiedClass) ~ SP ~> ParsedAst.TypeParam
+      SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ SP ~> ParsedAst.TypeParam
     }
 
     def TypeParams: Rule1[ParsedAst.TypeParams] = {
