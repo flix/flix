@@ -131,11 +131,13 @@ class LangSuite extends Suites(
   //
   // Fixpoint.
   //
-  new FlixTest("Test.Exp.Fixpoint.Constraint", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Fixpoint.Compose", "main/test/flix/Test.Exp.Fixpoint.Compose.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Fixpoint.Entails", "main/test/flix/Test.Exp.Fixpoint.Entails.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Fixpoint.Project", "main/test/flix/Test.Exp.Fixpoint.Project.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Fixpoint.Solve", "main/test/flix/Test.Exp.Fixpoint.Solve.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Fixpoint", List(
+    "main/test/flix/Test.Exp.Fixpoint.Constraint.flix",
+    "main/test/flix/Test.Exp.Fixpoint.Compose.flix",
+    "main/test/flix/Test.Exp.Fixpoint.Entails.flix",
+    "main/test/flix/Test.Exp.Fixpoint.Project.flix",
+    "main/test/flix/Test.Exp.Fixpoint.Solve.flix"
+  ), Options.TestWithLibrary),
 
   //
   // Force.
@@ -287,10 +289,12 @@ class LangSuite extends Suites(
   //
   // Predicate.
   //
-  new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Predicate.Nullary", "main/test/flix/Test.Predicate.Nullary.flix")(Options.TestWithLibrary),
-  new Ignore("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix")(Options.TestWithLibrary), // TODO
+  new FlixTest("Test.Predicate", List(
+    "main/test/flix/Test.Predicate.Filter.flix",
+    "main/test/flix/Test.Predicate.Guard.flix",
+    "main/test/flix/Test.Predicate.Nullary.flix",
+    // "main/test/flix/Test.Predicate.Union.flix" // TODO
+  ), Options.TestWithLibrary),
 
   //
   // Stratified Negation.
@@ -300,10 +304,9 @@ class LangSuite extends Suites(
   //
   // Term.
   //
-  new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Lit", "main/test/flix/Test.Term.Lit.flix")(Options.TestWithLibrary),
-
   new FlixTest("Test.Term", List(
+    "main/test/flix/Test.Term.Apply.flix",
+    "main/test/flix/Test.Term.Lit.flix",
     "main/test/flix/Test.Term.Lit.Option.flix",
     "main/test/flix/Test.Term.Lit.Result.flix",
     "main/test/flix/Test.Term.Lit.List.flix",
