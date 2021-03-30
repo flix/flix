@@ -1,149 +1,82 @@
 namespace Test/Predicate/Nullary {
 
     @test
-    def testFalsePredicate01(): #{ False() } =
-        let x = False().;
-        solve x
+    def testNullaryPredicate01(): Bool =
+        (solve #{ A(). }) |= #{ A(). }
 
     @test
-    def testFalsePredicate02(): #{ False() } =
-        let x = False().;
-        let u = x <+> x;
-        solve u
+    def testNullaryPredicate02(): Bool =
+        (solve #{ A(). B(). C(). }) |= #{ A(). }
 
     @test
-    def testFalsePredicate03(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let u = x <+> y;
-        solve u
+    def testNullaryPredicate03(): Bool =
+        (solve #{ A(). A(). A(). }) |= #{ A(). }
 
     @test
-    def testFalsePredicate04(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let u = x <+> y;
-        let v = y <+> x;
-        solve u <+> v
+    def testNullaryPredicate04(): Bool =
+        (solve #{ A(). }) |= #{ A(). A(). A(). }
 
     @test
-    def testFalsePredicate05(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let _ = x <+> y;
-        let v = y <+> x;
-        let w = y <+> v;
-        solve w
+    def testNullaryPredicate05(): Bool =
+        (solve #{ A(). A(). A(). }) |= #{ A(). A(). A(). }
 
     @test
-    def testFalsePredicate06(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let u = solve x;
-        let v = solve y;
-        u <+> v
+    def testNullaryPredicate06(): Bool =
+        let p = #{
+            R() :- A(), B().
+        };
+        let m = solve p;
+        not (m |= #{ R(). })
 
     @test
-    def testFalsePredicate07(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let u = solve (x <+> y);
-        let v = solve (y <+> x);
-        u <+> v
-
-
-    @test
-    def testTruePredicate01(): #{ True() } =
-        solve True().
+    def testNullaryPredicate07(): Bool =
+        let p = #{
+            A().
+            R() :- A(), B().
+        };
+        let m = solve p;
+        not (m |= #{ R(). })
 
     @test
-    def testTruePredicate02(): #{ True() } =
-        let x = True().;
-        let u = x <+> x;
-        solve u
+    def testNullaryPredicate08(): Bool =
+        let p = #{
+            A().
+            B().
+            R() :- A(), B().
+        };
+        let m = solve p;
+        m |= #{ R(). }
 
     @test
-    def testTruePredicate03(): #{ True() } =
-        let x = True().;
-        let u = x <+> x <+> x;
-        solve u
-
-    @test
-    def testTruePredicate04(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = x <+> y;
-        solve u
-
-    @test
-    def testTruePredicate05(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = (x <+> y) <+> (y <+> x);
-        solve u
-
-    @test
-    def testTruePredicate06(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = solve x;
-        let v = solve y;
-        (solve u) <+> (solve v)
-
-    @test
-    def testTruePredicate07(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = solve x <+> y;
-        let v = solve y <+> x;
-        (solve u) <+> (solve v)
-
-    @test
-    def testTruePredicate08(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = solve (solve x <+> y);
-        let v = solve (solve y <+> x);
-        (solve u) <+> (solve v)
-
-    @test
-    def testTruePredicate09(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = solve (solve x <+> y);
-        let v = solve (solve y <+> x);
-        solve (solve u <+> v)
-
-    @test
-    def testTruePredicate10(): Bool =
+    def testTruePredicate01(): Bool =
         (True().) |= (True().)
 
     @test
-    def testTruePredicate11(): Bool =
+    def testTruePredicate02(): Bool =
         (True().) |= #{ True(). True(). }
 
     @test
-    def testTruePredicate12(): Bool =
+    def testTruePredicate03(): Bool =
         (True().) |= #{ True(). True(). True(). }
 
     @test
-    def testTruePredicate13(): Bool =
+    def testTruePredicate04(): Bool =
         #{ True(). True(). } |= (True().)
 
     @test
-    def testTruePredicate14(): Bool =
+    def testTruePredicate05(): Bool =
         #{ True(). True(). True(). } |= (True().)
 
     @test
-    def testTruePredicate15(): Bool =
+    def testTruePredicate06(): Bool =
         (solve True().) |= (True().)
 
     @test
-    def testTruePredicate16(): Bool =
+    def testTruePredicate07(): Bool =
         (solve (solve True().)) |= (True().)
 
     @test
-    def testTruePredicate17(): Bool =
+    def testTruePredicate08(): Bool =
         (solve (solve (solve True().))) |= (True().)
 
 }
