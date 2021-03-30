@@ -1,106 +1,57 @@
 namespace Test/Term/Lit {
 
     ///////////////////////////////////////////////////////////////////////////////
-    /// General                                                                 ///
-    ///////////////////////////////////////////////////////////////////////////////
-    @test
-    def testLit01(): #{ A(Int, Int, String) } =
-        let x = A(1, 2, "hello").;
-        let y = A(3, 4, "world!").;
-        solve x <+> y
-
-    @test
-    def testLit02(): #{ A(Int, Int, String) } =
-        let x = A(1, 1, "hello").;
-        let y = A(1, 1, "world!").;
-        solve x <+> y
-
-    @test
-    def testLit03(): #{ A(Int, Int, String) } =
-        let x = A(1, 1, "hello world").;
-        let y = A(1, 1, v) :- A(1, 1, v).;
-        solve x <+> y
-
-    @test
-    def testLit04(): #{ A(Int, Int, String) } =
-        let x = A(1, 1, "abc").;
-        let y = A(w, w, "abc") :- A(w, w, "abc").;
-        solve x <+> y
-
-    ///////////////////////////////////////////////////////////////////////////////
     /// Unit                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////
     @test
-    def testUnitLit01(): #{ R(Unit) } =
-        let x = R(()).;
-        solve x
+    def testUnitLit01(): Bool =
+        let f = A(()).;
+        let p = R(x) :- A(x).;
+        let m = solve (f <+> p);
+        m |= R(()).
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Bool                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////
     @test
-    def testBoolLit01(): #{ R(Bool) } =
-        let x = R(true).;
-        solve x
+    def testBoolLit01(): Bool =
+        let f = A(false).;
+        let p = R(x) :- A(x).;
+        let m = solve (f <+> p);
+        m |= R(false).
 
     @test
-    def testBoolLit02(): #{ R(Bool) } =
-        let x = R(false).;
-        solve x
+    def testBoolLit02(): Bool =
+        let f = A(true).;
+        let p = R(x) :- A(x).;
+        let m = solve (f <+> p);
+        m |= R(true).
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Char                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////
     @test
-    def testCharLit01(): #{ R(Char) } =
-        let x = R(' ').;
-        solve x
+    def testCharLit01(): Bool =
+        let f = A(' ').;
+        let p = R(x) :- A(x).;
+        let m = solve (f <+> p);
+        m |= R(' ').
 
     @test
-    def testCharLit02(): #{ R(Char) } =
-        let x = R('a').;
-        solve x
+    def testCharLit02(): Bool =
+        let f = A('a').;
+        let p = R(x) :- A(x).;
+        let m = solve (f <+> p);
+        m |= R('a').
 
     @test
-    def testCharLit03(): #{ R(Char) } =
-        let x = R('x').;
-        solve x
+    def testCharLit03(): Bool =
+        let f = A('x').;
+        let p = R(x) :- A(x).;
+        let m = solve (f <+> p);
+        m |= R('x').
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Float32                                                                 ///
-    ///////////////////////////////////////////////////////////////////////////////
-    @test
-    def testFloat32Lit01(): #{ R(Float32) } =
-        let x = R(0.0f32).;
-        solve x
-
-    @test
-    def testFloat32Lit02(): #{ R(Float32) } =
-        let x = R(-123.456f32).;
-        solve x
-
-    @test
-    def testFloat32Lit03(): #{ R(Float32) } =
-        let x = R(123.567f32).;
-        solve x
-
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Float64                                                                 ///
-    ///////////////////////////////////////////////////////////////////////////////
-    @test
-    def testFloat64Lit01(): #{ R(Float64) } =
-        let x = R(0.0f64).;
-        solve x
-
-    @test
-    def testFloat64Lit02(): #{ R(Float64)  } =
-        let x = R(-123.456f64).;
-        solve x
-
-    @test
-    def testFloat64Lit03(): #{ R(Float64)  } =
-        let x = R(123.567f64).;
-        solve x
+    // TODO: Refactor the rest.
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Int8                                                                    ///
