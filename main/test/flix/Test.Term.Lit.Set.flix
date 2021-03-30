@@ -1,7 +1,7 @@
 namespace Test/Term/Lit/Set {
 
     @test
-    def testSetLit01(): Bool =
+    def testLitSet01(): Bool =
         let p = #{
             A(Set#{}: Set[Int32]).
             B(Set#{}: Set[Int32]).
@@ -10,7 +10,7 @@ namespace Test/Term/Lit/Set {
         (solve p) |= #{ R(Set#{}). }
 
     @test
-    def testSetLit02(): Bool =
+    def testLitSet02(): Bool =
         let p = #{
             A(Set#{1}).
             B(Set#{1}).
@@ -19,7 +19,7 @@ namespace Test/Term/Lit/Set {
         (solve p) |= #{ R(Set#{1}). }
 
     @test
-    def testSetLit03(): Bool =
+    def testLitSet03(): Bool =
         let p = #{
             A(Set#{1, 2}).
             B(Set#{2, 1}).
@@ -28,7 +28,7 @@ namespace Test/Term/Lit/Set {
         (solve p) |= #{ R(Set#{1, 2}). }
 
     @test
-    def testSetLit04(): Bool =
+    def testLitSet04(): Bool =
         let p = #{
             A(Set#{1, 2, 3}).
             B(Set#{3, 2, 1}).
