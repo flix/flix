@@ -15,7 +15,7 @@
  */
 namespace Fixpoint/Ast {
     pub enum HeadPredicate[v] {
-        case HeadAtom(PredSym, Denotation, Array[HeadTerm[v]], SourceLocation)
+        case HeadAtom(PredSym, Denotation[v], Array[HeadTerm[v]], SourceLocation)
     }
 
     instance ToString[HeadPredicate[v]] with ToString[v] {

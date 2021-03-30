@@ -122,7 +122,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val PredSym: Type = Type.mkEnum(Enums.PredSym, Nil)
     lazy val VarSym: Type = Type.mkEnum(Enums.VarSym, Nil)
 
-    lazy val Denotation: Type = Type.mkEnum(Enums.Denotation, Nil)
+    lazy val Denotation: Type = Type.mkEnum(Enums.Denotation, Boxed :: Nil)
     lazy val Polarity: Type = Type.mkEnum(Enums.Polarity, Nil)
     lazy val SourceLocation: Type = Type.mkEnum(Enums.SourceLocation, Nil)
 
