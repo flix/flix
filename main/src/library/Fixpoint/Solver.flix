@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym};
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
 use Fixpoint/Ast.Datalog.Datalog;
-use Fixpoint/Ast.Denotation.Relational;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
+use Fixpoint/Ram.RelSym;
 
 // TODO: The following tests have been commented and should be fixed an incommented.
 // Test.Dec.RelAlias
@@ -95,11 +95,21 @@ namespace Fixpoint {
         }, terms) as & Pure
     }
 
-    def tupleToFact(p: String, tuple: Array[v]): Constraint[v] =
-        use Fixpoint/Ast.SourceLocation.Unknown;
-        let denotation = Relational; // TODO
-        let terms = Array.map(v -> HeadTerm.Lit(v, Unknown), tuple) as & Pure;
-        Constraint(HeadAtom(PredSym(p, Unknown), denotation, terms, Unknown), [], Unknown) as & Pure
+    def tupleToFact(relSym: RelSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match relSym {
+        case RelSym.Full(relName, denotation) =>
+            use Fixpoint/Ast.SourceLocation.Unknown;
+            let terms = match denotation {
+                case Denotation.Relational => Array.map(v -> HeadTerm.Lit(v, Unknown), tuple)
+                case Denotation.Latticenal(_) => Array.init(i -> {
+                    if (i < Array.length(tuple))
+                        HeadTerm.Lit(tuple[i], Unknown)
+                    else
+                        HeadTerm.Lit(lat, Unknown)
+                }, Array.length(tuple) + 1)
+            };
+            Constraint(HeadAtom(PredSym(relName, Unknown), denotation, terms, Unknown), [], Unknown)
+        case _ => ?bug
+    }
 
     def toDatabase[v : Order](facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] =
         Array.foldRight(c -> match c {
@@ -107,10 +117,13 @@ namespace Fixpoint {
                 Map.insertWith(Set.union, pred, Set#{factToTuple(c)})
         }, Map#{}, facts) as & Pure
 
-    def toAst(db: Map[String, Set[Array[v]]]): Datalog[v] & Impure =
+    def toAst(db: Database[v]): Datalog[v] & Impure =
         let facts = MutList.new();
-        Map.foreach(k -> v -> Set.foreach(t -> {
-            MutList.push!(tupleToFact(k, t), facts)
-        }, v), db);
+        MutMap.foreach(relSym -> rel -> match relSym {
+            case RelSym.Full(_) => MutMap.foreach(t -> l -> {
+                MutList.push!(tupleToFact(relSym, t, l), facts)
+            }, rel)
+            case _ => ()
+        }, db);
         Datalog(MutList.toArray(facts), [])
 }

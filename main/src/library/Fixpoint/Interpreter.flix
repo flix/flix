@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
-use Fixpoint/Ast.PredSym;
-use Fixpoint/Ast.PredSym.PredSym;
-use Fixpoint.Tuple;
+use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar, toDenotation};
+use Fixpoint/Ast.Denotation;
 
-instance Order[Tuple[v]] with Order[v] {
-    pub def compare(a: Tuple[v], b: Tuple[v]): Comparison = compareHelper(a, b, 0) as & Pure
+instance Order[Array[v]] with Order[v] {
+    pub def compare(a: Array[v], b: Array[v]): Comparison = compareHelper(a, b, 0) as & Pure
+}
+
+// TODO: Delete after fixing MutMap.isEmpty
+instance Eq[Array[v]] with Eq[v] {
+    pub def eq(x: Array[v], y: Array[v]): Bool = Array.sameElements(x, y) as & Pure
 }
 
 def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & Impure =
@@ -35,30 +38,26 @@ def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & I
     }
 
 namespace Fixpoint {
-    pub type alias Tuple[v] = Array[v]
-    type alias Database[v] = MutMap[RelSym[v], MutSet[Tuple[v]]]
+    type alias Tuple[v] = Array[v]
+    type alias Database[v] = MutMap[RelSym[v], MutMap[Tuple[v], v]]
     type alias SearchEnv[v] = Array[Tuple[v]]
 
-    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure =
+    def interpret[v : Order : Eq : ToString](stmt: RamStmt[v]): Database[v] & Impure =
+        let _ = notifyPreInterpret(stmt);
         let db = MutMap.empty();
         evalStmt(db, stmt);
-        toImmutable(db)
-
-    def toImmutable(db: Database[v]): Map[String, Set[Tuple[v]]] & Impure =
-        MutMap.foldLeftWithKey(acc -> k -> v -> match k {
-            case RelSym.Full(relName, _) => Map.insert(relName, MutSet.toImmutable(v), acc)
-            case _ => acc
-        }, Map#{}, db)
+        db
 
     def evalStmt[v : Order : Eq](db: Database[v], stmt: RamStmt[v]): Unit & Impure = match stmt {
         case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
-        case RamStmt.Merge(src, dst) =>
-            db |>
-            MutMap.getOrElsePut!(dst, MutSet.empty()) |>
-            MutSet.addAll!(MutMap.getWithDefault(src, MutSet.empty(), db))
+        case RamStmt.Merge(src, dst) => match toDenotation(src) {
+            case Denotation.Relational =>
+                MutMap.getOrElsePut!(dst, MutMap.empty(), db) |>
+                MutMap.merge!(MutMap.getWithDefault(src, MutMap.empty(), db)) // TODO: optimize MutMap.merge!
+            case Denotation.Latticenal(_) => ??? // TODO: lattice
+        }
         case RamStmt.Assign(lhs, rhs) =>
-            db |>
-            MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutSet.empty(), db))
+            MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutMap.empty(), db), db)
         case RamStmt.Purge(relSym) => MutMap.remove!(relSym, db)
         case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
         case RamStmt.Until(test, body) =>
@@ -81,21 +80,31 @@ namespace Fixpoint {
     def evalOp[v : Order : Eq](db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure =
         match op {
             case RelOp.Search(RowVar.Index(i), relSym, body) =>
-                MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
-                MutSet.foreach(row -> {
-                    env[i] = row;
-                    evalOp(db, env, body)
-                })
+                let rel = MutMap.getWithDefault(relSym, MutMap.empty(), db);
+                match toDenotation(relSym) {
+                    case Denotation.Relational => MutMap.foreach(t -> l -> {
+                        env[i] = t;
+                        evalOp(db, env, body)
+                    }, rel)
+                    case Denotation.Latticenal(_) => ??? // TODO: lattice
+                }
             case RelOp.Query(RowVar.Index(i), relSym, query, body) =>
-                MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
-                MutSet.queryWith(evalQuery(env, 0, query), row -> {
-                    env[i] = row;
-                    evalOp(db, env, body)
-                })
+                let rel = MutMap.getWithDefault(relSym, MutMap.empty(), db);
+                match toDenotation(relSym) {
+                    case Denotation.Relational =>
+                        MutMap.queryWith(evalQuery(env, 0, query), t -> l -> {
+                            env[i] = t;
+                            evalOp(db, env, body)
+                        }, rel)
+                    case Denotation.Latticenal(_) => ??? // TODO: lattice
+                }
             case RelOp.Project(terms, relSym) =>
                 let tuple = Array.map(evalTerm(env), terms);
-                MutMap.getOrElsePut!(relSym, MutSet.empty(), db) |>
-                MutSet.add!(tuple)
+                let rel = MutMap.getOrElsePut!(relSym, MutMap.empty(), db);
+                match toDenotation(relSym) {
+                    case Denotation.Relational => MutMap.put!(tuple, default, rel)
+                    case Denotation.Latticenal(_) => ??? // TODO: lattice
+                }
             case RelOp.If(test, then) =>
                 if (evalBoolExp(db, env, test)) {
                     evalOp(db, env, then)
@@ -116,11 +125,14 @@ namespace Fixpoint {
     def evalBoolExp[v : Order : Eq](db: Database[v], env: SearchEnv[v], es: List[BoolExp[v]]): Bool =
         List.forall(exp -> match exp {
             case BoolExp.Empty(relSym) =>
-                MutMap.getWithDefault(relSym, MutSet.empty(), db) |> MutSet.isEmpty
+                MutMap.isEmpty(MutMap.getWithDefault(relSym, MutMap.empty(), db))
             case BoolExp.NotMemberOf(terms, relSym) => match MutMap.get(relSym, db) {
-                case Some(table) =>
-                    let tuple = Array.map(evalTerm(env), terms);
-                    not MutSet.memberOf(tuple, table)
+                case Some(rel) => match toDenotation(relSym) {
+                    case Denotation.Relational =>
+                        let tuple = Array.map(evalTerm(env), terms);
+                        not MutMap.memberOf(tuple, rel)
+                    case Denotation.Latticenal(_) => ??? // TODO: lattice
+                }
                 case None => true
             }
             case BoolExp.Eq(lhs, rhs) =>

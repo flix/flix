@@ -23,6 +23,12 @@ namespace Fixpoint/Ram {
         case New(String, Denotation[v])
     }
 
+    pub def toDenotation(relSym: RelSym[v]): Denotation[v] = match relSym {
+        case Full(_, den) => den
+        case Delta(_, den) => den
+        case New(_, den) => den
+    }
+
     instance ToString[RelSym[v]] {
         pub def toString(relSym: RelSym[v]): String = match relSym {
             case Full(name, _) => name
