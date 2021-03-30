@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 namespace Fixpoint/Ast {
-    pub enum Denotation {
-        case Relational,
-        case Latticenal
+    pub enum Denotation[v] {
+        case Relational
+        case Latticenal(Unit -> v, v -> v -> Bool, v -> v -> v, v -> v -> v)
     }
 }

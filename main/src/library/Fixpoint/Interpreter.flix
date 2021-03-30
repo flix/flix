@@ -36,7 +36,7 @@ def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & I
 
 namespace Fixpoint {
     pub type alias Tuple[v] = Array[v]
-    type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
+    type alias Database[v] = MutMap[RelSym[v], MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Array[Tuple[v]]
 
     pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure =
@@ -46,7 +46,7 @@ namespace Fixpoint {
 
     def toImmutable(db: Database[v]): Map[String, Set[Tuple[v]]] & Impure =
         MutMap.foldLeftWithKey(acc -> k -> v -> match k {
-            case RelSym.Full(relName) => Map.insert(relName, MutSet.toImmutable(v), acc)
+            case RelSym.Full(relName, _) => Map.insert(relName, MutSet.toImmutable(v), acc)
             case _ => acc
         }, Map#{}, db)
 
