@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{PrecedenceGraph, PredSym};
+use Fixpoint/Ast.{Datalog, PrecedenceGraph, PredSym};
+use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.PrecedenceGraph.PrecedenceGraph;
 use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
 
 namespace Fixpoint {
-    def stratify(g: PrecedenceGraph): Map[PredSym, Int32] = stratifyHelper(g, Map#{})
+    def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
+        case Datalog(_, rules) =>
+            predicatesOf(rules) |>
+            Set.foldRight(p -> Map.insert(p, 0), Map#{}) |>
+            stratifyHelper(Fixpoint/Ast.mkDepGraph(d))
+    }
 
     /// Compute a stratification (if one exists) with Ullman's algorithm.
     def stratifyHelper(g: PrecedenceGraph, stf: Map[PredSym, Int32]): Map[PredSym, Int32] = match g {
@@ -39,7 +45,7 @@ namespace Fixpoint {
                     if (bodyStratum > headStratum)
                         Map.insert(headSym, bodyStratum, acc)
                     else
-                        Map.insertWith(Int32.max, headSym, 0, acc)
+                        acc
                 case NegativeEdge(bodySym, headSym) =>
                     let bodyStratum = Map.getWithDefault(bodySym, 0, acc);
                     let headStratum = Map.getWithDefault(headSym, 0, acc);
@@ -48,11 +54,11 @@ namespace Fixpoint {
                         // If there are more strata than edges,
                         // the precedence graph must contain a negative cycle!
                         if (newHeadStratum > maxStratum)
-                            ??? // TODO: use bug! when it arrives
+                            bug!("Stratification error (negative cycle)")
                         else
                             Map.insert(headSym, newHeadStratum, acc)
                     else
-                        Map.insertWith(Int32.max, headSym, 0, acc)
+                        acc
             }, stf, xs);
             // Check if property 1 and 2 now holds for all edges.
             if (newStf == stf)

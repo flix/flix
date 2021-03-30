@@ -20,7 +20,6 @@ use Fixpoint/Ast.Denotation.Relational;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
-use Fixpoint/Ast.mkDepGraph;
 
 // TODO: The following tests have been commented and should be fixed an incommented.
 // Test.Dec.RelAlias
@@ -41,14 +40,12 @@ use Fixpoint/Ast.mkDepGraph;
 
 namespace Fixpoint {
     pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] =
-        mkDepGraph(d) |>
-        stratify |>
+        stratify(d) |>
         solveWithStratification(d)
 
     pub def solveWithStratification[v : Order : Eq : ToString](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] =
         let _ = notifyPreSolve(d, stf);
         let model = (compile(d, stf) |>
-         hoistStmt |>
          queryStmt |>
          lowerStmt |>
          interpret |>

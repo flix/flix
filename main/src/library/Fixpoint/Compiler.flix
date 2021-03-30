@@ -65,19 +65,16 @@ namespace Fixpoint {
         case Constraint(HeadAtom(PredSym(headPred, _), _, headTerms, _), body, _) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
-            let join = joinTerms(env, augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms) as & Pure;
             let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
+            let join = compileBody(env, augBody);
+            let loopBody = RelOp.If(join, projection);
             let insert =
-                Array.foldRight(match (atom, rowVar) -> match (isLast, acc) -> match atom {
-                    case BodyAtom(PredSym(pred, _), _, Polarity.Positive, _, _) =>
-                        if (isLast)
-                            (false, RelOp.Search(rowVar, RelSym.Full(pred), join, acc))
-                        else
-                            (false, RelOp.Search(rowVar, RelSym.Full(pred), Nil, acc))
-                    case _ => (isLast, acc)
-                }, (true, projection), augBody) as & Pure |>
-                snd |>
+                Array.foldRight(match (atom, rowVar) -> acc -> match atom {
+                    case BodyAtom(PredSym(pred, _), _, Polarity.Positive, _, _) => //TODO: denotation
+                        RelOp.Search(rowVar, RelSym.Full(pred), acc)
+                    case _ => acc
+                }, loopBody, augBody) as & Pure |>
                 RamStmt.Insert;
             let comment = RamStmt.Comment(ToString.toString(rule));
             List.fold(comment :: insert :: Nil)
@@ -87,27 +84,22 @@ namespace Fixpoint {
         case Constraint(HeadAtom(PredSym(headPred, _), _, headTerms, _), body, _) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
-            let join = joinTerms(env, augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms) as & Pure;
             let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
+            let join = compileBody(env, augBody);
+            let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RelSym.Full(headPred)) :: join, projection);
             /// Compile rule into an incremental join loop where delta designates the focused atom.
             let compile = delta ->
-                Array.foldRight(match (atom, rowVar) -> match (isLast, acc) -> match atom {
-                    case BodyAtom(PredSym(pred, _), _, Polarity.Positive, _, _) =>
+                Array.foldRight(match (atom, rowVar) -> acc -> match atom {
+                    case BodyAtom(PredSym(pred, _), _, Polarity.Positive, _, _) => //TODO: denotation
                         let relSym = if (rowVar == delta) {
                             RelSym.Delta(pred)
                         } else {
                             RelSym.Full(pred)
                         };
-                        let where = if (isLast) {
-                            BoolExp.NotMemberOf(ramTerms, RelSym.Full(headPred)) :: join
-                        } else {
-                            Nil
-                        };
-                        (false, RelOp.Search(rowVar, relSym, where, acc))
-                    case _ => (isLast, acc)
-                }, (true, projection), augBody) as & Pure |>
-                snd |>
+                        RelOp.Search(rowVar, relSym, acc)
+                    case _ => acc
+                }, loopBody, augBody) as & Pure |>
                 RamStmt.Insert;
             let positiveAtoms = Array.filter(match (atom, _) -> match atom {
                 case BodyAtom(_, _, Polarity.Positive, _, _) => true
@@ -172,7 +164,8 @@ namespace Fixpoint {
 
     /// Equates every term in a positive body atom with an attribute
     /// and declares that terms in negative body atoms are not in the corresponding relations.
-    def joinTerms(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
+    /// Guard atoms are compiled to function calls.
+    def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
         Array.foldRight(match (atom, rowVar) -> acc ->
             let compileBodyTerm = term -> j -> match term {
                 case BodyTerm.Var(var, _) => unwrap(Map.get(var, env))
