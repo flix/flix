@@ -111,6 +111,7 @@ namespace Fixpoint {
         case BoolExp.Empty(_) => true
         case BoolExp.NotMemberOf(terms, _) => Array.forall(isTermGround(freeVars), terms) as & Pure
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
+        case BoolExp.Leq(_, lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
         case BoolExp.Guard0(_) => true
         case BoolExp.Guard1(_, t) => isTermGround(freeVars, t)
         case BoolExp.Guard2(_, t1, t2) =>
@@ -137,6 +138,10 @@ namespace Fixpoint {
     def isTermGround(freeVars: Set[RowVar], term: RamTerm[v]): Bool = match term {
         case RamTerm.Lit(_) => true
         case RamTerm.Attribute(var, _) => Set.memberOf(var, freeVars)
+        case RamTerm.Lat(var) => Set.memberOf(var, freeVars)
+        case RamTerm.Meet(_, t1, t2) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2)
         case RamTerm.App0(_) => true
         case RamTerm.App1(_, t) => isTermGround(freeVars, t)
         case RamTerm.App2(_, t1, t2) =>

@@ -163,22 +163,31 @@ namespace Fixpoint {
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body) as & Pure
 
-    /// Unifies each variable that occurs in a rule body with an attribute
+    /// Unifies each relational variable that occurs in a rule body with an attribute
     /// corresponding to a positive atom where the variable is a term.
+    /// Latticenal variables are unified with a "meet" term.
     def unifyVars(body: Array[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] =
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
-            case BodyAtom(_, _, Polarity.Positive, terms, _) =>
-                Array.mapWithIndex(term -> j -> match term {
-                    case BodyTerm.Var(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
-                    case BodyTerm.Lit(_, _) => Map#{}
-                    case BodyTerm.Wild(_) => Map#{}
-                }, terms) |>
-                Array.foldLeft(Map.union, acc)
+            case BodyAtom(_, denotation, Polarity.Positive, terms, _) =>
+                Array.mapWithIndex(term -> i -> (term, i), terms) |>
+                Array.foldRight(match (term, i) -> match term {
+                    case BodyTerm.Var(var, _) => match denotation {
+                        case Denotation.Relational => Map.insert(var, RamTerm.Attribute(rowVar, i))
+                        case Denotation.Latticenal(_, _, _, glb) =>
+                            if (i < Array.length(terms) - 1)
+                                Map.insert(var, RamTerm.Attribute(rowVar, i))
+                            else
+                                Map.insertWith(t1 -> t2 -> RamTerm.Meet(glb, t1, t2), var, RamTerm.Lat(rowVar))
+                    }
+                    case _ => x -> x
+                }, acc)
             case _ => acc
         }, Map#{}, body) as & Pure
 
     /// Equates every term in a positive body atom with an attribute
     /// and declares that terms in negative body atoms are not in the corresponding relations.
+    /// Latticenal terms are handled slightly differently: they are compared with the partial
+    /// order on the lattice instead of with equality.
     /// Guard atoms are compiled to function calls.
     def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
         Array.foldRight(match (atom, rowVar) -> acc ->
@@ -188,15 +197,20 @@ namespace Fixpoint {
                 case BodyTerm.Wild(_) => RamTerm.Attribute(rowVar, j)
             };
             match atom {
-                case BodyAtom(_, _, Polarity.Positive, terms, _) =>
-                    Array.mapWithIndex(term -> j -> {
-                        let ramTerm = compileBodyTerm(term, j);
-                        BoolExp.Eq(RamTerm.Attribute(rowVar, j), ramTerm)
-                    }, terms) |>
+                case BodyAtom(_, denotation, Polarity.Positive, terms, _) =>
+                    Array.mapWithIndex(compileBodyTerm, terms) |>
+                    Array.mapWithIndex(t -> i -> match denotation {
+                        case Denotation.Relational => BoolExp.Eq(RamTerm.Attribute(rowVar, i), t)
+                        case Denotation.Latticenal(_, leq, _, _) =>
+                            if (i < Array.length(terms) - 1)
+                                BoolExp.Eq(RamTerm.Attribute(rowVar, i), t)
+                            else
+                                BoolExp.Leq(leq, t, RamTerm.Lat(rowVar))
+                    }) |>
                     Array.foldRight(x -> xs -> x :: xs, acc)
-                case BodyAtom(PredSym(pred, _), den, Polarity.Negative, terms, _) =>
+                case BodyAtom(PredSym(pred, _), denotation, Polarity.Negative, terms, _) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
-                    BoolExp.NotMemberOf(ramTerms, RelSym.Full(pred, den)) :: acc
+                    BoolExp.NotMemberOf(ramTerms, RelSym.Full(pred, denotation)) :: acc
                 case Guard0(f, _) =>
                     BoolExp.Guard0(f) :: acc
                 case Guard1(f, v, _) =>

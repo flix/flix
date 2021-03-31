@@ -59,6 +59,7 @@ namespace Fixpoint {
     }
 
     pub def isSubsetOf(d1: Datalog[v], d2: Datalog[v]): Bool with Order[v] = match (d1, d2) {
+        // TODO: lattice
         case (Datalog(edb1, _), Datalog(edb2, _)) =>
             let db1 = toDatabase(edb1);
             let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
@@ -112,6 +113,7 @@ namespace Fixpoint {
     }
 
     def toDatabase(facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] with Order[v] =
+        // TODO: lattice
         Array.foldRight(c -> match c {
             case Constraint(HeadAtom(PredSym(pred, _), _, _, _), _, _) =>
                 Map.insertWith(Set.union, pred, Set#{factToTuple(c)})
