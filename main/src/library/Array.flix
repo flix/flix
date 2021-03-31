@@ -125,7 +125,7 @@ namespace Array {
     /// Returns `true` if and only if `a` contains the element `x`.
     ///
     @Time(length(a)) @Space(1)
-    pub def memberOf[a](x: a, a: Array[a]): Bool & Impure with Eq[a] =
+    pub def memberOf(x: a, a: Array[a]): Bool & Impure with Eq[a] =
         exists(y -> y == x, a)
 
     ///
@@ -133,7 +133,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def minimum[a](a: Array[a]): Option[a] & Impure with Order[a] =
+    pub def minimum(a: Array[a]): Option[a] & Impure with Order[a] =
         reduceLeft(Order.min, a)
 
     ///
@@ -149,7 +149,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def maximum[a](a: Array[a]): Option[a] & Impure with Order[a] =
+    pub def maximum(a: Array[a]): Option[a] & Impure with Order[a] =
         reduceLeft(Order.max, a)
 
     ///
@@ -164,21 +164,21 @@ namespace Array {
     /// Alias for `IndexOfLeft`
     ///
     @Time(length(a)) @Space(1)
-    pub def indexOf[a](x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x,a)
+    pub def indexOf(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x,a)
 
     ///
     /// Optionally returns the position of the first occurence of `x` in `a`
     /// searching from left to right.
     ///
     @Time(length(a)) @Space(1)
-    pub def indexOfLeft[a](x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfLeft(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] =
         let i = indexOfLeftHelper(x, a, length(a), 0);
         if (i < 0) None else Some(i)
 
     ///
     /// Helper function for `indexOfLeft`.
     ///
-    def indexOfLeftHelper[a](x: a, a: Array[a], len:Int32, i: Int32): Int32 & Impure with Eq[a] =
+    def indexOfLeftHelper(x: a, a: Array[a], len:Int32, i: Int32): Int32 & Impure with Eq[a] =
         if (i >= len)
             -1
         else
@@ -192,7 +192,7 @@ namespace Array {
     /// searching from right to left.
     ///
     @Time(length(a)) @Space(1)
-    pub def indexOfRight[a](x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfRight(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] =
         let start = length(a) - 1;
         let i = indexOfRightHelper(x, a, start);
         if (i < 0) None else Some(i)
@@ -200,7 +200,7 @@ namespace Array {
     ///
     /// Helper function for `indexOfRight`.
     ///
-    def indexOfRightHelper[a](x: a, a: Array[a], i: Int32): Int32 & Impure with Eq[a] =
+    def indexOfRightHelper(x: a, a: Array[a], i: Int32): Int32 & Impure with Eq[a] =
         if (i < 0)
             -1
         else
@@ -213,7 +213,7 @@ namespace Array {
     /// Return the positions of the all the occurences of `x` in `a`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def indices[a](x: a, a: Array[a]): Array[Int32] & Impure with Eq[a] =
+    pub def indices(x: a, a: Array[a]): Array[Int32] & Impure with Eq[a] =
         findIndices(y -> x == y, a)
 
     ///
@@ -482,14 +482,14 @@ namespace Array {
     /// Returns a copy of `a` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def replace[a](x: a, y: a, a: Array[a]): Array[a] & Impure with Eq[a] =
+    pub def replace(x: a, y: a, a: Array[a]): Array[a] & Impure with Eq[a] =
         map(e -> if (e == x) y else e, a)
 
     ///
     /// Replace every occurrence of `x` by `y` in the array `a`, mutating it in place.
     ///
     @Time(length(a)) @Space(1)
-    pub def replace![a](x: a, y: a, a: mut Array[a]): Unit & Impure with Eq[a] =
+    pub def replace!(x: a, y: a, a: mut Array[a]): Unit & Impure with Eq[a] =
         transform!(e -> if (e == x) y else e, a)
 
     ///
@@ -630,7 +630,7 @@ namespace Array {
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isPrefixOf[a](a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isPrefixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
         let len1 = length(a1);
         if (len1 > length(a2))
             false
@@ -640,7 +640,7 @@ namespace Array {
     ///
     /// Helper function for `isPrefixOf`.
     ///
-    def isPrefixOfHelper[a](a1: Array[a], a2: Array[a], len: Int32, i: Int32): Bool & Impure with Eq[a] =
+    def isPrefixOfHelper(a1: Array[a], a2: Array[a], len: Int32, i: Int32): Bool & Impure with Eq[a] =
         if (i >= len)
             true
         else
@@ -653,7 +653,7 @@ namespace Array {
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isInfixOf[a](a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
@@ -669,7 +669,7 @@ namespace Array {
     ///
     /// Precondition: len1 (length of a1) > 0
     ///
-    def isInfixOfSearch[a](a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isInfixOfSearch(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, j: Int32): Bool & Impure with Eq[a] =
         if (j >= len2)
             false
         else
@@ -681,7 +681,7 @@ namespace Array {
     ///
     /// Helper function for `isInfixOf` - a1 has started matching, scan to see if it all matches.
     ///
-    def isInfixOfCheck[a](a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isInfixOfCheck(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool & Impure with Eq[a] =
         if (i >= len1)
             // a1 exhausted, so success
             true
@@ -699,7 +699,7 @@ namespace Array {
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isSuffixOf[a](a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isSuffixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
@@ -712,7 +712,7 @@ namespace Array {
     ///
     /// Precondition: i <= j
     ///
-    def isSuffixOfHelper[a](a1: Array[a], a2: Array[a], i: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isSuffixOfHelper(a1: Array[a], a2: Array[a], i: Int32, j: Int32): Bool & Impure with Eq[a] =
         if (i < 0)
             true
         else
@@ -724,7 +724,7 @@ namespace Array {
     ///
     /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold[a](a: Array[a]): a with Monoid[a] = Foldable.fold(a)
+    pub def fold(a: Array[a]): a with Monoid[a] = Foldable.fold(a)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
@@ -1245,7 +1245,7 @@ namespace Array {
     /// Returns the array `a` as a set.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toSet[a](a: Array[a]): Set[a] & Impure with Order[a] = foldRight(Set.insert, Set.empty(), a)
+    pub def toSet(a: Array[a]): Set[a] & Impure with Order[a] = foldRight(Set.insert, Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1254,7 +1254,7 @@ namespace Array {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toMap[a, b](a: Array[(a, b)]): Map[a, b] & Impure with Order[a] =
+    pub def toMap(a: Array[(a, b)]): Map[a, b] & Impure with Order[a] =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
@@ -1398,7 +1398,7 @@ namespace Array {
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
-    pub def sameElements[a](a: Array[a], b: Array[a]): Bool & Impure with Eq[a] =
+    pub def sameElements(a: Array[a], b: Array[a]): Bool & Impure with Eq[a] =
         let alen = length(a);
         let blen = length(b);
         if (alen == blen)
@@ -1409,7 +1409,7 @@ namespace Array {
     ///
     /// Helper function for `sameElements`.
     ///
-    def sameElementsHelper[a](a: Array[a], b: Array[a], len: Int32, i: Int32): Bool & Impure with Eq[a] =
+    def sameElementsHelper(a: Array[a], b: Array[a], len: Int32, i: Int32): Bool & Impure with Eq[a] =
         if (i >= len)
             true
         else
