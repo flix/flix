@@ -1529,7 +1529,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         mapN(getImplicitTypeParamsFromCases(cases, loc)) {
           implicitTparams => getExplicitUnkindedTypeParams(tparams, implicitTparams, uenv0)
         }
-      case WeededAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams).toSuccess // MATT right?
+      case WeededAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams).toSuccess
     }
   }
 
@@ -1547,12 +1547,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         mapN(getImplicitTypeParamsFromFormalParams(fparams, tpe, loc, tenv)) {
           implicitTparams => getExplicitUnkindedTypeParams(tparams0, implicitTparams, uenv)
         }
-      case WeededAst.TypeParams.Kinded(tparams0) => getExplicitKindedTypeParams(tparams0).toSuccess // MATT right?
+      case WeededAst.TypeParams.Kinded(tparams0) => getExplicitKindedTypeParams(tparams0).toSuccess
 
     }
   }
 
-  // MATT docs
+  /**
+    * Names the explicit kinded type params.
+    */
   private def getExplicitKindedTypeParams(tparams0: List[WeededAst.TypeParam.Kinded])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     tparams0.map {
       case WeededAst.TypeParam.Kinded(ident, kind) =>
@@ -1562,9 +1564,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Returns the explicit type parameters from the given type parameter names and implicit type parameters.
+    * Returns the explicit unkinded type parameters from the given type parameter names and implicit type parameters.
     */
-    // MATT update docs
   private def getExplicitUnkindedTypeParams(tparams0: List[WeededAst.TypeParam.Unkinded], implicitTparams: List[NamedAst.TypeParam], uenv0: UseEnv)(implicit flix: Flix): List[NamedAst.TypeParam] = {
     val kindPerName = implicitTparams.map(param => param.name.name -> param.tpe.kind).toMap
     tparams0.map {

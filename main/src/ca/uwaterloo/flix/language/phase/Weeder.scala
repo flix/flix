@@ -2073,8 +2073,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
   }
 
-  // MATT docs
-  // MATT dedupe
+  /**
+    * Weeds the type params, requiring that they be explicitly kinded.
+    */
   private def visitKindedTypeParams(tparams0: ParsedAst.TypeParams): Validation[WeededAst.KindedTypeParams, WeederError] = tparams0 match {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided.toSuccess
     case ParsedAst.TypeParams.Explicit(tparams) =>

@@ -345,7 +345,7 @@ object WeededAst {
   }
 
   sealed trait TypeParams
-  sealed trait KindedTypeParams extends TypeParams // MATT find a better name (KindedIfPresent)
+  sealed trait KindedTypeParams extends TypeParams
 
   object TypeParams {
 
