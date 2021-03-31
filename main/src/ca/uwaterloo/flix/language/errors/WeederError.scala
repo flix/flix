@@ -464,4 +464,19 @@ object WeederError {
     }
   }
 
+  // MATT docs
+  case class InconsistentTypeParameters(loc: SourceLocation) extends WeederError {
+    def summary: String = "TODO" // MATT
+
+    def message: VirtualTerminal = new VirtualTerminal // MATT
+  }
+
+
+  // MATT docs
+  case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
+    def summary: String = "TODO" // MATT
+
+    def message: VirtualTerminal = new VirtualTerminal // MATT
+  }
+
 }
