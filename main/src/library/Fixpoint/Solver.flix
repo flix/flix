@@ -39,11 +39,11 @@ use Fixpoint/Ram.RelSym;
 // TestIntroduction
 
 namespace Fixpoint {
-    pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] =
+    pub def solve(d: Datalog[v]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         stratify(d) |>
         solveWithStratification(d)
 
-    pub def solveWithStratification[v : Order : Eq : ToString](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] =
+    pub def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         let _ = notifyPreSolve(d, stf);
         let model = (compile(d, stf) |>
          queryStmt |>
@@ -58,7 +58,7 @@ namespace Fixpoint {
             Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2)) as & Pure
     }
 
-    pub def isSubsetOf[v : Order](d1: Datalog[v], d2: Datalog[v]): Bool = match (d1, d2) {
+    pub def isSubsetOf(d1: Datalog[v], d2: Datalog[v]): Bool with Order[v] = match (d1, d2) {
         case (Datalog(edb1, _), Datalog(edb2, _)) =>
             let db1 = toDatabase(edb1);
             let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
@@ -71,7 +71,7 @@ namespace Fixpoint {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
 
-    pub def foldRight[v : Order, b](d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b =
+    pub def foldRight(d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b =
         let Datalog(facts, _) = project(p, d);
         Array.foldRight(factToTuple >> f, i, facts) as & Pure
 
@@ -111,7 +111,7 @@ namespace Fixpoint {
         case _ => ?bug
     }
 
-    def toDatabase[v : Order](facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] =
+    def toDatabase(facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] with Order[v] =
         Array.foldRight(c -> match c {
             case Constraint(HeadAtom(PredSym(pred, _), _, _, _), _, _) =>
                 Map.insertWith(Set.union, pred, Set#{factToTuple(c)})

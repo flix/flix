@@ -16,7 +16,7 @@
 
 namespace Fixpoint {
     /// Helper function to implement ToString
-    pub def commaSeparate[v : ToString](a: Array[v]): String =
+    pub def commaSeparate(a: Array[v]): String with ToString[v] =
         let toString = () -> {
             let sb = StringBuilder.new();
             Array.map(ToString.toString, a) |>
