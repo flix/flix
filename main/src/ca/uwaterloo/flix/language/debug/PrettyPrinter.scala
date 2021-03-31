@@ -395,14 +395,23 @@ object PrettyPrinter {
 
         case Expression.SelectChannel(rules, default, tpe, loc) =>
           vt << "select {" << Indent << NewLine
-          for (SelectChannelRule(sym, chan, exp) <- rules) {
-            vt << "case "
-            fmtSym(sym, vt)
-            vt << " <- "
-            visitExp(chan)
-            vt << " => "
-            visitExp(exp)
-            vt << NewLine
+          rules.foreach {
+            case SelectChannelRule.SelectGet(sym, chan, exp) =>
+              vt << "case "
+              fmtSym(sym, vt)
+              vt << " <- "
+              visitExp(chan)
+              vt << " => "
+              visitExp(exp)
+              vt << NewLine
+            case SelectChannelRule.SelectPut(chan, value, exp) =>
+              vt << "case "
+              visitExp(chan)
+              vt << " <- "
+              visitExp(value)
+              vt << " => "
+              visitExp(exp)
+              vt << NewLine
           }
           default match {
             case Some(exp) =>
