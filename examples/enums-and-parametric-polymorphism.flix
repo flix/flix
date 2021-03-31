@@ -15,7 +15,7 @@ instance ToString[Tree[a]] with ToString[a] {
 
 /// A higher-order function that transforms a tree with
 /// elements of type a to a tree with elements of type b.
-def map[a, b](f: a -> b, t: Tree[a]): Tree[b] =
+def map(f: a -> b, t: Tree[a]): Tree[b] =
   match t {
     case Leaf(x)    => Leaf(f(x))
     case Node(l, r) => Node(map(f, l), map(f, r))
