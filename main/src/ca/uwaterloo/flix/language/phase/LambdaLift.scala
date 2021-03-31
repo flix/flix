@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.LiftedAst.SelectChannelRule
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.ConstraintParam
 import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -356,11 +357,16 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         LiftedAst.Expression.PutChannel(e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules map {
-          case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
+        val rs: List[LiftedAst.SelectChannelRule] = rules map {
+          case SimplifiedAst.SelectChannelRule.SelectGet(sym, chan, exp) =>
             val c = visitExp(chan)
             val e = visitExp(exp)
-            LiftedAst.SelectChannelRule(sym, c, e)
+            LiftedAst.SelectChannelRule.SelectGet(sym, c, e)
+          case SimplifiedAst.SelectChannelRule.SelectPut(chan, value, exp) =>
+            val c = visitExp(chan)
+            val v = visitExp(value)
+            val e = visitExp(exp)
+            LiftedAst.SelectChannelRule.SelectPut(c, v, e)
         }
 
         val d = default.map(visitExp)
