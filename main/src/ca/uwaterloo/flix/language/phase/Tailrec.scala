@@ -106,7 +106,8 @@ object Tailrec extends Phase[Root, Root] {
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
-          case SelectChannelRule(sym, chan, exp) => SelectChannelRule(sym, chan, visit(exp))
+          case SelectChannelRule.SelectGet(sym, chan, exp) => SelectChannelRule.SelectGet(sym, chan, visit(exp))
+          case SelectChannelRule.SelectPut(chan, value, exp) => SelectChannelRule.SelectPut(chan, visit(value), visit(exp))
         }
 
         val d = default.map(exp => visit(exp))
