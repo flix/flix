@@ -295,8 +295,15 @@ object SimplifiedAstOps {
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         for (rule <- rules) {
-          checkExp(rule.chan, env0, ienv0)
-          checkExp(rule.exp, env0, ienv0)
+          rule match {
+            case SelectChannelRule.SelectGet(_, chan, exp) =>
+              checkExp(chan, env0, ienv0)
+              checkExp(exp, env0, ienv0)
+            case SelectChannelRule.SelectPut(chan, value, exp) =>
+              checkExp(chan, env0, ienv0)
+              checkExp(value, env0, ienv0)
+              checkExp(exp, env0, ienv0)
+          }
         }
         default.foreach(exp => checkExp(exp, env0, ienv0))
         checkType(tpe)
