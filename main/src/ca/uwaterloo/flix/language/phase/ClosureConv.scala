@@ -312,10 +312,15 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = rules map {
-        case SelectChannelRule(sym, chan, exp) =>
+        case SelectChannelRule.SelectGet(sym, chan, exp) =>
           val c = visitExp(chan)
           val e = visitExp(exp)
-          SelectChannelRule(sym, c, e)
+          SelectChannelRule.SelectGet(sym, c, e)
+        case SelectChannelRule.SelectPut(chan, value, exp) =>
+          val c = visitExp(chan)
+          val v = visitExp(value)
+          val e = visitExp(exp)
+          SelectChannelRule.SelectPut(c, v, e)
       }
 
       val d = default.map(visitExp(_))
@@ -524,7 +529,8 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = mutable.LinkedHashSet.empty ++ rules.flatMap {
-        case SelectChannelRule(sym, chan, exp) => (freeVars(chan) ++ freeVars(exp)).filter(p => p._1 != sym)
+        case SelectChannelRule.SelectGet(sym, chan, exp) => (freeVars(chan) ++ freeVars(exp)).filter(p => p._1 != sym)
+        case SelectChannelRule.SelectPut(chan, value, exp) => freeVars(chan) ++ freeVars(value) ++ freeVars(exp)
       }
 
       val d = default.map(freeVars).getOrElse(mutable.LinkedHashSet.empty)
@@ -858,10 +864,15 @@ object ClosureConv extends Phase[Root, Root] {
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
-          case SelectChannelRule(sym, chan, exp) =>
+          case SelectChannelRule.SelectGet(sym, chan, exp) =>
             val c = visitExp(chan)
             val e = visitExp(exp)
-            SelectChannelRule(sym, c, e)
+            SelectChannelRule.SelectGet(sym, c, e)
+          case SelectChannelRule.SelectPut(chan, value, exp) =>
+            val c = visitExp(chan)
+            val v = visitExp(value)
+            val e = visitExp(exp)
+            SelectChannelRule.SelectPut(c, v, e)
         }
 
         val d = default.map(visitExp)
