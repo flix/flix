@@ -2065,7 +2065,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Case 2: only kinded type parameters
         case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
           // Case 3: some unkinded and some kinded
-        case (_ :: _, _ :: _) => WeederError.InconsistentTypeParameters(SourceLocation.Unknown).toFailure // MATT loc
+        case (_ :: _, _ :: _) =>
+          val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
+          WeederError.InconsistentTypeParameters(loc).toFailure
           // Case 4: no type parameters: should be prevented by parser
         case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.")
       }
@@ -2081,7 +2083,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val unkindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Unkinded => t }
       (kindedTypeParams, unkindedTypeParams) match {
         // Case 1: some unkinded type params
-        case (_, _ :: _) => WeederError.UnkindedTypeParameters(SourceLocation.Unknown).toFailure // MATT add loc to type params
+        case (_, _ :: _) =>
+          val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
+          WeederError.UnkindedTypeParameters(loc).toFailure
         // Case 2: only kinded type parameters
         case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
         // Case 3: no type parameters: should be prevented by parser
