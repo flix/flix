@@ -136,6 +136,15 @@ namespace MutMap {
         mm := Map.insert(k, v, deref mm)
 
     ///
+    /// Updates the mutable map `m` with the binding `k -> f(v, v1)` if `k -> v1` is in `m`.
+    ///
+    /// Otherwise updates the mutable map `m` with the binding `k -> v`.
+    ///
+    pub def putWith![k, v, e](f: (v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
+        let MutMap(mm) = m;
+        mm := Map.insertWith(f, k, v, deref mm)
+
+    ///
     /// Updates the mutable map `m` with `k -> f(v)` if `k -> v` is in `m`.
     ///
     /// Otherwise leaves the map is unchanged.
