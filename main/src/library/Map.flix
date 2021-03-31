@@ -472,7 +472,13 @@ namespace Map {
     ///
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
     pub def unionWithKey[k, v, e](f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e with Order[k] =
-        foldRightWithKey((k, v, m) -> insertWithKey((key, v1, v2) -> f(key, v1, v2), k, v, m) , m2, m1)
+        use RedBlackTree.{blackHeight, foldRight, insertWith};
+        let Map(xs) = m1;
+        let Map(ys) = m2;
+        if (blackHeight(xs) < blackHeight(ys))
+            Map(foldRight((k, v) -> insertWith(f, k, v), ys, xs))
+        else
+            Map(foldRight((k, v) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v), xs, ys))
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
