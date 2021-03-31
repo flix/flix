@@ -2082,11 +2082,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       (kindedTypeParams, unkindedTypeParams) match {
         // Case 1: some unkinded type params
         case (_, _ :: _) => WeederError.UnkindedTypeParameters(SourceLocation.Unknown).toFailure // MATT add loc to type params
-        // Case 3: only kinded type parameters
+        // Case 2: only kinded type parameters
         case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
-        // Case 4: some unkinded and some kinded
-        case (_ :: _, _ :: _) => WeederError.InconsistentTypeParameters(SourceLocation.Unknown).toFailure // MATT loc
-        // Case 5: no type parameters: should be prevented by parser
+        // Case 3: no type parameters: should be prevented by parser
         case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.")
       }
   }
