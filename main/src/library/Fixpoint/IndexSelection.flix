@@ -16,6 +16,7 @@
 
 use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 
+// TODO: rewrite docs. This is out of date.
 /// The purpose of this phase is to:
 /// 1) Hoist inner search conditions to outer search conditions.
 /// 2) Rewrite searches on relations to queries on indices, when possible.
@@ -69,6 +70,10 @@ namespace Fixpoint {
             let (attributeQuery, rest1) =
                 List.partition(exp -> match exp {
                     case Eq(Attribute(row1, _), Attribute(row2, _)) =>
+                        // TODO: consider that the order of attributes can have an impact
+                        // on query optimization.
+                        // E.g: a[1] = b[0] cannot be rewritten to a query on `a` but
+                        // b[0] = a[1] *can* be rewritten to a query on `b`.
                         row1 != row2 and row1 == var
                     case Eq(Attribute(row, _), Lit(_)) => row == var
                     case _ => false

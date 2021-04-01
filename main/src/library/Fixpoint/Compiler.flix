@@ -102,6 +102,7 @@ namespace Fixpoint {
             let ramTerms = Array.map(compileHeadTerm(env), headTerms) as & Pure;
             let projection = RelOp.Project(ramTerms, RelSym.New(headPred, headDen));
             let join = compileBody(env, augBody);
+            // TODO: make sure membership tests are checked last.
             let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RelSym.Full(headPred, headDen)) :: join, projection);
             /// Compile rule into an incremental join loop where delta designates the focused atom.
             let compile = delta ->

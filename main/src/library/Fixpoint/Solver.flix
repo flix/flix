@@ -120,6 +120,7 @@ namespace Fixpoint {
         }, Map#{}, facts) as & Pure
 
     def toAst(db: Database[v]): Datalog[v] & Impure =
+        // TODO: don't eagerly convert back to AST. Keep it as a database as long as possible.
         let facts = MutList.new();
         MutMap.foreach(relSym -> rel -> match relSym {
             case RelSym.Full(_) => MutMap.foreach(t -> l -> {
