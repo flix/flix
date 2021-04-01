@@ -114,7 +114,9 @@ object ClassEnvironment {
 
     tconstrGroups match {
       case Nil => UnificationError.NoMatchingInstance(tconstr).toFailure
-      case tconstrs :: Nil => tconstrs.toSuccess
+      case tconstrs :: Nil =>
+        // apply the base tconstr location to the new tconstrs
+        tconstrs.map(_.copy(loc = tconstr.loc)).toSuccess
       case _ :: _ :: _ => UnificationError.MultipleMatchingInstances(tconstr).toFailure
     }
   }
@@ -140,7 +142,7 @@ object ClassEnvironment {
     // There may be duplicates, but this will terminate since super classes must be acyclic.
     tconstr :: directSupers.flatMap {
       // recurse on the superclasses of each direct superclass
-      superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg, SourceLocation.Unknown), classEnv)
+      superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg, tconstr.loc), classEnv)
     }
   }
 

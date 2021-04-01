@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
@@ -1131,5 +1132,44 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.IllegalMain](result)
+  }
+
+  test("MattTest") {
+    val input =
+      """
+        |class Ring[t] with Eq[t] {
+        |    pub def add(x: t, y: t): t
+        |
+        |    pub def mul(x: t, y: t): t
+        |
+        |    law distributivity: forall(x: t, y: t, z: t). Ring.mul(Ring.add(x, y), z) == Ring.add(Ring.mul(x, y), Ring.mul(y, z))
+        |}
+        |
+        |
+        |pub def double[t](x: t): t with Ring[t] = Ring.mul(x, x)
+        |
+        |
+        |instance Ring[Int32] {
+        |    pub def add(x: Int32, y: Int32): Int32 = x + y
+        |
+        |    pub def mul(x: Int32, y: Int32): Int32 = x * y
+        |}
+        |
+        |instance Ring[(a, b)] with Ring[a], Ring[b] {
+        |    pub def add(x: (a, b), y: (a, b)): (a, b) = (fst(x) `Ring.add` fst(y), snd(x) `Ring.add` snd(y))
+        |
+        |    pub def mul(x: (a, b), y: (a, b)): (a, b) = (fst(x) `Ring.mul` fst(y), snd(x) `Ring.mul` snd(y))
+        |}
+        |
+        |pub def main(_: Array[String]): Int32 & Impure =
+        |    println(double(123));
+        |    println(double((2.2, 3.5)));
+        |    0
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibrary)
+    result match {
+      case Validation.Success(t) =>
+      case Validation.Failure(errors) => errors.foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
+    }
   }
 }
