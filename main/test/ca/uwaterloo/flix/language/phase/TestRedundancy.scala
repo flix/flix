@@ -905,7 +905,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |lawless class C[a]
         |
-        |pub def f[a : C : C](x: a): Bool = ???
+        |pub def f(x: a): Bool with C[a], C[a] = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[RedundancyError.RedundantTypeConstraint](result)
@@ -918,7 +918,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
         |lawless class D[a] with C[a]
         |
-        |pub def f[a : C : D](x: a): Bool = ???
+        |pub def f(x: a): Bool with C[a], D[a] = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[RedundancyError.RedundantTypeConstraint](result)
@@ -930,7 +930,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |lawless class C[a]
         |
         |lawless class D[a] {
-        |  pub def f[a : C : C](x: a): Bool
+        |  pub def f(x: a): Bool with C[a], C[a]
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -945,7 +945,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |lawless class D[a] with C[a]
         |
         |lawless class E[a] {
-        |  pub def f[a : C : C](x: a): Bool
+        |  pub def f(x: a): Bool with C[a], D[a]
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
