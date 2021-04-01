@@ -225,7 +225,17 @@ object ErasedAst {
 
   }
 
-  case class SelectChannelRule[T <: PType](sym: Symbol.VarSym, chan: ErasedAst.Expression[PReference[PChan[PType]]], exp: ErasedAst.Expression[T])
+  sealed trait SelectChannelRule[T <: PType]
+
+  // TODO: Fix error
+
+  object SelectChannelRule {
+
+    case class SelectGet[T <: PType](sym: Symbol.VarSym, chan: ErasedAst.Expression[PReference[PChan[PType]]], exp: ErasedAst.Expression[T]) extends SelectChannelRule[T]
+
+    case class SelectPut[T <: PType](chan: ErasedAst.Expression[PReference[PChan[PType]]], value: ErasedAst.Expression[T], exp: ErasedAst.Expression[T]) extends SelectChannelRule[PReference[PChan[T]]]
+
+  }
 
   sealed trait Predicate {
     def loc: SourceLocation
