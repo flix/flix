@@ -58,14 +58,22 @@ namespace Fixpoint {
             Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2)) as & Pure
     }
 
-    pub def isSubsetOf(d1: Datalog[v], d2: Datalog[v]): Bool with Order[v] = match (d1, d2) {
-        // TODO: lattice
+    pub def isSubsetOf(d1: Datalog[v], d2: Datalog[v]): Bool with Order[v], Eq[v], ToString[v] = match (d1, d2) {
         case (Datalog(edb1, _), Datalog(edb2, _)) =>
+            use Fixpoint/Ram.toDenotation;
             let db1 = toDatabase(edb1);
             let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
-            let lookupD2 = k -> Map.getWithDefault(k, Set#{}, db2);
-            let isSupersetOf = xs -> ys -> Set.isSubsetOf(ys, xs);
-            Map.forall(lookupD2 >> isSupersetOf, db1)
+            Map.forall(relSym -> rel1 -> match toDenotation(relSym) {
+                case Denotation.Relational =>
+                    let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
+                    Map.forall(t -> _ -> Map.memberOf(t, rel2), rel1)
+                case Denotation.Latticenal(_, leq, _, _) =>
+                    let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
+                    Map.forall(k -> l1 -> match Map.get(k, rel2) {
+                        case Some(l2) => l1 `leq` l2
+                        case None => false
+                    }, rel1)
+            }, db1)
     }
 
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] = match d {
@@ -112,12 +120,27 @@ namespace Fixpoint {
         case _ => ?bug
     }
 
-    def toDatabase(facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] with Order[v] =
-        // TODO: lattice
+    def toDatabase(facts: Array[Constraint[v]]): Map[RelSym[v], Map[Array[v], v]] with Order[v] =
         Array.foldRight(c -> match c {
-            case Constraint(HeadAtom(PredSym(pred, _), _, _, _), _, _) =>
-                Map.insertWith(Set.union, pred, Set#{factToTuple(c)})
-        }, Map#{}, facts) as & Pure
+            case Constraint(HeadAtom(PredSym(pred, _), denotation, terms, _), _, _) =>
+                let relSym = RelSym.Full(pred, denotation);
+                match denotation {
+                    case Denotation.Relational =>
+                        Map.singleton(factToTuple(c), default) |>
+                        Map.insertWith(Map.union, relSym)
+                    case Denotation.Latticenal(_, _, lub, _) =>
+                        let key = Array.init(i -> match terms[i] {
+                            case HeadTerm.Lit(v, _) => v
+                            case _ => ?bug
+                        }, Array.length(terms) - 1);
+                        let lat = match Array.last(terms) {
+                            case Some(HeadTerm.Lit(v, _)) => v
+                            case _ => ?bug
+                        };
+                        Map.singleton(key, lat) |>
+                        Map.insertWith(Map.unionWith(lub), relSym)
+                }
+        } as & Pure, Map#{}, facts) as & Pure
 
     def toAst(db: Database[v]): Datalog[v] & Impure =
         // TODO: don't eagerly convert back to AST. Keep it as a database as long as possible.
