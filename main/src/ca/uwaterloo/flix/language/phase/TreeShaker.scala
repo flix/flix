@@ -284,7 +284,12 @@ object TreeShaker extends Phase[Root, Root] {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.SelectChannel(rules, default, _, _) =>
-      val rs = visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp))
+      val rs = rules.map {
+        case SelectChannelRule.SelectGet(_, chan, exp) =>
+          visitExp(chan) ++ visitExp(exp)
+        case SelectChannelRule.SelectPut(chan, value, exp) =>
+          visitExp(chan) ++ visitExp(value) ++ visitExp(exp)
+      }.fold(Set())(_ ++ _)
       val d = default.map(visitExp).getOrElse(Set.empty)
       rs ++ d
 
