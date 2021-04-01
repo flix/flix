@@ -223,7 +223,15 @@ object FinalAst {
 
   }
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)
+  sealed trait SelectChannelRule
+
+  object SelectChannelRule {
+
+    case class SelectGet(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression) extends SelectChannelRule
+
+    case class SelectPut(chan: FinalAst.Expression, value: FinalAst.Expression, exp: FinalAst.Expression) extends SelectChannelRule
+
+  }
 
   sealed trait Predicate {
     def loc: SourceLocation
