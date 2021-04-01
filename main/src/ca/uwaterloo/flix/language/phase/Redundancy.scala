@@ -180,7 +180,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         (tconstr2, i2) <- tconstrs.zipWithIndex
         // don't compare a constraint against itself
         if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
-      } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc) // MATT good loc?
+      } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
     }
 
     val instErrors = root.instances.values.flatten.flatMap {

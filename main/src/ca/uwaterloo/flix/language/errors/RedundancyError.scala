@@ -305,7 +305,6 @@ object RedundancyError {
     * @param redundantTconstr the tconstr that is made redundant by the other.
     * @param loc              the location where the error occured.
     */
-  // MATT test tconstr1 locations to make sure they're reasonable
   case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Redundant type constraint."
 
