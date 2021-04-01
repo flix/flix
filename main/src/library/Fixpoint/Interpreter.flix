@@ -96,12 +96,11 @@ namespace Fixpoint {
                     case Denotation.Relational =>
                         let tuple = Array.map(evalTerm(env), terms);
                         MutMap.put!(tuple, default, rel)
-                    case Denotation.Latticenal(_, _, _lub, _) =>
+                    case Denotation.Latticenal(_, _, lub, _) =>
                         let len = Array.length(terms);
-                        let _key = Array.init(i -> evalTerm(env, terms[i]), len - 1);
-                        let _lat = evalTerm(env, terms[len - 1]);
-                        //MutMap.putWith!(lub, key, lat, rel)
-                        bug!("MutMap.putWith!") // TODO: implement MutMap.putWith
+                        let key = Array.init(i -> evalTerm(env, terms[i]), len - 1);
+                        let lat = evalTerm(env, terms[len - 1]);
+                        MutMap.putWith!(lub, key, lat, rel)
                 }
             case RelOp.If(test, then) =>
                 if (evalBoolExp(db, env, test)) {
