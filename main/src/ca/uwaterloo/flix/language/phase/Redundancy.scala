@@ -193,9 +193,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     val classErrors = root.classes.values.flatMap {
       clazz =>
-        // MATT use real type constraints instead of superclass list
-        val tconstrs = clazz.superClasses.map(sym => Ast.TypeConstraint(sym, clazz.tparam.tpe, SourceLocation.Unknown))
-        findRedundantTypeConstraints(tconstrs)
+        findRedundantTypeConstraints(clazz.superClasses)
     }
 
     val sigErrors = root.sigs.values.flatMap {
