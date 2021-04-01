@@ -1070,11 +1070,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = {
-    for {
-      clazz <- lookupClass(tconstr0.clazz, ns0, root)
-      tpe <- lookupType(tconstr0.arg, ns0, root)
-    } yield Ast.TypeConstraint(clazz.sym, tpe, SourceLocation.Unknown)
+  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
+      val classVal = lookupClass(clazz0, ns0, root)
+      val tpeVal = lookupType(tpe0, ns0, root)
+
+      mapN(classVal, tpeVal) {
+        case (clazz, tpe) => Ast.TypeConstraint(clazz.sym, tpe, loc)
+      }
   }
 
   /**
