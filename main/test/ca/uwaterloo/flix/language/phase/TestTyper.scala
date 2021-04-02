@@ -1068,4 +1068,30 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("Test.IllegalMain.01") {
+    val input =
+      """
+        |def main(blah: Array[String]): Int32 = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.IllegalMain](result)
+  }
+
+  test("Test.IllegalMain.02") {
+    val input =
+      """
+        |def main(blah: Array[Char]): Int32 & Impure = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.IllegalMain](result)
+  }
+
+  test("Test.IllegalMain.03") {
+    val input =
+      """
+        |def main(blah: Array[String]): Int64 & Impure = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.IllegalMain](result)
+  }
 }

@@ -292,4 +292,11 @@ object TypeError {
       vt << Underline("Tip:") << " Add an instance for the type." << NewLine
     }
   }
+
+  // MATT docs
+  case class IllegalMain(scheme: Scheme, loc: SourceLocation) extends TypeError {
+    override def summary: String = "TODO" // MATT
+
+    override def message: VirtualTerminal = new VirtualTerminal // MATT
+  }
 }
