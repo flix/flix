@@ -158,7 +158,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       } yield TypedAst.Def(sym, spec, exp)
   }
 
-  // MATT docs
+  /**
+    * Checks that, if the function is a main function, it has the right type scheme.
+    */
   private def checkMain(defn: ResolvedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
     if (!defn.sym.isMain) {
       return ().toSuccess
@@ -167,7 +169,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
 
     if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
-      TypeError.IllegalMain(defn.spec.sc, defn.spec.loc).toFailure
+      TypeError.IllegalMain(actualScheme = defn.spec.sc, expectedScheme = mainScheme, defn.spec.loc).toFailure
     } else {
       ().toSuccess
     }
