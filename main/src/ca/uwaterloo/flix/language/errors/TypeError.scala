@@ -293,10 +293,28 @@ object TypeError {
     }
   }
 
-  // MATT docs
-  case class IllegalMain(scheme: Scheme, loc: SourceLocation) extends TypeError {
-    override def summary: String = "TODO" // MATT
+  /**
+    * An error indicating that the main function's scheme is incorrect.
+    *
+    * @param actualScheme   the erroneous function's scheme.
+    * @param expectedScheme the scheme the main function is expected to have.
+    * @param loc            the location where the error occurred.
+    */
+  case class IllegalMain(actualScheme: Scheme, expectedScheme: Scheme, loc: SourceLocation) extends TypeError {
+    override def summary: String = "Illegal main."
 
-    override def message: VirtualTerminal = new VirtualTerminal // MATT
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Main function with wrong type." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"main function with wrong type.") << NewLine
+      vt << NewLine
+      vt << s"  Expected: " << Cyan(FormatScheme.formatScheme(expectedScheme)) << NewLine
+      vt << s"  Actual:   " << Magenta(FormatScheme.formatScheme(actualScheme)) << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Change the function to match the expected type scheme." << NewLine
+    }
   }
+
 }
