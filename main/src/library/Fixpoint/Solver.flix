@@ -14,19 +14,36 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym};
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
 use Fixpoint/Ast.Datalog.Datalog;
-use Fixpoint/Ast.Denotation.Relational;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
+use Fixpoint/Ram.RelSym;
+
+// TODO: The following tests have been commented and should be fixed an incommented.
+// Test.Dec.RelAlias
+// Test.Exp.Fixpoint.Fold
+// Test.Predicate.Filter
+// Test.Predicate.Guard
+// Test.Predicate.Union
+// Test.Term.Apply
+// Test.Term.Var.CapturedVar
+// Test.Term.Var.WildVar
+// fixpoint-computations-on-lattices
+// TestConstant
+// IFDS
+// IDE
+// SUOpt
+// FloydWarshall
+// TestIntroduction
 
 namespace Fixpoint {
-    pub def solve[v](d: Datalog[v]): Datalog[v] with Eq[v], Order[v], ToString[v] =
+    pub def solve(d: Datalog[v]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         stratify(d) |>
         solveWithStratification(d)
 
-    pub def solveWithStratification[v](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Eq[v], Order[v], ToString[v]  =
+    pub def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         let _ = notifyPreSolve(d, stf);
         let model = (compile(d, stf) |>
          queryStmt |>
@@ -41,20 +58,29 @@ namespace Fixpoint {
             Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2)) as & Pure
     }
 
-    pub def isSubsetOf[v](d1: Datalog[v], d2: Datalog[v]): Bool with Order[v] = match (d1, d2) {
+    pub def isSubsetOf(d1: Datalog[v], d2: Datalog[v]): Bool with Order[v], Eq[v], ToString[v] = match (d1, d2) {
         case (Datalog(edb1, _), Datalog(edb2, _)) =>
+            use Fixpoint/Ram.toDenotation;
             let db1 = toDatabase(edb1);
             let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
-            let lookupD2 = k -> Map.getWithDefault(k, Set#{}, db2);
-            let isSupersetOf = xs -> ys -> Set.isSubsetOf(ys, xs);
-            Map.forall(lookupD2 >> isSupersetOf, db1)
+            Map.forall(relSym -> rel1 -> match toDenotation(relSym) {
+                case Denotation.Relational =>
+                    let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
+                    Map.forall(t -> _ -> Map.memberOf(t, rel2), rel1)
+                case Denotation.Latticenal(_, leq, _, _) =>
+                    let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
+                    Map.forall(k -> l1 -> match Map.get(k, rel2) {
+                        case Some(l2) => l1 `leq` l2
+                        case None => false
+                    }, rel1)
+            }, db1)
     }
 
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] = match d {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
 
-    pub def foldRight[v, b](d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b with Order[v] =
+    pub def foldRight(d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b =
         let Datalog(facts, _) = project(p, d);
         Array.foldRight(factToTuple >> f, i, facts) as & Pure
 
@@ -78,22 +104,52 @@ namespace Fixpoint {
         }, terms) as & Pure
     }
 
-    def tupleToFact(p: String, tuple: Array[v]): Constraint[v] =
-        use Fixpoint/Ast.SourceLocation.Unknown;
-        let denotation = Relational; // TODO
-        let terms = Array.map(v -> HeadTerm.Lit(v, Unknown), tuple) as & Pure;
-        Constraint(HeadAtom(PredSym(p, Unknown), denotation, terms, Unknown), [], Unknown) as & Pure
+    def tupleToFact(relSym: RelSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match relSym {
+        case RelSym.Full(relName, denotation) =>
+            use Fixpoint/Ast.SourceLocation.Unknown;
+            let terms = match denotation {
+                case Denotation.Relational => Array.map(v -> HeadTerm.Lit(v, Unknown), tuple)
+                case Denotation.Latticenal(_) => Array.init(i -> {
+                    if (i < Array.length(tuple))
+                        HeadTerm.Lit(tuple[i], Unknown)
+                    else
+                        HeadTerm.Lit(lat, Unknown)
+                }, Array.length(tuple) + 1)
+            };
+            Constraint(HeadAtom(PredSym(relName, Unknown), denotation, terms, Unknown), [], Unknown)
+        case _ => ?bug
+    }
 
-    def toDatabase[v](facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] with Order[v] =
+    def toDatabase(facts: Array[Constraint[v]]): Map[RelSym[v], Map[Array[v], v]] with Order[v] =
         Array.foldRight(c -> match c {
-            case Constraint(HeadAtom(PredSym(pred, _), _, _, _), _, _) =>
-                Map.insertWith(Set.union, pred, Set#{factToTuple(c)})
-        }, Map#{}, facts) as & Pure
+            case Constraint(HeadAtom(PredSym(pred, _), denotation, terms, _), _, _) =>
+                let relSym = RelSym.Full(pred, denotation);
+                match denotation {
+                    case Denotation.Relational =>
+                        Map.singleton(factToTuple(c), default) |>
+                        Map.insertWith(Map.union, relSym)
+                    case Denotation.Latticenal(_, _, lub, _) =>
+                        let key = Array.init(i -> match terms[i] {
+                            case HeadTerm.Lit(v, _) => v
+                            case _ => ?bug
+                        }, Array.length(terms) - 1);
+                        let lat = match Array.last(terms) {
+                            case Some(HeadTerm.Lit(v, _)) => v
+                            case _ => ?bug
+                        };
+                        Map.singleton(key, lat) |>
+                        Map.insertWith(Map.unionWith(lub), relSym)
+                }
+        } as & Pure, Map#{}, facts) as & Pure
 
-    def toAst(db: Map[String, Set[Array[v]]]): Datalog[v] & Impure =
+    def toAst(db: Database[v]): Datalog[v] & Impure =
+        // TODO: don't eagerly convert back to AST. Keep it as a database as long as possible.
         let facts = MutList.new();
-        Map.foreach(k -> v -> Set.foreach(t -> {
-            MutList.push!(tupleToFact(k, t), facts)
-        }, v), db);
+        MutMap.foreach(relSym -> rel -> match relSym {
+            case RelSym.Full(_) => MutMap.foreach(t -> l -> {
+                MutList.push!(tupleToFact(relSym, t, l), facts)
+            }, rel)
+            case _ => ()
+        }, db);
         Datalog(MutList.toArray(facts), [])
 }

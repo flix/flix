@@ -16,9 +16,10 @@
 
 namespace Fixpoint/Ram {
     pub enum BoolExp[v] {
-        case Empty(RelSym)
-        case NotMemberOf(Array[RamTerm[v]], RelSym)
+        case Empty(RelSym[v])
+        case NotMemberOf(Array[RamTerm[v]], RelSym[v])
         case Eq(RamTerm[v], RamTerm[v])
+        case Leq(v -> v -> Bool, RamTerm[v], RamTerm[v])
         case Guard0(Unit -> Bool)
         case Guard1(v -> Bool, RamTerm[v])
         case Guard2(v -> v -> Bool, RamTerm[v], RamTerm[v])
@@ -34,6 +35,7 @@ namespace Fixpoint/Ram {
                 case Empty(relSym) => "${relSym} = ∅"
                 case NotMemberOf(terms, relSym) => "(${commaSeparate(terms)}) ∉ ${relSym}"
                 case Eq(lhs, rhs) => "${lhs} = ${rhs}"
+                case Leq(_, lhs, rhs) => "${lhs} ≤ ${rhs}"
                 case Guard0(_) => "f?()"
                 case Guard1(_, v) => "f?(${v})"
                 case Guard2(_, v1, v2) => "f?(${v1}, ${v2})"

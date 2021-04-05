@@ -14,32 +14,44 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.SourceLocation;
+use Fixpoint/Ast.Denotation;
 
 namespace Fixpoint/Ram {
-    pub enum RelSym {
-        case Full(String)
-        case Delta(String)
-        case New(String)
+    pub enum RelSym[v] {
+        case Full(String, Denotation[v])
+        case Delta(String, Denotation[v])
+        case New(String, Denotation[v])
     }
 
-    instance ToString[RelSym] {
-        pub def toString(relSym: RelSym): String = match relSym {
-            case Full(name) => name
-            case Delta(name) => "Δ${name}"
-            case New(name) => "Δ${name}'"
+    pub def toDenotation(relSym: RelSym[v]): Denotation[v] = match relSym {
+        case Full(_, den) => den
+        case Delta(_, den) => den
+        case New(_, den) => den
+    }
+
+    instance ToString[RelSym[v]] {
+        pub def toString(relSym: RelSym[v]): String = match relSym {
+            case Full(name, _) => name
+            case Delta(name, _) => "Δ${name}"
+            case New(name, _) => "Δ${name}'"
         }
     }
 
-    instance Order[RelSym] {
-        pub def compare(a: RelSym, b: RelSym): Comparison = match (a, b) {
-            case (Full(s1), Full(s2))   => s1 <=> s2
-            case (Delta(s1), Delta(s2)) => s1 <=> s2
-            case (New(s1), New(s2))     => s1 <=> s2
-            case (Full(_), _) => GreaterThan
-            case (_, Full(_)) => LessThan
-            case (Delta(_), New(_)) => GreaterThan
-            case (New(_), Delta(_)) => LessThan
+    instance Order[RelSym[v]] {
+        pub def compare(a: RelSym[v], b: RelSym[v]): Comparison = match a {
+            case Full(s1, _) => match b {
+                case Full(s2, _) => s1 <=> s2
+                case _ => GreaterThan
+            }
+            case Delta(s1, _) => match b {
+                case Delta(s2, _) => s1 <=> s2
+                case New(_) => GreaterThan
+                case Full(_) => LessThan
+            }
+            case New(s1, _) => match b {
+                case New(s2, _) => s1 <=> s2
+                case _ => LessThan
+            }
         }
     }
 }

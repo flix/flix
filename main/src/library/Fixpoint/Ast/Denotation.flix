@@ -15,7 +15,7 @@
  */
 namespace Fixpoint/Ast {
     pub enum Denotation[v] {
-        case Relational,
-        case Latticenal(Unit -> v, v -> v -> v, v -> v -> v, v -> v -> v)
+        case Relational
+        case Latticenal(Unit -> v, v -> v -> Bool, v -> v -> v, v -> v -> v)
     }
 }

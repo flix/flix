@@ -17,9 +17,9 @@
 namespace Fixpoint/Ram {
     pub enum RamStmt[v] {
         case Insert(RelOp[v])
-        case Merge(RelSym, RelSym)
-        case Assign(RelSym, RelSym)
-        case Purge(RelSym)
+        case Merge(RelSym[v], RelSym[v])
+        case Assign(RelSym[v], RelSym[v])
+        case Purge(RelSym[v])
         case Seq(List[RamStmt[v]])
         case Until(List[BoolExp[v]], RamStmt[v])
         case Comment(String)

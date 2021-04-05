@@ -54,6 +54,8 @@ namespace Fixpoint {
                  BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), relSym) as & Pure
             case BoolExp.Eq(lhs, rhs) =>
                  BoolExp.Eq(lowerTerm(rowVars, lhs), lowerTerm(rowVars, rhs))
+            case BoolExp.Leq(f, lhs, rhs) =>
+                 BoolExp.Leq(f, lowerTerm(rowVars, lhs), lowerTerm(rowVars, rhs))
             case BoolExp.Guard0(_) => exp
             case BoolExp.Guard1(f, v) =>
                 let t = lowerTerm(rowVars, v);
@@ -84,7 +86,14 @@ namespace Fixpoint {
 
     def lowerTerm(rowVars: Map[RowVar, RowVar], term: RamTerm[v]): RamTerm[v] = match term {
         case RamTerm.Lit(_) => term
-        case RamTerm.Attribute(rowVar, index) => RamTerm.Attribute(Map.getWithDefault(rowVar, rowVar, rowVars), index)
+        case RamTerm.Attribute(rowVar, index) =>
+             RamTerm.Attribute(Map.getWithDefault(rowVar, rowVar, rowVars), index)
+        case RamTerm.Lat(rowVar) =>
+             RamTerm.Lat(Map.getWithDefault(rowVar, rowVar, rowVars))
+        case RamTerm.Meet(f, v1, v2) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            RamTerm.Meet(f, t1, t2)
         case RamTerm.App0(_) => term
         case RamTerm.App1(f, v) =>
             let t = lowerTerm(rowVars, v);
