@@ -873,7 +873,7 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.Denotation` from the given denotation `d` and type `tpeOpt`
     * (which must be the optional type of the last term).
     */
-  private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation): Expression = d match {
+  private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = d match {
     case Relational =>
       val innerExp = Expression.Unit(loc)
       mkTag(Enums.Denotation, "Relational", innerExp, Types.Denotation, loc)
@@ -882,19 +882,23 @@ object Lowering extends Phase[Root, Root] {
       tpeOpt match {
         case None => throw InternalCompilerException("Unexpected nullary lattice predicate.")
         case Some(tpe) =>
-          val botTpe = Type.mkPureArrow(Type.Unit, tpe)
-          val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-          val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
-          val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
 
-          // TODO: liftX and liftXb assumes that given expression is curried. But that is not true for these sigs.
-          val botExp = liftX(Expression.Sig(Sigs.mkBot(loc), botTpe, loc), List(Type.Unit), tpe)
-          val leqExp = liftXb(Expression.Sig(Sigs.mkLeq(loc), leqTpe, loc), List(tpe, tpe))
-          val lubExp = liftX(Expression.Sig(Sigs.mkLub(loc), lubTpe, loc), List(tpe, tpe), tpe)
-          val glbExp = liftX(Expression.Sig(Sigs.mkGlb(loc), glbTpe, loc), List(tpe, tpe), tpe)
+          // TODO: Refactor
 
-          val innerExp = mkTuple(List(botExp, leqExp, lubExp, glbExp), loc)
-          mkTag(Enums.Denotation, "Latticenal", innerExp, Types.Denotation, loc)
+          // The type `Denotation[tpe]`.
+          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, tpe :: Nil)
+
+          // The type `Denotation[Boxed]`.
+          val boxedDenotationType = Types.Denotation
+
+          val Lattice: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast.lattice")
+          val LatticeType: Type = Type.mkPureArrow(Type.Unit, unboxedDenotationType)
+
+          val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast.box")
+          val BoxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType)
+
+          val innerApply = Expression.Apply(Expression.Def(Lattice, LatticeType, loc), List(Expression.Unit(loc)), unboxedDenotationType, Type.Pure, loc)
+          Expression.Apply(Expression.Def(Box, BoxType, loc), List(innerApply), boxedDenotationType, Type.Pure, loc)
       }
   }
 
