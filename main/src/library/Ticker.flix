@@ -81,9 +81,9 @@ namespace Ticker {
         let (tickChannel, stopChannel) = match ticker {
           case Ticker(t, s) => (t, s)
         };
-        
+
         sleep(ns / 1000000i64);
-        
+
         select {
           case _stop <- stopChannel => ()
           case _ => {
@@ -95,7 +95,7 @@ namespace Ticker {
     pub enum Ticker {
       case Ticker(Channel[Int], Channel[Unit])
     }
-    
+
     def newTicker(): Ticker & Impure = Ticker(chan Int 100, chan Unit 100)
 
     pub def stop(ticker: Ticker): Unit & Impure = {

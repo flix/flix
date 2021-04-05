@@ -161,11 +161,11 @@ object ErasedAst {
 
     case class ArraySlice[T <: PType](base: ErasedAst.Expression[PReference[PArray[T]]], beginIndex: ErasedAst.Expression[PInt32], endIndex: ErasedAst.Expression[PInt32], tpe: EType[PReference[PArray[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PArray[T]]]
 
-    case class Ref[T <: PType](exp: ErasedAst.Expression[T], tpe: EType[PReference[PRef[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PRef[T]]]
+    case class Ref[T <: PType](exp: ErasedAst.Expression[T], className: String, tpe: EType[PReference[PRef[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PRef[T]]]
 
-    case class Deref[T <: PType](exp: ErasedAst.Expression[PReference[PRef[T]]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class Deref[T <: PType](exp: ErasedAst.Expression[PReference[PRef[T]]], className: String, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Assign[T <: PType](exp1: ErasedAst.Expression[PReference[PRef[T]]], exp2: ErasedAst.Expression[T], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
+    case class Assign[T <: PType](exp1: ErasedAst.Expression[PReference[PRef[T]]], exp2: ErasedAst.Expression[T], className: String, tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
     case class Existential(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
       final val tpe = EType.Bool()

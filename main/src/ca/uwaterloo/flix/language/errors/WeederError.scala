@@ -464,23 +464,4 @@ object WeederError {
     }
   }
 
-  /**
-    * An error raised to indicate an illegal type constraint.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalTypeConstraint(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal type constraint."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal type constraint." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal type constraint") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << s" Remove the type constraint."
-    }
-  }
-
 }

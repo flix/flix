@@ -20,9 +20,36 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 
 // actual flix types
-sealed trait EType[T <: PType]
+sealed trait EType[T <: PType] {
+  def toInternalName: String = EType.toInternalName(this)
+  def erasedType: String = EType.erasedType(this)
+}
 
 object EType {
+
+  def toInternalName[T <: PType](e: EType[T]): String = e match {
+    case Bool() => "Z"
+    case Int8() => "B"
+    case Int16() => "S"
+    case Int32() => "I"
+    case Int64() => "J"
+    case Char() => "C"
+    case Float32() => "F"
+    case Float64() => "D"
+    case Reference(referenceType) => referenceType.toInternalName
+  }
+
+  def erasedType[T <: PType](e: EType[T]): String = e match {
+    case Bool() => "Bool"
+    case Int8() => "Int8"
+    case Int16() => "Int16"
+    case Int32() => "Int32"
+    case Int64() => "Int64"
+    case Char() => "Char"
+    case Float32() => "Float32"
+    case Float64() => "Float64"
+    case Reference(_) => "Obj"
+  }
 
   case class Bool() extends EType[PInt32]
 
@@ -45,9 +72,41 @@ object EType {
 }
 
 
-sealed trait ERefType[T <: PRefType]
+sealed trait ERefType[T <: PRefType] {
+  def toInternalName: String = ERefType.toInternalName(this)
+}
 
 object ERefType {
+
+  // todo
+  def toInternalName[T <: PRefType](e: ERefType[T]): String = e match {
+    case BoxedBool() => "???"
+    case BoxedInt8() => "???"
+    case BoxedInt16() => "???"
+    case BoxedInt32() => "???"
+    case BoxedInt64() => "???"
+    case BoxedChar() => "???"
+    case BoxedFloat32() => "???"
+    case BoxedFloat64() => "???"
+    case Unit() => "flix/runtime/value/Unit"
+    case Array(tpe) => "???"
+    case Channel(tpe) => "???"
+    case Lazy(tpe) => "???"
+    case Ref(tpe) => "Ref$" + tpe.erasedType
+    case Var(id) => "???"
+    case Tuple(elms) => "???"
+    case Enum(sym, args) => "???"
+    case BigInt() => "???"
+    case Str() => "???"
+    case Arrow(args, result) => "???"
+    case RecordEmpty() => "???"
+    case RecordExtend(field, value, rest) => "???"
+    case SchemaEmpty() => "???"
+    case SchemaExtend(name, tpe, rest) => "???"
+    case Relation(tpes) => "???"
+    case Lattice(tpes) => "???"
+    case Native(clazz) => "???"
+  }
 
   case class BoxedBool() extends ERefType[PBoxedBool]
 

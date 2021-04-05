@@ -16,189 +16,574 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, SourceLocation, Symbol, ERefType => ERT, EType => ET, PRefType => PRT, PType => PT}
+import ca.uwaterloo.flix.language.ast.ERefType._
+import ca.uwaterloo.flix.language.ast.EType._
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, EType, PRefType, PType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Instructions {
   def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = ???
 
-  // TODO: Mark unsafe functions
+  // NATIVE
+  def SWAP
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] =
+    ???
 
-  def ISWAP[R <: Stack, T1 <: PT with Cat1, T2 <: PT with Cat1]: F[R ** T2 ** T1] => F[R ** T1 ** T2] = ???
+  // META
+  def NOP
+  [R <: Stack]:
+  F[R] => F[R] =
+    x => x
 
-  def NOP[R <: Stack]: F[R] => F[R] = x => x
+  // NATIVE
+  def XGETFIELD
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String, fieldType: EType[T1]):
+  F[R ** PReference[T2]] => F[R ** T1] =
+    fieldType match {
+      case Bool() =>  ???
+      case Int8() => ???
+      case Int16() => ???
+      case Int32() => ???
+      case Int64() => ???
+      case Char() => ???
+      case Float32() => ???
+      case Float64() => ???
+      case Reference(referenceType) => ???
+    }
 
-  def POP[R <: Stack, T <: PT]: F[R ** T] => F[R] = ???
+  // NATIVE
+  def GetInt32Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String, fieldType: EType[T1]):
+  F[R ** PReference[T2]] => F[R ** PInt32] =
+    ???
 
-  def DUP_X1[R <: Stack, T1 <: PT with Cat1, T2 <: PT with Cat1]: F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = ???
+  // NATIVE
+  def PUTFIELD
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String, fieldType: EType[T1]):
+  F[R ** PReference[T2] ** T1] => F[R] =
+    ???
 
-  def DUP_X2_onCat1[R <: Stack, T1 <: PT with Cat1, T2 <: PT with Cat1, T3 <: PT with Cat1]: F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = ???
+  // NATIVE
+  def CAST
+  [R <: Stack, T <: PRefType]:
+  F[R ** PReference[PAnyObject]] => F[R ** PReference[T]] =
+    ???
 
-  def DUP_X2_onCat2[R <: Stack, T1 <: PT with Cat1, T2 <: PT with Cat2]: F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = ???
+  // NATIVE
+  def NEW
+  [R <: Stack, T <: PRefType]
+  (className: String):
+  F[R] => F[R ** PReference[T]] =
+    ???
 
-  def DUP2_X2_cat1_onCat1[R <: Stack, T1 <: PT with Cat1, T2 <: PT with Cat1, T3 <: PT with Cat1, T4 <: PT with Cat1]: F[R ** T4 ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T4 ** T3 ** T2 ** T1] = ???
+  // TODO: type should be constructed along with descriptor string
+  // NATIVE
+  def INVOKESPECIAL
+  [R <: Stack, T <: PRefType]
+  (className: String, constructorDescriptor: String):
+  F[R ** PReference[T]] => F[R] =
+    ???
 
-  def DUP2_X2_cat2_onCat1[R <: Stack, T1 <: PT with Cat2, T2 <: PT with Cat1, T3 <: PT with Cat1]: F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = ???
+  // todo delete
+  def SCAFFOLD
+  [R1 <: Stack, R2 <: Stack]:
+  F[R1] => F[R2] =
+    ???
 
-  def DUP2_X2_cat1_onCat2[R <: Stack, T1 <: PT with Cat1, T2 <: PT with Cat1, T3 <: PT with Cat2]: F[R ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T3 ** T2 ** T1] = ???
+  // TODO: What should happen here
+  // NATIVE
+  // def RETURN[R <: Stack]: F[R] => R[???] =
 
-  def DUP2_X2_cat2_onCat2[R <: Stack, T1 <: PT with Cat2, T2 <: PT with Cat2]: F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = ???
+  // NATIVE
+  def POP
+  [R <: Stack, T <: PType with Cat1]:
+  F[R ** T] => F[R] =
+    ???
 
-  def DUP[R <: Stack, T <: PT with Cat1]: F[R ** T] => F[R ** T ** T] = ???
+  // NATIVE
+  def DUP_X1
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] =
+    ???
 
-  def ISUB[R <: Stack]: F[R ** PT.PInt32 ** PT.PInt32] => F[R ** PT.PInt32] = ???
+  // NATIVE
+  def DUP_X2_onCat1
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat1]:
+  F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] =
+    ???
 
-  def pushUnit[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PUnit]] = ???
+  // NATIVE
+  def DUP_X2_onCat2
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat2]:
+  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] =
+    ???
 
-  def pushNull[R <: Stack, T <: PRT]: F[R] => F[R ** PT.PReference[T]] = ???
+  // NATIVE
+  def DUP2_X2_cat1_onCat1
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat1, T4 <: PType with Cat1]:
+  F[R ** T4 ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T4 ** T3 ** T2 ** T1] =
+    ???
 
-  def pushBool[R <: Stack](b: Boolean): F[R] => F[R ** PT.PInt32] = pushInt32(if (b) 1 else 0)
+  // NATIVE
+  def DUP2_X2_cat2_onCat1
+  [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat1, T3 <: PType with Cat1]:
+  F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] =
+    ???
 
-  def pushInt8[R <: Stack](n: Int): F[R] => F[R ** PT.PInt8] = ???
+  // NATIVE
+  def DUP2_X2_cat1_onCat2
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat2]:
+  F[R ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T3 ** T2 ** T1] =
+    ???
 
-  def pushInt16[R <: Stack](n: Int): F[R] => F[R ** PT.PInt16] = ???
+  // NATIVE
+  def DUP2_X2_cat2_onCat2
+  [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat2]:
+  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] =
+    ???
 
-  def pushInt32[R <: Stack](n: Int): F[R] => F[R ** PT.PInt32] = ???
+  // NATIVE
+  def DUP
+  [R <: Stack, T <: PType with Cat1]:
+  F[R ** T] => F[R ** T ** T] =
+    ???
 
-  def pushInt64[R <: Stack](n: Long): F[R] => F[R ** PT.PInt64] = ???
+  // NATIVE
+  def ISUB
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] =
+    ???
 
-  def pushFloat32[R <: Stack](n: Float): F[R] => F[R ** PT.PFloat32] = ???
-
-  def pushFloat64[R <: Stack](n: Double): F[R] => F[R ** PT.PFloat64] = ???
-
-  def pushChar[R <: Stack](c: Char): F[R] => F[R ** PT.PChar] = ???
-
-  def BALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PInt8]] ** PT.PInt32] => F[R ** PT.PInt8] = ???
-
-  def SALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PInt16]] ** PT.PInt32] => F[R ** PT.PInt16] = ???
-
-  def IALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PInt32]] ** PT.PInt32] => F[R ** PT.PInt32] = ???
-
-  def LALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PInt64]] ** PT.PInt32] => F[R ** PT.PInt64] = ???
-
-  def CALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PChar]] ** PT.PInt32] => F[R ** PT.PChar] = ???
-
-  def FALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PFloat32]] ** PT.PInt32] => F[R ** PT.PFloat32] = ???
-
-  def DALoad[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PFloat64]] ** PT.PInt32] => F[R ** PT.PFloat64] = ???
-
-  def AALoad[R <: Stack, T <: PRT]: F[R ** PT.PReference[PRT.PArray[PT.PReference[T]]] ** PT.PInt32] => F[R ** PT.PReference[T]] = ???
-
-  def XALoad[R <: Stack, T <: PT](tpe: ET[T]): F[R ** PT.PReference[PRT.PArray[T]] ** PT.PInt32] => F[R ** T] = tpe match {
-    case ET.Bool() | ET.Int32() => IALoad
-    case ET.Char() => CALoad
-    case ET.Float32() => FALoad
-    case ET.Float64() => DALoad
-    case ET.Int8() => BALoad
-    case ET.Int16() => SALoad
-    case ET.Int64() => LALoad
-    case ET.Reference(_) => AALoad //todo: try pop pop pushunit
+  // NATIVE
+  def pushUnit
+  [R <: Stack]:
+  F[R] => F[R ** PReference[PUnit]] = {
+    ???
+    // flix/runtime/value/Unit
   }
 
-  def BAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PInt8]] ** PT.PInt32 ** PT.PInt8] => F[R] = ???
+  // NATIVE
+  def pushNull
+  [R <: Stack, T <: PRefType]:
+  F[R] => F[R ** PReference[T]] =
+    ???
 
-  def SAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PInt16]] ** PT.PInt32 ** PT.PInt16] => F[R] = ???
+  // NATIVE
+  def pushBool
+  [R <: Stack]
+  (b: Boolean):
+  F[R] => F[R ** PInt32] =
+    pushInt32(if (b) 1 else 0)
 
-  def IAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PInt32]] ** PT.PInt32 ** PT.PInt32] => F[R] = ???
+  // NATIVE
+  def pushInt8
+  [R <: Stack]
+  (n: Int):
+  F[R] => F[R ** PInt8] =
+    ???
 
-  def LAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PInt64]] ** PT.PInt32 ** PT.PInt64] => F[R] = ???
+  // NATIVE
+  def pushInt16
+  [R <: Stack]
+  (n: Int):
+  F[R] => F[R ** PInt16] =
+    ???
 
-  def CAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PChar]] ** PT.PInt32 ** PT.PChar] => F[R] = ???
+  // NATIVE
+  def pushInt32
+  [R <: Stack]
+  (n: Int):
+  F[R] => F[R ** PInt32] =
+    ???
 
-  def FAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PFloat32]] ** PT.PInt32 ** PT.PFloat32] => F[R] = ???
+  // NATIVE
+  def pushInt64
+  [R <: Stack]
+  (n: Long):
+  F[R] => F[R ** PInt64] =
+    ???
 
-  def DAStore[R <: Stack]: F[R ** PT.PReference[PRT.PArray[PT.PFloat64]] ** PT.PInt32 ** PT.PFloat64] => F[R] = ???
+  // NATIVE
+  def pushFloat32
+  [R <: Stack]
+  (n: Float):
+  F[R] => F[R ** PFloat32] =
+    ???
 
-  def AAStore[R <: Stack, T <: PRT]: F[R ** PT.PReference[PRT.PArray[PT.PReference[T]]] ** PT.PInt32 ** PT.PReference[T]] => F[R] = ???
+  // NATIVE
+  def pushFloat64
+  [R <: Stack]
+  (n: Double):
+  F[R] => F[R ** PFloat64] =
+    ???
 
-  def XAStore[R <: Stack, T <: PT](tpe: ET[T]): F[R ** PT.PReference[PRT.PArray[T]] ** PT.PInt32 ** T] => F[R] = tpe match {
-    case ET.Char() => CAStore
-    case ET.Float32() => FAStore
-    case ET.Float64() => DAStore
-    case ET.Int8() => BAStore
-    case ET.Int16() => SAStore
-    case ET.Bool() | ET.Int32() => IAStore
-    case ET.Int64() => LAStore
-    case ET.Reference(_) => AAStore
-  }
+  // NATIVE
+  def pushChar
+  [R <: Stack]
+  (c: scala.Char):
+  F[R] => F[R ** PChar] =
+    ???
+
+  // NATIVE
+  def ALOAD
+  [R <: Stack, T <: PRefType]
+  (index: Int):
+  F[R] => F[R ** PReference[T]] =
+    ???
+
+  // NATIVE
+  def FLOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PFloat32] =
+    ???
+
+  // NATIVE
+  def DLOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PFloat64] =
+    ???
+
+  // NATIVE
+  def ILOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PInt32] =
+    ???
+
+  // NATIVE
+  def LLOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PInt64] =
+    ???
+
+  // META
+  def XLOAD
+  [R <: Stack, T <: PType]
+  (tpe: EType[T], index: Int):
+  F[R] => F[R ** T] =
+    tpe match {
+      case Bool() => ???
+      case Int8() => ???
+      case Int16() => ???
+      case Int32() => ILOAD(index)
+      case Int64() => LLOAD(index)
+      case Char() => ???
+      case Float32() => FLOAD(index)
+      case Float64() => DLOAD(index)
+      case Reference(_) => ALOAD(index)
+    }
+
+  // NATIVE
+  def BALoad
+  [R <: Stack]:
+  F[R ** PReference[PArray[PInt8]] ** PInt32] => F[R ** PInt8] =
+    ???
+
+  // NATIVE
+  def SALoad
+  [R <: Stack]:
+  F[R ** PReference[PArray[PInt16]] ** PInt32] => F[R ** PInt16] =
+    ???
+
+  // NATIVE
+  def IALoad
+  [R <: Stack]:
+  F[R ** PReference[PArray[PInt32]] ** PInt32] => F[R ** PInt32] =
+    ???
+
+  // NATIVE
+  def LALoad
+  [R <: Stack]:
+  F[R ** PReference[PArray[PInt64]] ** PInt32] => F[R ** PInt64] =
+    ???
+
+  // NATIVE
+  def CALoad
+  [R <: Stack]:
+  F[R ** PReference[PArray[PChar]] ** PInt32] => F[R ** PChar] =
+    ???
+
+  // NATIVE
+  def FALoad
+  [R <: Stack]:
+  F[R ** PReference[PArray[PFloat32]] ** PInt32] => F[R ** PFloat32] =
+    ???
+
+  // NATIVE
+  def DALoad
+  [R <: Stack]:
+  F[R ** PReference[PArray[PFloat64]] ** PInt32] => F[R ** PFloat64] =
+    ???
+
+  // NATIVE
+  def AALoad
+  [R <: Stack, T <: PRefType]:
+  F[R ** PReference[PArray[PReference[T]]] ** PInt32] => F[R ** PReference[T]] =
+    ???
+
+  // META
+  def XALoad
+  [R <: Stack, T <: PType]
+  (tpe: EType[T]):
+  F[R ** PReference[PArray[T]] ** PInt32] => F[R ** T] =
+    tpe match {
+      case Bool() | Int32() => IALoad
+      case Char() => CALoad
+      case Float32() => FALoad
+      case Float64() => DALoad
+      case Int8() => BALoad
+      case Int16() => SALoad
+      case Int64() => LALoad
+      case Reference(_) => AALoad
+    }
+
+  // NATIVE
+  def BAStore
+  [R <: Stack]:
+  F[R ** PReference[PArray[PInt8]] ** PInt32 ** PInt8] => F[R] =
+    ???
+
+  // NATIVE
+  def SAStore
+  [R <: Stack]:
+  F[R ** PReference[PArray[PInt16]] ** PInt32 ** PInt16] => F[R] =
+    ???
+
+  // NATIVE
+  def IAStore
+  [R <: Stack]:
+  F[R ** PReference[PArray[PInt32]] ** PInt32 ** PInt32] => F[R] =
+    ???
+
+  // NATIVE
+  def LAStore
+  [R <: Stack]:
+  F[R ** PReference[PArray[PInt64]] ** PInt32 ** PInt64] => F[R] =
+    ???
+
+  // NATIVE
+  def CAStore
+  [R <: Stack]:
+  F[R ** PReference[PArray[PChar]] ** PInt32 ** PChar] => F[R] =
+    ???
+
+  // NATIVE
+  def FAStore
+  [R <: Stack]:
+  F[R ** PReference[PArray[PFloat32]] ** PInt32 ** PFloat32] => F[R] =
+    ???
+
+  // NATIVE
+  def DAStore
+  [R <: Stack]:
+  F[R ** PReference[PArray[PFloat64]] ** PInt32 ** PFloat64] => F[R] =
+    ???
+
+  // NATIVE
+  def AAStore
+  [R <: Stack, T <: PRefType]:
+  F[R ** PReference[PArray[PReference[T]]] ** PInt32 ** PReference[T]] => F[R] =
+    ???
+
+  // META
+  def XAStore
+  [R <: Stack, T <: PType]
+  (tpe: EType[T]):
+  F[R ** PReference[PArray[T]] ** PInt32 ** T] => F[R] =
+    tpe match {
+      case Char() => CAStore
+      case Float32() => FAStore
+      case Float64() => DAStore
+      case Int8() => BAStore
+      case Int16() => SAStore
+      case Bool() | Int32() => IAStore
+      case Int64() => LAStore
+      case Reference(_) => AAStore
+    }
 
   // I/S/B/C-Store are all just jvm ISTORE
-  def IStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PInt32] => F[R] = ???
+  // NATIVE
+  def IStore
+  [R <: Stack]
+  (sym: Symbol.VarSym):
+  F[R ** PInt32] => F[R] =
+    ???
 
-  def SStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PInt16] => F[R] = ???
+  // NATIVE
+  def SStore
+  [R <: Stack]
+  (sym: Symbol.VarSym):
+  F[R ** PInt16] => F[R] =
+    ???
 
-  def BStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PInt8] => F[R] = ???
+  // NATIVE
+  def BStore
+  [R <: Stack]
+  (sym: Symbol.VarSym):
+  F[R ** PInt8] => F[R] =
+    ???
 
-  def CStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PChar] => F[R] = ???
+  // NATIVE
+  def CStore
+  [R <: Stack]
+  (sym: Symbol.VarSym):
+  F[R ** PChar] => F[R] =
+    ???
 
-  def LStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PInt64] => F[R] = ???
+  // NATIVE
+  def LStore
+  [R <: Stack]
+  (sym: Symbol.VarSym):
+  F[R ** PInt64] => F[R] =
+    ???
 
-  def FStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PFloat32] => F[R] = ???
+  // NATIVE
+  def FStore
+  [R <: Stack]
+  (sym: Symbol.VarSym):
+  F[R ** PFloat32] => F[R] =
+    ???
 
-  def DStore[R <: Stack](sym: Symbol.VarSym): F[R ** PT.PFloat64] => F[R] = ???
+  // NATIVE
+  def DStore
+  [R <: Stack]
+  (sym: Symbol.VarSym):
+  F[R ** PFloat64] => F[R] =
+    ???
 
-  def AStore[R <: Stack, T <: PRT](sym: Symbol.VarSym): F[R ** PT.PReference[T]] => F[R] = ???
+  // NATIVE
+  def AStore
+  [R <: Stack, T <: PRefType]
+  (sym: Symbol.VarSym):
+  F[R ** PReference[T]] => F[R] =
+    ???
 
-  def XStore[R <: Stack, T <: PT](sym: Symbol.VarSym, tpe: ET[T]): F[R ** T] => F[R] = tpe match {
-    case ET.Char() => CStore(sym)
-    case ET.Float32() => FStore(sym)
-    case ET.Float64() => DStore(sym)
-    case ET.Int8() => BStore(sym)
-    case ET.Int16() => SStore(sym)
-    case ET.Bool() | ET.Int32() => IStore(sym)
-    case ET.Int64() => LStore(sym)
-    case ET.Reference(_) => AStore(sym)
-  }
+  // META
+  def XStore
+  [R <: Stack, T <: PType]
+  (sym: Symbol.VarSym, tpe: EType[T]):
+  F[R ** T] => F[R] =
+    tpe match {
+      case Char() => CStore(sym)
+      case Float32() => FStore(sym)
+      case Float64() => DStore(sym)
+      case Int8() => BStore(sym)
+      case Int16() => SStore(sym)
+      case Bool() | Int32() => IStore(sym)
+      case Int64() => LStore(sym)
+      case Reference(_) => AStore(sym)
+    }
 
-  def BOOLNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt32]]] = ???
+  // NATIVE
+  def BOOLNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] =
+    ???
 
-  def CNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PChar]]] = ???
+  // NATIVE
+  def CNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PChar]]] =
+    ???
 
-  def FNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PFloat32]]] = ???
+  // NATIVE
+  def FNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PFloat32]]] =
+    ???
 
-  def DNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PFloat64]]] = ???
+  // NATIVE
+  def DNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PFloat64]]] =
+    ???
 
-  def BNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt8]]] = ???
+  // NATIVE
+  def BNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt8]]] =
+    ???
 
-  def SNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt16]]] = ???
+  // NATIVE
+  def SNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt16]]] =
+    ???
 
-  def INEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt32]]] = ???
+  // NATIVE
+  def INEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] =
+    ???
 
-  def LNEWARRAY[R <: Stack]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PInt64]]] = ???
+  // NATIVE
+  def LNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt64]]] =
+    ???
 
-  def ANEWARRAY[R <: Stack, T <: PRT]: F[R] => F[R ** PT.PReference[PRT.PArray[PT.PReference[T]]]] = {
-    // from genExpression:
-    // visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-    // should type be built?
+  // NATIVE
+  def ANEWARRAY
+  [R <: Stack, T <: PRefType]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PReference[T]]]] =
+  // from genExpression:
+  // visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
+  // should type be built?
+    ???
+
+  // META
+  def XNEWARRAY
+  [R <: Stack, T <: PType]
+  (arrayType: EType[PReference[PArray[T]]]):
+  F[R ** PInt32] => F[R ** PReference[PArray[T]]] =
+    arrayType match {
+      case Reference(Array(tpe)) => tpe match {
+        case Bool() => BOOLNEWARRAY
+        case Char() => CNEWARRAY
+        case Float32() => FNEWARRAY
+        case Float64() => DNEWARRAY
+        case Int8() => BNEWARRAY
+        case Int16() => SNEWARRAY
+        case Int32() => INEWARRAY
+        case Int64() => LNEWARRAY
+        case Reference(_) => ANEWARRAY
+      }
+      case _ => throw InternalCompilerException("unexpected non-array type")
+    }
+
+  def systemArrayCopy
+  [R <: Stack, S <: PRefType]:
+  F[R ** PReference[S] ** PInt32 ** PReference[S] ** PInt32 ** PInt32] => F[R] =
+    ???
+
+  def arrayLength
+  [R <: Stack, T <: PType]:
+  F[R ** PReference[PArray[T]]] => F[R ** PInt32] =
+    ???
+
+  // also make void
+  def defMakeFunction
+  [R <: Stack, T <: PType]
+  (x: F[R], t: EType[T]):
+  F[R ** T] = {
+    //todo where is this string stored
+    EType.toInternalName(t)
     ???
   }
 
-  def XNEWARRAY[R <: Stack, T <: PT](arrayType: ET[PT.PReference[PRT.PArray[T]]]): F[R] => F[R ** PT.PReference[PRT.PArray[T]]] = arrayType match {
-    case ET.Reference(ERT.Array(tpe)) => tpe match {
-      case ET.Bool() => BOOLNEWARRAY
-      case ET.Char() => CNEWARRAY
-      case ET.Float32() => FNEWARRAY
-      case ET.Float64() => DNEWARRAY
-      case ET.Int8() => BNEWARRAY
-      case ET.Int16() => SNEWARRAY
-      case ET.Int32() => INEWARRAY
-      case ET.Int64() => LNEWARRAY
-      case ET.Reference(_) => ANEWARRAY
-    }
-    case _ => throw InternalCompilerException("unexpected non-array type")
-  }
+  def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, Int32()), Int32())
 
-  def systemArrayCopy[R <: Stack]: F[R ** PT.PReference[PRT.PAnyObject] ** PT.PInt32 ** PT.PReference[PRT.PAnyObject] ** PT.PInt32 ** PT.PInt32] => F[R] = ???
-
-  def arrayLength[R <: Stack, T <: PT]: F[R ** PT.PReference[PRT.PArray[T]]] => F[R ** PT.PInt32] = ???
-
-  // also make void
-  def defMakeFunction[R <: Stack, T <: PT](t: ET[T], x: F[R]): F[R ** T] = ???
-
-  def foo = defMakeFunction(ET.Int32(), defMakeFunction(ET.Int32(), null))
-
-
+  // META
   implicit class ComposeOps[A, B](f: F[A] => F[B]) {
     def ~[C](that: F[B] => F[C]): F[A] => F[C] = ???
   }

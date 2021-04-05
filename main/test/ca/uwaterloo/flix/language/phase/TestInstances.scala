@@ -259,7 +259,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Box[a]] {
-        |    pub def f[a: C](_x: Box[a]): Bool = false
+        |    pub def f[a](_x: Box[a]): Bool with C[a] = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -295,7 +295,7 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    pub def f[b : D](x: b): a
+        |    pub def f[b](x: b): a with D[b]
         |}
         |
         |class D[a]
