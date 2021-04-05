@@ -1035,7 +1035,13 @@ object GenExpression {
         // Compile the index
         compileInt(visitor, index)
         // Compile the chan expression 100
-        compileExpression(rule.chan, visitor, currentClass, lenv0, entryPoint)
+        val chan = rule match {
+          case SelectChannelRule.SelectGet(_, chan, _) =>
+            chan
+          case SelectChannelRule.SelectPut(chan, _, _) =>
+            chan
+        }
+        compileExpression(chan, visitor, currentClass, lenv0, entryPoint)
         // Cast the type from Object to Channel
         visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
         // Store the expression in the array
@@ -1076,17 +1082,28 @@ object GenExpression {
         visitor.visitLabel(label)
         // The SelectChoice is on top of the stack. We get the element of the channel
         visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", "Ljava/lang/Object;")
+
+        val (chan, exp) = rule match {
+          case SelectChannelRule.SelectGet(_, chan, exp) =>
+            (chan, exp)
+          case SelectChannelRule.SelectPut(chan, _, exp) =>
+            (chan, exp)
+        }
         // Jvm Type of the elementType
-        val channelType = rule.chan.tpe.asInstanceOf[MonoType.Channel].tpe
+        val channelType = chan.tpe.asInstanceOf[MonoType.Channel].tpe
         val jvmType = JvmOps.getErasedJvmType(channelType)
         // Unbox if needed for primitives
         AsmOps.castIfNotPrimAndUnbox(visitor, jvmType)
         // Store instruction for `jvmType`
         val iStore = AsmOps.getStoreInstruction(jvmType)
         // Extend the environment with the element from the channel
-        visitor.visitVarInsn(iStore, rule.sym.getStackOffset + 3)
+        rule match {
+          case SelectChannelRule.SelectGet(sym, _, _) =>
+            visitor.visitVarInsn(iStore, sym.getStackOffset + 3)
+          case SelectChannelRule.SelectPut(_, _, _) => ()
+        }
         // Finally compile the body of the selected rule
-        compileExpression(rule.exp, visitor, currentClass, lenv0, entryPoint)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         // Jump out of the cases so we do not fall through to the next one
         visitor.visitJumpInsn(GOTO, completedLabel)
       }
