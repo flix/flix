@@ -261,10 +261,13 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       ErasedAst.Expression.PutChannel(visitExp[PReference[PChan[PType]]](exp1), visitExp(exp2), visitTpe[PReference[PChan[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-      val newRules = rules.map { case FinalAst.SelectChannelRule(sym, chan, exp) =>
-        ErasedAst.SelectChannelRule[T](sym, visitExp(chan), visitExp(exp))
-      }
-      ErasedAst.Expression.SelectChannel(newRules, default.map(visitExp[T]), visitTpe(tpe), loc)
+//      val newRules = rules.map {
+//        case FinalAst.SelectChannelRule.SelectGet(sym, chan, exp) =>
+//          ErasedAst.SelectChannelRule[T](sym, visitExp(chan), visitExp(exp))
+//        case FinalAst.SelectChannelRule.SelectPut(chan, value, exp) =>
+//          ErasedAst.SelectChannelRule[T](sym, visitExp(chan), visitExp(exp))
+//      }
+      ErasedAst.Expression.SelectChannel(null, default.map(visitExp[T]), visitTpe(tpe), loc)
 
     case FinalAst.Expression.Spawn(exp, tpe, loc) =>
       ErasedAst.Expression.Spawn(visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
