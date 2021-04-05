@@ -687,8 +687,12 @@ object JvmOps {
       case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules.foldLeft(Set.empty[ClosureInfo])((old, rule) =>
-          old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+        val rs = rules.foldLeft(Set.empty[ClosureInfo])((old, rule) => rule match {
+          case SelectChannelRule.SelectGet(_, chan, exp) =>
+            old ++ visitExp (chan) ++ visitExp (exp)
+          case SelectChannelRule.SelectPut(chan, value, exp) =>
+            old ++ visitExp (chan) ++ visitExp (value) ++ visitExp (exp)
+        })
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
@@ -1041,7 +1045,12 @@ object JvmOps {
       case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules.foldLeft(Set(tpe))((old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+        val rs = rules.foldLeft(Set(tpe))((old, rule) => rule match {
+          case SelectChannelRule.SelectGet(_, chan, exp) =>
+            old ++ visitExp(chan) ++ visitExp(exp)
+          case SelectChannelRule.SelectPut(chan, value, exp) =>
+            old ++ visitExp(chan) ++ visitExp(value) ++ visitExp(exp)
+        })
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
