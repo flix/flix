@@ -54,6 +54,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * The expected scheme of the `main` function.
+    */
+  private val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
+
+  /**
     * Type checks the given AST root.
     */
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
@@ -165,8 +170,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     if (!defn.sym.isMain) {
       return ().toSuccess
     }
-
-    val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
 
     if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
       TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.spec.loc).toFailure
