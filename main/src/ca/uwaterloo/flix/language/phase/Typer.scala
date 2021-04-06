@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.ToFailure
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
@@ -52,6 +52,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
 
   }
+
+  /**
+    * The expected scheme of the `main` function.
+    */
+  private val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
 
   /**
     * Type checks the given AST root.
@@ -82,7 +87,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val envInsts = instances.map {
           case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
         }
-        (classSym, Ast.ClassContext(clazz.superClasses, envInsts))
+        // ignore the super class parameters since they should all be the same as the class param
+        val superClasses = clazz.superClasses.map(_.sym)
+        (classSym, Ast.ClassContext(superClasses, envInsts))
     }
   }
 
@@ -148,9 +155,27 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitDefn(defn: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
-      typeCheckDecl(spec0, exp0, assumedTconstrs, isMain = sym.isMain, root, classEnv) map {
-        case (spec, exp) => TypedAst.Def(sym, spec, exp)
-      }
+      for {
+        // check the main signature before typechecking the def
+        _ <- checkMain(defn, classEnv)
+        res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv)
+        (spec, exp) = res
+      } yield TypedAst.Def(sym, spec, exp)
+  }
+
+  /**
+    * Checks that, if the function is a main function, it has the right type scheme.
+    */
+  private def checkMain(defn: ResolvedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
+    if (!defn.sym.isMain) {
+      return ().toSuccess
+    }
+
+    if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
+      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.spec.loc).toFailure
+    } else {
+      ().toSuccess
+    }
   }
 
   /**
@@ -158,7 +183,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitSig(sig: ResolvedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = sig match {
     case ResolvedAst.Sig(sym, spec0, Some(exp0)) =>
-      typeCheckDecl(spec0, exp0, assumedTconstrs, isMain = false, root, classEnv) map {
+      typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv) map {
         case (spec, exp) => TypedAst.Sig(sym, spec, Some(exp))
       }
     case ResolvedAst.Sig(sym, spec0, None) =>
@@ -201,7 +226,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDecl(spec0: ResolvedAst.Spec, exp0: ResolvedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], isMain: Boolean, root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
+  private def typeCheckDecl(spec0: ResolvedAst.Spec, exp0: ResolvedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, eff, loc) =>
 
       ///
@@ -212,13 +237,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp))
 
 
-      val declaredScheme = if (isMain) {
-        // Case 1: This is the main function. Its type signature is fixed.
-        Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
-      } else {
-        // Case 2: Use the declared type.
-        sc.copy(constraints = sc.constraints ++ assumedTconstrs)
-      }
+      // Add the assumed constraints to the declared scheme
+      val declaredScheme = sc.copy(constraints = sc.constraints ++ assumedTconstrs)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.

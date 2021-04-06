@@ -464,4 +464,42 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate type params where some (but not all) are explicitly kinded.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class InconsistentTypeParameters(loc: SourceLocation) extends WeederError {
+    def summary: String = "Either all or none of the type parameters must be annotated with a kind."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Inconsistent type parameters." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inconsistent type parameters") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Either all or none of the type parameters must be annotated with a kind."
+    }
+  }
+
+  /**
+    * An error raised to indicate type params that are not kinded.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
+    def summary: String = "Type parameters here must be annotated with a kind."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unkinded type parameters." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unkinded type parameters") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Type parameters here must be annotated with a kind."
+    }
+  }
+
 }

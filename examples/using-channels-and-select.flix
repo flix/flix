@@ -20,7 +20,7 @@ def hiss(c: Channel[String], n: Int): Unit & Impure =
     }
 
 /// Start the animal farm...
-def main(_args: Array[String]): String & Impure = {
+def main(_args: Array[String]): Int & Impure = {
     let c1 = chan String 1;
     let c2 = chan String 1;
     let c3 = chan String 1;

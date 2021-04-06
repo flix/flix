@@ -121,7 +121,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       } else {
         // Case 3: Check each superclass for cycles.
         val result = clazz.superClasses.flatMap {
-          superClass => findCycle(classes(superClass), clazz.sym :: path)
+          superClass => findCycle(classes(superClass.sym), clazz.sym :: path)
         }.headOption
 
         if (result.isEmpty) {
@@ -183,10 +183,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigsList <- traverse(signatures)(resolve(_, ns0, root))
         // ignore the parameter of the super class; we don't use it
-        superClasses <- traverse(superClasses0)(tconstr => lookupClassForImplementation(tconstr.clazz, ns0, root))
+        superClasses <- traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, ns0, root))
         laws <- traverse(laws0)(resolve(_, ns0, root))
         sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses.map(_.sym), sigs, laws, loc)
+      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc)
   }
 
   /**
@@ -1063,11 +1063,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = {
-    for {
-      clazz <- lookupClass(tconstr0.clazz, ns0, root)
-      tpe <- lookupType(tconstr0.arg, ns0, root)
-    } yield Ast.TypeConstraint(clazz.sym, tpe, SourceLocation.Unknown)
+  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
+      val classVal = lookupClass(clazz0, ns0, root)
+      val tpeVal = lookupType(tpe0, ns0, root)
+
+      mapN(classVal, tpeVal) {
+        case (clazz, tpe) => Ast.TypeConstraint(clazz.sym, tpe, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given superclass constraint `tconstr0`.
+    */
+  def resolveSuperClass(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
+      val classVal = lookupClassForImplementation(clazz0, ns0, root)
+      val tpeVal = lookupType(tpe0, ns0, root)
+
+      mapN(classVal, tpeVal) {
+        case (clazz, tpe) => Ast.TypeConstraint(clazz.sym, tpe, loc)
+      }
   }
 
   /**

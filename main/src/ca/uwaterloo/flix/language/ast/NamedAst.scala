@@ -371,6 +371,6 @@ object NamedAst {
 
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
 
-  case class TypeConstraint(clazz: Name.QName, arg: NamedAst.Type)
+  case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
 
 }
