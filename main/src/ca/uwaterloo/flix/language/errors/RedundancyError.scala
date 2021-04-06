@@ -311,7 +311,7 @@ object RedundancyError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Type constraint '" << Red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "' is entailed by type constraint '" << Red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "'." << NewLine
+      vt << ">> Type constraint '" << Red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "' is entailed by type constraint '" << Green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "redundant type constraint.") << NewLine
       vt << NewLine
