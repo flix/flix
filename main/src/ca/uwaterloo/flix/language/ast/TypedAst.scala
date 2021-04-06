@@ -38,7 +38,7 @@ object TypedAst {
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
 
   // TODO use TypedAst.Law for laws
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, superClasses: List[Symbol.ClassSym], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[TypedAst.Def], ns: Name.NName, loc: SourceLocation)
 

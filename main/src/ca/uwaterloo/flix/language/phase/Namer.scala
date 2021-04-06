@@ -351,7 +351,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparam = getTypeParamDefaultStar(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
-      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.tpe, tparam.loc))
+      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.tpe, tparam.loc), loc)
       for {
         superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
@@ -370,7 +370,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         tpe <- visitType(tpe0, uenv0, tenv)
         tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))
         qualifiedClass = getClass(clazz, uenv0)
-        instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe)
+        instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, loc)
         defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.map(_.tpe)))
       } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
   }
@@ -380,10 +380,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given type constraint `tconstr`.
     */
   private def visitTypeConstraint(tconstr: WeededAst.TypeConstraint, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
-    case WeededAst.TypeConstraint(clazz0, tparam0) =>
+    case WeededAst.TypeConstraint(clazz0, tparam0, loc) =>
       val clazz = getClass(clazz0, uenv0)
       mapN(visitType(tparam0, uenv0, tenv0)) {
-        tparam => NamedAst.TypeConstraint(clazz, tparam)
+        tparam => NamedAst.TypeConstraint(clazz, tparam, loc)
       }
   }
 
@@ -399,7 +399,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case (fparams, tconstrs) =>
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-              val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc))
+              val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
               val schemeVal = getDefOrSigScheme(tparams, tpe, uenv0, tenv, classTconstr :: tconstrs, List(classTparam.tpe))
               val expVal = traverse(exp0)(visitExp(_, env0, uenv0, tenv))
               val tpeVal = visitType(eff0, uenv0, tenv)

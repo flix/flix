@@ -2122,7 +2122,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitTypeConstraint(tconstr: ParsedAst.TypeConstraint): Validation[WeededAst.TypeConstraint, WeederError] = tconstr match {
     case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
       visitType(tparam0) match {
-        case tparam: WeededAst.Type.Var => WeededAst.TypeConstraint(clazz, tparam).toSuccess
+        case tparam: WeededAst.Type.Var => WeededAst.TypeConstraint(clazz, tparam, mkSL(sp1, sp2)).toSuccess
         case _ => WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
       }
   }

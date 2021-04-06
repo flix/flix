@@ -2,7 +2,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestRedundancy extends FunSuite with TestUtils {
@@ -875,4 +876,111 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
+  test("RedundantTypeConstraint.Class.01") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |lawless class D[a] with C[a], C[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.RedundantTypeConstraint](result)
+  }
+
+  test("RedundantTypeConstraint.Class.02") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |lawless class D[a] with C[a]
+        |
+        |lawless class E[a] with C[a], D[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.RedundantTypeConstraint](result)
+  }
+
+  test("RedundantTypeConstraint.Def.01") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |pub def f(x: a): Bool with C[a], C[a] = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.RedundantTypeConstraint](result)
+  }
+
+  test("RedundantTypeConstraint.Def.02") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |lawless class D[a] with C[a]
+        |
+        |pub def f(x: a): Bool with C[a], D[a] = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.RedundantTypeConstraint](result)
+  }
+
+  test("RedundantTypeConstraint.Sig.01") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |lawless class D[a] {
+        |  pub def f(x: a): Bool with C[a], C[a]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.RedundantTypeConstraint](result)
+  }
+
+  test("RedundantTypeConstraint.Sig.02") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |lawless class D[a] with C[a]
+        |
+        |lawless class E[a] {
+        |  pub def f(x: a): Bool with C[a], D[a]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.RedundantTypeConstraint](result)
+  }
+
+  test("RedundantTypeConstraint.Instance.01") {
+    val input =
+      """
+        |opaque type Box[a] = a
+        |
+        |lawless class C[a]
+        |
+        |lawless class D[a]
+        |
+        |instance D[Box[a]] with C[a], C[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.RedundantTypeConstraint](result)
+  }
+
+  test("RedundantTypeConstraint.Instance.02") {
+    val input =
+      """
+        |opaque type Box[a] = a
+        |
+        |lawless class C[a]
+        |
+        |lawless class D[a] with C[a]
+        |
+        |lawless class E[a]
+        |
+        |instance E[Box[a]] with C[a], C[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.RedundantTypeConstraint](result)
+  }
 }
