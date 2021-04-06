@@ -232,7 +232,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
 
       val fparamsVal = resolveFormalParams(fparams0, ns0, root)
-      val tparamsVal = resolveTypeParams(tparams0, ns0, root)
+      val tparamsVal = resolveTypeParams(tparams0.toList, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, ns0, root))
       val schemeVal = resolveScheme(sc0, ns0, root)
       val effVal = lookupType(eff0, ns0, root)
@@ -247,7 +247,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
-    traverse(e0.tparams)(p => Params.resolve(p, ns0, root)).flatMap {
+    traverse(e0.tparams.toList)(p => Params.resolve(p, ns0, root)).flatMap {
       tparams =>
         val tconstrs = Nil
         val casesVal = traverse(e0.cases) {
@@ -256,7 +256,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               t <- lookupType(tpe, ns0, root)
               _ <- checkProperType(t, tag.loc)
             } yield {
-              val freeVars = e0.tparams.map(_.tpe)
+              val freeVars = e0.tparams.toList.map(_.tpe)
               val caseType = t
               val enumType = Type.mkEnum(e0.sym, freeVars)
               val base = Type.mkTag(e0.sym, tag, caseType, enumType)
@@ -1008,7 +1008,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
-        case NamedAst.TypeParam(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
+        case NamedAst.TypeParam.Kinded(name, tpe, kind, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
+        case NamedAst.TypeParam.Unkinded(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess
     }
 
   }
@@ -1634,7 +1635,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     // Construct a type lambda for each type parameter.
     mapN(lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)) {
-      case base => mkTypeLambda(alia0.tparams, base)
+      case base => mkTypeLambda(alia0.tparams.toList, base)
     }
   }
 
