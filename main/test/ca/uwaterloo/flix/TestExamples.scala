@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.{FlixTest, Ignore, Options}
+import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class TestExamples extends Suites(
@@ -37,8 +37,7 @@ class TestExamples extends Suites(
   new FlixTest("using-laziness-for-logging", "examples/using-laziness-for-logging.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-laziness-to-compute-fibonacci", "examples/using-laziness-to-compute-fibonacci.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
-  // TODO
-  //new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  //new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)), // TODO
 
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
@@ -55,8 +54,8 @@ class TestExamples extends Suites(
   new FlixTest("StrictSign", List("examples/domains/StrictSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
 
   new FlixTest("IFDS", "examples/analysis/IFDS.flix")(Options.TestWithLibrary),
-  new Ignore("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibrary), // TODO
-  new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibrary), // TODO
+  new FlixTest("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibrary),
+  new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibrary),
   new FlixTest("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibrary)
 
 )

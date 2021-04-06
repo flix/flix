@@ -1,167 +1,210 @@
-namespace IDE {
+enum Value {
+    case Top,
+    case Cst(Int),
+    case Bot
+}
 
-    enum Value {
-        case Top,
-        case Cst(Int),
-        case Bot
+def sum(e1: Value, e2: Int): Value = match e1 {
+    case Value.Cst(n) => Value.Cst(n+e2)
+    case _ => e1
+}
+
+def prod(e1: Value, e2: Int): Value = match (e1, e2) {
+    case (Value.Cst(n), _) => Value.Cst(n*e2)
+    case (Value.Bot, _) => Value.Bot
+    case (_, zero) => if(zero == 0) Value.Cst(0) else e1
+    case _ => e1
+}
+
+instance LowerBound[Value] {
+    pub def minValue(): Value = Value.Bot
+}
+
+instance Eq[Value] {
+    pub def eq(x: Value, y: Value): Bool = match (x, y) {
+        case (Top, Top) => true
+        case (Cst(a), Cst(b)) => a == b
+        case (Bot, Bot) => true
+        case _ => false
     }
+}
 
-    def sum(e1: Value, e2: Int): Value = match e1 {
-        case Value.Cst(n) => Value.Cst(n+e2)
-        case _ => e1
+instance PartialOrder[Value] {
+    pub def partialCompare(e1: Value, e2: Value): Bool = match (e1, e2) {
+        case (Value.Bot, _) => true
+        case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2
+        case (_, Value.Top) => true
+        case _ => false
     }
+}
 
-    def prod(e1: Value, e2: Int): Value = match (e1, e2) {
-        case (Value.Cst(n), _) => Value.Cst(n*e2)
-        case (Value.Bot, _) => Value.Bot
-        case (_, zero) => if(zero == 0) Value.Cst(0) else e1
-        case _ => e1
+instance JoinLattice[Value] {
+    pub def leastUpperBound(e1: Value, e2: Value): Value = match (e1, e2) {
+        case (Value.Bot, x) => x
+        case (x, Value.Bot) => x
+        case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Top
+        case _ => Value.Top
     }
+}
 
-    instance LowerBound[Value] {
-        pub def minValue(): Value = Value.Bot
+instance MeetLattice[Value] {
+    pub def greatestLowerBound(e1: Value, e2: Value): Value = match (e1, e2) {
+        case (Value.Top, x) => x
+        case (x, Value.Top) => x
+        case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Bot
+        case _ => Value.Bot
     }
+}
 
-    instance Eq[Value] {
-        pub def eq(x: Value, y: Value): Bool = match (x, y) {
-            case (Top, Top) => true
-            case (Cst(a), Cst(b)) => a == b
-            case (Bot, Bot) => true
-            case _ => false
-        }
+instance ToString[Value] {
+    pub def toString(x: Value): String = match x {
+        case Top    => "Top"
+        case Cst(n) => "Cst(${n})"
+        case Bot    => "Bot"
     }
+}
 
-    instance PartialOrder[Value] {
-        pub def partialCompare(e1: Value, e2: Value): Bool = match (e1, e2) {
-            case (Value.Bot, _) => true
-            case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2
-            case (_, Value.Top) => true
-            case _ => false
-        }
+instance Boxable[Value] {
+    pub def box(x: Value): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Value, o2 as Value);
+        let toString = o -> ToString.toString(o as Value);
+        BoxedObject(value, compare, toString)
     }
-
-    instance JoinLattice[Value] {
-        pub def leastUpperBound(e1: Value, e2: Value): Value = match (e1, e2) {
-            case (Value.Bot, x) => x
-            case (x, Value.Bot) => x
-            case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Top
-            case _ => Value.Top
-        }
+    pub def unbox(x: Boxed): Value = match x {
+        case BoxedObject(v, _, _) => v as Value
+        case _                    => ?bug
     }
+}
 
-    instance MeetLattice[Value] {
-        pub def greatestLowerBound(e1: Value, e2: Value): Value = match (e1, e2) {
-            case (Value.Top, x) => x
-            case (x, Value.Top) => x
-            case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Bot
-            case _ => Value.Bot
-        }
+instance Order[Value] {
+    pub def compare(x: Value, y: Value): Comparison = match (x, y) {
+        case (Bot, Bot)         => EqualTo
+        case (Cst(n1), Cst(n2)) => n1 <=> n2
+        case (Top, Top)         => EqualTo
+        case (Bot, _)           => LessThan
+        case _                  => GreaterThan
     }
+}
 
-    instance ToString[Value] {
-        pub def toString(x: Value): String = match x {
-            case Top    => "Top"
-            case Cst(n) => "Cst(${n})"
-            case Bot    => "Bot"
-        }
+enum Transformer {
+    case BotTrans,
+    case NonBotTrans(Int,Int,Value)
+}
+
+def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
+case (_,Transformer.BotTrans) => Transformer.BotTrans
+case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
+  case Value.Bot => Transformer.BotTrans
+  case Value.Top => Transformer.NonBotTrans(0,0,Value.Top)
+  case Value.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
+}
+case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
+  Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(prod(c2, a1), b1), c1))
+}
+
+// from paper: f = \l. a*l+b meet c; f(Top) = Top
+// paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
+def apply(t: Transformer, l: Value): Value = match t {
+    case Transformer.BotTrans => Value.Bot
+    case Transformer.NonBotTrans(a, b, c) => if(l==Value.Bot) Value.Bot else JoinLattice.leastUpperBound(sum(prod(l,a),b),c)
+}
+
+instance LowerBound[Transformer] {
+    pub def minValue(): Transformer = Transformer.BotTrans
+}
+
+instance Eq[Transformer] {
+    pub def eq(x: Transformer, y: Transformer): Bool = match (x, y) {
+        case (BotTrans, BotTrans) => true
+        case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
+        case _ => false
     }
+}
 
-    enum Transformer {
-        case BotTrans,
-        case NonBotTrans(Int,Int,Value)
+instance PartialOrder[Transformer] {
+    pub def partialCompare(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
+}
+
+instance JoinLattice[Transformer] {
+    pub def leastUpperBound(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
+        case (Transformer.BotTrans, _) => t2
+        case (_, Transformer.BotTrans) => t1
+        case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
+            if (a1 == a2 and b1 == b2)
+                Transformer.NonBotTrans(a1, b1, JoinLattice.leastUpperBound(c1, c2))
+            else if(c1 == c2)
+                if((a2-a1) != 0 and 0==(b1-b2)%(a2-a1))
+                //                // is divisible
+                Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(Value.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
+                //                // is not divisible
+                else Transformer.NonBotTrans(1, 0, Value.Top)
+            else ???: Transformer
     }
+}
 
-  def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
-    case (_,Transformer.BotTrans) => Transformer.BotTrans
-    case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
-      case Value.Bot => Transformer.BotTrans
-      case Value.Top => Transformer.NonBotTrans(0,0,Value.Top)
-      case Value.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
+instance MeetLattice[Transformer] {
+    pub def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
+}
+
+instance ToString[Transformer] {
+    pub def toString(x: Transformer): String = match x {
+        case BotTrans               => "BotTrans"
+        case NonBotTrans(n, m, v)   => "NonBotTrans(${n}, ${m}, ${v})"
     }
-    case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-      Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(prod(c2, a1), b1), c1))
-  }
+}
 
-    // from paper: f = \l. a*l+b meet c; f(Top) = Top
-    // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-    def apply(t: Transformer, l: Value): Value = match t {
-        case Transformer.BotTrans => Value.Bot
-        case Transformer.NonBotTrans(a, b, c) => if(l==Value.Bot) Value.Bot else JoinLattice.leastUpperBound(sum(prod(l,a),b),c)
+instance Boxable[Transformer] {
+    pub def box(x: Transformer): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Transformer, o2 as Transformer);
+        let toString = o -> ToString.toString(o as Transformer);
+        BoxedObject(value, compare, toString)
     }
-
-    instance LowerBound[Transformer] {
-        pub def minValue(): Transformer = Transformer.BotTrans
+    pub def unbox(x: Boxed): Transformer = match x {
+        case BoxedObject(v, _, _) => v as Transformer
+        case _                    => ?bug
     }
+}
 
-    instance Eq[Transformer] {
-        pub def eq(x: Transformer, y: Transformer): Bool = match (x, y) {
-            case (BotTrans, BotTrans) => true
-            case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
-            case _ => false
-        }
+instance Order[Transformer] {
+    pub def compare(x: Transformer, y: Transformer): Comparison = match (x, y) {
+        case (BotTrans, BotTrans)                   => EqualTo
+        case (NonBotTrans(t1), NonBotTrans(t2))     => t1 <=> t2
+        case (BotTrans, _)                          => LessThan
+        case _                                      => GreaterThan
     }
+}
 
-    instance PartialOrder[Transformer] {
-        pub def partialCompare(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
-    }
+// Inputs
+lat EshIntra(node: String, infact: String, outfact: String, transformer: Transformer)
+lat EshCallStart(node: String, infact: String, proc: String, outfact: String, transformer: Transformer)
+lat EshEndReturn(proc: String, infact: String, node: String, outfact: String, transformer: Transformer)
 
-    instance JoinLattice[Transformer] {
-        pub def leastUpperBound(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
-            case (Transformer.BotTrans, _) => t2
-            case (_, Transformer.BotTrans) => t1
-            case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
-                if (a1 == a2 and b1 == b2)
-                    Transformer.NonBotTrans(a1, b1, JoinLattice.leastUpperBound(c1, c2))
-                else if(c1 == c2)
-                    if(0==(b1-b2)%(a2-a1))
-                    //                // is divisible
-                    Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(Value.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
-                    //                // is not divisible
-                    else Transformer.NonBotTrans(1, 0, Value.Top)
-                else ???: Transformer
-        }
-    }
+// Call-to-Return edges should be included above in EshIntra
+rel CFG(src: String, dst: String)
+rel CallGraph(callsite: String, proc: String)
+rel StartNode(proc: String, node: String)
+rel EndNode(proc: String, node: String)
 
-    instance MeetLattice[Transformer] {
-        pub def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
-    }
+// Internal lattices
+lat JumpFn(infact: String, node: String, outfact: String, transformer: Transformer)
+lat SummaryFn(node: String, infact: String, outfact: String, transformer: Transformer)
+lat ResultProc(proc: String, fact: String, value: Value)
+rel InProc(proc: String, node: String)
 
-    instance ToString[Transformer] {
-        pub def toString(x: Transformer): String = match x {
-            case BotTrans               => "BotTrans"
-            case NonBotTrans(n, m, v)   => "NonBotTrans(${n}, ${m}, ${v})"
-        }
-    }
+// Output
+lat Results(node: String, fact: String, value: Value)
 
-    // Inputs
-    lat EshIntra(node: String, infact: String, outfact: String, transformer: Transformer)
-    lat EshCallStart(node: String, infact: String, proc: String, outfact: String, transformer: Transformer)
-    lat EshEndReturn(proc: String, infact: String, node: String, outfact: String, transformer: Transformer)
+// Rules for Example (constant propagation) from IDE paper
+def id(): Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
 
-    // Call-to-Return edges should be included above in EshIntra
-    rel CFG(src: String, dst: String)
-    rel CallGraph(callsite: String, proc: String)
-    rel StartNode(proc: String, node: String)
-    rel EndNode(proc: String, node: String)
+// call-to-start
+def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
 
-    // Internal lattices
-    lat JumpFn(infact: String, node: String, outfact: String, transformer: Transformer)
-    lat SummaryFn(node: String, infact: String, outfact: String, transformer: Transformer)
-    lat ResultProc(proc: String, fact: String, value: Value)
-    rel InProc(proc: String, node: String)
-
-    // Output
-    lat Results(node: String, fact: String, value: Value)
-
-    // Rules for Example (constant propagation) from IDE paper
-    def id(): Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
-
-    // call-to-start
-    def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
-
-    // Rules
-    @test
-    def test(): #{ EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, JumpFn, SummaryFn, ResultProc, InProc, Results } = solve #{
+// Rules
+def main(_: Array[String]): Int32 & Impure =
+    let p = #{
         // nodes in a given procedure
         InProc(p,start) :- StartNode(p, start).
         InProc(p,m) :- InProc(p,n), CFG(n,m).
@@ -261,6 +304,7 @@ namespace IDE {
         // Entrypoint
         JumpFn("zero","smain","zero";id()).
         ResultProc("main","zero";Value.Top).
-    }
-
-}
+    };
+    let m = solve p;
+    (m |> Fixpoint.unsafePrint) as & Impure;
+    0
