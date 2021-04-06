@@ -483,7 +483,6 @@ object WeederError {
     }
   }
 
-
   /**
     * An error raised to indicate type params that are not kinded.
     *
