@@ -207,7 +207,7 @@ instance Boxable[String] {
         let toString = o -> ToString.toString(o as String);
         BoxedObject(value, compare, toString)
     }
-    pub def unbox(x: Boxed): String= match x {
+    pub def unbox(x: Boxed): String = match x {
         case BoxedObject(v, _, _) => v as String
         case _                    => ?bug
     }

@@ -47,7 +47,6 @@ class TestExamples extends Suites(
   new FlixTest("ConstantSign", List("examples/domains/ConstantSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("Interval", List("examples/domains/Interval.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("IntervalAlt", List("examples/domains/IntervalAlt.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  // new FlixTest("IntervalInf", "examples/domains/IntervalInf.flix", "examples/domains/Belnap.flix")(compiled = false), // TODO: Broken
   new FlixTest("Mod3", List("examples/domains/Mod3.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("Parity", List("examples/domains/Parity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("ParitySign", List("examples/domains/ParitySign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
@@ -57,7 +56,7 @@ class TestExamples extends Suites(
 
   new Ignore("IFDS", "examples/analysis/IFDS.flix")(Options.TestWithLibrary), // TODO
   new Ignore("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibrary), // TODO
-  new Ignore("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibrary), // TODO
+  new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibrary), // TODO
   new Ignore("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibrary) // TODO
 
 )
