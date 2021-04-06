@@ -44,11 +44,11 @@ object NamedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression) extends NamedAst.DefOrSig
 
-  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: Type, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: Type, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, kind: Kind, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, kind: Kind, loc: SourceLocation)
 
-  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation)
 
   sealed trait Use
 
@@ -336,6 +336,24 @@ object NamedAst {
 
   case class Scheme(quantifiers: List[ast.Type.Var], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
 
+  sealed trait TypeParams {
+    def toList: List[NamedAst.TypeParam] = this match {
+      case TypeParams.Elided => Nil
+      case TypeParams.Kinded(tparams) => tparams
+
+    }
+  }
+
+  object TypeParams {
+
+    case object Elided extends TypeParams // MATT do we need to distinguish elided at this point?
+
+    case class Kinded(tparams: List[NamedAst.TypeParam.Kinded]) extends TypeParams
+
+    case class Unkinded(tparams: List[NamedAst.TypeParam.Unkinded]) extends TypeParams
+
+  }
+
   case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
@@ -366,7 +384,19 @@ object NamedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
+  sealed trait TypeParam {
+    val name: Name.Ident
+    val tpe: ast.Type.Var
+    val loc: SourceLocation
+  }
+
+  object TypeParam {
+
+    case class Kinded(name: Name.Ident, tpe: ast.Type.Var, kind: Kind, loc: SourceLocation) extends TypeParam
+
+    case class Unkinded(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation) extends TypeParam
+
+  }
 
   case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
 
