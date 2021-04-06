@@ -169,7 +169,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
 
     if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
-      TypeError.IllegalMain(actualScheme = defn.spec.sc, expectedScheme = mainScheme, defn.spec.loc).toFailure
+      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.spec.loc).toFailure
     } else {
       ().toSuccess
     }
