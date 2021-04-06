@@ -470,7 +470,7 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class InconsistentTypeParameters(loc: SourceLocation) extends WeederError {
-    def summary: String = "Inconsistent type parameters."
+    def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -490,7 +490,7 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
-    def summary: String = "Unkinded type parameters."
+    def summary: String = "Type parameters here must be annotated with a kind."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
