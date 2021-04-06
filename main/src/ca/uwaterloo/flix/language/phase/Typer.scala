@@ -89,7 +89,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val envInsts = instances.map {
           case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
         }
-        (classSym, Ast.ClassContext(clazz.superClasses, envInsts))
+        // ignore the super class parameters since they should all be the same as the class param
+        val superClasses = clazz.superClasses.map(_.sym)
+        (classSym, Ast.ClassContext(superClasses, envInsts))
     }
   }
 
