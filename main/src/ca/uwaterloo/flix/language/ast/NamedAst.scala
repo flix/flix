@@ -337,16 +337,10 @@ object NamedAst {
   case class Scheme(quantifiers: List[ast.Type.Var], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
 
   sealed trait TypeParams {
-    def toList: List[NamedAst.TypeParam] = this match {
-      case TypeParams.Elided => Nil
-      case TypeParams.Kinded(tparams) => tparams
-
-    }
+    val tparams: List[NamedAst.TypeParam]
   }
 
   object TypeParams {
-
-    case object Elided extends TypeParams // MATT do we need to distinguish elided at this point?
 
     case class Kinded(tparams: List[NamedAst.TypeParam.Kinded]) extends TypeParams
 
