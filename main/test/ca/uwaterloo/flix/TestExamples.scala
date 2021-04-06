@@ -57,6 +57,6 @@ class TestExamples extends Suites(
   new FlixTest("IFDS", "examples/analysis/IFDS.flix")(Options.TestWithLibrary),
   new Ignore("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibrary), // TODO
   new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibrary), // TODO
-  new Ignore("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibrary) // TODO
+  new FlixTest("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibrary)
 
 )
