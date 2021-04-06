@@ -26,7 +26,7 @@ class TestExamples extends Suites(
   new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("select-with-defaults-and-timers", "examples/select-with-defaults-and-timers.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("fixpoint-computations-on-relations", "examples/fixpoint-computations-on-relations.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new Ignore("fixpoint-computations-on-lattices", "examples/fixpoint-computations-on-lattices.flix")(Options.DefaultTest.copy(xallowredundancies = true)), // TODO
+  new FlixTest("fixpoint-computations-on-lattices", "examples/fixpoint-computations-on-lattices.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("fixpoint-computations-with-stratified-negation", "examples/fixpoint-computations-with-stratified-negation.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("first-class-constraints-and-fixpoints", "examples/first-class-constraints-and-fixpoints.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("polymorphic-first-class-constraints", "examples/polymorphic-first-class-constraints.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
