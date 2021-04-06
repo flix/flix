@@ -310,10 +310,15 @@ object TypeError {
       vt << NewLine
       vt << Code(loc, s"main function with wrong type.") << NewLine
       vt << NewLine
-      vt << s"  Expected: " << Cyan(FormatScheme.formatScheme(expectedScheme)) << NewLine
-      vt << s"  Declared: " << Magenta(FormatScheme.formatScheme(declaredScheme)) << NewLine
+      vt << "The main function must have the form:" << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Change the function to match the expected type scheme." << NewLine
+      vt << "  def main(args: Array[String]): Int & Impure = ..." << NewLine
+      vt << NewLine
+      vt << "i.e." << NewLine
+      vt << "- it must return an integer which is the exit code, and" << NewLine
+      vt << "- it must have a side-effect (such as printing to the screen)." << NewLine
+      vt << NewLine
+      vt << "(If the arguments are not needed, then 'args' can be replaced with '_'." << NewLine
     }
   }
 
