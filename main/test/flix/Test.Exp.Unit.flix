@@ -7,8 +7,8 @@ namespace Test/Exp/Unit {
     def testUnit02(): Unit = ()
 
     @test
-    def testUnit03(): Unit = 
+    def testUnit03(): Unit =
         let f = () -> ();
         f()
-        
+
 }

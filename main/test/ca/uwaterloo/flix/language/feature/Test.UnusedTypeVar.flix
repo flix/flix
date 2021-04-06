@@ -8,13 +8,13 @@ def unusedTypeVar02(a: List[_]): Int = List.length(a)
 def unusedTypeVar03(a: {x: Int | _}): Int = a.x
 
 @test
-def unusedTypeVar04[t](_a: _, b: t): t = b
+def unusedTypeVar04(_a: _, b: t): t = b
 
 @test
-def unusedTypeVar05[t](a: List[_], b: List[t]): Int = List.length(a) - List.length(b)
+def unusedTypeVar05(a: List[_], b: List[t]): Int = List.length(a) - List.length(b)
 
 @test
-def unusedTypeVar06[t](a: {x: t | _}): t = a.x
+def unusedTypeVar06(a: {x: t | _}): t = a.x
 
 @test
 def unusedTypeVar07(a: {x: Int | _}, b: List[_]): Bool = a.x == List.length(b)

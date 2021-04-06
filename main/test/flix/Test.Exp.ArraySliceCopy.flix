@@ -86,7 +86,7 @@ namespace Test/Exp/ArraySliceCopy {
 
     @test
     def testArraySliceCopy29(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[..]
-    
+
     @test
     def testArraySliceCopy30(): Array[Option[Int]] & Impure = let x = [None, None, Some(2), Some(2)]; x[..]
 

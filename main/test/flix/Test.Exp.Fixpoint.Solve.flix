@@ -135,7 +135,7 @@ namespace Test/Exp/Fixpoint/Solve {
         };
         m |= Path("d", "b").
 
-    def closure[a](): #{Edge(a, a), Path(a, a)} with Eq[a], Hash[a], ToString[a] = #{
+    def closure(): #{Edge(a, a), Path(a, a)} with Eq[a], Hash[a], ToString[a] = #{
         Edge(y, x) :- Edge(x, y).
         Path(x, y) :- Edge(x, y).
         Path(x, z) :- Path(x, y), Edge(y, z).

@@ -17,7 +17,7 @@ def getEdgesWithNumbers(): #{ LabelEdge[Int], LabelPath[Int] } = #{
 /// Note that the return type is `open` (polymorphic) which
 /// means that the facts can be used within any constraint
 /// as long as the edges are labelled with strings.
-def getEdgesWithColor[r](): #{ LabelEdge[String] | r } = #{
+def getEdgesWithColor(): #{ LabelEdge[String] | r } = #{
     LabelEdge("a", "red", "b").
     LabelEdge("b", "red", "c").
     LabelEdge("c", "blu", "d").
@@ -25,7 +25,7 @@ def getEdgesWithColor[r](): #{ LabelEdge[String] | r } = #{
 
 /// Returns a set of polymorphic rules to compute the transitive
 /// closure of edges with the *same* label.
-def getRules[l](): #{ LabelEdge[l], LabelPath[l] } with Eq[l], Hash[l], ToString[l] = #{
+def getRules(): #{ LabelEdge[l], LabelPath[l] } with Eq[l], Hash[l], ToString[l] = #{
     LabelPath(x, l, y) :- LabelEdge(x, l, y).
     LabelPath(x, l, z) :- LabelPath(x, l, y), LabelPath(y, l, z).
 }

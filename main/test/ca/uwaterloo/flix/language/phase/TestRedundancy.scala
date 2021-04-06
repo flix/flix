@@ -472,7 +472,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedTypeParam.Def.01") {
     val input =
       s"""
-         |pub def f[a](): Int = 123
+         |pub def f[a: Type](): Int = 123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -482,7 +482,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedTypeParam.Def.02") {
     val input =
       s"""
-         |pub def f[a, b](x: a): a = x
+         |pub def f[a: Type, b: Type](x: a): a = x
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -492,7 +492,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedTypeParam.Def.03") {
     val input =
       s"""
-         |pub def f[a, b](x: b): b = x
+         |pub def f[a: Type, b: Type](x: b): b = x
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -502,7 +502,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedTypeParam.Def.04") {
     val input =
       s"""
-         |pub def f[a, b, c](x: a, y: c): (a, c) = (x, y)
+         |pub def f[a: Type, b: Type, c: Type](x: a, y: c): (a, c) = (x, y)
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
