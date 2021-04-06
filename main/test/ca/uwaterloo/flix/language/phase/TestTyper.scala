@@ -1094,4 +1094,24 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.IllegalMain](result)
   }
+
+  test("Test.IllegalMain.04") {
+    val input =
+      """
+        |def main(blah: Array[a]): Int32 & Impure = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.IllegalMain](result)
+  }
+
+  test("Test.IllegalMain.05") {
+    val input =
+      """
+        |class C[a]
+        |
+        |def main(blah: Array[a]): Int32 & Impure with C[a] = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.IllegalMain](result)
+  }
 }
