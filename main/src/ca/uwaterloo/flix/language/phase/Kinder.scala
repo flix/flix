@@ -2,9 +2,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, ResolvedAst, Scheme, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.annotation.tailrec
 
@@ -38,7 +38,7 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
 
   private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root): Validation[ResolvedAst.Class, CompilationError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc) =>
-      val ascriptions = getAscriptions(List(tparam))
+      val ascriptions = getAscription(tparam)
       // MATT superclasses should be constraints instead
       // MATT check over class constraints with ascriptions
       // MATT check over sigs with ascriptions
@@ -49,8 +49,8 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
   private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root): Validation[ResolvedAst.Instance, CompilationError] = inst match {
     case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc) =>
       val clazz = root.classes(sym)
-      val classAscriptions = getAscriptions(List(clazz.tparam))
-      val kind = classAscriptions.head._2 // MATT make safer for multiparam classes if those ever come
+      val classAscriptions = getAscription(clazz.tparam)
+      val kind = classAscriptions._2 // MATT make safer for multiparam classes if those ever come
       val expectedKind = KindMatch.fromKind(kind)
 
       val (actualKind, ascriptions) = inferKinds(tpe, expectedKind, root)
@@ -126,8 +126,8 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
   private def checkKinds(tconstr: Ast.TypeConstraint, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Ast.TypeConstraint = tconstr match {
     case Ast.TypeConstraint(sym, tpe, loc) =>
       val clazz = root.classes(sym)
-      val classAscriptions = getAscriptions(List(clazz.tparam))
-      val kind = classAscriptions.head._2 // MATT make safer for multiparam classes if those ever come
+      val classAscriptions = getAscription(clazz.tparam)
+      val kind = classAscriptions._2 // MATT make safer for multiparam classes if those ever come
       val expectedKind = KindMatch.fromKind(kind)
 
       val newTpe = checkKinds(tpe, expectedKind, ascriptions, root)
@@ -168,16 +168,31 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
 
   def getDeclaredKind(enum: ResolvedAst.Enum): Kind = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _) =>
-      tparams.foldRight(Kind.Star: Kind) { // MATT is foldRight right?
-        case (tparam, acc) => tparam.tpe.kind ->: acc
+      val ascriptions = getAscriptions(tparams)
+      tparams.tparams.foldRight(Kind.Star: Kind) { // MATT is foldRight right?
+        case (tparam, acc) => ascriptions(tparam.tpe.id) ->: acc
       }
     // MATT use types to enforce explicit/implicit kinding invariant
   }
 
-  def getAscriptions(tparams: List[ResolvedAst.TypeParam]): Map[Int, Kind] = {
-    tparams.foldLeft(Map.empty[Int, Kind]) {
-      case (acc, tparam) => acc + (tparam.tpe.id -> tparam.tpe.kind)
+  // MATT docs
+  def getAscriptions(tparams0: ResolvedAst.TypeParams): Map[Int, Kind] = tparams0 match {
+      // Case 1: Kinded tparams: use their kinds
+    case ResolvedAst.TypeParams.Kinded(tparams) => tparams.foldLeft(Map.empty[Int, Kind]) {
+      case (acc, ResolvedAst.TypeParam.Kinded(_, tpe, kind, _)) => acc + (tpe.id -> kind)
     }
+      // Case 2: Unkinded tparams: default to Star kind
+    case ResolvedAst.TypeParams.Unkinded(tparams) =>
+      tparams.foldLeft(Map.empty[Int, Kind]) {
+        case (acc, tparam) => acc + (tparam.tpe.id -> Kind.Star)
+      }
+  }
+
+  // MATT docs
+  def getAscription(tparam0: ResolvedAst.TypeParam): (Int, Kind) = tparam0 match {
+      // MATT case docs
+    case ResolvedAst.TypeParam.Kinded(_, tpe, kind, _) => tpe.id -> kind
+    case ResolvedAst.TypeParam.Unkinded(_, tpe, _) => tpe.id -> Kind.Star
   }
 
   def visitSpec(spec: ResolvedAst.Spec, root: ResolvedAst.Root): Validation[ResolvedAst.Spec, CompilationError] = spec match {
