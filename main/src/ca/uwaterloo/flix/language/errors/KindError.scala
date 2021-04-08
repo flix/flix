@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
+// MATT license
 // MATT docs
 sealed trait KindError extends CompilationError {
   def kind: String = "Type Error"

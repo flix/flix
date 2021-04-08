@@ -2,14 +2,16 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.ResolvedAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.language.errors.KindError
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.annotation.tailrec
 
 object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change to KindedAst.Root ?
-// MATT license
+  // MATT license
 
   /**
     * Runs the p
@@ -26,12 +28,15 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
   private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root): Validation[ResolvedAst.Enum, CompilationError] = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, cases, _, _, _) =>
       val ascriptions = getAscriptions(tparams)
-      val newCases = cases.map {
+      val newCasesVal = traverse(cases) {
         case (_, caze@ResolvedAst.Case(enum, tag, tpeDeprecated, sc)) =>
-          val newScheme = checkScheme(sc, ascriptions, root)
-          (tag, caze.copy(sc = newScheme))
+          checkScheme(sc, ascriptions, root) map {
+            newScheme => (tag, caze.copy(sc = newScheme))
+          }
       }
-      enum.copy(cases = newCases).toSuccess
+      mapN(newCasesVal) {
+        newCases => enum.copy(cases = newCases.toMap)
+      }
   }
 
   // MATT need to add type aliases to ResolvedAst;
@@ -67,39 +72,36 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
   }
 
   // MATT only useful for instances b/c of complexity assumptions
-  private def inferKinds(tpe: Type, expected: KindMatch, root: ResolvedAst.Root): (Kind, Map[Int, Kind]) = tpe match {
+  private def inferKinds(tpe: Type, expected: KindMatch, root: ResolvedAst.Root): Validation[(Kind, Map[Int, Kind]), KindError] = tpe match {
     case Type.Var(id, kind, rigidity, text) =>
       val k = KindMatch.toKind(expected)
-      (k, Map(id -> k))
+      (k, Map(id -> k)).toSuccess
+
     case Type.Cst(tc, loc) =>
       val kind = tc match {
         case TypeConstructor.Enum(sym, _) => // ignore actual kind (?)
           getDeclaredKind(root.enums(sym))
         case _ => tc.kind
       }
-      assert(KindMatch.matches(expected, kind)) // MATT monad
-      (kind, Map.empty)
+      checkKindsMatch(expected, kind) map {
+        _ => (kind, Map.empty)
+      }
     case Type.Lambda(tvar, tpe) =>
       throw InternalCompilerException("TODO") // MATT can't do without kind vars?
 
     case _: Type.Apply =>
+      // MATT inline docs
       val (base, args) = baseAndArgs(tpe)
-      val (baseKind, baseMap) = inferKinds(base, KindMatch.Wild, root) // wild is ok here because base is surely not a var
-
-      val expectedArgs = argKinds(baseKind).map(KindMatch.fromKind)
-
-      val (argKs, argMaps) = expectedArgs.zip(args).map {
-        case (expected, argType) => inferKinds(argType, expected, root)
-      }.unzip
-
-      val kind = applyKind(baseKind, argKs)
-
-      assert(KindMatch.matches(expected, kind)) // MATT monad
-
-      val kindMap = argMaps.fold(baseMap)(_ ++ _)
-
-      (kind, kindMap)
-
+      for {
+        res <- inferKinds(base, KindMatch.Wild, root) // wild is ok here because base is surely not a var
+        (baseKind, baseMap) = res
+        expectedArgs = argKinds(baseKind).map(KindMatch.fromKind)
+        res <- traverse(args.zip(expectedArgs)) { case (arg, expectedArg) => inferKinds(arg, expectedArg, root) }
+        (argKs, argMaps) = res.unzip
+        kind = applyKind(baseKind, argKs)
+        _ <- checkKindsMatch(expected, kind)
+        kindMap = argMaps.fold(baseMap)(_ ++ _) // MATT need to check for conflicts?
+      } yield (kind, kindMap)
   }
 
   // MATT docs
@@ -127,44 +129,51 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
     }
   }
 
-  private def checkKinds(tconstr: Ast.TypeConstraint, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Ast.TypeConstraint = tconstr match {
+  private def checkKinds(tconstr: Ast.TypeConstraint, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Ast.TypeConstraint, KindError] = tconstr match {
     case Ast.TypeConstraint(sym, tpe, loc) =>
       val clazz = root.classes(sym)
       val classAscriptions = getAscription(clazz.tparam)
       val kind = classAscriptions._2 // MATT make safer for multiparam classes if those ever come
       val expectedKind = KindMatch.fromKind(kind)
 
-      val newTpe = checkKinds(tpe, expectedKind, ascriptions, root)
-      Ast.TypeConstraint(sym, newTpe, loc)
+      checkKinds(tpe, expectedKind, ascriptions, root) map {
+        newTpe => Ast.TypeConstraint(sym, newTpe, loc)
+      }
 
   }
-  private def checkKinds(tpe: Type, expected: KindMatch, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Type = {
 
-    def visit(tpe: Type, expected: KindMatch): Type = tpe match {
+  private def checkKinds(tpe: Type, expected: KindMatch, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Type, KindError] = {
+
+    def visit(tpe: Type, expected: KindMatch): Validation[Type, KindError] = tpe match {
       case Type.Var(id, _, rigidity, text) => // ignore actual kind (?)
         val actual = ascriptions(id)
-        assert(KindMatch.matches(expected, actual))
-        Type.Var(id, actual, rigidity, text)
+        checkKindsMatch(expected, actual) map {
+          _ => Type.Var(id, actual, rigidity, text)
+        }
       case Type.Cst(tc, _) =>
         val kind = tc match {
           case TypeConstructor.Enum(sym, _) => // ignore actual kind (?)
             getDeclaredKind(root.enums(sym))
           case _ => tc.kind
         }
-        assert(KindMatch.matches(expected, kind))
-        tpe
+        checkKindsMatch(expected, kind) map {
+          _ => tpe
+        }
       case Type.Apply(tpe1, tpe2) =>
-        val newTpe2 = visit(tpe2, KindMatch.Wild)
-        val newTpe1 = visit(tpe1, KindMatch.Arrow(KindMatch.fromKind(newTpe2.kind), expected))
-        val newTpe = Type.Apply(newTpe1, newTpe2)
-        assert(KindMatch.matches(expected, newTpe.kind))
-        newTpe
+        for {
+          newTpe2 <- visit(tpe2, KindMatch.Wild)
+          newTpe1 <- visit(tpe1, KindMatch.Arrow(KindMatch.fromKind(newTpe2.kind), expected))
+          newTpe = Type.Apply(newTpe1, newTpe2)
+          _ <- checkKindsMatch(expected, newTpe.kind)
+        } yield newTpe
+
       case Type.Lambda(tvar, tpe) =>
-        val newTvar = visit(tvar, KindMatch.Wild)
-        val newBody = visit(tpe, KindMatch.Wild)
-        val newTpe = Type.Lambda(newTvar.asInstanceOf[Type.Var], newBody)
-        assert(KindMatch.matches(expected, newTpe.kind))
-        newTpe
+        for {
+          newTvar <- visit(tvar, KindMatch.Wild)
+          newBody <- visit(tpe, KindMatch.Wild)
+          newTpe = Type.Lambda(newTvar.asInstanceOf[Type.Var], newBody) // MATT avoid cast if possible
+          _ <- checkKindsMatch(expected, newTpe.kind)
+        } yield newTpe
     }
 
     visit(tpe, expected)
@@ -201,16 +210,14 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
   }
 
   def visitSpec(spec: ResolvedAst.Spec, root: ResolvedAst.Root): Validation[ResolvedAst.Spec, CompilationError] = spec match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, sc, eff, loc) =>
-
-      val explicit: Boolean = ???
-
-      if (explicit) {
-        val ascriptions = getAscriptions(tparams)
+    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams, sc, eff, loc) => tparams0 match {
+      case TypeParams.Kinded(tparams) =>
+        val ascriptions = getAscriptions(tparams0)
 
         val newScheme = checkScheme(sc, ascriptions, root)
 
         val newEff = checkKinds(eff, KindMatch.Bool, ascriptions, root)
+
 
         val newFparams = fparams.map {
           case ResolvedAst.FormalParam(sym, mod, tpe, loc) =>
@@ -220,10 +227,10 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
 
         // MATT need to check exp?
         ResolvedAst.Spec(doc, ann, mod, tparams, newFparams, newScheme, newEff, loc).toSuccess
-      } else {
+      case TypeParams.Unkinded(tparams) =>
         val fparamAscriptions = fparams.foldLeft(Map.empty[Int, Kind]) {
           case (acc, fparam) =>
-            val (_kind, map)  = inferKinds(fparam.tpe, KindMatch.Star, root)
+            val (_kind, map) = inferKinds(fparam.tpe, KindMatch.Star, root)
             acc ++ map // MATT handle conflicts
         }
         val (_effKind, effAscriptions) = inferKinds(eff, KindMatch.Bool, root)
@@ -235,29 +242,43 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
         val newScheme = checkScheme(sc, ascriptions, root)
 
         ResolvedAst.Spec(doc, ann, mod, tparams, fparams, newScheme, eff, loc).toSuccess
+    }
+  }
+
+  private def checkScheme(scheme: Scheme, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Scheme, KindError] = scheme match {
+    case Scheme(quantifiers, constraints, base) =>
+      val newBaseVal = checkKinds(base, KindMatch.Star, ascriptions, root)
+      // MATT use better types to avoid cast
+      val newQuantifiersVal = traverse(quantifiers)(checkKinds(_, KindMatch.Wild, ascriptions, root).map(_.asInstanceOf[Type.Var])) // MATT avoid cast ?
+      val newConstraintsVal = traverse(constraints)(checkKinds(_, ascriptions, root))
+      mapN(newQuantifiersVal, newConstraintsVal, newBaseVal) {
+        case (newQuantifiers, newConstraints, newBase) => Scheme(newQuantifiers, newConstraints, newBase)
       }
   }
 
-  private def checkScheme(scheme: Scheme, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Scheme = scheme match {
-    case Scheme(quantifiers, constraints, base) =>
-      val newBase = checkKinds(base, KindMatch.Star, ascriptions, root)
-      // MATT use better types to avoid cast
-      val newQuantifiers = quantifiers.map(checkKinds(_, KindMatch.Wild, ascriptions, root).asInstanceOf[Type.Var])
-      val newConstraints = constraints.map {
-        // MATT check against known classes
-        case Ast.TypeConstraint(sym, tpe, loc) => Ast.TypeConstraint(sym, checkKinds(tpe, KindMatch.Wild, ascriptions, root), loc)
-      }
-      Scheme(newQuantifiers, newConstraints, newBase)
+  private def checkKindsMatch(k1: KindMatch, k2: Kind): Validation[Unit, KindError] = {
+    if (KindMatch.matches(k1, k2)) {
+      ().toSuccess
+    } else {
+      KindError.MismatchedKinds(KindMatch.toKind(k1), k2, SourceLocation.Unknown).toFailure // MATT real location
+      // MATT don't do toKind
+    }
+
   }
 
   private sealed trait KindMatch
 
   private object KindMatch {
     case object Wild extends KindMatch
+
     case class Arrow(k1: KindMatch, k2: KindMatch) extends KindMatch
+
     case object Bool extends KindMatch
+
     case object Star extends KindMatch
+
     case object Record extends KindMatch
+
     case object Schema extends KindMatch
 
     def fromKind(k: Kind): KindMatch = {
