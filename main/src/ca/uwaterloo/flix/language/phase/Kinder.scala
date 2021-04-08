@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import scala.annotation.tailrec
 
 object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change to KindedAst.Root ?
-
+// MATT license
 
   /**
     * Runs the p
@@ -22,6 +22,7 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
     ???
   }
 
+  // MATT docs
   private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root): Validation[ResolvedAst.Enum, CompilationError] = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, cases, _, _, _) =>
       val ascriptions = getAscriptions(tparams)
@@ -39,6 +40,7 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
   private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root): Validation[ResolvedAst.Class, CompilationError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc) =>
       val ascriptions = getAscription(tparam)
+
       // MATT superclasses should be constraints instead
       // MATT check over class constraints with ascriptions
       // MATT check over sigs with ascriptions
@@ -46,6 +48,7 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
       clazz.toSuccess
   }
 
+  // MATT docs
   private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root): Validation[ResolvedAst.Instance, CompilationError] = inst match {
     case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc) =>
       val clazz = root.classes(sym)
@@ -77,7 +80,7 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
       assert(KindMatch.matches(expected, kind)) // MATT monad
       (kind, Map.empty)
     case Type.Lambda(tvar, tpe) =>
-      throw InternalCompilerException("TODO") // MATT
+      throw InternalCompilerException("TODO") // MATT can't do without kind vars?
 
     case _: Type.Apply =>
       val (base, args) = baseAndArgs(tpe)
@@ -99,6 +102,7 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
 
   }
 
+  // MATT docs
   def applyKind(base: Kind, args: List[Kind]): Kind = {
     def apply1(base: Kind, arg: Kind): Kind = base match {
       case Kind.Arrow(k1, k2) if arg <:: k1 => k2
@@ -166,6 +170,7 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
     visit(tpe, expected)
   }
 
+  // MATT docs
   def getDeclaredKind(enum: ResolvedAst.Enum): Kind = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _) =>
       val ascriptions = getAscriptions(tparams)
