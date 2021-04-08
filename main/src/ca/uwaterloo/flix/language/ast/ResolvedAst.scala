@@ -16,11 +16,10 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.List
 
 object ResolvedAst {
@@ -41,9 +40,9 @@ object ResolvedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: ResolvedAst.Spec, exp: ResolvedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
@@ -273,6 +272,18 @@ object ResolvedAst {
 
   }
 
+  sealed trait TypeParams {
+    val tparams: List[ResolvedAst.TypeParam]
+  }
+
+  object TypeParams {
+
+    case class Kinded(tparams: List[ResolvedAst.TypeParam.Kinded]) extends TypeParams
+
+    case class Unkinded(tparams: List[ResolvedAst.TypeParam.Unkinded]) extends TypeParams
+
+  }
+
   case class Annotation(name: Ast.Annotation, exps: List[ResolvedAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
@@ -301,6 +312,16 @@ object ResolvedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
+  sealed trait TypeParam {
+    val tpe: Type.Var
+  }
+
+  object TypeParam {
+
+    case class Kinded(name: Name.Ident, tpe: Type.Var, kind: Kind, loc: SourceLocation) extends TypeParam
+
+    case class Unkinded(name: Name.Ident, tpe: Type.Var, loc: SourceLocation) extends TypeParam
+
+  }
 
 }

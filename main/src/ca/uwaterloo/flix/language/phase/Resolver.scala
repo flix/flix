@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.NamedAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
@@ -175,13 +176,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(c0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
       for {
-        tparams <- resolveTypeParams(List(tparam0), ns0, root)
+        tparam <- Params.resolve(tparam0)
         sigsList <- traverse(signatures)(resolve(_, ns0, root))
         // ignore the parameter of the super class; we don't use it
         superClasses <- traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, ns0, root))
         laws <- traverse(laws0)(resolve(_, ns0, root))
         sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc)
+      } yield ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc)
   }
 
   /**
@@ -232,7 +233,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
 
       val fparamsVal = resolveFormalParams(fparams0, ns0, root)
-      val tparamsVal = resolveTypeParams(tparams0.tparams, ns0, root)
+      val tparamsVal = resolveTypeParams(tparams0, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, ns0, root))
       val schemeVal = resolveScheme(sc0, ns0, root)
       val effVal = lookupType(eff0, ns0, root)
@@ -247,7 +248,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
-    traverse(e0.tparams.tparams)(p => Params.resolve(p, ns0, root)).flatMap {
+    resolveTypeParams(e0.tparams, ns0, root).flatMap {
       tparams =>
         val tconstrs = Nil
         val casesVal = traverse(e0.cases) {
@@ -268,7 +269,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           cases <- casesVal
           tpe <- lookupType(e0.tpe, ns0, root)
         } yield {
-          val sc = Scheme(tparams.map(_.tpe), tconstrs, tpe)
+          val sc = Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
           ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
         }
     }
@@ -1007,11 +1008,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
-        case NamedAst.TypeParam.Kinded(name, tpe, kind, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
-        case NamedAst.TypeParam.Unkinded(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess
+    def resolve(tparam0: NamedAst.TypeParam): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
+        case tparam: NamedAst.TypeParam.Kinded => resolve(tparam)
+        case tparam: NamedAst.TypeParam.Unkinded => resolve(tparam)
     }
 
+    // MATT docs
+    def resolve(tparam0: NamedAst.TypeParam.Kinded): Validation[ResolvedAst.TypeParam.Kinded, ResolutionError] = tparam0 match {
+      case NamedAst.TypeParam.Kinded(name, tpe, kind, loc) => ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc).toSuccess // MATT monadic stuff is redundant here(?).toSuccess
+    }
+
+    // MATT docs
+    def resolve(tparam0: NamedAst.TypeParam.Unkinded): Validation[ResolvedAst.TypeParam.Unkinded, ResolutionError] = tparam0 match {
+      case NamedAst.TypeParam.Unkinded(name, tpe, loc) => ResolvedAst.TypeParam.Unkinded(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?).toSuccess
+    }
   }
 
   /**
@@ -1024,8 +1034,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given type parameters `tparams0`.
     */
-  def resolveTypeParams(tparams0: List[NamedAst.TypeParam], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.TypeParam], ResolutionError] =
-    traverse(tparams0)(tparam => Params.resolve(tparam, ns0, root))
+  def resolveTypeParams(tparams0: NamedAst.TypeParams, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParams, ResolutionError] = tparams0 match {
+    case TypeParams.Kinded(tparams1) =>
+      traverse(tparams1)(tparam => Params.resolve(tparam)) map {
+        tparams2 => ResolvedAst.TypeParams.Kinded(tparams2)
+      }
+    case TypeParams.Unkinded(tparams1) =>
+      traverse(tparams1)(tparam => Params.resolve(tparam)) map {
+        tparams2 => ResolvedAst.TypeParams.Unkinded(tparams2)
+      }
+      // MATT copy-pasta avoidable?
+  }
 
   /**
     * Performs name resolution on the given scheme `sc0`.
