@@ -38,19 +38,10 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   */
 
 // TODO: Long-term improvements:
-// - Allow arbitrary expressions as body terms.
-// - Use Validation everywhere.
+// - Return a [[Validation]] from visitExp etc.
+// - Decide which expressions to allow as head and body terms.
 
 object Lowering extends Phase[Root, Root] {
-
-  // TODO: Add doc
-
-  // TODO: Maybe better to have real source locations??
-  private val SL: SourcePosition = SourcePosition.Unknown
-  private val RootNS: Name.NName = Name.NName(SL, Nil, SL)
-
-  // TODO: Accept source locations.
-  private def mkIdent(s: String): Name.Ident = Name.Ident(SL, s, SL)
 
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
@@ -95,15 +86,12 @@ object Lowering extends Phase[Root, Root] {
   }
 
   private object Sigs {
+    private val SL: SourcePosition = SourcePosition.Unknown
+    private val RootNS: Name.NName = Name.NName(SL, Nil, SL)
+
+    private def mkIdent(s: String): Name.Ident = Name.Ident(SL, s, SL)
+
     lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("Boxable")), mkIdent("box"))
-
-    def mkBot(loc: SourceLocation): Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("LowerBound")), mkIdent("minValue"))
-
-    def mkLeq(loc: SourceLocation): Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("PartialOrder")), mkIdent("partialCompare"))
-
-    def mkLub(loc: SourceLocation): Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("JoinLattice")), mkIdent("leastUpperBound"))
-
-    def mkGlb(loc: SourceLocation): Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("MeetLattice")), mkIdent("greatestLowerBound"))
   }
 
   private object Types {
@@ -137,7 +125,6 @@ object Lowering extends Phase[Root, Root] {
     lazy val ComposeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
     lazy val EntailsType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Type.Bool)
     lazy val ProjectType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
-
   }
 
   /**
@@ -700,7 +687,8 @@ object Lowering extends Phase[Root, Root] {
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
 
     case Head.Union(exp, tpe, loc) =>
-      throw InternalCompilerException("Deprecated Expression") // TODO: Replace Union with some alternative.
+      // TODO: Add support for union (or similar).
+      throw InternalCompilerException("Deprecated Expression")
   }
 
   /**
@@ -727,20 +715,21 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitHeadTerm(cparams0: List[ConstraintParam], exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
     //
-    // We need to consider three cases:
+    // We need to consider four cases:
     //
-    // Case 1: The expression is quantified variable. We translate it to a variable term.
+    // Case 1.1: The expression is quantified variable. We translate it to a Var.
+    // Case 1.2: The expression is a lexically bound variable. We translate it to a Lit that captures its value.
     // Case 2: The expression does not contain a quantified variable. We evaluate it to a (boxed) value.
-    // Case 3: The expression does contains quantified variables. We translate it to an application term.
+    // Case 3: The expression contains quantified variables. We translate it to an application term.
     //
     exp0 match {
       case Expression.Var(sym, _, loc) =>
         // Case 1: Variable term.
         if (isQuantifiedVar(sym, cparams0)) {
-          // TODO: Actual variable term
+          // Case 1.1: Quantified variable.
           mkHeadTermVar(sym)
         } else {
-          // TODO: lexically capture variable.
+          // Case 1.2: Lexically bound variable.
           mkHeadTermLit(box(exp0))
         }
 
@@ -749,11 +738,10 @@ object Lowering extends Phase[Root, Root] {
         val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
 
         if (quantifiedFreeVars.isEmpty) {
-          // Case 2: Evaluate to (boxed) value.
-          // TODO: Is this case needed?
+          // Case 2: No quantified variables. The expression can be reduced to a value.
           mkHeadTermLit(box(exp0))
         } else {
-          // Case 3: Translate to application term.
+          // Case 3: Quantified variables. The expression is translated to an application term.
           mkAppTerm(quantifiedFreeVars, exp0, exp0.loc)
         }
     }
@@ -882,9 +870,6 @@ object Lowering extends Phase[Root, Root] {
       tpeOpt match {
         case None => throw InternalCompilerException("Unexpected nullary lattice predicate.")
         case Some(tpe) =>
-
-          // TODO: Refactor
-
           // The type `Denotation[tpe]`.
           val unboxedDenotationType = Type.mkEnum(Enums.Denotation, tpe :: Nil)
 
@@ -1171,6 +1156,7 @@ object Lowering extends Phase[Root, Root] {
 
 
   // TODO: Move into TypedAstOps
+
   /**
     * Applies the given substitution `subst` to the given expression `exp0`.
     */
@@ -1402,8 +1388,6 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.Force(e, tpe, eff, loc)
 
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ??? // TODO
-
     case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
@@ -1421,6 +1405,8 @@ object Lowering extends Phase[Root, Root] {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       Expression.FixpointEntails(e1, e2, tpe, eff, loc)
+
+    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }
 
   /**
