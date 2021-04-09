@@ -15,6 +15,16 @@
  */
 
 namespace Fixpoint/Ram {
+
+    ///
+    /// Represents a RAM term.
+    ///
+    /// `Attribute(x, i)` represents an index into the tuple
+    /// bound to the local variable `x`, i.e. `x[i]`.
+    ///
+    /// `Lat(x)` represents the lattice component in the tuple
+    /// bound to the local variable `x`.
+    ///
     pub enum RamTerm[v] {
         case Lit(v)
         case Attribute(RowVar, Int32)

@@ -21,23 +21,6 @@ use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ram.RelSym;
 
-// TODO: The following tests have been commented and should be fixed an incommented.
-// Test.Dec.RelAlias
-// Test.Exp.Fixpoint.Fold
-// Test.Predicate.Filter
-// Test.Predicate.Guard
-// Test.Predicate.Union
-// Test.Term.Apply
-// Test.Term.Var.CapturedVar
-// Test.Term.Var.WildVar
-// fixpoint-computations-on-lattices
-// TestConstant
-// IFDS
-// IDE
-// SUOpt
-// FloydWarshall
-// TestIntroduction
-
 namespace Fixpoint {
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         stratify(d) |>
@@ -67,12 +50,9 @@ namespace Fixpoint {
                 case Denotation.Relational =>
                     let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
                     Map.forall(t -> _ -> Map.memberOf(t, rel2), rel1)
-                case Denotation.Latticenal(_, leq, _, _) =>
+                case Denotation.Latticenal(bot, leq, _, _) =>
                     let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
-                    Map.forall(k -> l1 -> match Map.get(k, rel2) {
-                        case Some(l2) => l1 `leq` l2
-                        case None => false
-                    }, rel1)
+                    Map.forall(k -> l1 -> l1 `leq` Map.getWithDefault(k, bot(), rel2), rel1)
             }, db1)
     }
 

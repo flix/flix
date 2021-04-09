@@ -20,6 +20,7 @@ use Fixpoint/Ast.PrecedenceGraph.PrecedenceGraph;
 use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
 
 namespace Fixpoint {
+    /// Compute a stratification (if one exists) with Ullman's algorithm.
     def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
         case Datalog(_, rules) =>
             predicatesOf(rules) |>
@@ -27,7 +28,6 @@ namespace Fixpoint {
             stratifyHelper(Fixpoint/Ast.mkDepGraph(d))
     }
 
-    /// Compute a stratification (if one exists) with Ullman's algorithm.
     def stratifyHelper(g: PrecedenceGraph, stf: Map[PredSym, Int32]): Map[PredSym, Int32] = match g {
         case PrecedenceGraph(xs) =>
             // The number of strata is bounded by the number of predicates
