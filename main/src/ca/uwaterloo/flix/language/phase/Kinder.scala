@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ResolvedAst.TypeParams
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, traverse}
@@ -10,13 +10,13 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.annotation.tailrec
 
-object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change to KindedAst.Root ?
+object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change to KindedAst.Root ?
   // MATT license
 
   /**
     * Runs the p
     */
-  override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, CompilationError] = {
+  override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = {
     // visit enums
     // visit type aliases
     // visit classes
@@ -25,40 +25,44 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
   }
 
   // MATT docs
-  private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root): Validation[ResolvedAst.Enum, CompilationError] = enum match {
-    case ResolvedAst.Enum(_, _, _, tparams, cases, _, _, _) =>
-      val ascriptions = getAscriptions(tparams)
+  private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root): Validation[KindedAst.Enum, CompilationError] = enum match {
+    case ResolvedAst.Enum(doc, mod, sym, tparams0, cases, tpeDeprecated, sc, loc) =>
+      val ascriptions = getAscriptions(tparams0)
       val newCasesVal = traverse(cases) {
         case (_, caze@ResolvedAst.Case(enum, tag, tpeDeprecated, sc)) =>
           checkScheme(sc, ascriptions, root) map {
-            newScheme => (tag, caze.copy(sc = newScheme))
+            newScheme => (tag, KindedAst.Case(enum, tag, tpeDeprecated, newScheme))
           }
       }
-      mapN(newCasesVal) {
-        newCases => enum.copy(cases = newCases.toMap)
+
+      val newSchemeVal = checkScheme(sc, ascriptions, root)
+      val newTparamsVal = visitTparams(tparams0, ascriptions, root) // MATT merge with getAscriptions
+      mapN(newCasesVal, newSchemeVal, newTparamsVal) {
+        case (newCases, newScheme, tparams) =>
+          KindedAst.Enum(doc, mod, sym, tparams, newCases.toMap, tpeDeprecated, newScheme, loc)
       }
   }
 
   // MATT need to add type aliases to ResolvedAst;
   // MATT what effect does the replacement in Resolver have?
 
-  private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root): Validation[ResolvedAst.Class, CompilationError] = clazz match {
-    case ResolvedAst.Class(doc, mod, sym, tparam, superClasses0, sigs0, laws0, loc) =>
-      val ascriptions = Map(getAscription(tparam))
+  private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root): Validation[KindedAst.Class, CompilationError] = clazz match {
+    case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
+      val ascriptions = Map(getAscription(tparam0))
       val superClassesVal = traverse(superClasses0)(checkKinds(_, ascriptions, root))
-      val sigsVal = traverse(sigs0)(sig => sig.toSuccess) // MATT visitSig delegates to visitSpec
-      val lawsVal = traverse(laws0)(law => law.toSuccess) // MATT visitDef delegates to visitSpec
-
-      // MATT need to map over tparams also (?)
-      mapN(superClassesVal, sigsVal, lawsVal) {
-        case (superClasses, sigs, laws) => ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+      val sigsVal = traverse(sigs0) {
+        case (sigSym, sig0) => visitSig(sig0, ascriptions, root).map(sig => sigSym -> sig)
       }
+      val lawsVal = traverse(laws0)(visitDef(_, ascriptions, root))
+      val tparamVal = visitTparam(tparam0, ascriptions, root)
 
-      clazz.toSuccess
+      mapN(superClassesVal, sigsVal, lawsVal, tparamVal) {
+        case (superClasses, sigs, laws, tparam) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+      }
   }
 
   // MATT docs
-  private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root): Validation[ResolvedAst.Instance, CompilationError] = inst match {
+  private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root): Validation[KindedAst.Instance, CompilationError] = inst match {
     case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc) =>
       val clazz = root.classes(sym)
       val classAscriptions = Map(getAscription(clazz.tparam))
@@ -71,11 +75,55 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
           // MATT need to return new type from this (?)
           // MATT use internal visit function to avoid extra "actualkind"
           val newTconstrsVal = traverse(tconstrs)(checkKinds(_, ascriptions, root))
-          val newDefsVal = traverse(defs)(defn => defn.toSuccess) // MATT checkDef
+          val newDefsVal = traverse(defs)(visitDef(_, ascriptions, root))
           mapN(newTconstrsVal, newDefsVal) {
-            case (newTconstrs, newDefs) => ResolvedAst.Instance(doc, mod, sym, tpe, newTconstrs, newDefs, ns, loc)
+            case (newTconstrs, newDefs) => KindedAst.Instance(doc, mod, sym, tpe, newTconstrs, newDefs, ns, loc)
           }
       }
+  }
+
+  // MATT docs
+  private def visitAnnotation(ann: ResolvedAst.Annotation, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Annotation, KindError] = ann match {
+    case ResolvedAst.Annotation(name, exps, loc) =>
+      KindedAst.Annotation(name, ???, loc).toSuccess // MATT
+  }
+
+  // MATT docs
+  private def visitTparams(tparams0: ResolvedAst.TypeParams, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[List[KindedAst.TypeParam], KindError] = tparams0 match {
+    case ResolvedAst.TypeParams.Kinded(tparams) => tparams.map {
+      tparam => KindedAst.TypeParam(???, ???, ???, ???)
+    }.toSuccess // MATT
+  }
+
+  // MATT docs
+  private def visitTparam(tparam0: ResolvedAst.TypeParam, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.TypeParam, KindError] = tparam0 match {
+    case TypeParam.Kinded(name, tpe, kind, loc) => ??? // MATT
+    case TypeParam.Unkinded(name, tpe, loc) => ??? // MATT
+  }
+
+  // MATT docs
+  private def visitSig(sig0: ResolvedAst.Sig, ascriptions0: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Sig, KindError] = sig0 match {
+    case ResolvedAst.Sig(sym, spec0, exp0) =>
+      for {
+        res <- visitSpec(spec0, ascriptions0, root)
+        (spec, ascriptions) = res
+        exp <- traverse(exp0)(visitExp(_, ascriptions, root))
+      } yield KindedAst.Sig(sym, spec, exp.headOption)
+  }
+
+  // MATT docs
+  private def visitDef(defn0: ResolvedAst.Def, ascriptions0: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Def, KindError] = defn0 match {
+    case ResolvedAst.Def(sym, spec0, exp0) =>
+      for {
+        res <- visitSpec(spec0, ascriptions0, root)
+        (spec, ascriptions) = res
+        exp <- visitExp(exp0, ascriptions, root)
+      } yield KindedAst.Def(sym, spec, exp)
+  }
+
+  // MATT docs
+  private def visitExp(exp0: ResolvedAst.Expression, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Expression, KindError] = {
+    ??? // MATT
   }
 
   // MATT only useful for instances b/c of complexity assumptions
@@ -216,8 +264,9 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
     case ResolvedAst.TypeParam.Unkinded(_, tpe, _) => tpe.id -> Kind.Star
   }
 
-  def visitSpec(spec: ResolvedAst.Spec, root: ResolvedAst.Root): Validation[ResolvedAst.Spec, CompilationError] = spec match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams, sc, eff, loc) => tparams0 match {
+  def visitSpec(spec: ResolvedAst.Spec, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[(KindedAst.Spec, Map[Int, Kind]), KindError] = spec match {
+      // MATT need to compare/merge with provided ascriptions
+    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams, sc, eff, loc) => tparams0 match {
       case TypeParams.Kinded(tparams) =>
         val ascriptions = getAscriptions(tparams0)
 
@@ -229,18 +278,19 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
         val newFparamsVal = traverse(fparams) {
           case ResolvedAst.FormalParam(sym, mod, tpe, loc) =>
             checkKinds(tpe, KindMatch.Star, ascriptions, root) map {
-              newTpe => ResolvedAst.FormalParam(sym, mod, newTpe, loc)
+              newTpe => KindedAst.FormalParam(sym, mod, newTpe, loc)
             }
         }
 
-        mapN(newSchemeVal, newEffVal, newFparamsVal) {
-          case (newScheme, newEff, newFparams) =>
-            // MATT visit tparams
-            // MATT do arg0 -> arg instead of arg -> newArg
-            ResolvedAst.Spec(doc, ann, mod, tparams0, newFparams, newScheme, newEff, loc)
-        }
+        val newAnnVal = traverse(ann0)(visitAnnotation(_, ascriptions, root))
 
-        // MATT need to check exp?
+        val newTparamsVal = visitTparams(tparams0, ascriptions, root)
+
+        mapN(newSchemeVal, newEffVal, newFparamsVal, newAnnVal, newTparamsVal) {
+          case (newScheme, newEff, newFparams, newAnn, newTparams) =>
+            // MATT do arg0 -> arg instead of arg -> newArg
+            (KindedAst.Spec(doc, newAnn, mod, newTparams, newFparams, newScheme, newEff, loc), ascriptions)
+        }
       case TypeParams.Unkinded(tparams) =>
         val fparamAscriptionsVal = fold(fparams, Map.empty[Int, Kind]) {
           case (acc, fparam) => inferKinds(fparam.tpe, KindMatch.Star, root) map {
@@ -248,25 +298,36 @@ object Kinder extends Phase[ResolvedAst.Root, ResolvedAst.Root] { // MATT change
           }
         }
 
+        // MATT visit fparams while inferring
+        val newFparamsVal = traverse(fparams) {
+          case ResolvedAst.FormalParam(sym, mod, tpe, loc) =>
+            checkKinds(tpe, KindMatch.Star, ascriptions, root) map {
+              newTpe => KindedAst.FormalParam(sym, mod, newTpe, loc)
+            }
+        }
         val effAscriptionsVal = inferKinds(eff, KindMatch.Bool, root) map {
           case (_, ascriptions) => ascriptions
         }
 
+        val newAnnVal = traverse(ann0)(visitAnnotation(_, ascriptions, root))
+
+        val newTparamsVal = visitTparams(tparams0, ascriptions, root)
+
         // MATT need to keep and use result of inference
 
         // MATT more docs everywhere
-        flatMapN(fparamAscriptionsVal, effAscriptionsVal) {
-          case (fparamAscriptions, effAscriptions) =>
+        flatMapN(fparamAscriptionsVal, effAscriptionsVal, newAnnVal, newTparamsVal, newFparamsVal) {
+          case (fparamAscriptions, effAscriptions, newAnn, newTparams, newFparams) =>
             val ascriptions = fparamAscriptions ++ effAscriptions // MATT handle conflicts
             // MATT make merge ascriptions function
             checkScheme(sc, ascriptions, root) map {
-              // MATT check tparams
-              newScheme => ResolvedAst.Spec(doc, ann, mod, tparams0, fparams, newScheme, eff, loc)
+              newScheme => (KindedAst.Spec(doc, newAnn, mod, newTparams, newFparams, newScheme, eff, loc), ascriptions)
             }
         }
     }
   }
 
+  // MATT docs
   private def checkScheme(scheme: Scheme, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Scheme, KindError] = scheme match {
     case Scheme(quantifiers, constraints, base) =>
       val newBaseVal = checkKinds(base, KindMatch.Star, ascriptions, root)
