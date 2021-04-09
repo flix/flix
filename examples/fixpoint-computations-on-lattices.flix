@@ -71,6 +71,23 @@ instance ToString[Sign] {
     }
 }
 
+instance Order[Sign] {
+    pub def compare(a: Sign, b: Sign): Comparison = ?bug
+}
+
+instance Boxable[Sign] {
+    pub def box(x: Sign): Boxed =
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Sign, o2 as Sign);
+        let toString = o -> ToString.toString(o as Sign);
+        BoxedObject(value, compare, toString)
+
+    pub def unbox(x: Boxed): Sign = match x {
+        case BoxedObject(v, _, _) => v as Sign
+        case _                    => ?bug
+    }
+}
+
 /// We can now declare three map lattices:
 lat A(x: String, s: Sign)
 lat B(x: String, s: Sign)
