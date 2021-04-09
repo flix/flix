@@ -178,7 +178,7 @@ namespace Test/Term/Apply {
         R(f(x, y)) :- A(x), A(y).
     }
 
-    pub def ho3[a](f: Int -> a): #{A(Int), P(a)} with Boxable[a] = #{
+    pub def ho3(f: Int -> a): #{A(Int), P(a)} with Boxable[a] = #{
         A(1). A(2). A(3).
         P(f(x)) :- A(x).
     }

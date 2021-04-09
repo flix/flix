@@ -13,6 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
+///
+/// Represents a boxed value.
+///
 pub enum Boxed {
     case BoxedBool(Bool)
     case BoxedChar(Char)
@@ -39,7 +43,7 @@ instance Eq[Boxed] {
         case (BoxedFloat32(v1),         BoxedFloat32(v2))       => v1 == v2
         case (BoxedFloat64(v1),         BoxedFloat64(v2))       => v1 == v2
         case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2) == EqualTo
-        case _ => ?bug
+        case _                                                  => bug!("Mismatched types.")
     }
 }
 
@@ -54,7 +58,7 @@ instance Order[Boxed] {
         case (BoxedFloat32(v1),         BoxedFloat32(v2))       => v1 <=> v2
         case (BoxedFloat64(v1),         BoxedFloat64(v2))       => v1 <=> v2
         case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2)
-        case _                                                  => ?bug
+        case _                                                  => bug!("Mismatched types.")
     }
 }
 

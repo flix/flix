@@ -49,10 +49,10 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
       case TypedAst.Class(_, _, sym, _, superClasses, _, _, loc) =>
         val lawlessSuperClasses = superClasses.filter {
-          superSym => root.classes(superSym).mod.isLawless
+          superClass => root.classes(superClass.sym).mod.isLawless
         }
         Validation.traverseX(lawlessSuperClasses) {
-          superSym => InstanceError.LawlessSuperClass(sym, superSym, loc).toFailure
+          superClass => InstanceError.LawlessSuperClass(sym, superClass.sym, loc).toFailure
         }
     }
 

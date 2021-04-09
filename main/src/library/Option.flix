@@ -121,7 +121,7 @@ namespace Option {
     /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
     ///
     @Time(1) @Space(1)
-    pub def replace[a](x: a, y: a, o: Option[a]): Option[a] with Eq[a] = match o {
+    pub def replace(x: a, y: a, o: Option[a]): Option[a] with Eq[a] = match o {
         case None => o
         case Some(v) => Some(if (v == x) y else v)
     }
@@ -233,7 +233,7 @@ namespace Option {
     ///
     /// Returns the result of applying `combine` to all the elements in `o`, using `empty` as the initial value.
     ///
-    pub def fold[a](o: Option[a]): a with Monoid[a] = Foldable.fold(o)
+    pub def fold(o: Option[a]): a with Monoid[a] = Foldable.fold(o)
 
     ///
     /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
@@ -354,7 +354,7 @@ namespace Option {
     /// Returns a one-element set of the value `v` if `o` is `Some(v)`. Otherwise returns the empty set.
     ///
     @Time(1) @Space(1)
-    pub def toSet[a](o: Option[a]): Set[a] with Order[a] = match o {
+    pub def toSet(o: Option[a]): Set[a] with Order[a] = match o {
         case None       => Set.empty()
         case Some(v)    => Set.singleton(v)
     }
@@ -363,7 +363,7 @@ namespace Option {
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Some((k, v))`. Otherwise returns the empty map.
     ///
     @Time(1) @Space(1)
-    pub def toMap[k, v](o: Option[(k, v)]): Map[k, v] with Order[k] = match o {
+    pub def toMap(o: Option[(k, v)]): Map[k, v] with Order[k] = match o {
         case None           => Map.empty()
         case Some((k, v))   => Map.singleton(k, v)
     }

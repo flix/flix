@@ -14,13 +14,26 @@
  * limitations under the License.
  */
 namespace Fixpoint/Ast {
+
+    ///
+    /// Represents the denotation of a predicate symbol.
+    ///
+    /// A predicate symbol either has relational or lattice semantics.
+    ///
+    /// If it has lattice semantics it is equipped with:
+    ///
+    /// - A bottom element.
+    /// - A partial order (a leq function).
+    /// - a least upper bound (a lub function).
+    /// - a greatest lower bound (a glb function).
+    ///
     pub enum Denotation[v] {
         case Relational
         case Latticenal(Unit -> v, v -> v -> Bool, v -> v -> v, v -> v -> v)
     }
 
     ///
-    /// Returns a latticenal denotation with the given type.
+    /// Returns a latticenal denotation associated with the type `t`.
     ///
     pub def lattice(): Denotation[t] with LowerBound[t], PartialOrder[t], JoinLattice[t], MeetLattice[t] =
         // TODO: Why are these type annotations necessary?
@@ -32,7 +45,7 @@ namespace Fixpoint/Ast {
         )
 
     ///
-    /// Boxes the lattice components inside the given denotation.
+    /// Boxes the lattice components inside the given denotation `d`.
     ///
     pub def box(d: Denotation[t]): Denotation[Boxed] with Boxable[t] = match d {
         case Denotation.Relational => Denotation.Relational

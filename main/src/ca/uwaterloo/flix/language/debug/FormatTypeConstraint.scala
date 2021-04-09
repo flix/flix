@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2021 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix
+package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.util.{FlixTest, Ignore, Options}
-import org.scalatest.Suites
+import ca.uwaterloo.flix.language.ast.Ast
 
-class TestTutorials extends Suites(
-  new FlixTest("TestIntroduction", "main/src/tutorials/introduction.flix")(Options.TestWithLibrary),
-  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")(Options.TestWithLibrary)
-)
+object FormatTypeConstraint {
+
+  /**
+    * Formats the given `tconstr` as `Class[Param]`.
+    */
+  def formatTypeConstraint(tconstr: Ast.TypeConstraint)(implicit audience: Audience): String = tconstr match {
+    case Ast.TypeConstraint(sym, arg, _) =>
+      val typeString = FormatType.formatType(arg)
+      s"${sym}[${typeString}]"
+  }
+}

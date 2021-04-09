@@ -58,15 +58,17 @@ class LangSuite extends Suites(
   //
   // Array.
   //
-  new FlixTest("Test.Exp.ArrayLength", "main/test/flix/Test.Exp.ArrayLength.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ArrayLit", "main/test/flix/Test.Exp.ArrayLit.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ArrayLoad", "main/test/flix/Test.Exp.ArrayLoad.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ArraySlice", "main/test/flix/Test.Exp.ArraySlice.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ArraySliceNoEndIndex", "main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ArraySliceStartEndIndex", "main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ArraySliceCopy", "main/test/flix/Test.Exp.ArraySliceCopy.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ArrayStore", "main/test/flix/Test.Exp.ArrayStore.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ArrayNew", "main/test/flix/Test.Exp.ArrayNew.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Array", List(
+    "main/test/flix/Test.Exp.ArrayLength.flix",
+    "main/test/flix/Test.Exp.ArrayLit.flix",
+    "main/test/flix/Test.Exp.ArrayLoad.flix",
+    "main/test/flix/Test.Exp.ArraySlice.flix",
+    "main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix",
+    "main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix",
+    "main/test/flix/Test.Exp.ArraySliceCopy.flix",
+    "main/test/flix/Test.Exp.ArrayStore.flix",
+    "main/test/flix/Test.Exp.ArrayNew.flix"
+  ), Options.TestWithLibrary),
 
   //
   // Ascribe.
@@ -114,8 +116,8 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Concurrency.Buffered", "main/test/flix/Test.Exp.Concurrency.Buffered.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Concurrency.NewChannel", "main/test/flix/Test.Exp.Concurrency.NewChannel.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Concurrency.Unbuffered", "main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Concurrency.Select", "main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("Test.Exp.Concurrency.Spawn", "main/test/flix/Test.Exp.Concurrency.Spawn.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Concurrency.Select", "main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   //
   // Default.
@@ -248,10 +250,12 @@ class LangSuite extends Suites(
   //
   // Reference.
   //
-  new FlixTest("Test.Exp.Reference.Assign", "main/test/flix/Test.Exp.Reference.Assign.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Reference.Deref", "main/test/flix/Test.Exp.Reference.Deref.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Reference.Ref.flix", "main/test/flix/Test.Exp.Reference.Ref.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Reference.Precedence", "main/test/flix/Test.Exp.Reference.Precedence.flix"),
+  new FlixTest("Test.Exp.Reference", List(
+    "main/test/flix/Test.Exp.Reference.Assign.flix",
+    "main/test/flix/Test.Exp.Reference.Ref.flix",
+    "main/test/flix/Test.Exp.Reference.Deref.flix",
+    "main/test/flix/Test.Exp.Reference.Precedence.flix"
+  ), Options.TestWithLibrary),
 
   //
   // Tag.

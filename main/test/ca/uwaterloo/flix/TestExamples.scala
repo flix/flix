@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.{FlixTest, Ignore, Options}
+import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class TestExamples extends Suites(
@@ -37,17 +37,15 @@ class TestExamples extends Suites(
   new FlixTest("using-laziness-for-logging", "examples/using-laziness-for-logging.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-laziness-to-compute-fibonacci", "examples/using-laziness-to-compute-fibonacci.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
-  // TODO
-  //new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  //new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)), // TODO
 
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new Ignore("TestConstant", "examples/domains/Constant.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary), // TODO
+  new FlixTest("TestConstant", List("examples/domains/Constant.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("ConstantParity", List("examples/domains/ConstantParity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("ConstantSign", List("examples/domains/ConstantSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("Interval", List("examples/domains/Interval.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("IntervalAlt", List("examples/domains/IntervalAlt.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  // new FlixTest("IntervalInf", "examples/domains/IntervalInf.flix", "examples/domains/Belnap.flix")(compiled = false), // TODO: Broken
   new FlixTest("Mod3", List("examples/domains/Mod3.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("Parity", List("examples/domains/Parity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
   new FlixTest("ParitySign", List("examples/domains/ParitySign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
@@ -56,8 +54,8 @@ class TestExamples extends Suites(
   new FlixTest("StrictSign", List("examples/domains/StrictSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
 
   new FlixTest("IFDS", "examples/analysis/IFDS.flix")(Options.TestWithLibrary),
-  new Ignore("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibrary), // TODO
-  new Ignore("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibrary), // TODO
-  new Ignore("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibrary) // TODO
+  new FlixTest("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibrary),
+  new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibrary),
+  new FlixTest("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibrary)
 
 )

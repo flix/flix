@@ -184,7 +184,7 @@ def isMaybeZero(e: Constant): Bool = match e {
 }
 
 pub def main(_: Array[String]): Int32 & Impure =
-    let _p = solve #{
+    let p = #{
         //
         // We can now define the semantic rules of the analysis.
         //
@@ -243,13 +243,12 @@ pub def main(_: Array[String]): Int32 & Impure =
         AddStm("w", "x", "y"). // w = x + y
         DivStm("v", "w", "z"). // v = w / z
     };
-    println("Hello World!");
+    let m = solve p;
+    (m |> Fixpoint.unsafePrint) as & Impure;
     0
 
 //
 // We can now run our program with Flix and inspect the output!
-//
-// Run: flix --print LocalVar,ArithmeticError introduction.flix
 //
 // This should produce output like:
 //
@@ -264,7 +263,6 @@ pub def main(_: Array[String]): Int32 & Impure =
 // | List(w) | Cst(10) |
 // | List(z) | Cst(0)  |
 // +---------+---------+
-// Query matched 5 row(s) out of 5 total row(s).
 
 // ArithmeticError
 // +---+
@@ -272,7 +270,6 @@ pub def main(_: Array[String]): Int32 & Impure =
 // +---+
 // | v |
 // +---+
-// Query matched 1 row(s) out of 1 total row(s).
 
 //
 // Here are some exercises for learning Flix:

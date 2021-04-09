@@ -21,19 +21,19 @@ def main(_args: Array[String]): Int32 & Impure =
 def connection(): {pass: Option[String]} = {pass = None}
 
 /// The host function extends the options record with a hostname.
-def host[r](o: {| r}, h: String): {host: String | r} = {+host = h | o}
+def host(o: {| r}, h: String): {host: String | r} = {+host = h | o}
 
 /// The port function extends the options record with a port number.
-def port[r](o: {| r}, p: Int): {port: Int | r} = {+port = p | o}
+def port(o: {| r}, p: Int): {port: Int | r} = {+port = p | o}
 
 /// The user function extends the options record with a username.
-def user[r](o: {| r}, u: String): {user: String | r} = {+user = u | o}
+def user(o: {| r}, u: String): {user: String | r} = {+user = u | o}
 
 /// The pass function *updates* the options record with a new value
 /// of its pass field. Notice that the options record must already
 /// have a pass field for this to type check, hence the connection
 /// "builder" function ensures that such a field exists.
-def pass[r](o: {pass: Option[String] | r}, p: String):
+def pass(o: {pass: Option[String] | r}, p: String):
            {pass: Option[String] | r} = {pass = Some(p) | o}
 
 /// Finally, the connect function has a very natural signature that

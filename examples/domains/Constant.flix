@@ -321,33 +321,4 @@ namespace Domain/Constant {
 
 //    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int, Int) -> Int): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
-    ///
-    /// Tests
-    ///
-    lat L(k: Int, y: Constant)
-    lat R(k: Int, y: Constant)
-
-    @test
-    pub def testConstant01(): #{ R } = solve #{
-        R(1; Bot).
-        R(2; Cst(42)).
-        R(3; Top).
-    }
-
-    @test
-    pub def testConstant02(): #{ R } = solve #{
-        R(1; Cst(1)).
-        R(1; Cst(2)).
-        R(1; Cst(3)).
-    }
-
-    @test
-    pub def testConstant03(): #{ L, R } = solve #{
-        L(1; Cst(1)).
-        L(2; Cst(2)).
-        L(3; Cst(3)).
-
-        R(1; x) :- L(1; x), L(2; x), L(3; x).
-    }
-
 }
