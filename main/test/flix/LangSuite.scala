@@ -138,7 +138,8 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Exp.Fixpoint.Compose.flix",
     "main/test/flix/Test.Exp.Fixpoint.Entails.flix",
     "main/test/flix/Test.Exp.Fixpoint.Project.flix",
-    "main/test/flix/Test.Exp.Fixpoint.Solve.flix"
+    "main/test/flix/Test.Exp.Fixpoint.Solve.flix",
+    "main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix"
   ), Options.TestWithLibrary),
 
   //
