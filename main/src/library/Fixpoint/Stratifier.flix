@@ -20,12 +20,18 @@ use Fixpoint/Ast.PrecedenceGraph.PrecedenceGraph;
 use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
 
 namespace Fixpoint {
-    /// Compute a stratification (if one exists) with Ullman's algorithm.
+    ///
+    /// Compute a stratification with Ullman's algorithm.
+    /// The Flix compiler is supposed to guarantee the existence of a stratification at this point.
+    /// Initially, all IDB predicates are assigned to stratum 0.
+    /// I.e. facts are ignored in the stratification.
+    ///
     def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
         case Datalog(_, rules) =>
+            use Fixpoint/Ast.mkDepGraph;
             predicatesOf(rules) |>
             Set.foldRight(p -> Map.insert(p, 0), Map#{}) |>
-            stratifyHelper(Fixpoint/Ast.mkDepGraph(d))
+            stratifyHelper(mkDepGraph(d))
     }
 
     def stratifyHelper(g: PrecedenceGraph, stf: Map[PredSym, Int32]): Map[PredSym, Int32] = match g {
@@ -38,14 +44,14 @@ namespace Fixpoint {
             // or the same stratum as head.
             // 2. If (body, head) is a negative edge, then body belongs to a strictly lower stratum
             // than head.
-            let newStf = Set.foldLeft(acc -> edge -> match edge {
+            let (newStf, changed) = Set.foldLeft(match (acc, changed) -> edge -> match edge {
                 case PositiveEdge(bodySym, headSym) =>
                     let bodyStratum = Map.getWithDefault(bodySym, 0, acc);
                     let headStratum = Map.getWithDefault(headSym, 0, acc);
                     if (bodyStratum > headStratum)
-                        Map.insert(headSym, bodyStratum, acc)
+                        (Map.insert(headSym, bodyStratum, acc), true)
                     else
-                        acc
+                        (acc, changed)
                 case NegativeEdge(bodySym, headSym) =>
                     let bodyStratum = Map.getWithDefault(bodySym, 0, acc);
                     let headStratum = Map.getWithDefault(headSym, 0, acc);
@@ -56,14 +62,14 @@ namespace Fixpoint {
                         if (newHeadStratum > maxStratum)
                             bug!("Stratification error (negative cycle)")
                         else
-                            Map.insert(headSym, newHeadStratum, acc)
+                            (Map.insert(headSym, newHeadStratum, acc), true)
                     else
-                        acc
-            }, stf, xs);
+                        (acc, changed)
+            }, (stf, false), xs);
             // Check if property 1 and 2 now holds for all edges.
-            if (newStf == stf)
-                stf
-            else
+            if (changed)
                 stratifyHelper(g, newStf)
+            else
+                stf
     }
 }
