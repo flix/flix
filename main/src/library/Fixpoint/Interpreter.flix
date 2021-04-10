@@ -17,21 +17,6 @@
 use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar, toDenotation};
 use Fixpoint/Ast.Denotation;
 
-instance Order[Array[v]] with Order[v] {
-    pub def compare(a: Array[v], b: Array[v]): Comparison = compareHelper(a, b, 0) as & Pure
-}
-
-def compareHelper(a: Array[v], b: Array[v], i: Int32): Comparison & Impure with Order[v] =
-    if (i < Array.length(a)) {
-        let cmp = a[i] <=> b[i];
-        if (cmp == EqualTo)
-            compareHelper(a, b, i + 1)
-        else
-            cmp
-    } else {
-        EqualTo
-    }
-
 namespace Fixpoint {
     type alias Tuple[v] = Array[v]
     type alias Database[v] = MutMap[RelSym[v], MutMap[Tuple[v], v]]
