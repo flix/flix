@@ -19,7 +19,7 @@ use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
-use Fixpoint/Ram.RelSym;
+use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v], Eq[v], ToString[v] =
@@ -46,12 +46,12 @@ namespace Fixpoint {
             use Fixpoint/Ram.toDenotation;
             let db1 = toDatabase(edb1);
             let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
-            Map.forall(relSym -> rel1 -> match toDenotation(relSym) {
+            Map.forall(ramSym -> rel1 -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
+                    let rel2 = Map.getWithDefault(ramSym, Map#{}, db2);
                     Map.forall(t -> _ -> Map.memberOf(t, rel2), rel1)
                 case Denotation.Latticenal(bot, leq, _, _) =>
-                    let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
+                    let rel2 = Map.getWithDefault(ramSym, Map#{}, db2);
                     Map.forall(k -> l1 -> l1 `leq` Map.getWithDefault(k, bot(), rel2), rel1)
             }, db1)
     }
@@ -84,8 +84,8 @@ namespace Fixpoint {
         }, terms) as & Pure
     }
 
-    def tupleToFact(relSym: RelSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match relSym {
-        case RelSym.Full(relName, denotation) =>
+    def tupleToFact(ramSym: RamSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match ramSym {
+        case RamSym.Full(relName, denotation) =>
             use Fixpoint/Ast.SourceLocation.Unknown;
             let terms = match denotation {
                 case Denotation.Relational => Array.map(v -> HeadTerm.Lit(v, Unknown), tuple)
@@ -100,14 +100,14 @@ namespace Fixpoint {
         case _ => ?bug
     }
 
-    def toDatabase(facts: Array[Constraint[v]]): Map[RelSym[v], Map[Array[v], v]] with Order[v] =
+    def toDatabase(facts: Array[Constraint[v]]): Map[RamSym[v], Map[Array[v], v]] with Order[v] =
         Array.foldRight(c -> match c {
             case Constraint(HeadAtom(PredSym(pred, _), denotation, terms, _), _, _) =>
-                let relSym = RelSym.Full(pred, denotation);
+                let ramSym = RamSym.Full(pred, denotation);
                 match denotation {
                     case Denotation.Relational =>
                         Map.singleton(factToTuple(c), default) |>
-                        Map.insertWith(Map.union, relSym)
+                        Map.insertWith(Map.union, ramSym)
                     case Denotation.Latticenal(_, _, lub, _) =>
                         let key = Array.init(i -> match terms[i] {
                             case HeadTerm.Lit(v, _) => v
@@ -118,16 +118,16 @@ namespace Fixpoint {
                             case _ => ?bug
                         };
                         Map.singleton(key, lat) |>
-                        Map.insertWith(Map.unionWith(lub), relSym)
+                        Map.insertWith(Map.unionWith(lub), ramSym)
                 }
         } as & Pure, Map#{}, facts) as & Pure
 
     def toAst(db: Database[v]): Datalog[v] & Impure =
         // TODO: don't eagerly convert back to AST. Keep it as a database as long as possible.
         let facts = MutList.new();
-        MutMap.foreach(relSym -> rel -> match relSym {
-            case RelSym.Full(_) => MutMap.foreach(t -> l -> {
-                MutList.push!(tupleToFact(relSym, t, l), facts)
+        MutMap.foreach(ramSym -> rel -> match ramSym {
+            case RamSym.Full(_) => MutMap.foreach(t -> l -> {
+                MutList.push!(tupleToFact(ramSym, t, l), facts)
             }, rel)
             case _ => ()
         }, db);

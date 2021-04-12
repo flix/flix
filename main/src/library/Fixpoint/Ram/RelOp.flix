@@ -16,9 +16,9 @@
 
 namespace Fixpoint/Ram {
     pub enum RelOp[v] {
-        case Search(RowVar, RelSym[v], RelOp[v])
-        case Query(RowVar, RelSym[v], Array[RamTerm[v]], RelOp[v])
-        case Project(Array[RamTerm[v]], RelSym[v])
+        case Search(RowVar, RamSym[v], RelOp[v])
+        case Query(RowVar, RamSym[v], Array[RamTerm[v]], RelOp[v])
+        case Project(Array[RamTerm[v]], RamSym[v])
         case If(List[BoolExp[v]], RelOp[v])
     }
 
@@ -27,17 +27,17 @@ namespace Fixpoint/Ram {
             use Fixpoint.commaSeparate;
             let nl = String.lineSeparator();
             match op {
-                case Search(var, relSym, body) =>
-                    "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
-                case Query(var, relSym, prefixQuery, body) =>
+                case Search(var, ramSym, body) =>
+                    "search ${var} ∈ ${ramSym} do${nl}${String.indent(4, "${body}")}end"
+                case Query(var, ramSym, prefixQuery, body) =>
                     let query =
                         List.mapWithIndex(term -> i -> {
                             ToString.toString(BoolExp.Eq(RamTerm.Attribute(var, i), term))
                         }, Array.toList(prefixQuery) as & Pure) |>
                         String.intercalate(" ∧ ");
-                    "query {${var} ∈ ${relSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
-                case Project(terms, relSym) =>
-                    "project (${commaSeparate(terms)}) into ${relSym}"
+                    "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
+                case Project(terms, ramSym) =>
+                    "project (${commaSeparate(terms)}) into ${ramSym}"
                 case If(test, then) =>
                     let tst =
                         List.map(ToString.toString, test) |>

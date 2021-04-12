@@ -17,9 +17,9 @@
 namespace Fixpoint/Ram {
     pub enum RamStmt[v] {
         case Insert(RelOp[v])
-        case Merge(RelSym[v], RelSym[v])
-        case Assign(RelSym[v], RelSym[v])
-        case Purge(RelSym[v])
+        case Merge(RamSym[v], RamSym[v])
+        case Assign(RamSym[v], RamSym[v])
+        case Purge(RamSym[v])
         case Seq(List[RamStmt[v]])
         case Until(List[BoolExp[v]], RamStmt[v])
         case Comment(String)
@@ -43,7 +43,7 @@ namespace Fixpoint/Ram {
                 case Insert(op) => ToString.toString(op)
                 case Merge(src, dst) => "merge ${src} into ${dst}"
                 case Assign(lhs, rhs) => "${lhs} := ${rhs}"
-                case Purge(relSym) => "purge ${relSym}"
+                case Purge(ramSym) => "purge ${ramSym}"
                 case Seq(xs) => List.map(ToString.toString, xs) |> String.intercalate(";${nl}")
                 case Until(test, body) =>
                     let tst = List.map(ToString.toString, test) |> String.intercalate(" Λ ");

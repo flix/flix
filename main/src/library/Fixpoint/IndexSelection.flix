@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
+use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar};
 
 // TODO: rewrite docs. This is out of date.
 /// The purpose of this phase is to:
@@ -62,7 +62,7 @@ namespace Fixpoint {
     }
 
     def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
-        case RelOp.Search(var, relSym, body) =>
+        case RelOp.Search(var, ramSym, body) =>
             use Fixpoint/Ram.BoolExp.Eq;
             use Fixpoint/Ram.RamTerm.{Attribute, Lit};
             let (innerOp, innerGround) = queryOp(body, Set.insert(var, freeVars));
@@ -91,18 +91,18 @@ namespace Fixpoint {
             let test = rest1 ::: rest2;
             if (List.isEmpty(prefixQuery))
                 if (List.isEmpty(test))
-                    let search = RelOp.Search(var, relSym, innerOp);
+                    let search = RelOp.Search(var, ramSym, innerOp);
                     (search, ground)
                 else
-                    let search = RelOp.Search(var, relSym, RelOp.If(test, innerOp));
+                    let search = RelOp.Search(var, ramSym, RelOp.If(test, innerOp));
                     (search, ground)
             else
                 let query = List.toArray(prefixQuery) as & Pure;
                 if (List.isEmpty(test))
-                    let search = RelOp.Query(var, relSym, query, innerOp);
+                    let search = RelOp.Query(var, ramSym, query, innerOp);
                     (search, ground)
                 else
-                    let search = RelOp.Query(var, relSym, query, RelOp.If(test, innerOp));
+                    let search = RelOp.Query(var, ramSym, query, RelOp.If(test, innerOp));
                     (search, ground)
         case RelOp.Query(_) => (op, Nil)
         case RelOp.Project(_) => (op, Nil)

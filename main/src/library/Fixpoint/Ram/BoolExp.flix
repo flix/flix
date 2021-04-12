@@ -16,8 +16,8 @@
 
 namespace Fixpoint/Ram {
     pub enum BoolExp[v] {
-        case Empty(RelSym[v])
-        case NotMemberOf(Array[RamTerm[v]], RelSym[v])
+        case Empty(RamSym[v])
+        case NotMemberOf(Array[RamTerm[v]], RamSym[v])
         case Eq(RamTerm[v], RamTerm[v])
         case Leq(v -> v -> Bool, RamTerm[v], RamTerm[v])
         case Guard0(Unit -> Bool)
@@ -32,8 +32,8 @@ namespace Fixpoint/Ram {
         pub def toString(exp: BoolExp[v]): String =
             use Fixpoint.commaSeparate;
             match exp {
-                case Empty(relSym) => "${relSym} = ∅"
-                case NotMemberOf(terms, relSym) => "(${commaSeparate(terms)}) ∉ ${relSym}"
+                case Empty(ramSym) => "${ramSym} = ∅"
+                case NotMemberOf(terms, ramSym) => "(${commaSeparate(terms)}) ∉ ${ramSym}"
                 case Eq(lhs, rhs) => "${lhs} = ${rhs}"
                 case Leq(_, lhs, rhs) => "${lhs} ≤ ${rhs}"
                 case Guard0(_) => "f?()"

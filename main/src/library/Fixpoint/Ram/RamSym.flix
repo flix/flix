@@ -17,28 +17,28 @@
 use Fixpoint/Ast.Denotation;
 
 namespace Fixpoint/Ram {
-    pub enum RelSym[v] {
+    pub enum RamSym[v] {
         case Full(String, Denotation[v])
         case Delta(String, Denotation[v])
         case New(String, Denotation[v])
     }
 
-    pub def toDenotation(relSym: RelSym[v]): Denotation[v] = match relSym {
+    pub def toDenotation(ramSym: RamSym[v]): Denotation[v] = match ramSym {
         case Full(_, den) => den
         case Delta(_, den) => den
         case New(_, den) => den
     }
 
-    instance ToString[RelSym[v]] {
-        pub def toString(relSym: RelSym[v]): String = match relSym {
+    instance ToString[RamSym[v]] {
+        pub def toString(ramSym: RamSym[v]): String = match ramSym {
             case Full(name, _) => name
             case Delta(name, _) => "Δ${name}"
             case New(name, _) => "Δ${name}'"
         }
     }
 
-    instance Order[RelSym[v]] {
-        pub def compare(a: RelSym[v], b: RelSym[v]): Comparison = match a {
+    instance Order[RamSym[v]] {
+        pub def compare(a: RamSym[v], b: RamSym[v]): Comparison = match a {
             case Full(s1, _) => match b {
                 case Full(s2, _) => s1 <=> s2
                 case _ => GreaterThan

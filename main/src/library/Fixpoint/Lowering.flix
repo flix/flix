@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
+use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar};
 
 /// The purpose of this phase is to lower row variables in searches and queries to array indices.
 /// This implies substituting named references to row variables with indices
@@ -32,17 +32,17 @@ namespace Fixpoint {
 
     def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] =
         match op {
-            case RelOp.Search(var, relSym, body) =>
+            case RelOp.Search(var, ramSym, body) =>
                 let newVar = RowVar.Index(depth);
                 let newVars = Map.insert(var, newVar, rowVars);
-                RelOp.Search(newVar, relSym, lowerOp(body, newVars, depth + 1))
-            case RelOp.Query(var, relSym, prefixQuery, body) =>
+                RelOp.Search(newVar, ramSym, lowerOp(body, newVars, depth + 1))
+            case RelOp.Query(var, ramSym, prefixQuery, body) =>
                 let newVar = RowVar.Index(depth);
                 let newVars = Map.insert(var, newVar, rowVars);
                 let newQuery = Array.map(lowerTerm(rowVars), prefixQuery) as & Pure;
-                RelOp.Query(newVar, relSym, newQuery, lowerOp(body, newVars, depth + 1))
-            case RelOp.Project(terms, relSym) =>
-                 RelOp.Project(Array.map(lowerTerm(rowVars), terms), relSym) as & Pure
+                RelOp.Query(newVar, ramSym, newQuery, lowerOp(body, newVars, depth + 1))
+            case RelOp.Project(terms, ramSym) =>
+                 RelOp.Project(Array.map(lowerTerm(rowVars), terms), ramSym) as & Pure
             case RelOp.If(test, then) =>
                  RelOp.If(List.map(lowerExp(rowVars), test), lowerOp(then, rowVars, depth))
         }
@@ -50,8 +50,8 @@ namespace Fixpoint {
     def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] =
         match exp {
             case BoolExp.Empty(_) => exp
-            case BoolExp.NotMemberOf(terms, relSym) =>
-                 BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), relSym) as & Pure
+            case BoolExp.NotMemberOf(terms, ramSym) =>
+                 BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), ramSym) as & Pure
             case BoolExp.Eq(lhs, rhs) =>
                  BoolExp.Eq(lowerTerm(rowVars, lhs), lowerTerm(rowVars, rhs))
             case BoolExp.Leq(f, lhs, rhs) =>
