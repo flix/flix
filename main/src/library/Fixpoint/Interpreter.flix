@@ -85,7 +85,7 @@ namespace Fixpoint {
                         let len = Array.length(terms);
                         let key = Array.init(i -> evalTerm(env, terms[i]), len - 1);
                         let lat = evalTerm(env, terms[len - 1]);
-                        if (lat `leq` bot())
+                        if (lat `leq` bot)
                             ()
                         else
                             MutMap.putWith!(lub, key, lat, rel)
@@ -121,7 +121,7 @@ namespace Fixpoint {
                         let len = Array.length(terms);
                         let key = Array.init(i -> evalTerm(env, terms[i]), len - 1);
                         let lat = evalTerm(env, terms[len - 1]);
-                        not (lat `leq` MutMap.getWithDefault(key, bot(), rel))
+                        not (lat `leq` MutMap.getWithDefault(key, bot, rel))
                 }
             case BoolExp.Eq(lhs, rhs) =>
                 evalTerm(env, lhs) == evalTerm(env, rhs)

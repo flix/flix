@@ -52,7 +52,7 @@ namespace Fixpoint {
                     Map.forall(t -> _ -> Map.memberOf(t, rel2), rel1)
                 case Denotation.Latticenal(bot, leq, _, _) =>
                     let rel2 = Map.getWithDefault(ramSym, Map#{}, db2);
-                    Map.forall(k -> l1 -> l1 `leq` Map.getWithDefault(k, bot(), rel2), rel1)
+                    Map.forall(k -> l1 -> l1 `leq` Map.getWithDefault(k, bot, rel2), rel1)
             }, db1)
     }
 

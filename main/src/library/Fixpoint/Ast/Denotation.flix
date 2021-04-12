@@ -29,7 +29,7 @@ namespace Fixpoint/Ast {
     ///
     pub enum Denotation[v] {
         case Relational
-        case Latticenal(Unit -> v, v -> v -> Bool, v -> v -> v, v -> v -> v)
+        case Latticenal(v, v -> v -> Bool, v -> v -> v, v -> v -> v)
     }
 
     ///
@@ -38,7 +38,7 @@ namespace Fixpoint/Ast {
     pub def lattice(): Denotation[t] with LowerBound[t], PartialOrder[t], JoinLattice[t], MeetLattice[t] =
         // TODO: Why are these type annotations necessary?
         Latticenal(
-            () -> LowerBound.minValue() : t,
+            LowerBound.minValue() : t,
             (x: t, y: t) -> PartialOrder.partialCompare(x: t, y: t),
             (x: t, y: t) -> JoinLattice.leastUpperBound(x: t, y: t),
             (x: t, y: t) -> MeetLattice.greatestLowerBound(x: t, y:t)
@@ -51,7 +51,7 @@ namespace Fixpoint/Ast {
         case Denotation.Relational => Denotation.Relational
         case Denotation.Latticenal(bot, leq, lub, glb) =>
             Latticenal(
-                () -> Boxable.box(bot()),
+                Boxable.box(bot),
                 Boxable.lift2b(leq),
                 Boxable.lift2(lub),
                 Boxable.lift2(glb)
