@@ -282,6 +282,8 @@ object TypedAst {
 
     case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class FixpointFacts(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
   }
 
   sealed trait Pattern {

@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -488,6 +488,25 @@ object Lowering extends Phase[Root, Root] {
       val argExps = arg1 :: arg2 :: Nil
       val resultType = Type.Bool
       Expression.Apply(defExp, argExps, resultType, eff, loc)
+
+    case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
+      // Compute the arity of the predicate symbol.
+      // The type must be of the form `Array[(a, b, c)].
+      val arity = tpe match {
+        case Type.Apply(Type.Cst(TypeConstructor.Array, _), tuple) => tuple.typeArguments.length
+        case _ => throw InternalCompilerException(s"Unexpected non-array type: '$tpe'.")
+      }
+
+      // Compute the symbol of the function.
+      val sym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
+
+      // The type of the function.
+      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe)
+
+      val defn = Defs.lookup(sym)
+      val defExp = Expression.Def(defn.sym, defTpe, loc)
+      val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
+      Expression.Apply(defExp, argExps, tpe, eff, loc)
   }
 
   /**

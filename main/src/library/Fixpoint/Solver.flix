@@ -85,6 +85,46 @@ namespace Fixpoint {
         Array.foldRight(factToTuple >> f, i, facts) as & Pure
 
     ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts1(_p: PredSym, _d: Datalog[v]): Array[v] with Boxable[v] =
+        [] as & Pure  // TODO: Benj: Implement
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    // TODO: Benj improve my mess :)
+    pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2)] with Boxable[t1], Boxable[t2] = {
+        let getValue = term -> match term {
+            case HeadTerm.Lit(v, _) => v
+            case _                  => bug!("Unexpected non-value term.")
+        };
+        let unbox = terms -> (Boxable.unbox(getValue(terms[0])), Boxable.unbox(getValue(terms[1])));
+        let Datalog(facts, _) = d;
+        let headPredicates = restrict(facts, Set#{p}) |> Array.map(match Constraint(head, _, _) -> head);
+        let headAtoms = headPredicates |> Array.map(match HeadAtom(_, _, terms, _) -> unbox(terms));
+        headAtoms
+    } as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts3(_p: PredSym, _d: Datalog[v]): Array[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
+        [] as & Pure // TODO: Benj: Implement
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts4(_p: PredSym, _d: Datalog[v]): Array[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
+        [] as & Pure // TODO: Benj: Implement
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts5(_p: PredSym, _d: Datalog[v]): Array[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
+        [] as & Pure // TODO: Benj: Implement
+
+    ///
     /// Unsafely casts and prints the given Datalog program `d`.
     ///
     pub def unsafePrint(d: a): a =
