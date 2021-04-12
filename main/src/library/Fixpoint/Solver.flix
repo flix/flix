@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+use Boxable.unbox;
 use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
@@ -87,42 +88,57 @@ namespace Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    pub def facts1(_p: PredSym, _d: Datalog[v]): Array[v] with Boxable[v] =
-        [] as & Pure  // TODO: Benj: Implement
+    pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
+        let f = terms -> unbox(terms[0]);
+        (factsOf(p, d) |> Array.map(f)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    // TODO: Benj improve my mess :)
-    pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2)] with Boxable[t1], Boxable[t2] = {
-        let getValue = term -> match term {
-            case HeadTerm.Lit(v, _) => v
-            case _                  => bug!("Unexpected non-value term.")
-        };
-        let unbox = terms -> (Boxable.unbox(getValue(terms[0])), Boxable.unbox(getValue(terms[1])));
+    pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2)] with Boxable[t1], Boxable[t2] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
+    ///
+    def factsOf(p: PredSym, d: Datalog[v]): Array[Array[v]] & Impure =
         let Datalog(facts, _) = d;
-        let headPredicates = restrict(facts, Set#{p}) |> Array.map(match Constraint(head, _, _) -> head);
-        let headAtoms = headPredicates |> Array.map(match HeadAtom(_, _, terms, _) -> unbox(terms));
-        headAtoms
-    } as & Pure
+        restrict(facts, Set#{p}) |>
+        Array.map(match Constraint(head, _, _) -> head) |>
+        Array.map(match HeadAtom(_, _, terms, _) -> terms) |>
+        Array.map(terms -> terms |> Array.map(headTermValue))
 
     ///
-    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    /// Returns the value of the given head term `v`.
     ///
-    pub def facts3(_p: PredSym, _d: Datalog[v]): Array[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
-        [] as & Pure // TODO: Benj: Implement
-
+    /// Note the term must have been fully evaluated to a literal value.
     ///
-    /// Returns all facts in `d` associated with the predicate symbol `p`.
-    ///
-    pub def facts4(_p: PredSym, _d: Datalog[v]): Array[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
-        [] as & Pure // TODO: Benj: Implement
-
-    ///
-    /// Returns all facts in `d` associated with the predicate symbol `p`.
-    ///
-    pub def facts5(_p: PredSym, _d: Datalog[v]): Array[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
-        [] as & Pure // TODO: Benj: Implement
+    def headTermValue(t: HeadTerm[v]): v = match t {
+        case HeadTerm.Lit(v, _) => v
+        case _                  => bug!("Unexpected non-value term.")
+    }
 
     ///
     /// Unsafely casts and prints the given Datalog program `d`.
