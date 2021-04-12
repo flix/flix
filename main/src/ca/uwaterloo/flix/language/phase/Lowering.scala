@@ -491,9 +491,13 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
-      // The type must be of the form `Array[(a, b, c)].
+      // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = tpe match {
-        case Type.Apply(Type.Cst(TypeConstructor.Array, _), tuple) => tuple.typeArguments.length
+        case Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType) => innerType.typeConstructor match {
+          case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
+          case Some(TypeConstructor.Unit) => 0
+          case _ => 1
+        }
         case _ => throw InternalCompilerException(s"Unexpected non-array type: '$tpe'.")
       }
 
