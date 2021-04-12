@@ -29,12 +29,12 @@ namespace Fixpoint/Ast {
         pub def toString(term: HeadTerm[v]): String = match term {
             case HeadTerm.Var(varSym, _) => "${varSym}"
             case HeadTerm.Lit(v, _) => "${v}"
-            case HeadTerm.App0(_) => "f()"
-            case HeadTerm.App1(_, v, _) => "f(${v})"
-            case HeadTerm.App2(_, v1, v2, _) => "f(${v1}, ${v2})"
-            case HeadTerm.App3(_, v1, v2, v3, _) => "f(${v1}, ${v2}, ${v3})"
-            case HeadTerm.App4(_, v1, v2, v3, v4, _) => "f(${v1}, ${v2}, ${v3}, ${v4})"
-            case HeadTerm.App5(_, v1, v2, v3, v4, v5, _) => "f(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+            case HeadTerm.App0(_) => "<clo>()"
+            case HeadTerm.App1(_, v, _) => "<clo>(${v})"
+            case HeadTerm.App2(_, v1, v2, _) => "<clo>(${v1}, ${v2})"
+            case HeadTerm.App3(_, v1, v2, v3, _) => "<clo>(${v1}, ${v2}, ${v3})"
+            case HeadTerm.App4(_, v1, v2, v3, v4, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case HeadTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
 }

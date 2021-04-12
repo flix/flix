@@ -44,12 +44,12 @@ namespace Fixpoint/Ram {
             case Attribute(var, index) => "${var}[${index}]"
             case Lat(var) => "${var}[-1]"
             case Meet(_, lhs, rhs) => "(${lhs} ⊓ ${rhs})"
-            case App0(_) => "f()"
-            case App1(_, v) => "f(${v})"
-            case App2(_, v1, v2) => "f(${v1}, ${v2})"
-            case App3(_, v1, v2, v3) => "f(${v1}, ${v2}, ${v3})"
-            case App4(_, v1, v2, v3, v4) => "f(${v1}, ${v2}, ${v3}, ${v4})"
-            case App5(_, v1, v2, v3, v4, v5) => "f(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+            case App0(_) => "<clo>()"
+            case App1(_, v) => "<clo>(${v})"
+            case App2(_, v1, v2) => "<clo>(${v1}, ${v2})"
+            case App3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
+            case App4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case App5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
 }
