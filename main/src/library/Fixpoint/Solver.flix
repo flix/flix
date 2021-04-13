@@ -61,15 +61,11 @@ namespace Fixpoint {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
 
-    pub def foldRight(d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b =
-        let Datalog(facts, _) = project(p, d);
-        Array.foldRight(factToTuple >> f, i, facts) as & Pure
-
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
-        ??? // TODO: Benjamin
+        (factsOf(p, d) |> Array.map(_ -> () as v)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -112,9 +108,7 @@ namespace Fixpoint {
     def factsOf(p: PredSym, d: Datalog[v]): Array[Array[v]] & Impure =
         let Datalog(facts, _) = d;
         restrict(facts, Set#{p}) |>
-        Array.map(match Constraint(head, _, _) -> head) |>
-        Array.map(match HeadAtom(_, _, terms, _) -> terms) |>
-        Array.map(terms -> terms |> Array.map(headTermValue))
+        Array.map(factToTuple)
 
     ///
     /// Returns the value of the given head term `v`.
@@ -139,11 +133,14 @@ namespace Fixpoint {
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
 
-    def factToTuple(fact: Constraint[v]): Array[v] = match fact {
-        case Constraint(HeadAtom(_, _, terms, _), _, _) => Array.map(t -> match t {
-            case HeadTerm.Lit(v, _) => v
-            case _ => ?bug
-        }, terms) as & Pure
+    ///
+    /// Convert `fact` to an array of terms.
+    /// I.e. `A(t1, t2, ..., tn).` becomes `[t1, t2, ..., tn]`.
+    ///
+    /// Note that `t1, t2, ..., tn` must have been fully evaluated to literals.
+    ///
+    def factToTuple(fact: Constraint[v]): Array[v] & Impure = match fact {
+        case Constraint(HeadAtom(_, _, terms, _), _, _) => Array.map(headTermValue, terms)
     }
 
     def tupleToFact(ramSym: RamSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match ramSym {
