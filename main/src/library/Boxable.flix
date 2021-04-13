@@ -239,9 +239,28 @@ instance Boxable[(a, b, c)] with Boxable[a], Boxable[b], Boxable[c] {
     }
 }
 
-// TODO: Benj: Add for Tuples 3, 4, 5.
+instance Boxable[(a, b, c, d)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d] {
+    pub def box(x: (a, b, c, d)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d), o2 as (a, b, c, d));
+        let toString = o -> ToString.toString(o as (a, b, c, d));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d)
+        case _                    => ?bug
+    }
+}
 
-// TODO: Benj: Add Option
-// TODO: Benj: Add List
-// TODO: Benj: Add Nel
-// TODO: Benj: Add Set/Map
+instance Boxable[(a, b, c, d, e)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e] {
+    pub def box(x: (a, b, c, d, e)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e), o2 as (a, b, c, d, e));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e)
+        case _                    => ?bug
+    }
+}

@@ -170,11 +170,11 @@ class Flix {
     "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),
     "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
     "Fixpoint/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint/Interpreter.flix"),
-    "Fixpoint/Lowering.flix" -> LocalResource.get("/src/library/Fixpoint/Lowering.flix"),
     "Fixpoint/Options.flix" -> LocalResource.get("/src/library/Fixpoint/Options.flix"),
     "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
     "Fixpoint/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Stratifier.flix"),
     "Fixpoint/ToString.flix" -> LocalResource.get("/src/library/Fixpoint/ToString.flix"),
+    "Fixpoint/VarsToIndices.flix" -> LocalResource.get("/src/library/Fixpoint/VarsToIndices.flix"),
 
     "Fixpoint/Ast/BodyPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyPredicate.flix"),
     "Fixpoint/Ast/BodyTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyTerm.flix"),
@@ -191,9 +191,9 @@ class Flix {
 
     "Fixpoint/Ram/BoolExp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/BoolExp.flix"),
     "Fixpoint/Ram/RamStmt.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamStmt.flix"),
+    "Fixpoint/Ram/RamSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamSym.flix"),
     "Fixpoint/Ram/RamTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamTerm.flix"),
     "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
-    "Fixpoint/Ram/RelSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelSym.flix"),
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Unsafe.flix" -> LocalResource.get("/src/library/Unsafe.flix"),

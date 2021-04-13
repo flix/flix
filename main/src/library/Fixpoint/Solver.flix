@@ -20,24 +20,7 @@ use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
-use Fixpoint/Ram.RelSym;
-
-// TODO: The following tests have been commented and should be fixed an incommented.
-// Test.Dec.RelAlias
-// Test.Exp.Fixpoint.Fold
-// Test.Predicate.Filter
-// Test.Predicate.Guard
-// Test.Predicate.Union
-// Test.Term.Apply
-// Test.Term.Var.CapturedVar
-// Test.Term.Var.WildVar
-// fixpoint-computations-on-lattices
-// TestConstant
-// IFDS
-// IDE
-// SUOpt
-// FloydWarshall
-// TestIntroduction
+use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v], Eq[v], ToString[v] =
@@ -64,16 +47,13 @@ namespace Fixpoint {
             use Fixpoint/Ram.toDenotation;
             let db1 = toDatabase(edb1);
             let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
-            Map.forall(relSym -> rel1 -> match toDenotation(relSym) {
+            Map.forall(ramSym -> rel1 -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
+                    let rel2 = Map.getWithDefault(ramSym, Map#{}, db2);
                     Map.forall(t -> _ -> Map.memberOf(t, rel2), rel1)
-                case Denotation.Latticenal(_, leq, _, _) =>
-                    let rel2 = Map.getWithDefault(relSym, Map#{}, db2);
-                    Map.forall(k -> l1 -> match Map.get(k, rel2) {
-                        case Some(l2) => l1 `leq` l2
-                        case None => false
-                    }, rel1)
+                case Denotation.Latticenal(bot, leq, _, _) =>
+                    let rel2 = Map.getWithDefault(ramSym, Map#{}, db2);
+                    Map.forall(k -> l1 -> l1 `leq` Map.getWithDefault(k, bot, rel2), rel1)
             }, db1)
     }
 
@@ -81,15 +61,11 @@ namespace Fixpoint {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
 
-    pub def foldRight(d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b =
-        let Datalog(facts, _) = project(p, d);
-        Array.foldRight(factToTuple >> f, i, facts) as & Pure
-
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
-        ??? // TODO: Benjamin
+        (factsOf(p, d) |> Array.map(_ -> () as v)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -132,9 +108,7 @@ namespace Fixpoint {
     def factsOf(p: PredSym, d: Datalog[v]): Array[Array[v]] & Impure =
         let Datalog(facts, _) = d;
         restrict(facts, Set#{p}) |>
-        Array.map(match Constraint(head, _, _) -> head) |>
-        Array.map(match HeadAtom(_, _, terms, _) -> terms) |>
-        Array.map(terms -> terms |> Array.map(headTermValue))
+        Array.map(factToTuple)
 
     ///
     /// Returns the value of the given head term `v`.
@@ -159,15 +133,18 @@ namespace Fixpoint {
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
 
-    def factToTuple(fact: Constraint[v]): Array[v] = match fact {
-        case Constraint(HeadAtom(_, _, terms, _), _, _) => Array.map(t -> match t {
-            case HeadTerm.Lit(v, _) => v
-            case _ => ?bug
-        }, terms) as & Pure
+    ///
+    /// Convert `fact` to an array of terms.
+    /// I.e. `A(t1, t2, ..., tn).` becomes `[t1, t2, ..., tn]`.
+    ///
+    /// Note that `t1, t2, ..., tn` must have been fully evaluated to literals.
+    ///
+    def factToTuple(fact: Constraint[v]): Array[v] & Impure = match fact {
+        case Constraint(HeadAtom(_, _, terms, _), _, _) => Array.map(headTermValue, terms)
     }
 
-    def tupleToFact(relSym: RelSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match relSym {
-        case RelSym.Full(relName, denotation) =>
+    def tupleToFact(ramSym: RamSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match ramSym {
+        case RamSym.Full(relName, denotation) =>
             use Fixpoint/Ast.SourceLocation.Unknown;
             let terms = match denotation {
                 case Denotation.Relational => Array.map(v -> HeadTerm.Lit(v, Unknown), tuple)
@@ -182,14 +159,14 @@ namespace Fixpoint {
         case _ => ?bug
     }
 
-    def toDatabase(facts: Array[Constraint[v]]): Map[RelSym[v], Map[Array[v], v]] with Order[v] =
+    def toDatabase(facts: Array[Constraint[v]]): Map[RamSym[v], Map[Array[v], v]] with Order[v] =
         Array.foldRight(c -> match c {
             case Constraint(HeadAtom(PredSym(pred, _), denotation, terms, _), _, _) =>
-                let relSym = RelSym.Full(pred, denotation);
+                let ramSym = RamSym.Full(pred, denotation);
                 match denotation {
                     case Denotation.Relational =>
                         Map.singleton(factToTuple(c), default) |>
-                        Map.insertWith(Map.union, relSym)
+                        Map.insertWith(Map.union, ramSym)
                     case Denotation.Latticenal(_, _, lub, _) =>
                         let key = Array.init(i -> match terms[i] {
                             case HeadTerm.Lit(v, _) => v
@@ -200,16 +177,16 @@ namespace Fixpoint {
                             case _ => ?bug
                         };
                         Map.singleton(key, lat) |>
-                        Map.insertWith(Map.unionWith(lub), relSym)
+                        Map.insertWith(Map.unionWith(lub), ramSym)
                 }
         } as & Pure, Map#{}, facts) as & Pure
 
     def toAst(db: Database[v]): Datalog[v] & Impure =
         // TODO: don't eagerly convert back to AST. Keep it as a database as long as possible.
         let facts = MutList.new();
-        MutMap.foreach(relSym -> rel -> match relSym {
-            case RelSym.Full(_) => MutMap.foreach(t -> l -> {
-                MutList.push!(tupleToFact(relSym, t, l), facts)
+        MutMap.foreach(ramSym -> rel -> match ramSym {
+            case RamSym.Full(_) => MutMap.foreach(t -> l -> {
+                MutList.push!(tupleToFact(ramSym, t, l), facts)
             }, rel)
             case _ => ()
         }, db);

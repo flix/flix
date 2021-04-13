@@ -21,13 +21,13 @@ namespace Fixpoint/Ast {
 
     instance ToString[Datalog[v]] with ToString[v] {
         pub def toString(cs: Datalog[v]): String =
-            let toString = match Datalog(facts, rules) -> {
+            let toStr = match Datalog(facts, rules) -> {
                 let sb = StringBuilder.new();
                 Array.append(facts, rules) |>
                 Array.map(ToString.toString) |>
                 StringBuilder.appendLines!(sb);
                 StringBuilder.toString(sb)
             };
-            toString(cs) as & Pure
+            toStr(cs) as & Pure
     }
 }

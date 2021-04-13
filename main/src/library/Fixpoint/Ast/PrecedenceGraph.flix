@@ -21,22 +21,6 @@ namespace Fixpoint/Ast {
         case NegativeEdge(PredSym, PredSym)
     }
 
-    pub def mkDepGraph(d: Datalog[v]): PrecedenceGraph = match d {
-        case Datalog(_, rules) => Array.fold(Array.map(precedenceHelper, rules)) as & Pure
-    }
-
-    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph = match cnst {
-        case Constraint(head, body, _) => Array.fold(Array.map(mkDepEdge(head), body)) as & Pure
-    }
-
-    def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
-        case (HeadAtom(headSym, _, _, _), BodyAtom(bodySym, _, Positive, _, _)) =>
-            PrecedenceGraph(Set#{PositiveEdge(bodySym, headSym)})
-        case (HeadAtom(headSym, _, _, _), BodyAtom(bodySym, _, Negative, _, _)) =>
-            PrecedenceGraph(Set#{NegativeEdge(bodySym, headSym)})
-        case _ => PrecedenceGraph(Set#{})
-    }
-
     instance Monoid[PrecedenceGraph] {
         pub def empty(): PrecedenceGraph = PrecedenceGraph(Set.empty())
 
@@ -52,5 +36,21 @@ namespace Fixpoint/Ast {
             case (NegativeEdge(_), PositiveEdge(_)) => LessThan
             case (PositiveEdge(_), NegativeEdge(_)) => GreaterThan
         }
+    }
+
+    pub def mkDepGraph(d: Datalog[v]): PrecedenceGraph = match d {
+        case Datalog(_, rules) => Array.fold(Array.map(precedenceHelper, rules)) as & Pure
+    }
+
+    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph = match cnst {
+        case Constraint(head, body, _) => Array.fold(Array.map(mkDepEdge(head), body)) as & Pure
+    }
+
+    def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
+        case (HeadAtom(headSym, _, _, _), BodyAtom(bodySym, _, Positive, _, _)) =>
+            PrecedenceGraph(Set#{PositiveEdge(bodySym, headSym)})
+        case (HeadAtom(headSym, _, _, _), BodyAtom(bodySym, _, Negative, _, _)) =>
+            PrecedenceGraph(Set#{NegativeEdge(bodySym, headSym)})
+        case _ => PrecedenceGraph(Set#{})
     }
 }

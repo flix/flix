@@ -39,12 +39,12 @@ namespace Fixpoint/Ast {
                         case Positive => "${predSym}(${commaSeparate(k)}; ${l})"
                         case Negative => "not ${predSym}(${commaSeparate(k)}; ${l})"
                     }
-                case Guard0(_) => "f?()"
-                case Guard1(_, v, _) => "f?(${v})"
-                case Guard2(_, v1, v2, _) => "f?(${v1}, ${v2})"
-                case Guard3(_, v1, v2, v3, _) => "f?(${v1}, ${v2}, ${v3})"
-                case Guard4(_, v1, v2, v3, v4, _) => "f?(${v1}, ${v2}, ${v3}, ${v4})"
-                case Guard5(_, v1, v2, v3, v4, v5, _) => "f?(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case Guard0(_) => "<clo>()"
+                case Guard1(_, v, _) => "<clo>(${v})"
+                case Guard2(_, v1, v2, _) => "<clo>(${v1}, ${v2})"
+                case Guard3(_, v1, v2, v3, _) => "<clo>(${v1}, ${v2}, ${v3})"
+                case Guard4(_, v1, v2, v3, v4, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+                case Guard5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
             }
     }
 }
