@@ -158,10 +158,10 @@ namespace Fixpoint {
 
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v with ToString[v] = match term {
         case RamTerm.Lit(v) => v
-        case RamTerm.Attribute(RowVar.Index(i), index) =>
+        case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;
             tupleEnv[i][index] as & Pure
-        case RamTerm.Lat(RowVar.Index(i)) =>
+        case RamTerm.LoadLatVar(RowVar.Index(i)) =>
             let (_, latEnv) = env;
             latEnv[i] as & Pure
         case RamTerm.Meet(cap, lhs, rhs) =>

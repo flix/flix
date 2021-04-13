@@ -173,12 +173,12 @@ namespace Fixpoint {
                 Array.mapWithIndex(term -> i -> (term, i), terms) |>
                 Array.foldRight(match (term, i) -> match term {
                     case BodyTerm.Var(var, _) => match denotation {
-                        case Denotation.Relational => Map.insert(var, RamTerm.Attribute(rowVar, i))
+                        case Denotation.Relational => Map.insert(var, RamTerm.RowLoad(rowVar, i))
                         case Denotation.Latticenal(_, _, _, glb) =>
                             if (i < Array.length(terms) - 1)
-                                Map.insert(var, RamTerm.Attribute(rowVar, i))
+                                Map.insert(var, RamTerm.RowLoad(rowVar, i))
                             else
-                                Map.insertWith(t1 -> t2 -> RamTerm.Meet(glb, t1, t2), var, RamTerm.Lat(rowVar))
+                                Map.insertWith(t1 -> t2 -> RamTerm.Meet(glb, t1, t2), var, RamTerm.LoadLatVar(rowVar))
                     }
                     case _ => x -> x
                 }, acc)
@@ -195,18 +195,18 @@ namespace Fixpoint {
             let compileBodyTerm = term -> j -> match term {
                 case BodyTerm.Var(var, _) => unwrap(Map.get(var, env))
                 case BodyTerm.Lit(v, _) => RamTerm.Lit(v)
-                case BodyTerm.Wild(_) => RamTerm.Attribute(rowVar, j)
+                case BodyTerm.Wild(_) => RamTerm.RowLoad(rowVar, j)
             };
             match atom {
                 case BodyAtom(_, denotation, Polarity.Positive, terms, _) =>
                     Array.mapWithIndex(compileBodyTerm, terms) |>
                     Array.mapWithIndex(t -> i -> match denotation {
-                        case Denotation.Relational => BoolExp.Eq(RamTerm.Attribute(rowVar, i), t)
+                        case Denotation.Relational => BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
                         case Denotation.Latticenal(_, leq, _, _) =>
                             if (i < Array.length(terms) - 1)
-                                BoolExp.Eq(RamTerm.Attribute(rowVar, i), t)
+                                BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
                             else
-                                BoolExp.Leq(leq, t, RamTerm.Lat(rowVar))
+                                BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
                     }) |>
                     Array.foldRight(x -> xs -> x :: xs, acc)
                 case BodyAtom(PredSym(pred, _), denotation, Polarity.Negative, terms, _) =>

@@ -32,7 +32,7 @@ namespace Fixpoint/Ram {
                 case Query(var, ramSym, prefixQuery, body) =>
                     let query =
                         List.mapWithIndex(term -> i -> {
-                            ToString.toString(BoolExp.Eq(RamTerm.Attribute(var, i), term))
+                            ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
                         }, Array.toList(prefixQuery) as & Pure) |>
                         String.intercalate(" ∧ ");
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"

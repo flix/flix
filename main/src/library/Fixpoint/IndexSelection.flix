@@ -64,27 +64,27 @@ namespace Fixpoint {
     def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
         case RelOp.Search(var, ramSym, body) =>
             use Fixpoint/Ram.BoolExp.Eq;
-            use Fixpoint/Ram.RamTerm.{Attribute, Lit};
+            use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
             let (innerOp, innerGround) = queryOp(body, Set.insert(var, freeVars));
             let (ground, notGround) = List.partition(isExpGround(freeVars), innerGround);
             let (attributeQuery, rest1) =
                 List.partition(exp -> match exp {
-                    case Eq(Attribute(row1, _), Attribute(row2, _)) =>
+                    case Eq(RowLoad(row1, _), RowLoad(row2, _)) =>
                         // TODO: consider that the order of attributes can have an impact
                         // on query optimization.
                         // E.g: a[1] = b[0] cannot be rewritten to a query on `a` but
                         // b[0] = a[1] *can* be rewritten to a query on `b`.
                         row1 != row2 and row1 == var
-                    case Eq(Attribute(row, _), Lit(_)) => row == var
+                    case Eq(RowLoad(row, _), Lit(_)) => row == var
                     case _ => false
                 }, notGround);
             let (prefixQuery, rest2) =
                 List.sortWith(x -> y -> match (x, y) {
-                    case (Eq(Attribute(_, index1), _), Eq(Attribute(_, index2), _)) =>
+                    case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) =>
                         index1 - index2
                 }, attributeQuery) |>
                 List.mapWithIndex(x -> i -> (x, i)) |>
-                List.partition(match (Eq(Attribute(_, index), _), i) -> index == i) |>
+                List.partition(match (Eq(RowLoad(_, index), _), i) -> index == i) |>
                 // finally project away the left-hand side and the index.
                 match (query, rest) ->
                     (List.map(match (Eq(_, rhs), _) -> rhs, query), List.map(fst, rest));
@@ -142,8 +142,8 @@ namespace Fixpoint {
     /// A term is ground if it is a literal or a free variable.
     def isTermGround(freeVars: Set[RowVar], term: RamTerm[v]): Bool = match term {
         case RamTerm.Lit(_) => true
-        case RamTerm.Attribute(var, _) => Set.memberOf(var, freeVars)
-        case RamTerm.Lat(var) => Set.memberOf(var, freeVars)
+        case RamTerm.RowLoad(var, _) => Set.memberOf(var, freeVars)
+        case RamTerm.LoadLatVar(var) => Set.memberOf(var, freeVars)
         case RamTerm.Meet(_, t1, t2) =>
             isTermGround(freeVars, t1) and
             isTermGround(freeVars, t2)

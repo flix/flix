@@ -86,10 +86,10 @@ namespace Fixpoint {
 
     def lowerTerm(rowVars: Map[RowVar, RowVar], term: RamTerm[v]): RamTerm[v] = match term {
         case RamTerm.Lit(_) => term
-        case RamTerm.Attribute(rowVar, index) =>
-             RamTerm.Attribute(Map.getWithDefault(rowVar, rowVar, rowVars), index)
-        case RamTerm.Lat(rowVar) =>
-             RamTerm.Lat(Map.getWithDefault(rowVar, rowVar, rowVars))
+        case RamTerm.RowLoad(rowVar, index) =>
+             RamTerm.RowLoad(Map.getWithDefault(rowVar, rowVar, rowVars), index)
+        case RamTerm.LoadLatVar(rowVar) =>
+             RamTerm.LoadLatVar(Map.getWithDefault(rowVar, rowVar, rowVars))
         case RamTerm.Meet(f, v1, v2) =>
             let t1 = lowerTerm(rowVars, v1);
             let t2 = lowerTerm(rowVars, v2);

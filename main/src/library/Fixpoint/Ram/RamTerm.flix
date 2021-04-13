@@ -19,16 +19,16 @@ namespace Fixpoint/Ram {
     ///
     /// Represents a RAM term.
     ///
-    /// `Attribute(x, i)` represents an index into the tuple
+    /// `RowLoad(x, i)` represents an index into the tuple
     /// bound to the local variable `x`, i.e. `x[i]`.
     ///
-    /// `Lat(x)` represents the lattice component in the tuple
+    /// `LoadLatVar(x)` represents the lattice component in the tuple
     /// bound to the local variable `x`.
     ///
     pub enum RamTerm[v] {
         case Lit(v)
-        case Attribute(RowVar, Int32)
-        case Lat(RowVar)
+        case RowLoad(RowVar, Int32)
+        case LoadLatVar(RowVar)
         case Meet(v -> v -> v, RamTerm[v], RamTerm[v])
         case App0(Unit -> v)
         case App1(v -> v, RamTerm[v])
@@ -41,8 +41,8 @@ namespace Fixpoint/Ram {
     instance ToString[RamTerm[v]] with ToString[v] {
         pub def toString(term: RamTerm[v]): String = match term {
             case Lit(v) => ToString.toString(v)
-            case Attribute(var, index) => "${var}[${index}]"
-            case Lat(var) => "${var}[-1]"
+            case RowLoad(var, index) => "${var}[${index}]"
+            case LoadLatVar(var) => "${var}[-1]"
             case Meet(_, lhs, rhs) => "(${lhs} ⊓ ${rhs})"
             case App0(_) => "<clo>()"
             case App1(_, v) => "<clo>(${v})"
