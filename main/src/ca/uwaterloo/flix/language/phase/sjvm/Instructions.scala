@@ -265,14 +265,16 @@ object Instructions {
   [R <: Stack]
   (c: scala.Char):
   F[R] => F[R ** PChar] =
-    ???
+    f => castF(pushInt16(c)(f))
 
   // NATIVE
   def ALOAD
   [R <: Stack, T <: PRefType]
   (index: Int):
-  F[R] => F[R ** PReference[T]] =
-    ???
+  F[R] => F[R ** PReference[T]] = f => {
+    f.visitor.visitVarInsn(Opcodes.ALOAD, index)
+    castF(f)
+  }
 
   // NATIVE
   def FLOAD
