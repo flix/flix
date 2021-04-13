@@ -23,15 +23,21 @@ import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, EType, PRefType, PType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm.Opcodes
 
 object Instructions {
+
+  private def castF[S1 <: Stack, S2 <: Stack](f: F[S1]): F[S2] = f.asInstanceOf[F[S2]]
+
   def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = ???
 
   // NATIVE
   def SWAP
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
-  F[R ** T2 ** T1] => F[R ** T1 ** T2] =
-    ???
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] = {
+    f => f.visitor.visitInsn(Opcodes.SWAP)
+    castF(f)
+  }
 
   // META
   def NOP
@@ -73,23 +79,29 @@ object Instructions {
   // NATIVE
   def CAST
   [R <: Stack, T <: PRefType]:
-  F[R ** PReference[PAnyObject]] => F[R ** PReference[T]] =
-    ???
+  F[R ** PReference[PAnyObject]] => F[R ** PReference[T]] = f => {
+    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "TODO")
+    castF(f)
+  }
 
   // NATIVE
   def NEW
   [R <: Stack, T <: PRefType]
   (className: String):
-  F[R] => F[R ** PReference[T]] =
-    ???
+  F[R] => F[R ** PReference[T]] = f => {
+    f.visitor.visitTypeInsn(Opcodes.NEW, className)
+    castF(f)
+  }
 
   // TODO: type should be constructed along with descriptor string
   // NATIVE
   def INVOKESPECIAL
   [R <: Stack, T <: PRefType]
   (className: String, constructorDescriptor: String):
-  F[R ** PReference[T]] => F[R] =
-    ???
+  F[R ** PReference[T]] => F[R] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, "<init>", constructorDescriptor, false)
+    castF(f)
+  }
 
   // todo delete
   def SCAFFOLD
@@ -99,81 +111,105 @@ object Instructions {
 
   // TODO: What should happen here
   // NATIVE
-  // def RETURN[R <: Stack]: F[R] => R[???] =
+  def RETURN[R <: Stack]: F[R] => F[StackEnd] = ???
 
   // NATIVE
   def POP
   [R <: Stack, T <: PType with Cat1]:
-  F[R ** T] => F[R] =
-    ???
+  F[R ** T] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.POP)
+    castF(f)
+  }
 
   // NATIVE
   def DUP_X1
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
-  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] =
-    ???
+  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP_X1)
+    castF(f)
+  }
 
   // NATIVE
   def DUP_X2_onCat1
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat1]:
-  F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] =
-    ???
+  F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP_X2)
+    castF(f)
+  }
 
   // NATIVE
   def DUP_X2_onCat2
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat2]:
-  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] =
-    ???
+  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP_X2)
+    castF(f)
+  }
 
   // NATIVE
   def DUP2_X2_cat1_onCat1
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat1, T4 <: PType with Cat1]:
-  F[R ** T4 ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T4 ** T3 ** T2 ** T1] =
-    ???
+  F[R ** T4 ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T4 ** T3 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP2_X2)
+    castF(f)
+  }
 
   // NATIVE
   def DUP2_X2_cat2_onCat1
   [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat1, T3 <: PType with Cat1]:
-  F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] =
-    ???
+  F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP2_X2)
+    castF(f)
+  }
 
   // NATIVE
   def DUP2_X2_cat1_onCat2
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat2]:
-  F[R ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T3 ** T2 ** T1] =
-    ???
+  F[R ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T3 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP2_X2)
+    castF(f)
+  }
 
   // NATIVE
   def DUP2_X2_cat2_onCat2
   [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat2]:
-  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] =
-    ???
+  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP2_X2)
+    castF(f)
+  }
 
   // NATIVE
   def DUP
   [R <: Stack, T <: PType with Cat1]:
-  F[R ** T] => F[R ** T ** T] =
-    ???
+  F[R ** T] => F[R ** T ** T] = f => {
+    f.visitor.visitInsn(Opcodes.DUP)
+    castF(f)
+  }
 
   // NATIVE
   def ISUB
   [R <: Stack]:
-  F[R ** PInt32 ** PInt32] => F[R ** PInt32] =
-    ???
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.ISUB)
+    castF(f)
+  }
 
   // NATIVE
   def pushUnit
   [R <: Stack]:
-  F[R] => F[R ** PReference[PUnit]] = {
-    ???
-    // flix/runtime/value/Unit
+  F[R] => F[R ** PReference[PUnit]] = f => {
+    val className = "flix/runtime/value/Unit"
+    f.visitor.
+      visitMethodInsn(Opcodes.INVOKESTATIC, className, "getInstance", s"()L$className;", false)
+    castF(f)
   }
 
   // NATIVE
   def pushNull
   [R <: Stack, T <: PRefType]:
-  F[R] => F[R ** PReference[T]] =
-    ???
+  F[R] => F[R ** PReference[T]] = f => {
+    f.visitor.visitInsn(Opcodes.ACONST_NULL)
+    castF(f)
+  }
 
   // NATIVE
   def pushBool

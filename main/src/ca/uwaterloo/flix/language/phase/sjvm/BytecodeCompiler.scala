@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, EType, ErasedAst, PType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
+import org.objectweb.asm.MethodVisitor
 
 object BytecodeCompiler {
 
@@ -28,9 +29,11 @@ object BytecodeCompiler {
 
   sealed case class StackCons[R <: Stack, T <: PType](rest: R, top: T) extends Stack
 
+  sealed trait StackEnd extends Stack
+
   type **[R <: Stack, T <: PType] = StackCons[R, T]
 
-  sealed trait F[T]
+  sealed case class F[T](visitor: MethodVisitor)
 
   def compileExp[R <: Stack, T <: PType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) =>
