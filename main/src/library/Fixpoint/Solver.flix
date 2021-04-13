@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+use Boxable.unbox;
 use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
@@ -63,6 +64,67 @@ namespace Fixpoint {
     pub def foldRight(d: Datalog[v], p: PredSym, i: b, f: (Array[v], b) -> b): b =
         let Datalog(facts, _) = project(p, d);
         Array.foldRight(factToTuple >> f, i, facts) as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
+        ??? // TODO: Benjamin
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
+        let f = terms -> unbox(terms[0]);
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2)] with Boxable[t1], Boxable[t2] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+
+    ///
+    /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
+    ///
+    def factsOf(p: PredSym, d: Datalog[v]): Array[Array[v]] & Impure =
+        let Datalog(facts, _) = d;
+        restrict(facts, Set#{p}) |>
+        Array.map(match Constraint(head, _, _) -> head) |>
+        Array.map(match HeadAtom(_, _, terms, _) -> terms) |>
+        Array.map(terms -> terms |> Array.map(headTermValue))
+
+    ///
+    /// Returns the value of the given head term `v`.
+    ///
+    /// Note the term must have been fully evaluated to a literal value.
+    ///
+    def headTermValue(t: HeadTerm[v]): v = match t {
+        case HeadTerm.Lit(v, _) => v
+        case _                  => bug!("Unexpected non-value term.")
+    }
 
     ///
     /// Unsafely casts and prints the given Datalog program `d`.

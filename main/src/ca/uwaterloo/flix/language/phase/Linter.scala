@@ -937,6 +937,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
+      case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.FixpointFacts(pred, e, tpe, eff, loc)
+
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case Expression.Universal(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")

@@ -1412,6 +1412,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp = Type.Bool
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.FixpointFacts(pred, exp, tvar, loc) =>
+        //
+        //  exp1 : tpe    exp2 : #{ P : a  | b }
+        //  -------------------------------------------
+        //  facts P exp2 : Array[a]
+        //
+        val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Star)
+        val freshPredicateTypeVar = Type.freshVar(Kind.Star)
+        val freshRestSchemaTypeVar = Type.freshVar(Kind.Schema)
+
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          expectedType <- unifyTypeM(tpe, Type.mkSchemaExtend(pred, Type.Apply(freshRelOrLat, freshPredicateTypeVar), freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(freshPredicateTypeVar), loc)
+          resultEff = eff
+        } yield (constrs, resultTyp, resultEff)
     }
 
     /**
@@ -1792,6 +1809,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = Type.Bool
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.FixpointEntails(e1, e2, tpe, eff, loc)
+
+      case ResolvedAst.Expression.FixpointFacts(pred, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val eff = e.eff
+        TypedAst.Expression.FixpointFacts(pred, e, tpe, eff, loc)
 
     }
 

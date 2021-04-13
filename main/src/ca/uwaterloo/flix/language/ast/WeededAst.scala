@@ -205,6 +205,8 @@ object WeededAst {
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class FixpointFacts(pred: Name.Pred, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
   }
 
   sealed trait Pattern {

@@ -987,6 +987,16 @@ object ParsedAst {
       */
     case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * Fixpoint Facts expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the predicate.
+      * @param exp   the constraint expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class FixpointFacts(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**
@@ -1439,10 +1449,10 @@ object ParsedAst {
   /**
     * A single type parameter, with optional kind and constraint.
     *
-    * @param sp1     the position of the first character in the type parameter.
-    * @param ident   the type variable being bound
-    * @param kind    the optional kind of the type variable.
-    * @param sp2     the position of the last character in the type parameter.
+    * @param sp1   the position of the first character in the type parameter.
+    * @param ident the type variable being bound
+    * @param kind  the optional kind of the type variable.
+    * @param sp2   the position of the last character in the type parameter.
     */
   case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], sp2: SourcePosition)
 
