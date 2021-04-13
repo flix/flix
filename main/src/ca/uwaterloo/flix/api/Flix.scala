@@ -191,9 +191,9 @@ class Flix {
 
     "Fixpoint/Ram/BoolExp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/BoolExp.flix"),
     "Fixpoint/Ram/RamStmt.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamStmt.flix"),
+    "Fixpoint/Ram/RamSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamSym.flix"),
     "Fixpoint/Ram/RamTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamTerm.flix"),
     "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
-    "Fixpoint/Ram/RelSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelSym.flix"),
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Unsafe.flix" -> LocalResource.get("/src/library/Unsafe.flix"),
