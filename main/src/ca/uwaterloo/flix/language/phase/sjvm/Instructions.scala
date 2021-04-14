@@ -20,12 +20,32 @@ import ca.uwaterloo.flix.language.ast.ERefType._
 import ca.uwaterloo.flix.language.ast.EType._
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, EType, PRefType, PType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, ERefType, EType, PRefType, PType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
 object Instructions {
+  val classStrings: scala.collection.mutable.Map[EType[_], String] = scala.collection.mutable.Map()
+  val descriptorStrings: scala.collection.mutable.Map[EType[_], String] = scala.collection.mutable.Map()
+
+  def getInternalName[T <: PType](eType: EType[T]): String =
+    classStrings.getOrElseUpdate(eType, EType.toInternalName(eType))
+
+  def getInternalName[T <: PRefType](eRefType: ERefType[T]): String =
+    getInternalName(EType.Reference(eRefType))
+
+  def getDescriptor[T1 <: PType, T2 <: PType](args: List[EType[T1]], result: EType[T2]): String =
+    args.map(getDescriptor(_)).mkString("(", "", ")") + getDescriptor(result)
+
+  def getDescriptor[T <: PType](eType: EType[T]): String =
+    descriptorStrings.getOrElseUpdate(eType, eType match {
+      case Reference(referenceType) => s"L${getInternalName(referenceType)};"
+      case other => getInternalName(other)
+    })
+
+  def getDescriptor[T <: PRefType](eRefType: ERefType[T]): String =
+    getDescriptor(EType.Reference(eRefType))
 
   private def castF[S1 <: Stack, S2 <: Stack](f: F[S1]): F[S2] = f.asInstanceOf[F[S2]]
 
@@ -35,8 +55,9 @@ object Instructions {
   def SWAP
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
   F[R ** T2 ** T1] => F[R ** T1 ** T2] = {
-    f => f.visitor.visitInsn(Opcodes.SWAP)
-    castF(f)
+    f =>
+      f.visitor.visitInsn(Opcodes.SWAP)
+      castF(f)
   }
 
   // META
@@ -51,7 +72,7 @@ object Instructions {
   (className: String, fieldName: String, fieldType: EType[T1]):
   F[R ** PReference[T2]] => F[R ** T1] =
     fieldType match {
-      case Bool() =>  ???
+      case Bool() => ???
       case Int8() => ???
       case Int16() => ???
       case Int32() => ???
@@ -197,9 +218,9 @@ object Instructions {
   def pushUnit
   [R <: Stack]:
   F[R] => F[R ** PReference[PUnit]] = f => {
-    val className = "flix/runtime/value/Unit"
-    f.visitor.
-      visitMethodInsn(Opcodes.INVOKESTATIC, className, "getInstance", s"()L$className;", false)
+    val className = getInternalName(ERefType.Unit())
+    val classDescriptor = getDescriptor(ERefType.Unit())
+    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, "getInstance", classDescriptor, false)
     castF(f)
   }
 
@@ -609,13 +630,29 @@ object Instructions {
   F[R ** PReference[PArray[T]]] => F[R ** PInt32] =
     ???
 
+  def getRefValue
+  [R <: Stack, T <: PType]
+  (className: String, innerType: EType[T]):
+  F[R ** PReference[PRef[T]]] => F[R ** T] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, "value", getInternalName(innerType))
+    castF(f)
+  }
+
+  def setRefValue
+  [R <: Stack, T <: PType]
+  (className: String, innerType: EType[T]):
+  F[R ** PReference[PRef[T]] ** T] => F[R] = f => {
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className, "value", getInternalName(innerType))
+    castF(f)
+  }
+
   // also make void
   def defMakeFunction
   [R <: Stack, T <: PType]
   (x: F[R], t: EType[T]):
   F[R ** T] = {
     //todo where is this string stored
-    EType.toInternalName(t)
+    getInternalName(t)
     ???
   }
 
