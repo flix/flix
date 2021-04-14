@@ -11,13 +11,14 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.Opcodes
 
 /**
-  * Generates bytecode for the ref classes.
-  */
+ * Generates bytecode for the ref classes.
+ */
 object GenRefClasses {
+  val fieldName: String = "value"
 
   /**
-    * Returns the bytecode for the ref classes built-in to the Flix language.
-    */
+   * Returns the bytecode for the ref classes built-in to the Flix language.
+   */
   def gen()(implicit root: Root, flix: Flix): Map[String, JvmClass] = {
 
     // Generating each ref class
@@ -41,20 +42,20 @@ object GenRefClasses {
   }
 
   /**
-    * Generating class `className` with value of type `innerType`
-    */
+   * Generating class `className` with value of type `innerType`
+   */
   private def genByteCode[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, className, null,
-      "class string of Object", null)
+      objectInternalName, null)
 
 
     // Generate the instance field
     val innerTypeString = Instructions.getDescriptor(innerType)
-    AsmOps.compileField(visitor, "value", innerTypeString, isStatic = false, isPrivate = false)
+    AsmOps.compileField(visitor, fieldName, innerTypeString, isStatic = false, isPrivate = false)
 
     val constructorDescriptor = Instructions.getDescriptor(innerTypeString, "V")
     // Generate the constructor
@@ -70,11 +71,11 @@ object GenRefClasses {
   }
 
   /**
-    * Generating constructor for the class with value of type `innerType`
-    */
+   * Generating constructor for the class with value of type `innerType`
+   */
   def genConstructor[T <: PType](eType: RType[T]): F[StackNil] => F[StackEnd] = {
-    ALOAD[StackNil, PRef[T]](0) ~
-      INVOKESPECIAL("class string of Object", "()V)")
-    RETURN
+    THISLOAD[StackNil, PRef[T]] ~
+      INVOKESPECIAL(objectInternalName, "()V)") ~
+      RETURN
   }
 }

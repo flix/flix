@@ -144,21 +144,21 @@ object BytecodeCompiler {
       WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
         NEW(className) ~
         DUP ~
-        INVOKESPECIAL(className, "()V)") ~
+        INVOKESPECIAL(className, "()V") ~
         DUP ~
         compileExp(exp) ~
-        PUTFIELD(className, "value", exp.tpe)
+        PUTFIELD(className, GenRefClasses.fieldName, exp.tpe)
 
     case Expression.Deref(exp, className, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        getRefValue(className, tpe)
+        XGETFIELD(className, GenRefClasses.fieldName, tpe)
 
     case Expression.Assign(exp1, exp2, className, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
-        PUTFIELD(className, "value", exp2.tpe) ~
+        PUTFIELD(className, GenRefClasses.fieldName, exp2.tpe) ~
         pushUnit
 
     case Expression.Existential(fparam, exp, loc) => ???

@@ -294,6 +294,12 @@ object Instructions {
     castF(f)
   }
 
+  def THISLOAD
+  [R <: Stack, T <: PRefType]:
+  F[R] => F[R ** PReference[T]] =
+    ALOAD(0)
+
+
   // NATIVE
   def FLOAD
   [R <: Stack]
@@ -627,19 +633,11 @@ object Instructions {
   F[R ** PReference[PArray[T]]] => F[R ** PInt32] =
     ???
 
-  def getRefValue
-  [R <: Stack, T <: PType]
-  (className: String, innerType: RType[T]):
-  F[R ** PReference[PRef[T]]] => F[R ** T] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, "value", getInternalName(innerType))
-    castF(f)
-  }
-
   def setRefValue
   [R <: Stack, T <: PType]
   (className: String, innerType: RType[T]):
   F[R ** PReference[PRef[T]] ** T] => F[R] = f => {
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className, "value", getInternalName(innerType))
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className, GenRefClasses.fieldName, getInternalName(innerType))
     castF(f)
   }
 
