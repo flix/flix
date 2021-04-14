@@ -30,7 +30,7 @@ object Instructions {
   val descriptorStrings: scala.collection.mutable.Map[RType[_], String] = scala.collection.mutable.Map()
 
   def getInternalName[T <: PType](eType: RType[T]): String =
-    classStrings.getOrElseUpdate(eType, toInternalName(eType))
+    classStrings.getOrElseUpdate(eType, RType.toInternalName(eType))
 
   def getInternalName[T <: PRefType](eRefType: RRefType[T]): String =
     getInternalName(RReference(eRefType))
