@@ -110,7 +110,7 @@ object GenLazyClasses {
     * Emits code to call a closure (not in tail position). fType is the type of the called
     * closure. argsType is the type of its arguments, and resultType is the type of its result.
     */
-  private def compileClosureApplication[T <: PType](visitor: MethodVisitor, valueType: RType[T])(implicit root: Root, flix: Flix) = ???
+  private def compileClosureApplication[T <: PType](visitor: MethodVisitor, valueType: RType[T])(implicit root: Root, flix: Flix) = ()
 
   //  {
   //    val fType = MonoType.Arrow(List(MonoType.Unit), valueType)
@@ -228,14 +228,14 @@ object GenLazyClasses {
     //
     //      // [] Return the value of appropriate type.
     //      method.visitInsn(AsmOps.getReturnInstruction(erasedValueType))
-    ???
+    f => f.asInstanceOf[F[StackEnd]]
   }
 
   /**
     * The constructor takes a expression object, which should be a function that takes
     * no argument and returns something of type tpe, related to the type of the lazy class.
     */
-  def compileLazyConstructor(classType: String)(implicit root: Root, flix: Flix): Unit = ???
+  def compileLazyConstructor(classType: String)(implicit root: Root, flix: Flix): Unit = ()
 
   //  {
   //    /*
