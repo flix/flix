@@ -26,11 +26,9 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
 object Instructions {
-  val classStrings: scala.collection.mutable.Map[RType[_], String] = scala.collection.mutable.Map()
-  val descriptorStrings: scala.collection.mutable.Map[RType[_], String] = scala.collection.mutable.Map()
 
   def getInternalName[T <: PType](eType: RType[T]): String =
-    classStrings.getOrElseUpdate(eType, RType.toInternalName(eType))
+    RType.toInternalName(eType)
 
   def getInternalName[T <: PRefType](eRefType: RRefType[T]): String =
     getInternalName(RReference(eRefType))
@@ -38,11 +36,10 @@ object Instructions {
   def getDescriptor[T1 <: PType, T2 <: PType](args: String, result: String): String =
     s"($args)$result"
 
-  def getDescriptor[T <: PType](eType: RType[T]): String =
-    descriptorStrings.getOrElseUpdate(eType, eType match {
-      case RReference(referenceType) => s"L${getInternalName(referenceType)};"
-      case other => getInternalName(other)
-    })
+  def getDescriptor[T <: PType](eType: RType[T]): String = eType match {
+    case RReference(referenceType) => s"L${getInternalName(referenceType)};"
+    case other => getInternalName(other)
+  }
 
   def getDescriptor[T <: PRefType](eRefType: RRefType[T]): String =
     getDescriptor(RReference(eRefType))
