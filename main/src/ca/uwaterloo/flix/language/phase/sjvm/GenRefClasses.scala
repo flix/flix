@@ -6,7 +6,6 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
-import ca.uwaterloo.flix.language.phase.sjvm.AsmOps
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.Opcodes
@@ -61,7 +60,7 @@ object GenRefClasses {
     // Generate the constructor
     val initMethod = visitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", constructorDescriptor, null, null)
     initMethod.visitCode()
-    genConstructor()(F(initMethod))
+    genConstructor(innerType)(F(initMethod))
     initMethod.visitMaxs(2, 2)
     initMethod.visitEnd()
 
@@ -73,7 +72,7 @@ object GenRefClasses {
   /**
     * Generating constructor for the class with value of type `innerType`
     */
-  def genConstructor[T <: PType](): F[StackNil] => F[StackEnd] = {
+  def genConstructor[T <: PType](eType: RType[T]): F[StackNil] => F[StackEnd] = {
     ALOAD[StackNil, PRef[T]](0) ~
       INVOKESPECIAL("class string of Object", "()V)")
     RETURN
