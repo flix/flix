@@ -35,8 +35,8 @@ object Instructions {
   def getInternalName[T <: PRefType](eRefType: ERefType[T]): String =
     getInternalName(EType.Reference(eRefType))
 
-  def getDescriptor[T1 <: PType, T2 <: PType](args: List[EType[T1]], result: EType[T2]): String =
-    args.map(getDescriptor(_)).mkString("(", "", ")") + getDescriptor(result)
+  def getDescriptor[T1 <: PType, T2 <: PType](args: String, result: String): String =
+    s"($args)$result"
 
   def getDescriptor[T <: PType](eType: EType[T]): String =
     descriptorStrings.getOrElseUpdate(eType, eType match {

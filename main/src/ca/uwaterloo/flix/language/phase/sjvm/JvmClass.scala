@@ -22,7 +22,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
   * @param name     the name of the class (or interface).
   * @param bytecode the bytecode of the class (or interface).
   */
-case class JvmClass(name: JvmName, bytecode: Array[Byte]) {
+case class JvmClass(name: String, bytecode: Array[Byte]) {
   /**
     * Returns the hashCode of `this` JvmClass.
     */
