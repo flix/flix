@@ -50,7 +50,7 @@ object GenRefClasses {
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, className, null,
-      objectInternalName, null)
+      objectName, null)
 
 
     // Generate the instance field
@@ -75,7 +75,7 @@ object GenRefClasses {
    */
   def genConstructor[T <: PType](eType: RType[T]): F[StackNil] => F[StackEnd] = {
     THISLOAD[StackNil, PRef[T]] ~
-      INVOKESPECIAL(objectInternalName, "()V)") ~
+      INVOKESPECIAL(objectName, "()V)") ~
       RETURN
   }
 }

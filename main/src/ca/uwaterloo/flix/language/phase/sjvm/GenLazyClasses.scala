@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
@@ -30,6 +31,12 @@ import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
   * Generates bytecode for the lazy classes.
   */
 object GenLazyClasses {
+
+  val initializedField: String = "initialized"
+  val initializedFieldType: RType[PInt32] = RBool()
+  val expressionField: String = "expression"
+  val valueField = "value"
+  val forceMethod = "force"
 
   /**
     * Returns the set of lazy classes for the given set of types `ts`.
@@ -75,16 +82,15 @@ object GenLazyClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, className, null, "java/lang/Object", null)
+    visitor.visit(AsmOps.JavaVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, className, null, objectName, null)
 
-    AsmOps.compileField(visitor, "initialized", getDescriptor(RBool()), isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, "expression", getDescriptor(RReference(null)), isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, "value", s"L$className;", isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, initializedField, getDescriptor(RBool()), isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, expressionField, getDescriptor(RReference(null)), isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, valueField, s"L$className;", isStatic = false, isPrivate = true)
     compileForceMethod(visitor, className, innerType)
 
     // Emit the code for the constructor
     compileLazyConstructor(className)
-
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -95,7 +101,7 @@ object GenLazyClasses {
 
     // Header of the method.
     val returnDescription = s"(LContext;)$erasedValueTypeDescriptor"
-    val method = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, "force", returnDescription, null, null)
+    val method = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, forceMethod, returnDescription, null, null)
     method.visitCode()
     val t = compileForceMethod(className, innerType)
     t(F(method))
@@ -172,25 +178,34 @@ object GenLazyClasses {
 
     // [this] This is pushed to lock the object.
     //      f.visitor.visitVarInsn(ALOAD, 0)
-
     //      // [] The object is now locked.
     //      method.visitInsn(MONITORENTER)
-
     //      // [this] this is pushed to retrieve initialized to check if the Lazy object has already been evaluated.
     //      method.visitVarInsn(ALOAD, 0)
-
     //      // [this.initialized] the condition can now be checked.
     //      method.visitFieldInsn(GETFIELD, internalClassType, "initialized", JvmType.PrimBool.toDescriptor)
-
-    //
     //      // [] If expression has been evaluated, skip to returning this.value.
     //      val skip = new Label
     //      method.visitJumpInsn(IFNE, skip)
-    //
     //      // [context] Load the context to give as an argument to the expression closure.
     //      method.visitVarInsn(ALOAD, 1)
     //      // [context, this] push this to get the expression.
     //      method.visitVarInsn(ALOAD, 0)
+    THISLOAD[StackNil, PLazy[T]] ~
+    (WITHMONITOR {
+      THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+      GetBoolField(className, initializedField) ~
+      (RUNIFTRUE {
+//        ALOAD(1) ~
+//        THISLOAD() ~
+//        XGETFIELD(className, expressionField, ??? /* Context */) ~
+        SCAFFOLD
+      }) ~
+      SCAFFOLD
+    }) ~
+    SCAFFOLD
+
+    //
     //      // [context, expression] now ready to call the expression closure.
     //      method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
     //      // [value] The result of expression remains on the stack.
@@ -228,7 +243,6 @@ object GenLazyClasses {
     //
     //      // [] Return the value of appropriate type.
     //      method.visitInsn(AsmOps.getReturnInstruction(erasedValueType))
-    f => f.asInstanceOf[F[StackEnd]]
   }
 
   /**
