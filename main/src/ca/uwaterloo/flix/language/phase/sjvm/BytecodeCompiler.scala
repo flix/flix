@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, EType, ErasedAst, PType}
+import ca.uwaterloo.flix.language.ast.{Cat1, ErasedAst, PType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.MethodVisitor
 

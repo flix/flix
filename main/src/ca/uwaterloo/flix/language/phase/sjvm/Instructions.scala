@@ -16,36 +16,36 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.ERefType._
-import ca.uwaterloo.flix.language.ast.EType._
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, ERefType, EType, PRefType, PType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
+import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
 object Instructions {
-  val classStrings: scala.collection.mutable.Map[EType[_], String] = scala.collection.mutable.Map()
-  val descriptorStrings: scala.collection.mutable.Map[EType[_], String] = scala.collection.mutable.Map()
+  val classStrings: scala.collection.mutable.Map[RType[_], String] = scala.collection.mutable.Map()
+  val descriptorStrings: scala.collection.mutable.Map[RType[_], String] = scala.collection.mutable.Map()
 
-  def getInternalName[T <: PType](eType: EType[T]): String =
-    classStrings.getOrElseUpdate(eType, EType.toInternalName(eType))
+  def getInternalName[T <: PType](eType: RType[T]): String =
+    classStrings.getOrElseUpdate(eType, toInternalName(eType))
 
-  def getInternalName[T <: PRefType](eRefType: ERefType[T]): String =
-    getInternalName(EType.Reference(eRefType))
+  def getInternalName[T <: PRefType](eRefType: RRefType[T]): String =
+    getInternalName(RReference(eRefType))
 
   def getDescriptor[T1 <: PType, T2 <: PType](args: String, result: String): String =
     s"($args)$result"
 
-  def getDescriptor[T <: PType](eType: EType[T]): String =
+  def getDescriptor[T <: PType](eType: RType[T]): String =
     descriptorStrings.getOrElseUpdate(eType, eType match {
-      case Reference(referenceType) => s"L${getInternalName(referenceType)};"
+      case RReference(referenceType) => s"L${getInternalName(referenceType)};"
       case other => getInternalName(other)
     })
 
-  def getDescriptor[T <: PRefType](eRefType: ERefType[T]): String =
-    getDescriptor(EType.Reference(eRefType))
+  def getDescriptor[T <: PRefType](eRefType: RRefType[T]): String =
+    getDescriptor(RReference(eRefType))
 
   private def castF[S1 <: Stack, S2 <: Stack](f: F[S1]): F[S2] = f.asInstanceOf[F[S2]]
 
@@ -69,31 +69,31 @@ object Instructions {
   // NATIVE
   def XGETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String, fieldType: EType[T1]):
+  (className: String, fieldName: String, fieldType: RType[T1]):
   F[R ** PReference[T2]] => F[R ** T1] =
     fieldType match {
-      case Bool() => ???
-      case Int8() => ???
-      case Int16() => ???
-      case Int32() => ???
-      case Int64() => ???
-      case Char() => ???
-      case Float32() => ???
-      case Float64() => ???
-      case Reference(referenceType) => ???
+      case RBool() => ???
+      case RInt8() => ???
+      case RInt16() => ???
+      case RInt32() => ???
+      case RInt64() => ???
+      case RChar() => ???
+      case RFloat32() => ???
+      case RFloat64() => ???
+      case RReference(referenceType) => ???
     }
 
   // NATIVE
   def GetInt32Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String, fieldType: EType[T1]):
+  (className: String, fieldName: String, fieldType: RType[T1]):
   F[R ** PReference[T2]] => F[R ** PInt32] =
     ???
 
   // NATIVE
   def PUTFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String, fieldType: EType[T1]):
+  (className: String, fieldName: String, fieldType: RType[T1]):
   F[R ** PReference[T2] ** T1] => F[R] =
     ???
 
@@ -218,8 +218,8 @@ object Instructions {
   def pushUnit
   [R <: Stack]:
   F[R] => F[R ** PReference[PUnit]] = f => {
-    val className = getInternalName(ERefType.Unit())
-    val classDescriptor = getDescriptor(ERefType.Unit())
+    val className = getInternalName(RRefType.RUnit())
+    val classDescriptor = getDescriptor(RRefType.RUnit())
     f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, "getInstance", classDescriptor, false)
     castF(f)
   }
@@ -328,18 +328,18 @@ object Instructions {
   // META
   def XLOAD
   [R <: Stack, T <: PType]
-  (tpe: EType[T], index: Int):
+  (tpe: RType[T], index: Int):
   F[R] => F[R ** T] =
     tpe match {
-      case Bool() => ???
-      case Int8() => ???
-      case Int16() => ???
-      case Int32() => ILOAD(index)
-      case Int64() => LLOAD(index)
-      case Char() => ???
-      case Float32() => FLOAD(index)
-      case Float64() => DLOAD(index)
-      case Reference(_) => ALOAD(index)
+      case RBool() => ???
+      case RInt8() => ???
+      case RInt16() => ???
+      case RInt32() => ILOAD(index)
+      case RInt64() => LLOAD(index)
+      case RChar() => ???
+      case RFloat32() => FLOAD(index)
+      case RFloat64() => DLOAD(index)
+      case RReference(_) => ALOAD(index)
     }
 
   // NATIVE
@@ -393,17 +393,17 @@ object Instructions {
   // META
   def XALoad
   [R <: Stack, T <: PType]
-  (tpe: EType[T]):
+  (tpe: RType[T]):
   F[R ** PReference[PArray[T]] ** PInt32] => F[R ** T] =
     tpe match {
-      case Bool() | Int32() => IALoad
-      case Char() => CALoad
-      case Float32() => FALoad
-      case Float64() => DALoad
-      case Int8() => BALoad
-      case Int16() => SALoad
-      case Int64() => LALoad
-      case Reference(_) => AALoad
+      case RBool() | RInt32() => IALoad
+      case RChar() => CALoad
+      case RFloat32() => FALoad
+      case RFloat64() => DALoad
+      case RInt8() => BALoad
+      case RInt16() => SALoad
+      case RInt64() => LALoad
+      case RReference(_) => AALoad
     }
 
   // NATIVE
@@ -457,17 +457,17 @@ object Instructions {
   // META
   def XAStore
   [R <: Stack, T <: PType]
-  (tpe: EType[T]):
+  (tpe: RType[T]):
   F[R ** PReference[PArray[T]] ** PInt32 ** T] => F[R] =
     tpe match {
-      case Char() => CAStore
-      case Float32() => FAStore
-      case Float64() => DAStore
-      case Int8() => BAStore
-      case Int16() => SAStore
-      case Bool() | Int32() => IAStore
-      case Int64() => LAStore
-      case Reference(_) => AAStore
+      case RChar() => CAStore
+      case RFloat32() => FAStore
+      case RFloat64() => DAStore
+      case RInt8() => BAStore
+      case RInt16() => SAStore
+      case RBool() | RInt32() => IAStore
+      case RInt64() => LAStore
+      case RReference(_) => AAStore
     }
 
   // I/S/B/C-Store are all just jvm ISTORE
@@ -530,17 +530,17 @@ object Instructions {
   // META
   def XStore
   [R <: Stack, T <: PType]
-  (sym: Symbol.VarSym, tpe: EType[T]):
+  (sym: Symbol.VarSym, tpe: RType[T]):
   F[R ** T] => F[R] =
     tpe match {
-      case Char() => CStore(sym)
-      case Float32() => FStore(sym)
-      case Float64() => DStore(sym)
-      case Int8() => BStore(sym)
-      case Int16() => SStore(sym)
-      case Bool() | Int32() => IStore(sym)
-      case Int64() => LStore(sym)
-      case Reference(_) => AStore(sym)
+      case RChar() => CStore(sym)
+      case RFloat32() => FStore(sym)
+      case RFloat64() => DStore(sym)
+      case RInt8() => BStore(sym)
+      case RInt16() => SStore(sym)
+      case RBool() | RInt32() => IStore(sym)
+      case RInt64() => LStore(sym)
+      case RReference(_) => AStore(sym)
     }
 
   // NATIVE
@@ -603,19 +603,19 @@ object Instructions {
   // META
   def XNEWARRAY
   [R <: Stack, T <: PType]
-  (arrayType: EType[PReference[PArray[T]]]):
+  (arrayType: RType[PReference[PArray[T]]]):
   F[R ** PInt32] => F[R ** PReference[PArray[T]]] =
     arrayType match {
-      case Reference(Array(tpe)) => tpe match {
-        case Bool() => BOOLNEWARRAY
-        case Char() => CNEWARRAY
-        case Float32() => FNEWARRAY
-        case Float64() => DNEWARRAY
-        case Int8() => BNEWARRAY
-        case Int16() => SNEWARRAY
-        case Int32() => INEWARRAY
-        case Int64() => LNEWARRAY
-        case Reference(_) => ANEWARRAY
+      case RReference(RArray(tpe)) => tpe match {
+        case RBool() => BOOLNEWARRAY
+        case RChar() => CNEWARRAY
+        case RFloat32() => FNEWARRAY
+        case RFloat64() => DNEWARRAY
+        case RInt8() => BNEWARRAY
+        case RInt16() => SNEWARRAY
+        case RInt32() => INEWARRAY
+        case RInt64() => LNEWARRAY
+        case RReference(_) => ANEWARRAY
       }
       case _ => throw InternalCompilerException("unexpected non-array type")
     }
@@ -632,7 +632,7 @@ object Instructions {
 
   def getRefValue
   [R <: Stack, T <: PType]
-  (className: String, innerType: EType[T]):
+  (className: String, innerType: RType[T]):
   F[R ** PReference[PRef[T]]] => F[R ** T] = f => {
     f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, "value", getInternalName(innerType))
     castF(f)
@@ -640,7 +640,7 @@ object Instructions {
 
   def setRefValue
   [R <: Stack, T <: PType]
-  (className: String, innerType: EType[T]):
+  (className: String, innerType: RType[T]):
   F[R ** PReference[PRef[T]] ** T] => F[R] = f => {
     f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className, "value", getInternalName(innerType))
     castF(f)
@@ -649,14 +649,14 @@ object Instructions {
   // also make void
   def defMakeFunction
   [R <: Stack, T <: PType]
-  (x: F[R], t: EType[T]):
+  (x: F[R], t: RType[T]):
   F[R ** T] = {
     //todo where is this string stored
     getInternalName(t)
     ???
   }
 
-  def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, Int32()), Int32())
+  def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, RInt32()), RInt32())
 
   // META
   implicit class ComposeOps[A, B](f: F[A] => F[B]) {

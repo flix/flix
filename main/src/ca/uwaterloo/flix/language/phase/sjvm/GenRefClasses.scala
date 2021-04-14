@@ -1,13 +1,15 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.EType._
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.{ERefType, EType, PRefType, PType}
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
+import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.jvm.AsmOps
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
-import org.objectweb.asm.{ClassWriter, Opcodes}
+import org.objectweb.asm.Opcodes
 
 /**
   * Generates bytecode for the ref classes.
@@ -20,29 +22,29 @@ object GenRefClasses {
   def gen()(implicit root: Root, flix: Flix): Map[String, JvmClass] = {
 
     // Generating each cell class
-    def genAUX[T <: PType](tpe: EType[T]): (String, JvmClass) = {
-      val eeType = Reference(ERefType.Ref(tpe))
+    def genAUX[T <: PType](tpe: RType[T]): (String, JvmClass) = {
+      val eeType = RReference(RRef(tpe))
       val className: String = Instructions.getInternalName(eeType)
       className -> JvmClass(className, genRefClass(className, tpe))
     }
 
     //Type that we need a cell class for
     Map() +
-      genAUX(Bool()) +
-      genAUX(Int8()) +
-      genAUX(Int16()) +
-      genAUX(Int32()) +
-      genAUX(Int64()) +
-      genAUX(Char()) +
-      genAUX(Float32()) +
-      genAUX(Float64()) +
-      genAUX(Reference(null))
+      genAUX(RBool()) +
+      genAUX(RInt8()) +
+      genAUX(RInt16()) +
+      genAUX(RInt32()) +
+      genAUX(RInt64()) +
+      genAUX(RChar()) +
+      genAUX(RFloat32()) +
+      genAUX(RFloat64()) +
+      genAUX(RReference(null))
   }
 
   /**
     * Generating class `className` with value of type `innerType`
     */
-  def genRefClass[T <: PType](className: String, innerType: EType[T])(implicit root: Root, flix: Flix): scala.Array[Byte] = {
+  def genRefClass[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
@@ -72,7 +74,7 @@ object GenRefClasses {
     * Generating constructor for the class with value of type `innerType`
     */
   def genConstructor[T <: PType](): F[StackNil] => F[StackEnd] = {
-    ALOAD[StackNil, PRefType.PRef[T]](0) ~
+    ALOAD[StackNil, PRef[T]](0) ~
       INVOKESPECIAL("class string of Object", "()V)")
     RETURN
   }

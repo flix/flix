@@ -18,11 +18,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ERefType._
-import ca.uwaterloo.flix.language.ast.EType._
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.{EType, ErasedAst, FinalAst, MonoType, PType, Symbol}
+import ca.uwaterloo.flix.language.ast.{RType, ErasedAst, FinalAst, MonoType, PType, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -37,9 +37,9 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
         }
         k -> ErasedAst.Enum(mod, sym, cases, loc)
     }
-    val latticeOps: Map[EType[PType], ErasedAst.LatticeOps] = root.latticeOps.map { case (k, v) => visitTpe[PType](k) -> visitLatticeOps(v) }
+    val latticeOps: Map[RType[PType], ErasedAst.LatticeOps] = root.latticeOps.map { case (k, v) => visitTpe[PType](k) -> visitLatticeOps(v) }
     val properties = root.properties.map { p => visitProperty(p) }
-    val specialOps = root.specialOps.map { case (k1, m) => k1 -> m.map[EType[PType], Symbol.DefnSym] { case (k2, v) => visitTpe[PType](k2) -> v } }
+    val specialOps = root.specialOps.map { case (k1, m) => k1 -> m.map[RType[PType], Symbol.DefnSym] { case (k2, v) => visitTpe[PType](k2) -> v } }
     val reachable = root.reachable
 
     val actualTransformation = ErasedAst.Root(defns, enums, latticeOps, properties, specialOps, reachable, root.sources).toSuccess
@@ -383,49 +383,49 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
   /**
    * Translates the type 'tpe' to the ErasedType.
    */
-  private def visitTpe[T <: PType](tpe: MonoType): EType[T] = (tpe match {
-    case MonoType.Unit => Reference(Unit())
-    case MonoType.Bool => Bool()
-    case MonoType.Char => Char()
-    case MonoType.Float32 => Float32()
-    case MonoType.Float64 => Float64()
-    case MonoType.Int8 => Int8()
-    case MonoType.Int16 => Int16()
-    case MonoType.Int32 => Int32()
-    case MonoType.Int64 => Int64()
+  private def visitTpe[T <: PType](tpe: MonoType): RType[T] = (tpe match {
+    case MonoType.Unit => RReference(RUnit())
+    case MonoType.Bool => RBool()
+    case MonoType.Char => RChar()
+    case MonoType.Float32 => RFloat32()
+    case MonoType.Float64 => RFloat64()
+    case MonoType.Int8 => RInt8()
+    case MonoType.Int16 => RInt16()
+    case MonoType.Int32 => RInt32()
+    case MonoType.Int64 => RInt64()
     case MonoType.BigInt =>
-      Reference(BigInt())
+      RReference(RBigInt())
     case MonoType.Str =>
-      Reference(Str())
+      RReference(RStr())
     case MonoType.Array(tpe) =>
-      Reference(Array[PType](visitTpe[PType](tpe)))
+      RReference(RArray[PType](visitTpe[PType](tpe)))
     case MonoType.Channel(tpe) =>
-      Reference(Channel(visitTpe(tpe)))
+      RReference(RChannel(visitTpe(tpe)))
     case MonoType.Lazy(tpe) =>
-      Reference(Lazy(visitTpe(tpe)))
+      RReference(RLazy(visitTpe(tpe)))
     case MonoType.Ref(tpe) =>
-      Reference(Ref(visitTpe(tpe)))
+      RReference(RRef(visitTpe(tpe)))
     case MonoType.Tuple(elms) =>
-      Reference(Tuple(elms.map(visitTpe)))
+      RReference(RTuple(elms.map(visitTpe)))
     case MonoType.Enum(sym, args) =>
-      Reference(Enum(sym, args.map(visitTpe)))
+      RReference(REnum(sym, args.map(visitTpe)))
     case MonoType.Arrow(args, result) =>
-      Reference(Arrow(args.map(visitTpe), visitTpe(result)))
+      RReference(RArrow(args.map(visitTpe), visitTpe(result)))
     case MonoType.RecordEmpty() =>
-      Reference(RecordEmpty())
+      RReference(RRecordEmpty())
     case MonoType.RecordExtend(field, value, rest) =>
-      Reference(RecordExtend(field, visitTpe(value), visitTpe(rest)))
+      RReference(RRecordExtend(field, visitTpe(value), visitTpe(rest)))
     case MonoType.SchemaEmpty() =>
-      Reference(SchemaEmpty())
+      RReference(RSchemaEmpty())
     case MonoType.SchemaExtend(name, tpe, rest) =>
-      Reference(SchemaExtend(name, visitTpe(tpe), visitTpe(rest)))
+      RReference(RSchemaExtend(name, visitTpe(tpe), visitTpe(rest)))
     case MonoType.Relation(tpes) =>
-      Reference(Relation(tpes.map(visitTpe)))
+      RReference(RRelation(tpes.map(visitTpe)))
     case MonoType.Lattice(tpes) =>
-      Reference(Lattice(tpes.map(visitTpe)))
+      RReference(RLattice(tpes.map(visitTpe)))
     case MonoType.Native(clazz) =>
-      Reference(Native(clazz))
+      RReference(RNative(clazz))
     case MonoType.Var(id) =>
-      Reference(Var(id))
-  }).asInstanceOf[EType[T]]
+      RReference(RVar(id))
+  }).asInstanceOf[RType[T]]
 }
