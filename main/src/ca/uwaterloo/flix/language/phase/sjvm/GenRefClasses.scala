@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
-import ca.uwaterloo.flix.language.phase.jvm.AsmOps
+import ca.uwaterloo.flix.language.phase.sjvm.AsmOps
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.Opcodes
@@ -21,11 +21,11 @@ object GenRefClasses {
     */
   def gen()(implicit root: Root, flix: Flix): Map[String, JvmClass] = {
 
-    // Generating each cell class
+    // Generating each ref class
     def genAUX[T <: PType](tpe: RType[T]): (String, JvmClass) = {
       val eeType = RReference(RRef(tpe))
       val className: String = Instructions.getInternalName(eeType)
-      className -> JvmClass(className, genRefClass(className, tpe))
+      className -> JvmClass(className, genByteCode(className, tpe))
     }
 
     //Type that we need a cell class for
@@ -44,7 +44,7 @@ object GenRefClasses {
   /**
     * Generating class `className` with value of type `innerType`
     */
-  def genRefClass[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
@@ -55,7 +55,7 @@ object GenRefClasses {
 
     // Generate the instance field
     val innerTypeString = Instructions.getDescriptor(innerType)
-    visitor.visitField(Opcodes.ACC_PRIVATE, "value", innerTypeString, null, null).visitEnd()
+    AsmOps.compileField(visitor, "value", innerTypeString, isStatic = false, isPrivate = false)
 
     val constructorDescriptor = Instructions.getDescriptor(innerTypeString, "V")
     // Generate the constructor

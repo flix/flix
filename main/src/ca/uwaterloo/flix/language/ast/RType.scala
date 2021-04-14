@@ -91,7 +91,7 @@ object RRefType {
     case RUnit() => "flix/runtime/value/Unit"
     case RArray(tpe) => "???"
     case RChannel(tpe) => "???"
-    case RLazy(tpe) => "???"
+    case RLazy(tpe) => "Lazy$" + tpe.erasedType
     case RRef(tpe) => "Ref$" + tpe.erasedType
     case RVar(id) => "???"
     case RTuple(elms) => "???"
