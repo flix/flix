@@ -1028,7 +1028,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = rule {
-        WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Positive | Predicates.Body.Negative)
+        WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Positive | Predicates.Body.Negative).separatedBy(optWS ~ "," ~ optWS)
       }
 
       def WherePart: Rule1[Option[ParsedAst.Expression]] = rule {
