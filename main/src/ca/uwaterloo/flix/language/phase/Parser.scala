@@ -641,7 +641,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointSolve |
+        FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointSolveWithProject |
         FixpointProject | FixpointFacts | Constraint | Interpolation | Literal | Existential | Universal |
         UnaryLambda | FName | Tag | Hole
     }
@@ -996,6 +996,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FixpointSolve: Rule1[ParsedAst.Expression] = rule {
       SP ~ keyword("solve") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointSolve
+    }
+
+    def FixpointSolveWithProject: Rule1[ParsedAst.Expression] = {
+      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
+        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+      }
+      def ProjectPart: Rule1[Option[Seq[Name.Ident]]] = rule {
+        optional(WS ~ keyword("project") ~ WS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS))
+      }
+
+      rule {
+        SP ~ keyword("solve2") ~ WS ~ ExpressionPart ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointSolveWithProject
+      }
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {

@@ -997,6 +997,16 @@ object ParsedAst {
       */
     case class FixpointFacts(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * Fixpoint Solve-Project expression.
+      *
+      * @param sp1    the position of the first character in the expression.
+      * @param exps   the non-empty sequence of expressions to merge and solve.
+      * @param idents the (optional) non-empty sequence of predicates to project and merge out of the solution.
+      * @param sp2    the position of the last character in the expression.
+      */
+    case class FixpointSolveWithProject(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], idents: Option[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**

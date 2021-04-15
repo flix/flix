@@ -1383,8 +1383,54 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointFacts(Name.mkPred(ident), e, mkSL(sp1, sp2))
       }
 
-  }
+    case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      mapN(traverse(exps)(visitExp)) {
+        case es =>
+          //
+          // Performs the following rewrite:
+          //
+          // solve e1, e2, e3 project P1, P2, P3
+          //
+          // =>
+          //
+          // let $tmp = solve merge (merge e1, 2, e3);
+          // merge (project P1 $tmp, project P2 $tmp, project P3 $tmp)
 
+          // Introduce a $tmp variable that holds the minimal model of the merge of the exps.
+          val localVar = Name.Ident(sp1, "$tmp", sp2)
+
+          // Merge all the exps into one Datalog program value.
+          val mergeExp = es.reduceRight[WeededAst.Expression] {
+            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+          }
+          val modelExp = WeededAst.Expression.FixpointSolve(mergeExp, loc)
+
+          // Any projections?
+          val bodyExp = optIdents match {
+            case None =>
+              // Case 1: No projections: Simply return the minimal model.
+              WeededAst.Expression.VarOrDefOrSig(localVar, loc)
+            case Some(idents) =>
+              // Case 2: A non-empty sequence of predicate symbols to project.
+
+              // Construct a list of each projection.
+              val projectExps = idents.map {
+                case ident =>
+                  val varExp = WeededAst.Expression.VarOrDefOrSig(localVar, loc)
+                  WeededAst.Expression.FixpointProject(Name.Pred(ident.name, loc), varExp, loc)
+              }
+
+              // Merge all of the projections into one result.
+              projectExps.reduceRight[WeededAst.Expression] {
+                case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+              }
+          }
+
+          // Bind the $tmp variable to the minimal model and combine it with the body expression.
+          WeededAst.Expression.Let(localVar, modelExp, bodyExp, loc)
+      }
+  }
 
   /**
     * Translates the given literal to an expression.
@@ -2061,15 +2107,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val kindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Kinded => t }
       val unkindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Unkinded => t }
       (kindedTypeParams, unkindedTypeParams) match {
-          // Case 1: only unkinded type parameters
+        // Case 1: only unkinded type parameters
         case (Nil, _ :: _) => WeededAst.TypeParams.Unkinded(unkindedTypeParams).toSuccess
-          // Case 2: only kinded type parameters
+        // Case 2: only kinded type parameters
         case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
-          // Case 3: some unkinded and some kinded
+        // Case 3: some unkinded and some kinded
         case (_ :: _, _ :: _) =>
           val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
           WeederError.InconsistentTypeParameters(loc).toFailure
-          // Case 4: no type parameters: should be prevented by parser
+        // Case 4: no type parameters: should be prevented by parser
         case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.")
       }
   }
