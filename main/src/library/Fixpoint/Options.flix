@@ -16,15 +16,8 @@
 namespace Fixpoint {
 
     ///
-    /// Controls whether to enable parallel evaluation.
-    ///
-    pub def enableParallelEvaluation(): Bool = true
-
-    // TODO: Add more options.
-
-    ///
     /// Prints the Datalog program before the fixpoint computation.
     ///
-    pub def enableDebugging(): Bool = true
+    pub def enableDebugging(): Bool = false
 
 }
