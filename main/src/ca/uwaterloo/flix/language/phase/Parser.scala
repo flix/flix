@@ -638,7 +638,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointSolveWithProject | FixpointQuery |
-        FixpointProject | FixpointFacts | Constraint | Interpolation | Literal | Existential | Universal |
+        FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
         UnaryLambda | FName | Tag | Hole
     }
 
@@ -1038,10 +1038,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
       SP ~ keyword("project") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
-    }
-
-    def FixpointFacts: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("facts") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFacts
     }
 
     // TODO: We should only allow one variant of these.
