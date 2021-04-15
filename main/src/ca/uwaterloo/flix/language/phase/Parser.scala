@@ -1013,8 +1013,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
       }
 
-      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = rule {
-        WS ~ keyword("select") ~ WS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" | Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = {
+        def SelectOne: Rule1[Seq[ParsedAst.Expression]] = rule {
+          Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+        }
+
+        def SelectMany: Rule1[Seq[ParsedAst.Expression]] = rule {
+          "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+        }
+
+        rule {
+          WS ~ keyword("select") ~ WS ~ (SelectMany | SelectOne)
+        }
       }
 
       def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = rule {
