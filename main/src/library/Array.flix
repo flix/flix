@@ -75,6 +75,12 @@ namespace Array {
     pub def put(a: Array[a], i: Int32, x: a): Array[a] & Impure = a[i] = x; a
 
     ///
+    /// Returns `true` if the given array `a` is empty.
+    ///
+    @Time(1) @Space(1)
+    pub def isEmpty(a: Array[a]): Bool = a.length == 0
+
+    ///
     /// Returns the length of the array `a`.
     ///
     @Time(1) @Space(1)

@@ -9,8 +9,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, y, z), C(x, y, z).
             F() :- A(x, y, z), B(x, y, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar02(): Bool =
@@ -21,8 +21,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(_, y, z), B(x, y, z), C(x, y, z).
             F() :- A(_, y, z), B(x, y, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar03(): Bool =
@@ -33,8 +33,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, _, z), B(x, y, z), C(x, y, z).
             F() :- A(x, _, z), B(x, y, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar04(): Bool =
@@ -45,8 +45,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, _), B(x, y, z), C(x, y, z).
             F() :- A(x, y, _), B(x, y, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar05(): Bool =
@@ -57,8 +57,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(_, y, z), C(x, y, z).
             F() :- A(x, y, z), B(_, y, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
 
     @test
@@ -70,8 +70,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, _, z), C(x, y, z).
             F() :- A(x, y, z), B(x, _, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar07(): Bool =
@@ -82,8 +82,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, y, _), C(x, y, z).
             F() :- A(x, y, z), B(x, y, _), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar08(): Bool =
@@ -94,8 +94,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, y, z), C(_, y, z).
             F() :- A(x, y, z), B(x, y, z), C(_, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar09(): Bool =
@@ -106,8 +106,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, y, z), C(x, _, z).
             F() :- A(x, y, z), B(x, y, z), C(x, _, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar10(): Bool =
@@ -118,8 +118,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, y, z), C(x, y, _).
             F() :- A(x, y, z), B(x, y, z), C(x, y, _), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar11(): Bool =
@@ -130,8 +130,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(_, _, z), B(x, y, z), C(x, y, z).
             F() :- A(_, _, z), B(x, y, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar12(): Bool =
@@ -142,8 +142,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, _, _), B(x, y, z), C(x, y, z).
             F() :- A(x, _, _), B(x, y, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar13(): Bool =
@@ -154,8 +154,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, _), B(_, y, z), C(x, y, z).
             F() :- A(x, y, _), B(_, y, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar14(): Bool =
@@ -166,8 +166,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(_, _, z), C(x, y, z).
             F() :- A(x, y, z), B(_, _, z), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar15(): Bool =
@@ -178,8 +178,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, _, _), C(x, y, z).
             F() :- A(x, y, z), B(x, _, _), C(x, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar16(): Bool =
@@ -190,8 +190,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, y, _), C(_, y, z).
             F() :- A(x, y, z), B(x, y, _), C(_, y, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar17(): Bool =
@@ -202,8 +202,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, y, z), C(_, _, z).
             F() :- A(x, y, z), B(x, y, z), C(_, _, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar18(): Bool =
@@ -214,8 +214,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, y, z), B(x, y, z), C(x, _, _).
             F() :- A(x, y, z), B(x, y, z), C(x, _, _), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar19(): Bool =
@@ -226,8 +226,8 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, _, z), B(x, y, z), C(x, _, z).
             F() :- A(x, _, z), B(x, y, z), C(x, _, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
     @test
     def testWildVar20(): Bool =
@@ -238,7 +238,7 @@ namespace Test/Term/Var/WildVar {
             T() :- A(x, _, _), B(_, y, _), C(_, _, z).
             F() :- A(x, _, _), B(_, y, _), C(_, _, z), D(x, y, z).
         };
-        let m = solve p;
-        (m |= #{ T(). }) and not (m |= #{ F(). })
+        let m = query p select 42 from T(), not F();
+        not Array.isEmpty(m)
 
 }

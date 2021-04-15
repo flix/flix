@@ -4,54 +4,46 @@ namespace Test/Term/Lit {
     /// Unit                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////
     @test
-    def testUnitLit01(): Bool =
+    def testUnitLit01(): #{ R(Unit) } =
         let f = A(()).;
         let p = R(x) :- A(x).;
-        let m = solve (f <+> p);
-        m |= R(()).
+        solve f, p project R
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Bool                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////
     @test
-    def testBoolLit01(): Bool =
+    def testBoolLit01(): #{ R(Bool) } =
         let f = A(false).;
         let p = R(x) :- A(x).;
-        let m = solve (f <+> p);
-        m |= R(false).
+        solve f, p project R
 
     @test
-    def testBoolLit02(): Bool =
+    def testBoolLit02(): #{ R(Bool) } =
         let f = A(true).;
         let p = R(x) :- A(x).;
-        let m = solve (f <+> p);
-        m |= R(true).
+        solve f, p project R
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Char                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////
     @test
-    def testCharLit01(): Bool =
+    def testCharLit01(): #{ R(Char) } =
         let f = A(' ').;
         let p = R(x) :- A(x).;
-        let m = solve (f <+> p);
-        m |= R(' ').
+        solve f, p project R
 
     @test
-    def testCharLit02(): Bool =
+    def testCharLit02(): #{ R(Char) } =
         let f = A('a').;
         let p = R(x) :- A(x).;
-        let m = solve (f <+> p);
-        m |= R('a').
+        solve f, p project R
 
     @test
-    def testCharLit03(): Bool =
+    def testCharLit03(): #{ R(Char) } =
         let f = A('x').;
         let p = R(x) :- A(x).;
-        let m = solve (f <+> p);
-        m |= R('x').
-
-    // TODO: Refactor the rest.
+        solve f, p project R
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Int8                                                                    ///

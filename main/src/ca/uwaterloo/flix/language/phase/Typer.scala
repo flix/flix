@@ -1399,20 +1399,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
-        //
-        //  exp1 : #{...}    exp2 : #{...}
-        //  ------------------------------
-        //  exp1 |= exp2 : Bool
-        //
-        for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
-          schemaType <- unifyTypeM(tpe1, tpe2, mkAnySchemaType(), loc)
-          resultTyp = Type.Bool
-          resultEff = Type.mkAnd(eff1, eff2)
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
       case ResolvedAst.Expression.FixpointFacts(pred, exp, tvar, loc) =>
         //
         //  exp1 : tpe    exp2 : #{ P : a  | b }
@@ -1802,13 +1788,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         val eff = e.eff
         TypedAst.Expression.FixpointProject(pred, e, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val tpe = Type.Bool
-        val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointFacts(pred, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

@@ -42,6 +42,7 @@ namespace Fixpoint {
             Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2)) as & Pure
     }
 
+    // TODO: Remove this? It is not used anymore.
     pub def isSubsetOf(d1: Datalog[v], d2: Datalog[v]): Bool with Order[v], Eq[v], ToString[v] = match (d1, d2) {
         case (Datalog(edb1, _), Datalog(edb2, _)) =>
             use Fixpoint/Ram.toDenotation;

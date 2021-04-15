@@ -46,7 +46,6 @@ object Lowering extends Phase[Root, Root] {
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
     lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
-    lazy val IsSubsetOf: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.isSubsetOf")
     lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
 
     lazy val Lift1: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1")
@@ -123,7 +122,6 @@ object Lowering extends Phase[Root, Root] {
     //
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog)
     lazy val ComposeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
-    lazy val EntailsType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Type.Bool)
     lazy val ProjectType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
   }
 
@@ -478,15 +476,6 @@ object Lowering extends Phase[Root, Root] {
       val defExp = Expression.Def(defn.sym, Types.ProjectType, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      Expression.Apply(defExp, argExps, resultType, eff, loc)
-
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
-      val defn = Defs.lookup(Defs.IsSubsetOf)
-      val defExp = Expression.Def(defn.sym, Types.EntailsType, loc)
-      val arg1 = visitExp(exp2)
-      val arg2 = visitExp(exp1)
-      val argExps = arg1 :: arg2 :: Nil
-      val resultType = Type.Bool
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
@@ -1423,11 +1412,6 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.FixpointProject(pred, e, tpe, eff, loc)
-
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
     case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)

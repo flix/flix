@@ -298,9 +298,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.FixpointProject(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointEntails(_, _, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
-
       case TypedAst.Expression.FixpointFacts(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

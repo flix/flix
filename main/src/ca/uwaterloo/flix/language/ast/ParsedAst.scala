@@ -970,15 +970,6 @@ object ParsedAst {
     case class FixpointProject(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Entails expression.
-      *
-      * @param exp1 the lhs expression.
-      * @param exp2 the rhs expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Fixpoint Facts expression.
       *
       * @param sp1   the position of the first character in the expression.
