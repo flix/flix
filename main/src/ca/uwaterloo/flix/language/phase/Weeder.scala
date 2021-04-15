@@ -1389,7 +1389,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           // =>
           //
-          // let $tmp = solve merge (merge e1, 2, e3);
+          // let $tmp = solve (merge e1, 2, e3);
           // merge (project P1 $tmp, project P2 $tmp, project P3 $tmp)
 
           // Introduce a $tmp variable that holds the minimal model of the merge of the exps.
@@ -1426,6 +1426,55 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Bind the $tmp variable to the minimal model and combine it with the body expression.
           WeededAst.Expression.Let(localVar, modelExp, bodyExp, loc)
       }
+
+    case ParsedAst.Expression.FixpointQuery(sp1, exps0, selects0, from0, whereExp0, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      mapN(traverse(exps0)(visitExp), traverse(selects0)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
+        case (exps, selects, from, where) =>
+          //
+          // Performs the following rewrite:
+          //
+          // query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
+          //
+          // =>
+          //
+          // facts $Result (solve (merge (merge e1, 2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+
+          // The fresh predicate name where to store the result of the query.
+          val pred = Name.Pred("$Result", loc)
+
+          // The head of the pseudo-rule.
+          val head = WeededAst.Predicate.Head.Atom(pred, Denotation.Relational, selects, loc)
+
+          // The body of the pseudo-rule.
+          val body = where match {
+            case Nil => from
+            case g :: Nil => WeededAst.Predicate.Body.Guard(g, loc) :: from
+            case _ => throw InternalCompilerException("Impossible. The list must have 0 or 1 elements.")
+          }
+
+          // Construct the pseudo-query.
+          val pseudoConstraint = WeededAst.Constraint(head, body, loc)
+
+          // Construct the merge of all the expressions.
+          val mergeExp = exps.reduceRight[WeededAst.Expression] {
+            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+          }
+
+          // Construct a constraint set that contains the single pseudo constraint.
+          val pseudoExp = WeededAst.Expression.FixpointConstraintSet(List(pseudoConstraint), loc)
+
+          // Construct the merge of the original merged exps and the pseudo-rule.
+          val extendedExp = WeededAst.Expression.FixpointCompose(mergeExp, pseudoExp, loc)
+
+          // Construct the minimal model of the extend program.
+          val solveExp = WeededAst.Expression.FixpointSolve(extendedExp, loc)
+
+          // Extract the tuples of the result predicate.
+          WeededAst.Expression.FixpointFacts(pred, solveExp, loc)
+      }
+
   }
 
   /**
@@ -2360,6 +2409,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.FixpointFacts(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointQuery(sp1, _, _, _, _, _) => sp1
   }
 
   /**

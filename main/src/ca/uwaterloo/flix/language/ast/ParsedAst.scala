@@ -998,6 +998,18 @@ object ParsedAst {
       */
     case class FixpointSolveWithProject(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], idents: Option[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * Fixpoint Query expression.
+      *
+      * @param sp1      the position of the first character in the expression.
+      * @param exps     the non-empty sequence of expressions to merge and solve.
+      * @param selects  the expressions of the selected tuple. (the head of the pseudo-rule).
+      * @param from     the predicates to select from (the body of the pseudo-rule).
+      * @param whereExp the optional guard of the pseudo-rule.
+      * @param sp2      the position of the last character in the expression.
+      */
+    case class FixpointQuery(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**

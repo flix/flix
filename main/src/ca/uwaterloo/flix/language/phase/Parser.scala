@@ -641,7 +641,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointSolveWithProject |
+        FNil | FSet | FMap | ConstraintSet | FixpointSolveWithProject | FixpointQuery |
         FixpointProject | FixpointFacts | Constraint | Interpolation | Literal | Existential | Universal |
         UnaryLambda | FName | Tag | Hole
     }
@@ -998,12 +998,35 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
         oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
       }
+
       def ProjectPart: Rule1[Option[Seq[Name.Ident]]] = rule {
         optional(WS ~ keyword("project") ~ WS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS))
       }
 
       rule {
         SP ~ keyword("solve") ~ WS ~ ExpressionPart ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointSolveWithProject
+      }
+    }
+
+    def FixpointQuery: Rule1[ParsedAst.Expression] = {
+      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
+        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = rule {
+        WS ~ keyword("select") ~ WS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" | Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+      }
+
+      def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = rule {
+        WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Positive | Predicates.Body.Negative)
+      }
+
+      def WherePart: Rule1[Option[ParsedAst.Expression]] = rule {
+        optional(WS ~ keyword("where") ~ WS ~ Expression)
+      }
+
+      rule {
+        SP ~ keyword("query") ~ WS ~ ExpressionPart ~ SelectPart ~ FromPart ~ WherePart ~ SP ~> ParsedAst.Expression.FixpointQuery
       }
     }
 
