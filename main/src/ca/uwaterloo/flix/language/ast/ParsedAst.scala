@@ -979,7 +979,7 @@ object ParsedAst {
       * @param whereExp the optional guard of the pseudo-rule.
       * @param sp2      the position of the last character in the expression.
       */
-    case class FixpointQuery(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

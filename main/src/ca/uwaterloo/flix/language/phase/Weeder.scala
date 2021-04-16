@@ -1404,7 +1404,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Let(localVar, modelExp, bodyExp, loc)
       }
 
-    case ParsedAst.Expression.FixpointQuery(sp1, exps0, selects0, from0, whereExp0, sp2) =>
+    case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       mapN(traverse(exps0)(visitExp), traverse(selects0)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
@@ -2383,7 +2383,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.FixpointQuery(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
   }
 
   /**
