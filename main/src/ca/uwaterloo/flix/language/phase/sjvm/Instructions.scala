@@ -48,15 +48,22 @@ object Instructions {
 
   def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = ???
 
+  def compileClosureApplication
+  [R <: Stack, T1 <: PRefType, T2 <: PType]
+  (resultType: RType[T2]):
+  F[R ** PReference[PAnyObject]] => F[R ** T2] =
+    ???
+
   def WITHMONITOR
-  [R <: Stack, S <: PRefType]
-  (f: F[R ** PReference[S]] => F[R ** PReference[S]]):
-  F[R ** PReference[S]] => F[R] = {
+  [R <: Stack, S <: PRefType, T <: PType]
+  (f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
+  F[R ** PReference[S]] => F[R ** T] = {
     //todo why is NOP/the type needed here?
     NOP ~[R ** PReference[S] ** PReference[S]]
       DUP ~
       MONITORENTER ~
       f ~
+      MAGICSWAP ~
       MONITOREXIT
   }
 
@@ -102,6 +109,12 @@ object Instructions {
       f.visitor.visitInsn(Opcodes.SWAP)
       castF(f)
   }
+
+  // NATIVE
+  def MAGICSWAP
+  [R <: Stack, T1 <: PType, T2 <: PType]:
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] =
+    ???
 
   // META
   def NOP
@@ -258,6 +271,13 @@ object Instructions {
   // TODO: What should happen here
   // NATIVE
   def RETURN[R <: Stack]: F[R] => F[StackEnd] = ???
+
+  // NATIVE
+  def XRETURN
+  [R <: Stack, T <: PType]
+  (e: RType[T]):
+  F[R] => F[StackEnd] =
+    ???
 
   // NATIVE
   def POP

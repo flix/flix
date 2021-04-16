@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
-import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
+import org.objectweb.asm.{ClassWriter, Opcodes}
 
 /**
   * Generates bytecode for the lazy classes.
@@ -111,48 +111,6 @@ object GenLazyClasses {
   }
 
   /**
-    * !OBS!: This code was copied from AsmOps to omit the last cast in the function.
-    *
-    * Emits code to call a closure (not in tail position). fType is the type of the called
-    * closure. argsType is the type of its arguments, and resultType is the type of its result.
-    */
-  private def compileClosureApplication[T <: PType](visitor: MethodVisitor, valueType: RType[T])(implicit root: Root, flix: Flix) = ()
-
-  //  {
-  //    val fType = MonoType.Arrow(List(MonoType.Unit), valueType)
-  //    // Type of the continuation interface
-  //    val cont = JvmOps.getContinuationInterfaceType(fType)
-  //    // Label for the loop
-  //    val loop = new Label
-  //    visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-  //    // Begin of the loop
-  //    visitor.visitLabel(loop)
-  //    // Getting `continuation` field on `Context`
-  //    visitor.visitVarInsn(ALOAD, 1)
-  //    visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-  //    // Setting `continuation` field of global to `null`
-  //    visitor.visitVarInsn(ALOAD, 1)
-  //    visitor.visitInsn(ACONST_NULL)
-  //    visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-  //    // Cast to the continuation
-  //    visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-  //    // Duplicate
-  //    visitor.visitInsn(DUP)
-  //    // Save it on the IFO local variable
-  //    visitor.visitVarInsn(ASTORE, 2)
-  //    // Call invoke
-  //    visitor.visitVarInsn(ALOAD, 1)
-  //    visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-  //    // Getting `continuation` field on `Context`
-  //    visitor.visitVarInsn(ALOAD, 1)
-  //    visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-  //    visitor.visitJumpInsn(IFNONNULL, loop)
-  //    // Load IFO from local variable and invoke `getResult` on it
-  //    visitor.visitVarInsn(ALOAD, 2)
-  //    visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(valueType)), true)
-  //  }
-
-  /**
     * The force method takes a context as argument to call the expression closure in.
     * The result of the expression given in the constructor is then returned.
     * This is only actually evaluated the first time, and saved to return directly
@@ -196,14 +154,20 @@ object GenLazyClasses {
       THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
       GetBoolField(className, initializedField) ~
       (RUNIFTRUE {
-//        ALOAD(1) ~
-//        THISLOAD() ~
-//        XGETFIELD(className, expressionField, ??? /* Context */) ~
-        SCAFFOLD
+        THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
+        GetObjectField(className, expressionField) ~
+        compileClosureApplication(valueType) ~
+        THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
+        MAGICSWAP ~
+        PUTFIELD(className, valueField, valueType) ~
+        THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+        pushInt32(1) ~
+        PUTFIELD(className, initializedField, RInt32())
       }) ~
-      SCAFFOLD
+      THISLOAD ~
+      XGETFIELD(className, valueField, valueType)
     }) ~
-    SCAFFOLD
+    XRETURN(valueType)
 
     //
     //      // [context, expression] now ready to call the expression closure.
