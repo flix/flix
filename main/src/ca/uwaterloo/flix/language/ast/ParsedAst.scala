@@ -960,16 +960,6 @@ object ParsedAst {
     case class FixpointCompose(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Project expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param ident the name of the predicate.
-      * @param exp   the constraint expression.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class FixpointProject(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Fixpoint Solve-Project expression.
       *
       * @param sp1    the position of the first character in the expression.

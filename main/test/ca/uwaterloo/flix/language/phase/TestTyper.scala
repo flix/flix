@@ -148,20 +148,6 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedKinds](result)
   }
 
-  test("TestMismatchedKinds.05") {
-    val input =
-      """
-        |rel A(a: Int)
-        |
-        |def foo(): Int = {
-        |  let b = "b";
-        |  project A b
-        |}
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[TypeError](result) // TODO use more specific error once TypeError logic is more defined
-  }
-
   test("TestLeq.Wildcard.01") {
     val input = "def foo(a: _): _ = a"
     val result = compile(input, DefaultOptions)
