@@ -1399,22 +1399,25 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointFacts(pred, exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointQuery(pred, exp1, exp2, tvar, loc) =>
         //
-        //  exp1 : tpe    exp2 : #{ P : a  | b }
-        //  -------------------------------------------
-        //  facts P exp2 : Array[a]
+        //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
+        //  exp2: freshRestSchemaVar
+        //  --------------------------------------------------------------------
+        //  FixpointQuery pred, exp1, exp2 : Array[freshTupleVar]
         //
         val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Star)
-        val freshPredicateTypeVar = Type.freshVar(Kind.Star)
-        val freshRestSchemaTypeVar = Type.freshVar(Kind.Schema)
+        val freshTupleVar = Type.freshVar(Kind.Star)
+        val freshRestSchemaVar = Type.freshVar(Kind.Schema)
 
         for {
-          (constrs, tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypeM(tpe, Type.mkSchemaExtend(pred, Type.Apply(freshRelOrLat, freshPredicateTypeVar), freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArray(freshPredicateTypeVar), loc)
-          resultEff = eff
-        } yield (constrs, resultTyp, resultEff)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          _ <- unifyTypeM(tpe1, Type.mkSchemaExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar), freshRestSchemaVar), loc)
+          _ <- unifyTypeM(tpe2, freshRestSchemaVar, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar), loc)
+          resultEff = Type.mkAnd(eff1, eff2)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
     }
 
     /**
@@ -1789,12 +1792,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.FixpointProject(pred, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.FixpointFacts(pred, exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
+      case ResolvedAst.Expression.FixpointQuery(pred, exp1, exp2, tvar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val stf = Stratification.Empty
         val tpe = subst0(tvar)
-        val eff = e.eff
-        TypedAst.Expression.FixpointFacts(pred, e, tpe, eff, loc)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
 
+        val mergeExp = TypedAst.Expression.FixpointCompose(e1, e2, stf, tpe, eff, loc)
+        val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
+        TypedAst.Expression.FixpointFacts(pred, solveExp, tpe, eff, loc)
     }
 
     /**

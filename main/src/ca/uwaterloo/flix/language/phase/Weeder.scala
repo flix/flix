@@ -1434,22 +1434,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Construct the pseudo-query.
           val pseudoConstraint = WeededAst.Constraint(head, body, loc)
 
+          // Construct a constraint set that contains the single pseudo constraint.
+          val queryExp = WeededAst.Expression.FixpointConstraintSet(List(pseudoConstraint), loc)
+
           // Construct the merge of all the expressions.
-          val mergeExp = exps.reduceRight[WeededAst.Expression] {
+          val dbExp = exps.reduceRight[WeededAst.Expression] {
             case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
           }
 
-          // Construct a constraint set that contains the single pseudo constraint.
-          val pseudoExp = WeededAst.Expression.FixpointConstraintSet(List(pseudoConstraint), loc)
-
-          // Construct the merge of the original merged exps and the pseudo-rule.
-          val extendedExp = WeededAst.Expression.FixpointCompose(mergeExp, pseudoExp, loc)
-
-          // Construct the minimal model of the extend program.
-          val solveExp = WeededAst.Expression.FixpointSolve(extendedExp, loc)
-
           // Extract the tuples of the result predicate.
-          WeededAst.Expression.FixpointFacts(pred, solveExp, loc)
+          WeededAst.Expression.FixpointQuery(pred, queryExp, dbExp, loc)
       }
 
   }
