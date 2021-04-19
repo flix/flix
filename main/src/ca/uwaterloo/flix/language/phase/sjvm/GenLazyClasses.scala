@@ -28,8 +28,8 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
 /**
-  * Generates bytecode for the lazy classes.
-  */
+ * Generates bytecode for the lazy classes.
+ */
 object GenLazyClasses {
 
   val initializedField: String = "initialized"
@@ -39,8 +39,8 @@ object GenLazyClasses {
   val forceMethod = "force"
 
   /**
-    * Returns the set of lazy classes for the given set of types `ts`.
-    */
+   * Returns the set of lazy classes for the given set of types `ts`.
+   */
   def gen()(implicit root: Root, flix: Flix): Map[String, JvmClass] = {
 
     // Generating each lazy class
@@ -65,18 +65,18 @@ object GenLazyClasses {
   }
 
   /**
-    * This method creates the class for each lazy value.
-    * The specific lazy class has an associated value type (tpe) which
-    * is either a jvm primitive or object.
-    *
-    * The lazy class has three fields - initialized: bool, expression: () -> tpe,
-    * and value: tpe. These are all private. force(context) is the only public
-    * method, which retuns a value of type tpe given a context to call the
-    * expression closure in.
-    *
-    * force will only evaluate the expression the first time, based on the flag initialized.
-    * After that point it will store the result in value and just return that.
-    */
+   * This method creates the class for each lazy value.
+   * The specific lazy class has an associated value type (tpe) which
+   * is either a jvm primitive or object.
+   *
+   * The lazy class has three fields - initialized: bool, expression: () -> tpe,
+   * and value: tpe. These are all private. force(context) is the only public
+   * method, which retuns a value of type tpe given a context to call the
+   * expression closure in.
+   *
+   * force will only evaluate the expression the first time, based on the flag initialized.
+   * After that point it will store the result in value and just return that.
+   */
   private def genByteCode[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
@@ -111,14 +111,14 @@ object GenLazyClasses {
   }
 
   /**
-    * The force method takes a context as argument to call the expression closure in.
-    * The result of the expression given in the constructor is then returned.
-    * This is only actually evaluated the first time, and saved to return directly
-    * afterwards.
-    *
-    * If lazy has associated type of Obj, the returned object needs to be casted
-    * to whatever expected type.
-    */
+   * The force method takes a context as argument to call the expression closure in.
+   * The result of the expression given in the constructor is then returned.
+   * This is only actually evaluated the first time, and saved to return directly
+   * afterwards.
+   *
+   * If lazy has associated type of Obj, the returned object needs to be casted
+   * to whatever expected type.
+   */
   private def compileForceMethod[T <: PType](className: String, valueType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     force(context) :=
@@ -150,24 +150,24 @@ object GenLazyClasses {
     //      // [context, this] push this to get the expression.
     //      method.visitVarInsn(ALOAD, 0)
     THISLOAD[StackNil, PLazy[T]] ~
-    (WITHMONITOR {
-      THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
-      GetBoolField(className, initializedField) ~
-      (RUNIFTRUE {
-        THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
-        GetObjectField(className, expressionField) ~
-        compileClosureApplication(valueType) ~
-        THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
-        MAGICSWAP ~
-        PUTFIELD(className, valueField, valueType) ~
+      (WITHMONITOR {
         THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
-        pushInt32(1) ~
-        PUTFIELD(className, initializedField, RInt32())
+          GetBoolField(className, initializedField) ~
+          (RUNIFTRUE {
+            THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
+              GetObjectField(className, expressionField) ~
+              compileClosureApplication(valueType) ~
+              THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
+              MAGICSWAP ~
+              PUTFIELD(className, valueField, valueType) ~
+              THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+              pushInt32(1) ~
+              PUTFIELD(className, initializedField, RInt32())
+          }) ~
+          THISLOAD ~
+          XGETFIELD(className, valueField, valueType)
       }) ~
-      THISLOAD ~
-      XGETFIELD(className, valueField, valueType)
-    }) ~
-    XRETURN(valueType)
+      XRETURN(valueType)
 
     //
     //      // [context, expression] now ready to call the expression closure.
@@ -210,9 +210,9 @@ object GenLazyClasses {
   }
 
   /**
-    * The constructor takes a expression object, which should be a function that takes
-    * no argument and returns something of type tpe, related to the type of the lazy class.
-    */
+   * The constructor takes a expression object, which should be a function that takes
+   * no argument and returns something of type tpe, related to the type of the lazy class.
+   */
   def compileLazyConstructor(classType: String)(implicit root: Root, flix: Flix): Unit = ()
 
   //  {

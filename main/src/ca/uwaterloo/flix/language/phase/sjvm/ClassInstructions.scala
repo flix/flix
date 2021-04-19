@@ -16,15 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.PRefType._
-import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.RRefType._
-import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
-import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.Opcodes
-
 object ClassInstructions {
 
 }

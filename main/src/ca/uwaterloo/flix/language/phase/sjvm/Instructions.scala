@@ -89,7 +89,8 @@ object Instructions {
     IFNE(label) ~
       f ~
       (f0 => {
-        f0.visitor.visitLabel(label); castF(f0)
+        f0.visitor.visitLabel(label);
+        castF(f0)
       })
   }
 

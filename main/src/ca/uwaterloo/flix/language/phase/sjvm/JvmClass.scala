@@ -17,27 +17,27 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 /**
-  * Represents a Java class (or interface).
-  *
-  * @param name     the name of the class (or interface).
-  * @param bytecode the bytecode of the class (or interface).
-  */
+ * Represents a Java class (or interface).
+ *
+ * @param name     the name of the class (or interface).
+ * @param bytecode the bytecode of the class (or interface).
+ */
 case class JvmClass(name: String, bytecode: Array[Byte]) {
   /**
-    * Returns the hashCode of `this` JvmClass.
-    */
+   * Returns the hashCode of `this` JvmClass.
+   */
   override def hashCode(): Int = name.hashCode()
 
   /**
-    * Returns `true` if `obj` is a JvmClass with the same JvmName.
-    */
+   * Returns `true` if `obj` is a JvmClass with the same JvmName.
+   */
   override def equals(obj: scala.Any): Boolean = obj match {
     case that: JvmClass => this.name == that.name
     case _ => false
   }
 
   /**
-    * Returns a string representation of `this` JvmClass.
-    */
+   * Returns a string representation of `this` JvmClass.
+   */
   override def toString: String = s"JvmClass($name, ${bytecode.length} bytes)"
 }
