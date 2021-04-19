@@ -19,17 +19,24 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
-import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
+import org.objectweb.asm.{ClassWriter, Opcodes}
 
 /**
   * Generates bytecode for the lazy classes.
   */
 object GenLazyClasses {
+
+  val initializedField: String = "initialized"
+  val initializedFieldType: RType[PInt32] = RBool()
+  val expressionField: String = "expression"
+  val valueField = "value"
+  val forceMethod = "force"
 
   /**
     * Returns the set of lazy classes for the given set of types `ts`.
@@ -75,16 +82,15 @@ object GenLazyClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, className, null, "java/lang/Object", null)
+    visitor.visit(AsmOps.JavaVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, className, null, objectName, null)
 
-    AsmOps.compileField(visitor, "initialized", getDescriptor(RBool()), isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, "expression", getDescriptor(RReference(null)), isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, "value", s"L$className;", isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, initializedField, getDescriptor(RBool()), isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, expressionField, getDescriptor(RReference(null)), isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, valueField, s"L$className;", isStatic = false, isPrivate = true)
     compileForceMethod(visitor, className, innerType)
 
     // Emit the code for the constructor
     compileLazyConstructor(className)
-
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -95,7 +101,7 @@ object GenLazyClasses {
 
     // Header of the method.
     val returnDescription = s"(LContext;)$erasedValueTypeDescriptor"
-    val method = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, "force", returnDescription, null, null)
+    val method = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, forceMethod, returnDescription, null, null)
     method.visitCode()
     val t = compileForceMethod(className, innerType)
     t(F(method))
@@ -103,48 +109,6 @@ object GenLazyClasses {
     method.visitMaxs(1, 1)
     method.visitEnd()
   }
-
-  /**
-    * !OBS!: This code was copied from AsmOps to omit the last cast in the function.
-    *
-    * Emits code to call a closure (not in tail position). fType is the type of the called
-    * closure. argsType is the type of its arguments, and resultType is the type of its result.
-    */
-  private def compileClosureApplication[T <: PType](visitor: MethodVisitor, valueType: RType[T])(implicit root: Root, flix: Flix) = ()
-
-  //  {
-  //    val fType = MonoType.Arrow(List(MonoType.Unit), valueType)
-  //    // Type of the continuation interface
-  //    val cont = JvmOps.getContinuationInterfaceType(fType)
-  //    // Label for the loop
-  //    val loop = new Label
-  //    visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-  //    // Begin of the loop
-  //    visitor.visitLabel(loop)
-  //    // Getting `continuation` field on `Context`
-  //    visitor.visitVarInsn(ALOAD, 1)
-  //    visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-  //    // Setting `continuation` field of global to `null`
-  //    visitor.visitVarInsn(ALOAD, 1)
-  //    visitor.visitInsn(ACONST_NULL)
-  //    visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-  //    // Cast to the continuation
-  //    visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-  //    // Duplicate
-  //    visitor.visitInsn(DUP)
-  //    // Save it on the IFO local variable
-  //    visitor.visitVarInsn(ASTORE, 2)
-  //    // Call invoke
-  //    visitor.visitVarInsn(ALOAD, 1)
-  //    visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-  //    // Getting `continuation` field on `Context`
-  //    visitor.visitVarInsn(ALOAD, 1)
-  //    visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-  //    visitor.visitJumpInsn(IFNONNULL, loop)
-  //    // Load IFO from local variable and invoke `getResult` on it
-  //    visitor.visitVarInsn(ALOAD, 2)
-  //    visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(valueType)), true)
-  //  }
 
   /**
     * The force method takes a context as argument to call the expression closure in.
@@ -172,25 +136,40 @@ object GenLazyClasses {
 
     // [this] This is pushed to lock the object.
     //      f.visitor.visitVarInsn(ALOAD, 0)
-
     //      // [] The object is now locked.
     //      method.visitInsn(MONITORENTER)
-
     //      // [this] this is pushed to retrieve initialized to check if the Lazy object has already been evaluated.
     //      method.visitVarInsn(ALOAD, 0)
-
     //      // [this.initialized] the condition can now be checked.
     //      method.visitFieldInsn(GETFIELD, internalClassType, "initialized", JvmType.PrimBool.toDescriptor)
-
-    //
     //      // [] If expression has been evaluated, skip to returning this.value.
     //      val skip = new Label
     //      method.visitJumpInsn(IFNE, skip)
-    //
     //      // [context] Load the context to give as an argument to the expression closure.
     //      method.visitVarInsn(ALOAD, 1)
     //      // [context, this] push this to get the expression.
     //      method.visitVarInsn(ALOAD, 0)
+    THISLOAD[StackNil, PLazy[T]] ~
+    (WITHMONITOR {
+      THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+      GetBoolField(className, initializedField) ~
+      (RUNIFTRUE {
+        THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
+        GetObjectField(className, expressionField) ~
+        compileClosureApplication(valueType) ~
+        THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
+        MAGICSWAP ~
+        PUTFIELD(className, valueField, valueType) ~
+        THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+        pushInt32(1) ~
+        PUTFIELD(className, initializedField, RInt32())
+      }) ~
+      THISLOAD ~
+      XGETFIELD(className, valueField, valueType)
+    }) ~
+    XRETURN(valueType)
+
+    //
     //      // [context, expression] now ready to call the expression closure.
     //      method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
     //      // [value] The result of expression remains on the stack.
@@ -228,7 +207,6 @@ object GenLazyClasses {
     //
     //      // [] Return the value of appropriate type.
     //      method.visitInsn(AsmOps.getReturnInstruction(erasedValueType))
-    f => f.asInstanceOf[F[StackEnd]]
   }
 
   /**

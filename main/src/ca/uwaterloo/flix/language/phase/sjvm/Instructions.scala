@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.Opcodes
+import org.objectweb.asm.{Label, Opcodes}
 
 object Instructions {
 
@@ -48,6 +48,59 @@ object Instructions {
 
   def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = ???
 
+  def compileClosureApplication
+  [R <: Stack, T1 <: PRefType, T2 <: PType]
+  (resultType: RType[T2]):
+  F[R ** PReference[PAnyObject]] => F[R ** T2] =
+    ???
+
+  def WITHMONITOR
+  [R <: Stack, S <: PRefType, T <: PType]
+  (f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
+  F[R ** PReference[S]] => F[R ** T] = {
+    //todo why is NOP/the type needed here?
+    NOP ~[R ** PReference[S] ** PReference[S]]
+      DUP ~
+      MONITORENTER ~
+      f ~
+      MAGICSWAP ~
+      MONITOREXIT
+  }
+
+  private def MONITORENTER
+  [R <: Stack, S <: PRefType]:
+  F[R ** PReference[S]] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.MONITORENTER)
+    castF(f)
+  }
+
+  private def MONITOREXIT
+  [R <: Stack, S <: PRefType]:
+  F[R ** PReference[S]] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.MONITOREXIT)
+    castF(f)
+  }
+
+  def RUNIFTRUE
+  [R <: Stack]
+  (f: F[R] => F[R]):
+  F[R ** PInt32] => F[R] = {
+    val label = new Label
+    IFNE(label) ~
+      f ~
+      (f0 => {
+        f0.visitor.visitLabel(label); castF(f0)
+      })
+  }
+
+  private def IFNE
+  [R <: Stack]
+  (label: Label):
+  F[R ** PInt32] => F[R] = f => {
+    f.visitor.visitJumpInsn(Opcodes.IFNE, label)
+    castF(f)
+  }
+
   // NATIVE
   def SWAP
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
@@ -57,11 +110,18 @@ object Instructions {
       castF(f)
   }
 
+  // NATIVE
+  def MAGICSWAP
+  [R <: Stack, T1 <: PType, T2 <: PType]:
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] =
+    ???
+
   // META
   def NOP
   [R <: Stack]:
   F[R] => F[R] =
     x => x
+
 
   // NATIVE
   def XGETFIELD
@@ -69,23 +129,104 @@ object Instructions {
   (className: String, fieldName: String, fieldType: RType[T1]):
   F[R ** PReference[T2]] => F[R ** T1] =
     fieldType match {
-      case RBool() => ???
-      case RInt8() => ???
-      case RInt16() => ???
-      case RInt32() => ???
-      case RInt64() => ???
-      case RChar() => ???
-      case RFloat32() => ???
-      case RFloat64() => ???
-      case RReference(referenceType) => ???
+      case RBool() => GetBoolField(className, fieldName)
+      case RInt8() => GetInt8Field(className, fieldName)
+      case RInt16() => GetInt16Field(className, fieldName)
+      case RInt32() => GetInt32Field(className, fieldName)
+      case RInt64() => GetInt64Field(className, fieldName)
+      case RChar() => GetCharField(className, fieldName)
+      case RFloat32() => GetFloat32Field(className, fieldName)
+      case RFloat64() => GetFloat64Field(className, fieldName)
+      case RReference(referenceType) => GetClassField(className, fieldName, referenceType)
     }
+
+  // NATIVE
+  def GetBoolField
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PInt32] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, boolDescriptor)
+    castF(f)
+  }
+
+  // NATIVE
+  def GetInt8Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PInt8] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, int8Descriptor)
+    castF(f)
+  }
+
+  // NATIVE
+  def GetInt16Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PInt16] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, int16Descriptor)
+    castF(f)
+  }
 
   // NATIVE
   def GetInt32Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String, fieldType: RType[T1]):
-  F[R ** PReference[T2]] => F[R ** PInt32] =
-    ???
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PInt32] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, int32Descriptor)
+    castF(f)
+  }
+
+  // NATIVE
+  def GetInt64Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PInt64] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, int64Descriptor)
+    castF(f)
+  }
+
+  // NATIVE
+  def GetCharField
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PChar] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, charDescriptor)
+    castF(f)
+  }
+
+  // NATIVE
+  def GetFloat32Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PFloat32] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, float32Descriptor)
+    castF(f)
+  }
+
+  // NATIVE
+  def GetFloat64Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PFloat64] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, float64Descriptor)
+    castF(f)
+  }
+
+  def GetClassField
+  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
+  (className: String, fieldName: String, referenceType: RRefType[T1]):
+  F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, referenceType.toInternalName)
+    castF(f)
+  }
+
+  def GetObjectField
+  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
+  (className: String, fieldName: String):
+  F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, objectDescriptor)
+    castF(f)
+  }
 
   // NATIVE
   def PUTFIELD
@@ -130,6 +271,13 @@ object Instructions {
   // TODO: What should happen here
   // NATIVE
   def RETURN[R <: Stack]: F[R] => F[StackEnd] = ???
+
+  // NATIVE
+  def XRETURN
+  [R <: Stack, T <: PType]
+  (e: RType[T]):
+  F[R] => F[StackEnd] =
+    ???
 
   // NATIVE
   def POP
@@ -298,7 +446,6 @@ object Instructions {
   [R <: Stack, T <: PRefType]:
   F[R] => F[R ** PReference[T]] =
     ALOAD(0)
-
 
   // NATIVE
   def FLOAD
