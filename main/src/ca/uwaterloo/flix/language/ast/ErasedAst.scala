@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 
@@ -205,16 +205,6 @@ object ErasedAst {
 
     case class Force[T <: PType](exp: ErasedAst.Expression[PReference[PLazy[T]]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class FixpointConstraintSet(cs: List[ErasedAst.Constraint], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
-
-    case class FixpointCompose(exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
-
-    case class FixpointSolve(exp: ErasedAst.Expression[PReference[PAnyObject]], stf: Ast.Stratification, tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
-
-    case class FixpointProject(pred: Name.Pred, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
-
-    case class FixpointFold[T <: PType](pred: Name.Pred, init: ErasedAst.Expression.Var[PReference[PAnyObject]], f: ErasedAst.Expression.Var[PReference[PAnyObject]], constraints: ErasedAst.Expression.Var[PReference[PAnyObject]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
-
     case class HoleError[T <: PType](sym: Symbol.HoleSym, tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class MatchError[T <: PType](tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
@@ -223,89 +213,9 @@ object ErasedAst {
 
   case class SelectChannelRule[T <: PType](sym: Symbol.VarSym, chan: ErasedAst.Expression[PReference[PChan[PType]]], exp: ErasedAst.Expression[T])
 
-  sealed trait Predicate {
-    def loc: SourceLocation
-  }
-
-  object Predicate {
-
-    sealed trait Head extends ErasedAst.Predicate
-
-    object Head {
-
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[ErasedAst.Term.Head], tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Predicate.Head
-
-      case class Union(exp: ErasedAst.Expression[PReference[PAnyObject]], terms: List[ErasedAst.Term.Head], tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Predicate.Head
-
-    }
-
-    sealed trait Body extends ErasedAst.Predicate
-
-    object Body {
-
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[ErasedAst.Term.Body], tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Predicate.Body
-
-      case class Guard(exp: ErasedAst.Expression[PInt32], terms: List[ErasedAst.Term.Body], loc: SourceLocation) extends ErasedAst.Predicate.Body
-
-    }
-
-  }
-
-  object Term {
-
-    sealed trait Head {
-      def tpe: RType[PType]
-    }
-
-    object Head {
-
-      case class QuantVar(sym: Symbol.VarSym, tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Term.Head
-
-      case class CapturedVar(sym: Symbol.VarSym, tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Term.Head
-
-      case class Lit(sym: Symbol.DefnSym, tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Term.Head
-
-      case class App(exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[Symbol.VarSym], tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Term.Head
-
-    }
-
-    sealed trait Body {
-      def tpe: RType[PType]
-    }
-
-    object Body {
-
-      case class Wild(tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Term.Body
-
-      case class QuantVar(sym: Symbol.VarSym, tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Term.Body
-
-      case class CapturedVar(sym: Symbol.VarSym, tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Term.Body
-
-      case class Lit(sym: Symbol.DefnSym, tpe: RType[PType], loc: SourceLocation) extends ErasedAst.Term.Body
-
-    }
-
-  }
-
-  case class Attribute(name: String, tpe: RType[PType])
-
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: RType[PType], loc: SourceLocation)
 
   case class CatchRule[T <: PType](sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression[T])
-
-  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
-
-  sealed trait ConstraintParam {
-    def sym: Symbol.VarSym
-  }
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: RType[PType], loc: SourceLocation) extends ErasedAst.ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: RType[PType], loc: SourceLocation) extends ErasedAst.ConstraintParam
-
-  }
 
   case class FormalParam(sym: Symbol.VarSym, tpe: RType[PType])
 
