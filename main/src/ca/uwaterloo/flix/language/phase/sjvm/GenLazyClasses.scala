@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{PType, RType}
+import ca.uwaterloo.flix.language.ast.{Cat1, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.{ClassWriter, Opcodes}
@@ -90,7 +90,7 @@ object GenLazyClasses {
     compileForceMethod(visitor, className, innerType)
 
     // Emit the code for the constructor
-    compileLazyConstructor(className)
+    compileLazyConstructor(className, innerType)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -119,7 +119,7 @@ object GenLazyClasses {
    * If lazy has associated type of Obj, the returned object needs to be casted
    * to whatever expected type.
    */
-  private def compileForceMethod[T <: PType](className: String, valueType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+  private def compileForceMethod[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     force(context) :=
 
@@ -150,24 +150,24 @@ object GenLazyClasses {
     //      // [context, this] push this to get the expression.
     //      method.visitVarInsn(ALOAD, 0)
     THISLOAD[StackNil, PLazy[T]] ~
-      (WITHMONITOR {
+    (WITHMONITOR (innerType) {
+      THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+      GetBoolField(className, initializedField) ~
+      (RUNIFTRUE {
+        THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
+        GetObjectField(className, expressionField) ~
+        compileClosureApplication(innerType) ~
+        THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
+        XSWAP(RReference(null), innerType) ~
+        PUTFIELD(className, valueField, innerType) ~
         THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
-          GetBoolField(className, initializedField) ~
-          (RUNIFTRUE {
-            THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
-              GetObjectField(className, expressionField) ~
-              compileClosureApplication(valueType) ~
-              THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
-              MAGICSWAP ~
-              PUTFIELD(className, valueField, valueType) ~
-              THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
-              pushInt32(1) ~
-              PUTFIELD(className, initializedField, RInt32())
-          }) ~
-          THISLOAD ~
-          XGETFIELD(className, valueField, valueType)
+        pushInt32(1) ~
+        PUTFIELD(className, initializedField, RInt32())
       }) ~
-      XRETURN(valueType)
+      THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+      XGETFIELD(className, valueField, innerType)
+    }) ~
+    XRETURN(innerType)
 
     //
     //      // [context, expression] now ready to call the expression closure.
@@ -209,47 +209,56 @@ object GenLazyClasses {
     //      method.visitInsn(AsmOps.getReturnInstruction(erasedValueType))
   }
 
+  def compileLazyConstructor[T <: PType](visitor: ClassWriter, className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Unit = {
+    val constructor = visitor.visitMethod(Opcodes.ACC_PUBLIC, constructorMethod, s"($objectDescriptor)V", null, null)
+    constructor.visitCode()
+    val c = compileLazyConstructor(className, innerType)
+    c(F(constructor))
+    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
+    constructor.visitMaxs(65535, 65535)
+    constructor.visitEnd()
+  }
+
   /**
    * The constructor takes a expression object, which should be a function that takes
    * no argument and returns something of type tpe, related to the type of the lazy class.
    */
-  def compileLazyConstructor(classType: String)(implicit root: Root, flix: Flix): Unit = ()
+  def compileLazyConstructor[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+    /*
+    Lazy$tpe(expression) :=
 
-  //  {
-  //    /*
-  //    Lazy$tpe(expression) :=
-  //
-  //    this.initialized = false
-  //    this.expression = expression.
-  //     */
-  //    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), null, null)
-  //
-  //    constructor.visitCode()
-  //    // [this] push this to call the object constructor.
-  //    constructor.visitVarInsn(ALOAD, 0)
-  //
-  //    // [] Call the super (java.lang.Object) constructor
-  //    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-  //
-  //    // [this] this is pushed to assign initialized to false.
-  //    constructor.visitVarInsn(ALOAD, 0)
-  //    // [this, false] now ready to put field.
-  //    constructor.visitInsn(ICONST_0)
-  //    // [] initialized = false.
-  //    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "initialized", JvmType.PrimBool.toDescriptor)
-  //
-  //    // [this] save the argument to expression.
-  //    constructor.visitVarInsn(ALOAD, 0)
-  //    // [this, expression] now ready to put field.
-  //    constructor.visitVarInsn(ALOAD, 1)
-  //    // [] expression has the value of the argument.
-  //    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "expression", JvmType.Object.toDescriptor)
-  //
-  //    // [] Return nothing.
-  //    constructor.visitInsn(RETURN)
-  //
-  //    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-  //    constructor.visitMaxs(65535, 65535)
-  //    constructor.visitEnd()
-  //  }
+    this.initialized = false
+    this.expression = expression.
+     */
+
+    // [this] push this to call the object constructor.
+    //constructor.visitVarInsn(ALOAD, 0)
+
+    //    // [] Call the super (java.lang.Object) constructor
+    //    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    THISLOAD[StackNil, PLazy[T]] ~
+      Instructions.INVOKESPECIAL(objectName, nothingToVoid) ~
+      THISLOAD[StackNil, PLazy[T]] ~
+      SCAFFOLD
+
+    //    // [this] this is pushed to assign initialized to false.
+    //    constructor.visitVarInsn(ALOAD, 0)
+    //    // [this, false] now ready to put field.
+    //    constructor.visitInsn(ICONST_0)
+    //    // [] initialized = false.
+    //    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "initialized", JvmType.PrimBool.toDescriptor)
+    //
+    //    // [this] save the argument to expression.
+    //    constructor.visitVarInsn(ALOAD, 0)
+    //    // [this, expression] now ready to put field.
+    //    constructor.visitVarInsn(ALOAD, 1)
+    //    // [] expression has the value of the argument.
+    //    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "expression", JvmType.Object.toDescriptor)
+    //
+    //    // [] Return nothing.
+    //    constructor.visitInsn(RETURN)
+    //
+
+    //  }
+  }
 }

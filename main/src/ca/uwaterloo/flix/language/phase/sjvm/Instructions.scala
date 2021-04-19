@@ -56,14 +56,14 @@ object Instructions {
 
   def WITHMONITOR
   [R <: Stack, S <: PRefType, T <: PType]
-  (f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
+  (e: RType[T])(f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
   F[R ** PReference[S]] => F[R ** T] = {
     //todo why is NOP/the type needed here?
     NOP ~[R ** PReference[S] ** PReference[S]]
       DUP ~
       MONITORENTER ~
       f ~
-      MAGICSWAP ~
+      XSWAP(e, RType.RReference(null)) ~
       MONITOREXIT
   }
 
@@ -111,11 +111,39 @@ object Instructions {
       castF(f)
   }
 
-  // NATIVE
-  def MAGICSWAP
-  [R <: Stack, T1 <: PType, T2 <: PType]:
+  def SWAP_cat1_onCat2
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
     ???
+
+  def SWAP_cat2_onCat1
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] =
+    ???
+
+  def SWAP_cat2_onCat2
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] =
+    ???
+
+  // NATIVE
+  def XSWAP
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (t1: RType[T1], t2: RType[T2]):
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] = (t1, t2) match {
+    case (RInt64(), RInt64()) => ??? //SWAP_cat2_onCat2
+    case (RInt64(), RFloat64()) => ??? //SWAP_cat2_onCat2
+    case (RFloat64(), RInt64()) => ??? //SWAP_cat2_onCat2
+    case (RFloat64(), RFloat64()) => ??? //SWAP_cat2_onCat2
+
+    case (RInt64(), _) => ??? //SWAP_cat2_onCat1
+    case (RFloat64(), _) => ??? //SWAP_cat2_onCat1
+
+    case (_, RInt64()) => ??? //SWAP_cat1_onCat2
+    case (_, RFloat64()) => ??? //SWAP_cat1_onCat2
+
+    case _ => ??? //SWAP
+  }
 
   // META
   def NOP
@@ -259,7 +287,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (className: String, constructorDescriptor: String):
   F[R ** PReference[T]] => F[R] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, "<init>", constructorDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, constructorMethod, constructorDescriptor, false)
     castF(f)
   }
 

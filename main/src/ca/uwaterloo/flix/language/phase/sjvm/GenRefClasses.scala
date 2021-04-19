@@ -57,9 +57,9 @@ object GenRefClasses {
     val innerTypeString = Instructions.getDescriptor(innerType)
     AsmOps.compileField(visitor, fieldName, innerTypeString, isStatic = false, isPrivate = false)
 
-    val constructorDescriptor = Instructions.getDescriptor(innerTypeString, "V")
+    val constructorDescriptor = Instructions.getDescriptor(innerTypeString, voidDescriptor)
     // Generate the constructor
-    val initMethod = visitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", constructorDescriptor, null, null)
+    val initMethod = visitor.visitMethod(Opcodes.ACC_PUBLIC, constructorMethod, constructorDescriptor, null, null)
     initMethod.visitCode()
     genConstructor(innerType)(F(initMethod))
     initMethod.visitMaxs(2, 2)
@@ -75,7 +75,7 @@ object GenRefClasses {
    */
   def genConstructor[T <: PType](eType: RType[T]): F[StackNil] => F[StackEnd] = {
     THISLOAD[StackNil, PRef[T]] ~
-      INVOKESPECIAL(objectName, "()V)") ~
+      INVOKESPECIAL(objectName, nothingToVoid) ~
       RETURN
   }
 }

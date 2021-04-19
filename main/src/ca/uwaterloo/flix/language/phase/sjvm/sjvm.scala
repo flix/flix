@@ -2,6 +2,10 @@ package ca.uwaterloo.flix.language.phase
 
 package object sjvm {
 
+  val nothingToVoid = "()V"
+  val voidDescriptor = "V"
+
+  val constructorMethod = "<init>"
 
   val boolName = "Z"
   val boolDescriptor = "Z"
