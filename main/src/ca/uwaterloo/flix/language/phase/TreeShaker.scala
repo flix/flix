@@ -80,20 +80,6 @@ object TreeShaker extends Phase[Root, Root] {
       }
     }
 
-    //
-    // (c) A function that appears as a lattice operator.
-    //
-    for (LatticeOps(_, bot, equ, leq, lub, glb) <- root.latticeOps.values) {
-      reachable = reachable + bot + equ + leq + lub + glb
-    }
-
-    //
-    // (d) A function that appears as a special operator.
-    //
-    for (syms <- root.specialOps.values) {
-      reachable = reachable ++ syms.values
-    }
-
     reachable
   }
 
@@ -297,25 +283,6 @@ object TreeShaker extends Phase[Root, Root] {
     case Expression.Force(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointConstraintSet(cs0, _, _) =>
-      cs0.foldLeft(Set.empty[Symbol.DefnSym]) {
-        case (fvs, c) => fvs ++ visitConstraint(c)
-      }
-    case Expression.FixpointCompose(exp1, exp2, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.FixpointSolve(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointProject(_, exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointEntails(exp1, exp2, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
     case Expression.HoleError(_, _, _) =>
       Set.empty
 
@@ -327,52 +294,5 @@ object TreeShaker extends Phase[Root, Root] {
     * Returns the function symbols reachable from `es`.
     */
   private def visitExps(es: List[Expression]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
-
-  /**
-    * Returns the function symbols reachable from the given constraint `c0`.
-    */
-  private def visitConstraint(c0: Constraint): Set[Symbol.DefnSym] = {
-    val headSymbols = c0.head match {
-      case Predicate.Head.Atom(_, _, terms, tpe, loc) =>
-        terms.map(visitHeadTerm).fold(Set.empty)(_ ++ _)
-
-      case Predicate.Head.Union(exp, _, _) =>
-        visitExp(exp)
-    }
-
-    val bodySymbols = c0.body.map {
-      case Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) =>
-        terms.map(visitBodyTerm).fold(Set.empty)(_ ++ _)
-
-      case Predicate.Body.Guard(exp, loc) =>
-        visitExp(exp)
-    }.fold(Set())(_ ++ _)
-
-    headSymbols ++ bodySymbols
-  }
-
-  /**
-    * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `head`.
-    */
-  private def visitHeadTerm(h0: Term.Head): Set[Symbol.DefnSym] = {
-    h0 match {
-      case Term.Head.QuantVar(sym, tpe, loc) => Set.empty
-      case Term.Head.CapturedVar(sym, tpe, loc) => Set.empty
-      case Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-      case Term.Head.App(exp, args, tpe, loc) => visitExp(exp)
-    }
-  }
-
-  /**
-    * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `body`.
-    */
-  private def visitBodyTerm(b0: Term.Body): Set[Symbol.DefnSym] = {
-    b0 match {
-      case Term.Body.Wild(tpe, loc) => Set.empty
-      case Term.Body.QuantVar(sym, tpe, loc) => Set.empty
-      case Term.Body.CapturedVar(sym, tpe, loc) => Set.empty
-      case Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
-    }
-  }
 
 }

@@ -22,6 +22,19 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
+instance Boxable[Nel[a]] with Order[a], ToString[a] {
+    pub def box(x: Nel[a]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Nel[a], o2 as Nel[a]);
+        let toString = o -> ToString.toString(o as Nel[a]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Nel[a] = match x {
+        case BoxedObject(v, _, _) => v as Nel[a]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = match l {
         case Nel(x, xs) => "Nel(${x}, ${xs})"
@@ -37,6 +50,17 @@ instance Hash[Nel[a]] with Hash[a] {
 instance Eq[Nel[a]] with Eq[a] {
     pub def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
         case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
+    }
+}
+
+instance Order[Nel[a]] with Order[a] {
+    ///
+    /// Compares `xs` and `ys` lexicographically.
+    ///
+    pub def compare(xs: Nel[a], ys: Nel[a]): Comparison = match (xs, ys) {
+        case (Nel(x, l1), Nel(y, l2)) =>
+            let cmp = x <=> y;
+            if (cmp == EqualTo) l1 <=> l2 else cmp
     }
 }
 

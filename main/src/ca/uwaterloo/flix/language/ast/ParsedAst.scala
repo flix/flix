@@ -960,44 +960,26 @@ object ParsedAst {
     case class FixpointCompose(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Solve expression.
+      * Fixpoint Solve-Project expression.
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the constraint expression.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1    the position of the first character in the expression.
+      * @param exps   the non-empty sequence of expressions to merge and solve.
+      * @param idents the (optional) non-empty sequence of predicates to project and merge out of the solution.
+      * @param sp2    the position of the last character in the expression.
       */
-    case class FixpointSolve(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointSolveWithProject(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], idents: Option[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Project expression.
+      * Fixpoint Query expression.
       *
-      * @param sp1   the position of the first character in the expression.
-      * @param ident the name of the predicate.
-      * @param exp   the constraint expression.
-      * @param sp2   the position of the last character in the expression.
+      * @param sp1      the position of the first character in the expression.
+      * @param exps     the non-empty sequence of expressions to merge and solve.
+      * @param selects  the expressions of the selected tuple. (the head of the pseudo-rule).
+      * @param from     the predicates to select from (the body of the pseudo-rule).
+      * @param whereExp the optional guard of the pseudo-rule.
+      * @param sp2      the position of the last character in the expression.
       */
-    case class FixpointProject(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Fixpoint Entails expression.
-      *
-      * @param exp1 the lhs expression.
-      * @param exp2 the rhs expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Fixpoint Fold expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param ident the name of the predicate.
-      * @param exp1  the initial value.
-      * @param exp2  the function to fold.
-      * @param exp3  the constraints over which to fold.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class FixpointFold(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1451,10 +1433,10 @@ object ParsedAst {
   /**
     * A single type parameter, with optional kind and constraint.
     *
-    * @param sp1     the position of the first character in the type parameter.
-    * @param ident   the type variable being bound
-    * @param kind    the optional kind of the type variable.
-    * @param sp2     the position of the last character in the type parameter.
+    * @param sp1   the position of the first character in the type parameter.
+    * @param ident the type variable being bound
+    * @param kind  the optional kind of the type variable.
+    * @param sp2   the position of the last character in the type parameter.
     */
   case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], sp2: SourcePosition)
 

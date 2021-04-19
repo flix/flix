@@ -26,9 +26,7 @@ object ErasedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
                   enums: Map[Symbol.EnumSym, ErasedAst.Enum],
-                  latticeOps: Map[RType[PType], ErasedAst.LatticeOps],
                   properties: List[ErasedAst.Property],
-                  specialOps: Map[SpecialOperator, Map[RType[PType], Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -214,8 +212,6 @@ object ErasedAst {
     case class FixpointSolve(exp: ErasedAst.Expression[PReference[PAnyObject]], stf: Ast.Stratification, tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
     case class FixpointProject(pred: Name.Pred, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
-
-    case class FixpointEntails(exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32]
 
     case class FixpointFold[T <: PType](pred: Name.Pred, init: ErasedAst.Expression.Var[PReference[PAnyObject]], f: ErasedAst.Expression.Var[PReference[PAnyObject]], constraints: ErasedAst.Expression.Var[PReference[PAnyObject]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 

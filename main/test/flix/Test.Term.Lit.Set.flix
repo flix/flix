@@ -1,38 +1,43 @@
 namespace Test/Term/Lit/Set {
 
     @test
-    def test01(): #{ R(Set[Int]) } =
-        let x = R(Set#{}).;
-        solve x
+    def testLitSet01(): Bool & Impure =
+        let p = #{
+            A(Set#{}: Set[Int32]).
+            B(Set#{}: Set[Int32]).
+            R(x) :- A(x), B(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf(Set#{}, r)
 
     @test
-    def test02(): #{ R(Set[Int]) } =
-        let x = R(Set#{42}).;
-        solve x
+    def testLitSet02(): Bool & Impure =
+        let p = #{
+            A(Set#{1}).
+            B(Set#{1}).
+            R(x) :- A(x), B(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf(Set#{1}, r)
 
     @test
-    def test03(): #{ R(Set[Int]) } =
-        let x = R(Set#{1, 2, 3}).;
-        solve x
+    def testLitSet03(): Bool & Impure =
+        let p = #{
+            A(Set#{1, 2}).
+            B(Set#{2, 1}).
+            R(x) :- A(x), B(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf(Set#{1, 2}, r)
 
     @test
-    def test04(): #{ R(Set[Int]) } =
-        let x = R(Set#{1}).;
-        let y = R(Set#{2}).;
-        solve x <+> y
-
-    @test
-    def test05(): #{ R(Set[Int]) } =
-        let x = R(Set#{1}).;
-        let y = R(Set#{2}).;
-        let z = R(Set#{3}).;
-        solve x <+> y <+> z
-
-    @test
-    def test06(): #{ R(Set[Int]) } =
-        let x = R(Set#{1, 2, 3}).;
-        let y = R(Set#{4, 5, 6}).;
-        let z = R(Set#{1, 2, 3}).;
-        solve x <+> y <+> z
+    def testLitSet04(): Bool & Impure =
+        let p = #{
+            A(Set#{1, 2, 3}).
+            B(Set#{3, 2, 1}).
+            R(x) :- A(x), B(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf(Set#{1, 2, 3}, r)
 
 }

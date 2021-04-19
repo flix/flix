@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.{FlixTest, Options}
+import ca.uwaterloo.flix.util.{FlixTest, Ignore, Options}
 import org.scalatest.Suites
 
 class TestTutorials extends Suites(

@@ -530,11 +530,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Entails ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Entails ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def Entails: Rule1[ParsedAst.Expression] = rule {
-      Compose ~ optional(optWS ~ atomic("|=") ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.FixpointEntails)
+      Compose ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Compose: Rule1[ParsedAst.Expression] = rule {
@@ -641,8 +637,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
-        FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
+        FNil | FSet | FMap | ConstraintSet | FixpointSolveWithProject | FixpointQueryWithSelect |
+        Constraint | Interpolation | Literal | Existential | Universal |
         UnaryLambda | FName | Tag | Hole
     }
 
@@ -994,16 +990,50 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Declarations.Constraint) ~ optWS ~ atomic("}") ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
     }
 
-    def FixpointSolve: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("solve") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointSolve
+    def FixpointSolveWithProject: Rule1[ParsedAst.Expression] = {
+      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
+        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      def ProjectPart: Rule1[Option[Seq[Name.Ident]]] = rule {
+        optional(WS ~ keyword("project") ~ WS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS))
+      }
+
+      rule {
+        SP ~ keyword("solve") ~ WS ~ ExpressionPart ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointSolveWithProject
+      }
     }
 
-    def FixpointProject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("project") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
-    }
+    def FixpointQueryWithSelect: Rule1[ParsedAst.Expression] = {
+      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
+        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+      }
 
-    def FixpointFold: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("fold") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
+      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = {
+        def SelectOne: Rule1[Seq[ParsedAst.Expression]] = rule {
+          Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+        }
+
+        def SelectMany: Rule1[Seq[ParsedAst.Expression]] = rule {
+          "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+        }
+
+        rule {
+          WS ~ keyword("select") ~ WS ~ (SelectMany | SelectOne)
+        }
+      }
+
+      def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = rule {
+        WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Positive | Predicates.Body.Negative).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      def WherePart: Rule1[Option[ParsedAst.Expression]] = rule {
+        optional(WS ~ keyword("where") ~ WS ~ Expression)
+      }
+
+      rule {
+        SP ~ keyword("query") ~ WS ~ ExpressionPart ~ SelectPart ~ FromPart ~ WherePart ~ SP ~> ParsedAst.Expression.FixpointQueryWithSelect
+      }
     }
 
     // TODO: We should only allow one variant of these.

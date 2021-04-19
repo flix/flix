@@ -319,11 +319,9 @@ object Indexer {
     case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expression.FixpointFacts(_, exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
   }
 
   /**
