@@ -27,14 +27,6 @@ instance Eq[Dist] {
     }
 }
 
-instance Hash[Dist] {
-    pub def hash(x: Dist): Int32 = match x {
-        case Top    => 0
-        case Bot    => 1
-        case Dst(n) => n + 2
-    }
-}
-
 instance PartialOrder[Dist] {
     pub def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
         case (_, Top) => true
@@ -70,14 +62,29 @@ instance ToString[Dist] {
     }
 }
 
-// Copy input relation into the ShortestDist lattice
-ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).
+instance Boxable[Dist] {
+    pub def box(x: Dist): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Dist, o2 as Dist);
+        let toString = o -> ToString.toString(o as Dist);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Dist = match x {
+        case BoxedObject(v, _, _) => v as Dist
+        case _                    => ?bug
+    }
+}
 
-// If a->b->c, try using that to get a->c
-ShortestDist(a, c; sum(d1, d2)) :- ShortestDist(a, b; d1), ShortestDist(b, c; d2).
-
-// If you can get from a->a with negative distance, then it is part of a negative cycle
-ShortestDist(a, a; Top) :- ShortestDist(a, a; d), negativeDist(d).
+instance Order[Dist] {
+    pub def compare(x: Dist, y: Dist): Comparison = match (x, y) {
+        case (Bot, Bot)         => EqualTo
+        case (Dst(n1), Dst(n2)) => n1 <=> n2
+        case (Top, Top)         => EqualTo
+        case (Bot, _)           => LessThan
+        case (Dst(_), _)        => LessThan
+        case _                  => GreaterThan
+    }
+}
 
 ///
 /// Transfer function.
@@ -100,20 +107,35 @@ def negativeDist(d: Dist): Bool = match d {
   case _ => false
 }
 
-// Example input data
-Edge("a", "b", 1).
-Edge("b", "c", 2).
-Edge("c", "a", 3).
-Edge("c", "d", 4).
-Edge("d", "e", 7).
-Edge("d", "f", 11).
-Edge("f", "e", 23).
+def main(_: Array[String]): Int32 & Impure =
+    let p = #{
+        // Copy input relation into the ShortestDist lattice
+        ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).
 
-// Negative cycle
-Edge("1", "2", -3).
-Edge("2", "3", 1).
-Edge("3", "1", 1).
-Edge("3", "4", 30).
+        // If a->b->c, try using that to get a->c
+        ShortestDist(a, c; sum(d1, d2)) :- ShortestDist(a, b; d1), ShortestDist(b, c; d2).
+
+        // If you can get from a->a with negative distance, then it is part of a negative cycle
+        ShortestDist(a, a; Top) :- ShortestDist(a, a; d), negativeDist(d).
+
+        // Example input data
+        Edge("a", "b", 1).
+        Edge("b", "c", 2).
+        Edge("c", "a", 3).
+        Edge("c", "d", 4).
+        Edge("d", "e", 7).
+        Edge("d", "f", 11).
+        Edge("f", "e", 23).
+
+        // Negative cycle
+        Edge("1", "2", -3).
+        Edge("2", "3", 1).
+        Edge("3", "1", 1).
+        Edge("3", "4", 30).
+    };
+    let m = solve p;
+    (m |> Fixpoint.unsafePrint) as & Impure;
+    0
 
 // Expected output
 // ShortestDist

@@ -1355,35 +1355,98 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointCompose(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
-      visitExp(exp) map {
-        case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
+    case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      mapN(traverse(exps)(visitExp)) {
+        case es =>
+          //
+          // Performs the following rewrite:
+          //
+          // solve e1, e2, e3 project P1, P2, P3
+          //
+          // =>
+          //
+          // let $tmp = solve (merge e1, 2, e3);
+          // merge (project P1 $tmp, project P2 $tmp, project P3 $tmp)
+
+          // Introduce a $tmp variable that holds the minimal model of the merge of the exps.
+          val freshVar = flix.genSym.freshId()
+          val localVar = Name.Ident(sp1, s"tmp$freshVar", sp2)
+
+          // Merge all the exps into one Datalog program value.
+          val mergeExp = es.reduceRight[WeededAst.Expression] {
+            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+          }
+          val modelExp = WeededAst.Expression.FixpointSolve(mergeExp, loc)
+
+          // Any projections?
+          val bodyExp = optIdents match {
+            case None =>
+              // Case 1: No projections: Simply return the minimal model.
+              WeededAst.Expression.VarOrDefOrSig(localVar, loc)
+            case Some(idents) =>
+              // Case 2: A non-empty sequence of predicate symbols to project.
+
+              // Construct a list of each projection.
+              val projectExps = idents.map {
+                case ident =>
+                  val varExp = WeededAst.Expression.VarOrDefOrSig(localVar, loc)
+                  WeededAst.Expression.FixpointProject(Name.Pred(ident.name, loc), varExp, loc)
+              }
+
+              // Merge all of the projections into one result.
+              projectExps.reduceRight[WeededAst.Expression] {
+                case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+              }
+          }
+
+          // Bind the $tmp variable to the minimal model and combine it with the body expression.
+          WeededAst.Expression.Let(localVar, modelExp, bodyExp, loc)
       }
 
-    case ParsedAst.Expression.FixpointProject(sp1, ident, exp, sp2) =>
+    case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      mapN(visitExp(exp)) {
-        case e =>
-          WeededAst.Expression.FixpointProject(Name.mkPred(ident), e, mkSL(sp1, sp2))
+      mapN(traverse(exps0)(visitExp), traverse(selects0)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
+        case (exps, selects, from, where) =>
+          //
+          // Performs the following rewrite:
+          //
+          // query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
+          //
+          // =>
+          //
+          // facts $Result (solve (merge (merge e1, 2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+
+          // The fresh predicate name where to store the result of the query.
+          val pred = Name.Pred("$Result", loc)
+
+          // The head of the pseudo-rule.
+          val head = WeededAst.Predicate.Head.Atom(pred, Denotation.Relational, selects, loc)
+
+          // The body of the pseudo-rule.
+          val body = where match {
+            case Nil => from
+            case g :: Nil => WeededAst.Predicate.Body.Guard(g, loc) :: from
+            case _ => throw InternalCompilerException("Impossible. The list must have 0 or 1 elements.")
+          }
+
+          // Construct the pseudo-query.
+          val pseudoConstraint = WeededAst.Constraint(head, body, loc)
+
+          // Construct a constraint set that contains the single pseudo constraint.
+          val queryExp = WeededAst.Expression.FixpointConstraintSet(List(pseudoConstraint), loc)
+
+          // Construct the merge of all the expressions.
+          val dbExp = exps.reduceRight[WeededAst.Expression] {
+            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+          }
+
+          // Extract the tuples of the result predicate.
+          WeededAst.Expression.FixpointQuery(pred, queryExp, dbExp, loc)
       }
 
-    case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) =>
-          val sp1 = leftMostSourcePosition(exp1)
-          WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.FixpointFold(sp1, ident, init, f, constraints, sp2) =>
-      val loc = mkSL(sp1, sp2)
-
-      mapN(visitExp(init), visitExp(f), visitExp(constraints)) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.FixpointFold(Name.mkPred(ident), e1, e2, e3, loc)
-      }
   }
-
 
   /**
     * Translates the given literal to an expression.
@@ -2060,15 +2123,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val kindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Kinded => t }
       val unkindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Unkinded => t }
       (kindedTypeParams, unkindedTypeParams) match {
-          // Case 1: only unkinded type parameters
+        // Case 1: only unkinded type parameters
         case (Nil, _ :: _) => WeededAst.TypeParams.Unkinded(unkindedTypeParams).toSuccess
-          // Case 2: only kinded type parameters
+        // Case 2: only kinded type parameters
         case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
-          // Case 3: some unkinded and some kinded
+        // Case 3: some unkinded and some kinded
         case (_ :: _, _ :: _) =>
           val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
           WeederError.InconsistentTypeParameters(loc).toFailure
-          // Case 4: no type parameters: should be prevented by parser
+        // Case 4: no type parameters: should be prevented by parser
         case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.")
       }
   }
@@ -2313,10 +2376,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointConstraint(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
-    case ParsedAst.Expression.FixpointProject(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
-    case ParsedAst.Expression.FixpointFold(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
   }
 
   /**

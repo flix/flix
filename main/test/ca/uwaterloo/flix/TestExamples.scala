@@ -36,25 +36,22 @@ class TestExamples extends Suites(
   new FlixTest("using-laziness-for-infinite-streams", "examples/using-laziness-for-infinite-streams.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-laziness-for-logging", "examples/using-laziness-for-logging.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-laziness-to-compute-fibonacci", "examples/using-laziness-to-compute-fibonacci.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  
-  // TODO
-  //new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+
+  //new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)), // TODO
 
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("TestConstant", "examples/domains/Constant.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-
-  new FlixTest("ConstantParity", "examples/domains/ConstantParity.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("ConstantSign", "examples/domains/ConstantSign.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("Interval", "examples/domains/Interval.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("IntervalAlt", "examples/domains/IntervalAlt.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  // new FlixTest("IntervalInf", "examples/domains/IntervalInf.flix", "examples/domains/Belnap.flix")(compiled = false), // TODO: Broken
-  new FlixTest("Mod3", "examples/domains/Mod3.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("Parity", "examples/domains/Parity.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("ParitySign", "examples/domains/ParitySign.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("PrefixSuffix", "examples/domains/PrefixSuffix.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("Sign", "examples/domains/Sign.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("StrictSign", "examples/domains/StrictSign.flix", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
+  new FlixTest("TestConstant", List("examples/domains/Constant.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("ConstantParity", List("examples/domains/ConstantParity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("ConstantSign", List("examples/domains/ConstantSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("Interval", List("examples/domains/Interval.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("IntervalAlt", List("examples/domains/IntervalAlt.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("Mod3", List("examples/domains/Mod3.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("Parity", List("examples/domains/Parity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("ParitySign", List("examples/domains/ParitySign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("PrefixSuffix", List("examples/domains/PrefixSuffix.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("Sign", List("examples/domains/Sign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("StrictSign", List("examples/domains/StrictSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
 
   new FlixTest("IFDS", "examples/analysis/IFDS.flix")(Options.TestWithLibrary),
   new FlixTest("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibrary),

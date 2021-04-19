@@ -183,7 +183,6 @@ object BytecodeCompiler {
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) => ???
     case Expression.FixpointSolve(exp, stf, tpe, loc) => ???
     case Expression.FixpointProject(pred, exp, tpe, loc) => ???
-    case Expression.FixpointEntails(exp1, exp2, tpe, loc) => ???
     case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) => ???
     case Expression.HoleError(sym, tpe, loc) => ???
     case Expression.MatchError(tpe, loc) => ???

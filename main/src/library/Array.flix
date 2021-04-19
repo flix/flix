@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+instance Order[Array[v]] with Order[v] {
+    ///
+    /// Compares `a` and `b` lexicographically.
+    ///
+    pub def compare(a: Array[v], b: Array[v]): Comparison =
+        ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
+}
+
 instance Functor[Array] {
     pub def map(f: a -> b & e, a: Array[a]): Array[b] & e = Array.map(f, a) as & e
 }
@@ -21,6 +29,23 @@ instance Functor[Array] {
 instance Foldable[Array] {
     pub def foldLeft(f: (b, a) -> b & e, s: b, a: Array[a]): b & e = Array.foldLeft(f, s, a) as & e
     pub def foldRight(f: (a, b) -> b & e, s: b, a: Array[a]): b & e = Array.foldRight(f, s, a) as & e
+}
+
+namespace ArrayOps {
+    pub def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
+        if (i < len) {
+            let cmp = a[i] <=> b[i];
+            if (cmp == EqualTo)
+                compareHelper(a, b, len, i + 1)
+            else
+                cmp
+        } else if (i < Array.length(a)) {
+            GreaterThan
+        } else if (i < Array.length(b)) {
+            LessThan
+        } else {
+            EqualTo
+        }
 }
 
 namespace Array {
@@ -48,6 +73,12 @@ namespace Array {
     ///
     @Time(1) @Space(1)
     pub def put(a: Array[a], i: Int32, x: a): Array[a] & Impure = a[i] = x; a
+
+    ///
+    /// Returns `true` if the given array `a` is empty.
+    ///
+    @Time(1) @Space(1)
+    pub def isEmpty(a: Array[a]): Bool = a.length == 0
 
     ///
     /// Returns the length of the array `a`.

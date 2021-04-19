@@ -72,113 +72,119 @@ namespace Test/Term/Apply {
     }
 
     @test
-    def testTermApply11(): Bool =
+    def testTermApply11(): Bool & Impure =
         let f = zer;
-        let m = solve #{
+        let p = #{
             R(f()).
         };
-        m |= R(0).
+        let m = query p select x from R(x);
+        Array.memberOf(0, m)
 
     @test
-    def testTermApply12(): Bool =
+    def testTermApply12(): Bool & Impure =
         let f = one;
-        let m = solve #{
+        let p = #{
             R(f()).
         };
-        m |= R(1).
+        let m = query p select x from R(x);
+        Array.memberOf(1, m)
 
     @test
-    def testTermApply13(): Bool =
+    def testTermApply13(): Bool & Impure =
         let f = two;
-        let m = solve #{
+        let p = solve #{
             R(f()).
         };
-        m |= R(2).
+        let m = query p select x from R(x);
+        Array.memberOf(2, m)
 
     @test
-    def testTermApply14(): Bool =
+    def testTermApply14(): Bool & Impure =
         let f = inc;
-        let m = solve #{
+        let p = #{
             A(1). A(2). A(3).
             R(f(x)) :- A(x).
         };
-        m |= R(4).
+        let m = query p select x from R(x);
+        Array.memberOf(4, m)
 
     @test
-    def testTermApply15(): Bool =
+    def testTermApply15(): Bool & Impure =
         let f = dec;
-        let m = solve #{
+        let p = #{
             A(1). A(2). A(3).
             R(f(x)) :- A(x).
         };
-        m |= R(0).
+        let m = query p select x from R(x);
+        Array.memberOf(0, m)
 
     @test
-    def testTermApply16(): Bool =
+    def testTermApply16(): Bool & Impure =
         let f = add;
-        let m = solve #{
+        let p = solve #{
             A(1). A(2). A(3).
             R(f(x, y)) :- A(x), A(y).
         };
-        m |= R(6).
+        let m = query p select x from R(x);
+        Array.memberOf(6, m)
 
     @test
-    def testTermApply17(): Bool =
-        let m = solve ho1(inc);
-        m |= R(4).
+    def testTermApply17(): Bool & Impure =
+        let m = query ho1(inc) select x from R(x);
+        Array.memberOf(4, m)
 
     @test
-    def testTermApply18(): Bool =
-        let m = solve ho1(dec);
-        m |= R(0).
+    def testTermApply18(): Bool & Impure =
+        let m = query ho1(dec) select x from R(x);
+        Array.memberOf(0, m)
 
     @test
-    def testTermApply19(): Bool =
-        let m = solve ho2(add);
-        m |= R(6).
+    def testTermApply19(): Bool & Impure =
+        let m = query ho2(add) select x from R(x);
+        Array.memberOf(6, m)
 
     @test
-    def testTermApply20(): Bool =
-        let m = solve ho3(inc);
-        m |= P(4).
+    def testTermApply20(): Bool & Impure =
+        let m = query ho3(inc) select x from P(x);
+        Array.memberOf(4, m)
 
     @test
-    def testTermApply21(): Bool =
-        let m = solve ho3(dec);
-        m |= P(0).
+    def testTermApply21(): Bool & Impure =
+        let m = query ho3(dec) select x from P(x);
+        Array.memberOf(0, m)
 
     @test
-    def testTermApply22(): Bool =
-        let m = solve ho3(_ -> true);
-        m |= P(true).
+    def testTermApply22(): Bool & Impure =
+        let m = query ho3(_ -> true) select x from P(x);
+        Array.memberOf(true, m)
 
     @test
-    def testTermApply23(): Bool =
-        let m = solve ho3(_ -> "hello");
-        m |= P("hello").
+    def testTermApply23(): Bool & Impure =
+        let m = query ho3(_ -> "hello") select x from P(x);
+        Array.memberOf("hello", m)
 
-    def zer(): Int = 0
-    def one(): Int = 1
-    def two(): Int = 2
-    def inc(x: Int): Int = x + 1
-    def dec(x: Int): Int = x - 1
-    def add(x: Int, y: Int): Int = x + y
+    pub def zer(): Int = 0
+    pub def one(): Int = 1
+    pub def two(): Int = 2
+    pub def inc(x: Int): Int = x + 1
+    pub def dec(x: Int): Int = x - 1
+    pub def add(x: Int, y: Int): Int = x + y
 
-    def identity(x: a): a = x
-    def fst(p: (a, b)): a = let (x, _) = p; x
-    def snd(p: (a, b)): b = let (_, y) = p; y
+    pub def identity(x: a): a = x
+    pub def fst(p: (a, b)): a = let (x, _) = p; x
+    pub def snd(p: (a, b)): b = let (_, y) = p; y
 
-    pub def ho1(f: Int -> Int): #{A(Int), R(Int)} = #{
+    pub def ho1(f: Int -> Int): #{A(Int), R(Int) | r} = #{
         A(1). A(2). A(3).
         R(f(x)) :- A(x), A(y).
     }
 
-    pub def ho2(f: (Int, Int) -> Int): #{A(Int), R(Int)} = #{
+    pub def ho2(f: (Int, Int) -> Int): #{A(Int), R(Int) | r} = #{
         A(1). A(2). A(3).
         R(f(x, y)) :- A(x), A(y).
     }
 
-    pub def ho3(f: Int -> a): #{A(Int), P(a)} with Eq[a], Hash[a], ToString[a] = #{
+    pub def ho3(f: Int -> a): #{A(Int), P(a) | r} with Boxable[a] = #{
         A(1). A(2). A(3).
         P(f(x)) :- A(x).
     }

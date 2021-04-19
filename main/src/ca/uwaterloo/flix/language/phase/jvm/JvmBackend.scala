@@ -22,7 +22,7 @@ import java.nio.file.{Path, Paths}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
@@ -276,22 +276,13 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     */
   private def newProxyObj(result: AnyRef, resultType: MonoType, root: Root)(implicit flix: Flix): ProxyObject = {
     // Lookup the Equality method.
-    val eq = root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty).get(resultType) match {
-      case None => null
-      case Some(defn) => link(defn, root)
-    }
+    val eq = null
 
     // Lookup the HashCode method.
-    val hash = root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty).get(resultType) match {
-      case None => null
-      case Some(defn) => link(defn, root)
-    }
+    val hash = null
 
     // Lookup the ToString method.
-    val toString = root.specialOps.getOrElse(SpecialOperator.ToString, Map.empty).get(resultType) match {
-      case None => null
-      case Some(defn) => link(defn, root)
-    }
+    val toString = null
 
     // Create the proxy object.
     ProxyObject.of(result, eq, hash, toString)

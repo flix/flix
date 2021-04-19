@@ -73,9 +73,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, propertiesVal) {
       case (classes, instances, defs, enums, properties) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        val latticeOps = Map.empty[Type, TypedAst.LatticeOps]
-        val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-        TypedAst.Root(classes, instances, sigs, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, properties, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -1401,41 +1399,25 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.FixpointQuery(pred, exp1, exp2, tvar, loc) =>
         //
-        //  exp1 : #{...}    exp2 : #{...}
-        //  ------------------------------
-        //  exp1 |= exp2 : Bool
+        //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
+        //  exp2: freshRestSchemaVar
+        //  --------------------------------------------------------------------
+        //  FixpointQuery pred, exp1, exp2 : Array[freshTupleVar]
         //
+        val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Star)
+        val freshTupleVar = Type.freshVar(Kind.Star)
+        val freshRestSchemaVar = Type.freshVar(Kind.Schema)
+
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          schemaType <- unifyTypeM(tpe1, tpe2, mkAnySchemaType(), loc)
-          resultTyp = Type.Bool
+          _ <- unifyTypeM(tpe1, Type.mkSchemaExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar), freshRestSchemaVar), loc)
+          _ <- unifyTypeM(tpe2, freshRestSchemaVar, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar), loc)
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tvar, loc) =>
-        //
-        // exp3 : #{P : a | c}    init : b   exp2 : a' -> b -> b
-        // where a' is the tuple reification of relation a
-        // ---------------------------------------------------
-        // fold P exp1 exp2 exp3 : b
-        //
-        val freshPredicateNameTypeVar = Type.freshVar(Kind.Star ->: Kind.Star)
-        val tupleType = Type.freshVar(Kind.Star)
-        val restRow = Type.freshVar(Kind.Schema)
-        for {
-          (constrs1, initType, eff1) <- visitExp(exp1)
-          (constrs2, fType, eff2) <- visitExp(exp2)
-          (constrs3, constraintsType, eff3) <- visitExp(exp3)
-          // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          constraintsType2 <- unifyTypeM(constraintsType, Type.mkSchemaExtend(pred, Type.Apply(freshPredicateNameTypeVar, tupleType), restRow), loc)
-          // f is of type tupleType -> initType -> initType. It cannot have any effect.
-          fType2 <- unifyTypeM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
-          resultTyp <- unifyTypeM(tvar, initType, loc) // the result of the fold is the same type as init
-          resultEff = Type.mkAnd(eff1, eff2, eff3)
-        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
     }
 
     /**
@@ -1810,19 +1792,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.FixpointProject(pred, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.FixpointQuery(pred, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        val tpe = Type.Bool
+        val stf = Stratification.Empty
+        val tpe = subst0(tvar)
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, loc) =>
-        val e1 = visitExp(init, subst0)
-        val e2 = visitExp(f, subst0)
-        val e3 = visitExp(constraints, subst0)
-        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
-        TypedAst.Expression.FixpointFold(pred, e1, e2, e3, subst0(tvar), eff, loc)
+        val mergeExp = TypedAst.Expression.FixpointCompose(e1, e2, stf, tpe, eff, loc)
+        val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
+        TypedAst.Expression.FixpointFacts(pred, solveExp, tpe, eff, loc)
     }
 
     /**
@@ -2093,8 +2072,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
+      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
     )
     classes.map(Ast.TypeConstraint(_, tpe, loc))
@@ -2105,8 +2084,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
+      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),

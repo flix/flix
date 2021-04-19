@@ -1,149 +1,63 @@
 namespace Test/Predicate/Nullary {
 
     @test
-    def testFalsePredicate01(): #{ False() } =
-        let x = False().;
-        solve x
+    def testNullaryPredicate01(): Bool & Impure =
+        let p = #{
+            A(). B(). C().
+        };
+        let m = query p select 42 from A();
+        Array.memberOf(42, m)
 
     @test
-    def testFalsePredicate02(): #{ False() } =
-        let x = False().;
-        let u = x <+> x;
-        solve u
+    def testNullaryPredicate02(): Bool & Impure =
+        let p = #{
+            A(). B(). C().
+        };
+        let m = query p select 42 from B();
+        Array.memberOf(42, m)
 
     @test
-    def testFalsePredicate03(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let u = x <+> y;
-        solve u
+    def testNullaryPredicate03(): Bool & Impure =
+        let p = #{
+            A(). B(). C().
+        };
+        let m = query p select 42 from C();
+        Array.memberOf(42, m)
 
     @test
-    def testFalsePredicate04(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let u = x <+> y;
-        let v = y <+> x;
-        solve u <+> v
+    def testNullaryPredicate04(): Bool & Impure =
+        let p = #{
+            A(). B(). C().
+            R() :- A().
+        };
+        let m = query p select 42 from R();
+        Array.memberOf(42, m)
 
     @test
-    def testFalsePredicate05(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let _ = x <+> y;
-        let v = y <+> x;
-        let w = y <+> v;
-        solve w
+    def testNullaryPredicate05(): Bool & Impure =
+        let p = #{
+            A(). B(). C().
+            R() :- B().
+        };
+        let m = query p select 42 from R();
+        Array.memberOf(42, m)
 
     @test
-    def testFalsePredicate06(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let u = solve x;
-        let v = solve y;
-        u <+> v
+    def testNullaryPredicate06(): Bool & Impure =
+        let p = #{
+            A(). B(). C().
+            R() :- C().
+        };
+        let m = query p select 42 from R();
+        Array.memberOf(42, m)
 
     @test
-    def testFalsePredicate07(): #{ False() } =
-        let x = False().;
-        let y = False().;
-        let u = solve (x <+> y);
-        let v = solve (y <+> x);
-        u <+> v
-
-
-    @test
-    def testTruePredicate01(): #{ True() } =
-        solve True().
-
-    @test
-    def testTruePredicate02(): #{ True() } =
-        let x = True().;
-        let u = x <+> x;
-        solve u
-
-    @test
-    def testTruePredicate03(): #{ True() } =
-        let x = True().;
-        let u = x <+> x <+> x;
-        solve u
-
-    @test
-    def testTruePredicate04(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = x <+> y;
-        solve u
-
-    @test
-    def testTruePredicate05(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = (x <+> y) <+> (y <+> x);
-        solve u
-
-    @test
-    def testTruePredicate06(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = solve x;
-        let v = solve y;
-        (solve u) <+> (solve v)
-
-    @test
-    def testTruePredicate07(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = solve x <+> y;
-        let v = solve y <+> x;
-        (solve u) <+> (solve v)
-
-    @test
-    def testTruePredicate08(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = solve (solve x <+> y);
-        let v = solve (solve y <+> x);
-        (solve u) <+> (solve v)
-
-    @test
-    def testTruePredicate09(): #{ True() } =
-        let x = True().;
-        let y = True().;
-        let u = solve (solve x <+> y);
-        let v = solve (solve y <+> x);
-        solve (solve u <+> v)
-
-    @test
-    def testTruePredicate10(): Bool =
-        (True().) |= (True().)
-
-    @test
-    def testTruePredicate11(): Bool =
-        (True().) |= #{ True(). True(). }
-
-    @test
-    def testTruePredicate12(): Bool =
-        (True().) |= #{ True(). True(). True(). }
-
-    @test
-    def testTruePredicate13(): Bool =
-        #{ True(). True(). } |= (True().)
-
-    @test
-    def testTruePredicate14(): Bool =
-        #{ True(). True(). True(). } |= (True().)
-
-    @test
-    def testTruePredicate15(): Bool =
-        (solve True().) |= (True().)
-
-    @test
-    def testTruePredicate16(): Bool =
-        (solve (solve True().)) |= (True().)
-
-    @test
-    def testTruePredicate17(): Bool =
-        (solve (solve (solve True().))) |= (True().)
+    def testNullaryPredicate07(): Bool & Impure =
+        let p = #{
+            A(). B(). C().
+            R() :- A(), B(), C().
+        };
+        let m = query p select 42 from R();
+        Array.memberOf(42, m)
 
 }
