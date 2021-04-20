@@ -27,8 +27,8 @@ import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
-  * Generates bytecode for the lazy classes.
-  */
+ * Generates bytecode for the lazy classes.
+ */
 object GenLazyClasses {
 
   val initializedFieldName: String = "initialized"
@@ -41,8 +41,8 @@ object GenLazyClasses {
   val forceMethod: String = "force"
 
   /**
-    * Returns the set of lazy classes for the given set of types `ts`.
-    */
+   * Returns the set of lazy classes for the given set of types `ts`.
+   */
   def gen()(implicit root: Root, flix: Flix): Map[String, JvmClass] = {
 
     // Generating each lazy class
@@ -67,18 +67,18 @@ object GenLazyClasses {
   }
 
   /**
-    * This method creates the class for each lazy value.
-    * The specific lazy class has an associated value type (tpe) which
-    * is either a jvm primitive or object.
-    *
-    * The lazy class has three fields - initialized: bool, expression: () -> tpe,
-    * and value: tpe. These are all private. force(context) is the only public
-    * method, which retuns a value of type tpe given a context to call the
-    * expression closure in.
-    *
-    * force will only evaluate the expression the first time, based on the flag initialized.
-    * After that point it will store the result in value and just return that.
-    */
+   * This method creates the class for each lazy value.
+   * The specific lazy class has an associated value type (tpe) which
+   * is either a jvm primitive or object.
+   *
+   * The lazy class has three fields - initialized: bool, expression: () -> tpe,
+   * and value: tpe. These are all private. force(context) is the only public
+   * method, which retuns a value of type tpe given a context to call the
+   * expression closure in.
+   *
+   * force will only evaluate the expression the first time, based on the flag initialized.
+   * After that point it will store the result in value and just return that.
+   */
   private def genByteCode[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.openClassWriter(className, isPublic = true, isFinal = true)
 
@@ -92,14 +92,14 @@ object GenLazyClasses {
   }
 
   /**
-    * The force method takes a context as argument to call the expression closure in.
-    * The result of the expression given in the constructor is then returned.
-    * This is only actually evaluated the first time, and saved to return directly
-    * afterwards.
-    *
-    * If lazy has associated type of Obj, the returned object needs to be casted
-    * to whatever expected type.
-    */
+   * The force method takes a context as argument to call the expression closure in.
+   * The result of the expression given in the constructor is then returned.
+   * This is only actually evaluated the first time, and saved to return directly
+   * afterwards.
+   *
+   * If lazy has associated type of Obj, the returned object needs to be casted
+   * to whatever expected type.
+   */
   private def compileForceMethod[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     force(context) :=
@@ -113,31 +113,33 @@ object GenLazyClasses {
     unlock(this)
     return result
      */
-    THISLOAD[StackNil, PLazy[T]] ~
+    THISLOAD(tag[PLazy[T]]) ~
       (WITHMONITOR(innerType) {
-        THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+        START[StackNil ** PReference[PLazy[T]]] ~
+          THISLOAD(tag[PLazy[T]]) ~
           GetBoolField(className, initializedFieldName) ~
           (RUNIFTRUE {
-            THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
-              GetObjectField(className, expressionFieldName) ~
+            START[StackNil ** PReference[PLazy[T]]] ~
+              THISLOAD(tag[PLazy[T]]) ~
+              GetObjectField(className, expressionFieldName, tag[PAnyObject]) ~
               compileClosureApplication(innerType) ~
-              THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
+              THISLOAD(tag[PLazy[T]]) ~
               XSWAP(RReference(RLazy(innerType)), innerType) ~
               PUTFIELD(className, valueField, innerType) ~
-              THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+              THISLOAD(tag[PLazy[T]]) ~
               pushInt32(1) ~
               PUTFIELD(className, initializedFieldName, RInt32())
           }) ~
-          THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+          THISLOAD(tag[PLazy[T]]) ~
           XGETFIELD(className, valueField, innerType)
       }) ~
       XRETURN(innerType)
   }
 
   /**
-    * The constructor takes a expression object, which should be a function that takes
-    * no argument and returns something of type tpe, related to the type of the lazy class.
-    */
+   * The constructor takes a expression object, which should be a function that takes
+   * no argument and returns something of type tpe, related to the type of the lazy class.
+   */
   def compileLazyConstructor[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     Lazy$tpe(expression) :=
@@ -145,13 +147,14 @@ object GenLazyClasses {
     this.initialized = false
     this.expression = expression.
      */
-    THISLOAD[StackNil, PLazy[T]] ~
-      Instructions.INVOKESPECIAL(objectName, nothingToVoid) ~
-      THISLOAD[StackNil, PLazy[T]] ~
+    START[StackNil] ~
+      THISLOAD(tag[PLazy[T]]) ~
+      INVOKESPECIAL(objectName, nothingToVoid) ~
+      THISLOAD(tag[PLazy[T]]) ~
       pushBool(false) ~
-      PUTFIELD(className, initializedFieldName, initializedFieldType) ~[StackNil ** PReference[PLazy[T]]]
-      THISLOAD ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
-      ALOAD(1) ~
+      PUTFIELD(className, initializedFieldName, initializedFieldType) ~
+      THISLOAD(tag[PLazy[T]]) ~
+      ALOAD(1, tag[PAnyObject]) ~
       PUTFIELD(className, expressionFieldName, expressionFieldType) ~
       RETURN
   }

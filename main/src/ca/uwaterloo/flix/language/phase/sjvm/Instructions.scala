@@ -48,6 +48,13 @@ object Instructions {
 
   def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = ???
 
+  def tag[T]: T = null.asInstanceOf[T]
+
+  def START
+  [R <: Stack]:
+  F[R] => F[R] =
+    f => f
+
   def compileClosureApplication
   [R <: Stack, T1 <: PRefType, T2 <: PType]
   (resultType: RType[T2]):
@@ -56,7 +63,7 @@ object Instructions {
 
   def WITHMONITOR
   [R <: Stack, S <: PRefType, T <: PType]
-  (e: RType[T])(f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
+  (e: RType[T], tpe: S = tag[T])(f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
   F[R ** PReference[S]] => F[R ** T] = {
     //todo why is NOP/the type needed here?
     NOP ~[R ** PReference[S] ** PReference[S]]
@@ -251,7 +258,7 @@ object Instructions {
 
   def GetObjectField
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  (className: String, fieldName: String, tpe: T1 = tag[T1]):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
     f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, objectDescriptor)
     castF(f)
@@ -465,14 +472,15 @@ object Instructions {
   // NATIVE
   def ALOAD
   [R <: Stack, T <: PRefType]
-  (index: Int):
+  (index: Int, tpe: T = tag[T]):
   F[R] => F[R ** PReference[T]] = f => {
     f.visitor.visitVarInsn(Opcodes.ALOAD, index)
     castF(f)
   }
 
   def THISLOAD
-  [R <: Stack, T <: PRefType]:
+  [R <: Stack, T <: PRefType]
+  (tpe: T = tag[T]):
   F[R] => F[R ** PReference[T]] =
     ALOAD(0)
 

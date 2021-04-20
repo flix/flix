@@ -60,7 +60,8 @@ object GenRefClasses {
     * Generating constructor for the class with value of type `innerType`
     */
   def genConstructor[T <: PType](eType: RType[T]): F[StackNil] => F[StackEnd] = {
-    THISLOAD[StackNil, PRef[T]] ~
+    START[StackNil] ~
+    THISLOAD(tag[PRef[T]]) ~
       INVOKESPECIAL(objectName, nothingToVoid) ~
       RETURN
   }
