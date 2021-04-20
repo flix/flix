@@ -305,10 +305,5 @@ object KindedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: KindedAst.Expression, exp: KindedAst.Expression)
 
-  sealed trait TypeParam {
-    val tpe: Type.Var
-  }
-
   case class TypeParam(name: Name.Ident, tpe: Type.Var, kind: Kind, loc: SourceLocation)
-
 }
