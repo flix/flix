@@ -309,9 +309,11 @@ object Instructions {
   F[R1] => F[R2] =
     ???
 
-  // TODO: What should happen here
   // NATIVE
-  def RETURN[R <: Stack]: F[StackNil] => F[StackEnd] = ???
+  def RETURN[R <: Stack]: F[StackNil] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.RETURN)
+    castF(f)
+  }
 
   // NATIVE
   def XRETURN
