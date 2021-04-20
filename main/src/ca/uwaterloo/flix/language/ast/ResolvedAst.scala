@@ -32,17 +32,17 @@ object ResolvedAst {
                   sources: Map[Source, SourceLocation])
 
   // TODO use ResolvedAst.Law for laws
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[Ast.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: UnkindedType, tconstrs: List[Ast.TypeConstraint], defs: List[ResolvedAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: UnkindedType, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: ResolvedAst.Spec, exp: Option[ResolvedAst.Expression])
 
   case class Def(sym: Symbol.DefnSym, spec: ResolvedAst.Spec, exp: ResolvedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: UnkindedType, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: ResolvedAst.Scheme, eff: UnkindedType, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: UnkindedType, sc: Scheme, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: UnkindedType, sc: ResolvedAst.Scheme, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
@@ -272,6 +272,8 @@ object ResolvedAst {
 
   }
 
+  case class Scheme(quantifiers: List[UnkindedType.Var], constraints: List[ResolvedAst.TypeConstraint], base: UnkindedType)
+
   sealed trait TypeParams {
     val tparams: List[ResolvedAst.TypeParam]
   }
@@ -323,5 +325,7 @@ object ResolvedAst {
     case class Unkinded(name: Name.Ident, tpe: UnkindedType.Var, loc: SourceLocation) extends TypeParam
 
   }
+
+  case class TypeConstraint(clazz: Symbol.ClassSym, tpe: UnkindedType, loc: SourceLocation)
 
 }
