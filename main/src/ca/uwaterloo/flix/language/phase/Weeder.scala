@@ -1358,7 +1358,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointProjectInto(sp1, exps, idents, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      // TODO: Ensure that exps and idents have same length.
+      ///
+      /// Check for [[MismatchedArity]].
+      ///
+      if (exps.length != idents.length) {
+        return WeederError.MismatchedArity(exps.length, idents.length, loc).toFailure
+      }
+
       mapN(traverse(exps)(visitExp)) {
         case es =>
           val init = WeededAst.Expression.FixpointConstraintSet(Nil, loc)
