@@ -77,6 +77,7 @@ object FormatExpression {
     case TypedAst.Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => s"FixpointCompose($exp1, $exp2)"
     case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) => s"FixpointSolve($exp, $stf)"
     case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) => s"FixpointProject($pred, $exp)"
+    case TypedAst.Expression.FixpointProjectInto(exp, pred, tpe, eff, loc) => s"FixpointProjectInto($exp, $pred)"
     case TypedAst.Expression.FixpointFacts(pred, exp, tpe, eff, loc) => s"FixpointFacts($pred, $exp)"
   }
 

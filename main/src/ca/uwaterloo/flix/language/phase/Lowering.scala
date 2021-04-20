@@ -1434,6 +1434,10 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.FixpointProject(pred, e, tpe, eff, loc)
 
+    case Expression.FixpointProjectInto(exp, pred, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.FixpointProjectInto(e, pred, tpe, eff, loc)
+
     case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.FixpointFacts(pred, e, tpe, eff, loc)

@@ -1294,6 +1294,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProject(qname, exp, loc) => freeVars(exp)
+    case WeededAst.Expression.FixpointProjectInto(exp, pred, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointQuery(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
   }
 

@@ -927,6 +927,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.FixpointProject(pred, e, tpe, eff, loc)
 
+      case Expression.FixpointProjectInto(exp, pred, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.FixpointProjectInto(e, pred, tpe, eff, loc)
+
       case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.FixpointFacts(pred, e, tpe, eff, loc)
