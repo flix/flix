@@ -26,6 +26,11 @@ namespace Fixpoint/Ram {
         case Guard3(v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v])
         case Guard4(v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
         case Guard5(v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case Guard6(v -> v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case Guard7(v -> v -> v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case Guard8(v -> v -> v -> v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case Guard9(v -> v -> v -> v -> v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case Guard10(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
     }
 
     instance ToString[BoolExp[v]] with ToString[v] {
@@ -42,6 +47,11 @@ namespace Fixpoint/Ram {
                 case Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
                 case Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case Guard6(_, v1, v2, v3, v4, v5, v6) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6})"
+                case Guard7(_, v1, v2, v3, v4, v5, v6, v7) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7})"
+                case Guard8(_, v1, v2, v3, v4, v5, v6, v7, v8) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8})"
+                case Guard9(_, v1, v2, v3, v4, v5, v6, v7, v8, v9) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9})"
+                case Guard10(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10})"
             }
     }
 }

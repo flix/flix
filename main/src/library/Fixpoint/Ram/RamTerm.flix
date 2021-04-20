@@ -36,6 +36,11 @@ namespace Fixpoint/Ram {
         case App3(v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v])
         case App4(v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
         case App5(v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App6(v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App7(v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App8(v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App9(v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App10(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
     }
 
     instance ToString[RamTerm[v]] with ToString[v] {
@@ -50,6 +55,11 @@ namespace Fixpoint/Ram {
             case App3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
             case App4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
             case App5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+            case App6(_, v1, v2, v3, v4, v5, v6) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6})"
+            case App7(_, v1, v2, v3, v4, v5, v6, v7) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7})"
+            case App8(_, v1, v2, v3, v4, v5, v6, v7, v8) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8})"
+            case App9(_, v1, v2, v3, v4, v5, v6, v7, v8, v9) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9})"
+            case App10(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10})"
         }
     }
 }

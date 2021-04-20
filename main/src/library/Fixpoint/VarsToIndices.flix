@@ -82,6 +82,56 @@ namespace Fixpoint {
                 let t4 = lowerTerm(rowVars, v4);
                 let t5 = lowerTerm(rowVars, v5);
                 BoolExp.Guard5(f, t1, t2, t3, t4, t5)
+            case BoolExp.Guard6(f, v1, v2, v3, v4, v5, v6) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                let t3 = lowerTerm(rowVars, v3);
+                let t4 = lowerTerm(rowVars, v4);
+                let t5 = lowerTerm(rowVars, v5);
+                let t6 = lowerTerm(rowVars, v6);
+                BoolExp.Guard6(f, t1, t2, t3, t4, t5, t6)                
+            case BoolExp.Guard7(f, v1, v2, v3, v4, v5, v6, v7) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                let t3 = lowerTerm(rowVars, v3);
+                let t4 = lowerTerm(rowVars, v4);
+                let t5 = lowerTerm(rowVars, v5);
+                let t6 = lowerTerm(rowVars, v6);
+                let t7 = lowerTerm(rowVars, v7);
+                BoolExp.Guard7(f, t1, t2, t3, t4, t5, t6, t7)
+            case BoolExp.Guard8(f, v1, v2, v3, v4, v5, v6, v7, v8) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                let t3 = lowerTerm(rowVars, v3);
+                let t4 = lowerTerm(rowVars, v4);
+                let t5 = lowerTerm(rowVars, v5);
+                let t6 = lowerTerm(rowVars, v6);
+                let t7 = lowerTerm(rowVars, v7);
+                let t8 = lowerTerm(rowVars, v8);
+                BoolExp.Guard8(f, t1, t2, t3, t4, t5, t6, t7, t8)
+            case BoolExp.Guard9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                let t3 = lowerTerm(rowVars, v3);
+                let t4 = lowerTerm(rowVars, v4);
+                let t5 = lowerTerm(rowVars, v5);
+                let t6 = lowerTerm(rowVars, v6);
+                let t7 = lowerTerm(rowVars, v7);
+                let t8 = lowerTerm(rowVars, v8);
+                let t9 = lowerTerm(rowVars, v9);
+                BoolExp.Guard9(f, t1, t2, t3, t4, t5, t6, t7, t8, t9)
+            case BoolExp.Guard10(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                let t3 = lowerTerm(rowVars, v3);
+                let t4 = lowerTerm(rowVars, v4);
+                let t5 = lowerTerm(rowVars, v5);
+                let t6 = lowerTerm(rowVars, v6);
+                let t7 = lowerTerm(rowVars, v7);
+                let t8 = lowerTerm(rowVars, v8);
+                let t9 = lowerTerm(rowVars, v9);
+                let t10 = lowerTerm(rowVars, v10);
+                BoolExp.Guard10(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
         }
 
     def lowerTerm(rowVars: Map[RowVar, RowVar], term: RamTerm[v]): RamTerm[v] = match term {
@@ -120,5 +170,55 @@ namespace Fixpoint {
             let t4 = lowerTerm(rowVars, v4);
             let t5 = lowerTerm(rowVars, v5);
             RamTerm.App5(f, t1, t2, t3, t4, t5)
+        case RamTerm.App6(f, v1, v2, v3, v4, v5, v6) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            let t3 = lowerTerm(rowVars, v3);
+            let t4 = lowerTerm(rowVars, v4);
+            let t5 = lowerTerm(rowVars, v5);
+            let t6 = lowerTerm(rowVars, v6);
+            RamTerm.App6(f, t1, t2, t3, t4, t5, t6)
+        case RamTerm.App7(f, v1, v2, v3, v4, v5, v6, v7) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            let t3 = lowerTerm(rowVars, v3);
+            let t4 = lowerTerm(rowVars, v4);
+            let t5 = lowerTerm(rowVars, v5);
+            let t6 = lowerTerm(rowVars, v6);
+            let t7 = lowerTerm(rowVars, v7);
+            RamTerm.App7(f, t1, t2, t3, t4, t5, t6, t7)
+        case RamTerm.App8(f, v1, v2, v3, v4, v5, v6, v7, v8) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            let t3 = lowerTerm(rowVars, v3);
+            let t4 = lowerTerm(rowVars, v4);
+            let t5 = lowerTerm(rowVars, v5);
+            let t6 = lowerTerm(rowVars, v6);
+            let t7 = lowerTerm(rowVars, v7);
+            let t8 = lowerTerm(rowVars, v8);
+            RamTerm.App8(f, t1, t2, t3, t4, t5, t6, t7, t8)
+        case RamTerm.App9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            let t3 = lowerTerm(rowVars, v3);
+            let t4 = lowerTerm(rowVars, v4);
+            let t5 = lowerTerm(rowVars, v5);
+            let t6 = lowerTerm(rowVars, v6);
+            let t7 = lowerTerm(rowVars, v7);
+            let t8 = lowerTerm(rowVars, v8);
+            let t9 = lowerTerm(rowVars, v9);
+            RamTerm.App9(f, t1, t2, t3, t4, t5, t6, t7, t8, t9)
+        case RamTerm.App10(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            let t3 = lowerTerm(rowVars, v3);
+            let t4 = lowerTerm(rowVars, v4);
+            let t5 = lowerTerm(rowVars, v5);
+            let t6 = lowerTerm(rowVars, v6);
+            let t7 = lowerTerm(rowVars, v7);
+            let t8 = lowerTerm(rowVars, v8);
+            let t9 = lowerTerm(rowVars, v9);
+            let t10 = lowerTerm(rowVars, v10);
+            RamTerm.App10(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
     }
 }
