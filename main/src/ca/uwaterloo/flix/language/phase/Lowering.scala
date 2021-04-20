@@ -478,6 +478,27 @@ object Lowering extends Phase[Root, Root] {
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
+    case Expression.FixpointProjectInto(exp, pred, tpe, eff, loc) =>
+      // Compute the arity of the functor F[(a, b, c)] or F[a].
+      val arity = exp.tpe match {
+        case Type.Apply(_, innerType) => innerType.typeConstructor match {
+          case Some(TypeConstructor.Tuple(l)) => l
+          case _ => 1
+        }
+        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.")
+      }
+
+      // Compute the symbol of the function.
+      val sym = Symbol.mkDefnSym(s"Fixpoint.projectInto$arity")
+
+      // The type of the function.
+      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog)
+
+      // Put everything together.
+      val defExp = Expression.Def(sym, defTpe, loc)
+      val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
+      Expression.Apply(defExp, argExps, Types.Datalog, eff, loc)
+
     case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
@@ -496,8 +517,8 @@ object Lowering extends Phase[Root, Root] {
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe)
 
-      val defn = Defs.lookup(sym)
-      val defExp = Expression.Def(defn.sym, defTpe, loc)
+      // Put everything together.
+      val defExp = Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       Expression.Apply(defExp, argExps, tpe, eff, loc)
   }

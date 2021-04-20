@@ -203,6 +203,8 @@ object WeededAst {
 
     case class FixpointProject(pred: Name.Pred, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class FixpointProjectInto(exp: WeededAst.Expression, pred: Name.Pred, loc: SourceLocation) extends WeededAst.Expression
+
     case class FixpointQuery(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
@@ -343,6 +345,7 @@ object WeededAst {
   }
 
   sealed trait TypeParams
+
   sealed trait KindedTypeParams extends TypeParams
 
   object TypeParams {

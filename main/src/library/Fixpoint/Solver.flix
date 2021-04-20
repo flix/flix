@@ -62,6 +62,12 @@ namespace Fixpoint {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
 
+    // TODO: DOC
+    pub def projectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type, v: Type](_p: PredSym, _ts: f[(t1, t2, t3)]):
+        Datalog[v] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
+        // TODO: Benjamin
+        Datalog([], []) as & Pure
+
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///

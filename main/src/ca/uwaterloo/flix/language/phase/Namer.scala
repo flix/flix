@@ -889,6 +889,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointProject(ident, e, Type.freshVar(Kind.Schema), loc)
       }
 
+    case WeededAst.Expression.FixpointProjectInto(exp, pred, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.FixpointProjectInto(e, pred, Type.freshVar(Kind.Schema), loc)
+      }
+
     case WeededAst.Expression.FixpointQuery(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.FixpointQuery(pred, e1, e2, Type.freshVar(Kind.Star), loc)

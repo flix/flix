@@ -393,6 +393,11 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.FixpointProject(pred, e, tpe, eff, loc)
       }
 
+    case Expression.FixpointProjectInto(exp, pred, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.FixpointProjectInto(e, pred, tpe, eff, loc)
+      }
+
     case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.FixpointFacts(pred, e, tpe, eff, loc)
@@ -618,6 +623,9 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(exp)
 
     case Expression.FixpointProject(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.FixpointProjectInto(exp, _, _, _, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.FixpointFacts(_, exp, _, _, _) =>

@@ -16,11 +16,10 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
 
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.List
 
 object TypedAst {
@@ -279,6 +278,8 @@ object TypedAst {
     case class FixpointSolve(exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class FixpointProjectInto(exp: TypedAst.Expression, pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointFacts(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

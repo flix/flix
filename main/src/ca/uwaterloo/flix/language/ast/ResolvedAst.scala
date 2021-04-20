@@ -186,6 +186,8 @@ object ResolvedAst {
 
     case class FixpointProject(pred: Name.Pred, exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class FixpointProjectInto(exp: ResolvedAst.Expression, pred: Name.Pred, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class FixpointQuery(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }

@@ -959,6 +959,9 @@ object ParsedAst {
       */
     case class FixpointCompose(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    // TODO: DOC
+    case class FixpointProject(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], into: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
+
     /**
       * Fixpoint Solve-Project expression.
       *

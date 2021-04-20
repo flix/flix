@@ -1355,6 +1355,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointCompose(e1, e2, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.FixpointProject(sp1, exps, idents, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      // TODO: Ensure that exps and idents have same length.
+      mapN(traverse(exps)(visitExp)) {
+        case es =>
+          val init = WeededAst.Expression.FixpointConstraintSet(Nil, loc)
+          (es.zip(idents.toList)).foldRight(init: WeededAst.Expression) {
+            case ((exp, ident), acc) =>
+              val pred = Name.mkPred(ident)
+              val innerExp = WeededAst.Expression.FixpointProjectInto(exp, pred, loc)
+              WeededAst.Expression.FixpointCompose(innerExp, acc, loc)
+          }
+      }
+
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
       val loc = mkSL(sp1, sp2)
       mapN(traverse(exps)(visitExp)) {

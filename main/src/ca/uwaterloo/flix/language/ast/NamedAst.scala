@@ -203,6 +203,8 @@ object NamedAst {
 
     case class FixpointProject(pred: Name.Pred, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class FixpointProjectInto(exp: NamedAst.Expression, pred: Name.Pred, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class FixpointQuery(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }
