@@ -1403,25 +1403,25 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //
         //  exp : F[freshElmType] where F is Foldable
         //  -------------------------------------------
-        //  project exp into A: #{A(freshElmType) | freshRestSchemaTypeVar}
+        //  project exp into A: #{A(freshElmType) | freshRestSchemaType}
         //
-        val freshTypeConstructor = Type.freshVar(Kind.Star ->: Kind.Star)
-        val freshElmType = Type.freshVar(Kind.Star)
+        val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star)
+        val freshElmTypeVar = Type.freshVar(Kind.Star)
         val freshPredicateTypeVar = Type.freshVar(Kind.Star)
         val freshRestSchemaTypeVar = Type.freshVar(Kind.Schema)
-        val freshResultSchemaTypeVar = Type.freshVar(Kind.Schema)
 
-        // Require a foldable instance for F (freshTypeConstructor).
-        // TODO: Boxable instances?
+        // Require Boxable and Foldable instances.
+        val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
         val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
-        val foldable = Ast.TypeConstraint(foldableSym, freshTypeConstructor, loc)
+        val boxable = Ast.TypeConstraint(boxableSym, freshElmTypeVar, loc)
+        val foldable = Ast.TypeConstraint(foldableSym, freshTypeConstructorVar, loc)
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypeM(tpe, Type.mkApply(freshTypeConstructor, List(freshElmType)), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkSchemaExtend(pred, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypeM(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar)), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchemaExtend(pred, Type.mkRelation(List(freshElmTypeVar)), freshRestSchemaTypeVar), loc)
           resultEff = eff
-        } yield (foldable :: constrs, resultTyp, resultEff)
+        } yield (boxable :: foldable :: constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
         //
