@@ -1,4 +1,7 @@
 package ca.uwaterloo.flix.language.ast
+
+import ca.uwaterloo.flix.api.Flix
+
 // MATT license
 // MATT docs
 sealed trait UnkindedType
@@ -11,6 +14,11 @@ object UnkindedType {
   case class Lambda(t1: UnkindedType.Var, t2: UnkindedType)
 
   case class Var(id: Int, text: Option[String] = None)
+
+  // MATT docs
+  def freshVar(text: Option[String] = None)(implicit flix: Flix): UnkindedType.Var = {
+    Var(flix.genSym.freshId(), text)
+  }
 
   trait Constructor
 
@@ -124,7 +132,7 @@ object UnkindedType {
     /**
       * A type constructor that represent the type of enums.
       */
-    case class Enum(sym: Symbol.EnumSym) extends TypeConstructor
+    case class Enum(sym: Symbol.EnumSym) extends Constructor
 
     /**
       * A type constructor that represent the type of JVM classes.
