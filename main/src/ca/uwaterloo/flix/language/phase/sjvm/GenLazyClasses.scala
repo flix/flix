@@ -25,19 +25,20 @@ import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
-import org.objectweb.asm.{ClassWriter, Opcodes}
 
 /**
   * Generates bytecode for the lazy classes.
   */
 object GenLazyClasses {
 
-  val initializedField = "initialized"
+  val initializedFieldName: String = "initialized"
+  val initializedFieldTypeDescriptor: String = boolDescriptor
   val initializedFieldType: RType[PInt32] = RBool()
-  val expressionField = "expression"
+  val expressionFieldName: String = "expression"
+  val expressionFieldTypeDescriptor: String = objectDescriptor
   val expressionFieldType: RType[PReference[PAnyObject]] = RReference(null)
-  val valueField = "value"
-  val forceMethod = "force"
+  val valueField: String = "value"
+  val forceMethod: String = "force"
 
   /**
     * Returns the set of lazy classes for the given set of types `ts`.
@@ -79,36 +80,15 @@ object GenLazyClasses {
     * After that point it will store the result in value and just return that.
     */
   private def genByteCode[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    // class writer
-    val visitor = AsmOps.mkClassWriter()
+    val classMaker = ClassMaker.openClassWriter(className, isPublic = true, isFinal = true)
 
-    // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, className, null, objectName, null)
-
-    AsmOps.compileField(visitor, initializedField, getDescriptor(RBool()), isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, expressionField, getDescriptor(expressionFieldType), isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, valueField, s"L$className;", isStatic = false, isPrivate = true)
-    compileForceMethod(visitor, className, innerType)
-
-    // Emit the code for the constructor
-    compileLazyConstructor(className, innerType)
-
-    visitor.visitEnd()
-    visitor.toByteArray
-  }
-
-  private def compileForceMethod[T <: PType](visitor: ClassWriter, className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Unit = {
-    val erasedValueTypeDescriptor = getDescriptor(innerType)
-
-    // Header of the method.
-    val returnDescription = s"(LContext;)$erasedValueTypeDescriptor"
-    val method = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, forceMethod, returnDescription, null, null)
-    method.visitCode()
-    val t = compileForceMethod(className, innerType)
-    t(F(method))
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    method.visitMaxs(1, 1)
-    method.visitEnd()
+    classMaker.makeField(initializedFieldName, initializedFieldTypeDescriptor, isStatic = false, isPublic = false)
+    classMaker.makeField(expressionFieldName, expressionFieldTypeDescriptor, isStatic = false, isPublic = false)
+    classMaker.makeField(valueField, s"L$className;", isStatic = false, isPublic = false)
+    val methodDescriptor = s"(LContext;)${getDescriptor(innerType)}"
+    classMaker.makeMethod(compileForceMethod(className, innerType), forceMethod, methodDescriptor, isFinal = true, isPublic = true)
+    classMaker.makeConstructor(compileLazyConstructor(className, innerType), s"($objectDescriptor)V")
+    classMaker.closeClassMaker
   }
 
   /**
@@ -136,32 +116,22 @@ object GenLazyClasses {
     THISLOAD[StackNil, PLazy[T]] ~
       (WITHMONITOR(innerType) {
         THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
-          GetBoolField(className, initializedField) ~
+          GetBoolField(className, initializedFieldName) ~
           (RUNIFTRUE {
             THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
-              GetObjectField(className, expressionField) ~
+              GetObjectField(className, expressionFieldName) ~
               compileClosureApplication(innerType) ~
               THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
               XSWAP(RReference(RLazy(innerType)), innerType) ~
               PUTFIELD(className, valueField, innerType) ~
               THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
               pushInt32(1) ~
-              PUTFIELD(className, initializedField, RInt32())
+              PUTFIELD(className, initializedFieldName, RInt32())
           }) ~
           THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
           XGETFIELD(className, valueField, innerType)
       }) ~
       XRETURN(innerType)
-  }
-
-  def compileLazyConstructor[T <: PType](visitor: ClassWriter, className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Unit = {
-    val constructor = visitor.visitMethod(Opcodes.ACC_PUBLIC, constructorMethod, s"($objectDescriptor)V", null, null)
-    constructor.visitCode()
-    val c = compileLazyConstructor(className, innerType)
-    c(F(constructor))
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    constructor.visitMaxs(65535, 65535)
-    constructor.visitEnd()
   }
 
   /**
@@ -179,10 +149,10 @@ object GenLazyClasses {
       Instructions.INVOKESPECIAL(objectName, nothingToVoid) ~
       THISLOAD[StackNil, PLazy[T]] ~
       pushBool(false) ~
-      PUTFIELD(className, initializedField, initializedFieldType) ~[StackNil ** PReference[PLazy[T]]]
+      PUTFIELD(className, initializedFieldName, initializedFieldType) ~[StackNil ** PReference[PLazy[T]]]
       THISLOAD ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
       ALOAD(1) ~
-      PUTFIELD(className, expressionField, expressionFieldType) ~
+      PUTFIELD(className, expressionFieldName, expressionFieldType) ~
       RETURN
   }
 }
