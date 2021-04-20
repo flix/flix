@@ -22,25 +22,26 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{Cat1, PType, RType}
+import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
 /**
- * Generates bytecode for the lazy classes.
- */
+  * Generates bytecode for the lazy classes.
+  */
 object GenLazyClasses {
 
-  val initializedField: String = "initialized"
+  val initializedField = "initialized"
   val initializedFieldType: RType[PInt32] = RBool()
-  val expressionField: String = "expression"
+  val expressionField = "expression"
+  val expressionFieldType: RType[PReference[PAnyObject]] = RReference(null)
   val valueField = "value"
   val forceMethod = "force"
 
   /**
-   * Returns the set of lazy classes for the given set of types `ts`.
-   */
+    * Returns the set of lazy classes for the given set of types `ts`.
+    */
   def gen()(implicit root: Root, flix: Flix): Map[String, JvmClass] = {
 
     // Generating each lazy class
@@ -65,18 +66,18 @@ object GenLazyClasses {
   }
 
   /**
-   * This method creates the class for each lazy value.
-   * The specific lazy class has an associated value type (tpe) which
-   * is either a jvm primitive or object.
-   *
-   * The lazy class has three fields - initialized: bool, expression: () -> tpe,
-   * and value: tpe. These are all private. force(context) is the only public
-   * method, which retuns a value of type tpe given a context to call the
-   * expression closure in.
-   *
-   * force will only evaluate the expression the first time, based on the flag initialized.
-   * After that point it will store the result in value and just return that.
-   */
+    * This method creates the class for each lazy value.
+    * The specific lazy class has an associated value type (tpe) which
+    * is either a jvm primitive or object.
+    *
+    * The lazy class has three fields - initialized: bool, expression: () -> tpe,
+    * and value: tpe. These are all private. force(context) is the only public
+    * method, which retuns a value of type tpe given a context to call the
+    * expression closure in.
+    *
+    * force will only evaluate the expression the first time, based on the flag initialized.
+    * After that point it will store the result in value and just return that.
+    */
   private def genByteCode[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
@@ -85,7 +86,7 @@ object GenLazyClasses {
     visitor.visit(AsmOps.JavaVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, className, null, objectName, null)
 
     AsmOps.compileField(visitor, initializedField, getDescriptor(RBool()), isStatic = false, isPrivate = true)
-    AsmOps.compileField(visitor, expressionField, getDescriptor(RReference(null)), isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, expressionField, getDescriptor(expressionFieldType), isStatic = false, isPrivate = true)
     AsmOps.compileField(visitor, valueField, s"L$className;", isStatic = false, isPrivate = true)
     compileForceMethod(visitor, className, innerType)
 
@@ -111,14 +112,14 @@ object GenLazyClasses {
   }
 
   /**
-   * The force method takes a context as argument to call the expression closure in.
-   * The result of the expression given in the constructor is then returned.
-   * This is only actually evaluated the first time, and saved to return directly
-   * afterwards.
-   *
-   * If lazy has associated type of Obj, the returned object needs to be casted
-   * to whatever expected type.
-   */
+    * The force method takes a context as argument to call the expression closure in.
+    * The result of the expression given in the constructor is then returned.
+    * This is only actually evaluated the first time, and saved to return directly
+    * afterwards.
+    *
+    * If lazy has associated type of Obj, the returned object needs to be casted
+    * to whatever expected type.
+    */
   private def compileForceMethod[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     force(context) :=
@@ -132,81 +133,25 @@ object GenLazyClasses {
     unlock(this)
     return result
      */
-
-
-    // [this] This is pushed to lock the object.
-    //      f.visitor.visitVarInsn(ALOAD, 0)
-    //      // [] The object is now locked.
-    //      method.visitInsn(MONITORENTER)
-    //      // [this] this is pushed to retrieve initialized to check if the Lazy object has already been evaluated.
-    //      method.visitVarInsn(ALOAD, 0)
-    //      // [this.initialized] the condition can now be checked.
-    //      method.visitFieldInsn(GETFIELD, internalClassType, "initialized", JvmType.PrimBool.toDescriptor)
-    //      // [] If expression has been evaluated, skip to returning this.value.
-    //      val skip = new Label
-    //      method.visitJumpInsn(IFNE, skip)
-    //      // [context] Load the context to give as an argument to the expression closure.
-    //      method.visitVarInsn(ALOAD, 1)
-    //      // [context, this] push this to get the expression.
-    //      method.visitVarInsn(ALOAD, 0)
     THISLOAD[StackNil, PLazy[T]] ~
-    (WITHMONITOR (innerType) {
-      THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
-      GetBoolField(className, initializedField) ~
-      (RUNIFTRUE {
-        THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
-        GetObjectField(className, expressionField) ~
-        compileClosureApplication(innerType) ~
-        THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
-        XSWAP(RReference(null), innerType) ~
-        PUTFIELD(className, valueField, innerType) ~
+      (WITHMONITOR(innerType) {
         THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
-        pushInt32(1) ~
-        PUTFIELD(className, initializedField, RInt32())
+          GetBoolField(className, initializedField) ~
+          (RUNIFTRUE {
+            THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
+              GetObjectField(className, expressionField) ~
+              compileClosureApplication(innerType) ~
+              THISLOAD[StackNil ** PReference[PLazy[T]] ** T, PLazy[T]] ~
+              XSWAP(RReference(RLazy(innerType)), innerType) ~
+              PUTFIELD(className, valueField, innerType) ~
+              THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+              pushInt32(1) ~
+              PUTFIELD(className, initializedField, RInt32())
+          }) ~
+          THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
+          XGETFIELD(className, valueField, innerType)
       }) ~
-      THISLOAD[StackNil ** PReference[PLazy[T]], PLazy[T]] ~
-      XGETFIELD(className, valueField, innerType)
-    }) ~
-    XRETURN(innerType)
-
-    //
-    //      // [context, expression] now ready to call the expression closure.
-    //      method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
-    //      // [value] The result of expression remains on the stack.
-    //      compileClosureApplication(method, valueType)
-    //      // [value, this] this is pushed to assign this.value = value.
-    //      method.visitVarInsn(ALOAD, 0)
-    //      // [this, value] the two stack elements are swapped, technique depending on values type category.
-    //      if (AsmOps.getStackSize(erasedValueType) == 1) {
-    //        method.visitInsn(SWAP)
-    //      } else {
-    //        method.visitInsn(DUP_X2)
-    //        method.visitInsn(POP)
-    //      }
-    //      // [] this.value now stores the result from expression.
-    //      method.visitFieldInsn(PUTFIELD, internalClassType, "value", erasedValueTypeDescriptor)
-    //
-    //      // [this] this is pushed to update initialized such that evaluation is skipped the next call.
-    //      method.visitVarInsn(ALOAD, 0)
-    //      // [this, 1] true is pushed to assign this.initialized = true.
-    //      method.visitInsn(ICONST_1)
-    //      // [] initialized is now true.
-    //      method.visitFieldInsn(PUTFIELD, internalClassType, "initialized", JvmType.PrimBool.toDescriptor)
-    //
-    //      // This is the return point if initialized was true at the start of force.
-    //      method.visitLabel(skip)
-    //      // [this] this is pushed to retrieve this.value.
-    //      method.visitVarInsn(ALOAD, 0)
-    //      // [this.value] The return value is now on the stack.
-    //      method.visitFieldInsn(GETFIELD, internalClassType, "value", erasedValueTypeDescriptor)
-    //
-    //      // [this.value, this] this is pushed to unlock the object.
-    //      method.visitVarInsn(ALOAD, 0)
-    //      // [this.value] we are now ready to return.
-    //      method.visitInsn(MONITOREXIT)
-    //
-    //      // [] Return the value of appropriate type.
-    //      method.visitInsn(AsmOps.getReturnInstruction(erasedValueType))
+      XRETURN(innerType)
   }
 
   def compileLazyConstructor[T <: PType](visitor: ClassWriter, className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Unit = {
@@ -220,9 +165,9 @@ object GenLazyClasses {
   }
 
   /**
-   * The constructor takes a expression object, which should be a function that takes
-   * no argument and returns something of type tpe, related to the type of the lazy class.
-   */
+    * The constructor takes a expression object, which should be a function that takes
+    * no argument and returns something of type tpe, related to the type of the lazy class.
+    */
   def compileLazyConstructor[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     Lazy$tpe(expression) :=
@@ -230,35 +175,14 @@ object GenLazyClasses {
     this.initialized = false
     this.expression = expression.
      */
-
-    // [this] push this to call the object constructor.
-    //constructor.visitVarInsn(ALOAD, 0)
-
-    //    // [] Call the super (java.lang.Object) constructor
-    //    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
     THISLOAD[StackNil, PLazy[T]] ~
       Instructions.INVOKESPECIAL(objectName, nothingToVoid) ~
       THISLOAD[StackNil, PLazy[T]] ~
-      SCAFFOLD
-
-    //    // [this] this is pushed to assign initialized to false.
-    //    constructor.visitVarInsn(ALOAD, 0)
-    //    // [this, false] now ready to put field.
-    //    constructor.visitInsn(ICONST_0)
-    //    // [] initialized = false.
-    //    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "initialized", JvmType.PrimBool.toDescriptor)
-    //
-    //    // [this] save the argument to expression.
-    //    constructor.visitVarInsn(ALOAD, 0)
-    //    // [this, expression] now ready to put field.
-    //    constructor.visitVarInsn(ALOAD, 1)
-    //    // [] expression has the value of the argument.
-    //    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "expression", JvmType.Object.toDescriptor)
-    //
-    //    // [] Return nothing.
-    //    constructor.visitInsn(RETURN)
-    //
-
-    //  }
+      pushBool(false) ~
+      PUTFIELD(className, initializedField, initializedFieldType) ~[StackNil ** PReference[PLazy[T]]]
+      THISLOAD ~[StackNil ** PReference[PLazy[T]] ** PReference[PAnyObject]]
+      ALOAD(1) ~
+      PUTFIELD(className, expressionField, expressionFieldType) ~
+      RETURN
   }
 }
