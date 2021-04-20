@@ -299,13 +299,13 @@ object Instructions {
 
   // TODO: What should happen here
   // NATIVE
-  def RETURN[R <: Stack]: F[R] => F[StackEnd] = ???
+  def RETURN[R <: Stack]: F[StackNil] => F[StackEnd] = ???
 
   // NATIVE
   def XRETURN
   [R <: Stack, T <: PType]
   (e: RType[T]):
-  F[R] => F[StackEnd] =
+  F[StackNil ** T] => F[StackEnd] =
     ???
 
   // NATIVE
