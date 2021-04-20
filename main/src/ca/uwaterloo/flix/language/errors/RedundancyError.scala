@@ -323,7 +323,6 @@ object RedundancyError {
     }
   }
 
-  // MATT update docs and messages
   /**
     * An error raised to indicate that the given signature recurses unconditionally.
     *
