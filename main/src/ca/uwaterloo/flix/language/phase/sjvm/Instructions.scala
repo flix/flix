@@ -46,7 +46,12 @@ object Instructions {
 
   private def castF[S1 <: Stack, S2 <: Stack](f: F[S1]): F[S2] = f.asInstanceOf[F[S2]]
 
-  def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = ???
+  def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = f => {
+    val label = new Label()
+    f.visitor.visitLabel(label)
+    f.visitor.visitLineNumber(loc.beginLine, label)
+    f
+  }
 
   def tag[T]: T = null.asInstanceOf[T]
 

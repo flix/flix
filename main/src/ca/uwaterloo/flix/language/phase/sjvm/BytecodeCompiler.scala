@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{Cat1, ErasedAst, PType}
+import ca.uwaterloo.flix.language.ast.RType._
+import ca.uwaterloo.flix.language.ast.{Cat1, ErasedAst, PType, RType, SourceLocation}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.MethodVisitor
 
@@ -102,7 +103,13 @@ object BytecodeCompiler {
     case Expression.RecordExtend(field, value, rest, tpe, loc) => ???
     case Expression.RecordRestrict(field, rest, tpe, loc) => ???
     case Expression.ArrayLit(elms, tpe, loc) => ???
-    case Expression.ArrayNew(elm, len, tpe, loc) => ???
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(elm) ~
+        compileExp(len) ~
+        XNEWARRAY(tpe) ~
+        ???
+
     case Expression.ArrayLoad(base, index, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
@@ -144,7 +151,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
         NEW(className) ~
         DUP ~
-        INVOKESPECIAL(className, "()V") ~
+        INVOKESPECIAL(className, nothingToVoid) ~
         DUP ~
         compileExp(exp) ~
         PUTFIELD(className, GenRefClasses.fieldName, exp.tpe)
