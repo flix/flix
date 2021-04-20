@@ -289,19 +289,19 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.FixpointConstraintSet(_, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointCompose(_, _, _, _, _, _) =>
+      case TypedAst.Expression.FixpointMerge(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.FixpointSolve(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointProject(_, _, _, _, _) =>
+      case TypedAst.Expression.FixpointFilter(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointProjectInto(_, _, _, _, _) =>
+      case TypedAst.Expression.FixpointProjectIn(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointFacts(_, _, _, _, _) =>
+      case TypedAst.Expression.FixpointProjectOut(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
     }

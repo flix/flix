@@ -553,7 +553,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (used, con) => used and visitConstraint(con, env0)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       us1 and us2
@@ -561,13 +561,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.FixpointProjectInto(exp, _, _, _, _) =>
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.FixpointFacts(_, exp, _, _, _) =>
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       visitExp(exp, env0)
 
   }

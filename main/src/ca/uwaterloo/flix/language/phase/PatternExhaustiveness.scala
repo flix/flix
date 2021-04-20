@@ -328,7 +328,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- traverse(cs)(visitConstraint(_, root))
           } yield tast
 
-        case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
+        case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
@@ -339,17 +339,17 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProject(_, exp, _, _, _) =>
+        case Expression.FixpointFilter(_, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProjectInto(exp, _, _, _, _) =>
+        case Expression.FixpointProjectIn(exp, _, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointFacts(_, exp, tpe, eff, loc) =>
+        case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast

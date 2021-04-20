@@ -426,26 +426,26 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val cs = cs0.map(visitConstraint(_, env0))
           Expression.FixpointConstraintSet(cs, stf, subst0(tpe), loc)
 
-        case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
+        case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.FixpointCompose(e1, e2, stf, subst0(tpe), eff, loc)
+          Expression.FixpointMerge(e1, e2, stf, subst0(tpe), eff, loc)
 
         case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           Expression.FixpointSolve(e, stf, subst0(tpe), eff, loc)
 
-        case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+        case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointProject(pred, e, subst0(tpe), eff, loc)
+          Expression.FixpointFilter(pred, e, subst0(tpe), eff, loc)
 
-        case Expression.FixpointProjectInto(exp, pred, tpe, eff, loc) =>
+        case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointProjectInto(e, pred, subst0(tpe), eff, loc)
+          Expression.FixpointProjectIn(e, pred, subst0(tpe), eff, loc)
 
-        case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
+        case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointFacts(pred, e, subst0(tpe), eff, loc)
+          Expression.FixpointProjectOut(pred, e, subst0(tpe), eff, loc)
       }
 
       /**

@@ -74,11 +74,11 @@ object FormatExpression {
     case TypedAst.Expression.Lazy(exp, tpe, loc) => s"Lazy($exp)"
     case TypedAst.Expression.Force(exp, tpe, eff, loc) => s"Force($exp)"
     case TypedAst.Expression.FixpointConstraintSet(cs, stf, tpe, loc) => s"FixpointConstraintSet($cs})"
-    case TypedAst.Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => s"FixpointCompose($exp1, $exp2)"
+    case TypedAst.Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => s"FixpointMerge($exp1, $exp2)"
     case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) => s"FixpointSolve($exp, $stf)"
-    case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) => s"FixpointProject($pred, $exp)"
-    case TypedAst.Expression.FixpointProjectInto(exp, pred, tpe, eff, loc) => s"FixpointProjectInto($exp, $pred)"
-    case TypedAst.Expression.FixpointFacts(pred, exp, tpe, eff, loc) => s"FixpointFacts($pred, $exp)"
+    case TypedAst.Expression.FixpointFilter(pred, exp, tpe, eff, loc) => s"FixpointFilter($pred, $exp)"
+    case TypedAst.Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => s"FixpointProjectIn($exp, $pred)"
+    case TypedAst.Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => s"FixpointProjectOut($pred, $exp)"
   }
 
 }
