@@ -7,18 +7,26 @@ import ca.uwaterloo.flix.api.Flix
 sealed trait UnkindedType
 
 object UnkindedType {
-  case class Cst(cst: Constructor, loc: SourceLocation)
+  case class Cst(cst: Constructor, loc: SourceLocation) extends UnkindedType
 
-  case class Apply(t1: UnkindedType, t2: UnkindedType)
+  case class Apply(t1: UnkindedType, t2: UnkindedType) extends UnkindedType
 
-  case class Lambda(t1: UnkindedType.Var, t2: UnkindedType)
+  case class Lambda(t1: UnkindedType.Var, t2: UnkindedType) extends UnkindedType
 
-  case class Var(id: Int, text: Option[String] = None)
+  case class Var(id: Int, text: Option[String] = None) extends UnkindedType
 
   // MATT docs
   def freshVar(text: Option[String] = None)(implicit flix: Flix): UnkindedType.Var = {
     Var(flix.genSym.freshId(), text)
   }
+
+  /**
+    * Constructs the apply type base[t_1, ,..., t_n].
+    */
+  def mkApply(base: UnkindedType, ts: List[UnkindedType]): UnkindedType = ts.foldLeft(base) {
+    case (acc, t) => Apply(acc, t)
+  }
+  def mkEnum()
 
   trait Constructor
 
