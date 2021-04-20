@@ -92,6 +92,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Unit(_) => Nil
 
+      case Expression.Null(_, _) => Nil
+
       case Expression.True(_) => Nil
 
       case Expression.False(_) => Nil
@@ -114,11 +116,15 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Str(_, _) => Nil
 
+      case Expression.Default(_, _) => Nil
+
       case Expression.Wild(_, _) => Nil
 
       case Expression.Var(_, _, _) => Nil
 
       case Expression.Def(_, _, _) => Nil
+
+      case Expression.Sig(_, _, _) => Nil
 
       case Expression.Hole(_, _, _, _) => Nil
 
@@ -216,6 +222,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Spawn(exp, _, _, _) => visitExp(exp, lint0)
 
+      case Expression.Lazy(exp, _, _) => visitExp(exp, lint0)
+
+      case Expression.Force(exp, _, _, _) => visitExp(exp, lint0)
+
       case Expression.FixpointConstraintSet(cs, _, _, _) => cs.flatMap(visitConstraint(_, lint0))
 
       case Expression.FixpointMerge(exp1, exp2, _, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
@@ -223,6 +233,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointSolve(exp, _, _, _, _) => visitExp(exp, lint0)
 
       case Expression.FixpointFilter(_, exp, _, _, _) => visitExp(exp, lint0)
+
+      case Expression.FixpointProjectIn(exp, _, _, _, _) => visitExp(exp, lint0)
+
+      case Expression.FixpointProjectOut(_, exp, _, _, _) => visitExp(exp, lint0)
+
 
     }
 
