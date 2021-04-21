@@ -1341,7 +1341,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Type.Tuple(elms0, loc) =>
       for {
         elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
-        tup = UnkindedType.mkTuple(elms)
+        tup = UnkindedType.mkTuple(elms, loc)
       } yield tup
 
     case NamedAst.Type.RecordEmpty(loc) =>
@@ -1355,7 +1355,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       } yield rec
 
     case NamedAst.Type.SchemaEmpty(loc) =>
-      Type.SchemaEmpty.toSuccess
+      UnkindedType.mkSchemaEmpty(loc).toSuccess
 
     case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
@@ -1369,9 +1369,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
-            app <- mkApply(t, ts, loc)
-            tpe <- Type.simplify(app).toSuccess[Type, ResolutionError]
-            schema <- mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
+            app = UnkindedType.mkApply(t, ts)
+            tpe = UnkindedType.simplify(app)
+            schema = UnkindedType.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
           } yield schema
       }
 
@@ -1379,20 +1379,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
-        pred <- mkPredicate(den, ts, loc)
-        schema <- mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
+        pred = mkPredicate(den, ts, loc)
+        schema = UnkindedType.mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-        rel <- mkRelation(ts, loc)
+        rel = UnkindedType.mkRelation(ts, loc)
       } yield rel
 
     case NamedAst.Type.Lattice(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-        lat <- mkLattice(ts, loc)
+        lat = UnkindedType.mkLattice(ts, loc)
       } yield lat
 
     case NamedAst.Type.Native(fqn, loc) =>
@@ -1409,34 +1409,34 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult) // TODO lift this once Type.Arrow effect is moved
+      } yield UnkindedType.mkUncurriedArrowWithEffect(tparams, eff, tresult) // TODO lift this once Type.Arrow effect is moved
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for {
         tpe1 <- lookupType(base0, ns0, root)
         tpe2 <- lookupType(targ0, ns0, root)
-        app <- mkApply(tpe1, tpe2, loc)
-      } yield Type.simplify(app)
+        app = UnkindedType.Apply(tpe1, tpe2) // MATT lost loc
+      } yield UnkindedType.simplify(app)
 
     case NamedAst.Type.True(loc) =>
-      Type.True.toSuccess
+      UnkindedType.mkTrue(loc).toSuccess
 
     case NamedAst.Type.False(loc) =>
-      Type.False.toSuccess
+      UnkindedType.mkFalse(loc).toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
-      flatMapN(lookupType(tpe, ns0, root)) {
-        case t => mkNot(t, loc)
+      mapN(lookupType(tpe, ns0, root)) {
+        case t => UnkindedType.mkNot(t, loc)
       }
 
     case NamedAst.Type.And(tpe1, tpe2, loc) =>
-      flatMapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => mkAnd(t1, t2, loc)
+      mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
+        case (t1, t2) => UnkindedType.mkAnd(t1, t2, loc)
       }
 
     case NamedAst.Type.Or(tpe1, tpe2, loc) =>
-      flatMapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => mkOr(t1, t2, loc)
+      mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
+        case (t1, t2) => UnkindedType.mkOr(t1, t2, loc)
       }
 
   }
@@ -1663,9 +1663,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the given type `tpe` wrapped in a type lambda for the given type parameters `tparam`.
     */
-  private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type): Type =
+  private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: UnkindedType): UnkindedType =
     tparams.foldRight(tpe) {
-      case (tparam, acc) => Type.Lambda(tparam.tpe, acc)
+      case (tparam, acc) => UnkindedType.Lambda(tparam.tpe, acc)
     }
 
 
@@ -1898,6 +1898,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
 
     flatMapN(tsVal)(mkApply(tycon, _, loc))
+  }
+
+  // MATT docs
+  private def mkPredicate(den: Ast.Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+    val tycon = den match {
+      case Denotation.Relational => UnkindedType.Cst(UnkindedType.Constructor.Relation, loc)
+      case Denotation.Latticenal => UnkindedType.Cst(UnkindedType.Constructor.Lattice, loc)
+    }
+    val ts = ts0 match {
+      case Nil => UnkindedType.mkUnit(loc)
+      case x :: Nil => x
+      case xs => UnkindedType.mkTuple(xs, loc)
+    }
+
+    UnkindedType.Apply(tycon, ts)
   }
 
   /**

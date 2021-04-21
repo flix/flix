@@ -131,6 +131,12 @@ object UnkindedType {
   def mkNative(clazz: Class[_]): UnkindedType = Cst(Constructor.Native(clazz), SourceLocation.Unknown)
 
   // MATT docs
+  def mkTrue(loc: SourceLocation): UnkindedType = Cst(Constructor.True, loc)
+
+  // MATT docs
+  def mkFalse(loc: SourceLocation): UnkindedType = Cst(Constructor.False, loc)
+
+  // MATT docs
   def freshVar(text: Option[String] = None)(implicit flix: Flix): UnkindedType.Var = {
     Var(flix.genSym.freshId(), text)
   }
@@ -179,8 +185,8 @@ object UnkindedType {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: List[UnkindedType]): UnkindedType = { // MATT needs loc?
-    mkApply(Cst(Constructor.Tuple(ts.length), SourceLocation.Unknown), ts)
+  def mkTuple(ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+    mkApply(Cst(Constructor.Tuple(ts.length), loc), ts)
   }
 
   // MATT docs
@@ -190,7 +196,149 @@ object UnkindedType {
 
   // MATT docs
   def mkRecordExtend(field: Name.Field, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
-    Apply(Cst(Constructor.RecordExtend(field), loc), rest)
+    mkApply(Cst(Constructor.RecordExtend(field), loc), List(tpe, rest))
+  }
+
+  // MATT docs
+  def mkSchemaEmpty(loc: SourceLocation): UnkindedType = {
+    Cst(Constructor.SchemaEmpty, loc)
+  }
+
+  // MATT docs
+  def mkSchemaExtend(pred: Name.Pred, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
+    mkApply(Cst(Constructor.SchemaExtend(pred), loc), List(tpe, rest))
+  }
+
+
+  /**
+    * Construct a relation type with the given list of type arguments `ts0`.
+    */
+  def mkRelation(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+    val ts = ts0 match {
+      case Nil => mkUnit(loc)
+      case x :: Nil => x
+      case xs => mkTuple(xs, loc)
+    }
+
+    Apply(Cst(Constructor.Relation, loc), ts)
+  }
+
+  /**
+    * Construct a lattice type with the given list of type arguments `ts0`.
+    */
+  def mkLattice(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+    val ts = ts0 match {
+      case Nil => mkUnit(loc)
+      case x :: Nil => x
+      case xs => mkTuple(xs, loc)
+    }
+
+    Apply(Cst(Constructor.Lattice, loc), ts)
+  }
+
+  /**
+    * Constructs the pure arrow type A -> B.
+    */
+  def mkPureArrow(a: UnkindedType, b: UnkindedType): UnkindedType = mkArrowWithEffect(a, Cst(Constructor.Pure, SourceLocation.Unknown), b)
+
+  /**
+    * Constructs the impure arrow type A ~> B.
+    */
+  def mkImpureArrow(a: UnkindedType, b: UnkindedType): UnkindedType = mkArrowWithEffect(a, Cst(Constructor.Impure, SourceLocation.Unknown), b)
+
+  /**
+    * Constructs the arrow type A -> B & e.
+    */
+  def mkArrowWithEffect(a: UnkindedType, e: UnkindedType, b: UnkindedType): UnkindedType = mkApply(Cst(Constructor.Arrow(2), SourceLocation.Unknown), List(e, a, b))
+
+  /**
+    * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
+    */
+  def mkPureCurriedArrow(as: List[UnkindedType], b: UnkindedType): UnkindedType = mkCurriedArrowWithEffect(as, Cst(Constructor.Pure, SourceLocation.Unknown), b)
+
+  /**
+    * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
+    */
+  def mkImpureCurriedArrow(as: List[UnkindedType], b: UnkindedType): UnkindedType = mkCurriedArrowWithEffect(as, Cst(Constructor.Impure, SourceLocation.Unknown), b)
+
+  /**
+    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
+    */
+  def mkCurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType, b: UnkindedType): UnkindedType = {
+    val a = as.last
+    val base = mkArrowWithEffect(a, e, b)
+    as.init.foldRight(base)(mkPureArrow)
+  }
+
+  /**
+    * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
+    */
+  def mkPureUncurriedArrow(as: List[UnkindedType], b: UnkindedType): UnkindedType = mkUncurriedArrowWithEffect(as, Cst(Constructor.Pure, SourceLocation.Unknown), b)
+
+  /**
+    * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
+    */
+  def mkImpureUncurriedArrow(as: List[UnkindedType], b: UnkindedType): UnkindedType = mkUncurriedArrowWithEffect(as, Cst(Constructor.Impure, SourceLocation.Unknown), b)
+
+  /**
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    */
+  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType, b: UnkindedType): UnkindedType = {
+    val arrow = Apply(Cst(Constructor.Arrow(as.length + 1), SourceLocation.Unknown), e)
+    val inner = as.foldLeft(arrow: UnkindedType) {
+      case (acc, x) => Apply(acc, x)
+    }
+    Apply(inner, b)
+  }
+
+  // MATT docs
+  def mkNot(t: UnkindedType, loc: SourceLocation): UnkindedType = {
+    Apply(Cst(Constructor.Not, loc), t)
+  }
+
+  // MATT docs
+  def mkAnd(t1: UnkindedType, t2: UnkindedType, loc: SourceLocation): UnkindedType = {
+    mkApply(Cst(Constructor.And, loc), List(t1, t2))
+  }
+
+  // MATT docs
+  def mkOr(t1: UnkindedType, t2: UnkindedType, loc: SourceLocation): UnkindedType = {
+    mkApply(Cst(Constructor.Or, loc), List(t1, t2))
+  }
+
+  // MATT reorganize all these functions
+
+  /**
+    * Returns a simplified (evaluated) form of the given type `tpe0`.
+    *
+    * Performs beta-reduction of type abstractions and applications.
+    */
+  def simplify(tpe0: UnkindedType): UnkindedType = {
+    def eval(t: UnkindedType, subst: Map[UnkindedType.Var, UnkindedType]): UnkindedType = t match {
+      case tvar: Var => subst.getOrElse(tvar, tvar)
+
+      case Cst(_, _) => t
+
+      case Apply(Apply(Cst(Constructor.RecordExtend(field), loc), tpe), rest) =>
+        val t1 = eval(tpe, subst)
+        val t2 = eval(rest, subst)
+        UnkindedType.mkRecordExtend(field, t1, t2, loc)
+
+      case Apply(Apply(Cst(Constructor.SchemaExtend(pred), loc), tpe), rest) =>
+        val t1 = eval(tpe, subst)
+        val t2 = eval(rest, subst)
+        UnkindedType.mkSchemaExtend(pred, t1, t2, loc)
+
+      case Lambda(tvar, tpe) => Lambda(tvar, eval(tpe, subst))
+
+      // TODO: Does not take variable capture into account.
+      case Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
+        case (Lambda(tvar, tpe3), t2) => eval(tpe3, subst + (tvar -> t2))
+        case (t1, t2) => Apply(t1, t2)
+      }
+    }
+
+    eval(tpe0, Map.empty)
   }
 
   trait Constructor
@@ -356,5 +504,9 @@ object UnkindedType {
       * A type constructor that represents the disjunction of two effects.
       */
     case object Or extends Constructor
+
+    val Pure: Constructor = True
+    val Impure: Constructor = False
+
   }
 }
