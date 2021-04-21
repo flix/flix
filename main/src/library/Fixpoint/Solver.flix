@@ -63,7 +63,32 @@ namespace Fixpoint {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
 
-    // TODO: Add doc and add for N=1 to N=10
+    // TODO: is N=1 correct?
+    
+    pub def projectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[t1]):
+        Datalog[Boxed] with Boxable[t1], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(v1 -> acc -> {
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure
+
+    pub def projectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure
+
     pub def projectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
         use Fixpoint/Ast.SourceLocation.{Unknown};
@@ -77,6 +102,252 @@ namespace Fixpoint {
                         [], Unknown) :: acc
         }, Nil, ts) as & Pure;
         Datalog(List.toArray(facts), []) as & Pure
+
+    pub def projectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure
+
+    pub def projectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure      
+    
+    pub def projectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure
+
+    pub def projectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure
+
+    pub def projectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7, v8) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown),
+                                 HeadTerm.Lit(box(v8), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure
+
+    pub def projectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7, v8, v9) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown),
+                                 HeadTerm.Lit(box(v8), Unknown),
+                                 HeadTerm.Lit(box(v9), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure
+
+    pub def projectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown),
+                                 HeadTerm.Lit(box(v8), Unknown),
+                                 HeadTerm.Lit(box(v9), Unknown),
+                                 HeadTerm.Lit(box(v10), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure 
+
+    pub def projectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown),
+                                 HeadTerm.Lit(box(v8), Unknown),
+                                 HeadTerm.Lit(box(v9), Unknown),
+                                 HeadTerm.Lit(box(v10), Unknown),
+                                 HeadTerm.Lit(box(v11), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure 
+
+    pub def projectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown),
+                                 HeadTerm.Lit(box(v8), Unknown),
+                                 HeadTerm.Lit(box(v9), Unknown),
+                                 HeadTerm.Lit(box(v10), Unknown),
+                                 HeadTerm.Lit(box(v11), Unknown),
+                                 HeadTerm.Lit(box(v12), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure 
+
+    pub def projectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown),
+                                 HeadTerm.Lit(box(v8), Unknown),
+                                 HeadTerm.Lit(box(v9), Unknown),
+                                 HeadTerm.Lit(box(v10), Unknown),
+                                 HeadTerm.Lit(box(v11), Unknown),
+                                 HeadTerm.Lit(box(v12), Unknown),
+                                 HeadTerm.Lit(box(v13), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure 
+
+    pub def projectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown),
+                                 HeadTerm.Lit(box(v8), Unknown),
+                                 HeadTerm.Lit(box(v9), Unknown),
+                                 HeadTerm.Lit(box(v10), Unknown),
+                                 HeadTerm.Lit(box(v11), Unknown),
+                                 HeadTerm.Lit(box(v12), Unknown),
+                                 HeadTerm.Lit(box(v13), Unknown),
+                                 HeadTerm.Lit(box(v14), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure   
+
+    pub def projectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown),
+                                 HeadTerm.Lit(box(v4), Unknown),
+                                 HeadTerm.Lit(box(v5), Unknown),
+                                 HeadTerm.Lit(box(v6), Unknown),
+                                 HeadTerm.Lit(box(v7), Unknown),
+                                 HeadTerm.Lit(box(v8), Unknown),
+                                 HeadTerm.Lit(box(v9), Unknown),
+                                 HeadTerm.Lit(box(v10), Unknown),
+                                 HeadTerm.Lit(box(v11), Unknown),
+                                 HeadTerm.Lit(box(v12), Unknown),
+                                 HeadTerm.Lit(box(v13), Unknown),
+                                 HeadTerm.Lit(box(v14), Unknown),
+                                 HeadTerm.Lit(box(v15), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure   
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
