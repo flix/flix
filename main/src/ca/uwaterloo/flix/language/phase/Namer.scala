@@ -874,9 +874,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Schema), loc)
       }
 
-    case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
+    case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, loc)
+        case (e1, e2) => NamedAst.Expression.FixpointMerge(e1, e2, loc)
       }
 
     case WeededAst.Expression.FixpointSolve(exp, loc) =>
@@ -884,14 +884,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointSolve(e, loc)
       }
 
-    case WeededAst.Expression.FixpointProject(ident, exp, loc) =>
+    case WeededAst.Expression.FixpointFilter(ident, exp, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProject(ident, e, Type.freshVar(Kind.Schema), loc)
+        case e => NamedAst.Expression.FixpointFilter(ident, e, Type.freshVar(Kind.Schema), loc)
       }
 
-    case WeededAst.Expression.FixpointQuery(pred, exp1, exp2, loc) =>
+    case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.FixpointProjectIn(e, pred, Type.freshVar(Kind.Schema), loc)
+      }
+
+    case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointQuery(pred, e1, e2, Type.freshVar(Kind.Star), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, Type.freshVar(Kind.Star), loc)
       }
 
   }
@@ -1286,10 +1291,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Lazy(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Force(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
-    case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointProject(qname, exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointQuery(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
+    case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
+    case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
   }
 
   /**

@@ -1357,7 +1357,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypeAllowEmptyM(tvar :: constraintTypes, loc)
         } yield (constrs.flatten, resultTyp, Type.Pure)
 
-      case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         //
         //  exp1 : #{...}    exp2 : #{...}
         //  ------------------------------
@@ -1382,7 +1382,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
         //
         //  exp1 : tpe    exp2 : #{ P : a  | b }
         //  -------------------------------------------
@@ -1399,7 +1399,31 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointQuery(pred, exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
+        //
+        //  exp : F[freshElmType] where F is Foldable
+        //  -------------------------------------------
+        //  project exp into A: #{A(freshElmType) | freshRestSchemaType}
+        //
+        val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star)
+        val freshElmTypeVar = Type.freshVar(Kind.Star)
+        val freshPredicateTypeVar = Type.freshVar(Kind.Star)
+        val freshRestSchemaTypeVar = Type.freshVar(Kind.Schema)
+
+        // Require Boxable and Foldable instances.
+        val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
+        val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
+        val boxable = Ast.TypeConstraint(boxableSym, freshElmTypeVar, loc)
+        val foldable = Ast.TypeConstraint(foldableSym, freshTypeConstructorVar, loc)
+
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          expectedType <- unifyTypeM(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar)), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchemaExtend(pred, Type.mkRelation(List(freshElmTypeVar)), freshRestSchemaTypeVar), loc)
+          resultEff = eff
+        } yield (boxable :: foldable :: constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
         //
         //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
         //  exp2: freshRestSchemaVar
@@ -1774,12 +1798,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val cs = cs0.map(visitConstraint)
         TypedAst.Expression.FixpointConstraintSet(cs, Stratification.Empty, subst0(tvar), loc)
 
-      case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e1.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.FixpointCompose(e1, e2, Stratification.Empty, tpe, eff, loc)
+        TypedAst.Expression.FixpointMerge(e1, e2, Stratification.Empty, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointSolve(exp, loc) =>
         val e = visitExp(exp, subst0)
@@ -1787,21 +1811,26 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.FixpointSolve(e, Stratification.Empty, tpe, eff, loc)
 
-      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.FixpointProject(pred, e, subst0(tvar), eff, loc)
+        TypedAst.Expression.FixpointFilter(pred, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.FixpointQuery(pred, exp1, exp2, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val eff = e.eff
+        TypedAst.Expression.FixpointProjectIn(e, pred, subst0(tvar), eff, loc)
+
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val stf = Stratification.Empty
         val tpe = subst0(tvar)
         val eff = Type.mkAnd(e1.eff, e2.eff)
 
-        val mergeExp = TypedAst.Expression.FixpointCompose(e1, e2, stf, tpe, eff, loc)
+        val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
-        TypedAst.Expression.FixpointFacts(pred, solveExp, tpe, eff, loc)
+        TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
     }
 
     /**

@@ -219,16 +219,19 @@ object TypedAstOps {
           case (macc, c) => macc ++ visitConstraint(c, env0)
         }
 
-      case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
+      case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointProject(_, exp, tpe, eff, loc) =>
+      case Expression.FixpointFilter(_, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointFacts(_, exp, tpe, eff, loc) =>
+      case Expression.FixpointProjectIn(exp, _, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
+      case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
     }
 
@@ -379,10 +382,11 @@ object TypedAstOps {
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expression.FixpointFacts(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.FixpointProjectIn(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.FixpointProjectOut(_, exp, _, _, _) => sigSymsOf(exp)
   }
 
   /**
@@ -624,16 +628,19 @@ object TypedAstOps {
         case (acc, c) => acc ++ freeVars(c)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.FixpointFacts(_, exp, _, _, _) =>
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       freeVars(exp)
   }
 
