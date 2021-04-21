@@ -182,6 +182,76 @@ namespace Fixpoint {
             isTermGround(freeVars, t8) and
             isTermGround(freeVars, t9) and
             isTermGround(freeVars, t10)
+        case BoolExp.Guard11(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11)
+        case BoolExp.Guard12(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11) and
+            isTermGround(freeVars, t12)
+        case BoolExp.Guard13(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11) and
+            isTermGround(freeVars, t12) and
+            isTermGround(freeVars, t13)
+        case BoolExp.Guard14(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11) and
+            isTermGround(freeVars, t12) and
+            isTermGround(freeVars, t13) and
+            isTermGround(freeVars, t14)
+        case BoolExp.Guard15(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11) and
+            isTermGround(freeVars, t12) and
+            isTermGround(freeVars, t13) and
+            isTermGround(freeVars, t14) and
+            isTermGround(freeVars, t15)
     }
 
     /// A term is ground if it is a literal or a free variable.
@@ -257,5 +327,75 @@ namespace Fixpoint {
             isTermGround(freeVars, t8) and
             isTermGround(freeVars, t9) and
             isTermGround(freeVars, t10)
+        case RamTerm.App11(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11)
+        case RamTerm.App12(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11) and
+            isTermGround(freeVars, t12)
+        case RamTerm.App13(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11) and
+            isTermGround(freeVars, t12) and
+            isTermGround(freeVars, t13)
+        case RamTerm.App14(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11) and
+            isTermGround(freeVars, t12) and
+            isTermGround(freeVars, t13) and
+            isTermGround(freeVars, t14)
+        case RamTerm.App15(_, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5) and
+            isTermGround(freeVars, t6) and
+            isTermGround(freeVars, t7) and
+            isTermGround(freeVars, t8) and
+            isTermGround(freeVars, t9) and
+            isTermGround(freeVars, t10) and
+            isTermGround(freeVars, t11) and
+            isTermGround(freeVars, t12) and
+            isTermGround(freeVars, t13) and
+            isTermGround(freeVars, t14) and
+            isTermGround(freeVars, t15)
     }
 }

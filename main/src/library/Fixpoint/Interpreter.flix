@@ -204,6 +204,81 @@ namespace Fixpoint {
                 let v9 = evalTerm(env, t9);
                 let v10 = evalTerm(env, t10);
                 f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)
+            case BoolExp.Guard11(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                let v3 = evalTerm(env, t3);
+                let v4 = evalTerm(env, t4);
+                let v5 = evalTerm(env, t5);
+                let v6 = evalTerm(env, t6);
+                let v7 = evalTerm(env, t7);
+                let v8 = evalTerm(env, t8);
+                let v9 = evalTerm(env, t9);
+                let v10 = evalTerm(env, t10);
+                let v11 = evalTerm(env, t11);
+                f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)
+            case BoolExp.Guard12(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                let v3 = evalTerm(env, t3);
+                let v4 = evalTerm(env, t4);
+                let v5 = evalTerm(env, t5);
+                let v6 = evalTerm(env, t6);
+                let v7 = evalTerm(env, t7);
+                let v8 = evalTerm(env, t8);
+                let v9 = evalTerm(env, t9);
+                let v10 = evalTerm(env, t10);
+                let v11 = evalTerm(env, t11);
+                let v12 = evalTerm(env, t12);
+                f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)(v12)
+            case BoolExp.Guard13(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                let v3 = evalTerm(env, t3);
+                let v4 = evalTerm(env, t4);
+                let v5 = evalTerm(env, t5);
+                let v6 = evalTerm(env, t6);
+                let v7 = evalTerm(env, t7);
+                let v8 = evalTerm(env, t8);
+                let v9 = evalTerm(env, t9);
+                let v10 = evalTerm(env, t10);
+                let v11 = evalTerm(env, t11);
+                let v12 = evalTerm(env, t12);
+                let v13 = evalTerm(env, t13);
+                f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)(v12)(v13)
+            case BoolExp.Guard14(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                let v3 = evalTerm(env, t3);
+                let v4 = evalTerm(env, t4);
+                let v5 = evalTerm(env, t5);
+                let v6 = evalTerm(env, t6);
+                let v7 = evalTerm(env, t7);
+                let v8 = evalTerm(env, t8);
+                let v9 = evalTerm(env, t9);
+                let v10 = evalTerm(env, t10);
+                let v11 = evalTerm(env, t11);
+                let v12 = evalTerm(env, t12);
+                let v13 = evalTerm(env, t13);
+                let v14 = evalTerm(env, t14);
+                f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)(v12)(v13)(v14)
+            case BoolExp.Guard15(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                let v3 = evalTerm(env, t3);
+                let v4 = evalTerm(env, t4);
+                let v5 = evalTerm(env, t5);
+                let v6 = evalTerm(env, t6);
+                let v7 = evalTerm(env, t7);
+                let v8 = evalTerm(env, t8);
+                let v9 = evalTerm(env, t9);
+                let v10 = evalTerm(env, t10);
+                let v11 = evalTerm(env, t11);
+                let v12 = evalTerm(env, t12);
+                let v13 = evalTerm(env, t13);
+                let v14 = evalTerm(env, t14);
+                let v15 = evalTerm(env, t15);
+                f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)(v12)(v13)(v14)(v15)
         } as & Pure, es)
 
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v with ToString[v] = match term {
@@ -243,6 +318,131 @@ namespace Fixpoint {
             let v4 = evalTerm(env, t4);
             let v5 = evalTerm(env, t5);
             f(v1)(v2)(v3)(v4)(v5)
+        case RamTerm.App6(f, t1, t2, t3, t4, t5, t6) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            f(v1)(v2)(v3)(v4)(v5)(v6)
+        case RamTerm.App7(f, t1, t2, t3, t4, t5, t6, t7) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)
+        case RamTerm.App8(f, t1, t2, t3, t4, t5, t6, t7, t8) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            let v8 = evalTerm(env, t8);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)
+        case RamTerm.App9(f, t1, t2, t3, t4, t5, t6, t7, t8, t9) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            let v8 = evalTerm(env, t8);
+            let v9 = evalTerm(env, t9);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)
+        case RamTerm.App10(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            let v8 = evalTerm(env, t8);
+            let v9 = evalTerm(env, t9);
+            let v10 = evalTerm(env, t10);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)
+        case RamTerm.App11(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            let v8 = evalTerm(env, t8);
+            let v9 = evalTerm(env, t9);
+            let v10 = evalTerm(env, t10);
+            let v11 = evalTerm(env, t11);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)
+        case RamTerm.App12(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            let v8 = evalTerm(env, t8);
+            let v9 = evalTerm(env, t9);
+            let v10 = evalTerm(env, t10);
+            let v11 = evalTerm(env, t11);
+            let v12 = evalTerm(env, t12);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)(v12)
+        case RamTerm.App13(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            let v8 = evalTerm(env, t8);
+            let v9 = evalTerm(env, t9);
+            let v10 = evalTerm(env, t10);
+            let v11 = evalTerm(env, t11);
+            let v12 = evalTerm(env, t12);
+            let v13 = evalTerm(env, t13);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)(v12)(v13)
+        case RamTerm.App14(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            let v8 = evalTerm(env, t8);
+            let v9 = evalTerm(env, t9);
+            let v10 = evalTerm(env, t10);
+            let v11 = evalTerm(env, t11);
+            let v12 = evalTerm(env, t12);
+            let v13 = evalTerm(env, t13);
+            let v14 = evalTerm(env, t14);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)(v12)(v13)(v14)
+        case RamTerm.App15(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) =>
+            let v1 = evalTerm(env, t1);
+            let v2 = evalTerm(env, t2);
+            let v3 = evalTerm(env, t3);
+            let v4 = evalTerm(env, t4);
+            let v5 = evalTerm(env, t5);
+            let v6 = evalTerm(env, t6);
+            let v7 = evalTerm(env, t7);
+            let v8 = evalTerm(env, t8);
+            let v9 = evalTerm(env, t9);
+            let v10 = evalTerm(env, t10);
+            let v11 = evalTerm(env, t11);
+            let v12 = evalTerm(env, t12);
+            let v13 = evalTerm(env, t13);
+            let v14 = evalTerm(env, t14);
+            let v15 = evalTerm(env, t15);
+            f(v1)(v2)(v3)(v4)(v5)(v6)(v7)(v8)(v9)(v10)(v11)(v12)(v13)(v14)(v15)
         case _ => bug!("Illegal term ${term}")
     }
 }

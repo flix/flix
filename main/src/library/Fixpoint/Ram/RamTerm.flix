@@ -41,6 +41,11 @@ namespace Fixpoint/Ram {
         case App8(v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
         case App9(v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
         case App10(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App11(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App12(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App13(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App14(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App15(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
     }
 
     instance ToString[RamTerm[v]] with ToString[v] {
@@ -60,6 +65,11 @@ namespace Fixpoint/Ram {
             case App8(_, v1, v2, v3, v4, v5, v6, v7, v8) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8})"
             case App9(_, v1, v2, v3, v4, v5, v6, v7, v8, v9) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9})"
             case App10(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10})"
+            case App11(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11})"
+            case App12(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11}, ${v12})"
+            case App13(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11}, ${v12}, ${v13})"
+            case App14(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11}, ${v12}, ${v13}, ${v14})"
+            case App15(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11}, ${v12}, ${v13}, ${v14}, ${v15})"
         }
     }
 }

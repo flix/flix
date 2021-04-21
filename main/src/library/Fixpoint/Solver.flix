@@ -139,6 +139,16 @@ namespace Fixpoint {
         (factsOf(p, d) |> Array.map(f)) as & Pure
 
     ///
+    /// Returns all facts in `d` associated with the predicate symbol `p`.
+    ///
+    pub def facts11(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11] =
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]));
+        (factsOf(p, d) |> Array.map(f)) as & Pure
+    
+    /// TODO (spt)
+
+
+    ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
     def factsOf(p: PredSym, d: Datalog[v]): Array[Array[v]] & Impure =
