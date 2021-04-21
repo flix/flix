@@ -19,7 +19,7 @@ use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denota
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard0, Guard1, Guard2, Guard3, Guard4, Guard5};
+use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard0, Guard1, Guard2, Guard3, Guard4, Guard5, Guard6, Guard7, Guard8, Guard9, Guard10, Guard11, Guard12, Guard13, Guard14, Guard15};
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
@@ -155,6 +155,131 @@ namespace Fixpoint {
             let t4 = unwrap(Map.get(v4, env));
             let t5 = unwrap(Map.get(v5, env));
             RamTerm.App5(f, t1, t2, t3, t4, t5)
+        case HeadTerm.App6(f, v1, v2, v3, v4, v5, v6, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            RamTerm.App6(f, t1, t2, t3, t4, t5, t6)
+        case HeadTerm.App7(f, v1, v2, v3, v4, v5, v6, v7, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            RamTerm.App7(f, t1, t2, t3, t4, t5, t6, t7)
+        case HeadTerm.App8(f, v1, v2, v3, v4, v5, v6, v7, v8, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            let t8 = unwrap(Map.get(v8, env));
+            RamTerm.App8(f, t1, t2, t3, t4, t5, t6, t7, t8)
+        case HeadTerm.App9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            let t8 = unwrap(Map.get(v8, env));
+            let t9 = unwrap(Map.get(v9, env));
+            RamTerm.App9(f, t1, t2, t3, t4, t5, t6, t7, t8, t9)
+        case HeadTerm.App10(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            let t8 = unwrap(Map.get(v8, env));
+            let t9 = unwrap(Map.get(v9, env));
+            let t10 = unwrap(Map.get(v10, env));
+            RamTerm.App10(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
+        case HeadTerm.App11(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            let t8 = unwrap(Map.get(v8, env));
+            let t9 = unwrap(Map.get(v9, env));
+            let t10 = unwrap(Map.get(v10, env));
+            let t11 = unwrap(Map.get(v11, env));
+            RamTerm.App11(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)
+        case HeadTerm.App12(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            let t8 = unwrap(Map.get(v8, env));
+            let t9 = unwrap(Map.get(v9, env));
+            let t10 = unwrap(Map.get(v10, env));
+            let t11 = unwrap(Map.get(v11, env));
+            let t12 = unwrap(Map.get(v12, env));
+            RamTerm.App12(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)
+        case HeadTerm.App13(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            let t8 = unwrap(Map.get(v8, env));
+            let t9 = unwrap(Map.get(v9, env));
+            let t10 = unwrap(Map.get(v10, env));
+            let t11 = unwrap(Map.get(v11, env));
+            let t12 = unwrap(Map.get(v12, env));
+            let t13 = unwrap(Map.get(v13, env));
+            RamTerm.App13(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)
+        case HeadTerm.App14(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            let t8 = unwrap(Map.get(v8, env));
+            let t9 = unwrap(Map.get(v9, env));
+            let t10 = unwrap(Map.get(v10, env));
+            let t11 = unwrap(Map.get(v11, env));
+            let t12 = unwrap(Map.get(v12, env));
+            let t13 = unwrap(Map.get(v13, env));
+            let t14 = unwrap(Map.get(v14, env));
+            RamTerm.App14(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
+        case HeadTerm.App15(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            let t6 = unwrap(Map.get(v6, env));
+            let t7 = unwrap(Map.get(v7, env));
+            let t8 = unwrap(Map.get(v8, env));
+            let t9 = unwrap(Map.get(v9, env));
+            let t10 = unwrap(Map.get(v10, env));
+            let t11 = unwrap(Map.get(v11, env));
+            let t12 = unwrap(Map.get(v12, env));
+            let t13 = unwrap(Map.get(v13, env));
+            let t14 = unwrap(Map.get(v14, env));
+            let t15 = unwrap(Map.get(v15, env));
+            RamTerm.App15(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)
     }
 
     /// Augment body atoms with row variables.
@@ -239,6 +364,131 @@ namespace Fixpoint {
                     let t4 = unwrap(Map.get(v4, env));
                     let t5 = unwrap(Map.get(v5, env));
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
+                case Guard6(f, v1, v2, v3, v4, v5, v6, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    BoolExp.Guard6(f, t1, t2, t3, t4, t5, t6) :: acc
+                case Guard7(f, v1, v2, v3, v4, v5, v6, v7, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    BoolExp.Guard7(f, t1, t2, t3, t4, t5, t6, t7) :: acc
+                case Guard8(f, v1, v2, v3, v4, v5, v6, v7, v8, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    let t8 = unwrap(Map.get(v8, env));
+                    BoolExp.Guard8(f, t1, t2, t3, t4, t5, t6, t7, t8) :: acc
+                case Guard9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    let t8 = unwrap(Map.get(v8, env));
+                    let t9 = unwrap(Map.get(v9, env));
+                    BoolExp.Guard9(f, t1, t2, t3, t4, t5, t6, t7, t8, t9) :: acc
+                case Guard10(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    let t8 = unwrap(Map.get(v8, env));
+                    let t9 = unwrap(Map.get(v9, env));
+                    let t10 = unwrap(Map.get(v10, env));
+                    BoolExp.Guard10(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) :: acc
+                case Guard11(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    let t8 = unwrap(Map.get(v8, env));
+                    let t9 = unwrap(Map.get(v9, env));
+                    let t10 = unwrap(Map.get(v10, env));
+                    let t11 = unwrap(Map.get(v11, env));
+                    BoolExp.Guard11(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) :: acc
+                case Guard12(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    let t8 = unwrap(Map.get(v8, env));
+                    let t9 = unwrap(Map.get(v9, env));
+                    let t10 = unwrap(Map.get(v10, env));
+                    let t11 = unwrap(Map.get(v11, env));
+                    let t12 = unwrap(Map.get(v12, env));
+                    BoolExp.Guard12(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) :: acc
+                case Guard13(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    let t8 = unwrap(Map.get(v8, env));
+                    let t9 = unwrap(Map.get(v9, env));
+                    let t10 = unwrap(Map.get(v10, env));
+                    let t11 = unwrap(Map.get(v11, env));
+                    let t12 = unwrap(Map.get(v12, env));
+                    let t13 = unwrap(Map.get(v13, env));
+                    BoolExp.Guard13(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) :: acc
+                case Guard14(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    let t8 = unwrap(Map.get(v8, env));
+                    let t9 = unwrap(Map.get(v9, env));
+                    let t10 = unwrap(Map.get(v10, env));
+                    let t11 = unwrap(Map.get(v11, env));
+                    let t12 = unwrap(Map.get(v12, env));
+                    let t13 = unwrap(Map.get(v13, env));
+                    let t14 = unwrap(Map.get(v14, env));
+                    BoolExp.Guard14(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) :: acc
+                case Guard15(f, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    let t6 = unwrap(Map.get(v6, env));
+                    let t7 = unwrap(Map.get(v7, env));
+                    let t8 = unwrap(Map.get(v8, env));
+                    let t9 = unwrap(Map.get(v9, env));
+                    let t10 = unwrap(Map.get(v10, env));
+                    let t11 = unwrap(Map.get(v11, env));
+                    let t12 = unwrap(Map.get(v12, env));
+                    let t13 = unwrap(Map.get(v13, env));
+                    let t14 = unwrap(Map.get(v14, env));
+                    let t15 = unwrap(Map.get(v15, env));
+                    BoolExp.Guard15(f, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) :: acc
             }, Nil, body) as & Pure
 
     /// Restrict a constraint system to those constraints whose head predicate belongs to the given domain.

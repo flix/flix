@@ -23,7 +23,16 @@ namespace Fixpoint/Ast {
         case App3(v -> v -> v -> v, VarSym, VarSym, VarSym, SourceLocation)
         case App4(v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, SourceLocation)
         case App5(v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
-        /// TODO (spt)
+        case App6(v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App7(v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App8(v -> v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)        
+        case App9(v -> v -> v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App10(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App11(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App12(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App13(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App14(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App15(v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
     }
 
     instance ToString[HeadTerm[v]] with ToString[v] {
@@ -36,6 +45,16 @@ namespace Fixpoint/Ast {
             case HeadTerm.App3(_, v1, v2, v3, _) => "<clo>(${v1}, ${v2}, ${v3})"
             case HeadTerm.App4(_, v1, v2, v3, v4, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
             case HeadTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+            case HeadTerm.App6(_, v1, v2, v3, v4, v5, v6, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6})"
+            case HeadTerm.App7(_, v1, v2, v3, v4, v5, v6, v7, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7})"
+            case HeadTerm.App8(_, v1, v2, v3, v4, v5, v6, v7, v8, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8})"
+            case HeadTerm.App9(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9})"
+            case HeadTerm.App10(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10})"
+            case HeadTerm.App11(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11})"
+            case HeadTerm.App12(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11}, ${v12})"
+            case HeadTerm.App13(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11}, ${v12}, ${v13})"
+            case HeadTerm.App14(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11}, ${v12}, ${v13}, ${v14})"
+            case HeadTerm.App15(_, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5}, ${v6}, ${v7}, ${v8}, ${v9}, ${v10}, ${v11}, ${v12}, ${v13}, ${v14}, ${v15})"
         }
     }
 }
