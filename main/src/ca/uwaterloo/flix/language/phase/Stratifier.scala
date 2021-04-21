@@ -372,12 +372,12 @@ object Stratifier extends Phase[Root, Root] {
           Expression.FixpointConstraintSet(cs, s, tpe, loc)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, tpe, eff, loc) =>
+    case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
-        case (e1, e2, s) => Expression.FixpointCompose(e1, e2, s, tpe, eff, loc)
+        case (e1, e2, s) => Expression.FixpointMerge(e1, e2, s, tpe, eff, loc)
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
@@ -388,14 +388,19 @@ object Stratifier extends Phase[Root, Root] {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProject(pred, e, tpe, eff, loc)
+        case e => Expression.FixpointFilter(pred, e, tpe, eff, loc)
       }
 
-    case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointFacts(pred, e, tpe, eff, loc)
+        case e => Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
+      }
+
+    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
       }
   }
 
@@ -611,16 +616,19 @@ object Stratifier extends Phase[Root, Root] {
         case (dg, c) => dg + dependencyGraphOfConstraint(c)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.FixpointFacts(_, exp, _, _, _) =>
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
   }

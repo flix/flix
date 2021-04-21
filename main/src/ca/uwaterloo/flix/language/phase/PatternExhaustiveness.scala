@@ -24,8 +24,8 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.Function.const
 
@@ -328,7 +328,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- traverse(cs)(visitConstraint(_, root))
           } yield tast
 
-        case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
+        case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
@@ -339,12 +339,17 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProject(_, exp, tpe, eff, loc) =>
+        case Expression.FixpointFilter(_, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointFacts(_, exp, tpe, eff, loc) =>
+        case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
+
+        case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
@@ -406,7 +411,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * @param rules The rules to check for exhaustion
       * @param n     The size of resulting pattern vector
-      * @param  root The AST root of the expression
+      * @param root  The AST root of the expression
       * @return If no such pattern exists, returns Exhaustive, else returns NonExhaustive(a matching pattern)
       */
     def findNonMatchingPat(rules: List[List[Pattern]], n: Int, root: TypedAst.Root): Exhaustiveness = {
@@ -632,7 +637,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         // other enums
         case TyCon.Enum(_, sym, _, _) => {
           root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1.name, sym, countTypeArgs(x._2.tpeDeprecated), List.empty[TyCon]))
-          }.toList ::: xs
+        }.toList ::: xs
 
         /* For numeric types, we consider them as "infinite" types union
          * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
