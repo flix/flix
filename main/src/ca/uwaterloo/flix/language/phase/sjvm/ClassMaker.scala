@@ -72,8 +72,8 @@ object ClassMaker {
     }
   }
 
-  def openClassWriter(className: String, isPublic: Boolean, isFinal: Boolean)(implicit flix: Flix): ClassMaker = {
-    val visibility = if (isPublic) ACC_PUBLIC else ACC_PRIVATE
+  def openClassWriter(className: String, isFinal: Boolean)(implicit flix: Flix): ClassMaker = {
+    val visibility = ACC_PUBLIC
     val finality = if (isFinal) ACC_FINAL else 0
     val visitor = makeClassWriter()
     visitor.visit(JavaVersion, visibility + finality, className, null, objectName, null)
