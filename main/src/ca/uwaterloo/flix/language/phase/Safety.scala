@@ -212,13 +212,15 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => cs.flatMap(checkConstraint)
 
-    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointFacts(pred, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visitExp(exp)
 
   }
 

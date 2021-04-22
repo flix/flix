@@ -45,8 +45,8 @@ object Lowering extends Phase[Root, Root] {
 
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
-    lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
-    lazy val Project: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
+    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
+    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
 
     lazy val Lift1: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1")
     lazy val Lift2: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2")
@@ -121,8 +121,8 @@ object Lowering extends Phase[Root, Root] {
     // Function Types.
     //
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog)
-    lazy val ComposeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
-    lazy val ProjectType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
+    lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
+    lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
   }
 
   /**
@@ -457,9 +457,9 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Union)
-      val defExp = Expression.Def(defn.sym, Types.ComposeType, loc)
+    case Expression.FixpointMerge(exp1, exp2, _, _, eff, loc) =>
+      val defn = Defs.lookup(Defs.Merge)
+      val defExp = Expression.Def(defn.sym, Types.MergeType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
@@ -471,14 +471,35 @@ object Lowering extends Phase[Root, Root] {
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
-      val defn = Defs.lookup(Defs.Project)
-      val defExp = Expression.Def(defn.sym, Types.ProjectType, loc)
+    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
+      val defn = Defs.lookup(Defs.Filter)
+      val defExp = Expression.Def(defn.sym, Types.FilterType, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
-    case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+      // Compute the arity of the functor F[(a, b, c)] or F[a].
+      val arity = exp.tpe match {
+        case Type.Apply(_, innerType) => innerType.typeConstructor match {
+          case Some(TypeConstructor.Tuple(l)) => l
+          case _ => 1
+        }
+        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.")
+      }
+
+      // Compute the symbol of the function.
+      val sym = Symbol.mkDefnSym(s"Fixpoint.projectInto$arity")
+
+      // The type of the function.
+      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog)
+
+      // Put everything together.
+      val defExp = Expression.Def(sym, defTpe, loc)
+      val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
+      Expression.Apply(defExp, argExps, Types.Datalog, eff, loc)
+
+    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = tpe match {
@@ -496,8 +517,8 @@ object Lowering extends Phase[Root, Root] {
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe)
 
-      val defn = Defs.lookup(sym)
-      val defExp = Expression.Def(defn.sym, defTpe, loc)
+      // Put everything together.
+      val defExp = Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       Expression.Apply(defExp, argExps, tpe, eff, loc)
   }
@@ -1400,22 +1421,26 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.Force(e, tpe, eff, loc)
 
-    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
+    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      Expression.FixpointCompose(e1, e2, stf, tpe, eff, loc)
+      Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.FixpointProject(pred, e, tpe, eff, loc)
+      Expression.FixpointFilter(pred, e, tpe, eff, loc)
 
-    case Expression.FixpointFacts(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.FixpointFacts(pred, e, tpe, eff, loc)
+      Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
+
+    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }

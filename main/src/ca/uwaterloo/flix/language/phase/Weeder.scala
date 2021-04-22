@@ -1352,7 +1352,28 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
           val sp1 = leftMostSourcePosition(exp1)
-          WeededAst.Expression.FixpointCompose(e1, e2, mkSL(sp1, sp2))
+          WeededAst.Expression.FixpointMerge(e1, e2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.FixpointProjectInto(sp1, exps, idents, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      ///
+      /// Check for [[MismatchedArity]].
+      ///
+      if (exps.length != idents.length) {
+        return WeederError.MismatchedArity(exps.length, idents.length, loc).toFailure
+      }
+
+      mapN(traverse(exps)(visitExp)) {
+        case es =>
+          val init = WeededAst.Expression.FixpointConstraintSet(Nil, loc)
+          (es.zip(idents.toList)).foldRight(init: WeededAst.Expression) {
+            case ((exp, ident), acc) =>
+              val pred = Name.mkPred(ident)
+              val innerExp = WeededAst.Expression.FixpointProjectIn(exp, pred, loc)
+              WeededAst.Expression.FixpointMerge(innerExp, acc, loc)
+          }
       }
 
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
@@ -1375,7 +1396,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // Merge all the exps into one Datalog program value.
           val mergeExp = es.reduceRight[WeededAst.Expression] {
-            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+            case (e, acc) => WeededAst.Expression.FixpointMerge(e, acc, loc)
           }
           val modelExp = WeededAst.Expression.FixpointSolve(mergeExp, loc)
 
@@ -1391,12 +1412,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val projectExps = idents.map {
                 case ident =>
                   val varExp = WeededAst.Expression.VarOrDefOrSig(localVar, loc)
-                  WeededAst.Expression.FixpointProject(Name.Pred(ident.name, loc), varExp, loc)
+                  WeededAst.Expression.FixpointFilter(Name.Pred(ident.name, loc), varExp, loc)
               }
 
               // Merge all of the projections into one result.
               projectExps.reduceRight[WeededAst.Expression] {
-                case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+                case (e, acc) => WeededAst.Expression.FixpointMerge(e, acc, loc)
               }
           }
 
@@ -1439,11 +1460,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // Construct the merge of all the expressions.
           val dbExp = exps.reduceRight[WeededAst.Expression] {
-            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
+            case (e, acc) => WeededAst.Expression.FixpointMerge(e, acc, loc)
           }
 
           // Extract the tuples of the result predicate.
-          WeededAst.Expression.FixpointQuery(pred, queryExp, dbExp, loc)
+          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
       }
 
   }
@@ -2376,6 +2397,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointConstraint(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.FixpointProjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
   }
