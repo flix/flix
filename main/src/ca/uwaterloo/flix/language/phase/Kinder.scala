@@ -425,6 +425,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   // MATT docs
   private def getSchemeAscriptions(sc: ResolvedAst.Scheme, root: ResolvedAst.Root): Validation[Map[Int, Kind], KindError] = sc match {
     case ResolvedAst.Scheme(_, constraints0, base0) =>
+      // MATT need to get from quantifiers, but what kinds?
       val tconstrAscriptionsVal = Validation.fold(constraints0, Map.empty[Int, Kind]) {
         case (acc, ResolvedAst.TypeConstraint(classSym, tpe, _)) =>
           val clazz = root.classes(classSym)
@@ -433,6 +434,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
           mergeAscriptions(acc, Map(id -> kind))
       }
+
 
       val baseAscriptionsVal = inferKinds(base0, KindMatch.Star, root)
       // MATT make dedicated getAscriptions instead of reusing inferKinds (?)
