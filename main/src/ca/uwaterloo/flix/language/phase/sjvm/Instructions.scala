@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2020-2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ object Instructions {
       DUP ~
       MONITORENTER ~
       f ~
-      XSWAP(e, RType.RReference(null)) ~
+      XSWAP(e, RType.RReference(RObject)) ~ // TODO: make partial automatic swap
       MONITOREXIT
   }
 
@@ -186,7 +186,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, boolDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RBool().toDescriptor)
     castF(f)
   }
 
@@ -195,7 +195,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt8] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, int8Descriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RInt8().toDescriptor)
     castF(f)
   }
 
@@ -204,7 +204,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt16] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, int16Descriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RInt16().toDescriptor)
     castF(f)
   }
 
@@ -213,7 +213,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, int32Descriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RInt32().toDescriptor)
     castF(f)
   }
 
@@ -222,7 +222,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, int64Descriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RInt64().toDescriptor)
     castF(f)
   }
 
@@ -231,7 +231,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String):
   F[R ** PReference[T2]] => F[R ** PChar] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, charDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RChar().toDescriptor)
     castF(f)
   }
 
@@ -240,7 +240,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String):
   F[R ** PReference[T2]] => F[R ** PFloat32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, float32Descriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RFloat32().toDescriptor)
     castF(f)
   }
 
@@ -249,7 +249,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: String, fieldName: String):
   F[R ** PReference[T2]] => F[R ** PFloat64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, float64Descriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RFloat64().toDescriptor)
     castF(f)
   }
 
@@ -265,7 +265,7 @@ object Instructions {
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
   (className: String, fieldName: String, tpe: T1 = tag[T1]):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, objectDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, JvmName.Java.Lang.Object.toDescriptor)
     castF(f)
   }
 
@@ -278,9 +278,10 @@ object Instructions {
 
   // NATIVE
   def CAST
-  [R <: Stack, T <: PRefType]:
+  [R <: Stack, T <: PRefType]
+  (e: RRefType[T]):
   F[R ** PReference[PAnyObject]] => F[R ** PReference[T]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "TODO")
+    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, e.toInternalName)
     castF(f)
   }
 
@@ -299,7 +300,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (className: String, constructorDescriptor: String):
   F[R ** PReference[T]] => F[R] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, constructorMethod, constructorDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, JvmName.constructorMethod, constructorDescriptor, false)
     castF(f)
   }
 

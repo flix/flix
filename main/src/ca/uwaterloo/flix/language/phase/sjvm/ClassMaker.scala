@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2020-2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class ClassMaker(visitor: ClassWriter) {
   }
 
   def makeConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
-    makeMethod(f, constructorMethod, descriptor, isFinal = false, isPublic = true)
+    makeMethod(f, JvmName.constructorMethod, descriptor, isFinal = false, isPublic = true)
 
   def makeMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, isFinal: Boolean, isPublic: Boolean): Unit = {
     val visibility = if (isPublic) ACC_PUBLIC else ACC_PRIVATE
@@ -52,8 +52,8 @@ class ClassMaker(visitor: ClassWriter) {
 object ClassMaker {
 
   /**
-    * Returns the target JVM version.
-    */
+   * Returns the target JVM version.
+   */
   private def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
     case JvmTarget.Version16 => V1_6
     case JvmTarget.Version17 => V1_7
@@ -62,10 +62,10 @@ object ClassMaker {
   }
 
   /**
-    * Returns a freshly created class writer object.
-    *
-    * The object is constructed to compute stack map frames automatically.
-    */
+   * Returns a freshly created class writer object.
+   *
+   * The object is constructed to compute stack map frames automatically.
+   */
   private def makeClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
       "java/lang/Object"
@@ -76,7 +76,7 @@ object ClassMaker {
     val visibility = ACC_PUBLIC
     val finality = if (isFinal) ACC_FINAL else 0
     val visitor = makeClassWriter()
-    visitor.visit(JavaVersion, visibility + finality, className, null, objectName, null)
+    visitor.visit(JavaVersion, visibility + finality, className, null, JvmName.Java.Lang.Object.toInternalName, null)
     new ClassMaker(visitor)
   }
 

@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{Cat1, ErasedAst, PType, RType, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Cat1, PType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.MethodVisitor
 
@@ -151,7 +150,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
         NEW(className) ~
         DUP ~
-        INVOKESPECIAL(className, nothingToVoid) ~
+        INVOKESPECIAL(className, JvmName.nothingToVoid) ~
         DUP ~
         compileExp(exp) ~
         PUTFIELD(className, GenRefClasses.fieldName, exp.tpe)
@@ -183,33 +182,33 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         pushNull
 
-//    case Expression.GetChannel(exp, tpe, loc) => ???
-//    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
-//    case Expression.SelectChannel(rules, default, tpe, loc) => ???
-//    case Expression.Spawn(exp, tpe, loc) => ???
-//    case Expression.Lazy(exp, tpe, loc) => ???
-//    case Expression.Force(exp, tpe, loc) => ???
-//    case Expression.FixpointConstraintSet(cs, tpe, loc) => ???
-//    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => ???
-//    case Expression.FixpointSolve(exp, stf, tpe, loc) => ???
-//    case Expression.FixpointProject(pred, exp, tpe, loc) => ???
-//    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) => ???
-//    case Expression.HoleError(sym, tpe, loc) => ???
-//    case Expression.MatchError(tpe, loc) => ???
-//    case ErasedAst.BoxInt8(exp, loc) => ???
-//    case ErasedAst.BoxInt16(exp, loc) => ???
-//    case ErasedAst.BoxInt32(exp, loc) => ???
-//    case ErasedAst.BoxInt64(exp, loc) => ???
-//    case ErasedAst.BoxChar(exp, loc) => ???
-//    case ErasedAst.BoxFloat32(exp, loc) => ???
-//    case ErasedAst.BoxFloat64(exp, loc) => ???
-//    case ErasedAst.UnboxInt8(exp, loc) => ???
-//    case ErasedAst.UnboxInt16(exp, loc) => ???
-//    case ErasedAst.UnboxInt32(exp, loc) => ???
-//    case ErasedAst.UnboxInt64(exp, loc) => ???
-//    case ErasedAst.UnboxChar(exp, loc) => ???
-//    case ErasedAst.UnboxFloat32(exp, loc) => ???
-//    case ErasedAst.UnboxFloat64(exp, loc) => ???
+    //    case Expression.GetChannel(exp, tpe, loc) => ???
+    //    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
+    //    case Expression.SelectChannel(rules, default, tpe, loc) => ???
+    //    case Expression.Spawn(exp, tpe, loc) => ???
+    //    case Expression.Lazy(exp, tpe, loc) => ???
+    //    case Expression.Force(exp, tpe, loc) => ???
+    //    case Expression.FixpointConstraintSet(cs, tpe, loc) => ???
+    //    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => ???
+    //    case Expression.FixpointSolve(exp, stf, tpe, loc) => ???
+    //    case Expression.FixpointProject(pred, exp, tpe, loc) => ???
+    //    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) => ???
+    //    case Expression.HoleError(sym, tpe, loc) => ???
+    //    case Expression.MatchError(tpe, loc) => ???
+    //    case ErasedAst.BoxInt8(exp, loc) => ???
+    //    case ErasedAst.BoxInt16(exp, loc) => ???
+    //    case ErasedAst.BoxInt32(exp, loc) => ???
+    //    case ErasedAst.BoxInt64(exp, loc) => ???
+    //    case ErasedAst.BoxChar(exp, loc) => ???
+    //    case ErasedAst.BoxFloat32(exp, loc) => ???
+    //    case ErasedAst.BoxFloat64(exp, loc) => ???
+    //    case ErasedAst.UnboxInt8(exp, loc) => ???
+    //    case ErasedAst.UnboxInt16(exp, loc) => ???
+    //    case ErasedAst.UnboxInt32(exp, loc) => ???
+    //    case ErasedAst.UnboxInt64(exp, loc) => ???
+    //    case ErasedAst.UnboxChar(exp, loc) => ???
+    //    case ErasedAst.UnboxFloat32(exp, loc) => ???
+    //    case ErasedAst.UnboxFloat64(exp, loc) => ???
     case _ => ???
   }
 

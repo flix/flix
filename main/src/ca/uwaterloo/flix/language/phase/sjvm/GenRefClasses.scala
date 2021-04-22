@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2020-2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ object GenRefClasses {
       genAUX(RChar()) +
       genAUX(RFloat32()) +
       genAUX(RFloat64()) +
-      genAUX(RReference(null))
+      genAUX(RReference(RObject))
   }
 
   /**
@@ -66,7 +66,7 @@ object GenRefClasses {
     val innerTypeString = Instructions.getDescriptor(innerType)
     classMaker.makeField(fieldName, innerTypeString, isStatic = false, isPublic = true)
 
-    val constructorDescriptor = Instructions.getDescriptor(innerTypeString, voidDescriptor)
+    val constructorDescriptor = Instructions.getDescriptor(innerTypeString, JvmName.voidDescriptor)
     classMaker.makeConstructor(genConstructor(innerType), constructorDescriptor)
 
     classMaker.closeClassMaker
@@ -78,7 +78,7 @@ object GenRefClasses {
   def genConstructor[T <: PType](eType: RType[T]): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
     THISLOAD(tag[PRef[T]]) ~
-      INVOKESPECIAL(objectName, nothingToVoid) ~
+      INVOKESPECIAL(JvmName.Java.Lang.Object.toInternalName, JvmName.nothingToVoid) ~
       RETURN
   }
 }

@@ -18,16 +18,18 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 
 // actual flix types
 sealed trait RType[T <: PType] {
   def toInternalName: String = RType.toInternalName(this)
-  def erasedType: String = RType.erasedString(this)
+  def toDescriptor: String = RType.toDescriptor(this)
+  def toErasedType: String = RType.toErasedString(this)
 }
 
 object RType {
 
-  def toInternalName[T <: PType](e: RType[T]): String = e match {
+  def toDescriptor[T <: PType](e: RType[T]): String = e match {
     case RBool() => "Z"
     case RInt8() => "B"
     case RInt16() => "S"
@@ -36,10 +38,16 @@ object RType {
     case RChar() => "C"
     case RFloat32() => "F"
     case RFloat64() => "D"
-    case RReference(referenceType) => referenceType.toInternalName
+    case RReference(referenceType) => referenceType.toDescriptor
   }
 
-  def erasedString[T <: PType](e: RType[T]): String = e match {
+  // TODO: maybe it shouldn't be defined on RType
+  def toInternalName[T <: PType](e: RType[T]): String = e match {
+    case RReference(referenceType) => referenceType.toInternalName
+    case _ => throw new IllegalArgumentException("Primitive types do not have internal names")
+  }
+
+  def toErasedString[T <: PType](e: RType[T]): String = e match {
     case RBool() => "Bool"
     case RInt8() => "Int8"
     case RInt16() => "Int16"
@@ -73,92 +81,126 @@ object RType {
 
 
 sealed trait RRefType[T <: PRefType] {
+  val jvmName: JvmName
   def toInternalName: String = RRefType.toInternalName(this)
+  def toDescriptor: String = RRefType.toDescriptor(this)
 }
 
 object RRefType {
 
-  // todo
-  def toInternalName[T <: PRefType](e: RRefType[T]): String = e match {
-    case RBoxedBool() => "???"
-    case RBoxedInt8() => "???"
-    case RBoxedInt16() => "???"
-    case RBoxedInt32() => "???"
-    case RBoxedInt64() => "???"
-    case RBoxedChar() => "???"
-    case RBoxedFloat32() => "???"
-    case RBoxedFloat64() => "???"
-    case RUnit() => "flix/runtime/value/Unit"
-    case RArray(tpe) => "???"
-    case RChannel(tpe) => "???"
-    case RLazy(tpe) => "Lazy$" + tpe.erasedType
-    case RRef(tpe) => "Ref$" + tpe.erasedType
-    case RVar(id) => "???"
-    case RTuple(elms) => "???"
-    case REnum(sym, args) => "???"
-    case RBigInt() => "???"
-    case RStr() => "???"
-    case RArrow(args, result) => "???"
-    case RRecordEmpty() => "???"
-    case RRecordExtend(field, value, rest) => "???"
-    case RSchemaEmpty() => "???"
-    case RSchemaExtend(name, tpe, rest) => "???"
-    case RRelation(tpes) => "???"
-    case RLattice(tpes) => "???"
-    case RNative(clazz) => "???"
+  def toDescriptor[T <: PRefType](e: RRefType[T]): String = e.jvmName.toDescriptor
+
+  def toInternalName[T <: PRefType](e: RRefType[T]): String = e.jvmName.toInternalName
+
+  // TODO: These should be object for the sake of jvm strings
+  case class RBoxedBool() extends RRefType[PBoxedBool] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Boolean
   }
 
-  case class RBoxedBool() extends RRefType[PBoxedBool]
+  case class RBoxedInt8() extends RRefType[PBoxedInt8] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Byte
+  }
 
-  case class RBoxedInt8() extends RRefType[PBoxedInt8]
+  case class RBoxedInt16() extends RRefType[PBoxedInt16] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Short
+  }
 
-  case class RBoxedInt16() extends RRefType[PBoxedInt16]
+  case class RBoxedInt32() extends RRefType[PBoxedInt32] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Integer
+  }
 
-  case class RBoxedInt32() extends RRefType[PBoxedInt32]
+  case class RBoxedInt64() extends RRefType[PBoxedInt64] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Long
+  }
 
-  case class RBoxedInt64() extends RRefType[PBoxedInt64]
+  case class RBoxedChar() extends RRefType[PBoxedChar] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Character
+  }
 
-  case class RBoxedChar() extends RRefType[PBoxedChar]
+  case class RBoxedFloat32() extends RRefType[PBoxedFloat32] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Float
+  }
 
-  case class RBoxedFloat32() extends RRefType[PBoxedFloat32]
+  case class RBoxedFloat64() extends RRefType[PBoxedFloat64] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Double
+  }
 
-  case class RBoxedFloat64() extends RRefType[PBoxedFloat64]
+  case class RUnit() extends RRefType[PUnit] {
+    override val jvmName: JvmName = JvmName.Flix.Runtime.Value.Unit
+  }
 
-  case class RUnit() extends RRefType[PUnit]
+  case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]]
+  case class RChannel[T <: PType](tpe: RType[T]) extends RRefType[PChan[T]] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RChannel[T <: PType](tpe: RType[T]) extends RRefType[PChan[T]]
+  case class RLazy[T <: PType](tpe: RType[T]) extends RRefType[PLazy[T]] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RLazy[T <: PType](tpe: RType[T]) extends RRefType[PLazy[T]]
-
-  case class RRef[T <: PType](tpe: RType[T]) extends RRefType[PRef[T]]
+  case class RRef[T <: PType](tpe: RType[T]) extends RRefType[PRef[T]] {
+    private val className = s"Ref${JvmName.reservedDelimiter}${tpe.toErasedType}"
+    override val jvmName: JvmName = JvmName(Nil, className)
+  }
 
   // TODO: Should be removed.
-  case class RVar(id: Int) extends RRefType[PAnyObject]
+  case class RVar(id: Int) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RTuple(elms: List[RType[PType]]) extends RRefType[PAnyObject]
+  case class RTuple(elms: List[RType[PType]]) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class REnum(sym: Symbol.EnumSym, args: List[RType[PType]]) extends RRefType[PAnyObject]
+  case class REnum(sym: Symbol.EnumSym, args: List[RType[PType]]) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RBigInt() extends RRefType[PBigInt]
+  case class RBigInt() extends RRefType[PBigInt] {
+    override val jvmName: JvmName = JvmName.Java.Math.BigInteger
+  }
 
-  case class RStr() extends RRefType[PStr]
+  case class RStr() extends RRefType[PStr] {
+    override val jvmName: JvmName = JvmName.Java.Lang.String
+  }
 
-  case class RArrow(args: List[RType[PType]], result: RType[PType]) extends RRefType[PAnyObject]
+  case class RArrow(args: List[RType[PType]], result: RType[PType]) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RRecordEmpty() extends RRefType[PAnyObject]
+  case class RRecordEmpty() extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RRecordExtend(field: String, value: RType[PType], rest: RType[PReference[PAnyObject]]) extends RRefType[PAnyObject]
+  case class RRecordExtend(field: String, value: RType[PType], rest: RType[PReference[PAnyObject]]) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RSchemaEmpty() extends RRefType[PAnyObject]
+  case class RSchemaEmpty() extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RSchemaExtend(name: String, tpe: RType[PType], rest: RType[PReference[PAnyObject]]) extends RRefType[PAnyObject]
+  case class RSchemaExtend(name: String, tpe: RType[PType], rest: RType[PReference[PAnyObject]]) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RRelation(tpes: List[RType[PType]]) extends RRefType[PAnyObject]
+  case class RRelation(tpes: List[RType[PType]]) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RLattice(tpes: List[RType[PType]]) extends RRefType[PAnyObject]
+  case class RLattice(tpes: List[RType[PType]]) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
-  case class RNative(clazz: Class[_]) extends RRefType[PAnyObject]
+  case class RNative(clazz: Class[_]) extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
+
+  case class RObject() extends RRefType[PAnyObject] {
+    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  }
 
 }

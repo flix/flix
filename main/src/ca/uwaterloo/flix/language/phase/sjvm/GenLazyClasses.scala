@@ -32,11 +32,10 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 object GenLazyClasses {
 
   val initializedFieldName: String = "initialized"
-  val initializedFieldTypeDescriptor: String = boolDescriptor
   val initializedFieldType: RType[PInt32] = RBool()
   val expressionFieldName: String = "expression"
-  val expressionFieldTypeDescriptor: String = objectDescriptor
-  val expressionFieldType: RType[PReference[PAnyObject]] = RReference(null)
+  val expressionFieldType: RType[PReference[PAnyObject]] = RReference(RObject())
+  val expressionToVoid: String = JvmName.objectToVoid
   val valueField: String = "value"
   val forceMethod: String = "force"
 
@@ -63,7 +62,7 @@ object GenLazyClasses {
       genAUX(RChar()) +
       genAUX(RFloat32()) +
       genAUX(RFloat64()) +
-      genAUX(RReference(null))
+      genAUX(RReference(RObject()))
   }
 
   /**
@@ -87,7 +86,7 @@ object GenLazyClasses {
     classMaker.makeField(valueField, s"L$className;", isStatic = false, isPublic = false)
     val methodDescriptor = s"(LContext;)${getDescriptor(innerType)}"
     classMaker.makeMethod(compileForceMethod(className, innerType), forceMethod, methodDescriptor, isFinal = true, isPublic = true)
-    classMaker.makeConstructor(compileLazyConstructor(className, innerType), s"($objectDescriptor)V")
+    classMaker.makeConstructor(compileLazyConstructor(className, innerType), expressionToVoid)
     classMaker.closeClassMaker
   }
 
@@ -149,7 +148,7 @@ object GenLazyClasses {
      */
     START[StackNil] ~
       THISLOAD(tag[PLazy[T]]) ~
-      INVOKESPECIAL(objectName, nothingToVoid) ~
+      INVOKESPECIAL(expressionFieldType.toInternalName, JvmName.nothingToVoid) ~
       THISLOAD(tag[PLazy[T]]) ~
       pushBool(false) ~
       PUTFIELD(className, initializedFieldName, initializedFieldType) ~
