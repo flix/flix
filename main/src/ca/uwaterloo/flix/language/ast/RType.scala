@@ -59,23 +59,23 @@ object RType {
     case RReference(_) => "Obj"
   }
 
-  case class RBool() extends RType[PInt32]
+  case class RBool() extends RType[PInt32 with Cat1]
 
-  case class RInt8() extends RType[PInt8]
+  case class RInt8() extends RType[PInt8 with Cat1]
 
-  case class RInt16() extends RType[PInt16]
+  case class RInt16() extends RType[PInt16 with Cat1]
 
-  case class RInt32() extends RType[PInt32]
+  case class RInt32() extends RType[PInt32 with Cat1]
 
-  case class RInt64() extends RType[PInt64]
+  case class RInt64() extends RType[PInt64 with Cat2]
 
-  case class RChar() extends RType[PChar]
+  case class RChar() extends RType[PChar with Cat1]
 
-  case class RFloat32() extends RType[PFloat32]
+  case class RFloat32() extends RType[PFloat32 with Cat1]
 
-  case class RFloat64() extends RType[PFloat64]
+  case class RFloat64() extends RType[PFloat64 with Cat2]
 
-  case class RReference[T <: PRefType](referenceType: RRefType[T]) extends RType[PReference[T]]
+  case class RReference[T <: PRefType](referenceType: RRefType[T]) extends RType[PReference[T] with Cat1]
 
 }
 

@@ -53,7 +53,7 @@ object GenRefClasses {
       genAUX(RChar()) +
       genAUX(RFloat32()) +
       genAUX(RFloat64()) +
-      genAUX(RReference(RObject))
+      genAUX(RReference(RObject()))
   }
 
   /**

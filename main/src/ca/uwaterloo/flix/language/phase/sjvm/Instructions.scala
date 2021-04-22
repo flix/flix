@@ -75,7 +75,7 @@ object Instructions {
       DUP ~
       MONITORENTER ~
       f ~
-      XSWAP(e, RType.RReference(RObject)) ~ // TODO: make partial automatic swap
+      XSWAP(e, RType.RReference(null)) ~ // TODO: fix and make partial automatic swap
       MONITOREXIT
   }
 
@@ -124,19 +124,36 @@ object Instructions {
   }
 
   def SWAP_cat1_onCat2
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat2]:
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
     ???
 
   def SWAP_cat2_onCat1
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat1]:
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
     ???
 
   def SWAP_cat2_onCat2
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat2]:
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
     ???
+
+  // TODO: fix automatic swap
+
+  def SWAP_cat1_onSomething
+  [R <: Stack, T1 <: PType with Cat1, T2 <: PType]
+  (t2: RType[T2]):
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] = t2 match {
+    case RBool() => ???//SWAP
+    case RInt8() => ???//SWAP
+    case RInt16() => ???//SWAP
+    case RInt32() => ???//SWAP
+    case RInt64() => ???//SWAP_cat1_onCat2
+    case RChar() => ???//SWAP
+    case RFloat32() => ???//SWAP
+    case RFloat64() => ???//SWAP_cat1_onCat2
+    case RReference(referenceType) => ???//SWAP
+  }
 
   // NATIVE
   def XSWAP
