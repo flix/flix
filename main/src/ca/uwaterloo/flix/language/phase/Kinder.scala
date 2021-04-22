@@ -11,18 +11,35 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.annotation.tailrec
 
-object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change to KindedAst.Root ?
+object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   // MATT license
 
   /**
     * Runs the p
     */
   override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = {
-    // visit enums
-    // visit type aliases
-    // visit classes
-    // visit defs
-    ???
+    val enumsVal = Validation.traverse(root.enums) {
+      case (sym, enum) => visitEnum(enum, root).map((sym, _))
+    }
+
+    val classesVal = Validation.traverse(root.classes) {
+      case (sym, clazz) => visitClass(clazz, root).map((sym, _))
+    }
+
+    val defsVal = Validation.traverse(root.defs) {
+      case (sym, defn) => visitDef(defn, Map.empty, root).map((sym, _))
+    }
+
+    val instancesVal = Validation.traverse(root.instances) {
+      case (sym, insts0) => traverse(insts0)(visitInstance(_, root)).map((sym, _))
+    }
+
+    mapN(enumsVal, classesVal, defsVal, instancesVal) {
+      case (enums, classes, defs, instances) =>
+        // MATT just hack around properties for now
+        KindedAst.Root(classes.toMap, instances.toMap, defs.toMap, enums.toMap, ???, root.reachable, root.sources)
+    }
+
   }
 
   // MATT docs
@@ -39,7 +56,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change t
       }
 
       val schemeVal = checkScheme(sc0, ascriptions, root)
-      val tparamsVal = visitTparams(tparams0, ascriptions, root) // MATT merge with getAscriptions
+      val tparamsVal = visitTparams(tparams0, ascriptions, root) // MATT merge visitTparams with getAscriptions(tparams)
       val tpeVal = checkKinds(tpeDeprecated, KindMatch.Star, ascriptions, root)
       mapN(casesVal, schemeVal, tparamsVal, tpeVal) {
         case (cases, scheme, tparams, tpe) =>
