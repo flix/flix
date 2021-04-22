@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
+import ca.uwaterloo.flix.language.ast.UnkindedType.Constructor
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, traverse}
@@ -135,14 +136,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change t
       val k = KindMatch.toKind(expected)
       (k, Map(id -> k)).toSuccess
 
-    case UnkindedType.Cst(tc, loc) =>
-      val kind = tc match {
-        case TypeConstructor.Enum(sym, _) => // ignore actual kind (?)
-          getDeclaredKind(root.enums(sym))
-        case _ => ??? // MATT call visitTypeConstructor
-      }
-      checkKindsMatch(expected, kind) map {
-        _ => (kind, Map.empty)
+    case UnkindedType.Cst(tc0, loc) =>
+      val tc = visitTypeConstructor(tc0, root)
+      checkKindsMatch(expected, tc.kind) map {
+        _ => (tc.kind, Map.empty)
       }
     case UnkindedType.Lambda(tvar, tpe) =>
       throw InternalCompilerException("TODO") // MATT can't do without kind vars?
@@ -209,14 +206,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change t
         checkKindsMatch(expected, actual) map {
           _ => Type.Var(id, actual, text = text)
         }
-      case UnkindedType.Cst(tc, _) =>
-        val kind = tc match {
-          case UnkindedType.Constructor.Enum(sym) =>
-            getDeclaredKind(root.enums(sym))
-          case _ => ??? // MATT call visitTypeConstructor
-        }
-        checkKindsMatch(expected, kind) map {
-          _ => ??? // tpe // MATT call visitTypeConstructor
+      case UnkindedType.Cst(tc0, loc) =>
+        val tc = visitTypeConstructor(tc0, root)
+        checkKindsMatch(expected, tc.kind) map {
+          _ => Type.Cst(tc, loc)
         }
       case UnkindedType.Apply(tpe1, tpe2) =>
         for {
@@ -246,6 +239,45 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change t
         case (tparam, acc) => ascriptions(tparam.tpe.id) ->: acc
       }
     // MATT use types to enforce explicit/implicit kinding invariant
+  }
+
+  // MATT docs
+  def visitTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root): TypeConstructor = tycon match {
+    case UnkindedType.Constructor.Unit => TypeConstructor.Unit
+    case UnkindedType.Constructor.Null => TypeConstructor.Null
+    case UnkindedType.Constructor.Bool => TypeConstructor.Bool
+    case UnkindedType.Constructor.Char => TypeConstructor.Char
+    case UnkindedType.Constructor.Float32 => TypeConstructor.Float32
+    case UnkindedType.Constructor.Float64 => TypeConstructor.Float64
+    case UnkindedType.Constructor.Int8 => TypeConstructor.Int8
+    case UnkindedType.Constructor.Int16 => TypeConstructor.Int16
+    case UnkindedType.Constructor.Int32 => TypeConstructor.Int32
+    case UnkindedType.Constructor.Int64 => TypeConstructor.Int64
+    case UnkindedType.Constructor.BigInt => TypeConstructor.BigInt
+    case UnkindedType.Constructor.Str => TypeConstructor.Str
+    case UnkindedType.Constructor.Arrow(arity) => TypeConstructor.Arrow(arity)
+    case UnkindedType.Constructor.RecordEmpty => TypeConstructor.RecordEmpty
+    case UnkindedType.Constructor.RecordExtend(field) => TypeConstructor.RecordExtend(field)
+    case UnkindedType.Constructor.SchemaEmpty => TypeConstructor.SchemaEmpty
+    case UnkindedType.Constructor.SchemaExtend(pred) => TypeConstructor.SchemaExtend(pred)
+    case UnkindedType.Constructor.Array => TypeConstructor.Array
+    case UnkindedType.Constructor.Channel => TypeConstructor.Channel
+    case UnkindedType.Constructor.Lazy => TypeConstructor.Lazy
+    case UnkindedType.Constructor.Tag(sym, tag) => TypeConstructor.Tag(sym, tag)
+    case UnkindedType.Constructor.Enum(sym) =>
+      // Lookup the enum kind
+      val kind = getDeclaredKind(root.enums(sym)) // MATT any reason to expect a bad lookup here?
+      TypeConstructor.Enum(sym, kind)
+    case UnkindedType.Constructor.Native(clazz) => TypeConstructor.Native(clazz)
+    case UnkindedType.Constructor.Ref => TypeConstructor.Ref
+    case UnkindedType.Constructor.Tuple(l) => TypeConstructor.Tuple(l)
+    case UnkindedType.Constructor.Relation => TypeConstructor.Relation
+    case UnkindedType.Constructor.Lattice => TypeConstructor.Lattice
+    case UnkindedType.Constructor.True => TypeConstructor.True
+    case UnkindedType.Constructor.False => TypeConstructor.False
+    case UnkindedType.Constructor.Not => TypeConstructor.Not
+    case UnkindedType.Constructor.And => TypeConstructor.And
+    case UnkindedType.Constructor.Or => TypeConstructor.Or
   }
 
   // MATT docs

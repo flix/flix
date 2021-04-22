@@ -341,7 +341,7 @@ object UnkindedType {
     eval(tpe0, Map.empty)
   }
 
-  trait Constructor
+  sealed trait Constructor
 
   object Constructor {
 
