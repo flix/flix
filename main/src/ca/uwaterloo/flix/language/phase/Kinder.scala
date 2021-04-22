@@ -315,8 +315,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   // MATT docs
   def getAscription(tparam0: ResolvedAst.TypeParam): (Int, Kind) = tparam0 match {
-      // MATT case docs
+      // Case 1: the kind is explicit: use it
     case ResolvedAst.TypeParam.Kinded(_, tpe, kind, _) => tpe.id -> kind
+      // Case 2: the kind is not explicit: assume Star
     case ResolvedAst.TypeParam.Unkinded(_, tpe, _) => tpe.id -> Kind.Star
   }
 
