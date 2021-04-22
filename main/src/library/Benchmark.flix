@@ -38,7 +38,7 @@ namespace Benchmark {
     /// This number does not affect the results. Only how accurate the tool is
     /// at spending the same amount of time.
     ///
-    def scaleFactor(): Int64 = 6i64
+    def scaleFactor(): Int64 = 5i64
 
     ///
     /// A smart constructor for a benchmark.
@@ -171,7 +171,7 @@ namespace Benchmark {
         let avgMs = toMicroSeconds(avgNs);
         let namePart = String.padRight(40, ' ', r.name);
         let iterPart = String.padLeft(20, ' ', "${r.rounds}");
-        let avgTimePart = String.padLeft(20, ' ', "${avgMs} ms/op");
+        let avgTimePart = String.padLeft(20, ' ', "${avgMs} us/op");
         "${namePart}${iterPart}${avgTimePart}" |> println
     }
 
