@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
-import ca.uwaterloo.flix.language.ast.UnkindedType.Constructor
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, sequenceT, traverse}
@@ -107,6 +106,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT decide on consistent naming: visit/check/infer/etc.
   // MATT no chance of error
   private def visitTparams(tparams0: ResolvedAst.TypeParams): (List[KindedAst.TypeParam], Map[Int, Kind]) = tparams0 match {
     // Case 1: Kinded tparams: use their kinds
@@ -345,10 +345,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.TypeParam.Unkinded(_, tpe, _) => tpe.id -> Kind.Star
   }
 
-  def visitSpec(spec: ResolvedAst.Spec, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[(KindedAst.Spec, Map[Int, Kind]), KindError] = spec match {
-      // MATT need to compare/merge with provided ascriptions
+  def visitSpec(spec: ResolvedAst.Spec, ascriptions0: Map[Int, Kind], root: ResolvedAst.Root): Validation[(KindedAst.Spec, Map[Int, Kind]), KindError] = spec match {
+    // MATT need to compare/merge with provided ascriptions
     case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) => tparams0 match {
-        // Case 1: explicitly kinded tparams: just use the explicit kinds
+      // Case 1: explicitly kinded tparams: just use the explicit kinds
       case _: TypeParams.Kinded =>
         val (tparams, ascriptions) = visitTparams(tparams0)
 
@@ -356,13 +356,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
         val effVal = checkKinds(eff0, KindMatch.Bool, ascriptions, root)
 
-
-        val fparamsVal = traverse(fparams0) {
-          case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
-            checkKinds(tpe0, KindMatch.Star, ascriptions, root) map {
-              tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
-            }
-        }
+        val fparamsVal = traverse(fparams0)(checkFparam(_, ascriptions, root))
 
         val annVal = traverse(ann0)(visitAnnotation(_, ascriptions, root))
 
@@ -371,8 +365,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
             (KindedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc), ascriptions)
         }
 
-        // Case 2: no kind annotations: need to infer them
-      case _: TypeParams.Unkinded =>
+      // Case 2: no kind annotations: need to infer them
+      case utparams: TypeParams.Unkinded =>
+
+        // Start by getting all the kind ascriptions possible
+        // from fparams, the type scheme, and the effect
 
         val fparamAscriptionsVal = fold(fparams0, Map.empty[Int, Kind]) {
           case (acc, fparam) => inferKinds(fparam.tpe, KindMatch.Star, root) map {
@@ -380,54 +377,79 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           }
         }
 
-        // MATT visit fparams while inferring
-        val fparamsVal = traverse(fparams0) {
-          case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
-            checkKinds(tpe0, KindMatch.Star, ascriptions, root) map {
-              tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
-            }
-        }
+        val schemeAscriptionsVal = getSchemeAscriptions(sc0, root)
+
         val effAscriptionsVal = inferKinds(eff0, KindMatch.Bool, root) map {
           case (_, ascriptions) => ascriptions
         }
 
-        val annVal = traverse(ann0)(visitAnnotation(_, ascriptions, root))
-
-        // MATT need to keep and use result of inference
-
         // MATT more docs everywhere
         for {
-          res <- sequenceT(fparamAscriptionsVal, effAscriptionsVal, annVal, tparamsVal, fparamsVal)
-          (fparamAscriptions, effAscriptions, ann, tparams, fparams) = res
-          ascriptions <- mergeAscriptions(fparamAscriptions, effAscriptions)
-          scheme <- checkScheme(sc0, ascriptions, root)
-          // MATT visit eff
-        } yield (KindedAst.Spec(doc, ann, mod, tparams, fparams, scheme, ???, loc), ascriptions)
+          res <- sequenceT(schemeAscriptionsVal, effAscriptionsVal, fparamAscriptionsVal)
+          (schemeAscriptions, effAscriptions, fparamAscriptions) = res
+          ascriptions <- mergeAscriptions(List(schemeAscriptions, effAscriptions, fparamAscriptions))
+
+          res <- sequenceT(
+            checkScheme(sc0, ascriptions, root),
+            checkKinds(eff0, KindMatch.Bool, ascriptions, root),
+            traverse(fparams0)(checkFparam(_, ascriptions, root)),
+            traverse(ann0)(visitAnnotation(_, ascriptions, root))
+          )
+          (scheme, eff, fparams, ann) = res
+
+          tparams = ascribeTparams(utparams, ascriptions)
+        } yield (KindedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc), ascriptions)
     }
   }
 
-  private def inferScheme(sc: ResolvedAst.Scheme, root: ResolvedAst.Root): Validation[(ResolvedAst.Scheme, Map[Int, Kind]), KindError] = sc match {
-    case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
-      val tconstrAscriptions = constraints0.map {
-        tconstr =>
-          val clazz = root.classes(tconstr.clazz)
-          val classAscriptions = getAscription(clazz.tparam)
-          val kind = classAscriptions._2 // MATT make safer for multiparam classes if those ever come
-          (tconstr.tpe.asInstanceOf[UnkindedType.Var].id, kind) // MATT are non-vars even possible yet? if yes, don't cast. If no, make it tconstr(type)
-      }.toMap // MATT handle conflicts among tconstrs
-      inferKinds(base0, KindMatch.Star, root) flatMap {
-        case (_kind, baseAscriptions) => (mergeAscriptions(tconstrAscriptions, baseAscriptions))
+  // MATT docs
+  private def ascribeTparams(tparams0: ResolvedAst.TypeParams.Unkinded, ascriptions: Map[Int, Kind]): List[KindedAst.TypeParam] = tparams0 match {
+    case ResolvedAst.TypeParams.Unkinded(tparams) => tparams.map {
+      case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, ascriptions(tpe.id)), ascriptions(tpe.id), loc) // MATT remove extra kind
+    }
+  }
+
+  // MATT docs
+  private def checkFparam(fparam: ResolvedAst.FormalParam, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.FormalParam, KindError] = fparam match {
+    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+      checkKinds(tpe0, KindMatch.Star, ascriptions, root) map {
+        tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
       }
   }
+
+  // MATT docs
+  private def getSchemeAscriptions(sc: ResolvedAst.Scheme, root: ResolvedAst.Root): Validation[Map[Int, Kind], KindError] = sc match {
+    case ResolvedAst.Scheme(_, constraints0, base0) =>
+      val tconstrAscriptionsVal = Validation.fold(constraints0, Map.empty[Int, Kind]) {
+        case (acc, tconstr) =>
+          val clazz = root.classes(tconstr.clazz)
+          val classAscriptions = Map(getAscription(clazz.tparam))
+          mergeAscriptions(acc, classAscriptions)
+      }
+
+      val baseAscriptionsVal = inferKinds(base0, KindMatch.Star, root)
+      // MATT make dedicated getAscriptions instead of reusing inferKinds (?)
+
+      flatMapN(tconstrAscriptionsVal, baseAscriptionsVal) {
+        case (tconstrAscriptions, (_inferredBase, baseAscriptions)) =>
+          mergeAscriptions(tconstrAscriptions, baseAscriptions)
+      }
+  }
+
   // MATT docs
   private def mergeAscriptions(ascriptions1: Map[Int, Kind], ascriptions2: Map[Int, Kind]): Validation[Map[Int, Kind], KindError] = {
     // ascription in one or the other: keep it
     Validation.fold(ascriptions1, ascriptions2) {
       // Case 1: ascription in both: ensure that one is a subkind of the other and use the subkind
       case (acc, (id, kind)) if ascriptions2.contains(id) => mergeKinds(kind, ascriptions2(id)).map(acc + (id -> _))
-        // Case 2: ascription just in first, we can safely add it
+      // Case 2: ascription just in first, we can safely add it
       case (acc, (id, kind)) => (acc + (id -> kind)).toSuccess
     }
+  }
+
+  // MATT docs
+  private def mergeAscriptions(ascriptions: List[Map[Int, Kind]]): Validation[Map[Int, Kind], KindError] = {
+    Validation.fold(ascriptions, Map.empty[Int, Kind])(mergeAscriptions)
   }
 
   // MATT docs
