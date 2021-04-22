@@ -28,7 +28,9 @@ object UnkindedType {
 
   case class Lambda(t1: UnkindedType.Var, t2: UnkindedType) extends UnkindedType
 
-  case class Var(id: Int, text: Option[String] = None) extends UnkindedType
+  case class Var(id: Int, text: Option[String] = None) extends UnkindedType {
+    def ascribedWith(kind: Kind): Type.Var = Type.Var(id, kind, text = text)
+  }
 
   /**
     * Returns the Unit type with given source location `loc`.

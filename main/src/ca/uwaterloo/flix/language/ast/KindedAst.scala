@@ -179,15 +179,15 @@ object KindedAst {
 
     case class FixpointConstraintSet(cs: List[KindedAst.Constraint], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointCompose(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointMerge(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class FixpointSolve(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointProject(pred: Name.Pred, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointFilter(pred: Name.Pred, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointEntails(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointProjectIn(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointFold(pred: Name.Pred, init: KindedAst.Expression, f: KindedAst.Expression, constraints: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointProjectOut(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
   }
 
