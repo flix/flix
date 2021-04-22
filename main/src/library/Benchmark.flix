@@ -18,8 +18,8 @@ namespace Benchmark {
     ///
     /// A benchmark has a name and a function to execute.
     ///
-    pub enum Benchmark[a] {
-        case Benchmark({name: String, f: Unit -> a})
+    pub enum Benchmark {
+        case Benchmark({name: String, f: Unit -> Unit})
     }
 
     ///
@@ -38,13 +38,17 @@ namespace Benchmark {
     /// This number does not affect the results. Only how accurate the tool is
     /// at spending the same amount of time.
     ///
-    def scaleFactor(): Int64 = 8i64
+    def scaleFactor(): Int64 = 6i64
 
     ///
     /// A smart constructor for a benchmark.
     ///
-    pub def defBenchmark(name: String, f: Unit -> a): Benchmark[a] =
-        Benchmark({name = name, f = f})
+    pub def defBenchmark(name: String, f: Unit -> a): Benchmark =
+        let fn = () -> {
+            let _ = f();
+            ()
+        };
+        Benchmark({name = name, f = fn})
 
     pub enum BenchmarkResult {
         case Success({name: String, rounds: Int32, total: Int64})
@@ -53,7 +57,7 @@ namespace Benchmark {
     ///
     /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
     ///
-    pub def runWithBudget(bs: Array[Benchmark[a]], budget: Int64): Int32 & Impure =
+    pub def runWithBudget(bs: Array[Benchmark], budget: Int64): Int32 & Impure =
         if (bs.length == 0) {
             println("No benchmarks");
             1
@@ -76,7 +80,7 @@ namespace Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(bs: Array[Benchmark[a]]): Array[(Benchmark[a], Int64)] & Impure = {
+    def warmupAndEstimate(bs: Array[Benchmark]): Array[(Benchmark, Int64)] & Impure = {
         print("Warmup: ");
         bs |> Array.map(b -> {
             let time = runBenchmarkOnce(b);
@@ -88,7 +92,7 @@ namespace Benchmark {
     ///
     /// Runs all the given benchmarks with estimates `bs` and the given time `budget`.
     ///
-    def runAll(bs: Array[(Benchmark[a], Int64)], budget: Int64): Unit & Impure = {
+    def runAll(bs: Array[(Benchmark, Int64)], budget: Int64): Unit & Impure = {
         let budgetPerBenchmark = budget / (Int32.toInt64(bs.length));
         bs |> Array.foreach(match (b, cost) ->
             let iters = iterations(cost, budgetPerBenchmark);
@@ -99,7 +103,7 @@ namespace Benchmark {
     ///
     /// Runs the given benchmark `b` exactly `n` times.
     ///
-    def runBenchmark(b: Benchmark[a], n: Int32): BenchmarkResult & Impure =
+    def runBenchmark(b: Benchmark, n: Int32): BenchmarkResult & Impure =
         import java.lang.System:nanoTime();
         let Benchmark(r) = b;
         let t = nanoTime();
@@ -113,7 +117,7 @@ namespace Benchmark {
     ///
     /// Runs `f` once and divides the time elapsed by the `scaleFactor`.
     ///
-    def runBenchmarkOnce(b: Benchmark[a]): Int64 & Impure =
+    def runBenchmarkOnce(b: Benchmark): Int64 & Impure =
         let Benchmark(r) = b;
         import java.lang.System:nanoTime();
         let t = nanoTime();
@@ -145,7 +149,7 @@ namespace Benchmark {
     /// Prints the benchmark header.
     ///
     def printHeader(): Unit & Impure = {
-        println("----------------------------- Running Benchmarks -----------------------------")
+        println("------------------------------ Running Benchmarks ------------------------------")
     }
 
     ///
@@ -163,10 +167,11 @@ namespace Benchmark {
     ///
     def printRow(s: BenchmarkResult): Unit & Impure = {
         let Success(r) = s;
-        let avg = r.total / Int32.toInt64(r.rounds);
+        let avgNs = r.total / Int32.toInt64(r.rounds);
+        let avgMs = toMicroSeconds(avgNs);
         let namePart = String.padRight(40, ' ', r.name);
         let iterPart = String.padLeft(20, ' ', "${r.rounds}");
-        let avgTimePart = String.padLeft(20, ' ', "${avg} ns/op");
+        let avgTimePart = String.padLeft(20, ' ', "${avgMs} ms/op");
         "${namePart}${iterPart}${avgTimePart}" |> println
     }
 
