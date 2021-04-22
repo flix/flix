@@ -115,8 +115,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case (acc, ResolvedAst.TypeParam.Kinded(_, tpe, kind, _)) => acc + (tpe.id -> kind)
       }
       val ktparams = tparams.map {
-            // MATT can probably remove kind from KindedAst.TypeParam
-        case ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, kind), kind, loc)
+        case ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, kind), loc)
       }
       (ktparams, ascriptions)
     // Case 2: Unkinded tparams: default to Star kind
@@ -125,7 +124,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case (acc, tparam) => acc + (tparam.tpe.id -> Kind.Star)
       }
       val ktparams = tparams.map {
-        case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, Kind.Star), Kind.Star, loc)
+        case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, Kind.Star), loc)
       }
       (ktparams, ascriptions)
   }
@@ -405,7 +404,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   // MATT docs
   private def ascribeTparams(tparams0: ResolvedAst.TypeParams.Unkinded, ascriptions: Map[Int, Kind]): List[KindedAst.TypeParam] = tparams0 match {
     case ResolvedAst.TypeParams.Unkinded(tparams) => tparams.map {
-      case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, ascriptions(tpe.id)), ascriptions(tpe.id), loc) // MATT remove extra kind
+      case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, ascriptions(tpe.id)), loc)
     }
   }
 
