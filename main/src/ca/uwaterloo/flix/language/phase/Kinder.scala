@@ -526,6 +526,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case (Record, Kind.Record) => true
       case (Schema, Kind.Schema) => true
       case (Arrow(k11, k12),  Kind.Arrow(k21, k22)) => matches(k11, k21) && matches(k12, k22)
+
+      case (Star, Kind.Record) => true
+      case (Star, Kind.Schema) => true
+
+      case _ => false
     }
 
     def toKind(k: KindMatch): Kind = k match {
