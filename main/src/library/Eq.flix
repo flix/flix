@@ -183,3 +183,48 @@ instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Eq[a1], Eq[a2], Eq[a
             x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10
 
 }
+
+instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8], Eq[a9], Eq[a10], Eq[a11] {
+
+    pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)): Bool =
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11) = t2;
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11
+
+}
+
+instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8], Eq[a9], Eq[a10], Eq[a11], Eq[a12] {
+
+    pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)): Bool =
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12) = t2;
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12
+
+}
+
+instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8], Eq[a9], Eq[a10], Eq[a11], Eq[a12], Eq[a13] {
+
+    pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)): Bool =
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13) = t2;
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13
+
+}
+
+instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8], Eq[a9], Eq[a10], Eq[a11], Eq[a12], Eq[a13], Eq[a14] {
+
+    pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)): Bool =
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14) = t2;
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13 and x14 == y14
+
+}
+
+instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8], Eq[a9], Eq[a10], Eq[a11], Eq[a12], Eq[a13], Eq[a14], Eq[a15] {
+
+    pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)): Bool =
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15) = t2;
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13 and x14 == y14 and x15 == y15
+
+}
