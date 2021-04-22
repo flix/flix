@@ -112,6 +112,7 @@ class Flix {
     */
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
+    "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
