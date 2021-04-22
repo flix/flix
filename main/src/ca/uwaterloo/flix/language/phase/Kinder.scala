@@ -30,19 +30,20 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change t
     case ResolvedAst.Enum(doc, mod, sym, tparams0, cases, tpeDeprecated, sc, loc) =>
       val ascriptions = getAscriptions(tparams0)
       val newCasesVal = traverse(cases) {
-        case (_, caze@ResolvedAst.Case(enum, tag, tpeDeprecated, sc)) =>
-          checkScheme(sc, ascriptions, root) map {
-            // MATT visit tpeDeprecated
-            newScheme => (tag, KindedAst.Case(enum, tag, ???, newScheme))
+        case (_, ResolvedAst.Case(enum, tag, tpeDeprecated, sc)) =>
+          val schemeVal = checkScheme(sc, ascriptions, root)
+          val tpeVal = checkKinds(tpeDeprecated, KindMatch.Star, ascriptions, root)
+          mapN(schemeVal, tpeVal) {
+            case (scheme, tpe) => (tag, KindedAst.Case(enum, tag, tpe, scheme))
           }
       }
 
       val newSchemeVal = checkScheme(sc, ascriptions, root)
       val newTparamsVal = visitTparams(tparams0, ascriptions, root) // MATT merge with getAscriptions
-      mapN(newCasesVal, newSchemeVal, newTparamsVal) {
-        case (newCases, newScheme, tparams) =>
-          // MATT visit tpeDeprecated
-          KindedAst.Enum(doc, mod, sym, tparams, newCases.toMap, ???, newScheme, loc)
+      val tpeVal = checkKinds(tpeDeprecated, KindMatch.Star, ascriptions, root)
+      mapN(newCasesVal, newSchemeVal, newTparamsVal, tpeVal) {
+        case (newCases, newScheme, tparams, tpe) =>
+          KindedAst.Enum(doc, mod, sym, tparams, newCases.toMap, tpe, newScheme, loc)
       }
   }
 
@@ -79,9 +80,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change t
           // MATT use internal visit function to avoid extra "actualkind"
           val newTconstrsVal = traverse(tconstrs)(checkKinds(_, ascriptions, root))
           val newDefsVal = traverse(defs)(visitDef(_, ascriptions, root))
-          mapN(newTconstrsVal, newDefsVal) {
-            // MATT visitTpe
-            case (newTconstrs, newDefs) => KindedAst.Instance(doc, mod, sym, ???, newTconstrs, newDefs, ns, loc)
+          val tpeVal = checkKinds(tpe, KindMatch.fromKind(actualKind), ascriptions, root) // MATT this is redundant with inferKinds
+          mapN(newTconstrsVal, newDefsVal, tpeVal) {
+            case (newTconstrs, newDefs, newTpe) => KindedAst.Instance(doc, mod, sym, newTpe, newTconstrs, newDefs, ns, loc)
           }
       }
   }
