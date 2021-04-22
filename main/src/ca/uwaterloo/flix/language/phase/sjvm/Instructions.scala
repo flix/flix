@@ -70,7 +70,7 @@ object Instructions {
   [R <: Stack, S <: PRefType, T <: PType]
   (e: RType[T], tpe: S = tag[T])(f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
   F[R ** PReference[S]] => F[R ** T] = {
-    //todo why is NOP/the type needed here?
+    // TODO: why is NOP/the type needed here?
     NOP ~[R ** PReference[S] ** PReference[S]]
       DUP ~
       MONITORENTER ~
