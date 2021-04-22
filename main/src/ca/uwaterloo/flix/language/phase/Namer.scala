@@ -1565,12 +1565,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, tenv: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.TypeParams, NameError] = {
     // Compute the type variables that occur in the formal parameters.
-    val tvars = fparams.flatMap {
+    val fparamTvars = fparams.flatMap {
       case WeededAst.FormalParam(_, _, Some(tpe), _) => freeVars(tpe)
       case WeededAst.FormalParam(_, _, None, _) => Nil
-    }.distinct
+    }
 
-    val tparams = tvars.map {
+    val returnTvars = freeVars(tpe)
+
+    val tparams = (fparamTvars ++ returnTvars).map {
       tvar => NamedAst.TypeParam.Unkinded(tvar, UnkindedType.freshVar(Some(tvar.name)), tvar.loc)
     }
     // MATT maybe make a helper for ident -> tparam

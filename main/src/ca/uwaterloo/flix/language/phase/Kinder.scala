@@ -66,7 +66,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   // MATT docs
   private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root): Validation[KindedAst.Class, CompilationError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
-      val (tparam, ascriptions) = visitTparam(tparam0, ascriptions, root)
+      val (tparam, ascriptions) = visitTparam(tparam0)
       val superClassesVal = traverse(superClasses0)(ascribeTconstr(_, ascriptions, root))
       val sigsVal = traverse(sigs0) {
         case (sigSym, sig0) => visitSig(sig0, ascriptions, root).map(sig => sigSym -> sig)
@@ -131,7 +131,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  private def visitTparam(tparam0: ResolvedAst.TypeParam, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): (KindedAst.TypeParam, Map[Int, Kind]) = tparam0 match {
+  private def visitTparam(tparam0: ResolvedAst.TypeParam): (KindedAst.TypeParam, Map[Int, Kind]) = tparam0 match {
       // Case 1: explicit kind: use it
     case TypeParam.Kinded(name, tpe, kind, loc) =>
       (KindedAst.TypeParam(name, ascribeTvar(tpe, kind), loc), Map(tpe.id -> kind))
@@ -448,7 +448,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     // ascription in one or the other: keep it
     Validation.fold(ascriptions1, ascriptions2) {
       // Case 1: ascription in both: ensure that one is a subkind of the other and use the subkind
-      case (acc, (id, kind)) if ascriptions2.contains(id) => mergeKinds(kind, ascriptions2(id)).map(acc + (id -> _))
+      case (acc, (id, kind)) if ascriptions2.contains(id) => mergeKinds(kind, ascriptions2(id)).map(subkind => acc + (id -> subkind))
       // Case 2: ascription just in first, we can safely add it
       case (acc, (id, kind)) => (acc + (id -> kind)).toSuccess
     }

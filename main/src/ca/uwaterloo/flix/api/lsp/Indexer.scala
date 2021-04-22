@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec}
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object Indexer {
 
@@ -292,7 +292,7 @@ object Indexer {
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = rules.foldLeft(Index.empty) {
         case (index, SelectChannelRule(sym, chan, body)) =>
-          index ++ Index.occurrenceOf(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(body)
+          index ++ Index.occurrenceOf(sym, sym.tvar.ascribedWith(Kind.Star)) ++ visitExp(chan) ++ visitExp(body) // MATT ascription here is a hack
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
