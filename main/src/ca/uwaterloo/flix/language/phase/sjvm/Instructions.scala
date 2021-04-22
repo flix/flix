@@ -23,26 +23,10 @@ import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.phase.sjvm.GenRefClasses
 import org.objectweb.asm.{Label, Opcodes}
 
 object Instructions {
-
-  def getInternalName[T <: PType](eType: RType[T]): String =
-    RType.toInternalName(eType)
-
-  def getInternalName[T <: PRefType](eRefType: RRefType[T]): String =
-    getInternalName(RReference(eRefType))
-
-  def getDescriptor[T1 <: PType, T2 <: PType](args: String, result: String): String =
-    s"($args)$result"
-
-  def getDescriptor[T <: PType](eType: RType[T]): String = eType match {
-    case RReference(referenceType) => s"L${getInternalName(referenceType)};"
-    case other => getInternalName(other)
-  }
-
-  def getDescriptor[T <: PRefType](eRefType: RRefType[T]): String =
-    getDescriptor(RReference(eRefType))
 
   private def castF[S1 <: Stack, S2 <: Stack](f: F[S1]): F[S2] = f.asInstanceOf[F[S2]]
 
@@ -424,8 +408,8 @@ object Instructions {
   def pushUnit
   [R <: Stack]:
   F[R] => F[R ** PReference[PUnit]] = f => {
-    val className = getInternalName(RRefType.RUnit())
-    val classDescriptor = getDescriptor(RRefType.RUnit())
+    val className = RUnit().toInternalName
+    val classDescriptor = RUnit().toDescriptor
     f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, "getInstance", classDescriptor, false)
     castF(f)
   }
@@ -846,7 +830,7 @@ object Instructions {
   [R <: Stack, T <: PType]
   (className: String, innerType: RType[T]):
   F[R ** PReference[PRef[T]] ** T] => F[R] = f => {
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className, GenRefClasses.fieldName, getInternalName(innerType))
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className, GenRefClasses.valueFieldName, innerType.toDescriptor)
     castF(f)
   }
 
@@ -855,8 +839,8 @@ object Instructions {
   [R <: Stack, T <: PType]
   (x: F[R], t: RType[T]):
   F[R ** T] = {
-    //todo where is this string stored
-    getInternalName(t)
+    // TODO: where is this string stored
+    //t.toDescriptor
     ???
   }
 

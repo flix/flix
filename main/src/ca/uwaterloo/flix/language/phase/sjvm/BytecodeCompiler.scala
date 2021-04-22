@@ -153,18 +153,18 @@ object BytecodeCompiler {
         INVOKESPECIAL(className, JvmName.nothingToVoid) ~
         DUP ~
         compileExp(exp) ~
-        PUTFIELD(className, GenRefClasses.fieldName, exp.tpe)
+        PUTFIELD(className, GenRefClasses.valueFieldName, exp.tpe)
 
     case Expression.Deref(exp, className, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        XGETFIELD(className, GenRefClasses.fieldName, tpe)
+        XGETFIELD(className, GenRefClasses.valueFieldName, tpe)
 
     case Expression.Assign(exp1, exp2, className, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
-        PUTFIELD(className, GenRefClasses.fieldName, exp2.tpe) ~
+        PUTFIELD(className, GenRefClasses.valueFieldName, exp2.tpe) ~
         pushUnit
 
     case Expression.Existential(fparam, exp, loc) => ???

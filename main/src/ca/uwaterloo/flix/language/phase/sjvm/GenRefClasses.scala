@@ -29,18 +29,17 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
   * Generates bytecode for the ref classes.
   */
 object GenRefClasses {
-  val fieldName: String = "value"
+  val valueFieldName: String = "value"
 
   /**
     * Returns the bytecode for the ref classes built-in to the Flix language.
     */
-  def gen()(implicit root: Root, flix: Flix): Map[String, JvmClass] = {
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     // Generating each ref class
-    def genAUX[T <: PType](tpe: RType[T]): (String, JvmClass) = {
-      val eeType = RReference(RRef(tpe))
-      val className: String = Instructions.getInternalName(eeType)
-      className -> JvmClass(className, genByteCode(className, tpe))
+    def genAUX[T <: PType](valueFieldType: RType[T]): (JvmName, JvmClass) = {
+      val refType = RReference(RRef(valueFieldType))
+      refType.jvmName -> JvmClass(refType.jvmName, genByteCode(refType, valueFieldType))
     }
 
     //Type that we need a cell class for
@@ -59,15 +58,16 @@ object GenRefClasses {
   /**
     * Generating class `className` with value of type `innerType`
     */
-  private def genByteCode[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode[T <: PType](refType: RReference[PRef[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
+    val className = refType.toInternalName
     val classMaker = ClassMaker.openClassWriter(className, isFinal = true)
 
     // Generate the instance field
-    val innerTypeString = Instructions.getDescriptor(innerType)
-    classMaker.makeField(fieldName, innerTypeString, isStatic = false, isPublic = true)
+    // TODO: make string arguments RTypes in general
+    classMaker.makeField(valueFieldName, valueFieldType.toDescriptor, isStatic = false, isPublic = true)
 
-    val constructorDescriptor = Instructions.getDescriptor(innerTypeString, JvmName.voidDescriptor)
-    classMaker.makeConstructor(genConstructor(innerType), constructorDescriptor)
+    val constructorDescriptor = JvmName.getMethodDescriptor(valueFieldType, None)
+    classMaker.makeConstructor(genConstructor(valueFieldType), constructorDescriptor)
 
     classMaker.closeClassMaker
   }
@@ -75,7 +75,7 @@ object GenRefClasses {
   /**
     * Generating constructor for the class with value of type `innerType`
     */
-  def genConstructor[T <: PType](eType: RType[T]): F[StackNil] => F[StackEnd] = {
+  def genConstructor[T <: PType](valueFieldType: RType[T]): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
     THISLOAD(tag[PRef[T]]) ~
       INVOKESPECIAL(JvmName.Java.Lang.Object.toInternalName, JvmName.nothingToVoid) ~

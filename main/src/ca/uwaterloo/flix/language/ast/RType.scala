@@ -20,11 +20,14 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 
+trait Describable {
+  val toDescriptor: String
+}
+
 // actual flix types
-sealed trait RType[T <: PType] {
-  def toInternalName: String = RType.toInternalName(this)
-  def toDescriptor: String = RType.toDescriptor(this)
-  def toErasedType: String = RType.toErasedString(this)
+sealed trait RType[T <: PType] extends Describable {
+  val toDescriptor: String = RType.toDescriptor(this)
+  val toErasedString: String = RType.toErasedString(this)
 }
 
 object RType {
@@ -41,8 +44,7 @@ object RType {
     case RReference(referenceType) => referenceType.toDescriptor
   }
 
-  // TODO: maybe it shouldn't be defined on RType
-  def toInternalName[T <: PType](e: RType[T]): String = e match {
+  def internalNameOfReference[T <: PRefType](e: RType[PReference[T]]): String = e match {
     case RReference(referenceType) => referenceType.toInternalName
     case _ => throw new IllegalArgumentException("Primitive types do not have internal names")
   }
@@ -75,15 +77,18 @@ object RType {
 
   case class RFloat64() extends RType[PFloat64 with Cat2]
 
-  case class RReference[T <: PRefType](referenceType: RRefType[T]) extends RType[PReference[T] with Cat1]
+  case class RReference[T <: PRefType](referenceType: RRefType[T]) extends RType[PReference[T] with Cat1] {
+    val toInternalName: String = referenceType.toInternalName
+    val jvmName: JvmName = referenceType.jvmName
+  }
 
 }
 
 
-sealed trait RRefType[T <: PRefType] {
+sealed trait RRefType[T <: PRefType] extends Describable {
   val jvmName: JvmName
-  def toInternalName: String = RRefType.toInternalName(this)
-  def toDescriptor: String = RRefType.toDescriptor(this)
+  lazy val toInternalName: String = RRefType.toInternalName(this)
+  lazy val toDescriptor: String = RRefType.toDescriptor(this)
 }
 
 object RRefType {
@@ -142,7 +147,7 @@ object RRefType {
   }
 
   case class RRef[T <: PType](tpe: RType[T]) extends RRefType[PRef[T]] {
-    private val className = s"Ref${JvmName.reservedDelimiter}${tpe.toErasedType}"
+    private val className = s"Ref${JvmName.reservedDelimiter}${tpe.toErasedString}"
     override val jvmName: JvmName = JvmName(Nil, className)
   }
 

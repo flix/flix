@@ -34,22 +34,21 @@ object GenLazyClasses {
   val initializedFieldName: String = "initialized"
   val initializedFieldType: RType[PInt32] = RBool()
   val expressionFieldName: String = "expression"
-  val expressionFieldType: RType[PReference[PAnyObject]] = RReference(RObject())
+  val expressionFieldType: RReference[PAnyObject] = RReference(RObject())
   val expressionToVoid: String = JvmName.objectToVoid
-  val valueField: String = "value"
+  val valueFieldName: String = "value"
   val forceMethod: String = "force"
 
   /**
    * Returns the set of lazy classes for the given set of types `ts`.
    */
-  def gen()(implicit root: Root, flix: Flix): Map[String, JvmClass] = {
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     // Generating each lazy class
-    def genAUX[T <: PType](tpe: RType[T]): (String, JvmClass) = {
-      val eeType = RReference(RLazy(tpe))
-      val className = getInternalName(eeType)
-      val bytecode = genByteCode(className, tpe)
-      className -> JvmClass(className, bytecode)
+    def genAUX[T <: PType](valueFieldType: RType[T]): (JvmName, JvmClass) = {
+      val lazyType = RReference(RLazy(valueFieldType))
+      val bytecode = genByteCode(lazyType, valueFieldType)
+      lazyType.jvmName -> JvmClass(lazyType.jvmName, bytecode)
     }
 
     //Type that we need a cell class for
@@ -78,15 +77,16 @@ object GenLazyClasses {
    * force will only evaluate the expression the first time, based on the flag initialized.
    * After that point it will store the result in value and just return that.
    */
-  private def genByteCode[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
+    val className = lazyType.toInternalName
     val classMaker = ClassMaker.openClassWriter(className, isFinal = true)
 
     classMaker.makeField(initializedFieldName, initializedFieldType.toDescriptor, isStatic = false, isPublic = false)
     classMaker.makeField(expressionFieldName, expressionFieldType.toDescriptor, isStatic = false, isPublic = false)
-    classMaker.makeField(valueField, s"L$className;", isStatic = false, isPublic = false)
-    val methodDescriptor = s"(LContext;)${getDescriptor(innerType)}"
-    classMaker.makeMethod(compileForceMethod(className, innerType), forceMethod, methodDescriptor, isFinal = true, isPublic = true)
-    classMaker.makeConstructor(compileLazyConstructor(className, innerType), expressionToVoid)
+    classMaker.makeField(valueFieldName, valueFieldType.toDescriptor, isStatic = false, isPublic = false)
+    val methodDescriptor = s"(LContext;)${valueFieldType.toDescriptor}"
+    classMaker.makeMethod(compileForceMethod(lazyType, valueFieldType), forceMethod, methodDescriptor, isFinal = true, isPublic = true)
+    classMaker.makeConstructor(compileLazyConstructor(lazyType, valueFieldType), expressionToVoid)
     classMaker.closeClassMaker
   }
 
@@ -99,7 +99,7 @@ object GenLazyClasses {
    * If lazy has associated type of Obj, the returned object needs to be casted
    * to whatever expected type.
    */
-  private def compileForceMethod[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+  private def compileForceMethod[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     force(context) :=
 
@@ -112,8 +112,9 @@ object GenLazyClasses {
     unlock(this)
     return result
      */
+    val className = lazyType.toInternalName
     THISLOAD(tag[PLazy[T]]) ~
-      (WITHMONITOR(innerType) {
+      (WITHMONITOR(valueFieldType) {
         START[StackNil ** PReference[PLazy[T]]] ~
           THISLOAD(tag[PLazy[T]]) ~
           GetBoolField(className, initializedFieldName) ~
@@ -121,31 +122,32 @@ object GenLazyClasses {
             START[StackNil ** PReference[PLazy[T]]] ~
               THISLOAD(tag[PLazy[T]]) ~
               GetObjectField(className, expressionFieldName, tag[PAnyObject]) ~
-              compileClosureApplication(innerType) ~
+              compileClosureApplication(valueFieldType) ~
               THISLOAD(tag[PLazy[T]]) ~
-              XSWAP(RReference(RLazy(innerType)), innerType) ~
-              PUTFIELD(className, valueField, innerType) ~
+              XSWAP(lazyType, valueFieldType) ~
+              PUTFIELD(className, valueFieldName, valueFieldType) ~
               THISLOAD(tag[PLazy[T]]) ~
               pushInt32(1) ~
               PUTFIELD(className, initializedFieldName, RInt32())
           }) ~
           THISLOAD(tag[PLazy[T]]) ~
-          XGETFIELD(className, valueField, innerType)
+          XGETFIELD(className, valueFieldName, valueFieldType)
       }) ~
-      XRETURN(innerType)
+      XRETURN(valueFieldType)
   }
 
   /**
    * The constructor takes a expression object, which should be a function that takes
    * no argument and returns something of type tpe, related to the type of the lazy class.
    */
-  def compileLazyConstructor[T <: PType](className: String, innerType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+  def compileLazyConstructor[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     Lazy$tpe(expression) :=
 
     this.initialized = false
     this.expression = expression.
      */
+    val className = lazyType.toInternalName
     START[StackNil] ~
       THISLOAD(tag[PLazy[T]]) ~
       INVOKESPECIAL(expressionFieldType.toInternalName, JvmName.nothingToVoid) ~
