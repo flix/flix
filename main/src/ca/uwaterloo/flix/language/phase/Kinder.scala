@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast.UnkindedType.Constructor
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, sequenceT, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.annotation.tailrec
@@ -90,7 +90,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change t
   // MATT docs
   private def visitAnnotation(ann: ResolvedAst.Annotation, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Annotation, KindError] = ann match {
     case ResolvedAst.Annotation(name, exps, loc) =>
-      KindedAst.Annotation(name, ???, loc).toSuccess // MATT
+      traverse(exps)(visitExp(_, ascriptions, root)) map {
+        KindedAst.Annotation(name, _, loc)
+      }
   }
 
   // MATT docs
@@ -353,18 +355,37 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] { // MATT change t
         // MATT need to keep and use result of inference
 
         // MATT more docs everywhere
-        flatMapN(fparamAscriptionsVal, effAscriptionsVal, newAnnVal, newTparamsVal, newFparamsVal) {
-          case (fparamAscriptions, effAscriptions, newAnn, newTparams, newFparams) =>
-            val ascriptions = fparamAscriptions ++ effAscriptions // MATT handle conflicts
-            // MATT make merge ascriptions function
-            // MATT visit eff
-            checkScheme(sc, ascriptions, root) map {
-              newScheme => (KindedAst.Spec(doc, newAnn, mod, newTparams, newFparams, newScheme, ???, loc), ascriptions)
-            }
-        }
+        for {
+          res <- sequenceT(fparamAscriptionsVal, effAscriptionsVal, newAnnVal, newTparamsVal, newFparamsVal)
+          (fparamAscriptions, effAscriptions, newAnn, newTparams, newFparams) = res
+          ascriptions <- mergeAscriptions(fparamAscriptions, effAscriptions)
+          newScheme <- checkScheme(sc, ascriptions, root)
+          // MATT visit eff
+        } yield (KindedAst.Spec(doc, newAnn, mod, newTparams, newFparams, newScheme, ???, loc), ascriptions)
     }
   }
 
+  // MATT docs
+  private def mergeAscriptions(ascriptions1: Map[Int, Kind], ascriptions2: Map[Int, Kind]): Validation[Map[Int, Kind], KindError] = {
+    // ascription in one or the other: keep it
+    Validation.fold(ascriptions1, ascriptions2) {
+      // Case 1: ascription in both: ensure that one is a subkind of the other and use the subkind
+      case (acc, (id, kind)) if ascriptions2.contains(id) => mergeKinds(kind, ascriptions2(id)).map(acc + (id -> _))
+        // Case 2: ascription just in first, we can safely add it
+      case (acc, (id, kind)) => (acc + (id -> kind)).toSuccess
+    }
+  }
+
+  // MATT docs
+  private def mergeKinds(k1: Kind, k2: Kind): Validation[Kind, KindError] = {
+    if (k1 <:: k2) {
+      k1.toSuccess
+    } else if (k2 <:: k2) {
+      k2.toSuccess
+    } else {
+      KindError.MismatchedKinds(k1, k2, SourceLocation.Unknown).toFailure // MATT real location
+    }
+  }
   // MATT docs
   private def checkScheme(scheme: ResolvedAst.Scheme, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Scheme, KindError] = scheme match {
     case ResolvedAst.Scheme(quantifiers, constraints, base) =>
