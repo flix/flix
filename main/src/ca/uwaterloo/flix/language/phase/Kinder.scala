@@ -47,15 +47,15 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val (tparams, ascriptions) = visitTparams(tparams0)
       val casesVal = traverse(cases0) {
         case (_, ResolvedAst.Case(enum, tag, tpeDeprecated, sc)) =>
-          val schemeVal = checkScheme(sc, ascriptions, root)
-          val tpeVal = checkKinds(tpeDeprecated, KindMatch.Star, ascriptions, root)
+          val schemeVal = ascribeScheme(sc, ascriptions, root)
+          val tpeVal = ascribeType(tpeDeprecated, KindMatch.Star, ascriptions, root)
           mapN(schemeVal, tpeVal) {
             case (scheme, tpe) => (tag, KindedAst.Case(enum, tag, tpe, scheme))
           }
       }
 
-      val schemeVal = checkScheme(sc0, ascriptions, root)
-      val tpeVal = checkKinds(tpeDeprecated, KindMatch.Star, ascriptions, root)
+      val schemeVal = ascribeScheme(sc0, ascriptions, root)
+      val tpeVal = ascribeType(tpeDeprecated, KindMatch.Star, ascriptions, root)
       mapN(casesVal, schemeVal, tpeVal) {
         case (cases, scheme, tpe) =>
           KindedAst.Enum(doc, mod, sym, tparams, cases.toMap, tpe, scheme, loc)
@@ -67,7 +67,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root): Validation[KindedAst.Class, CompilationError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
       val ascriptions = Map(getAscription(tparam0))
-      val superClassesVal = traverse(superClasses0)(checkKinds(_, ascriptions, root))
+      val superClassesVal = traverse(superClasses0)(ascribeTconstr(_, ascriptions, root))
       val sigsVal = traverse(sigs0) {
         case (sigSym, sig0) => visitSig(sig0, ascriptions, root).map(sig => sigSym -> sig)
       }
@@ -90,7 +90,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
       inferKinds(tpe, expectedKind, root) flatMap {
         case (tpe, ascriptions) =>
-          val tconstrsVal = traverse(tconstrs0)(checkKinds(_, ascriptions, root))
+          val tconstrsVal = traverse(tconstrs0)(ascribeTconstr(_, ascriptions, root))
           val defsVal = traverse(defs0)(visitDef(_, ascriptions, root))
           mapN(tconstrsVal, defsVal) {
             case (tconstrs, defs) => KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
@@ -99,7 +99,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  private def visitAnnotation(ann: ResolvedAst.Annotation, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Annotation, KindError] = ann match {
+  private def ascribeAnnotation(ann: ResolvedAst.Annotation, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Annotation, KindError] = ann match {
     case ResolvedAst.Annotation(name, exps, loc) =>
       traverse(exps)(visitExp(_, ascriptions, root)) map {
         KindedAst.Annotation(name, _, loc)
@@ -115,7 +115,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case (acc, ResolvedAst.TypeParam.Kinded(_, tpe, kind, _)) => acc + (tpe.id -> kind)
       }
       val ktparams = tparams.map {
-        case ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, kind), loc)
+        case ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc) => KindedAst.TypeParam(name, ascribeTvar(tpe, kind), loc)
       }
       (ktparams, ascriptions)
     // Case 2: Unkinded tparams: default to Star kind
@@ -124,13 +124,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case (acc, tparam) => acc + (tparam.tpe.id -> Kind.Star)
       }
       val ktparams = tparams.map {
-        case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, Kind.Star), loc)
+        case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeTvar(tpe, Kind.Star), loc)
       }
       (ktparams, ascriptions)
   }
 
   // MATT docs
-  private def ascribeKind(tvar: UnkindedType.Var, kind: Kind): Type.Var = tvar match {
+  private def ascribeTvar(tvar: UnkindedType.Var, kind: Kind): Type.Var = tvar match {
     case UnkindedType.Var(id, text) => Type.Var(id, kind, text = text)
   }
 
@@ -169,7 +169,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def inferKinds(tpe: UnkindedType, expected: KindMatch, root: ResolvedAst.Root): Validation[(Type, Map[Int, Kind]), KindError] = tpe match {
     case tvar@UnkindedType.Var(id, text) =>
       val k = KindMatch.toKind(expected)
-      (ascribeKind(tvar, k), Map(id -> k)).toSuccess
+      (ascribeTvar(tvar, k), Map(id -> k)).toSuccess
 
     case UnkindedType.Cst(tc0, loc) =>
       val tc = visitTypeConstructor(tc0, root)
@@ -228,20 +228,20 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  private def checkKinds(tconstr: ResolvedAst.TypeConstraint, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Ast.TypeConstraint, KindError] = tconstr match {
+  private def ascribeTconstr(tconstr: ResolvedAst.TypeConstraint, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Ast.TypeConstraint, KindError] = tconstr match {
     case ResolvedAst.TypeConstraint(sym, tpe0, loc) =>
       val clazz = root.classes(sym)
       val classAscriptions = getAscription(clazz.tparam)
       val kind = classAscriptions._2 // MATT make safer for multiparam classes if those ever come
       val expectedKind = KindMatch.fromKind(kind)
 
-      checkKinds(tpe0, expectedKind, ascriptions, root) map {
+      ascribeType(tpe0, expectedKind, ascriptions, root) map {
         tpe => Ast.TypeConstraint(sym, tpe, loc)
       }
 
   }
 
-  private def checkKinds(tpe: UnkindedType, expected: KindMatch, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Type, KindError] = {
+  private def ascribeType(tpe: UnkindedType, expected: KindMatch, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Type, KindError] = {
 
     def visit(tpe: UnkindedType, expected: KindMatch): Validation[Type, KindError] = tpe match {
       case UnkindedType.Var(id, text) =>
@@ -351,13 +351,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case _: TypeParams.Kinded =>
         val (tparams, ascriptions) = visitTparams(tparams0)
 
-        val schemeVal = checkScheme(sc0, ascriptions, root)
+        val schemeVal = ascribeScheme(sc0, ascriptions, root)
 
-        val effVal = checkKinds(eff0, KindMatch.Bool, ascriptions, root)
+        val effVal = ascribeType(eff0, KindMatch.Bool, ascriptions, root)
 
-        val fparamsVal = traverse(fparams0)(checkFparam(_, ascriptions, root))
+        val fparamsVal = traverse(fparams0)(ascribeFparam(_, ascriptions, root))
 
-        val annVal = traverse(ann0)(visitAnnotation(_, ascriptions, root))
+        val annVal = traverse(ann0)(ascribeAnnotation(_, ascriptions, root))
 
         mapN(schemeVal, effVal, fparamsVal, annVal) {
           case (scheme, eff, fparams, ann) =>
@@ -389,10 +389,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           ascriptions <- mergeAscriptions(List(schemeAscriptions, effAscriptions, fparamAscriptions))
 
           res <- sequenceT(
-            checkScheme(sc0, ascriptions, root),
-            checkKinds(eff0, KindMatch.Bool, ascriptions, root),
-            traverse(fparams0)(checkFparam(_, ascriptions, root)),
-            traverse(ann0)(visitAnnotation(_, ascriptions, root))
+            ascribeScheme(sc0, ascriptions, root),
+            ascribeType(eff0, KindMatch.Bool, ascriptions, root),
+            traverse(fparams0)(ascribeFparam(_, ascriptions, root)),
+            traverse(ann0)(ascribeAnnotation(_, ascriptions, root))
           )
           (scheme, eff, fparams, ann) = res
 
@@ -404,14 +404,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   // MATT docs
   private def ascribeTparams(tparams0: ResolvedAst.TypeParams.Unkinded, ascriptions: Map[Int, Kind]): List[KindedAst.TypeParam] = tparams0 match {
     case ResolvedAst.TypeParams.Unkinded(tparams) => tparams.map {
-      case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeKind(tpe, ascriptions(tpe.id)), loc)
+      case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeTvar(tpe, ascriptions(tpe.id)), loc)
     }
   }
 
   // MATT docs
-  private def checkFparam(fparam: ResolvedAst.FormalParam, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.FormalParam, KindError] = fparam match {
+  private def ascribeFparam(fparam: ResolvedAst.FormalParam, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.FormalParam, KindError] = fparam match {
     case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
-      checkKinds(tpe0, KindMatch.Star, ascriptions, root) map {
+      ascribeType(tpe0, KindMatch.Star, ascriptions, root) map {
         tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
       }
   }
@@ -462,12 +462,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
   }
   // MATT docs
-  private def checkScheme(scheme: ResolvedAst.Scheme, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Scheme, KindError] = scheme match {
+  private def ascribeScheme(scheme: ResolvedAst.Scheme, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Scheme, KindError] = scheme match {
     case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
-      val baseVal = checkKinds(base0, KindMatch.Star, ascriptions, root)
+      val baseVal = ascribeType(base0, KindMatch.Star, ascriptions, root)
       // MATT use better types to avoid cast
-      val quantifiersVal = traverse(quantifiers0)(checkKinds(_, KindMatch.Wild, ascriptions, root).map(_.asInstanceOf[Type.Var])) // MATT avoid cast ?
-      val constraintsVal = traverse(constraints0)(checkKinds(_, ascriptions, root))
+      val quantifiersVal = traverse(quantifiers0)(ascribeType(_, KindMatch.Wild, ascriptions, root).map(_.asInstanceOf[Type.Var])) // MATT avoid cast ?
+      val constraintsVal = traverse(constraints0)(ascribeTconstr(_, ascriptions, root))
       mapN(quantifiersVal, constraintsVal, baseVal) {
         case (quantifiers, constraints, base) => Scheme(quantifiers, constraints, base)
       }
