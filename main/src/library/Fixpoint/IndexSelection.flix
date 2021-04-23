@@ -33,7 +33,7 @@ namespace Fixpoint {
     ///         search u ∈ c do
     ///             if (x = y ∧ x = w ∧ z = u ∧ x ∉ a) then
     ///                 project x into a
-    /// After step 1:h
+    /// After step 1:
     /// search x ∈ b do
     ///     if (x ∉ a) then
     ///         search (y, z, w) ∈ r do
@@ -94,19 +94,7 @@ namespace Fixpoint {
                     case Eq(RowLoad(row, _), Lit(_)) => row == var
                     case _ => false
                 });
-            let (prefixQuery, rest2) =
-                // Sort equalities of the form `var[i] = rhs` ascending on `i`.
-                List.sortWith(x -> y -> match (x, y) {
-                    case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) =>
-                        index1 - index2
-                }, varQuery) |>
-                // Tag `var[i] = rhs` with its "expected" / prefix index.
-                List.mapWithIndex(x -> i -> (x, i)) |>
-                // Partition into those equalities that form a prefix on `var` and those that don't.
-                List.partition(match (Eq(RowLoad(_, index), _rhs), i) -> index == i) |>
-                // Finally project away the left-hand side and the index.
-                match (query, rest) ->
-                    (List.map(match (Eq(_, rhs), _) -> rhs, query), List.map(fst, rest));
+            let (prefixQuery, rest2) = longestPrefixQuery(varQuery);
             let test = rest1 ::: rest2;
             if (List.isEmpty(prefixQuery))
                 if (List.isEmpty(test))
@@ -116,7 +104,12 @@ namespace Fixpoint {
                     let search = RelOp.Search(var, ramSym, RelOp.If(test, innerOp));
                     (search, ground)
             else
-                let query = List.toArray(prefixQuery) as & Pure;
+                let query =
+                    (List.map(x -> match x {
+                        case Eq(RamTerm.RowLoad(_, j), rhs) => (j, rhs)
+                        case _ => ???
+                    }, prefixQuery) |>
+                    List.toArray) as & Pure;
                 if (List.isEmpty(test))
                     let search = RelOp.Query(var, ramSym, query, innerOp);
                     (search, ground)
@@ -129,6 +122,29 @@ namespace Fixpoint {
             let (innerOp, innerGround) = queryOp(then, freeVars);
             (innerOp, test ::: innerGround)
     }
+
+    def longestPrefixQuery(varQuery: List[BoolExp[v]]): (List[BoolExp[v]], List[BoolExp[v]]) =
+        use Fixpoint/Ram.BoolExp.Eq;
+        use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
+        // Sort equalities of the form `var[i] = rhs` ascending on `i`.
+        List.sortWith(x -> y -> match (x, y) {
+            case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) => index1 - index2
+            case _ => ???
+        }, varQuery) |>
+        // Group `var[i] = rhs` by `i`.
+        List.groupBy(x -> y -> match (x, y) {
+            case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) => index1 == index2
+            case _ => ???
+        }) |>
+        prefixHelper(0, Nil, Nil)
+
+    def prefixHelper(i: Int32, prefix: List[BoolExp[v]], rest: List[BoolExp[v]], eqs: List[List[BoolExp[v]]]): (List[BoolExp[v]], List[BoolExp[v]]) =
+        match eqs {
+            case e :: es =>
+                let (p, r) = List.partition(match BoolExp.Eq(RamTerm.RowLoad(_, j), _) -> i == j, e);
+                prefixHelper(i + 1, prefix ::: p, rest ::: r, es)
+            case Nil => (prefix, rest)
+        }
 
     ///
     /// An expression is ground if all its terms are ground.
