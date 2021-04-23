@@ -5,7 +5,8 @@ namespace Bench/Exp/FixpointProjectIn {
 
     pub def benchmarks(): Array[Benchmark] & Impure = [
         benchmarkProjectInto(),
-        benchmarkQuery()
+        benchmarkQuery(),
+        benchmarkSolve()
     ] |> Array.flatten
 
     pub def benchmarkProjectInto(): Array[Benchmark] & Impure =
@@ -34,6 +35,24 @@ namespace Bench/Exp/FixpointProjectIn {
             defBenchmark("Select 10000 (Int, Int, Int)", () -> { query l10000 select (x, y, z) from A(x, y, z) })
             //defBenchmark("Select 100000 (Int, Int, Int)", () -> { query l100000 select (x, y, z) from A(x, y, z) })
             //defBenchmark("Select 1000000 (Int, Int, Int)", () -> { query l1000000 select (x, y, z) from A(x, y, z) })
+        ]
+
+    pub def benchmarkSolve(): Array[Benchmark] & Impure =
+        let p = #{
+            Path(x, y) :- Edge(x, y).
+            Path(x, z) :- Path(x, y), Edge(y, z).
+        };
+        let e8   = project (List.range(1,   8) |> List.map(x -> (x, x + 1))) into Edge;
+        let e16  = project (List.range(1,  16) |> List.map(x -> (x, x + 1))) into Edge;
+        let e32  = project (List.range(1,  32) |> List.map(x -> (x, x + 1))) into Edge;
+        let e64  = project (List.range(1,  64) |> List.map(x -> (x, x + 1))) into Edge;
+        let e128 = project (List.range(1, 128) |> List.map(x -> (x, x + 1))) into Edge;
+        [
+            defBenchmark("Closure 8", () -> { solve p, e8 }),
+            defBenchmark("Closure 16", () -> { solve p, e16 }),
+            defBenchmark("Closure 32", () -> { solve p, e32 }),
+            defBenchmark("Closure 64", () -> { solve p, e64 }),
+            defBenchmark("Closure 128", () -> { solve p, e128 })
         ]
 
 }
