@@ -24,7 +24,7 @@ use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
     ///
-    /// Return the minimal model of the given Datalog program `d`.
+    /// Returns the minimal model of the given Datalog program `d`.
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// The stratification is computed automatically by the solver.
     ///
@@ -33,7 +33,7 @@ namespace Fixpoint {
         solveWithStratification(d)
 
     ///
-    /// Return the minimal model of the given Datalog program `d`.
+    /// Returns the minimal model of the given Datalog program `d`.
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// A stratification of `d` is given by `stf`.
     ///
@@ -48,9 +48,9 @@ namespace Fixpoint {
          model
 
     ///
-    /// Return the pairwise union of `d1` and `d2`.
+    /// Returns the pairwise union of `d1` and `d2`.
     /// I.e. the facts of the union is the union of the facts and likewise for rules.
-    /// Facts and rules are not deduplicated. This has no effect on the minimal model.
+    /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.
     ///
     pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
