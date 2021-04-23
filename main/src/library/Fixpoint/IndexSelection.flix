@@ -20,34 +20,41 @@ namespace Fixpoint {
     ///
     /// Hoist and query optimize `stmt`.
     ///
+    /// This is an optimization phase and can be omitted with no semantic effect.
+    ///
     /// The purpose of this phase is to:
     /// 1) Hoist if-statements from inner loops to outer loops.
     /// An if-statement can be hoisted from its enclosing loop if it only reads variables
     /// that are bound in an outer loop.
     /// 2) Rewrite searches on relations to queries on indices, when possible.
-    /// It is possible to rewrite a searc when it searches on attributes that form a prefix
+    /// It is possible to rewrite a search when it searches on attributes that form a prefix
     /// of the attribute sequence used to lexicographically define the index.
     /// Consider the following example:
-    /// search x ∈ b do
-    ///     search (y, z, w) ∈ r do
-    ///         search u ∈ c do
-    ///             if (x = y ∧ x = w ∧ z = u ∧ x ∉ a) then
-    ///                 project x into a
-    /// After step 1:
-    /// search x ∈ b do
-    ///     if (x ∉ a) then
-    ///         search (y, z, w) ∈ r do
+    /// search x ∈ B do
+    ///     search (y, z, w) ∈ R do
+    ///         search u ∈ C do
+    ///             if (x = y ∧ x = w ∧ z = u ∧ x ∉ A) then
+    ///                 project x into A
+    /// After step 1 (hoisting):
+    /// search x ∈ B do
+    ///     if (x ∉ A) then
+    ///         search (y, z, w) ∈ R do
     ///             if (x = y ∧ x = w) then
-    ///                 search u ∈ c do
+    ///                 search u ∈ C do
     ///                     if (z = u) then
-    ///                         project x into a
-    /// After step 2:
-    /// search x ∈ b do
-    ///     if (x ∉ a) then
-    ///         query {(y, z, w) ∈ r | x = y} do
+    ///                         project x into A
+    /// After step 2 (query rewriting):
+    /// search x ∈ B do
+    ///     if (x ∉ A) then
+    ///         query {(y, z, w) ∈ R | x = y} do
     ///             if (x = w) then
-    ///                 query {u ∈ c | z = u} do
-    ///                     project x into a
+    ///                 query {u ∈ C | z = u} do
+    ///                     project x into A
+    ///
+    /// Note how the search `x = y` is optimized, but `x = w` is not.
+    /// The index for R is defined by the attribute sequence Y < Z < W.
+    /// Therefore the search `x = y` is a prefix search.
+    /// But `x = w` is not part of any prefix and hence cannot be optimized.
     ///
     /// Step 1 and Step 2 are implemented as one pass.
     ///
