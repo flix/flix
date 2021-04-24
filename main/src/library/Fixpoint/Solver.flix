@@ -24,10 +24,20 @@ use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
+    ///
+    /// Returns the minimal model of the given Datalog program `d`.
+    /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
+    /// The stratification is computed automatically by the solver.
+    ///
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         stratify(d) |>
         solveWithStratification(d)
 
+    ///
+    /// Returns the minimal model of the given Datalog program `d`.
+    /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
+    /// A stratification of `d` is given by `stf`.
+    ///
     pub def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         let _ = notifyPreSolve(d, stf);
         let model = (compile(d, stf) |>
@@ -38,27 +48,19 @@ namespace Fixpoint {
          let _ = notifyPostSolve(model);
          model
 
+    ///
+    /// Returns the pairwise union of `d1` and `d2`.
+    /// I.e. the facts of the union is the union of the facts and likewise for rules.
+    /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.
+    ///
     pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2)) as & Pure
     }
 
-    // TODO: Remove this? It is not used anymore.
-    pub def isSubsetOf(d1: Datalog[v], d2: Datalog[v]): Bool with Order[v], Eq[v], ToString[v] = match (d1, d2) {
-        case (Datalog(edb1, _), Datalog(edb2, _)) =>
-            use Fixpoint/Ram.toDenotation;
-            let db1 = toDatabase(edb1);
-            let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
-            Map.forall(ramSym -> rel1 -> match toDenotation(ramSym) {
-                case Denotation.Relational =>
-                    let rel2 = Map.getWithDefault(ramSym, Map#{}, db2);
-                    Map.forall(t -> _ -> Map.memberOf(t, rel2), rel1)
-                case Denotation.Latticenal(bot, leq, _, _) =>
-                    let rel2 = Map.getWithDefault(ramSym, Map#{}, db2);
-                    Map.forall(k -> l1 -> l1 `leq` Map.getWithDefault(k, bot, rel2), rel1)
-            }, db1)
-    }
-
+    ///
+    /// Project all facts in the given Datalog program `d` that has `p` in its head.
+    ///
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] = match d {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
@@ -175,28 +177,6 @@ namespace Fixpoint {
             Constraint(HeadAtom(PredSym(relName, Unknown), denotation, terms, Unknown), [], Unknown)
         case _ => ?bug
     }
-
-    def toDatabase(facts: Array[Constraint[v]]): Map[RamSym[v], Map[Array[v], v]] with Order[v] =
-        Array.foldRight(c -> match c {
-            case Constraint(HeadAtom(PredSym(pred, _), denotation, terms, _), _, _) =>
-                let ramSym = RamSym.Full(pred, denotation);
-                match denotation {
-                    case Denotation.Relational =>
-                        Map.singleton(factToTuple(c), default) |>
-                        Map.insertWith(Map.union, ramSym)
-                    case Denotation.Latticenal(_, _, lub, _) =>
-                        let key = Array.init(i -> match terms[i] {
-                            case HeadTerm.Lit(v, _) => v
-                            case _ => ?bug
-                        }, Array.length(terms) - 1);
-                        let lat = match Array.last(terms) {
-                            case Some(HeadTerm.Lit(v, _)) => v
-                            case _ => ?bug
-                        };
-                        Map.singleton(key, lat) |>
-                        Map.insertWith(Map.unionWith(lub), ramSym)
-                }
-        } as & Pure, Map#{}, facts) as & Pure
 
     def toAst(db: Database[v]): Datalog[v] & Impure =
         // TODO: don't eagerly convert back to AST. Keep it as a database as long as possible.

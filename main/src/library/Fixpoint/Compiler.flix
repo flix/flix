@@ -23,6 +23,14 @@ use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard0, Guard1, Guard2, Guard3, Guard4
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
+    ///
+    /// Compile the given Datalog program `cs` to RAM.
+    /// First compile all facts in `cs` to project-statements.
+    /// For example, the fact `Path(1, 2).` becomes `project (1, 2) into Path`.
+    /// Second compile all rules in `cs` according to the given stratification `strat`.
+    /// This means to compile all rules in stratum 0, then stratum 1 and so on.
+    /// A rule belongs to the same stratum as its head predicate.
+    ///
     def compile(cs: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] with ToString[v] = match cs {
         case Datalog(facts, rules) =>
             let evalFacts = Array.fold(Array.map(compileRule, facts)) as & Pure;
@@ -34,8 +42,24 @@ namespace Fixpoint {
             List.fold(evalFacts :: evalStrata :: Nil)
     }
 
-    /// Compile all rules to be computed in a stratum to RAM
+    ///
+    /// Compile all rules to be evaluated in `stratum` to RAM
     /// by using semi-naive evaluation as a code generator.
+    /// The steps are:
+    ///     1. For each rule Ri in `stratum` with head Pi:
+    ///     Pi = Pi ∪ Eval-Rule(Ri);
+    ///     merge Pi into ΔPi;
+    ///     2. Generate fixpoint loop:
+    ///     until(⋃Pi == ∅) do
+    ///     2.1. For each rule Ri with Pi in its head:
+    ///         purge ΔPi';
+    ///         ΔPi' = ΔPi' ∪ Eval-Rule-Incr(Ri);
+    ///         merge ΔPi' into Pi;
+    ///         ΔPi = ΔPi';
+    ///     end
+    /// Note that Eval-Rule is the code emitted by `compileRule`
+    /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
+    ///
     def compileStratum(stratum: Array[Constraint[v]]): RamStmt[v] with ToString[v] =
         let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, _, _), _, _) -> {
             Map.insert(pred, den)
@@ -75,7 +99,20 @@ namespace Fixpoint {
         let fixpoint = RamStmt.Until(loopTest, loopBody);
         List.fold(eval :: mergeDelta :: fixpoint :: Nil)
 
-    /// Compile rule into a join loop.
+    ///
+    /// Compile `rule` into a join loop. A join loop is a nested loop.
+    /// Each positive body atom in `rule` becomes part of the nested loop.
+    /// The head atom in `rule` is compiled to an insertion into the corresponding relation.
+    /// Negative atoms are compiled into if-statements.
+    /// The rule `R(x) :- not A(x), B(x),  C(x).` compiles to:
+    ///     search B$1 ∈ B do
+    ///         search C$2 C do
+    ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A) then
+    ///                 project (B$1[0]) into R
+    ///             end
+    ///         end
+    ///     end
+    ///
     def compileRule(rule: Constraint[v]): RamStmt[v] with ToString[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred, _), headDen, headTerms, _), body, _) =>
             let augBody = augmentBody(body);
@@ -95,6 +132,32 @@ namespace Fixpoint {
             List.fold(comment :: insert :: Nil)
     }
 
+    ///
+    /// Compile `rule` into an incremental join loop. A join loop is a nested loop.
+    /// Each positive body atom in `rule` becomes part of the nested loop.
+    /// The head atom in `rule` is compiled to an insertion into the corresponding relation.
+    /// Incremental means there is a join loop for every positive atom.
+    /// Each join loop "focuses" on a particular atom.
+    /// Negative atoms are compiled into if-statements.
+    /// The rule `R(x) :- not A(x), B(x),  C(x).` compiles to:
+    ///     search B$1 ∈ ΔB do
+    ///         search C$2 C do
+    ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A ∧ (B$1[0]) ∉ R) then
+    ///                 project (B$1[0]) into ΔR'
+    ///             end
+    ///         end
+    ///     end
+    ///     search B$1 ∈ B do
+    ///         search C$2 ΔC do
+    ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A ∧ (B$1[0]) ∉ R) then
+    ///                 project (B$1[0]) into ΔR'
+    ///             end
+    ///         end
+    ///     end
+    ///
+    /// Note that there are two join loops, because there are two positive atoms.
+    /// Also note how in the first loop, `B` is the focused atom and `C` is focused in the second loop.
+    ///
     def compileRuleIncr(rule: Constraint[v]): RamStmt[v] with ToString[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred, _), headDen, headTerms, _), body, _) =>
             let augBody = augmentBody(body);
@@ -104,8 +167,7 @@ namespace Fixpoint {
             let join = compileBody(env, augBody);
             // TODO: make sure membership tests are checked last.
             let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headPred, headDen)) :: join, projection);
-            /// Compile rule into an incremental join loop where delta designates the focused atom.
-            let compile = delta ->
+            let compile = delta -> // `delta` designates the focused atom.
                 Array.foldRight(match (atom, rowVar) -> acc -> match atom {
                     case BodyAtom(PredSym(pred, _), den, Polarity.Positive, _, _) =>
                         let ramSym = if (rowVar == delta) {
@@ -126,6 +188,9 @@ namespace Fixpoint {
             List.fold(comment :: deltas :: Nil)
     }
 
+    ///
+    /// Substitute Datalog head term `term` for a RAM term according to the given substitution `env`.
+    ///
     def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
         case HeadTerm.Var(var, _) => unwrap(Map.get(var, env))
         case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
@@ -157,16 +222,27 @@ namespace Fixpoint {
             RamTerm.App5(f, t1, t2, t3, t4, t5)
     }
 
+    ///
     /// Augment body atoms with row variables.
+    /// Every atom is thus identified by a unique row variable, regardless of its position in the body.
+    ///
+    /// Note that row variables not unique across rules.
+    ///
     def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar)] =
         Array.mapWithIndex(atom -> i -> match atom {
             case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body) as & Pure
 
+    ///
     /// Unifies each relational variable that occurs in a rule body with an attribute
     /// corresponding to a positive atom where the variable is a term.
     /// Latticenal variables are unified with a "meet" term.
+    /// For example, a body like `not A(x), B(x; s),  C(x; s).` returns the substitution:
+    ///     `Map#{x -> B$1[0], s -> B$1[1] ⊓ C$2[1]}`
+    /// `x` is mapped to B$1[0] because `x` occurs positively in the second atom.
+    /// `s` is mapped to the glb of all its positive occurences because it is latticenal.
+    ///
     def unifyVars(body: Array[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] =
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
             case BodyAtom(_, denotation, Polarity.Positive, terms, _) =>
@@ -185,11 +261,22 @@ namespace Fixpoint {
             case _ => acc
         }, Map#{}, body) as & Pure
 
-    /// Equates every term in a positive body atom with an attribute
+    ///
+    /// Equates every term in a positive body atom with a RAM term corresponding to an attribute
     /// and declares that terms in negative body atoms are not in the corresponding relations.
     /// Latticenal terms are handled slightly differently: they are compared with the partial
     /// order on the lattice instead of with equality.
     /// Guard atoms are compiled to function calls.
+    /// For example, a body like `not A(x), B(x), if x > 0.` is compiled to the following expressions:
+    /// 1.    B$1[0] = B$1[0]
+    /// 2.    (B$1[0]) ∉ A
+    /// 3.    <clo>(x)
+    /// Intuitively, the variable `x` has been unified with the term B$1[0]
+    /// because `x` occurs positively in the second atom.
+    /// All positive occurences of `x` is therefore equated with B$1[0], generating (1).
+    /// (2) comes from the negative atom `not A(x)`.
+    /// (3) is a function call that computes the expression `x > 0`.
+    ///
     def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
         Array.foldRight(match (atom, rowVar) -> acc ->
             let compileBodyTerm = term -> j -> match term {
@@ -241,18 +328,22 @@ namespace Fixpoint {
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
             }, Nil, body) as & Pure
 
+    ///
     /// Restrict a constraint system to those constraints whose head predicate belongs to the given domain.
+    ///
     def restrict(cs: Array[Constraint[v]], domain: Set[PredSym]): Array[Constraint[v]] =
         let headPred = match Constraint(HeadAtom(headSym, _, _, _), _, _) -> headSym;
         let memberOf = xs -> x -> Set.memberOf(x, xs);
         Array.filter(headPred >> memberOf(domain), cs) as & Pure
 
+    ///
     /// Return the set of predicates of the given constraint system.
+    ///
     def predicatesOf(cs: Array[Constraint[v]]): Set[PredSym] =
         Array.foldRight(match Constraint(HeadAtom(headPred, _, _, _), _, _) -> Set.insert(headPred), Set#{}, cs) as & Pure
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a
-        case None => ???
+        case None => bug!("Unexpected None")
     }
 }
