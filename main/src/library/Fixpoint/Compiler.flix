@@ -128,8 +128,12 @@ namespace Fixpoint {
                     case _ => acc
                 }, loopBody, augBody) as & Pure |>
                 RamStmt.Insert;
-            let comment = RamStmt.Comment(ToString.toString(rule));
-            List.fold(comment :: insert :: Nil)
+            if (enableDebugging()) {
+                let comment = RamStmt.Comment(ToString.toString(rule));
+                List.fold(comment :: insert :: Nil)
+            } else {
+                insert
+            }
     }
 
     ///
@@ -184,8 +188,12 @@ namespace Fixpoint {
                 case _ => false
             }, augBody) as & Pure;
             let deltas = Array.fold(Array.map(match (_, rowVar) -> compile(rowVar), positiveAtoms)) as & Pure;
-            let comment = RamStmt.Comment(ToString.toString(rule));
-            List.fold(comment :: deltas :: Nil)
+            if (enableDebugging()) {
+                let comment = RamStmt.Comment(ToString.toString(rule));
+                List.fold(comment :: deltas :: Nil)
+            } else {
+                deltas
+            }
     }
 
     ///
