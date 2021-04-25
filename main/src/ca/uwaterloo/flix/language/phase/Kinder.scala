@@ -212,11 +212,34 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       mapN(expVal, expsVal) {
         case (exp, exps) => KindedAst.Expression.Apply(exp, exps, tpe, eff, loc)
       }
-    case ResolvedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
-    case ResolvedAst.Expression.Unary(sop, exp, tpe, loc) =>
-    case ResolvedAst.Expression.Binary(sop, exp1, exp2, tpe, loc) =>
-    case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
-    case ResolvedAst.Expression.Stm(exp1, exp2, loc) =>
+    case ResolvedAst.Expression.Lambda(fparam, exp, tpe, loc) => // MATT
+    case ResolvedAst.Expression.Unary(sop, exp0, tpe0, loc) =>
+      val expVal = visitExp(exp0, ascriptions, root)
+      val tpe = tpe0.ascribedWith(Kind.Star)
+      expVal.map {
+        exp => KindedAst.Expression.Unary(sop, exp, tpe, loc)
+      }
+    case ResolvedAst.Expression.Binary(sop, exp10, exp20, tpe0, loc) =>
+      val exp1Val = visitExp(exp10, ascriptions, root)
+      val exp2Val = visitExp(exp20, ascriptions, root)
+      val tpe = tpe0.ascribedWith(Kind.Star)
+      mapN(exp1Val, exp2Val) {
+        case (exp1, exp2) => KindedAst.Expression.Binary(sop, exp1, exp2, tpe, loc)
+      }
+    case ResolvedAst.Expression.IfThenElse(exp10, exp20, exp30, loc) =>
+      val exp1Val = visitExp(exp10, ascriptions, root)
+      val exp2Val = visitExp(exp20, ascriptions, root)
+      val exp3Val = visitExp(exp30, ascriptions, root)
+      mapN(exp1Val, exp2Val, exp3Val) {
+        case (exp1, exp2, exp3) => KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc)
+      }
+
+    case ResolvedAst.Expression.Stm(exp10, exp20, loc) =>
+      val exp1Val = visitExp(exp10, ascriptions, root)
+      val exp2Val = visitExp(exp20, ascriptions, root)
+      mapN(exp1Val, exp2Val) {
+        case (exp1, exp2) => KindedAst.Expression.Stm(exp1, exp2, loc)
+      }
     case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
     case ResolvedAst.Expression.Match(exp, rules, loc) =>
     case ResolvedAst.Expression.Choose(star, exps, rules, tpe, loc) =>
