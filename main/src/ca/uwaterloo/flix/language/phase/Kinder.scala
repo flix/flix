@@ -247,7 +247,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(exp1Val, exp2Val) {
           case (exp1, exp2) => KindedAst.Expression.Let(sym, exp1, exp2, loc)
         }
-      case ResolvedAst.Expression.Match(exp, rules, loc) => ???
+      case ResolvedAst.Expression.Match(exp0, rules, loc) =>
+        val expVal = visit(exp0)
+        val rulesVal = traverse(rules)(visitMatchRule(_, ascriptions, root))
+        mapN(expVal, rulesVal) {
+          case (exp, rules) => KindedAst.Expression.Match(exp, rules, loc)
+        }
       case ResolvedAst.Expression.Choose(star, exps, rules, tpe, loc) => ???
       case ResolvedAst.Expression.Tag(sym, tag, exp, tpe, loc) => ???
       case ResolvedAst.Expression.Tuple(elms0, loc) =>
@@ -346,6 +351,42 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
     visit(exp00)
   }
+
+  // MATT docs
+  private def visitMatchRule(rule: ResolvedAst.MatchRule, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.MatchRule, KindError] = rule match {
+    case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
+      val pat = visitPattern(pat0)
+      val guardVal = visitExp(guard0, ascriptions, root)
+      val expVal = visitExp(exp0, ascriptions, root)
+      mapN(guardVal, expVal) {
+        case (guard, exp) => KindedAst.MatchRule(pat, guard, exp)
+      }
+
+  }
+
+  // MATT docs
+  private def visitPattern(pat: ResolvedAst.Pattern): KindedAst.Pattern = pat match {
+    case ResolvedAst.Pattern.Wild(tvar, loc) => KindedAst.Pattern.Wild(tvar.ascribedWith(Kind.Star), loc)
+    case ResolvedAst.Pattern.Var(sym, tvar, loc) => KindedAst.Pattern.Var(sym, tvar.ascribedWith(Kind.Star), loc)
+    case ResolvedAst.Pattern.Unit(loc) => KindedAst.Pattern.Unit(loc)
+    case ResolvedAst.Pattern.True(loc) => KindedAst.Pattern.True(loc)
+    case ResolvedAst.Pattern.False(loc) => KindedAst.Pattern.False(loc)
+    case ResolvedAst.Pattern.Char(lit, loc) => KindedAst.Pattern.Char(lit, loc)
+    case ResolvedAst.Pattern.Float32(lit, loc) => KindedAst.Pattern.Float32(lit, loc)
+    case ResolvedAst.Pattern.Float64(lit, loc) => KindedAst.Pattern.Float64(lit, loc)
+    case ResolvedAst.Pattern.Int8(lit, loc) => KindedAst.Pattern.Int8(lit, loc)
+    case ResolvedAst.Pattern.Int16(lit, loc) => KindedAst.Pattern.Int16(lit, loc)
+    case ResolvedAst.Pattern.Int32(lit, loc) => KindedAst.Pattern.Int32(lit, loc)
+    case ResolvedAst.Pattern.Int64(lit, loc) => KindedAst.Pattern.Int64(lit, loc)
+    case ResolvedAst.Pattern.BigInt(lit, loc) => KindedAst.Pattern.BigInt(lit, loc)
+    case ResolvedAst.Pattern.Str(lit, loc) => KindedAst.Pattern.Str(lit, loc)
+    case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) => KindedAst.Pattern.Tag(sym, tag, visitPattern(pat), tvar.ascribedWith(Kind.Star), loc)
+    case ResolvedAst.Pattern.Tuple(elms, loc) => KindedAst.Pattern.Tuple(elms.map(visitPattern), loc)
+    case ResolvedAst.Pattern.Array(elms, tvar, loc) => KindedAst.Pattern.Array(elms.map(visitPattern), tvar.ascribedWith(Kind.Star), loc)
+    case ResolvedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) => KindedAst.Pattern.ArrayTailSpread(elms.map(visitPattern), sym, tvar.ascribedWith(Kind.Star), loc)
+    case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) => KindedAst.Pattern.ArrayHeadSpread(sym, elms.map(visitPattern), tvar.ascribedWith(Kind.Star), loc)
+  }
+
 
   // MATT only useful for instances b/c of complexity assumptions
   private def inferKinds(tpe: UnkindedType, expected: KindMatch, root: ResolvedAst.Root): Validation[(Type, Map[Int, Kind]), KindError] = tpe match {
