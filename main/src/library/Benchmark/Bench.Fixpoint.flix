@@ -47,12 +47,16 @@ namespace Bench/Exp/FixpointProjectIn {
         let e32  = project (List.range(1,  32) |> List.map(x -> (x, x + 1))) into Edge;
         let e64  = project (List.range(1,  64) |> List.map(x -> (x, x + 1))) into Edge;
         let e128 = project (List.range(1, 128) |> List.map(x -> (x, x + 1))) into Edge;
+        let e256 = project (List.range(1, 256) |> List.map(x -> (x, x + 1))) into Edge;
+        let e512 = project (List.range(1, 512) |> List.map(x -> (x, x + 1))) into Edge;
         [
             defBenchmark("Solve Edges 8", () -> { solve p, e8 }),
             defBenchmark("Solve Edges 16", () -> { solve p, e16 }),
             defBenchmark("Solve Edges 32", () -> { solve p, e32 }),
             defBenchmark("Solve Edges 64", () -> { solve p, e64 }),
-            defBenchmark("Solve Edges 128", () -> { solve p, e128 })
+            defBenchmark("Solve Edges 128", () -> { solve p, e128 }),
+            defBenchmark("Solve Edges 256", () -> { solve p, e256 }),
+            defBenchmark("Solve Edges 512", () -> { solve p, e512 })
         ]
 
 }
