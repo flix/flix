@@ -477,3 +477,125 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Order[a1], Order[
         lazy (x10 <=> y10)
 
 }
+
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8], Order[a9], Order[a10], Order[a11] {
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)): Comparison =
+        use Order.thenCompare;
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11) = t2;
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7) `thenCompare`
+        lazy (x8 <=> y8) `thenCompare`
+        lazy (x9 <=> y9) `thenCompare`
+        lazy (x10 <=> y10) `thenCompare`
+        lazy (x11 <=> y11)
+}
+
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8], Order[a9], Order[a10], Order[a11], Order[a12] {
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)): Comparison =
+        use Order.thenCompare;
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12) = t2;
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7) `thenCompare`
+        lazy (x8 <=> y8) `thenCompare`
+        lazy (x9 <=> y9) `thenCompare`
+        lazy (x10 <=> y10) `thenCompare`
+        lazy (x11 <=> y11) `thenCompare`
+        lazy (x12 <=> y12)
+}
+
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8], Order[a9], Order[a10], Order[a11], Order[a12], Order[a13] {
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)): Comparison =
+        use Order.thenCompare;
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13) = t2;
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7) `thenCompare`
+        lazy (x8 <=> y8) `thenCompare`
+        lazy (x9 <=> y9) `thenCompare`
+        lazy (x10 <=> y10) `thenCompare`
+        lazy (x11 <=> y11) `thenCompare`
+        lazy (x12 <=> y12) `thenCompare`
+        lazy (x13 <=> y13) 
+}
+
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8], Order[a9], Order[a10], Order[a11], Order[a12], Order[a13], Order[a14] {
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)): Comparison =
+        use Order.thenCompare;
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14) = t2;
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7) `thenCompare`
+        lazy (x8 <=> y8) `thenCompare`
+        lazy (x9 <=> y9) `thenCompare`
+        lazy (x10 <=> y10) `thenCompare`
+        lazy (x11 <=> y11) `thenCompare`
+        lazy (x12 <=> y12) `thenCompare`
+        lazy (x13 <=> y13) `thenCompare`
+        lazy (x14 <=> y14)
+
+}
+
+instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8], Order[a9], Order[a10], Order[a11], Order[a12], Order[a13], Order[a14], Order[a15] {
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    pub def compare(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)): Comparison =
+        use Order.thenCompare;
+        let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) = t1;
+        let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15) = t2;
+             (x1 <=> y1) `thenCompare`
+        lazy (x2 <=> y2) `thenCompare`
+        lazy (x3 <=> y3) `thenCompare`
+        lazy (x4 <=> y4) `thenCompare`
+        lazy (x5 <=> y5) `thenCompare`
+        lazy (x6 <=> y6) `thenCompare`
+        lazy (x7 <=> y7) `thenCompare`
+        lazy (x8 <=> y8) `thenCompare`
+        lazy (x9 <=> y9) `thenCompare`
+        lazy (x10 <=> y10) `thenCompare`
+        lazy (x11 <=> y11) `thenCompare`
+        lazy (x12 <=> y12) `thenCompare`
+        lazy (x13 <=> y13) `thenCompare`
+        lazy (x14 <=> y14) `thenCompare`
+        lazy (x15 <=> y15)
+
+}

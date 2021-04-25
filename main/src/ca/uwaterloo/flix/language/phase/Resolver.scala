@@ -854,27 +854,32 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, root))
           } yield ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc)
 
-        case NamedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
+        case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointCompose(e1, e2, loc)
+          } yield ResolvedAst.Expression.FixpointMerge(e1, e2, loc)
 
         case NamedAst.Expression.FixpointSolve(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, loc)
 
-        case NamedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
+        case NamedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(pred, e, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointFilter(pred, e, tvar, loc)
 
-        case NamedAst.Expression.FixpointQuery(pred, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.FixpointProjectIn(e, pred, tvar, loc)
+
+        case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointQuery(pred, e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
 
       }
 

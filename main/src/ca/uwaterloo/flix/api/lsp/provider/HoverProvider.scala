@@ -44,7 +44,7 @@ object HoverProvider {
 
             case Expression.FixpointConstraintSet(_, stf, tpe, loc) => hoverFixpoint(tpe, Type.Pure, stf, loc)
 
-            case Expression.FixpointCompose(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
+            case Expression.FixpointMerge(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
 
             case Expression.FixpointSolve(_, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
 

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+use Boxable.box;
 use Boxable.unbox;
 use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
 use Fixpoint/Ast.Datalog.Datalog;
@@ -63,6 +64,21 @@ namespace Fixpoint {
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] = match d {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
+
+    // TODO: Add doc and add for N=1 to N=10
+    pub def projectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
+        use Fixpoint/Ast.SourceLocation.{Unknown};
+        let facts = Foldable.foldRight(vs -> acc -> {
+            let (v1, v2, v3) = vs;
+            Constraint(HeadAtom(p, Denotation.Relational,
+                                [HeadTerm.Lit(box(v1), Unknown),
+                                 HeadTerm.Lit(box(v2), Unknown),
+                                 HeadTerm.Lit(box(v3), Unknown)],
+                                Unknown),
+                        [], Unknown) :: acc
+        }, Nil, ts) as & Pure;
+        Datalog(List.toArray(facts), []) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
