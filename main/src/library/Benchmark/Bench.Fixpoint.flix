@@ -30,9 +30,9 @@ namespace Bench/Exp/FixpointProjectIn {
         let facts08 = mkFacts(2 ** 8);
         let facts12 = mkFacts(2 ** 12);
         [
-            defBenchmark("Select (Int, Int) from A (n = ${2 ** 4})", () -> { query facts04 select (x, y) from A(x, y) }),
-            defBenchmark("Select (Int, Int) from A (n = ${2 ** 5})", () -> { query facts08 select (x, y) from A(x, y) }),
-            defBenchmark("Select (Int, Int) from A (n = ${2 ** 6})", () -> { query facts12 select (x, y) from A(x, y) })
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 04})", () -> { query facts04 select (x, y) from A(x, y) }),
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 08})", () -> { query facts08 select (x, y) from A(x, y) }),
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 12})", () -> { query facts12 select (x, y) from A(x, y) })
         ]
 
     pub def benchmarkSolve(): Array[Benchmark] & Impure =
