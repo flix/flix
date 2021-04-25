@@ -5,58 +5,53 @@ namespace Bench/Exp/FixpointProjectIn {
 
     pub def benchmarks(): Array[Benchmark] & Impure = [
         benchmarkProjectInto(),
-        benchmarkQuery(),
+        benchmarkSelect(),
         benchmarkSolve()
     ] |> Array.flatten
 
     pub def benchmarkProjectInto(): Array[Benchmark] & Impure =
-        let l100     = List.range(1,       100) |> List.map(x -> (x, x, x));
-        let l1000    = List.range(1,     1_000) |> List.map(x -> (x, x, x));
-        let l10000   = List.range(1,    10_000) |> List.map(x -> (x, x, x));
-        let l100000  = List.range(1,   100_000) |> List.map(x -> (x, x, x));
-        let l1000000 = List.range(1, 1_000_000) |> List.map(x -> (x, x, x));
+        let mkFacts = n -> List.range(1, n) |> List.map(x -> (x, x));
+        let facts04 = mkFacts(2 ** 4);
+        let facts08 = mkFacts(2 ** 8);
+        let facts12 = mkFacts(2 ** 12);
+        let facts16 = mkFacts(2 ** 16);
+        let facts20 = mkFacts(2 ** 20);
         [
-            defBenchmark("Project 100 (Int, Int, Int) into A", () -> { project l100 into A }),
-            defBenchmark("Project 1000 (Int, Int, Int) into A", () -> { project l1000 into A }),
-            defBenchmark("Project 10000 (Int, Int, Int) into A", () -> { project l10000 into A }),
-            defBenchmark("Project 100000 (Int, Int, Int) into A", () -> { project l100000 into A }),
-            defBenchmark("Project 1000000 (Int, Int, Int) into A", () -> { project l1000000 into A })
+            defBenchmark("Project (Int, Int) into A (n = ${2 ** 04})", () -> { project facts04 into A }),
+            defBenchmark("Project (Int, Int) into A (n = ${2 ** 08})", () -> { project facts08 into A }),
+            defBenchmark("Project (Int, Int) into A (n = ${2 ** 12})", () -> { project facts12 into A }),
+            defBenchmark("Project (Int, Int) into A (n = ${2 ** 16})", () -> { project facts16 into A }),
+            defBenchmark("Project (Int, Int) into A (n = ${2 ** 20})", () -> { project facts20 into A })
         ]
 
-    pub def benchmarkQuery(): Array[Benchmark] & Impure =
-        let l100     = project (List.range(1,       100) |> List.map(x -> (x, x, x))) into A;
-        let l1000    = project (List.range(1,     1_000) |> List.map(x -> (x, x, x))) into A;
-        let l10000   = project (List.range(1,    10_000) |> List.map(x -> (x, x, x))) into A;
-        //let l100000  = project (List.range(1,   100_000) |> List.map(x -> (x, x, x))) into A;
-        //let l1000000 = project (List.range(1, 1_000_000) |> List.map(x -> (x, x, x))) into A;
+    pub def benchmarkSelect(): Array[Benchmark] & Impure =
+        let mkFacts = n -> (project (List.range(1, n) |> List.map(x -> (x, x))) into A);
+        let facts04 = mkFacts(2 ** 4);
+        let facts08 = mkFacts(2 ** 8);
+        let facts12 = mkFacts(2 ** 12);
         [
-            defBenchmark("Select 100 (Int, Int, Int)", () -> { query l100 select (x, y, z) from A(x, y, z) }),
-            defBenchmark("Select 1000 (Int, Int, Int)", () -> { query l1000 select (x, y, z) from A(x, y, z) }),
-            defBenchmark("Select 10000 (Int, Int, Int)", () -> { query l10000 select (x, y, z) from A(x, y, z) })
-            //defBenchmark("Select 100000 (Int, Int, Int)", () -> { query l100000 select (x, y, z) from A(x, y, z) })
-            //defBenchmark("Select 1000000 (Int, Int, Int)", () -> { query l1000000 select (x, y, z) from A(x, y, z) })
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 4})", () -> { query facts04 select (x, y) from A(x, y) }),
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 5})", () -> { query facts08 select (x, y) from A(x, y) }),
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 6})", () -> { query facts12 select (x, y) from A(x, y) })
         ]
 
     pub def benchmarkSolve(): Array[Benchmark] & Impure =
+        let mkEdges = n -> project (List.range(1, n) |> List.map(x -> (x, x + 1))) into Edge;
         let p = #{
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let e8   = project (List.range(1,   8) |> List.map(x -> (x, x + 1))) into Edge;
-        let e16  = project (List.range(1,  16) |> List.map(x -> (x, x + 1))) into Edge;
-        let e32  = project (List.range(1,  32) |> List.map(x -> (x, x + 1))) into Edge;
-        let e64  = project (List.range(1,  64) |> List.map(x -> (x, x + 1))) into Edge;
-        let e128 = project (List.range(1, 128) |> List.map(x -> (x, x + 1))) into Edge;
-        let e256 = project (List.range(1, 256) |> List.map(x -> (x, x + 1))) into Edge;
-        let e512 = project (List.range(1, 512) |> List.map(x -> (x, x + 1))) into Edge;
+        let edges8   = mkEdges(2 ** 3);
+        let edges16  = mkEdges(2 ** 4);
+        let edges32  = mkEdges(2 ** 5);
+        let edges64  = mkEdges(2 ** 6);
+        let edges128 = mkEdges(2 ** 7);
         [
-            defBenchmark("Solve Edges 8", () -> { solve p, e8 }),
-            defBenchmark("Solve Edges 16", () -> { solve p, e16 }),
-            defBenchmark("Solve Edges 32", () -> { solve p, e32 }),
-            defBenchmark("Solve Edges 64", () -> { solve p, e64 }),
-            defBenchmark("Solve Edges 128", () -> { solve p, e128 }),
-            defBenchmark("Solve Edges 256", () -> { solve p, e256 }),
-            defBenchmark("Solve Edges 512", () -> { solve p, e512 })
+            defBenchmark("Solve (Closure) (n = ${  8 ** 2})", () -> { solve p, edges8 }),
+            defBenchmark("Solve (Closure) (n = ${ 16 ** 2})", () -> { solve p, edges16 }),
+            defBenchmark("Solve (Closure) (n = ${ 32 ** 2})", () -> { solve p, edges32 }),
+            defBenchmark("Solve (Closure) (n = ${ 64 ** 2})", () -> { solve p, edges64 }),
+            defBenchmark("Solve (Closure) (n = ${128 ** 2})", () -> { solve p, edges128 })
         ]
 
 }

@@ -33,12 +33,12 @@ namespace Benchmark {
     def maxIterations(): Int32 = 1_000_000
 
     ///
-    /// The estimated ratio between a cold and warm run. Determined emperically.
+    /// The estimated ratio between a cold and warm run. Determined empirically.
     ///
     /// This number does not affect the results. Only how accurate the tool is
     /// at spending the same amount of time.
     ///
-    def scaleFactor(): Int64 = 5i64
+    def scaleFactor(): Int64 = 2i64
 
     ///
     /// A smart constructor for a benchmark.
