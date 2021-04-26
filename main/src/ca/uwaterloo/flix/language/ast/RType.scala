@@ -103,7 +103,7 @@ object RRefType {
 
   def toInternalName[T <: PRefType](e: RRefType[T]): String = e.jvmName.toInternalName
 
-  // TODO: These should be object for the sake of jvm strings
+  // TODO(JLS): These should be object for the sake of jvm strings
   case class RBoxedBool() extends RRefType[PBoxedBool] {
     override val jvmName: JvmName = JvmName.Java.Lang.Boolean
   }

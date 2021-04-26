@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
  */
 object GenLazyClasses {
 
-  // TODO: Needs to use new call protocol and use type erasure
+  // TODO(JLS): Needs to use new call protocol and use type erasure
 
   val InitializedFieldName: String = "initialized"
   val InitializedFieldType: RType[PInt32] = RBool()
@@ -85,7 +85,7 @@ object GenLazyClasses {
     classMaker.mkField(InitializedFieldName, InitializedFieldType, isPublic = false)
     classMaker.mkField(ExpressionFieldName, ExpressionFieldType, isPublic = false)
     classMaker.mkField(ValueFieldName, valueFieldType, isPublic = false)
-    // TODO: This is temporary, call method needs to be changed
+    // TODO(JLS): This is temporary, call method needs to be changed
     val methodDescriptor = s"(LContext;)${valueFieldType.toDescriptor}"
     classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, methodDescriptor, isFinal = true, isPublic = true)
     classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType), ExpressionToVoid)

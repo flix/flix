@@ -114,7 +114,7 @@ object ErasedAst {
 
     case class ApplySelfTail[T <: PType](sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], actuals: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    // TODO: maybe make multiple classes for different exp types
+    // TODO(JLS): maybe make multiple classes for different exp types
     case class Unary[T <: PType](sop: SemanticOperator, op: UnaryOperator, exp: ErasedAst.Expression[PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class Binary[T <: PType](sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression[PType], exp2: ErasedAst.Expression[PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]

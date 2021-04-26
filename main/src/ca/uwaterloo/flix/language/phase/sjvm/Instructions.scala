@@ -54,12 +54,12 @@ object Instructions {
   [R <: Stack, S <: PRefType, T <: PType]
   (e: RType[T], tpe: S = tag[T])(f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
   F[R ** PReference[S]] => F[R ** T] = {
-    // TODO: why is NOP/the type needed here?
+    // TODO(JLS): why is NOP/the type needed here?
     NOP ~[R ** PReference[S] ** PReference[S]]
       DUP ~
       MONITORENTER ~
       f ~
-      XSWAP(e, RType.RReference(null)) ~ // TODO: fix and make partial automatic swap
+      XSWAP(e, RType.RReference(null)) ~ // TODO(JLS): fix and make partial automatic swap
       MONITOREXIT
   }
 
@@ -122,7 +122,7 @@ object Instructions {
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
     ???
 
-  // TODO: fix automatic swap
+  // TODO(JLS): fix automatic swap
 
   def SWAP_cat1_onSomething
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType]
@@ -295,7 +295,7 @@ object Instructions {
     castF(f)
   }
 
-  // TODO: type should be constructed along with descriptor string
+  // TODO(JLS): type should be constructed along with descriptor string
   // NATIVE
   def INVOKESPECIAL
   [R <: Stack, T <: PRefType]
@@ -312,7 +312,7 @@ object Instructions {
     castF(f)
   }
 
-  // todo delete
+  // TODO(JLS): delete
   def SCAFFOLD
   [R1 <: Stack, R2 <: Stack]:
   F[R1] => F[R2] =
@@ -846,7 +846,7 @@ object Instructions {
   [R <: Stack, T <: PType]
   (x: F[R], t: RType[T]):
   F[R ** T] = {
-    // TODO: where is this string stored
+    // TODO(JLS): where is this string stored
     //t.toDescriptor
     ???
   }
