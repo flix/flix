@@ -483,7 +483,7 @@ namespace Fixpoint {
                         HeadTerm.Lit(lat)
                 }, Array.length(tuple) + 1)
             };
-            Constraint(HeadAtom(PredSym(relName, Unknown), denotation, terms), [])
+            Constraint(HeadAtom(PredSym(relName), denotation, terms), [])
         case _ => ?bug
     }
 
