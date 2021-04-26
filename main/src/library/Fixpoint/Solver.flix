@@ -21,6 +21,7 @@ use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
+use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
@@ -65,20 +66,329 @@ namespace Fixpoint {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
     }
 
-    // TODO: Add doc and add for N=1 to N=10
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to `#{p(t1). p(t1').}`
+    /// given the sequence `(t1), (t1')`.
+    ///
+    pub def projectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
+        Datalog[Boxed] with Boxable[t1], Foldable[f] =
+        projectIntoX(match (v1) -> [HeadTerm.Lit(box(v1), Unknown)] as & Pure, p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to `#{p(t1, t2). p(t1', t2').}`
+    /// given the sequence `(t1, t2), (t1', t2')`.
+    ///
+    pub def projectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Foldable[f] =
+        projectIntoX(match (v1, v2) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to `#{p(t1, t2, t3). p(t1', t2', t3').}`
+    /// given the sequence `(t1, t2, t3), (t1', t2', t3')`.
+    ///
     pub def projectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
-        use Fixpoint/Ast.SourceLocation.{Unknown};
-        let facts = Foldable.foldRight(vs -> acc -> {
-            let (v1, v2, v3) = vs;
-            Constraint(HeadAtom(p, Denotation.Relational,
-                                [HeadTerm.Lit(box(v1), Unknown),
-                                 HeadTerm.Lit(box(v2), Unknown),
-                                 HeadTerm.Lit(box(v3), Unknown)],
-                                Unknown),
-                        [], Unknown) :: acc
-        }, Nil, ts) as & Pure;
-        Datalog(List.toArray(facts), []) as & Pure
+        projectIntoX(match (v1, v2, v3) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4). p(t1', t2', t3', t4').}`
+    /// given the sequence `(t1, t2, t3, t4), (t1', t2', t3', t4')`.
+    ///
+    pub def projectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5). p(t1', t2', t3', t4', t5').}`
+    /// given the sequence `(t1, t2, t3, t4, t5), (t1', t2', t3', t4', t5')`.
+    ///
+    pub def projectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6). p(t1', t2', t3', t4', t5', t6').}`
+    /// given the sequence `(t1, t2, t3, t4, t5, t6), (t1', t2', t3', t4', t5', t6')`.
+    ///
+    pub def projectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7). p(t1', t2', t3', t4', t5', t6', t7').}`
+    /// given the sequence `(t1, t2, t3, t4, t5, t6, t7), (t1', t2', t3', t4', t5', t6', t7')`.
+    ///
+    pub def projectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7, t8). p(t1', t2', t3', t4', t5', t6', t7', t8').}`
+    /// given the sequence
+    /// `(t1, t2, t3, t4, t5, t6, t7, t8), (t1', t2', t3', t4', t5', t6', t7', t8')`.
+    ///
+    pub def projectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown),
+             HeadTerm.Lit(box(v8), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7, t8, t9). p(t1', t2', t3', t4', t5', t6', t7', t8', t9').}`
+    /// given the sequence
+    /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9), (t1', t2', t3', t4', t5', t6', t7', t8', t9')`.
+    ///
+    pub def projectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown),
+             HeadTerm.Lit(box(v8), Unknown),
+             HeadTerm.Lit(box(v9), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10).
+    ///    p(t1', t2', t3', t4', t5', t6', t7', t8', t9', t10').}`
+    /// given the sequence
+    /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10),
+    ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10')`.
+    ///
+    pub def projectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown),
+             HeadTerm.Lit(box(v8), Unknown),
+             HeadTerm.Lit(box(v9), Unknown),
+             HeadTerm.Lit(box(v10), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11).
+    ///    p(t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11').}`
+    /// given the sequence
+    /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11),
+    ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11')`.
+    ///
+    pub def projectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown),
+             HeadTerm.Lit(box(v8), Unknown),
+             HeadTerm.Lit(box(v9), Unknown),
+             HeadTerm.Lit(box(v10), Unknown),
+             HeadTerm.Lit(box(v11), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12).
+    ///    p(t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12').}`
+    /// given the sequence
+    /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12),
+    ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12')`.
+    ///
+    pub def projectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown),
+             HeadTerm.Lit(box(v8), Unknown),
+             HeadTerm.Lit(box(v9), Unknown),
+             HeadTerm.Lit(box(v10), Unknown),
+             HeadTerm.Lit(box(v11), Unknown),
+             HeadTerm.Lit(box(v12), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13).
+    ///    p(t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13').}`
+    /// given the sequence
+    /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13),
+    ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13')`.
+    ///
+    pub def projectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown),
+             HeadTerm.Lit(box(v8), Unknown),
+             HeadTerm.Lit(box(v9), Unknown),
+             HeadTerm.Lit(box(v10), Unknown),
+             HeadTerm.Lit(box(v11), Unknown),
+             HeadTerm.Lit(box(v12), Unknown),
+             HeadTerm.Lit(box(v13), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14).
+    ///    p(t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14').}`
+    /// given the sequence
+    /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14),
+    ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14')`.
+    ///
+    pub def projectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown),
+             HeadTerm.Lit(box(v8), Unknown),
+             HeadTerm.Lit(box(v9), Unknown),
+             HeadTerm.Lit(box(v10), Unknown),
+             HeadTerm.Lit(box(v11), Unknown),
+             HeadTerm.Lit(box(v12), Unknown),
+             HeadTerm.Lit(box(v13), Unknown),
+             HeadTerm.Lit(box(v14), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    ///
+    /// Insert all facts in the given sequence `f` into the given relation `p`.
+    ///
+    /// I.e. returns a Datalog program corresponding to
+    /// `#{p(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15).
+    ///    p(t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14', t15').}`
+    /// given the sequence
+    /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15),
+    ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14', t15')`.
+    ///
+    pub def projectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
+        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15], Foldable[f] =
+        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
+            [HeadTerm.Lit(box(v1), Unknown),
+             HeadTerm.Lit(box(v2), Unknown),
+             HeadTerm.Lit(box(v3), Unknown),
+             HeadTerm.Lit(box(v4), Unknown),
+             HeadTerm.Lit(box(v5), Unknown),
+             HeadTerm.Lit(box(v6), Unknown),
+             HeadTerm.Lit(box(v7), Unknown),
+             HeadTerm.Lit(box(v8), Unknown),
+             HeadTerm.Lit(box(v9), Unknown),
+             HeadTerm.Lit(box(v10), Unknown),
+             HeadTerm.Lit(box(v11), Unknown),
+             HeadTerm.Lit(box(v12), Unknown),
+             HeadTerm.Lit(box(v13), Unknown),
+             HeadTerm.Lit(box(v14), Unknown),
+             HeadTerm.Lit(box(v15), Unknown)] as & Pure
+        , p, ts) as & Pure
+
+    def projectIntoX[f: Type -> Type, t: Type](f: t -> Array[HeadTerm[Boxed]], p: PredSym, ts: f[t]):
+        Datalog[Boxed] & Impure with Foldable[f] =
+        let facts = MutList.new();
+        Foldable.foldLeft(() -> vs -> {            
+            let fact = Constraint(HeadAtom(p, Denotation.Relational, f(vs), Unknown), [], Unknown);
+            MutList.push!(fact, facts)
+        }, (), ts);
+        Datalog(MutList.toArray(facts), [])
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -164,7 +474,6 @@ namespace Fixpoint {
 
     def tupleToFact(ramSym: RamSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match ramSym {
         case RamSym.Full(relName, denotation) =>
-            use Fixpoint/Ast.SourceLocation.Unknown;
             let terms = match denotation {
                 case Denotation.Relational => Array.map(v -> HeadTerm.Lit(v, Unknown), tuple)
                 case Denotation.Latticenal(_) => Array.init(i -> {
