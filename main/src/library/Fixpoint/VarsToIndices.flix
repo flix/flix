@@ -39,7 +39,7 @@ namespace Fixpoint {
             case RelOp.Query(var, ramSym, prefixQuery, body) =>
                 let newVar = RowVar.Index(depth);
                 let newVars = Map.insert(var, newVar, rowVars);
-                let newQuery = Array.map(lowerTerm(rowVars), prefixQuery) as & Pure;
+                let newQuery = Array.map(match (j, t) -> (j, lowerTerm(rowVars, t)), prefixQuery) as & Pure;
                 RelOp.Query(newVar, ramSym, newQuery, lowerOp(body, newVars, depth + 1))
             case RelOp.Project(terms, ramSym) =>
                  RelOp.Project(Array.map(lowerTerm(rowVars), terms), ramSym) as & Pure

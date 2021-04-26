@@ -99,12 +99,15 @@ namespace Fixpoint {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v], i: Int32, query: Array[RamTerm[v]], tuple: Tuple[v]): Comparison with Order[v], ToString[v] =
+    def evalQuery(env: SearchEnv[v], i: Int32, query: Array[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison with Order[v], ToString[v] =
         if (i >= Array.length(query))
             EqualTo
-        else match (tuple[i] as & Pure) <=> evalTerm(env, query[i] as & Pure) {
-            case EqualTo => evalQuery(env, i+1, query, tuple)
-            case cmp => cmp
+        else {
+            let (j, t) = query[i] as & Pure;
+            match (tuple[j] as & Pure) <=> evalTerm(env, t) {
+                case EqualTo => evalQuery(env, i+1, query, tuple)
+                case cmp => cmp
+            }
         }
 
     def evalBoolExp(db: Database[v], env: SearchEnv[v], es: List[BoolExp[v]]): Bool with Order[v], Eq[v], ToString[v] =
