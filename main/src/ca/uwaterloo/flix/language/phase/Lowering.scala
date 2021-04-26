@@ -731,8 +731,7 @@ object Lowering extends Phase[Root, Root] {
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
-      val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: termsExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case Body.Guard(exp0, loc) =>
@@ -979,9 +978,6 @@ object Lowering extends Phase[Root, Root] {
     * mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
   private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    // Construct the location expression.
-    val locExp = mkSourceLocation(loc)
-
     // Compute the number of free variables.
     val arity = fvs.length
 
@@ -996,7 +992,7 @@ object Lowering extends Phase[Root, Root] {
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
-      val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(lambdaExp :: Nil, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
     }
 
@@ -1022,7 +1018,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
-    val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+    val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
   }
 

@@ -123,7 +123,7 @@ namespace Fixpoint {
             let loopBody = RelOp.If(join, projection);
             let insert =
                 Array.foldRight(match (atom, rowVar) -> acc -> match atom {
-                    case BodyAtom(PredSym(pred, _), den, Polarity.Positive, _, _) =>
+                    case BodyAtom(PredSym(pred, _), den, Polarity.Positive, _) =>
                         RelOp.Search(rowVar, RamSym.Full(pred, den), acc)
                     case _ => acc
                 }, loopBody, augBody) as & Pure |>
@@ -173,7 +173,7 @@ namespace Fixpoint {
             let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headPred, headDen)) :: join, projection);
             let compile = delta -> // `delta` designates the focused atom.
                 Array.foldRight(match (atom, rowVar) -> acc -> match atom {
-                    case BodyAtom(PredSym(pred, _), den, Polarity.Positive, _, _) =>
+                    case BodyAtom(PredSym(pred, _), den, Polarity.Positive, _) =>
                         let ramSym = if (rowVar == delta) {
                             RamSym.Delta(pred, den)
                         } else {
@@ -184,7 +184,7 @@ namespace Fixpoint {
                 }, loopBody, augBody) as & Pure |>
                 RamStmt.Insert;
             let positiveAtoms = Array.filter(match (atom, _) -> match atom {
-                case BodyAtom(_, _, Polarity.Positive, _, _) => true
+                case BodyAtom(_, _, Polarity.Positive, _) => true
                 case _ => false
             }, augBody) as & Pure;
             let deltas = Array.fold(Array.map(match (_, rowVar) -> compile(rowVar), positiveAtoms)) as & Pure;
@@ -238,7 +238,7 @@ namespace Fixpoint {
     ///
     def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar)] =
         Array.mapWithIndex(atom -> i -> match atom {
-            case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
+            case BodyAtom(predSym, _, Polarity.Positive, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body) as & Pure
 
@@ -253,7 +253,7 @@ namespace Fixpoint {
     ///
     def unifyVars(body: Array[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] =
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
-            case BodyAtom(_, denotation, Polarity.Positive, terms, _) =>
+            case BodyAtom(_, denotation, Polarity.Positive, terms) =>
                 Array.mapWithIndex(term -> i -> (term, i), terms) |>
                 Array.foldRight(match (term, i) -> match term {
                     case BodyTerm.Var(var, _) => match denotation {
@@ -293,7 +293,7 @@ namespace Fixpoint {
                 case BodyTerm.Wild(_) => RamTerm.RowLoad(rowVar, j)
             };
             match atom {
-                case BodyAtom(_, denotation, Polarity.Positive, terms, _) =>
+                case BodyAtom(_, denotation, Polarity.Positive, terms) =>
                     Array.mapWithIndex(compileBodyTerm, terms) |>
                     Array.mapWithIndex(t -> i -> match denotation {
                         case Denotation.Relational => BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
@@ -304,30 +304,30 @@ namespace Fixpoint {
                                 BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
                     }) |>
                     Array.foldRight(x -> xs -> x :: xs, acc)
-                case BodyAtom(PredSym(pred, _), denotation, Polarity.Negative, terms, _) =>
+                case BodyAtom(PredSym(pred, _), denotation, Polarity.Negative, terms) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     BoolExp.NotMemberOf(ramTerms, RamSym.Full(pred, denotation)) :: acc
-                case Guard0(f, _) =>
+                case Guard0(f) =>
                     BoolExp.Guard0(f) :: acc
-                case Guard1(f, v, _) =>
+                case Guard1(f, v) =>
                     let t = unwrap(Map.get(v, env));
                     BoolExp.Guard1(f, t) :: acc
-                case Guard2(f, v1, v2, _) =>
+                case Guard2(f, v1, v2) =>
                     let t1 = unwrap(Map.get(v1, env));
                     let t2 = unwrap(Map.get(v2, env));
                     BoolExp.Guard2(f, t1, t2) :: acc
-                case Guard3(f, v1, v2, v3, _) =>
+                case Guard3(f, v1, v2, v3) =>
                     let t1 = unwrap(Map.get(v1, env));
                     let t2 = unwrap(Map.get(v2, env));
                     let t3 = unwrap(Map.get(v3, env));
                     BoolExp.Guard3(f, t1, t2, t3) :: acc
-                case Guard4(f, v1, v2, v3, v4, _) =>
+                case Guard4(f, v1, v2, v3, v4) =>
                     let t1 = unwrap(Map.get(v1, env));
                     let t2 = unwrap(Map.get(v2, env));
                     let t3 = unwrap(Map.get(v3, env));
                     let t4 = unwrap(Map.get(v4, env));
                     BoolExp.Guard4(f, t1, t2, t3, t4) :: acc
-                case Guard5(f, v1, v2, v3, v4, v5, _) =>
+                case Guard5(f, v1, v2, v3, v4, v5) =>
                     let t1 = unwrap(Map.get(v1, env));
                     let t2 = unwrap(Map.get(v2, env));
                     let t3 = unwrap(Map.get(v3, env));
