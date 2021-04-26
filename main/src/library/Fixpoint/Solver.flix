@@ -21,7 +21,6 @@ use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
-use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
