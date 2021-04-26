@@ -295,15 +295,20 @@ namespace Fixpoint {
             match atom {
                 case BodyAtom(_, denotation, Polarity.Positive, terms) =>
                     Array.mapWithIndex(compileBodyTerm, terms) |>
-                    Array.mapWithIndex(t -> i -> match denotation {
-                        case Denotation.Relational => BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
-                        case Denotation.Latticenal(_, leq, _, _) =>
-                            if (i < Array.length(terms) - 1)
-                                BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
-                            else
-                                BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
-                    }) |>
-                    Array.foldRight(x -> xs -> x :: xs, acc)
+                    Array.mapWithIndex(t -> i -> (t, i)) |>
+                    Array.foldRight((t, i) -> ts ->
+                        if (isCurrentRowload(t, rowVar, i))
+                            ts
+                        else
+                            match denotation {
+                                case Denotation.Relational =>
+                                    BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
+                                case Denotation.Latticenal(_, leq, _, _) =>
+                                    if (i < Array.length(terms) - 1)
+                                        BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
+                                    else
+                                        BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
+                    } :: ts, acc)
                 case BodyAtom(PredSym(pred), denotation, Polarity.Negative, terms) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     BoolExp.NotMemberOf(ramTerms, RamSym.Full(pred, denotation)) :: acc
@@ -335,6 +340,15 @@ namespace Fixpoint {
                     let t5 = unwrap(Map.get(v5, env));
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
             }, Nil, body) as & Pure
+
+    def isCurrentRowload(termToCheck: RamTerm[v], rowVar: RowVar, index: Int): Bool =
+        match termToCheck {
+            case RamTerm.RowLoad(row, i) =>
+                if (row == rowVar and i == index)
+                    true
+                else false
+            case _ => false
+        }
 
     ///
     /// Restrict a constraint system to those constraints whose head predicate belongs to the given domain.
