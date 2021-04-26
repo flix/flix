@@ -296,7 +296,8 @@ namespace Fixpoint {
                 case BodyAtom(_, denotation, Polarity.Positive, terms) =>
                     Array.mapWithIndex(compileBodyTerm, terms) |>
                     Array.mapWithIndex(t -> i -> (t, i)) |>
-                    Array.foldRight((t, i) -> ts ->
+                    Array.foldRight(tup -> ts ->
+                        let (t, i) = tup;
                         if (isCurrentRowload(t, rowVar, i))
                             ts
                         else
@@ -341,6 +342,9 @@ namespace Fixpoint {
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
             }, Nil, body) as & Pure
 
+    ///
+    /// Determines whether the RamTerm termToCheck is a RowLoad RamTerm with RowVar rowVar and Index index.
+    ///
     def isCurrentRowload(termToCheck: RamTerm[v], rowVar: RowVar, index: Int): Bool =
         match termToCheck {
             case RamTerm.RowLoad(row, i) =>
