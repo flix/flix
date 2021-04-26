@@ -986,8 +986,7 @@ object Lowering extends Phase[Root, Root] {
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
-      val innerExp = mkTuple(lambdaExp :: Nil, loc)
-      return mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
+      return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
     }
 
     // Introduce a fresh variable for each free variable.
@@ -1022,9 +1021,6 @@ object Lowering extends Phase[Root, Root] {
     * Note: mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
   private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    // Construct the location expression.
-    val locExp = mkSourceLocation(loc)
-
     // Compute the number of free variables.
     val arity = fvs.length
 
@@ -1039,8 +1035,7 @@ object Lowering extends Phase[Root, Root] {
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
-      val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
-      return mkTag(Enums.HeadTerm, s"App0", innerExp, Types.HeadTerm, loc)
+      return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
     }
 
     // Introduce a fresh variable for each free variable.
@@ -1065,7 +1060,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
-    val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+    val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
   }
 
