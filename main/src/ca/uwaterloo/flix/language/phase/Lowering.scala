@@ -860,7 +860,7 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.BodyTerm.Wild` from the given source location `loc`.
     */
   private def mkBodyTermWild(loc: SourceLocation): Expression = {
-    val innerExp = mkSourceLocation(loc)
+    val innerExp = Expression.Unit(loc)
     mkTag(Enums.BodyTerm, "Wild", innerExp, Types.BodyTerm, loc)
   }
 
@@ -868,20 +868,15 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.BodyTerm.Var` from the given variable symbol `sym`.
     */
   private def mkBodyTermVar(sym: Symbol.VarSym): Expression = {
-    val loc = sym.loc
-    val symExp = mkVarSym(sym)
-    val locExp = mkSourceLocation(sym.loc)
-    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(Enums.BodyTerm, "Var", innerExp, Types.BodyTerm, loc)
+    val innerExp = mkVarSym(sym)
+    mkTag(Enums.BodyTerm, "Var", innerExp, Types.BodyTerm, sym.loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Lit` from the given expression `exp0`.
     */
   private def mkBodyTermLit(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
-    val locExp = mkSourceLocation(exp0.loc)
-    val innerExp = mkTuple(exp0 :: locExp :: Nil, exp0.loc)
-    mkTag(Enums.BodyTerm, "Lit", innerExp, Types.BodyTerm, exp0.loc)
+    mkTag(Enums.BodyTerm, "Lit", exp0, Types.BodyTerm, exp0.loc)
   }
 
   /**

@@ -15,16 +15,16 @@
  */
 namespace Fixpoint/Ast {
     pub enum BodyTerm[v] {
-        case Wild(SourceLocation)
-        case Var(VarSym, SourceLocation)
-        case Lit(v, SourceLocation)
+        case Wild
+        case Var(VarSym)
+        case Lit(v)
     }
 
     instance ToString[BodyTerm[v]] with ToString[v] {
         pub def toString(term: BodyTerm[v]): String = match term {
-            case BodyTerm.Var(varSym, _) => ToString.toString(varSym)
-            case BodyTerm.Lit(v, _) => ToString.toString(v)
-            case BodyTerm.Wild(_) => "_"
+            case BodyTerm.Wild => "_"
+            case BodyTerm.Var(varSym) => ToString.toString(varSym)
+            case BodyTerm.Lit(v) => ToString.toString(v)
         }
     }
 }

@@ -256,7 +256,7 @@ namespace Fixpoint {
             case BodyAtom(_, denotation, Polarity.Positive, terms) =>
                 Array.mapWithIndex(term -> i -> (term, i), terms) |>
                 Array.foldRight(match (term, i) -> match term {
-                    case BodyTerm.Var(var, _) => match denotation {
+                    case BodyTerm.Var(var) => match denotation {
                         case Denotation.Relational => Map.insert(var, RamTerm.RowLoad(rowVar, i))
                         case Denotation.Latticenal(_, _, _, glb) =>
                             if (i < Array.length(terms) - 1)
@@ -288,9 +288,9 @@ namespace Fixpoint {
     def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
         Array.foldRight(match (atom, rowVar) -> acc ->
             let compileBodyTerm = term -> j -> match term {
-                case BodyTerm.Var(var, _) => unwrap(Map.get(var, env))
-                case BodyTerm.Lit(v, _) => RamTerm.Lit(v)
-                case BodyTerm.Wild(_) => RamTerm.RowLoad(rowVar, j)
+                case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
+                case BodyTerm.Var(var)  => unwrap(Map.get(var, env))
+                case BodyTerm.Lit(v)    => RamTerm.Lit(v)
             };
             match atom {
                 case BodyAtom(_, denotation, Polarity.Positive, terms) =>
