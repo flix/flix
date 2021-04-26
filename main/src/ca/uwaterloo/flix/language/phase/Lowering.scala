@@ -852,8 +852,7 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
   private def mkHeadTermLit(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
-    val innerExp = mkTuple(exp :: Nil, exp.loc)
-    mkTag(Enums.HeadTerm, "Lit", innerExp, Types.HeadTerm, exp.loc)
+    mkTag(Enums.HeadTerm, "Lit", exp, Types.HeadTerm, exp.loc)
   }
 
   /**
@@ -875,8 +874,8 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Lit` from the given expression `exp0`.
     */
-  private def mkBodyTermLit(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
-    mkTag(Enums.BodyTerm, "Lit", exp0, Types.BodyTerm, exp0.loc)
+  private def mkBodyTermLit(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
+    mkTag(Enums.BodyTerm, "Lit", exp, Types.BodyTerm, exp.loc)
   }
 
   /**
