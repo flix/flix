@@ -168,112 +168,112 @@ object Instructions {
   // NATIVE
   def XGETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String, fieldType: RType[T1]):
+  (classType: RReference[T2], fieldName: String, fieldType: RType[T1]):
   F[R ** PReference[T2]] => F[R ** T1] =
     fieldType match {
-      case RBool() => GetBoolField(className, fieldName)
-      case RInt8() => GetInt8Field(className, fieldName)
-      case RInt16() => GetInt16Field(className, fieldName)
-      case RInt32() => GetInt32Field(className, fieldName)
-      case RInt64() => GetInt64Field(className, fieldName)
-      case RChar() => GetCharField(className, fieldName)
-      case RFloat32() => GetFloat32Field(className, fieldName)
-      case RFloat64() => GetFloat64Field(className, fieldName)
-      case RReference(referenceType) => GetClassField(className, fieldName, referenceType)
+      case RBool() => GetBoolField(classType, fieldName)
+      case RInt8() => GetInt8Field(classType, fieldName)
+      case RInt16() => GetInt16Field(classType, fieldName)
+      case RInt32() => GetInt32Field(classType, fieldName)
+      case RInt64() => GetInt64Field(classType, fieldName)
+      case RChar() => GetCharField(classType, fieldName)
+      case RFloat32() => GetFloat32Field(classType, fieldName)
+      case RFloat64() => GetFloat64Field(classType, fieldName)
+      case RReference(referenceType) => GetClassField(classType, fieldName, referenceType)
     }
 
   // NATIVE
   def GetBoolField
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  [R <: Stack, T2 <: PRefType]
+  (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RBool().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RBool().toDescriptor)
     castF(f)
   }
 
   // NATIVE
   def GetInt8Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt8] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RInt8().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt8().toDescriptor)
     castF(f)
   }
 
   // NATIVE
   def GetInt16Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt16] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RInt16().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt16().toDescriptor)
     castF(f)
   }
 
   // NATIVE
   def GetInt32Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RInt32().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt32().toDescriptor)
     castF(f)
   }
 
   // NATIVE
   def GetInt64Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RInt64().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt64().toDescriptor)
     castF(f)
   }
 
   // NATIVE
   def GetCharField
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PChar] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RChar().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RChar().toDescriptor)
     castF(f)
   }
 
   // NATIVE
   def GetFloat32Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PFloat32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RFloat32().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RFloat32().toDescriptor)
     castF(f)
   }
 
   // NATIVE
   def GetFloat64Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String):
+  (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PFloat64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, RFloat64().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RFloat64().toDescriptor)
     castF(f)
   }
 
   def GetClassField
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (className: String, fieldName: String, referenceType: RRefType[T1]):
+  (classType: RReference[T2], fieldName: String, referenceType: RRefType[T1]):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, referenceType.toInternalName)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, referenceType.toInternalName)
     castF(f)
   }
 
   def GetObjectField
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (className: String, fieldName: String, tpe: T1 = tag[T1]):
+  (classType: RReference[T2], fieldName: String, tpe: T1 = tag[T1]):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className, fieldName, JvmName.Java.Lang.Object.toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, JvmName.Java.Lang.Object.toDescriptor)
     castF(f)
   }
 
   // NATIVE
   def PUTFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: String, fieldName: String, fieldType: RType[T1]):
+  (classType: RReference[T2], fieldName: String, fieldType: RType[T1]):
   F[R ** PReference[T2] ** T1] => F[R] =
     ???
 
@@ -289,9 +289,9 @@ object Instructions {
   // NATIVE
   def NEW
   [R <: Stack, T <: PRefType]
-  (className: String):
+  (classType: RReference[T]):
   F[R] => F[R ** PReference[T]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.NEW, className)
+    f.visitor.visitTypeInsn(Opcodes.NEW, classType.toInternalName)
     castF(f)
   }
 
@@ -299,9 +299,16 @@ object Instructions {
   // NATIVE
   def INVOKESPECIAL
   [R <: Stack, T <: PRefType]
-  (className: String, constructorDescriptor: String):
+  (classType: RReference[T], constructorDescriptor: String):
   F[R ** PReference[T]] => F[R] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, JvmName.constructorMethod, constructorDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, classType.toInternalName, JvmName.constructorMethod, constructorDescriptor, false)
+    castF(f)
+  }
+
+  def INVOKEOBJECTCONSTRUCTOR
+  [R <: Stack, T <: PRefType]:
+  F[R ** PReference[T]] => F[R] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Java.Lang.Object.name, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
@@ -828,9 +835,9 @@ object Instructions {
 
   def setRefValue
   [R <: Stack, T <: PType]
-  (className: String, innerType: RType[T]):
+  (classType: RReference[PRef[T]], innerType: RType[T]):
   F[R ** PReference[PRef[T]] ** T] => F[R] = f => {
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className, GenRefClasses.valueFieldName, innerType.toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, GenRefClasses.ValueFieldName, innerType.toDescriptor)
     castF(f)
   }
 

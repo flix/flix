@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
+import ca.uwaterloo.flix.util.InternalRuntimeException
 
 trait Describable {
   val toDescriptor: String
@@ -32,6 +33,16 @@ sealed trait RType[T <: PType] extends Describable {
 
 object RType {
 
+  def convert[T <: PRefType](x: RType[PReference[T]]): RReference[T] = x match {
+    case res@RReference(_) => res
+    case _ => throw InternalRuntimeException(s"Expected RReference but found $x")
+  }
+
+  def internalNameOfReference[T <: PRefType](e: RType[PReference[T]]): String = e match {
+    case RReference(referenceType) => referenceType.toInternalName
+    case _ => throw new IllegalArgumentException("Primitive types do not have internal names")
+  }
+
   def toDescriptor[T <: PType](e: RType[T]): String = e match {
     case RBool() => "Z"
     case RInt8() => "B"
@@ -42,11 +53,6 @@ object RType {
     case RFloat32() => "F"
     case RFloat64() => "D"
     case RReference(referenceType) => referenceType.toDescriptor
-  }
-
-  def internalNameOfReference[T <: PRefType](e: RType[PReference[T]]): String = e match {
-    case RReference(referenceType) => referenceType.toInternalName
-    case _ => throw new IllegalArgumentException("Primitive types do not have internal names")
   }
 
   def toErasedString[T <: PType](e: RType[T]): String = e match {

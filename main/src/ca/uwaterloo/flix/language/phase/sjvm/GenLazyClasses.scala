@@ -31,13 +31,15 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
  */
 object GenLazyClasses {
 
-  val initializedFieldName: String = "initialized"
-  val initializedFieldType: RType[PInt32] = RBool()
-  val expressionFieldName: String = "expression"
-  val expressionFieldType: RReference[PAnyObject] = RReference(RObject())
-  val expressionToVoid: String = JvmName.objectToVoid
-  val valueFieldName: String = "value"
-  val forceMethod: String = "force"
+  // TODO: Needs to use new call protocol and use type erasure
+
+  val InitializedFieldName: String = "initialized"
+  val InitializedFieldType: RType[PInt32] = RBool()
+  val ExpressionFieldName: String = "expression"
+  val ExpressionFieldType: RReference[PAnyObject] = RReference(RObject())
+  val ExpressionToVoid: String = JvmName.objectToVoid
+  val ValueFieldName: String = "value"
+  val ForceMethod: String = "force"
 
   /**
    * Returns the set of lazy classes for the given set of types `ts`.
@@ -78,15 +80,15 @@ object GenLazyClasses {
    * After that point it will store the result in value and just return that.
    */
   private def genByteCode[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    val className = lazyType.toInternalName
-    val classMaker = ClassMaker.openClassWriter(className, isFinal = true)
+    val classMaker = ClassMaker.openClassWriter(lazyType, isFinal = true)
 
-    classMaker.makeField(initializedFieldName, initializedFieldType.toDescriptor, isStatic = false, isPublic = false)
-    classMaker.makeField(expressionFieldName, expressionFieldType.toDescriptor, isStatic = false, isPublic = false)
-    classMaker.makeField(valueFieldName, valueFieldType.toDescriptor, isStatic = false, isPublic = false)
+    classMaker.mkField(InitializedFieldName, InitializedFieldType, isPublic = false)
+    classMaker.mkField(ExpressionFieldName, ExpressionFieldType, isPublic = false)
+    classMaker.mkField(ValueFieldName, valueFieldType, isPublic = false)
+    // TODO: This is temporary, call method needs to be changed
     val methodDescriptor = s"(LContext;)${valueFieldType.toDescriptor}"
-    classMaker.makeMethod(compileForceMethod(lazyType, valueFieldType), forceMethod, methodDescriptor, isFinal = true, isPublic = true)
-    classMaker.makeConstructor(compileLazyConstructor(lazyType, valueFieldType), expressionToVoid)
+    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, methodDescriptor, isFinal = true, isPublic = true)
+    classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType), ExpressionToVoid)
     classMaker.closeClassMaker
   }
 
@@ -112,26 +114,25 @@ object GenLazyClasses {
     unlock(this)
     return result
      */
-    val className = lazyType.toInternalName
     THISLOAD(tag[PLazy[T]]) ~
       (WITHMONITOR(valueFieldType) {
         START[StackNil ** PReference[PLazy[T]]] ~
           THISLOAD(tag[PLazy[T]]) ~
-          GetBoolField(className, initializedFieldName) ~
+          GetBoolField(lazyType, InitializedFieldName) ~
           (RUNIFTRUE {
             START[StackNil ** PReference[PLazy[T]]] ~
               THISLOAD(tag[PLazy[T]]) ~
-              GetObjectField(className, expressionFieldName, tag[PAnyObject]) ~
+              GetObjectField(lazyType, ExpressionFieldName, tag[PAnyObject]) ~
               compileClosureApplication(valueFieldType) ~
               THISLOAD(tag[PLazy[T]]) ~
               XSWAP(lazyType, valueFieldType) ~
-              PUTFIELD(className, valueFieldName, valueFieldType) ~
+              PUTFIELD(lazyType, ValueFieldName, valueFieldType) ~
               THISLOAD(tag[PLazy[T]]) ~
               pushInt32(1) ~
-              PUTFIELD(className, initializedFieldName, RInt32())
+              PUTFIELD(lazyType, InitializedFieldName, RInt32())
           }) ~
           THISLOAD(tag[PLazy[T]]) ~
-          XGETFIELD(className, valueFieldName, valueFieldType)
+          XGETFIELD(lazyType, ValueFieldName, valueFieldType)
       }) ~
       XRETURN(valueFieldType)
   }
@@ -147,16 +148,15 @@ object GenLazyClasses {
     this.initialized = false
     this.expression = expression.
      */
-    val className = lazyType.toInternalName
     START[StackNil] ~
       THISLOAD(tag[PLazy[T]]) ~
-      INVOKESPECIAL(expressionFieldType.toInternalName, JvmName.nothingToVoid) ~
+      INVOKEOBJECTCONSTRUCTOR ~
       THISLOAD(tag[PLazy[T]]) ~
       pushBool(false) ~
-      PUTFIELD(className, initializedFieldName, initializedFieldType) ~
+      PUTFIELD(lazyType, InitializedFieldName, InitializedFieldType) ~
       THISLOAD(tag[PLazy[T]]) ~
       ALOAD(1, tag[PAnyObject]) ~
-      PUTFIELD(className, expressionFieldName, expressionFieldType) ~
+      PUTFIELD(lazyType, ExpressionFieldName, ExpressionFieldType) ~
       RETURN
   }
 }

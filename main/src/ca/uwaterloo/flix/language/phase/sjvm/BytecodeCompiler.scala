@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{Cat1, PType}
+import ca.uwaterloo.flix.language.ast.{Cat1, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.MethodVisitor
 
@@ -147,24 +147,25 @@ object BytecodeCompiler {
         POP
 
     case Expression.Ref(exp, className, tpe, loc) =>
+      val tpeRRef = RType.convert(tpe)
       WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
-        NEW(className) ~
+        NEW(tpeRRef) ~
         DUP ~
-        INVOKESPECIAL(className, JvmName.nothingToVoid) ~
+        INVOKESPECIAL(tpeRRef, JvmName.nothingToVoid) ~
         DUP ~
         compileExp(exp) ~
-        PUTFIELD(className, GenRefClasses.valueFieldName, exp.tpe)
+        PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe)
 
     case Expression.Deref(exp, className, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        XGETFIELD(className, GenRefClasses.valueFieldName, tpe)
+        XGETFIELD(RType.convert(exp.tpe), GenRefClasses.ValueFieldName, tpe)
 
     case Expression.Assign(exp1, exp2, className, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
-        PUTFIELD(className, GenRefClasses.valueFieldName, exp2.tpe) ~
+        PUTFIELD(RType.convert(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe) ~
         pushUnit
 
     case Expression.Existential(fparam, exp, loc) => ???

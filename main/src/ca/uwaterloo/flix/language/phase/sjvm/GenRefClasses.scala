@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
   * Generates bytecode for the ref classes.
   */
 object GenRefClasses {
-  val valueFieldName: String = "value"
+  val ValueFieldName: String = "value"
 
   /**
     * Returns the bytecode for the ref classes built-in to the Flix language.
@@ -59,15 +59,13 @@ object GenRefClasses {
     * Generating class `className` with value of type `innerType`
     */
   private def genByteCode[T <: PType](refType: RReference[PRef[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    val className = refType.toInternalName
-    val classMaker = ClassMaker.openClassWriter(className, isFinal = true)
+    val classMaker = ClassMaker.openClassWriter(refType, isFinal = true)
 
     // Generate the instance field
-    // TODO: make string arguments RTypes in general
-    classMaker.makeField(valueFieldName, valueFieldType.toDescriptor, isStatic = false, isPublic = true)
+    classMaker.mkField(ValueFieldName, valueFieldType, isPublic = true)
 
     val constructorDescriptor = JvmName.getMethodDescriptor(valueFieldType, None)
-    classMaker.makeConstructor(genConstructor(valueFieldType), constructorDescriptor)
+    classMaker.mkConstructor(genConstructor(valueFieldType), constructorDescriptor)
 
     classMaker.closeClassMaker
   }
@@ -78,7 +76,7 @@ object GenRefClasses {
   def genConstructor[T <: PType](valueFieldType: RType[T]): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
     THISLOAD(tag[PRef[T]]) ~
-      INVOKESPECIAL(JvmName.Java.Lang.Object.toInternalName, JvmName.nothingToVoid) ~
+      INVOKEOBJECTCONSTRUCTOR ~
       RETURN
   }
 }

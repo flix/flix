@@ -17,23 +17,33 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.RType.RReference
+import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
 class ClassMaker(visitor: ClassWriter) {
-  def makeField(fieldName: String, fieldDescriptor: String, isStatic: Boolean, isPublic: Boolean): Unit = {
+  private def makeField[T <: PType](fieldName: String, fieldType: RType[T], isStatic: Boolean, isPublic: Boolean): Unit = {
     val visibility = if (isPublic) ACC_PUBLIC else ACC_PRIVATE
     val access = if (isStatic) ACC_STATIC else 0
-    val field = visitor.visitField(visibility + access, fieldName, fieldDescriptor, null, null)
+    val field = visitor.visitField(visibility + access, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
-  def makeConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
-    makeMethod(f, JvmName.constructorMethod, descriptor, isFinal = false, isPublic = true)
+  def mkStaticField[T <: PType](fieldName: String, fieldType: RType[T], isPublic: Boolean): Unit = {
+    makeField(fieldName, fieldType, isStatic = true, isPublic)
+  }
 
-  def makeMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, isFinal: Boolean, isPublic: Boolean): Unit = {
+  def mkField[T <: PType](fieldName: String, fieldType: RType[T], isPublic: Boolean): Unit = {
+    makeField(fieldName, fieldType, isStatic = false, isPublic)
+  }
+
+  def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
+    mkMethod(f, JvmName.constructorMethod, descriptor, isFinal = false, isPublic = true)
+
+  def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, isFinal: Boolean, isPublic: Boolean): Unit = {
     val visibility = if (isPublic) ACC_PUBLIC else ACC_PRIVATE
     val finality = if (isFinal) ACC_FINAL else 0
     val methodVisitor = visitor.visitMethod(visibility + finality, methodName, descriptor, null, null)
@@ -68,15 +78,15 @@ object ClassMaker {
    */
   private def makeClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
-      "java/lang/Object"
+      JvmName.Java.Lang.Object.name
     }
   }
 
-  def openClassWriter(className: String, isFinal: Boolean)(implicit flix: Flix): ClassMaker = {
+  def openClassWriter[T <: PRefType](classType: RReference[T], isFinal: Boolean)(implicit flix: Flix): ClassMaker = {
     val visibility = ACC_PUBLIC
     val finality = if (isFinal) ACC_FINAL else 0
     val visitor = makeClassWriter()
-    visitor.visit(JavaVersion, visibility + finality, className, null, JvmName.Java.Lang.Object.toInternalName, null)
+    visitor.visit(JavaVersion, visibility + finality, classType.toInternalName, null, JvmName.Java.Lang.Object.toInternalName, null)
     new ClassMaker(visitor)
   }
 

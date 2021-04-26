@@ -187,16 +187,16 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
 
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
       val tpe0 = visitTpe[PReference[PRef[PType]]](tpe)
-      ErasedAst.Expression.Ref(visitExp(exp), internalNameOfReference(tpe0), tpe0, loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.Ref(visitExp(exp), tpe0, loc).asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Deref(exp, tpe, loc) =>
       val tpe0 = visitTpe[T](tpe)
       val refValue = visitExp[PReference[PRef[T]]](exp)
-      ErasedAst.Expression.Deref(refValue, internalNameOfReference(refValue.tpe), tpe0, loc)
+      ErasedAst.Expression.Deref(refValue, tpe0, loc)
 
     case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
       val tpe0 = visitTpe[PReference[PUnit]](tpe)
-      ErasedAst.Expression.Assign(visitExp[PReference[PRef[PType]]](exp1), visitExp(exp2), internalNameOfReference(tpe0), tpe0, loc).asInstanceOf[ErasedAst.Expression[T]]
+      ErasedAst.Expression.Assign(visitExp[PReference[PRef[PType]]](exp1), visitExp(exp2), tpe0, loc).asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Existential(fparam, exp, loc) =>
       val FinalAst.FormalParam(sym, tpe) = fparam
