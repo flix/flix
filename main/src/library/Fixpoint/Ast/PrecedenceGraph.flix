@@ -43,7 +43,7 @@ namespace Fixpoint/Ast {
     }
 
     def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph = match cnst {
-        case Constraint(head, body, _) => Array.fold(Array.map(mkDepEdge(head), body)) as & Pure
+        case Constraint(head, body) => Array.fold(Array.map(mkDepEdge(head), body)) as & Pure
     }
 
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {

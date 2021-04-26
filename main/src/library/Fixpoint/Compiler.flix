@@ -61,7 +61,7 @@ namespace Fixpoint {
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
     def compileStratum(stratum: Array[Constraint[v]]): RamStmt[v] with ToString[v] =
-        let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, _, _), _, _) -> {
+        let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, _, _), _) -> {
             Map.insert(pred, den)
         }, Map#{}, stratum) as & Pure;
         let eval = Array.fold(Array.map(compileRule, stratum)) as & Pure;
@@ -114,7 +114,7 @@ namespace Fixpoint {
     ///     end
     ///
     def compileRule(rule: Constraint[v]): RamStmt[v] with ToString[v] = match rule {
-        case Constraint(HeadAtom(PredSym(headPred, _), headDen, headTerms, _), body, _) =>
+        case Constraint(HeadAtom(PredSym(headPred, _), headDen, headTerms, _), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms) as & Pure;
@@ -163,7 +163,7 @@ namespace Fixpoint {
     /// Also note how in the first loop, `B` is the focused atom and `C` is focused in the second loop.
     ///
     def compileRuleIncr(rule: Constraint[v]): RamStmt[v] with ToString[v] = match rule {
-        case Constraint(HeadAtom(PredSym(headPred, _), headDen, headTerms, _), body, _) =>
+        case Constraint(HeadAtom(PredSym(headPred, _), headDen, headTerms, _), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms) as & Pure;
@@ -340,7 +340,7 @@ namespace Fixpoint {
     /// Restrict a constraint system to those constraints whose head predicate belongs to the given domain.
     ///
     def restrict(cs: Array[Constraint[v]], domain: Set[PredSym]): Array[Constraint[v]] =
-        let headPred = match Constraint(HeadAtom(headSym, _, _, _), _, _) -> headSym;
+        let headPred = match Constraint(HeadAtom(headSym, _, _, _), _) -> headSym;
         let memberOf = xs -> x -> Set.memberOf(x, xs);
         Array.filter(headPred >> memberOf(domain), cs) as & Pure
 
@@ -348,7 +348,7 @@ namespace Fixpoint {
     /// Return the set of predicates of the given constraint system.
     ///
     def predicatesOf(cs: Array[Constraint[v]]): Set[PredSym] =
-        Array.foldRight(match Constraint(HeadAtom(headPred, _, _, _), _, _) -> Set.insert(headPred), Set#{}, cs) as & Pure
+        Array.foldRight(match Constraint(HeadAtom(headPred, _, _, _), _) -> Set.insert(headPred), Set#{}, cs) as & Pure
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a

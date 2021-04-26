@@ -702,8 +702,7 @@ object Lowering extends Phase[Root, Root] {
     case Constraint(cparams, head, body, loc) =>
       val headExp = visitHeadPred(cparams, head)
       val bodyExp = mkArray(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
-      val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(headExp :: bodyExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(headExp :: bodyExp :: Nil, loc)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
   }
 
