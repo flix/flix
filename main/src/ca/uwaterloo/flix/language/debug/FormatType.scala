@@ -98,7 +98,7 @@ object FormatType {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
             case Audience.External => s"${tvar.text.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
           }
-          //case Type.Apply(tpe1, tpe2) => s"${visit(tpe1)}[${visit(tpe2)}]"
+          case Type.Apply(tpe1, tpe2) => s"${visit(tpe1)}[${visit(tpe2)}]"
           case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
         }
 
