@@ -385,7 +385,7 @@ namespace Fixpoint {
         Datalog[Boxed] & Impure with Foldable[f] =
         let facts = MutList.new();
         Foldable.foldLeft(() -> vs -> {            
-            let fact = Constraint(HeadAtom(p, Denotation.Relational, f(vs), Unknown), []);
+            let fact = Constraint(HeadAtom(p, Denotation.Relational, f(vs)), []);
             MutList.push!(fact, facts)
         }, (), ts);
         Datalog(MutList.toArray(facts), [])
@@ -469,7 +469,7 @@ namespace Fixpoint {
     /// Note that `t1, t2, ..., tn` must have been fully evaluated to literals.
     ///
     def factToTuple(fact: Constraint[v]): Array[v] & Impure = match fact {
-        case Constraint(HeadAtom(_, _, terms, _), _) => Array.map(headTermValue, terms)
+        case Constraint(HeadAtom(_, _, terms), _) => Array.map(headTermValue, terms)
     }
 
     def tupleToFact(ramSym: RamSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match ramSym {
@@ -483,7 +483,7 @@ namespace Fixpoint {
                         HeadTerm.Lit(lat, Unknown)
                 }, Array.length(tuple) + 1)
             };
-            Constraint(HeadAtom(PredSym(relName, Unknown), denotation, terms, Unknown), [])
+            Constraint(HeadAtom(PredSym(relName, Unknown), denotation, terms), [])
         case _ => ?bug
     }
 

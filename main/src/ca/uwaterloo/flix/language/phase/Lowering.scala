@@ -714,8 +714,7 @@ object Lowering extends Phase[Root, Root] {
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
-      val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
 
     case Head.Union(exp, tpe, loc) =>
