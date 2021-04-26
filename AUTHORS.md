@@ -35,3 +35,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Justin Fargnoli](https://github.com/justinfargnoli)
 - [Benjamin Dahse](https://github.com/bdahse)
 - [J. Ryan Stinnett](https://github.com/jryans)
+- [Andreas Heglingegård](https://github.com/racerand)
