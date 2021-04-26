@@ -15,26 +15,26 @@
  */
 namespace Fixpoint/Ast {
     pub enum HeadTerm[v] {
-        case Var(VarSym, SourceLocation)
-        case Lit(v, SourceLocation)
-        case App0(Unit -> v, SourceLocation)
-        case App1(v -> v, VarSym, SourceLocation)
-        case App2(v -> v -> v, VarSym, VarSym, SourceLocation)
-        case App3(v -> v -> v -> v, VarSym, VarSym, VarSym, SourceLocation)
-        case App4(v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, SourceLocation)
-        case App5(v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case Var(VarSym)
+        case Lit(v)
+        case App0(Unit -> v)
+        case App1(v -> v, VarSym)
+        case App2(v -> v -> v, VarSym, VarSym)
+        case App3(v -> v -> v -> v, VarSym, VarSym, VarSym)
+        case App4(v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym)
+        case App5(v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym)
     }
 
     instance ToString[HeadTerm[v]] with ToString[v] {
         pub def toString(term: HeadTerm[v]): String = match term {
-            case HeadTerm.Var(varSym, _) => "${varSym}"
-            case HeadTerm.Lit(v, _) => "${v}"
+            case HeadTerm.Var(varSym) => "${varSym}"
+            case HeadTerm.Lit(v) => "${v}"
             case HeadTerm.App0(_) => "<clo>()"
-            case HeadTerm.App1(_, v, _) => "<clo>(${v})"
-            case HeadTerm.App2(_, v1, v2, _) => "<clo>(${v1}, ${v2})"
-            case HeadTerm.App3(_, v1, v2, v3, _) => "<clo>(${v1}, ${v2}, ${v3})"
-            case HeadTerm.App4(_, v1, v2, v3, v4, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-            case HeadTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+            case HeadTerm.App1(_, v) => "<clo>(${v})"
+            case HeadTerm.App2(_, v1, v2) => "<clo>(${v1}, ${v2})"
+            case HeadTerm.App3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
+            case HeadTerm.App4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case HeadTerm.App5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
 }

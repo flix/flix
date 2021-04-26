@@ -845,9 +845,7 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
     */
   private def mkHeadTermVar(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
-    val symExp = mkVarSym(sym)
-    val locExp = mkSourceLocation(sym.loc)
-    val innerExp = mkTuple(symExp :: locExp :: Nil, sym.loc)
+    val innerExp = mkVarSym(sym)
     mkTag(Enums.HeadTerm, "Var", innerExp, Types.HeadTerm, sym.loc)
   }
 
@@ -855,8 +853,7 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
   private def mkHeadTermLit(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
-    val locExp = mkSourceLocation(exp.loc)
-    val innerExp = mkTuple(exp :: locExp :: Nil, exp.loc)
+    val innerExp = mkTuple(exp :: Nil, exp.loc)
     mkTag(Enums.HeadTerm, "Lit", innerExp, Types.HeadTerm, exp.loc)
   }
 

@@ -200,28 +200,28 @@ namespace Fixpoint {
     /// Substitute Datalog head term `term` for a RAM term according to the given substitution `env`.
     ///
     def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
-        case HeadTerm.Var(var, _) => unwrap(Map.get(var, env))
-        case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
-        case HeadTerm.App0(f, _) => RamTerm.App0(f)
-        case HeadTerm.App1(f, v, _) =>
+        case HeadTerm.Var(var) => unwrap(Map.get(var, env))
+        case HeadTerm.Lit(v) => RamTerm.Lit(v)
+        case HeadTerm.App0(f) => RamTerm.App0(f)
+        case HeadTerm.App1(f, v) =>
             let t = unwrap(Map.get(v, env));
             RamTerm.App1(f, t)
-        case HeadTerm.App2(f, v1, v2, _) =>
+        case HeadTerm.App2(f, v1, v2) =>
             let t1 = unwrap(Map.get(v1, env));
             let t2 = unwrap(Map.get(v2, env));
             RamTerm.App2(f, t1, t2)
-        case HeadTerm.App3(f, v1, v2, v3, _) =>
+        case HeadTerm.App3(f, v1, v2, v3) =>
             let t1 = unwrap(Map.get(v1, env));
             let t2 = unwrap(Map.get(v2, env));
             let t3 = unwrap(Map.get(v3, env));
             RamTerm.App3(f, t1, t2, t3)
-        case HeadTerm.App4(f, v1, v2, v3, v4, _) =>
+        case HeadTerm.App4(f, v1, v2, v3, v4) =>
             let t1 = unwrap(Map.get(v1, env));
             let t2 = unwrap(Map.get(v2, env));
             let t3 = unwrap(Map.get(v3, env));
             let t4 = unwrap(Map.get(v4, env));
             RamTerm.App4(f, t1, t2, t3, t4)
-        case HeadTerm.App5(f, v1, v2, v3, v4, v5, _) =>
+        case HeadTerm.App5(f, v1, v2, v3, v4, v5) =>
             let t1 = unwrap(Map.get(v1, env));
             let t2 = unwrap(Map.get(v2, env));
             let t3 = unwrap(Map.get(v3, env));
