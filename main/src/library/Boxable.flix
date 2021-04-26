@@ -264,3 +264,133 @@ instance Boxable[(a, b, c, d, e)] with Boxable[a], Boxable[b], Boxable[c], Boxab
         case _                    => ?bug
     }
 }
+
+instance Boxable[(a, b, c, d, e, f)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f] {
+    pub def box(x: (a, b, c, d, e, f)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f), o2 as (a, b, c, d, e, f));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g] {
+    pub def box(x: (a, b, c, d, e, f, g)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g), o2 as (a, b, c, d, e, f, g));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g, h)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h] {
+    pub def box(x: (a, b, c, d, e, f, g, h)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g, h), o2 as (a, b, c, d, e, f, g, h));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g, h));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g, h) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g, h)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g, h, i)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i] {
+    pub def box(x: (a, b, c, d, e, f, g, h, i)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g, h, i), o2 as (a, b, c, d, e, f, g, h, i));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g, h, i));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g, h, i) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g, h, i)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g, h, i, j)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j] {
+    pub def box(x: (a, b, c, d, e, f, g, h, i, j)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g, h, i, j), o2 as (a, b, c, d, e, f, g, h, i, j));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g, h, i, j));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g, h, i, j) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g, h, i, j)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k] {
+    pub def box(x: (a, b, c, d, e, f, g, h, i, j, k)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g, h, i, j, k), o2 as (a, b, c, d, e, f, g, h, i, j, k));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g, h, i, j, k));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g, h, i, j, k) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g, h, i, j, k)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k], Boxable[l] {
+    pub def box(x: (a, b, c, d, e, f, g, h, i, j, k, l)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g, h, i, j, k, l), o2 as (a, b, c, d, e, f, g, h, i, j, k, l));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g, h, i, j, k, l));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g, h, i, j, k, l) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g, h, i, j, k, l)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k], Boxable[l], Boxable[m] {
+    pub def box(x: (a, b, c, d, e, f, g, h, i, j, k, l, m)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g, h, i, j, k, l, m), o2 as (a, b, c, d, e, f, g, h, i, j, k, l, m));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g, h, i, j, k, l, m));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g, h, i, j, k, l, m) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g, h, i, j, k, l, m)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m, n)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k], Boxable[l], Boxable[m], Boxable[n] {
+    pub def box(x: (a, b, c, d, e, f, g, h, i, j, k, l, m, n)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g, h, i, j, k, l, m, n), o2 as (a, b, c, d, e, f, g, h, i, j, k, l, m, n));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g, h, i, j, k, l, m, n));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g, h, i, j, k, l, m, n) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
+        case _                    => ?bug
+    }
+}
+
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k], Boxable[l], Boxable[m], Boxable[n], Boxable[o] {
+    pub def box(x: (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o), o2 as (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o));
+        let toString = o -> ToString.toString(o as (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o));
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) = match x {
+        case BoxedObject(v, _, _) => v as (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
+        case _                    => ?bug
+    }
+}

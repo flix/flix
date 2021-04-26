@@ -15,7 +15,9 @@
  */
 
 namespace Fixpoint {
-    /// Helper function to implement ToString
+    ///
+    /// Helper function to implement `ToString`.
+    ///
     pub def commaSeparate(a: Array[v]): String with ToString[v] =
         Array.formatWith(ToString.toString, ", ", a) as & Pure
 }
