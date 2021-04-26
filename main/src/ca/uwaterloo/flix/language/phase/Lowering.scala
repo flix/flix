@@ -927,33 +927,15 @@ object Lowering extends Phase[Root, Root] {
   private def mkPredSym(pred: Name.Pred): Expression = pred match {
     case Name.Pred(sym, loc) =>
       val nameExp = Expression.Str(sym, loc)
-      val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
-      mkTag(Enums.PredSym, "PredSym", innerExp, Types.PredSym, loc)
+      mkTag(Enums.PredSym, "PredSym", nameExp, Types.PredSym, loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.VarSym` from the given variable symbol `sym`.
     */
   private def mkVarSym(sym: Symbol.VarSym): Expression = {
-    val loc = sym.loc
-    val nameExp = Expression.Str(sym.text, loc)
-    val locExp = mkSourceLocation(loc)
-    val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
-    mkTag(Enums.VarSym, "VarSym", innerExp, Types.VarSym, loc)
-  }
-
-  /**
-    * Constructs a `Fixpoint/Ast.SourceLocation` from the given source location `loc`.
-    */
-  private def mkSourceLocation(loc: SourceLocation): Expression = {
-    val name = Expression.Str(loc.source.format, loc)
-    val beginLine = Expression.Int32(loc.beginLine, loc)
-    val beginCol = Expression.Int32(loc.beginCol, loc)
-    val endLine = Expression.Int32(loc.endLine, loc)
-    val endCol = Expression.Int32(loc.endCol, loc)
-    val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol), loc)
-    mkTag(Enums.SourceLocation, "SourceLocation", innerExp, Types.SourceLocation, loc)
+    val nameExp = Expression.Str(sym.text, sym.loc)
+    mkTag(Enums.VarSym, "VarSym", nameExp, Types.VarSym, sym.loc)
   }
 
   /**

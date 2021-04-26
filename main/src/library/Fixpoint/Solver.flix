@@ -21,7 +21,6 @@ use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
-use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
@@ -483,7 +482,7 @@ namespace Fixpoint {
                         HeadTerm.Lit(lat)
                 }, Array.length(tuple) + 1)
             };
-            Constraint(HeadAtom(PredSym(relName, Unknown), denotation, terms), [])
+            Constraint(HeadAtom(PredSym(relName), denotation, terms), [])
         case _ => ?bug
     }
 
