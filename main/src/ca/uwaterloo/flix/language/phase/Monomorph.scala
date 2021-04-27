@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
@@ -423,29 +422,23 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.Force(e, subst0(tpe), eff, loc)
 
         case Expression.FixpointConstraintSet(cs0, stf, tpe, loc) =>
-          val cs = cs0.map(visitConstraint(_, env0))
-          Expression.FixpointConstraintSet(cs, stf, subst0(tpe), loc)
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
         case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          Expression.FixpointMerge(e1, e2, stf, subst0(tpe), eff, loc)
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
         case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.FixpointSolve(e, stf, subst0(tpe), eff, loc)
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
         case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.FixpointFilter(pred, e, subst0(tpe), eff, loc)
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
         case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.FixpointProjectIn(e, pred, subst0(tpe), eff, loc)
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
         case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.FixpointProjectOut(pred, e, subst0(tpe), eff, loc)
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
       }
 
       /**
@@ -492,65 +485,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           (Pattern.ArrayHeadSpread(freshSym, ps, subst0(tpe), loc),
             if (envs.isEmpty) Map(sym -> freshSym)
             else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
-      }
-
-      /**
-        * Specializes the given constraint `c0` w.r.t. the given environment and current substitution.
-        */
-      def visitConstraint(c0: Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): Constraint = {
-        val Constraint(cparams0, head0, body0, loc) = c0
-        val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
-        val head = visitHeadPredicate(head0, env0 ++ env1)
-        val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
-        Constraint(cparams, head, body, loc)
-      }
-
-      /**
-        * Specializes the given head predicate `h0` w.r.t. the given environment and current substitution.
-        */
-      def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
-        case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-          val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.Atom(pred, den, ts, subst0(tpe), loc)
-
-        case Predicate.Head.Union(exp, tpe, loc) =>
-          val e = visitExp(exp, env0)
-          Predicate.Head.Union(e, subst0(tpe), loc)
-      }
-
-      /**
-        * Specializes the given body predicate `b0` w.r.t. the given environment and current substitution.
-        */
-      def visitBodyPredicate(b0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = {
-        // TODO: We should change what is allowed here. Probably only variables and constants should be allowed?
-        def visitPatTemporaryToBeRemoved(pat: Pattern): Pattern = pat match {
-          case Pattern.Wild(tpe, loc) => Pattern.Wild(subst0(tpe), loc)
-          case Pattern.Var(sym, tpe, loc) => Pattern.Var(env0(sym), subst0(tpe), loc)
-          case Pattern.Unit(loc) => Pattern.Unit(loc)
-          case Pattern.True(loc) => Pattern.True(loc)
-          case Pattern.False(loc) => Pattern.False(loc)
-          case Pattern.Char(lit, loc) => Pattern.Char(lit, loc)
-          case Pattern.Float32(lit, loc) => Pattern.Float32(lit, loc)
-          case Pattern.Float64(lit, loc) => Pattern.Float64(lit, loc)
-          case Pattern.Int8(lit, loc) => Pattern.Int8(lit, loc)
-          case Pattern.Int16(lit, loc) => Pattern.Int16(lit, loc)
-          case Pattern.Int32(lit, loc) => Pattern.Int32(lit, loc)
-          case Pattern.Int64(lit, loc) => Pattern.Int64(lit, loc)
-          case Pattern.BigInt(lit, loc) => Pattern.BigInt(lit, loc)
-          case Pattern.Str(lit, loc) => Pattern.Str(lit, loc)
-          case Pattern.Tag(sym, tag, p, tpe, loc) => Pattern.Tag(sym, tag, visitPatTemporaryToBeRemoved(p), subst0(tpe), loc)
-          case _ => throw InternalCompilerException(s"Pattern not allowed here $pat.")
-        }
-
-        b0 match {
-          case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-            val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.Atom(pred, den, polarity, ts, subst0(tpe), loc)
-
-          case Predicate.Body.Guard(exp, loc) =>
-            val e = visitExp(exp, env0)
-            Predicate.Body.Guard(e, loc)
-        }
       }
 
       visitExp(exp0, env0)

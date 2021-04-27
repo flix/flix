@@ -374,11 +374,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           ts <- traverse(terms)(checkPats(_, root))
         } yield h0
-
-      case TypedAst.Predicate.Head.Union(exp, tpe, loc) =>
-        for {
-          e <- checkPats(exp, root)
-        } yield h0
     }
 
     def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Body, CompilationError] = b0 match {

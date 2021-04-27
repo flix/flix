@@ -651,10 +651,6 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def getPredicate(head0: Predicate.Head): Option[Name.Pred] = head0 match {
     case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Some(pred)
-    case Predicate.Head.Union(exp, tpe, loc) =>
-      // NB: The situation is actually more complicated.
-      // If the union expressions evaluates to predicate A, B, C it could be argued that we should add dependency edges for each of these predicates.
-      None
   }
 
   /**
