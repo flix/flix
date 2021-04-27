@@ -296,8 +296,7 @@ namespace Fixpoint {
                 case BodyAtom(_, denotation, Polarity.Positive, terms) =>
                     Array.mapWithIndex(compileBodyTerm, terms) |>
                     Array.mapWithIndex(t -> i -> (t, i)) |>
-                    Array.foldRight(tup -> ts ->
-                        let (t, i) = tup;
+                    Array.foldRight(match (t, i) -> ts ->
                         if (isCurrentRowload(t, rowVar, i))
                             ts
                         else
