@@ -716,10 +716,6 @@ object Lowering extends Phase[Root, Root] {
       val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
-
-    case Head.Union(exp, tpe, loc) =>
-      // TODO: Add support for union (or similar).
-      throw InternalCompilerException("Deprecated Expression")
   }
 
   /**

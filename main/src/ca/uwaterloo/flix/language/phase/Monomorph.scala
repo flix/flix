@@ -512,10 +512,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
           val ts = terms.map(t => visitExp(t, env0))
           Predicate.Head.Atom(pred, den, ts, subst0(tpe), loc)
-
-        case Predicate.Head.Union(exp, tpe, loc) =>
-          val e = visitExp(exp, env0)
-          Predicate.Head.Union(e, subst0(tpe), loc)
       }
 
       /**

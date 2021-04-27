@@ -629,9 +629,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0)
-
-    case Head.Union(exp, _, _) =>
-      visitExp(exp, env0)
   }
 
   /**

@@ -177,16 +177,6 @@ object ParsedAst {
     case class Lattice(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Constraint Declaration.
-      *
-      * @param sp1  the position of the first character in the declaration.
-      * @param head the head predicate.
-      * @param body the body predicates.
-      * @param sp2  the position of the last character in the declaration.
-      */
-    case class Constraint(sp1: SourcePosition, head: ParsedAst.Predicate.Head, body: Seq[ParsedAst.Predicate.Body], sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
       * Typeclass Declaration.
       *
       * @param doc          the optional comment associated with the declaration.
@@ -939,7 +929,7 @@ object ParsedAst {
       * @param con the constraint.
       * @param sp2 the position of the last character in the expression.
       */
-    case class FixpointConstraint(sp1: SourcePosition, con: Declaration.Constraint, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointConstraint(sp1: SourcePosition, con: Constraint, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Constraint Set expression.
@@ -948,7 +938,7 @@ object ParsedAst {
       * @param cs  the set of constraints.
       * @param sp2 the position of the last character in the expression.
       */
-    case class FixpointConstraintSet(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointConstraintSet(sp1: SourcePosition, cs: Seq[Constraint], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Compose expression.
@@ -1114,6 +1104,16 @@ object ParsedAst {
   }
 
   /**
+    * Constraint Declaration.
+    *
+    * @param sp1  the position of the first character in the declaration.
+    * @param head the head predicate.
+    * @param body the body predicates.
+    * @param sp2  the position of the last character in the declaration.
+    */
+  case class Constraint(sp1: SourcePosition, head: ParsedAst.Predicate.Head, body: Seq[ParsedAst.Predicate.Body], sp2: SourcePosition)
+
+  /**
     * Predicates.
     */
   sealed trait Predicate
@@ -1134,15 +1134,6 @@ object ParsedAst {
         * @param sp2   the position of the last character in the predicate.
         */
       case class Atom(sp1: SourcePosition, ident: Name.Ident, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
-
-      /**
-        * Union Predicate.
-        *
-        * @param sp1 the position of the first character in the predicate.
-        * @param exp the expression to evaluate and union with the current constraint set.
-        * @param sp2 the position of the last character in the predicate.
-        */
-      case class Union(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
     }
 
