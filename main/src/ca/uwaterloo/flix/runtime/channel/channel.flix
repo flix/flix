@@ -17,10 +17,7 @@ def newCondition(reentrantLock: ReentrantLock): Condition & Impure =
     import java.util.concurrent.locks.ReentrantLock.newCondition() as javaNewCondition;
     javaNewCondition(reentrantLock)
 
-type alias LockConditionPair = {
-    lock: Lock,
-    condition: Condition
-}
+type alias LockConditionPair = (Lock, Condition)
 
 type alias Channel[a] = {
     id: Int64,
