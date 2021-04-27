@@ -27,5 +27,5 @@ def main(_args: Array[String]): Int32 & Impure =
         Compiler(intermediate, dst, lang),
         Interpreter(lang).
     };
-    (solve p) |> unsafeToString |> println;
+    (solve p) |> Fixpoint.unsafePrint as & Impure;
     0 // exit code

@@ -15,5 +15,5 @@ def getRules(): #{ParentOf(String, String), AncestorOf(String, String)} = #{
 /// Composes the facts and rules, and computes the lfp.
 def main(_args: Array[String]): Int32 & Impure =
     let r = (solve getFacts() <+> getRules());
-    r |> unsafeToString |> println;
+    r |> Fixpoint.unsafePrint as & Impure;
     0 // exit code

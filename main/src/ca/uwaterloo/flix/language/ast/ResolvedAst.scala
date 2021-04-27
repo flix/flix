@@ -262,8 +262,6 @@ object ResolvedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      case class Union(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
-
     }
 
     sealed trait Body extends ResolvedAst.Predicate

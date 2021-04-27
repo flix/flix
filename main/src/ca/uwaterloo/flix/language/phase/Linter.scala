@@ -262,7 +262,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitHead(head0: Predicate.Head, lint0: Lint)(implicit flix: Flix): List[LinterError] = head0 match {
     case Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp(_, lint0))
-    case Head.Union(exp, _, _) => visitExp(exp, lint0)
   }
 
   /**
@@ -1024,7 +1023,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     private def apply(head0: Predicate.Head): Predicate.Head = head0 match {
       case Head.Atom(pred, den, terms, tpe, loc) => Head.Atom(pred, den, terms.map(apply), tpe, loc)
-      case Head.Union(exp, tpe, loc) => Head.Union(apply(exp), tpe, loc)
     }
 
     /**

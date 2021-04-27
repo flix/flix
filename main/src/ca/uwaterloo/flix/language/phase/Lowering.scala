@@ -702,8 +702,7 @@ object Lowering extends Phase[Root, Root] {
     case Constraint(cparams, head, body, loc) =>
       val headExp = visitHeadPred(cparams, head)
       val bodyExp = mkArray(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
-      val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(headExp :: bodyExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(headExp :: bodyExp :: Nil, loc)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
   }
 
@@ -715,13 +714,8 @@ object Lowering extends Phase[Root, Root] {
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
-      val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
-
-    case Head.Union(exp, tpe, loc) =>
-      // TODO: Add support for union (or similar).
-      throw InternalCompilerException("Deprecated Expression")
   }
 
   /**
@@ -733,8 +727,7 @@ object Lowering extends Phase[Root, Root] {
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
-      val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: termsExp :: locExp :: Nil, loc)
+      val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case Body.Guard(exp0, loc) =>
@@ -847,9 +840,7 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
     */
   private def mkHeadTermVar(sym: Symbol.VarSym)(implicit root: Root, flix: Flix): Expression = {
-    val symExp = mkVarSym(sym)
-    val locExp = mkSourceLocation(sym.loc)
-    val innerExp = mkTuple(symExp :: locExp :: Nil, sym.loc)
+    val innerExp = mkVarSym(sym)
     mkTag(Enums.HeadTerm, "Var", innerExp, Types.HeadTerm, sym.loc)
   }
 
@@ -857,16 +848,14 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
   private def mkHeadTermLit(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
-    val locExp = mkSourceLocation(exp.loc)
-    val innerExp = mkTuple(exp :: locExp :: Nil, exp.loc)
-    mkTag(Enums.HeadTerm, "Lit", innerExp, Types.HeadTerm, exp.loc)
+    mkTag(Enums.HeadTerm, "Lit", exp, Types.HeadTerm, exp.loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Wild` from the given source location `loc`.
     */
   private def mkBodyTermWild(loc: SourceLocation): Expression = {
-    val innerExp = mkSourceLocation(loc)
+    val innerExp = Expression.Unit(loc)
     mkTag(Enums.BodyTerm, "Wild", innerExp, Types.BodyTerm, loc)
   }
 
@@ -874,20 +863,15 @@ object Lowering extends Phase[Root, Root] {
     * Constructs a `Fixpoint/Ast.BodyTerm.Var` from the given variable symbol `sym`.
     */
   private def mkBodyTermVar(sym: Symbol.VarSym): Expression = {
-    val loc = sym.loc
-    val symExp = mkVarSym(sym)
-    val locExp = mkSourceLocation(sym.loc)
-    val innerExp = mkTuple(symExp :: locExp :: Nil, loc)
-    mkTag(Enums.BodyTerm, "Var", innerExp, Types.BodyTerm, loc)
+    val innerExp = mkVarSym(sym)
+    mkTag(Enums.BodyTerm, "Var", innerExp, Types.BodyTerm, sym.loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.BodyTerm.Lit` from the given expression `exp0`.
     */
-  private def mkBodyTermLit(exp0: Expression)(implicit root: Root, flix: Flix): Expression = {
-    val locExp = mkSourceLocation(exp0.loc)
-    val innerExp = mkTuple(exp0 :: locExp :: Nil, exp0.loc)
-    mkTag(Enums.BodyTerm, "Lit", innerExp, Types.BodyTerm, exp0.loc)
+  private def mkBodyTermLit(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
+    mkTag(Enums.BodyTerm, "Lit", exp, Types.BodyTerm, exp.loc)
   }
 
   /**
@@ -939,33 +923,15 @@ object Lowering extends Phase[Root, Root] {
   private def mkPredSym(pred: Name.Pred): Expression = pred match {
     case Name.Pred(sym, loc) =>
       val nameExp = Expression.Str(sym, loc)
-      val locExp = mkSourceLocation(loc)
-      val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
-      mkTag(Enums.PredSym, "PredSym", innerExp, Types.PredSym, loc)
+      mkTag(Enums.PredSym, "PredSym", nameExp, Types.PredSym, loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast.VarSym` from the given variable symbol `sym`.
     */
   private def mkVarSym(sym: Symbol.VarSym): Expression = {
-    val loc = sym.loc
-    val nameExp = Expression.Str(sym.text, loc)
-    val locExp = mkSourceLocation(loc)
-    val innerExp = mkTuple(nameExp :: locExp :: Nil, loc)
-    mkTag(Enums.VarSym, "VarSym", innerExp, Types.VarSym, loc)
-  }
-
-  /**
-    * Constructs a `Fixpoint/Ast.SourceLocation` from the given source location `loc`.
-    */
-  private def mkSourceLocation(loc: SourceLocation): Expression = {
-    val name = Expression.Str(loc.source.format, loc)
-    val beginLine = Expression.Int32(loc.beginLine, loc)
-    val beginCol = Expression.Int32(loc.beginCol, loc)
-    val endLine = Expression.Int32(loc.endLine, loc)
-    val endCol = Expression.Int32(loc.endCol, loc)
-    val innerExp = mkTuple(List(name, beginLine, beginCol, endLine, endCol), loc)
-    mkTag(Enums.SourceLocation, "SourceLocation", innerExp, Types.SourceLocation, loc)
+    val nameExp = Expression.Str(sym.text, sym.loc)
+    mkTag(Enums.VarSym, "VarSym", nameExp, Types.VarSym, sym.loc)
   }
 
   /**
@@ -984,9 +950,6 @@ object Lowering extends Phase[Root, Root] {
     * mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
   private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    // Construct the location expression.
-    val locExp = mkSourceLocation(loc)
-
     // Compute the number of free variables.
     val arity = fvs.length
 
@@ -1001,8 +964,7 @@ object Lowering extends Phase[Root, Root] {
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
-      val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
-      return mkTag(Enums.BodyPredicate, s"Guard0", innerExp, Types.BodyPredicate, loc)
+      return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
     }
 
     // Introduce a fresh variable for each free variable.
@@ -1027,7 +989,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
-    val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+    val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
   }
 
@@ -1037,9 +999,6 @@ object Lowering extends Phase[Root, Root] {
     * Note: mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
   private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
-    // Construct the location expression.
-    val locExp = mkSourceLocation(loc)
-
     // Compute the number of free variables.
     val arity = fvs.length
 
@@ -1054,8 +1013,7 @@ object Lowering extends Phase[Root, Root] {
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
-      val innerExp = mkTuple(lambdaExp :: locExp :: Nil, loc)
-      return mkTag(Enums.HeadTerm, s"App0", innerExp, Types.HeadTerm, loc)
+      return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
     }
 
     // Introduce a fresh variable for each free variable.
@@ -1080,7 +1038,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
-    val innerExp = mkTuple(liftedExp :: varExps ::: locExp :: Nil, loc)
+    val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
   }
 

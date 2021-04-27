@@ -1016,11 +1016,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0))
       } yield NamedAst.Predicate.Head.Atom(pred, den, ts, Type.freshVar(Kind.Star), loc)
-
-    case WeededAst.Predicate.Head.Union(exp, loc) =>
-      for {
-        e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0)
-      } yield NamedAst.Predicate.Head.Union(e, Type.freshVar(Kind.Star), loc)
   }
 
   /**
@@ -1423,7 +1418,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
     case WeededAst.Predicate.Head.Atom(_, den, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Head.Union(exp, loc) => freeVars(exp)
   }
 
   /**

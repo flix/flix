@@ -15,15 +15,15 @@
  */
 namespace Fixpoint/Ast {
     pub enum HeadPredicate[v] {
-        case HeadAtom(PredSym, Denotation[v], Array[HeadTerm[v]], SourceLocation)
+        case HeadAtom(PredSym, Denotation[v], Array[HeadTerm[v]])
     }
 
     instance ToString[HeadPredicate[v]] with ToString[v] {
         pub def toString(head: HeadPredicate[v]): String =
             use Fixpoint.commaSeparate;
             match head {
-                case HeadAtom(predSym, Relational, terms, _) => "${predSym}(${commaSeparate(terms)})"
-                case HeadAtom(predSym, Latticenal(_), terms, _) =>
+                case HeadAtom(predSym, Relational, terms) => "${predSym}(${commaSeparate(terms)})"
+                case HeadAtom(predSym, Latticenal(_), terms) =>
                     let len = Array.length(terms) as & Pure;
                     let k = terms[0..len-1] as & Pure;
                     let l = terms[len-1] as & Pure;

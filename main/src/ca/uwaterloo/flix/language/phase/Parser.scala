@@ -110,7 +110,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
     Declarations.Namespace |
-      Declarations.Constraint |
       Declarations.Def |
       Declarations.Law |
       Declarations.Enum |
@@ -200,20 +199,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
       Documentation ~ Modifiers ~ SP ~ keyword("lat") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Lattice
-    }
-
-    def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
-      def Head: Rule1[ParsedAst.Predicate.Head] = rule {
-        HeadPredicate
-      }
-
-      def Body: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
-        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyPredicate).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.Predicate.Body]]) => o.getOrElse(Seq.empty))
-      }
-
-      rule {
-        optWS ~ SP ~ Head ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
-      }
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
@@ -638,7 +623,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
-        Constraint | Interpolation | Literal | Existential | Universal |
+        ConstraintSingleton | Interpolation | Literal | Existential | Universal |
         UnaryLambda | FName | Tag | Hole
     }
 
@@ -982,12 +967,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("match") ~ optWS ~ Pattern ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LambdaMatch
     }
 
-    def Constraint: Rule1[ParsedAst.Expression] = rule {
-      SP ~ Declarations.Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
+    def ConstraintSingleton: Rule1[ParsedAst.Expression] = rule {
+      SP ~ Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
     }
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Declarations.Constraint) ~ optWS ~ atomic("}") ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
+      SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Constraint) ~ optWS ~ atomic("}") ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = {
@@ -1117,10 +1102,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Constraints                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  def Constraint: Rule1[ParsedAst.Constraint] = {
+    def Head: Rule1[ParsedAst.Predicate.Head] = rule {
+      HeadPredicate
+    }
+
+    def Body: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
+      optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyPredicate).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.Predicate.Body]]) => o.getOrElse(Seq.empty))
+    }
+
+    rule {
+      optWS ~ SP ~ Head ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Constraint
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def HeadPredicate: Rule1[ParsedAst.Predicate.Head] = rule {
-    Predicates.Head.Atom | Predicates.Head.Union
+    Predicates.Head.Atom
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
@@ -1133,10 +1135,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
         SP ~ Names.Predicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
-      }
-
-      def Union: Rule1[ParsedAst.Predicate.Head.Union] = rule {
-        SP ~ keyword("union") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Head.Union
       }
 
     }

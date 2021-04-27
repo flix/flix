@@ -21,7 +21,6 @@ use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
-use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
@@ -74,7 +73,7 @@ namespace Fixpoint {
     ///
     pub def projectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
         Datalog[Boxed] with Boxable[t1], Foldable[f] =
-        projectIntoX(match (v1) -> [HeadTerm.Lit(box(v1), Unknown)] as & Pure, p, ts) as & Pure
+        projectIntoX(match (v1) -> [HeadTerm.Lit(box(v1))] as & Pure, p, ts) as & Pure
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -85,8 +84,8 @@ namespace Fixpoint {
     pub def projectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Foldable[f] =
         projectIntoX(match (v1, v2) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -98,9 +97,9 @@ namespace Fixpoint {
     pub def projectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
         projectIntoX(match (v1, v2, v3) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -113,10 +112,10 @@ namespace Fixpoint {
     pub def projectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -129,11 +128,11 @@ namespace Fixpoint {
     pub def projectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -146,12 +145,12 @@ namespace Fixpoint {
     pub def projectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -164,13 +163,13 @@ namespace Fixpoint {
     pub def projectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -184,14 +183,14 @@ namespace Fixpoint {
     pub def projectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown),
-             HeadTerm.Lit(box(v8), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7)),
+             HeadTerm.Lit(box(v8))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -205,15 +204,15 @@ namespace Fixpoint {
     pub def projectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown),
-             HeadTerm.Lit(box(v8), Unknown),
-             HeadTerm.Lit(box(v9), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7)),
+             HeadTerm.Lit(box(v8)),
+             HeadTerm.Lit(box(v9))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -229,16 +228,16 @@ namespace Fixpoint {
     pub def projectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown),
-             HeadTerm.Lit(box(v8), Unknown),
-             HeadTerm.Lit(box(v9), Unknown),
-             HeadTerm.Lit(box(v10), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7)),
+             HeadTerm.Lit(box(v8)),
+             HeadTerm.Lit(box(v9)),
+             HeadTerm.Lit(box(v10))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -254,17 +253,17 @@ namespace Fixpoint {
     pub def projectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown),
-             HeadTerm.Lit(box(v8), Unknown),
-             HeadTerm.Lit(box(v9), Unknown),
-             HeadTerm.Lit(box(v10), Unknown),
-             HeadTerm.Lit(box(v11), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7)),
+             HeadTerm.Lit(box(v8)),
+             HeadTerm.Lit(box(v9)),
+             HeadTerm.Lit(box(v10)),
+             HeadTerm.Lit(box(v11))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -280,18 +279,18 @@ namespace Fixpoint {
     pub def projectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown),
-             HeadTerm.Lit(box(v8), Unknown),
-             HeadTerm.Lit(box(v9), Unknown),
-             HeadTerm.Lit(box(v10), Unknown),
-             HeadTerm.Lit(box(v11), Unknown),
-             HeadTerm.Lit(box(v12), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7)),
+             HeadTerm.Lit(box(v8)),
+             HeadTerm.Lit(box(v9)),
+             HeadTerm.Lit(box(v10)),
+             HeadTerm.Lit(box(v11)),
+             HeadTerm.Lit(box(v12))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -307,19 +306,19 @@ namespace Fixpoint {
     pub def projectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown),
-             HeadTerm.Lit(box(v8), Unknown),
-             HeadTerm.Lit(box(v9), Unknown),
-             HeadTerm.Lit(box(v10), Unknown),
-             HeadTerm.Lit(box(v11), Unknown),
-             HeadTerm.Lit(box(v12), Unknown),
-             HeadTerm.Lit(box(v13), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7)),
+             HeadTerm.Lit(box(v8)),
+             HeadTerm.Lit(box(v9)),
+             HeadTerm.Lit(box(v10)),
+             HeadTerm.Lit(box(v11)),
+             HeadTerm.Lit(box(v12)),
+             HeadTerm.Lit(box(v13))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -335,20 +334,20 @@ namespace Fixpoint {
     pub def projectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown),
-             HeadTerm.Lit(box(v8), Unknown),
-             HeadTerm.Lit(box(v9), Unknown),
-             HeadTerm.Lit(box(v10), Unknown),
-             HeadTerm.Lit(box(v11), Unknown),
-             HeadTerm.Lit(box(v12), Unknown),
-             HeadTerm.Lit(box(v13), Unknown),
-             HeadTerm.Lit(box(v14), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7)),
+             HeadTerm.Lit(box(v8)),
+             HeadTerm.Lit(box(v9)),
+             HeadTerm.Lit(box(v10)),
+             HeadTerm.Lit(box(v11)),
+             HeadTerm.Lit(box(v12)),
+             HeadTerm.Lit(box(v13)),
+             HeadTerm.Lit(box(v14))] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -364,28 +363,28 @@ namespace Fixpoint {
     pub def projectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
-            [HeadTerm.Lit(box(v1), Unknown),
-             HeadTerm.Lit(box(v2), Unknown),
-             HeadTerm.Lit(box(v3), Unknown),
-             HeadTerm.Lit(box(v4), Unknown),
-             HeadTerm.Lit(box(v5), Unknown),
-             HeadTerm.Lit(box(v6), Unknown),
-             HeadTerm.Lit(box(v7), Unknown),
-             HeadTerm.Lit(box(v8), Unknown),
-             HeadTerm.Lit(box(v9), Unknown),
-             HeadTerm.Lit(box(v10), Unknown),
-             HeadTerm.Lit(box(v11), Unknown),
-             HeadTerm.Lit(box(v12), Unknown),
-             HeadTerm.Lit(box(v13), Unknown),
-             HeadTerm.Lit(box(v14), Unknown),
-             HeadTerm.Lit(box(v15), Unknown)] as & Pure
+            [HeadTerm.Lit(box(v1)),
+             HeadTerm.Lit(box(v2)),
+             HeadTerm.Lit(box(v3)),
+             HeadTerm.Lit(box(v4)),
+             HeadTerm.Lit(box(v5)),
+             HeadTerm.Lit(box(v6)),
+             HeadTerm.Lit(box(v7)),
+             HeadTerm.Lit(box(v8)),
+             HeadTerm.Lit(box(v9)),
+             HeadTerm.Lit(box(v10)),
+             HeadTerm.Lit(box(v11)),
+             HeadTerm.Lit(box(v12)),
+             HeadTerm.Lit(box(v13)),
+             HeadTerm.Lit(box(v14)),
+             HeadTerm.Lit(box(v15))] as & Pure
         , p, ts) as & Pure
 
     def projectIntoX[f: Type -> Type, t: Type](f: t -> Array[HeadTerm[Boxed]], p: PredSym, ts: f[t]):
         Datalog[Boxed] & Impure with Foldable[f] =
         let facts = MutList.new();
         Foldable.foldLeft(() -> vs -> {            
-            let fact = Constraint(HeadAtom(p, Denotation.Relational, f(vs), Unknown), [], Unknown);
+            let fact = Constraint(HeadAtom(p, Denotation.Relational, f(vs)), []);
             MutList.push!(fact, facts)
         }, (), ts);
         Datalog(MutList.toArray(facts), [])
@@ -445,8 +444,8 @@ namespace Fixpoint {
     /// Note the term must have been fully evaluated to a literal value.
     ///
     def headTermValue(t: HeadTerm[v]): v = match t {
-        case HeadTerm.Lit(v, _) => v
-        case _                  => bug!("Unexpected non-value term.")
+        case HeadTerm.Lit(v) => v
+        case _               => bug!("Unexpected non-value term.")
     }
 
     ///
@@ -469,21 +468,21 @@ namespace Fixpoint {
     /// Note that `t1, t2, ..., tn` must have been fully evaluated to literals.
     ///
     def factToTuple(fact: Constraint[v]): Array[v] & Impure = match fact {
-        case Constraint(HeadAtom(_, _, terms, _), _, _) => Array.map(headTermValue, terms)
+        case Constraint(HeadAtom(_, _, terms), _) => Array.map(headTermValue, terms)
     }
 
     def tupleToFact(ramSym: RamSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match ramSym {
         case RamSym.Full(relName, denotation) =>
             let terms = match denotation {
-                case Denotation.Relational => Array.map(v -> HeadTerm.Lit(v, Unknown), tuple)
+                case Denotation.Relational => Array.map(v -> HeadTerm.Lit(v), tuple)
                 case Denotation.Latticenal(_) => Array.init(i -> {
                     if (i < Array.length(tuple))
-                        HeadTerm.Lit(tuple[i], Unknown)
+                        HeadTerm.Lit(tuple[i])
                     else
-                        HeadTerm.Lit(lat, Unknown)
+                        HeadTerm.Lit(lat)
                 }, Array.length(tuple) + 1)
             };
-            Constraint(HeadAtom(PredSym(relName, Unknown), denotation, terms, Unknown), [], Unknown)
+            Constraint(HeadAtom(PredSym(relName), denotation, terms), [])
         case _ => ?bug
     }
 

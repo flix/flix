@@ -40,18 +40,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
     val roots = Validation.sequence(ParOps.parMap(program.roots, visitRoot))
-    val constraints = visitAllConstraints(program.roots)
 
-    mapN(roots, constraints) {
-      case (rs, cs) =>
-        // Check if there are top-level constraints and we should introduce a main.
-        if (cs.isEmpty)
-          WeededAst.Program(rs, flix.getReachableRoots)
-        else {
-          val sp1 = program.roots.headOption.map(_.sp1).getOrElse(SourcePosition.Unknown)
-          val sp2 = program.roots.headOption.map(_.sp2).getOrElse(SourcePosition.Unknown)
-          WeededAst.Program(mkMain(cs, sp1, sp2) :: rs, flix.getReachableRoots)
-        }
+    mapN(roots) {
+      case rs => WeededAst.Program(rs, flix.getReachableRoots)
     }
   }
 
@@ -94,8 +85,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case d: ParsedAst.Declaration.Relation => visitRelation(d)
 
     case d: ParsedAst.Declaration.Lattice => visitLattice(d)
-
-    case d: ParsedAst.Declaration.Constraint => Nil.toSuccess
 
     case d: ParsedAst.Declaration.Class => visitClass(d)
 
@@ -330,19 +319,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val termTypes = attr.map(a => visitType(a.tpe))
           val tpe = WeededAst.Type.Lattice(termTypes.toList, loc)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
-      }
-  }
-
-  /**
-    * Performs weeding on the given constraint `c0`.
-    */
-  private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[WeededAst.Constraint, WeederError] = c0 match {
-    case ParsedAst.Declaration.Constraint(sp1, head0, body0, sp2) =>
-      val headVal = visitHeadPredicate(head0)
-      val bodyVal = traverse(body0)(visitPredicateBody)
-
-      mapN(headVal, bodyVal) {
-        case (h, bs) => WeededAst.Constraint(h, bs, mkSL(sp1, sp2))
       }
   }
 
@@ -1685,6 +1661,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Performs weeding on the given constraint `c0`.
+    */
+  private def visitConstraint(c0: ParsedAst.Constraint)(implicit flix: Flix): Validation[WeededAst.Constraint, WeederError] = c0 match {
+    case ParsedAst.Constraint(sp1, head0, body0, sp2) =>
+      val headVal = visitHeadPredicate(head0)
+      val bodyVal = traverse(body0)(visitPredicateBody)
+
+      mapN(headVal, bodyVal) {
+        case (h, bs) => WeededAst.Constraint(h, bs, mkSL(sp1, sp2))
+      }
+  }
+
+  /**
     * Weeds the given head predicate.
     */
   private def visitHeadPredicate(past: ParsedAst.Predicate.Head)(implicit flix: Flix): Validation[WeededAst.Predicate.Head, WeederError] = past match {
@@ -1700,11 +1689,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitExp), visitExp(term)) {
         case (ts, t) => WeededAst.Predicate.Head.Atom(Name.Pred(ident.name, mkSL(ident.sp1, ident.sp2)), Denotation.Latticenal, ts ::: t :: Nil, loc)
-      }
-
-    case ParsedAst.Predicate.Head.Union(sp1, exp, sp2) =>
-      mapN(visitExp(exp)) {
-        case e => WeededAst.Predicate.Head.Union(e, mkSL(sp1, sp2))
       }
   }
 
@@ -1854,30 +1838,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     } else {
       WeederError.IllegalPrivateDeclaration(ident, ident.loc).toFailure
     }
-  }
-
-  /**
-    * Collects all constraints in the given AST `roots`.
-    */
-  private def visitAllConstraints(roots: List[ParsedAst.Root])(implicit flix: Flix): Validation[List[WeededAst.Constraint], WeederError] = {
-
-    // TODO: What if a constraint occurs in another namespace????
-
-    /**
-      * Local root visitor.
-      */
-    def visitRoot(root: ParsedAst.Root): Validation[List[WeededAst.Constraint], WeederError] = traverse(root.decls)(visitDecl).map(_.flatten)
-
-    /**
-      * Local declaration visitor.
-      */
-    def visitDecl(d0: ParsedAst.Declaration): Validation[List[WeededAst.Constraint], WeederError] = d0 match {
-      case ParsedAst.Declaration.Namespace(sp1, name, uses, decls, sp2) => traverse(decls)(visitDecl).map(_.flatten)
-      case d: ParsedAst.Declaration.Constraint => visitConstraint(d).map(x => x :: Nil)
-      case _ => Nil.toSuccess
-    }
-
-    traverse(roots)(visitRoot).map(_.flatten)
   }
 
   /**
@@ -2478,67 +2438,5 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     (className, memberName).toSuccess
   }
-
-  /**
-    * Introduces a main declaration that wraps the given constraints in a solve expression.
-    */
-  private def mkMain(cs: List[WeededAst.Constraint], sp1: SourcePosition, sp2: SourcePosition)(implicit flix: Flix): WeededAst.Root = {
-    // Source positions and source locations for the generated main.
-    val loc = SourceLocation.mk(sp1, sp2)
-
-    // Useful types.
-    val ArrayType = WeededAst.Type.Ambiguous(Name.mkQName("Array"), loc)
-    val Int32Type = WeededAst.Type.Ambiguous(Name.mkQName("Int32"), loc)
-    val StringType = WeededAst.Type.Ambiguous(Name.mkQName("String"), loc)
-
-    // Documentation, annotations, and modifiers for the generated main.
-    val doc = Ast.Doc(Nil, loc)
-    val ann = Nil
-    val mod = Ast.Modifiers.Empty
-    val ident = Name.Ident(sp1, "main", sp2)
-
-    // Type and formal parameters for the generated main.
-    val tparams = WeededAst.TypeParams.Elided
-    val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_args", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
-
-    // Type constraints for the generated main.
-    val tconstrs = Nil
-
-    // Collect all the constraints into a single constraint set.
-    val innerExp = WeededAst.Expression.FixpointConstraintSet(cs, loc)
-
-    // The solve expression.
-    val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
-
-    // Convert to string, print, and return 0.
-    val exp = mkStmReturn(mkApplyPrintln(mkApplyUnsafeToString(outerExp, sp1, sp2), sp1, sp2), 0, loc)
-
-    // The type and effect of the generated main.
-    val argType = WeededAst.Type.Apply(ArrayType, StringType, loc)
-    val resultType = Int32Type
-    val resultEff = WeededAst.Type.False(loc)
-    val tpe = mkArrow(argType, resultEff, Int32Type, loc)
-
-    // Construct the declaration.
-    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, resultEff, tconstrs, loc)
-
-    // Construct an AST root that contains the main declaration.
-    WeededAst.Root(Nil, List(decl), loc)
-  }
-
-  private def mkApplyUnsafeToString(exp: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val ident = Name.Ident(sp1, "unsafeToString", sp2)
-    val target = WeededAst.Expression.VarOrDefOrSig(ident, mkSL(sp1, sp2))
-    WeededAst.Expression.Apply(target, List(exp), mkSL(sp1, sp2))
-  }
-
-  private def mkApplyPrintln(exp: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val ident = Name.Ident(sp1, "println", sp2)
-    val target = WeededAst.Expression.VarOrDefOrSig(ident, mkSL(sp1, sp2))
-    WeededAst.Expression.Apply(target, List(exp), mkSL(sp1, sp2))
-  }
-
-  private def mkStmReturn(exp: WeededAst.Expression, value: Int, loc: SourceLocation): WeededAst.Expression =
-    WeededAst.Expression.Stm(exp, WeededAst.Expression.Int32(value, loc), loc)
 
 }
