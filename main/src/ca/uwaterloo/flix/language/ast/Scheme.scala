@@ -159,8 +159,8 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     for {
       subst <- Unification.unifyTypes(tpe1, tpe2).toValidation
-      newTconstrs1 = tconstrs1.map(subst.apply)
-      newTconstrs2 = tconstrs2.map(subst.apply)
+      newTconstrs1 <- ClassEnvironment.reduce(tconstrs1.map(subst.apply), classEnv)
+      newTconstrs2 <- ClassEnvironment.reduce(tconstrs2.map(subst.apply), classEnv)
       _ <- Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
     } yield ()
   }

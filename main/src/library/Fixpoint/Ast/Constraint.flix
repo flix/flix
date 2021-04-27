@@ -16,14 +16,14 @@
 
 namespace Fixpoint/Ast {
     pub enum Constraint[v] {
-        case Constraint(HeadPredicate[v], Array[BodyPredicate[v]], SourceLocation)
+        case Constraint(HeadPredicate[v], Array[BodyPredicate[v]])
     }
 
     instance ToString[Constraint[v]] with ToString[v] {
         pub def toString(c: Constraint[v]): String =
             use Fixpoint.commaSeparate;
             match c {
-                case Constraint(head, body, _) =>
+                case Constraint(head, body) =>
                     if (Array.length(body) == 0)
                         "${head}."
                     else

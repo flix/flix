@@ -2012,18 +2012,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
-
-    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
-      //
-      //  exp : typ
-      //  ------------------------------------------------------------
-      //  union exp : #{ ... }
-      //
-      for {
-        (tconstrs, typ, eff) <- inferExp(exp, root)
-        pureEff <- unifyBoolM(Type.Pure, eff, loc)
-        resultType <- unifyTypeM(tvar, typ, loc)
-      } yield (tconstrs, resultType)
   }
 
   /**
@@ -2033,10 +2021,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     case ResolvedAst.Predicate.Head.Atom(pred, den0, terms, tvar, loc) =>
       val ts = terms.map(t => reassembleExp(t, root, subst0))
       TypedAst.Predicate.Head.Atom(pred, den0, ts, subst0(tvar), loc)
-
-    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
-      val e = reassembleExp(exp, root, subst0)
-      TypedAst.Predicate.Head.Union(e, subst0(tvar), loc)
   }
 
   /**

@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 namespace Fixpoint/Ast {
+
     pub enum PredSym {
-        case PredSym(String, SourceLocation)
+        case PredSym(String)
+    }
+
+    instance Order[PredSym] {
+        pub def compare(a: PredSym, b: PredSym): Comparison = match (a, b) {
+            case (PredSym(s1), PredSym(s2)) => s1 <=> s2
+        }
     }
 
     instance ToString[PredSym] {
         pub def toString(predSym: PredSym): String = match predSym {
-            case PredSym(name, _) => name
-        }
-    }
-
-    instance Eq[PredSym] {
-        pub def eq(x: PredSym, y: PredSym): Bool = match x <=> y {
-            case EqualTo => true
-            case _ => false
-        }
-    }
-
-    instance Order[PredSym] {
-        pub def compare(a: PredSym, b: PredSym): Comparison = match (a,b) {
-            case (PredSym(s1, _), PredSym(s2, _)) => s1 <=> s2
+            case PredSym(name) => name
         }
     }
 
