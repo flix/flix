@@ -17,7 +17,7 @@
 ///
 /// A type class for join semi lattices.
 ///
-class JoinLattice[a] {
+lawless class JoinLattice[a] {
 
     ///
     /// Returns the least upper bound of `x` and `y`.
@@ -29,8 +29,8 @@ class JoinLattice[a] {
 
 }
 
-instance JoinLattice[(a1, a2)] with [a1 : JoinLattice, a2 : JoinLattice] {
-    def leastUpperBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
+instance JoinLattice[(a1, a2)] with JoinLattice[a1], JoinLattice[a2] {
+    pub def leastUpperBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
         case ((x1, x2), (y1, y2)) => (JoinLattice.leastUpperBound(x1, y1), JoinLattice.leastUpperBound(x2, y2))
     }
 }
@@ -43,15 +43,17 @@ namespace JoinLattice {
     /// The law asserts that the least upper bound operator returns
     //  an element that is greater than or equal to each of its arguments.
     ///
-    law leastUpperBound1[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
-        ∀(x: e, y: e). (x ⊑ (x ⊔ y)) and (y ⊑ (x ⊔ y))
+    // TODO change to class law
+//    law leastUpperBound1[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
+//        ∀(x: e, y: e). (x ⊑ (x ⊔ y)) and (y ⊑ (x ⊔ y))
 
     ///
     /// The law asserts that the least upper bound operator returns
     /// the smallest element that is larger than its two arguments.
     ///
-    law leastUpperBound2[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
-        let implies = (x, y) -> (not x) or y;
-        ∀(x: e, y: e, z: e). ((x ⊑ z) and (y ⊑ z)) `implies` ((x ⊔ y) ⊑ z)
+    // TODO change to class law
+//    law leastUpperBound2[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
+//        let implies = (x, y) -> (not x) or y;
+//        ∀(x: e, y: e, z: e). ((x ⊑ z) and (y ⊑ z)) `implies` ((x ⊔ y) ⊑ z)
 
 }

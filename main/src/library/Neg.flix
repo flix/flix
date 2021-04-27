@@ -17,7 +17,7 @@
 ///
 /// A type class for negation.
 ///
-pub class Neg[a] {
+pub lawless class Neg[a] {
     ///
     /// Returns -`x`.
     ///
@@ -25,29 +25,29 @@ pub class Neg[a] {
 }
 
 instance Neg[Float32] {
-    def neg(x: Float32): Float32 = $FLOAT32_NEG$(x)
+    pub def neg(x: Float32): Float32 = $FLOAT32_NEG$(x)
 }
 
 instance Neg[Float64] {
-    def neg(x: Float64): Float64 = $FLOAT64_NEG$(x)
+    pub def neg(x: Float64): Float64 = $FLOAT64_NEG$(x)
 }
 
 instance Neg[Int8] {
-    def neg(x: Int8): Int8 = $INT8_NEG$(x)
+    pub def neg(x: Int8): Int8 = $INT8_NEG$(x)
 }
 
 instance Neg[Int16] {
-    def neg(x: Int16): Int16 = $INT16_NEG$(x)
+    pub def neg(x: Int16): Int16 = $INT16_NEG$(x)
 }
 
 instance Neg[Int32] {
-    def neg(x: Int32): Int32 = $INT32_NEG$(x)
+    pub def neg(x: Int32): Int32 = $INT32_NEG$(x)
 }
 
 instance Neg[Int64] {
-    def neg(x: Int64): Int64 = $INT64_NEG$(x)
+    pub def neg(x: Int64): Int64 = $INT64_NEG$(x)
 }
 
 instance Neg[BigInt] {
-    def neg(x: BigInt): BigInt = $BIGINT_NEG$(x)
+    pub def neg(x: BigInt): BigInt = $BIGINT_NEG$(x)
 }

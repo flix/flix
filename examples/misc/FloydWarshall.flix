@@ -15,30 +15,20 @@ enum Dist {
 }
 
 instance LowerBound[Dist] {
-    def minValue(): Dist = Dist.Bot
+    pub def minValue(): Dist = Dist.Bot
 }
 
 instance Eq[Dist] {
-    def eq(x: Dist, y: Dist): Bool = match (x, y) {
+    pub def eq(x: Dist, y: Dist): Bool = match (x, y) {
         case (Top, Top) => true
         case (Dst(a), Dst(b)) => a == b
         case (Bot, Bot) => true
         case _ => false
     }
-
-    def neq(x: Dist, y: Dist): Bool = not (x == y)
-}
-
-instance Hash[Dist] {
-    def hash(x: Dist): Int32 = match x {
-        case Top    => 0
-        case Bot    => 1
-        case Dst(n) => n + 2
-    }
 }
 
 instance PartialOrder[Dist] {
-    def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
+    pub def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
         case (_, Top) => true
         case (Bot, _) => true
         case (Dst(n1), Dst(n2)) => n1 >= n2
@@ -47,7 +37,7 @@ instance PartialOrder[Dist] {
 }
 
 instance JoinLattice[Dist] {
-    def leastUpperBound(x: Dist, y: Dist): Dist = match (x, y) {
+    pub def leastUpperBound(x: Dist, y: Dist): Dist = match (x, y) {
         case (Bot, _)           => y
         case (_, Bot)           => x
         case (Dst(n1), Dst(n2)) => Dst(Int32.min(n1, n2))
@@ -56,30 +46,45 @@ instance JoinLattice[Dist] {
 }
 
 instance MeetLattice[Dist] {
-    def greatestLowerBound(x: Dist, y: Dist): Dist = match (x, y) {
-        case (Top, x) => x
-        case (x, Top) => x
+    pub def greatestLowerBound(x: Dist, y: Dist): Dist = match (x, y) {
+        case (Top, z) => z
+        case (z, Top) => z
         case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))
         case _ => Bot
     }
 }
 
 instance ToString[Dist] {
-    def toString(x: Dist): String = match x {
+    pub def toString(x: Dist): String = match x {
         case Top    => "Top"
         case Dst(n) => "Dst(${n})"
         case Bot    => "Bot"
     }
 }
 
-// Copy input relation into the ShortestDist lattice
-ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).
+instance Boxable[Dist] {
+    pub def box(x: Dist): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Dist, o2 as Dist);
+        let toString = o -> ToString.toString(o as Dist);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Dist = match x {
+        case BoxedObject(v, _, _) => v as Dist
+        case _                    => ?bug
+    }
+}
 
-// If a->b->c, try using that to get a->c
-ShortestDist(a, c; sum(d1, d2)) :- ShortestDist(a, b; d1), ShortestDist(b, c; d2).
-
-// If you can get from a->a with negative distance, then it is part of a negative cycle
-ShortestDist(a, a; Top) :- ShortestDist(a, a; d), negativeDist(d).
+instance Order[Dist] {
+    pub def compare(x: Dist, y: Dist): Comparison = match (x, y) {
+        case (Bot, Bot)         => EqualTo
+        case (Dst(n1), Dst(n2)) => n1 <=> n2
+        case (Top, Top)         => EqualTo
+        case (Bot, _)           => LessThan
+        case (Dst(_), _)        => LessThan
+        case _                  => GreaterThan
+    }
+}
 
 ///
 /// Transfer function.
@@ -102,20 +107,35 @@ def negativeDist(d: Dist): Bool = match d {
   case _ => false
 }
 
-// Example input data
-Edge("a", "b", 1).
-Edge("b", "c", 2).
-Edge("c", "a", 3).
-Edge("c", "d", 4).
-Edge("d", "e", 7).
-Edge("d", "f", 11).
-Edge("f", "e", 23).
+def main(_: Array[String]): Int32 & Impure =
+    let p = #{
+        // Copy input relation into the ShortestDist lattice
+        ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).
 
-// Negative cycle
-Edge("1", "2", -3).
-Edge("2", "3", 1).
-Edge("3", "1", 1).
-Edge("3", "4", 30).
+        // If a->b->c, try using that to get a->c
+        ShortestDist(a, c; sum(d1, d2)) :- ShortestDist(a, b; d1), ShortestDist(b, c; d2).
+
+        // If you can get from a->a with negative distance, then it is part of a negative cycle
+        ShortestDist(a, a; Top) :- ShortestDist(a, a; d), negativeDist(d).
+
+        // Example input data
+        Edge("a", "b", 1).
+        Edge("b", "c", 2).
+        Edge("c", "a", 3).
+        Edge("c", "d", 4).
+        Edge("d", "e", 7).
+        Edge("d", "f", 11).
+        Edge("f", "e", 23).
+
+        // Negative cycle
+        Edge("1", "2", -3).
+        Edge("2", "3", 1).
+        Edge("3", "1", 1).
+        Edge("3", "4", 30).
+    };
+    let m = solve p;
+    (m |> Fixpoint.unsafePrint) as & Impure;
+    0
 
 // Expected output
 // ShortestDist

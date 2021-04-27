@@ -901,16 +901,16 @@ def isSuffixOf13(): Bool = List.isSuffixOf(1 :: 2 :: 3 :: Nil, 89 :: 11 :: 1 :: 
 // fold                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def fold01(): Bool = List.fold((i, e) -> (i - e)*(e % 2 + 1), 100, Nil) == 100
+def fold01(): Bool = List.fold(Nil: List[String]) == ""
 
 @test
-def fold02(): Bool = List.fold((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: Nil) == 198
+def fold02(): Bool = List.fold("a" :: Nil) == "a"
 
 @test
-def fold03(): Bool = List.fold((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: Nil) == 196
+def fold03(): Bool = List.fold("a" :: "b" :: "c" :: Nil) == "abc"
 
 @test
-def fold04(): Bool = List.fold((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 386
+def fold04(): Bool = List.fold(("a", "b") :: ("c", "d") :: ("e", "f") :: Nil) == ("ace", "bdf")
 
 /////////////////////////////////////////////////////////////////////////////
 // foldLeft                                                                //
@@ -941,24 +941,6 @@ def foldRight03(): Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :
 
 @test
 def foldRight04(): Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// reduce                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def reduce01(): Bool = List.reduce((a, b) -> a-b, Nil: List[Int]) == None
-
-@test
-def reduce02(): Bool = List.reduce((a, b) -> a-b, 1 :: Nil) == Some(1)
-
-@test
-def reduce03(): Bool = List.reduce((a, b) -> a-b, 1 :: 2 :: Nil) == Some(-1)
-
-@test
-def reduce04(): Bool = List.reduce((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) == Some(-4)
-
-@test
-def reduce05(): Bool = List.reduce((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) == Some(-8)
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //

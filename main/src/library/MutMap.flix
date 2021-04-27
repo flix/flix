@@ -19,16 +19,10 @@
 ///
 opaque type MutMap[k, v] = Ref[Map[k, v]]
 
-instance ToString[MutMap[k, v]] with [k : ToString, v : ToString] {
-    def toString(m: MutMap[k, v]): String =
+instance ToString[MutMap[k, v]] with ToString[k], ToString[v] {
+    pub def toString(m: MutMap[k, v]): String =
         let s = MutMap.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m) as & Pure;
         "MutMap#{${String.dropRight(2, s)}}"
-}
-
-instance Copy[MutMap[k, v]] {
-    def copy(m: MutMap[k, v]): MutMap[k, v] & e =
-        let MutMap(mm) = m;
-        MutMap(ref (deref mm)) as & e
 }
 
 namespace MutMap {
@@ -36,7 +30,7 @@ namespace MutMap {
     ///
     /// Returns `true` if and only if `m` is the empty map.
     ///
-    pub def isEmpty[k : Eq, v](m: MutMap[k, v]): Bool & Impure =
+    pub def isEmpty(m: MutMap[k, v]): Bool & Impure =
         let MutMap(mm) = m;
         Map.isEmpty(deref mm)
 
@@ -49,13 +43,13 @@ namespace MutMap {
     ///
     /// Returns the singleton map where the key `k` is mapped to value `v`.
     ///
-    pub def singleton[k : Order, v](k: k, v: v): MutMap[k, v] & Impure =
+    pub def singleton(k: k, v: v): MutMap[k, v] & Impure with Order[k] =
         MutMap(ref Map.singleton(k, v))
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
     ///
-    pub def memberOf[k : Order, v](k: k, m: MutMap[k, v]): Bool & Impure =
+    pub def memberOf(k: k, m: MutMap[k, v]): Bool & Impure with Order[k] =
         let MutMap(mm) = m;
         Map.memberOf(k, deref mm)
 
@@ -98,7 +92,7 @@ namespace MutMap {
     ///
     /// Returns the keys of the mutable map `m`.
     ///
-    pub def keysOf[k : Order, v](m: MutMap[k, v]): Set[k] & Impure =
+    pub def keysOf(m: MutMap[k, v]): Set[k] & Impure with Order[k] =
         let MutMap(mm) = m;
         Map.keysOf(deref mm)
 
@@ -121,7 +115,7 @@ namespace MutMap {
     ///
     /// Otherwise returns `None`.
     ///
-    pub def get[k : Order, v](k: k, m: MutMap[k, v]): Option[v] & Impure =
+    pub def get(k: k, m: MutMap[k, v]): Option[v] & Impure with Order[k] =
         let MutMap(mm) = m;
         Map.get(k, deref mm)
 
@@ -130,23 +124,32 @@ namespace MutMap {
     ///
     /// Otherwise returns `d`.
     ///
-    pub def getWithDefault[k : Order, v](k: k, d: v, m: MutMap[k, v]): v & Impure =
+    pub def getWithDefault(k: k, d: v, m: MutMap[k, v]): v & Impure with Order[k] =
         let MutMap(mm) = m;
         Map.getWithDefault(k, d, deref mm)
 
     ///
     /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.
     ///
-    pub def put![k : Order, v](k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
+    pub def put!(k: k, v: v, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.insert(k, v, deref mm)
+
+    ///
+    /// Updates the mutable map `m` with the binding `k -> f(v, v1)` if `k -> v1` is in `m`.
+    ///
+    /// Otherwise updates the mutable map `m` with the binding `k -> v`.
+    ///
+    pub def putWith!(f: (v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
+        let MutMap(mm) = m;
+        mm := Map.insertWith(f, k, v, deref mm)
 
     ///
     /// Updates the mutable map `m` with `k -> f(v)` if `k -> v` is in `m`.
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjust![k : Order, v, e](f: v -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
+    pub def adjust!(f: v -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         adjustWithKey!((_, v1) -> f(v1), k, m)
 
     ///
@@ -154,7 +157,7 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjustWithKey![k : Order, v, e](f: (k, v) -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
+    pub def adjustWithKey!(f: (k, v) -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.adjustWithKey(f, k, deref mm)
 
@@ -170,7 +173,7 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with a new mapping `k -> d` and returns d.
     ///
-    pub def getOrElsePut![k : Order, v](k: k, d: v, m: mut MutMap[k, v]): v & Impure =
+    pub def getOrElsePut!(k: k, d: v, m: mut MutMap[k, v]): v & Impure with Order[k] =
         let MutMap(mm) = m;
         match Map.get(k, deref mm) {
             case None    => mm := Map.insert(k, d, deref mm); d
@@ -182,19 +185,19 @@ namespace MutMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def merge![k : Order, v](m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+    pub def merge!(m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure with Order[k] =
         mergeWithKey!((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def mergeWith![k : Order, v, e](f: (v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+    pub def mergeWith!(f: (v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure with Order[k] =
         mergeWithKey!((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def mergeWithKey![k : Order, v, e](f: (k, v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+    pub def mergeWithKey!(f: (k, v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
@@ -204,7 +207,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def refine![k : Order, v](f: v -> Bool, m: mut MutMap[k, v]): Unit & Impure =
+    pub def refine!(f: v -> Bool, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         refineWithKey!((_, v) -> f(v), m)
 
     ///
@@ -212,7 +215,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def refineWithKey![k : Order, v](f: (k, v) -> Bool, m: mut MutMap[k, v]): Unit & Impure =
+    pub def refineWithKey!(f: (k, v) -> Bool, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.filterWithKey(f, deref mm)
 
@@ -221,28 +224,28 @@ namespace MutMap {
     ///
     /// Leaves the map unchanged if the mutable map `m` does not contain any mapping for `k`.
     ///
-    pub def remove![k : Order, v](k: k, m: mut MutMap[k, v]): Unit & Impure =
+    pub def remove!(k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.delete(k, deref mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transform![k : Order, v, e](f: v -> v & e, m: mut MutMap[k, v]): Unit & Impure =
+    pub def transform!(f: v -> v & e, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.map(f, deref mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transformWithKey![k : Order, v, e](f: (k, v) -> v & e, m: mut MutMap[k, v]): Unit & Impure =
+    pub def transformWithKey!(f: (k, v) -> v & e, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.mapWithKey(f, deref mm)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2`.
     ///
-    pub def isSubmapOf[k : Order, v : Eq](m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
+    pub def isSubmapOf(m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure with Order[k], Eq[v] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         Map.isSubmapOf(deref mm1, deref mm2)
@@ -250,7 +253,7 @@ namespace MutMap {
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2` and `m1 != m2`.
     ///
-    pub def isProperSubmapOf[k : Order, v : Eq](m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
+    pub def isProperSubmapOf(m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure with Order[k], Eq[v] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         Map.isProperSubmapOf(deref mm1, deref mm2)
@@ -280,12 +283,6 @@ namespace MutMap {
     pub def findRight(f: (k, v) -> Bool, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.findRight(f, deref mm)
-
-    ///
-    /// Alias for `foldLeft`.
-    ///
-    pub def fold(f: (b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
-        foldLeft(f, i, m)
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -327,18 +324,6 @@ namespace MutMap {
     pub def foldRightWithKey(f: (k, v, b) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
         let MutMap(mm) = m;
         Map.foldRightWithKey(f, i, deref mm)
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (v, v) -> v & e, m: MutMap[k, v]): Option[v] & Impure =
-        reduceLeft(f, m)
-
-    ///
-    /// Alias for `reduceLeftWithKey`.
-    ///
-    pub def reduceWithKey(f: (k, v, k, v) -> (k, v) & e, m: MutMap[k, v]): Option[(k, v)] & Impure =
-        reduceLeftWithKey(f, m)
 
     ///
     /// Applies `f` to all values in the mutable map `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
@@ -439,7 +424,7 @@ namespace MutMap {
     ///
     /// Returns the mutable map `m` as a set of key-value pairs.
     ///
-    pub def toSet[k : Order, v : Order](m: MutMap[k, v]): Set[(k, v)] & Impure =
+    pub def toSet(m: MutMap[k, v]): Set[(k, v)] & Impure with Order[k], Order[v] =
         let MutMap(mm) = m;
         Map.toSet(deref mm)
 
@@ -460,5 +445,14 @@ namespace MutMap {
     pub def query(p: k -> Comparison, m: MutMap[k, v]): List[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.query(p, deref mm)
+
+    ///
+    /// Applies `f` to all key-value pairs `(k, v)` in the mutable map `m` where `p(k)` returns `EqualTo`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        Map.queryWith(p, f, deref mm)
 
 }

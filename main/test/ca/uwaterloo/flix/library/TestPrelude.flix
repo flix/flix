@@ -90,22 +90,22 @@ def curry04(): Bool =
 @test
 def uncurry01(): Bool =
     let f = uncurry(x -> y -> x - y);
-    f(5, 4) == 1
+    f((5, 4)) == 1
 
 @test
 def uncurry02(): Bool =
     let f = uncurry(x -> y -> x - y);
-    f(4, 5) == -1
+    f((4, 5)) == -1
 
 @test
 def uncurry03(): Bool =
     let f = uncurry(x -> y -> x / y);
-    f(10, 3) == 3
+    f((10, 3)) == 3
 
 @test
 def uncurry04(): Bool =
     let f = uncurry(x -> y -> x / y);
-    f(3, 10) == 0
+    f((3, 10)) == 0
 
 /////////////////////////////////////////////////////////////////////////////
 // fst                                                                     //

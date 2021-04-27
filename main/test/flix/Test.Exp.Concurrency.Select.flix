@@ -107,6 +107,20 @@ namespace Test/Exp/Concurrency/Select {
         }
 
     @test
+    def testSelectDefault01(): Bool & Impure =
+        select {
+            case x <- chan Bool 1 => x
+            case _                => true
+        }
+
+    @test
+    def testSelectDefault02(): Bool & Impure =
+        (1 + select {
+            case x <- chan Int64 1 => 2
+            case _                 => 1
+        }) == 2
+
+    @test
     def testSelectRandom01(): Unit & Impure = {
         let c9 = chan Unit 0;
         let c10 = chan Unit 0;
@@ -347,6 +361,24 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- c6 => ()
         case _ <- c6 => ()
         } ; c7 <- () ; () ; () } ; () ; c6 <- () ; () ; <- c9;
+        ()
+    }
+
+    @test
+    def testSelectRandom10(): Unit & Impure = {
+        let c10 = chan Unit 0;
+        let c11 = chan Unit 0;
+        let c12 = chan Unit 0;
+        let c13 = chan Unit 0;
+        spawn { c13 <- () ; () } ;
+        spawn { c12 <- () ; () } ;
+        spawn { c11 <- () ; () } ;
+        spawn { c10 <- () ; () } ;
+        select {
+            case _ <- c10 => <- c13 ; <- c12 ; <- c11
+            case _ <- c13 => <- c12 ; <- c10 ; <- c11
+            case _ <- c11 => <- c13 ; <- c12 ; <- c10
+        };
         ()
     }
 

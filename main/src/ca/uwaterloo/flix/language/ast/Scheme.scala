@@ -89,7 +89,7 @@ object Scheme {
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
     def visitTvar(t: Type.Var): Type.Var = t match {
-      case Type.Var(x, k, rigidity, _) =>
+      case Type.Var(x, k, rigidity, name) =>
         freshVars.get(x) match {
           case None =>
             // Determine the rigidity of the free type variable.
@@ -106,9 +106,9 @@ object Scheme {
     val newBase = baseType.map(visitTvar)
 
     val newConstrs = sc.constraints.map {
-      case Ast.TypeConstraint(sym, tpe0) =>
+      case Ast.TypeConstraint(sym, tpe0, loc) =>
         val tpe = tpe0.map(visitTvar)
-        Ast.TypeConstraint(sym, tpe)
+        Ast.TypeConstraint(sym, tpe, loc)
     }
 
     (newConstrs, newBase)
@@ -118,7 +118,7 @@ object Scheme {
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
   def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
-    val quantifiers = tpe0.typeVars
+    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(_.arg.typeVars)
     Scheme(quantifiers.toList, tconstrs, tpe0)
   }
 
@@ -126,7 +126,7 @@ object Scheme {
     * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Boolean = {
+  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     Validation.sequence(List(checkLessThanEqual(sc1, sc2, classEnv), checkLessThanEqual(sc2, sc1, classEnv))) match {
       case Validation.Success(_) => true
       case Validation.Failure(_) => false
@@ -137,7 +137,7 @@ object Scheme {
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])(implicit flix: Flix): Validation[Unit, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, UnificationError] = {
 
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
@@ -159,8 +159,8 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     for {
       subst <- Unification.unifyTypes(tpe1, tpe2).toValidation
-      newTconstrs1 = tconstrs1.map(subst.apply)
-      newTconstrs2 = tconstrs2.map(subst.apply)
+      newTconstrs1 <- ClassEnvironment.reduce(tconstrs1.map(subst.apply), classEnv)
+      newTconstrs2 <- ClassEnvironment.reduce(tconstrs2.map(subst.apply), classEnv)
       _ <- Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
     } yield ()
   }

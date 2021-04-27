@@ -53,7 +53,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     if (flix.options.documentor) {
       // Collect all public definitions and group them by namespace.
       val defsByNS = root.defs.filter {
-        case (sym, defn) => defn.mod.isPublic && !isBenchmark(defn.ann) && !isLaw(defn.ann) && !isTest(defn.ann)
+        case (sym, defn) => defn.spec.mod.isPublic && !isBenchmark(defn.spec.ann) && !isLaw(defn.spec.ann) && !isTest(defn.spec.ann)
       }.groupBy(_._1.namespace)
 
       // Convert all definitions to JSON objects.
@@ -90,14 +90,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitDef(defn0: Def): JObject = {
     // Compute the type parameters.
-    val tparams = defn0.tparams.map {
-      case TypeParam(ident, tpe, classes, loc) => JObject(List(
+    val tparams = defn0.spec.tparams.map {
+      case TypeParam(ident, tpe, loc) => JObject(List(
         JField("name", JString(ident.name))
       ))
     }
 
     // Compute the formal parameters.
-    val fparams = defn0.fparams.collect {
+    val fparams = defn0.spec.fparams.collect {
       case FormalParam(psym, mod, tpe, loc) if tpe != Type.Unit => JObject(
         JField("name", JString(psym.text)),
         JField("type", JString(FormatType.formatType(tpe)))
@@ -105,8 +105,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type and effect.
-    val result = getResultType(defn0.declaredScheme.base)
-    val effect = getEffectType(defn0.declaredScheme.base)
+    val result = getResultType(defn0.spec.declaredScheme.base)
+    val effect = getEffectType(defn0.spec.declaredScheme.base)
 
     // Construct the JSON object.
     ("name" -> defn0.sym.name) ~
@@ -116,7 +116,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("effect" -> FormatType.formatType(effect)) ~
       ("time" -> getTime(defn0)) ~
       ("space" -> getSpace(defn0)) ~
-      ("comment" -> defn0.doc.text.trim)
+      ("comment" -> defn0.spec.doc.text.trim)
   }
 
   /**
@@ -135,7 +135,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Optionally returns the time complexity of the given definition `defn0`.
     */
-  private def getTime(defn0: Def): Option[String] = defn0.ann.collectFirst {
+  private def getTime(defn0: Def): Option[String] = defn0.spec.ann.collectFirst {
     case Annotation(Ast.Annotation.Time(_), exp :: _, _) =>
       PrettyExpression.pretty(exp)
   }
@@ -143,7 +143,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Optionally returns the space complexity of the given definition `defn0`.
     */
-  private def getSpace(defn0: Def): Option[String] = defn0.ann.collectFirst {
+  private def getSpace(defn0: Def): Option[String] = defn0.spec.ann.collectFirst {
     case Annotation(Ast.Annotation.Space(_), exp :: _, _) =>
       PrettyExpression.pretty(exp)
   }

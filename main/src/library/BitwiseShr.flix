@@ -17,7 +17,7 @@
 ///
 /// A type class for bitwise right shift.
 ///
-pub class BitwiseShr[a] {
+pub lawless class BitwiseShr[a] {
     ///
     /// Returns `x` shifted right by `n` bits.
     ///
@@ -25,21 +25,21 @@ pub class BitwiseShr[a] {
 }
 
 instance BitwiseShr[Int8] {
-    def shr(x: Int8, n: Int32): Int8 = $INT8_SHR$(x, n)
+    pub def shr(x: Int8, n: Int32): Int8 = $INT8_SHR$(x, n)
 }
 
 instance BitwiseShr[Int16] {
-    def shr(x: Int16, n: Int32): Int16 = $INT16_SHR$(x, n)
+    pub def shr(x: Int16, n: Int32): Int16 = $INT16_SHR$(x, n)
 }
 
 instance BitwiseShr[Int32] {
-    def shr(x: Int32, n: Int32): Int32 = $INT32_SHR$(x, n)
+    pub def shr(x: Int32, n: Int32): Int32 = $INT32_SHR$(x, n)
 }
 
 instance BitwiseShr[Int64] {
-    def shr(x: Int64, n: Int32): Int64 = $INT64_SHR$(x, n)
+    pub def shr(x: Int64, n: Int32): Int64 = $INT64_SHR$(x, n)
 }
 
 instance BitwiseShr[BigInt] {
-    def shr(x: BigInt, n: Int32): BigInt = $BIGINT_SHR$(x, n)
+    pub def shr(x: BigInt, n: Int32): BigInt = $BIGINT_SHR$(x, n)
 }

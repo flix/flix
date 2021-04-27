@@ -690,21 +690,6 @@ def mapWithKey05(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 5 -> 15
                                         == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
 
 /////////////////////////////////////////////////////////////////////////////
-// fold                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def fold01(): Bool = Map.fold((s, v) -> s + v, 0, Map#{}) == 0
-
-@test
-def fold02(): Bool = Map.fold((s, v) -> s + v, 0, Map#{1 -> 2}) == 2
-
-@test
-def fold03(): Bool = Map.fold((s, v) -> s + v, 0, Map#{1 -> 2, 3 -> 4}) == 6
-
-@test
-def fold04(): Bool = Map.fold((s, v) -> s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) == 12
-
-/////////////////////////////////////////////////////////////////////////////
 // foldWithKey                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -778,36 +763,6 @@ def foldRightWithKey03(): Bool = Map.foldRightWithKey((k, v, s) -> k + s + v, 0,
 
 @test
 def foldRightWithKey04(): Bool = Map.foldRightWithKey((k, v, s) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) == 21
-
-/////////////////////////////////////////////////////////////////////////////
-// reduce                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def reduce01(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{}: Map[Int32, Int32]) == None
-
-@test
-def reduce02(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{1 -> 2}) == Some(2)
-
-@test
-def reduce03(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}) == Some(-1)
-
-@test
-def reduce04(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}) == Some(-5)
-
-/////////////////////////////////////////////////////////////////////////////
-// reduceWithKey                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def reduceWithKey01(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{}: Map[Int32, Int32]) == None
-
-@test
-def reduceWithKey02(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2}) == Some((1, 2))
-
-@test
-def reduceWithKey03(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3}) == Some((-1, -1))
-
-@test
-def reduceWithKey04(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3, 3 -> 4}) == Some((-4, -5))
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -1678,6 +1633,28 @@ def unfoldWithIter06(): Bool & Impure =
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
+
+/////////////////////////////////////////////////////////////////////////////
+// inverse                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def testInvert01(): Bool = Map.invert(Map#{1 -> "a"}) == Map#{"a" -> Set#{1}}
+
+@test
+def testInvert02(): Bool = Map.invert(Map#{1 -> "a", 2 -> "b"}) == Map#{"a" -> Set#{1}, "b" -> Set#{2}}
+
+@test
+def testInvert03(): Bool = Map.invert(Map#{1 -> "a", 2 -> "a"}) == Map#{"a" -> Set#{1, 2}}
+
+@test
+def testInvert04(): Bool = Map.invert(Map#{1 -> "a", 2 -> "b", 3 -> "a"}) == Map#{"a" -> Set#{1, 3}, "b" -> Set#{2}}
+
+@test
+def testInvert05(): Bool = Map.invert(Map#{1 -> "a", 2 -> "a", 3 -> "a"}) == Map#{"a" -> Set#{1, 2, 3}}
+
+@test
+def testInvert06(): Bool = Map.invert(Map#{1 -> "a", 2 -> "b", 3 -> "a", 4 -> "b"}) == Map#{"a" -> Set#{1, 3}, "b" -> Set#{2, 4}}
 
 /////////////////////////////////////////////////////////////////////////////
 // query                                                                   //

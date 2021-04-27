@@ -44,7 +44,7 @@ object HoverProvider {
 
             case Expression.FixpointConstraintSet(_, stf, tpe, loc) => hoverFixpoint(tpe, Type.Pure, stf, loc)
 
-            case Expression.FixpointCompose(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
+            case Expression.FixpointMerge(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
 
             case Expression.FixpointSolve(_, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
 
@@ -75,7 +75,7 @@ object HoverProvider {
     val markup =
       s"""${FormatSignature.asMarkDown(defDecl)}
          |
-         |${FormatDoc.asMarkDown(defDecl.doc)}
+         |${FormatDoc.asMarkDown(defDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
@@ -88,7 +88,7 @@ object HoverProvider {
     val markup =
       s"""${FormatSignature.asMarkDown(sigDecl)}
          |
-         |${FormatDoc.asMarkDown(sigDecl.doc)}
+         |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)

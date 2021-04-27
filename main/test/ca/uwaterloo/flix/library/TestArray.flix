@@ -56,6 +56,19 @@ def testPut02(): Bool & Impure = Array.put([1, 2], 1, 42)[1] == 42
 def testPut03(): Bool & Impure = Array.put([1, 2, 3], 2, 42)[2] == 42
 
 /////////////////////////////////////////////////////////////////////////////
+// isEmpty                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def testIsEmpty01(): Bool & Impure = Array.isEmpty([])
+
+@test
+def testIsEmpty02(): Bool & Impure = not Array.isEmpty([1])
+
+@test
+def testIsEmpty03(): Bool & Impure = not Array.isEmpty([1, 2, 3])
+
+/////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1729,16 +1742,16 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def fold01(): Bool & Impure = Array.fold((i, e) -> (i - e)*(e % 2 + 1), 100, []) == 100
+def fold01(): Bool & Impure = Array.fold([]: Array[Unit]) == ()
 
 @test
-def fold02(): Bool & Impure = Array.fold((i, e) -> (i - e)*(e % 2 + 1), 100, [1]) == 198
+def fold02(): Bool & Impure = Array.fold(["a"]) == "a"
 
 @test
-def fold03(): Bool & Impure = Array.fold((i, e) -> (i - e)*(e % 2 + 1), 100, [1,2]) == 196
+def fold03(): Bool & Impure = Array.fold(["a", "b", "c"]) == "abc"
 
 @test
-def fold04(): Bool & Impure = Array.fold((i, e) -> (i - e)*(e % 2 + 1), 100, [1,2,3]) == 386
+def fold04(): Bool & Impure = Array.fold([("yes", "no"), ("no", "yes")]) == ("yesno", "noyes")
 
 /////////////////////////////////////////////////////////////////////////////
 // foldLeft                                                                //
@@ -1771,25 +1784,6 @@ def foldRight03(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e % 2 + 1)
 
 @test
 def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, [1,2,3]) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// reduce                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def reduce01(): Bool & Impure = Array.reduce((a, b) -> a-b, []: Array[Int]) == None
-
-@test
-def reduce02(): Bool & Impure = Array.reduce((a, b) -> a-b, [1]) == Some(1)
-
-@test
-def reduce03(): Bool & Impure = Array.reduce((a, b) -> a-b, [1,2]) == Some(-1)
-
-@test
-def reduce04(): Bool & Impure = Array.reduce((a, b) -> a-b, [1,2,3]) == Some(-4)
-
-@test
-def reduce05(): Bool & Impure = Array.reduce((a, b) -> a-b, [1,2,3,4]) == Some(-8)
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //

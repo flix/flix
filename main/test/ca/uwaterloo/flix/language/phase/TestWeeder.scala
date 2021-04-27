@@ -275,4 +275,93 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[WeederError.UndefinedAnnotation](result)
   }
+
+  test("IllegalPrivateDeclaration.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
+  test("IllegalPrivateDeclaration.02") {
+    val input =
+      """
+        |instance C[Int] {
+        |    def f(): Int = 1
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
+  test("IllegalTypeConstraintParameter.01") {
+    val input =
+      """
+        |class C[a] with D[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
+  }
+
+  test("IllegalTypeConstraintParameter.02") {
+    val input =
+      """
+        |instance C[a] with D[Some[a]]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
+  }
+
+  test("InconsistentTypeParameters.01") {
+    val input =
+      """
+        |enum E[a, b: Bool] {
+        |    case E1
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
+  test("InconsistentTypeParameters.02") {
+    val input =
+      """
+        |type alias T[a, b: Bool] = Int
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
+  test("InconsistentTypeParameters.03") {
+    val input =
+      """
+        |opaque type T[a, b: Bool] = Int
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
+  test("UnkindedTypeParameters.01") {
+    val input =
+      """
+        |def f[a](x: a): a = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.UnkindedTypeParameters](result)
+  }
+
+  test("UnkindedTypeParameters.02") {
+    val input =
+      """
+        |class C[a] {
+        |    def f[b](x: b): a = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.UnkindedTypeParameters](result)
+  }
 }

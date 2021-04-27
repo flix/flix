@@ -26,56 +26,42 @@ enum Result[t, e] {
     case Err(e)
 }
 
-instance ToString[Result[t, e]] with [t : ToString, e : ToString] {
-    def toString(r: Result[t, e]): String = match r {
+instance Boxable[Result[t, e]] with Order[t], ToString[t], Order[e], ToString[e] {
+    pub def box(x: Result[t, e]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Result[t, e], o2 as Result[t, e]);
+        let toString = o -> ToString.toString(o as Result[t, e]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Result[t, e] = match x {
+        case BoxedObject(v, _, _) => v as Result[t, e]
+        case _                    => ?bug
+    }
+}
+
+instance ToString[Result[t, e]] with ToString[t], ToString[e] {
+    pub def toString(r: Result[t, e]): String = match r {
         case Ok(t)  => "Ok(${t})"
         case Err(e) => "Err(${e})"
     }
 }
 
-instance Hash[Result[t, e]] with [t : Hash, e : Hash] {
-    def hash(r: Result[t, e]): Int = match r {
+instance Hash[Result[t, e]] with Hash[t], Hash[e] {
+    pub def hash(r: Result[t, e]): Int = match r {
         case Ok(v)  => 5381 + 113 * Hash.hash(v)
         case Err(v) => 5351 + 97 * Hash.hash(v)
     }
 }
 
-instance Eq[Result[t, e]] with[t : Eq, e : Eq] {
-
-    def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
+instance Eq[Result[t, e]] with Eq[t], Eq[e] {
+    pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
         case (Ok(v1), Ok(v2)) => v1 == v2
         case (Err(w1), Err(w2)) => w1 == w2
         case _ => false
     }
-
-    def neq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
-        case (Ok(v1), Ok(v2)) => v1 != v2
-        case (Err(w1), Err(w2)) => w1 != w2
-        case _ => true
-    }
-
 }
 
-instance Order[Result[t, e]] with [t : Order, e : Order] {
-
-    def less(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    def lessEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    def greater(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    def greaterEqual(x: Result[t, e], y: Result[t, e]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
+instance Order[Result[t, e]] with Order[t], Order[e] {
 
     ///
     /// Returns the result of a three-way comparison between `r1` and `r2`.
@@ -84,7 +70,7 @@ instance Order[Result[t, e]] with [t : Order, e : Order] {
     /// Returns EqualTo if `r1` is equal to `r2`.
     /// Returns GreaterThan if `r1` is greater than `r2`.
     ///
-    def compare(r1: Result[t, e], r2: Result[t, e]): Comparison = match (r1, r2) {
+    pub def compare(r1: Result[t, e], r2: Result[t, e]): Comparison = match (r1, r2) {
         case (Ok(v1), Ok(v2))   =>  v1 <=> v2
         case (Err(v1), Err(v2)) =>  v1 <=> v2
         case (Ok(_), Err(_))    =>  LessThan
@@ -135,7 +121,7 @@ namespace Result {
     /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
     ///
     @Time(1) @Space(1)
-    pub def replace[t : Eq, e](x: t, y: t, r: Result[t, e]): Result[t, e] = match r {
+    pub def replace(x: t, y: t, r: Result[t, e]): Result[t, e] with Eq[t] = match r {
         case Ok(v) => Ok(if (v == x) y else v)
         case Err(_) => r
     }
@@ -335,7 +321,7 @@ namespace Result {
     /// Returns a one-element set of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty set.
     ///
     @Time(1) @Space(1)
-    pub def toSet[t : Order, e](r: Result[t, e]): Set[t] = match r {
+    pub def toSet(r: Result[t, e]): Set[t] with Order[t] = match r {
         case Ok(v)  => Set.singleton(v)
         case Err(_) => Set.empty()
     }
@@ -344,7 +330,7 @@ namespace Result {
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Ok((k, v))`. Otherwise returns the empty map.
     ///
     @Time(1) @Space(1)
-    pub def toMap[k : Order, v, e](r: Result[(k, v), e]): Map[k, v] = match r {
+    pub def toMap(r: Result[(k, v), e]): Map[k, v] with Order[k] = match r {
         case Ok((k, v)) => Map.singleton(k, v)
         case Err(_)     => Map.empty()
     }

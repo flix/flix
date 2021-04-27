@@ -21,21 +21,20 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
-instance ToString[MutList[a]] with [a : ToString] {
-    def toString(v: MutList[a]): String = {
+instance ToString[MutList[a]] with ToString[a] {
+    pub def toString(v: MutList[a]): String = {
         let s = MutList.formatWith(x -> "${x}", ", ", v) as & Pure;
         "MutList#{${s}}"
     }
 }
 
 instance Functor[MutList] {
-    def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
+    pub def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
 }
 
-instance Copy[MutList[a]] {
-    def copy(v: MutList[a]): MutList[a] & e =
-        let MutList(a, l) = v;
-        MutList(ref Copy.copy(deref a), ref (deref l)) as & e
+instance Foldable[MutList] {
+    pub def foldLeft(f: (b, a) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldLeft(f, s, v) as & e
+    pub def foldRight(f: (a, b) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldRight(f, s, v) as & e
 }
 
 namespace MutList {
@@ -77,15 +76,15 @@ namespace MutList {
     ///
     /// Returns `true` if the given element `x` is a member of the given mutable list `v`.
     ///
-    pub def memberOf[a : Eq](x: a, v: MutList[a]): Bool & Impure = exists(y -> y == x, v)
+    pub def memberOf(x: a, v: MutList[a]): Bool & Impure with Eq[a] = exists(y -> y == x, v)
 
     ///
     /// Optionally finds the smallest element of `v` according to the `Order` on `a`.
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def minimum[a : Order](v: MutList[a]): Option[a] & Impure =
-        reduce(Order.min, v)
+    pub def minimum(v: MutList[a]): Option[a] & Impure with Order[a] =
+        reduceLeft(Order.min, v)
 
     ///
     /// Optionally finds the smallest element of `v` according to the given comparator `cmp`.
@@ -93,15 +92,15 @@ namespace MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
-        reduce(Order.minBy(cmp), v)
+        reduceLeft(Order.minBy(cmp), v)
 
     ///
     /// Optionally finds the largest element of `v` according to the `Order` on `a`.
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def maximum[a : Order](v: MutList[a]): Option[a] & Impure =
-        reduce(Order.max, v)
+    pub def maximum(v: MutList[a]): Option[a] & Impure with Order[a] =
+        reduceLeft(Order.max, v)
 
     ///
     /// Optionally finds the largest element of `v` according to the given comparator `cmp`.
@@ -109,7 +108,7 @@ namespace MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
-        reduce(Order.maxBy(cmp), v)
+        reduceLeft(Order.maxBy(cmp), v)
 
     ///
     /// Returns the number of elements in the given mutable list `v` that satisfies the given predicate `f`.
@@ -180,20 +179,20 @@ namespace MutList {
     ///
     /// Alias for `IndexOfLeft`
     ///
-    pub def indexOf[a : Eq](x: a, v: MutList[a]): Option[Int32] & Impure = indexOfLeft(x, v)
+    pub def indexOf(x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x, v)
 
     ///
     /// Optionally returns the position of the first occurrence of `x` in `v`
     /// searching from left to right.
     ///
-    pub def indexOfLeft[a : Eq](x: a, v: MutList[a]): Option[Int32] & Impure =
+    pub def indexOfLeft(x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] =
         let MutList(a, l) = v;
         indexOfLeftHelper(x, deref a, deref l, 0)
 
     ///
     /// Helper function for `indexOfLeft`.
     ///
-    def indexOfLeftHelper[a : Eq](x: a, a: Array[a], len: Int32, i: Int32): Option[Int32] & Impure =
+    def indexOfLeftHelper(x: a, a: Array[a], len: Int32, i: Int32): Option[Int32] & Impure with Eq[a] =
         if (i >= len)
             None
         else
@@ -203,14 +202,14 @@ namespace MutList {
     /// Optionally returns the position of the first occurrence of `x` in `v`
     /// searching from right to left.
     ///
-    pub def indexOfRight[a : Eq](x: a, v: MutList[a]): Option[Int32] & Impure =
+    pub def indexOfRight(x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] =
         let MutList(a, l) = v;
         indexOfRightHelper(x, deref a, (deref l) - 1)
 
     ///
     /// Helper function for `indexOfRight`.
     ///
-    def indexOfRightHelper[a : Eq](x: a, a: Array[a], i: Int32): Option[Int32] & Impure =
+    def indexOfRightHelper(x: a, a: Array[a], i: Int32): Option[Int32] & Impure with Eq[a] =
         if (i < 0)
             None
         else
@@ -363,9 +362,9 @@ namespace MutList {
         }
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, v: MutList[a]): b & Impure = foldLeft(f, s, v)
+    pub def fold(v: MutList[a]): a with Monoid[a] = Foldable.fold(v)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
@@ -404,11 +403,6 @@ namespace MutList {
         else
             let s1 = f(get(i, v), s) as & Impure;
             foldRightHelper(f, s1, v, i - 1)
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, v: MutList[a]): Option[a] & Impure = reduceLeft(f, v)
 
     ///
     /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
@@ -565,7 +559,7 @@ namespace MutList {
     ///
     /// Replaces all occurrences of the `x` with `y` in the given mutable list `v`.
     ///
-    pub def replace![a : Eq](x: a, y: a, v: mut MutList[a]): Unit & Impure =
+    pub def replace!(x: a, y: a, v: mut MutList[a]): Unit & Impure with Eq[a] =
         transform!(e -> if (e == x) y else e, v)
 
     ///
@@ -660,9 +654,16 @@ namespace MutList {
         foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
+    /// Returns `v` as an array.
+    ///
+    pub def toArray(v: MutList[a]): Array[a] & Impure =
+        let MutList(a, l) = v;
+        Array.slice(deref a, 0, deref l)
+
+    ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements[a : Eq](v1: MutList[a], v2: MutList[a]): Bool & Impure =
+    pub def sameElements(v1: MutList[a], v2: MutList[a]): Bool & Impure with Eq[a] =
         let MutList(a1, l1) = v1;
         let MutList(a2, l2) = v2;
         let len1 = deref l1;
@@ -672,7 +673,7 @@ namespace MutList {
     ///
     /// Helper function for `sameElements`.
     ///
-    def sameElementsHelper[a : Eq](a1: Array[a], a2: Array[a], i: Int32, n: Int32): Bool & Impure =
+    def sameElementsHelper(a1: Array[a], a2: Array[a], i: Int32, n: Int32): Bool & Impure with Eq[a] =
         if (i >= n)
             true
         else

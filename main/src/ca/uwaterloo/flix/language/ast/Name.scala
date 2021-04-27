@@ -64,6 +64,11 @@ object Name {
   def extendNName(ns: NName, ident: Ident): NName = NName(ident.sp1, ns.idents :+ ident, ident.sp2)
 
   /**
+    * Extends the given namespace `ns` with the given name `name`.
+    */
+  def extendNName(ns: NName, name: String): NName = extendNName(ns, Ident(SourcePosition.Unknown, name, SourcePosition.Unknown))
+
+  /**
     * Identifier.
     *
     * @param sp1  the position of the first character in the identifier.

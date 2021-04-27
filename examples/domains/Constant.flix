@@ -15,27 +15,18 @@ namespace Domain/Constant {
     }
 
     instance Eq[Constant] {
-        def eq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+        pub def eq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
             case (Top, Top)         => true
             case (Cst(x), Cst(y))   => x == y
             case (Bot, Bot)         => true
             case _                  => false
-        }
-        def neq(e1: Constant, e2: Constant): Bool = not (e1 == e2)
-    }
-
-    instance Hash[Constant] {
-        def hash(x: Constant): Int32 = match x {
-            case Top    => 1
-            case Bot    => 2
-            case Cst(n) => n
         }
     }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
+//    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     pub def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
@@ -46,7 +37,7 @@ namespace Domain/Constant {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #upperBound #leastUpperBound #commutative #associative
+//    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, x)           => x
         case (x, Bot)           => x
@@ -57,7 +48,7 @@ namespace Domain/Constant {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #lowerBound #greatestLowerBound #commutative #associative
+//    #lowerBound #greatestLowerBound #commutative #associative
     pub def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Top, x)           => x
         case (x, Top)           => x
@@ -68,7 +59,7 @@ namespace Domain/Constant {
     ///
     /// The lattice height function.
     ///
-    #nonNegative
+//    #nonNegative
     pub def height(e: Constant): BigInt = match e {
         case Top    => 0ii
         case Cst(_) => 1ii
@@ -83,8 +74,8 @@ namespace Domain/Constant {
     /**
      * Over-approximates integer `increment`.
      */
-    #safe1(x -> x + 1)
-    #strict1 #monotone1
+//    #safe1(x -> x + 1)
+//    #strict1 #monotone1
     pub def inc(e: Constant): Constant = match e {
         case Bot    => Bot
         case Cst(n) => Cst(n + 1)
@@ -94,8 +85,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    #safe1(x -> x - 1)
-    #strict1 #monotone1
+//    #safe1(x -> x - 1)
+//    #strict1 #monotone1
     pub def dec(e: Constant): Constant = match e {
         case Bot    => Bot
         case Cst(n) => Cst(n - 1)
@@ -105,8 +96,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates integer `addition`.
     ///
-    #safe2((x, y) -> x + y)
-    #strict2 #monotone2 #commutative #associative
+//    #safe2((x, y) -> x + y)
+//    #strict2 #monotone2 #commutative #associative
     pub def plus(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -117,8 +108,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates integer `subtraction`.
     ///
-    #safe2((x, y) -> x - y)
-    #strict2 #monotone2
+//    #safe2((x, y) -> x - y)
+//    #strict2 #monotone2
     pub def minus(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -129,8 +120,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-    #safe2((x, y) -> x * y)
-    #strict2 #monotone2 #commutative #associative
+//    #safe2((x, y) -> x * y)
+//    #strict2 #monotone2 #commutative #associative
     pub def times(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -141,8 +132,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates integer `division`.
     ///
-    #safe2((x, y) -> x / y)
-    #strict2 #monotone2
+//    #safe2((x, y) -> x / y)
+//    #strict2 #monotone2
     pub def divide(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -153,8 +144,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates integer `modulus`.
     ///
-    #safe2((x, y) -> x % y)
-    #strict2 #monotone2
+//    #safe2((x, y) -> x % y)
+//    #strict2 #monotone2
     pub def modulo(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -165,8 +156,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `bitwise negation`.
     ///
-    #safe1(x -> ~~~x)
-    #strict1 #monotone1
+//    #safe1(x -> ~~~x)
+//    #strict1 #monotone1
     pub def negate(e: Constant): Constant = match e {
         case Bot       => Bot
         case Cst(n)    => Cst(~~~ n)
@@ -176,8 +167,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `bitwise and`.
     ///
-    #safe2((x, y) -> x &&& y)
-    #strict2 #monotone2 #commutative #associative
+//    #safe2((x, y) -> x &&& y)
+//    #strict2 #monotone2 #commutative #associative
     pub def and(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -188,8 +179,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `bitwise or`.
     ///
-    #safe2((x, y) -> x ||| y)
-    #strict2 #monotone2 #commutative #associative
+//    #safe2((x, y) -> x ||| y)
+//    #strict2 #monotone2 #commutative #associative
     pub def or(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -200,8 +191,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `bitwise xor`.
     ///
-    #safe2((x, y) -> x ^^^ y)
-    #strict2 #monotone2 #commutative #associative
+//    #safe2((x, y) -> x ^^^ y)
+//    #strict2 #monotone2 #commutative #associative
     pub def xor(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -212,8 +203,8 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-    #safe2((x, y) -> x <<< y)
-    #strict2 #monotone2
+//    #safe2((x, y) -> x <<< y)
+//    #strict2 #monotone2
     pub def leftShift(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -225,8 +216,8 @@ namespace Domain/Constant {
     /// Over-approximates `bitwise right shift`.
     ///
     ///
-    #safe2((x, y) -> x >>> y)
-    #strict2 #monotone2
+//    #safe2((x, y) -> x >>> y)
+//    #strict2 #monotone2
     pub def rightShift(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
@@ -237,10 +228,10 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `equal`.
     ///
-    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    #commutative
+//    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
+//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+//    #commutative
     pub def eq(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
@@ -251,18 +242,18 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `not equal`.
     ///
-    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    #commutative
+//    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
+//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+//    #commutative
     pub def neq(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+//    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
+//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def less(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
@@ -273,29 +264,29 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `less than or equal`.
     ///
-    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+//    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
+//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     instance LowerBound[Constant] {
-        def minValue(): Constant = Constant.Bot
+        pub def minValue(): Constant = Constant.Bot
     }
 
     instance PartialOrder[Constant] {
-        def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
+        pub def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
     }
 
     instance JoinLattice[Constant] {
-        def leastUpperBound(x: Constant, y: Constant): Constant = lub(x, y)
+        pub def leastUpperBound(x: Constant, y: Constant): Constant = lub(x, y)
     }
 
     instance MeetLattice[Constant] {
-        def greatestLowerBound(x: Constant, y: Constant): Constant = glb(x, y)
+        pub def greatestLowerBound(x: Constant, y: Constant): Constant = glb(x, y)
     }
 
     instance ToString[Constant] {
-        def toString(x: Constant): String = match x {
+        pub def toString(x: Constant): String = match x {
             case Top    => "Top"
             case Cst(n) => "Cst(${n})"
             case Bot    => "Bot"
@@ -306,57 +297,28 @@ namespace Domain/Constant {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound1(leq, lub)
+//    law upperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-    law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound2(leq, lub)
+//    law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-    law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound1(leq, glb)
+//    law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-    law greatestLowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound2(leq, glb)
+//    law greatestLowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
-    law leastElement(leq: (Constant, Constant) -> Bool, bot: Constant): Bool = Bounded.leastElement(bot, leq)
+//    law leastElement(leq: (Constant, Constant) -> Bool, bot: Constant): Bool = Bounded.leastElement(bot, leq)
 
-    law greatestElement(leq: (Constant, Constant) -> Bool, top: Constant): Bool = Bounded.greatestElement(top, leq)
+//    law greatestElement(leq: (Constant, Constant) -> Bool, top: Constant): Bool = Bounded.greatestElement(top, leq)
 
-    law strict1(f: Constant -> Constant): Bool = Bounded.strict1(f, Bot, Bot)
+//    law strict1(f: Constant -> Constant): Bool = Bounded.strict1(f, Bot, Bot)
 
-    law strict2(f: (Constant, Constant) -> Constant): Bool = Bounded.strict2(f, Bot, Bot, Bot)
+//    law strict2(f: (Constant, Constant) -> Constant): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-    law monotone1(f: Constant -> Constant): Bool = PartialOrder.monotone1(f, leq, leq)
+//    law monotone1(f: Constant -> Constant): Bool = PartialOrder.monotone1(f, leq, leq)
 
-    law monotone2(f: (Constant, Constant) -> Constant): Bool = PartialOrder.monotone2(f, leq, leq, leq)
+//    law monotone2(f: (Constant, Constant) -> Constant): Bool = PartialOrder.monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Constant -> Constant, fc: Int -> Int): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
+//    law safe1(fa: Constant -> Constant, fc: Int -> Int): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int, Int) -> Int): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
-
-    ///
-    /// Tests
-    ///
-    lat L(k: Int, y: Constant)
-    lat R(k: Int, y: Constant)
-
-    @test
-    pub def testConstant01(): #{ R } = solve #{
-        R(1; Bot).
-        R(2; Cst(42)).
-        R(3; Top).
-    }
-
-    @test
-    pub def testConstant02(): #{ R } = solve #{
-        R(1; Cst(1)).
-        R(1; Cst(2)).
-        R(1; Cst(3)).
-    }
-
-    @test
-    pub def testConstant03(): #{ L, R } = solve #{
-        L(1; Cst(1)).
-        L(2; Cst(2)).
-        L(3; Cst(3)).
-
-        R(1; x) :- L(1; x), L(2; x), L(3; x).
-    }
+//    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int, Int) -> Int): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

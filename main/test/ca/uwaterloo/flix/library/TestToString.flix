@@ -375,4 +375,8 @@ namespace TestToString {
     def arrayToString05(): Bool & Impure =
         toString(Array.new([1, 2, 3], 3)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
 
+    @test
+    def arrayToString06(): Bool & Impure =
+        toString(Array.range(0, 0)) == "[]"
+
 }

@@ -22,30 +22,55 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
-instance ToString[Nel[a]] with [a : ToString] {
-    def toString(l: Nel[a]): String = match l {
+instance Boxable[Nel[a]] with Order[a], ToString[a] {
+    pub def box(x: Nel[a]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Nel[a], o2 as Nel[a]);
+        let toString = o -> ToString.toString(o as Nel[a]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Nel[a] = match x {
+        case BoxedObject(v, _, _) => v as Nel[a]
+        case _                    => ?bug
+    }
+}
+
+instance ToString[Nel[a]] with ToString[a] {
+    pub def toString(l: Nel[a]): String = match l {
         case Nel(x, xs) => "Nel(${x}, ${xs})"
     }
 }
 
-instance Hash[Nel[a]] with [a : Hash] {
-    def hash(l: Nel[a]): Int = match l {
+instance Hash[Nel[a]] with Hash[a] {
+    pub def hash(l: Nel[a]): Int = match l {
         case Nel(x, xs) => 39119 + Hash.hash(xs) + Hash.hash(x)
     }
 }
 
-instance Eq[Nel[a]] with[a : Eq] {
-
-    def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
+instance Eq[Nel[a]] with Eq[a] {
+    pub def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
         case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
     }
+}
 
-    def neq(xs: Nel[a], ys: Nel[a]): Bool = not (xs == ys)
-
+instance Order[Nel[a]] with Order[a] {
+    ///
+    /// Compares `xs` and `ys` lexicographically.
+    ///
+    pub def compare(xs: Nel[a], ys: Nel[a]): Comparison = match (xs, ys) {
+        case (Nel(x, l1), Nel(y, l2)) =>
+            let cmp = x <=> y;
+            if (cmp == EqualTo) l1 <=> l2 else cmp
+    }
 }
 
 instance Functor[Nel] {
-    def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = Nel.map(f, xs)
+    pub def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = Nel.map(f, xs)
+}
+
+instance Foldable[Nel] {
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldLeft(f, s, xs)
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldRight(f, s, xs)
 }
 
 namespace Nel {
@@ -120,33 +145,33 @@ namespace Nel {
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def memberOf[a : Eq](a: a, xs: Nel[a]): Bool = match xs {
+    pub def memberOf(a: a, xs: Nel[a]): Bool with Eq[a] = match xs {
         case Nel(h, l) => h == a or List.memberOf(a, l)
     }
 
     ///
     /// Finds the smallest element of `xs` according to the `Order` on `a`.
     ///
-    pub def minimum[a : Order](xs: Nel[a]): a =
-        reduce(Order.min, xs)
+    pub def minimum(xs: Nel[a]): a with Order[a] =
+        reduceLeft(Order.min, xs)
 
     ///
     /// Finds the smallest element of `xs` according to the given comparator `cmp`.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
-        reduce(Order.minBy(cmp), xs)
+        reduceLeft(Order.minBy(cmp), xs)
 
     ///
     /// Finds the largest element of `xs` according to the `Order` on `a`.
     ///
-    pub def maximum[a : Order](xs: Nel[a]): a =
-        reduce(Order.max, xs)
+    pub def maximum(xs: Nel[a]): a with Order[a] =
+        reduceLeft(Order.max, xs)
 
     ///
     /// Finds the largest element of `xs` according to the given comparator `cmp`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, xs: Nel[a]): a =
-        reduce(Order.maxBy(cmp), xs)
+        reduceLeft(Order.maxBy(cmp), xs)
 
     ///
     /// Alias for `findLeft`.
@@ -218,7 +243,7 @@ namespace Nel {
     pub def reverse(xs: Nel[a]): Nel[a] = match xs {
         case Nel(h, l) => match List.reverse(h :: l) {
             case y :: ys => Nel(y, ys)
-            case _       => panic("unreachable")
+            case _       => unreachable!()
         }
     }
 
@@ -226,7 +251,7 @@ namespace Nel {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace[a : Eq](x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace(x: a, y: a, xs: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.
@@ -237,7 +262,7 @@ namespace Nel {
     pub def permutations(xs: Nel[a]): Nel[List[a]] = match xs {
         case Nel(h, l) => match List.permutations(h :: l) {
             case y :: ys => Nel(y, ys)
-            case Nil => panic("unreachable")
+            case Nil => unreachable!()
         }
     }
 
@@ -250,7 +275,7 @@ namespace Nel {
     pub def subsequences(xs: Nel[a]): Nel[List[a]] = match xs {
         case Nel(h, l) => match List.subsequences(h :: l) {
             case y :: ys => Nel(y, ys)
-            case Nil => panic("unreachable")
+            case Nil => unreachable!()
         }
     }
 
@@ -264,9 +289,9 @@ namespace Nel {
     }
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = foldLeft(f, s, xs)
+    pub def fold(xs: Nel[a]): a with Monoid[a] = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -287,9 +312,11 @@ namespace Nel {
     }
 
     ///
-    /// Alias for `reduceLeft`.
+    /// Applies `combine` to all elements in `xs` until a single value is obtained.
     ///
-    pub def reduce(f: (a, a) -> a & e, xs: Nel[a]): a & e = reduceLeft(f, xs)
+    pub def reduce(xs: Nel[a]): a with Semigroup[a] = match xs {
+        case Nel(h, l) => Foldable.foldLeft((acc, x) -> Semigroup.combine(acc, x), h, l)
+    }
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.
@@ -307,7 +334,7 @@ namespace Nel {
     ///
     pub def reduceRight(f: (a, a) -> a & e, xs: Nel[a]): a & e = match xs {
         case Nel(h, l) => match List.reduceRight(f, h :: l) {
-            case None    => panic("unreachable")
+            case None    => unreachable!()
             case Some(v) => v
         }
     }

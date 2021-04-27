@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
@@ -166,12 +166,12 @@ class TestResolver extends FunSuite with TestUtils {
       s"""
          |namespace A {
          |  class Show[a] {
-         |    def show(x: a): String
+         |    pub def show(x: a): String
          |  }
          |}
          |
          |namespace B {
-         |  def g[a: A.Show](x: a): Int = ???
+         |  def g(x: a): Int with A.Show[a] = ???
          |}
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -182,11 +182,11 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f[a: A/B/C.Show](x: a): Int = ???
+         |  def f(x: a): Int with A/B/C.Show[a] = ???
          |
          |  namespace B/C {
          |    class Show[a] {
-         |      def show(x: a): String
+         |      pub def show(x: a): String
          |    }
          |  }
          |}
@@ -204,6 +204,21 @@ class TestResolver extends FunSuite with TestUtils {
         |
         |namespace O {
         |    instance N.C[Int]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.InaccessibleClass](result)
+  }
+
+  test("InaccessibleClass.04") {
+    val input =
+      """
+        |namespace N {
+        |    class C[a]
+        |}
+        |
+        |namespace O {
+        |    class D[a] with N.C[a]
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -233,6 +248,21 @@ class TestResolver extends FunSuite with TestUtils {
         |
         |    namespace O {
         |        instance N.C[Int]
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.SealedClass](result)
+  }
+
+  test("SealedClass.03") {
+    val input =
+      """
+        |namespace N {
+        |    sealed class C[a]
+        |
+        |    namespace O {
+        |        class D[a] with N.C[a]
         |    }
         |}
         |""".stripMargin
@@ -345,7 +375,7 @@ class TestResolver extends FunSuite with TestUtils {
       s"""
          |namespace A {
          |    class C[a] {
-         |        def f(x: a): a
+         |        pub def f(x: a): a
          |    }
          |}
          |
@@ -370,7 +400,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedClass.02") {
     val input =
       """
-        |def f[a: C](x: a): a = x
+        |def f(x: a): a with C[a] = x
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedClass](result)
@@ -381,7 +411,7 @@ class TestResolver extends FunSuite with TestUtils {
       """
         |class K[a]
         |
-        |def f[a : K : U](x: a): a = x
+        |def f(x: a): a with K[a], U[a] = x
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedClass](result)
@@ -392,7 +422,7 @@ class TestResolver extends FunSuite with TestUtils {
       """
         |class K[a]
         |
-        |instance K[a] with [a : U]
+        |instance K[a] with U[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.UndefinedClass](result)
@@ -932,5 +962,53 @@ class TestResolver extends FunSuite with TestUtils {
     val input = "def f(a: (Int, true)): Int = 1"
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.IllegalTypeApplication](result)
+  }
+
+  test("CyclicClassHierarchy.01") {
+    val input = "class A[a] with A[a]"
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.02") {
+    val input =
+      """
+        |class A[a] with B[a]
+        |class B[a] with A[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.03") {
+    val input =
+      """
+        |class A[a] with B[a]
+        |class B[a] with C[a]
+        |class C[a] with A[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.04") {
+    val input =
+      """
+        |class A[a] with A[a], B[a]
+        |class B[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.05") {
+    val input =
+      """
+        |class A[a] with B[a]
+        |class B[a] with A[a], C[a]
+        |class C[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 }

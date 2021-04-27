@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be mapped over.
 ///
-class Functor[m :# Type -> Type] {
+lawless class Functor[m : Type -> Type] {
     ///
     /// Applies the function `f` to `s` preserving its structure.
     ///
@@ -28,10 +28,10 @@ namespace Functor {
   ///
   /// Lifts the function `f` into the functor.
   ///
-  pub def lift[a, b, e, m :# Type -> Type : Functor](f: a -> b & e): m[a] -> m[b] & e = Functor.map(f)
+  pub def lift[a: Type, b: Type, e: Bool, m: Type -> Type](f: a -> b & e): m[a] -> m[b] & e with Functor[m] = Functor.map(f)
 
   ///
   /// Replaces the value `a` in `s` by the given value `x` preserving the structure of `s`.
   ///
-  pub def as[a, b, m :# Type -> Type : Functor](s: m[a], x: b): m[b] = Functor.map(_ -> x, s)
+  pub def as[a: Type, b: Type, m: Type -> Type](s: m[a], x: b): m[b] with Functor[m] = Functor.map(_ -> x, s)
 }

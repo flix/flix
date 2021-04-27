@@ -16,11 +16,10 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
 
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.List
 
 object TypedAst {
@@ -30,26 +29,27 @@ object TypedAst {
                   sigs: Map[Symbol.SigSym, TypedAst.Sig],
                   defs: Map[Symbol.DefnSym, TypedAst.Def],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
-                  latticeOps: Map[Type, TypedAst.LatticeOps],
                   properties: List[TypedAst.Property],
-                  specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  classEnv: Map[Symbol.ClassSym, List[Ast.Instance]])
+                  classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
 
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, signatures: List[TypedAst.Sig], loc: SourceLocation)
+  // TODO use TypedAst.Law for laws
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[TypedAst.Def], ns: Name.NName, loc: SourceLocation)
 
-  case class Sig(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
+  case class Sig(sym: Symbol.SigSym, spec: TypedAst.Spec, impl: Option[TypedAst.Impl])
 
-  case class Def(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, declaredScheme: Scheme, inferredScheme: Scheme, eff: Type, loc: SourceLocation)
+  case class Def(sym: Symbol.DefnSym, spec: TypedAst.Spec, impl: TypedAst.Impl)
+
+  case class Spec(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], declaredScheme: Scheme, eff: Type, loc: SourceLocation)
+
+  case class Impl(exp: TypedAst.Expression, inferredScheme: Scheme)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[Name.Tag, TypedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation)
-
-  case class LatticeOps(tpe: Type, bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
   sealed trait Expression {
     def tpe: Type
@@ -273,15 +273,15 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class FixpointMerge(exp1: TypedAst.Expression, exp2: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointSolve(exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FixpointProject(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class FixpointFilter(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class FixpointProjectIn(exp: TypedAst.Expression, pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FixpointFold(pred: Name.Pred, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class FixpointProjectOut(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
   }
 
@@ -359,7 +359,9 @@ object TypedAst {
 
   }
 
-  sealed trait ChoicePattern
+  sealed trait ChoicePattern {
+    def loc: SourceLocation
+  }
 
   object ChoicePattern {
 
@@ -382,8 +384,6 @@ object TypedAst {
     object Head {
 
       case class Atom(pred: Name.Pred, den: Denotation, terms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
-
-      case class Union(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -433,6 +433,6 @@ object TypedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: Type.Var, classes: List[Symbol.ClassSym], loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
 
 }

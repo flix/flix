@@ -48,11 +48,9 @@ object TypeError {
       vt << ">> The type scheme: '" << Red(FormatScheme.formatScheme(inferred)) << "' cannot be generalized to '" << Red(FormatScheme.formatScheme(declared)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unable to generalize the type scheme.") << NewLine
-      vt << "Possible fixes:" << NewLine
       vt << NewLine
-      vt << "  (1) The function is declared as too polymorphic. Remove some type variables." << NewLine
-      vt << "  (2) The expression body of the function is incorrect." << NewLine
-      vt << NewLine
+      vt << s"  Declared: " << Cyan(FormatScheme.formatScheme(declared)) << NewLine
+      vt << s"  Inferred: " << Magenta(FormatScheme.formatScheme(inferred)) << NewLine
       vt
     }
   }
@@ -287,11 +285,41 @@ object TypeError {
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> No instance of class '" << Red(clazz.toString) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << ">> No instance of class '" << Red(clazz.toString) << "' for type " << Red(FormatType.formatType(tpe)) << "." << NewLine
       vt << NewLine
-      vt << Code(loc, "no instance found") << NewLine
+      vt << Code(loc, s"no instance of class '${clazz.toString}' for type ${FormatType.formatType(tpe)}") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Add an instance for the type." << NewLine
     }
   }
+
+  /**
+    * An error indicating that the main function's scheme is incorrect.
+    *
+    * @param declaredScheme the erroneous function's scheme.
+    * @param expectedScheme the scheme the main function is expected to have.
+    * @param loc            the location where the error occurred.
+    */
+  case class IllegalMain(declaredScheme: Scheme, expectedScheme: Scheme, loc: SourceLocation) extends TypeError {
+    override def summary: String = "Illegal main."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Main function with wrong type." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"main function with wrong type.") << NewLine
+      vt << NewLine
+      vt << "The main function must have the form:" << NewLine
+      vt << NewLine
+      vt << "  def main(args: Array[String]): Int & Impure = ..." << NewLine
+      vt << NewLine
+      vt << "i.e." << NewLine
+      vt << "- it must return an integer which is the exit code, and" << NewLine
+      vt << "- it must have a side-effect (such as printing to the screen)." << NewLine
+      vt << NewLine
+      vt << "(If the arguments are not needed, then 'args' can be replaced with '_'." << NewLine
+    }
+  }
+
 }

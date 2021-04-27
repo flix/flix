@@ -15,11 +15,11 @@
  */
 
 instance LowerBound[Float64] {
-    def minValue(): Float64 = Float64.minValue()
+    pub def minValue(): Float64 = Float64.minValue()
 }
 
 instance UpperBound[Float64] {
-    def maxValue(): Float64 = Float64.maxValue()
+    pub def maxValue(): Float64 = Float64.maxValue()
 }
 
 namespace Float64 {

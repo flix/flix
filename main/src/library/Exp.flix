@@ -17,7 +17,7 @@
 ///
 /// A type class for exponentiation.
 ///
-pub class Exp[a] {
+pub lawless class Exp[a] {
     ///
     /// Returns `b` raised to the power of `n`.
     ///
@@ -25,29 +25,29 @@ pub class Exp[a] {
 }
 
 instance Exp[Float32] {
-    def exp(b: Float32, n: Float32): Float32 = $FLOAT32_EXP$(b, n)
+    pub def exp(b: Float32, n: Float32): Float32 = $FLOAT32_EXP$(b, n)
 }
 
 instance Exp[Float64] {
-    def exp(b: Float64, n: Float64): Float64 = $FLOAT64_EXP$(b, n)
+    pub def exp(b: Float64, n: Float64): Float64 = $FLOAT64_EXP$(b, n)
 }
 
 instance Exp[Int8] {
-    def exp(b: Int8, n: Int8): Int8 = $INT8_EXP$(b, n)
+    pub def exp(b: Int8, n: Int8): Int8 = $INT8_EXP$(b, n)
 }
 
 instance Exp[Int16] {
-    def exp(b: Int16, n: Int16): Int16 = $INT16_EXP$(b, n)
+    pub def exp(b: Int16, n: Int16): Int16 = $INT16_EXP$(b, n)
 }
 
 instance Exp[Int32] {
-    def exp(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
+    pub def exp(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
 }
 
 instance Exp[Int64] {
-    def exp(b: Int64, n: Int64): Int64 = $INT64_EXP$(b, n)
+    pub def exp(b: Int64, n: Int64): Int64 = $INT64_EXP$(b, n)
 }
 
 instance Exp[BigInt] {
-    def exp(b: BigInt, n: BigInt): BigInt = $BIGINT_EXP$(b, n)
+    pub def exp(b: BigInt, n: BigInt): BigInt = $BIGINT_EXP$(b, n)
 }

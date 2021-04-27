@@ -156,7 +156,7 @@ namespace Core/Io/TestInputStream {
 
     def testBuffer(): InputStream & Impure = fromBuffer([0 as Int8, 1 as Int8, 2 as Int8])
 
-    def resultEq[a : Eq, e](i: a, r: Result[a, e]): Bool = Result.getWithDefault(Result.map(v -> i == v, r), false)
+    def resultEq(i: a, r: Result[a, e]): Bool with Eq[a] = Result.getWithDefault(Result.map(v -> i == v, r), false)
 
     def resultSwap(r: Result[a, b]): Result[b, a] = match r {
         case Ok(x) => Err(x)

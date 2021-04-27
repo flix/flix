@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec}
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object Indexer {
@@ -50,30 +50,24 @@ object Indexer {
     */
   private def visitDef(def0: Def): Index = {
     val idx0 = Index.occurrenceOf(def0)
-    val idx1 = visitExp(def0.exp)
-    val idx2 = def0.fparams.foldLeft(Index.empty) {
+    val idx1 = visitExp(def0.impl.exp)
+    val idx2 = def0.spec.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    val idx3 = def0.tparams.foldLeft(Index.empty) {
-      case (acc, tparam) => acc ++ visitTypeParam(tparam)
-    }
-    val idx4 = visitScheme(def0.declaredScheme, def0.loc)
-    idx0 ++ idx1 ++ idx2 ++ idx3 ++ idx4
+    val idx3 = visitScheme(def0.spec.declaredScheme, def0.spec.loc)
+    idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
   /**
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, _, _, _, tparams, fparams, _, _, _) =>
+    case Sig(_, Spec(_, _, _, _, fparams, _, _, _), _) =>
       val idx1 = Index.occurrenceOf(sig0)
       val idx2 = fparams.foldLeft(Index.empty) {
         case (acc, fparam) => acc ++ visitFormalParam(fparam)
       }
-      val idx3 = tparams.foldLeft(Index.empty) {
-        case (acc, tparam) => acc ++ visitTypeParam(tparam)
-      }
-      idx1 ++ idx2 ++ idx3
+      idx1 ++ idx2
   }
 
   /**
@@ -91,7 +85,7 @@ object Indexer {
     * Returns a reverse index for the given class `class0`.
     */
   private def visitClass(class0: TypedAst.Class): Index = class0 match {
-    case TypedAst.Class(doc, mod, sym, tparam, signatures, loc) =>
+    case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
       Index.occurrenceOf(class0)
   }
 
@@ -298,7 +292,7 @@ object Indexer {
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = rules.foldLeft(Index.empty) {
         case (index, SelectChannelRule(sym, chan, body)) =>
-          index ++ Index.occurrenceOf(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(chan)
+          index ++ Index.occurrenceOf(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(body)
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
@@ -316,20 +310,21 @@ object Indexer {
         case (index, c) => index ++ visitConstraint(c)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
   }
 
   /**
@@ -387,7 +382,6 @@ object Indexer {
     */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
     case Head.Atom(pred, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.defOf(pred) ++ visitExps(terms)
-    case Head.Union(exp, _, _) => visitExp(exp)
   }
 
   /**
@@ -404,16 +398,6 @@ object Indexer {
   private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
     case FormalParam(_, _, tpe, _) =>
       Index.occurrenceOf(fparam0) ++ visitType(tpe)
-  }
-
-  /**
-    * Returns a reverse index for the given type parameter `tparam0`.
-    */
-  private def visitTypeParam(tparam0: TypeParam): Index = tparam0 match {
-    case TypeParam(_, _, classes, _) =>
-      tparam0.classes.foldLeft(Index.empty) {
-        case (acc, sym) => acc ++ Index.useOf(sym, tparam0.loc)
-      }
   }
 
   /**

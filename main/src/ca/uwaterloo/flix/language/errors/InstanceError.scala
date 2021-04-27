@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Red, Underline}
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -58,21 +58,24 @@ object InstanceError {
   /**
     * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
     *
+    * @param sigSym   the mismatched signature
     * @param loc      the location of the definition
     * @param expected the scheme of the signature
     * @param actual   the scheme of the definition
     */
-  case class MismatchedSignatures(loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
+  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
     def summary: String = "Mismatched signature."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
+      vt << "Mismatched signature '" << Red(sigSym.name) << "' required by class '" << Red(sigSym.clazz.name) << "'." << NewLine
+      vt << NewLine
       vt << Code(loc, "mismatched signature.") << NewLine
       vt << NewLine
       vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)}" << NewLine
-      vt << s"Actual scheme: ${FormatScheme.formatScheme(actual)}" << NewLine
+      vt << s"Actual scheme:   ${FormatScheme.formatScheme(actual)}" << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Modify the definition to match the signature."
     }
@@ -91,7 +94,9 @@ object InstanceError {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
       vt << NewLine
-      vt << Code(loc, s"The signature ${sig.name} is missing from the instance.")
+      vt << s"Missing implementation of '" << Red(sig.name) << "' required by class '" << Red(sig.clazz.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"missing implementation") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Add an implementation of the signature to the instance."
     }
@@ -178,4 +183,118 @@ object InstanceError {
       vt << Underline("Tip:") << " An instance must be declared in the class's namespace or in the type's namespace."
     }
   }
+
+  /**
+    * Error indicating a missing super class instance.
+    *
+    * @param tpe        the type for which the super class instance is missing.
+    * @param subClass   the symbol of the sub class.
+    * @param superClass the symbol of the super class.
+    * @param loc        the location where the error occurred.
+    */
+  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Missing super class instance '$superClass'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << NewLine
+      vt << ">> The class '" << Red(subClass.name) << "' extends the class '" << Red(superClass.name) << "'." << NewLine
+      vt << ">> If you provide an instance for '" << Red(subClass.name) << "' you must also provide an instance for '" << Red(superClass.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"missing super class instance")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+    }
+  }
+
+  /**
+    * Error indicating an lawless super class of a lawful subclass.
+    *
+    * @param subClass   the lawful sub class.
+    * @param superClass the lawless super class.
+    * @param loc        the location where the error occurred.
+    */
+  case class LawlessSuperClass(subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Lawless super class '$superClass'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Lawless super class '" << Red(superClass.name) << "'." << NewLine
+      vt << NewLine
+      vt << ">> The class '" << Red(subClass.name) << "' extends the lawless class '" << Red(superClass.name) << "'." << NewLine
+      vt << ">> A lawful class cannot extend an unlawful class."
+      vt << NewLine
+      vt << Code(loc, s"lawless super class")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Mark '${subClass.name}' as lawless."
+    }
+  }
+
+  /**
+    * Error indicating an unlawful signature in a lawful class.
+    *
+    * @param sym the symbol of the unlawful signature.
+    * @param loc the location where the error occurred.
+    */
+  case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Unlawful signature '$sym'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unlawful signature '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << ">> Each signature of a lawful class must appear in at least one law."
+      vt << NewLine
+      vt << Code(loc, s"unlawful signature")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Create a law for '$sym' or mark the class as unlawful."
+    }
+  }
+
+  /**
+    * Error indicating the illegal placement of an override modifier.
+    *
+    * @param sym the def that the modifier was applied to.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Illegal override of '$sym'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal override of '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << ">> Only signatures with default implementations can be overridden." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"illegal override")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Remove the modifier." << NewLine
+    }
+  }
+
+  /**
+    * Error indicating a missing override modifier.
+    *
+    * @param sym the def that is missing the modifier.
+    * @param loc the location where the error occurred.
+    */
+  case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Unmarked override '$sym'."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unmarked override of '" << Red(sym.name) << "'. This definition overrides a default implementation." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"unmarked override")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Either add the `override` modifier or remove the definition." << NewLine
+    }
+  }
+
 }

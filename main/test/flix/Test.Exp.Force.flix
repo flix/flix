@@ -179,7 +179,7 @@ namespace Test/Exp/Force {
         case Both(a, b)
     }
 
-    instance Eq[Poly[a, b]] with [a : Eq, b : Eq] {
+    instance Eq[Poly[a, b]] with Eq[a], Eq[b] {
         pub def eq(p1: Poly[a, b], p2: Poly[a, b]): Bool = match (p1, p2) {
             case (None, None) => true
             case (This(x1), This(y1)) => x1 == y1
@@ -187,7 +187,6 @@ namespace Test/Exp/Force {
             case (Both(x1, x2), Both(y1, y2)) => x1 == y1 and x2 == y2
             case _ => false
         }
-        pub def neq(p1: Poly[a, b], p2: Poly[a, b]): Bool = ???
     }
 
 }

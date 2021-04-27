@@ -77,8 +77,8 @@ object Stratifier extends Phase[Root, Root] {
     * Performs stratification of the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache): Validation[Def, CompilationError] =
-    visitExp(def0.exp) map {
-      case e => def0.copy(exp = e)
+    visitExp(def0.impl.exp) map {
+      case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
 
   /**
@@ -372,12 +372,12 @@ object Stratifier extends Phase[Root, Root] {
           Expression.FixpointConstraintSet(cs, s, tpe, loc)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, tpe, eff, loc) =>
+    case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
-        case (e1, e2, s) => Expression.FixpointCompose(e1, e2, s, tpe, eff, loc)
+        case (e1, e2, s) => Expression.FixpointMerge(e1, e2, s, tpe, eff, loc)
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
@@ -388,25 +388,26 @@ object Stratifier extends Phase[Root, Root] {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProject(pred, e, tpe, eff, loc)
+        case e => Expression.FixpointFilter(pred, e, tpe, eff, loc)
       }
 
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.FixpointEntails(e1, e2, tpe, eff, loc)
+    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
       }
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
+
+    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
       }
   }
 
   /**
     * Returns the dependency graph of the given definition `def0`.
     */
-  private def dependencyGraphOfDef(def0: Def): DependencyGraph = dependencyGraphOfExp(def0.exp)
+  private def dependencyGraphOfDef(def0: Def): DependencyGraph = dependencyGraphOfExp(def0.impl.exp)
 
   /**
     * Returns the dependency graph of the given expression `exp0`.
@@ -615,20 +616,21 @@ object Stratifier extends Phase[Root, Root] {
         case (dg, c) => dg + dependencyGraphOfConstraint(c)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+      dependencyGraphOfExp(exp)
 
-    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
   }
 
   /**
@@ -649,10 +651,6 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def getPredicate(head0: Predicate.Head): Option[Name.Pred] = head0 match {
     case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Some(pred)
-    case Predicate.Head.Union(exp, tpe, loc) =>
-      // NB: The situation is actually more complicated.
-      // If the union expressions evaluates to predicate A, B, C it could be argued that we should add dependency edges for each of these predicates.
-      None
   }
 
   /**

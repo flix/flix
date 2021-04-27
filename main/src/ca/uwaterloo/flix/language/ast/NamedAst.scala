@@ -32,17 +32,20 @@ object NamedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, sigs: List[NamedAst.Sig], loc: SourceLocation)
+  // TODO change laws to NamedAst.Law
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Sig], laws: List[NamedAst.Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
   sealed trait DefOrSig {
-    val loc: SourceLocation
+    val spec: NamedAst.Spec
   }
 
-  case class Def(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation) extends DefOrSig
+  case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression]) extends NamedAst.DefOrSig
 
-  case class Sig(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation) extends DefOrSig
+  case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression) extends NamedAst.DefOrSig
+
+  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: Type, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, kind: Kind, loc: SourceLocation)
 
@@ -122,7 +125,7 @@ object NamedAst {
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
-    case class Choose(exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
+    case class Choose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Tag(enum: Option[Name.QName], tag: Name.Tag, expOpt: Option[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -194,15 +197,15 @@ object NamedAst {
 
     case class FixpointConstraintSet(cs: List[NamedAst.Constraint], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointCompose(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointMerge(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointSolve(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProject(pred: Name.Pred, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointFilter(pred: Name.Pred, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProjectIn(exp: NamedAst.Expression, pred: Name.Pred, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointFold(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProjectOut(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }
 
@@ -273,8 +276,6 @@ object NamedAst {
     object Head {
 
       case class Atom(pred: Name.Pred, den: Denotation, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
-
-      case class Union(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
     }
 
@@ -368,8 +369,8 @@ object NamedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, classes: List[Name.QName], loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
 
-  case class TypeConstraint(clazz: Name.QName, arg: NamedAst.Type)
+  case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
 
 }

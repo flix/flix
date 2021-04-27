@@ -17,7 +17,7 @@
 ///
 /// A type class for bitwise and.
 ///
-pub class BitwiseAnd[a] {
+pub lawless class BitwiseAnd[a] {
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
@@ -25,21 +25,21 @@ pub class BitwiseAnd[a] {
 }
 
 instance BitwiseAnd[Int8] {
-    def and(x: Int8, y: Int8): Int8 = $INT8_AND$(x, y)
+    pub def and(x: Int8, y: Int8): Int8 = $INT8_AND$(x, y)
 }
 
 instance BitwiseAnd[Int16] {
-    def and(x: Int16, y: Int16): Int16 = $INT16_AND$(x, y)
+    pub def and(x: Int16, y: Int16): Int16 = $INT16_AND$(x, y)
 }
 
 instance BitwiseAnd[Int32] {
-    def and(x: Int32, y: Int32): Int32 = $INT32_AND$(x, y)
+    pub def and(x: Int32, y: Int32): Int32 = $INT32_AND$(x, y)
 }
 
 instance BitwiseAnd[Int64] {
-    def and(x: Int64, y: Int64): Int64 = $INT64_AND$(x, y)
+    pub def and(x: Int64, y: Int64): Int64 = $INT64_AND$(x, y)
 }
 
 instance BitwiseAnd[BigInt] {
-    def and(x: BigInt, y: BigInt): BigInt = $BIGINT_AND$(x, y)
+    pub def and(x: BigInt, y: BigInt): BigInt = $BIGINT_AND$(x, y)
 }

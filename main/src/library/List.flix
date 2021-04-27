@@ -25,53 +25,43 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
-instance ToString[List[a]] with [a : ToString] {
-    def toString(xs: List[a]): String =
+instance Boxable[List[t]] with Order[t], ToString[t] {
+    pub def box(x: List[t]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as List[t], o2 as List[t]);
+        let toString = o -> ToString.toString(o as List[t]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): List[t] = match x {
+        case BoxedObject(v, _, _) => v as List[t]
+        case _                    => ?bug
+    }
+}
+
+instance ToString[List[a]] with ToString[a] {
+    pub def toString(xs: List[a]): String =
         List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
 }
 
-instance Hash[List[a]] with [a : Hash] {
-    def hash(xs: List[a]): Int =
+instance Hash[List[a]] with Hash[a] {
+    pub def hash(xs: List[a]): Int =
         List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
 }
 
-instance Eq[List[a]] with[a : Eq] {
-
-    def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+instance Eq[List[a]] with Eq[a] {
+    pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
         case (Nil, Nil) => true
         case (x :: rs, y :: qs) => if (x != y) false else rs == qs
         case _ => false
     }
-
-    def neq(xs: List[a], ys: List[a]): Bool = not (xs == ys)
-
 }
 
-instance Order[List[a]] with [a : Order] {
-
-    def less(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case _ => false
-    }
-    def lessEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-    def greater(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case _ => false
-    }
-    def greaterEqual(x: List[a], y: List[a]): Bool = match (x <=> y) {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
+instance Order[List[a]] with Order[a] {
 
     ///
     /// Compares `xs` and `ys` lexicographically.
     ///
-    def compare(xs: List[a], ys: List[a]): Comparison = match (xs, ys) {
+    pub def compare(xs: List[a], ys: List[a]): Comparison = match (xs, ys) {
         case (_ :: _, Nil) => GreaterThan
         case (Nil, Nil) => EqualTo
         case (Nil, _ :: _) => LessThan
@@ -83,7 +73,12 @@ instance Order[List[a]] with [a : Order] {
 }
 
 instance Functor[List] {
-    def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
+    pub def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
+}
+
+instance Foldable[List] {
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = List.foldLeft(f, s, xs)
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = List.foldRight(f, s, xs)
 }
 
 namespace List {
@@ -148,7 +143,7 @@ namespace List {
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def memberOf[a : Eq](a: a, xs: List[a]): Bool = match xs {
+    pub def memberOf(a: a, xs: List[a]): Bool with Eq[a] = match xs {
         case Nil => false
         case x :: rs => if (x == a) true else memberOf(a, rs)
     }
@@ -158,8 +153,8 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
-    pub def minimum[a : Order](xs: List[a]): Option[a] =
-        reduce(Order.min, xs)
+    pub def minimum(xs: List[a]): Option[a] with Order[a] =
+        reduceLeft(Order.min, xs)
 
     ///
     /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
@@ -167,15 +162,15 @@ namespace List {
     /// Returns `None` if `xs` is empty.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
-        reduce(Order.minBy(cmp), xs)
+        reduceLeft(Order.minBy(cmp), xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
     ///
     /// Returns `None` if `xs` is empty.
     ///
-    pub def maximum[a : Order](xs: List[a]): Option[a] =
-        reduce(Order.max, xs)
+    pub def maximum(xs: List[a]): Option[a] with Order[a] =
+        reduceLeft(Order.max, xs)
 
     ///
     /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
@@ -183,7 +178,7 @@ namespace List {
     /// Returns `None` if `xs` is empty.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, xs: List[a]): Option[a] =
-        reduce(Order.maxBy(cmp), xs)
+        reduceLeft(Order.maxBy(cmp), xs)
 
     ///
     /// Returns the position of `a` in `xs`.
@@ -191,12 +186,12 @@ namespace List {
     /// Returns `-1` if `a` does not exist in `xs`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def indexOf[a : Eq](a: a, xs: List[a]): Int32 = indexOfHelper(a, xs, 0)
+    pub def indexOf(a: a, xs: List[a]): Int32 with Eq[a] = indexOfHelper(a, xs, 0)
 
     ///
     /// Helper function for `indexOf`.
     ///
-    def indexOfHelper[a : Eq](a: a, xs: List[a], acc: Int32): Int32 = match xs {
+    def indexOfHelper(a: a, xs: List[a], acc: Int32): Int32 with Eq[a] = match xs {
         case Nil => -1
         case x :: rs => if (x == a) acc else indexOfHelper(a, rs, acc+1)
     }
@@ -294,7 +289,7 @@ namespace List {
         case Nil => s :: Nil
         case x :: rs => match scanRight(f, s, rs) {
             case y :: ys => f(x, y) :: y :: ys
-            case _ => panic("unreachable")
+            case _ => unreachable!()
         }
     }
 
@@ -402,7 +397,7 @@ namespace List {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace[a : Eq](x: a, y: a, xs: List[a]): List[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace(x: a, y: a, xs: List[a]): List[a] with Eq[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns `ys` with the `n` elements starting at index `i` replaced with the elements of `xs`.
@@ -447,7 +442,7 @@ namespace List {
     def at(i: Int32, xs: List[a]): a = match (i, xs) {
         case (0, x :: _) => x
         case (p, _ :: rs) => at(p - 1, rs)
-        case _ => panic("unreachable")
+        case _ => unreachable!()
     }
 
     ///
@@ -537,7 +532,7 @@ namespace List {
     def applyListHelper(xs: List[a], ys: List[List[a]]): List[List[a]] = match (xs, ys) {
         case (Nil, Nil) => Nil
         case (x :: rs, y :: qs) => (x :: y) :: applyListHelper(rs, qs)
-        case _ => panic("unreachable")
+        case _ => unreachable!()
     }
 
 
@@ -549,7 +544,7 @@ namespace List {
     /// Returns `true` if and only if `xs` is a prefix of `ys`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def isPrefixOf[a : Eq](xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+    pub def isPrefixOf(xs: List[a], ys: List[a]): Bool with Eq[a] = match (xs, ys) {
         case (Nil, _) => true
         case (_, Nil) => false
         case (x :: qs, y :: rs) => if (x == y) isPrefixOf(qs, rs) else false
@@ -559,7 +554,7 @@ namespace List {
     /// Returns `true` if and only if `xs` is an infix of `ys`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def isInfixOf[a : Eq](xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+    pub def isInfixOf(xs: List[a], ys: List[a]): Bool with Eq[a] = match (xs, ys) {
         case (Nil, _) => true
         case (_, Nil) => false
         case (_, _ :: rs) => if (isPrefixOf(xs, ys)) true else isInfixOf(xs, rs)
@@ -569,16 +564,16 @@ namespace List {
     /// Returns `true` if and only if `xs` is a suffix of `ys`.
     ///
     @Time(length(xs)) @Space(Int32.max(length(xs), length(ys)))
-    pub def isSuffixOf[a : Eq](xs: List[a], ys: List[a]): Bool = isPrefixOf(reverse(xs), reverse(ys))
+    pub def isSuffixOf(xs: List[a], ys: List[a]): Bool with Eq[a] = isPrefixOf(reverse(xs), reverse(ys))
 
 
 
 
 
     ///
-    /// Alias for `foldLeft`.
+    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = foldLeft(f, s, xs)
+    pub def fold(xs: List[a]): a with Monoid[a] = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -604,11 +599,6 @@ namespace List {
         case Nil => k(s)
         case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
     }
-
-    ///
-    /// Alias for `reduceLeft`.
-    ///
-    pub def reduce(f: (a, a) -> a & e, xs: List[a]): Option[a] & e = reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -1070,7 +1060,7 @@ namespace List {
     /// Returns the list `xs` as a set.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def toSet[a : Order](xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
+    pub def toSet(xs: List[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), xs)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1079,7 +1069,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def toMap[a : Order, b](xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
+    pub def toMap(xs: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -1248,13 +1238,13 @@ namespace List {
     /// `distinct` uses the Flix's builtin equality test. Use `distinctWith` if you
     /// need a custom equality test.
     ///
-    pub def distinct[a : Eq](xs: List[a]): List[a] =
+    pub def distinct(xs: List[a]): List[a] with Eq[a] =
         distinctHelper(xs, Nil, ks -> ks)
 
     ///
     /// Helper function for `distinct`.
     ///
-    def distinctHelper[a : Eq](xs: List[a], ys: List[a], k: List[a] -> List[a]): List[a] = match xs {
+    def distinctHelper(xs: List[a], ys: List[a], k: List[a] -> List[a]): List[a] with Eq[a] = match xs {
         case Nil => k(Nil)
         case x :: rs =>
             if (memberOf(x, ys))

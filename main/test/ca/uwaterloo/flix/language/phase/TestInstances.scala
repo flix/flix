@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestInstances extends FunSuite with TestUtils {
@@ -222,7 +222,7 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def get(): a
+        |    pub def get(): a
         |}
         |
         |instance C[Bool] {
@@ -236,11 +236,11 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def get(): a
+        |    pub def get(): a
         |}
         |
         |instance C[Bool] {
-        |    def get(_i: Int): Bool = false
+        |    pub def get(_i: Int): Bool = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -251,7 +251,7 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a): Bool
+        |    pub def f(x: a): Bool
         |}
         |
         |enum Box[a] {
@@ -259,7 +259,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Box[a]] {
-        |    def f[a: C](_x: Box[a]): Bool = false
+        |    pub def f(_x: Box[a]): Bool with C[a] = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -295,13 +295,13 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f[b : D](x: b): a
+        |    pub def f(x: b): a with D[b]
         |}
         |
         |class D[a]
         |
         |instance C[Bool] {
-        |    def f(x: b): Bool = false
+        |    pub def f(x: b): Bool = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -312,11 +312,11 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a, y: Int): Int
+        |    pub def f(x: a, y: Int): Int
         |}
         |
         |instance C[Bool] {
-        |    def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
+        |    pub def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -327,11 +327,11 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    def f(x: a, y: Int): Int & e
+        |    pub def f(x: a, y: Int): Int & e
         |}
         |
         |instance C[Bool] {
-        |    def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
+        |    pub def f(x: Bool, y: Int): Int & Impure = 123 as & Impure
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -344,7 +344,7 @@ class TestInstances extends FunSuite with TestUtils {
         |class C[a]
         |
         |instance C[Bool] {
-        |    def get(): Bool = false
+        |    pub def get(): Bool = false
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -405,5 +405,161 @@ class TestInstances extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[InstanceError.OrphanInstance](result)
+  }
+
+  test("Test.MissingSuperClassInstance.01") {
+    val input =
+      """
+        |class A[a] with B[a]
+        |class B[a]
+        |
+        |instance A[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.MissingSuperClassInstance](result)
+  }
+
+  test("Test.MissingSuperClassInstance.02") {
+    val input =
+      """
+        |class A[a] with B[a], C[a]
+        |class B[a]
+        |class C[a]
+        |
+        |instance A[Int]
+        |instance B[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.MissingSuperClassInstance](result)
+  }
+
+  test("Test.MissingSuperClassInstance.03") {
+    val input =
+      """
+        |class A[a] with B[a]
+        |class B[a]
+        |
+        |instance A[Int]
+        |instance B[Bool]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.MissingSuperClassInstance](result)
+  }
+
+  test("Test.LawlessSuperClass.01") {
+    val input =
+      """
+        |lawless class A[a]
+        |class B[a] with A[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.LawlessSuperClass](result)
+  }
+
+  test("Test.LawlessSuperClass.02") {
+    val input =
+      """
+        |lawless class A[a]
+        |class B[a]
+        |class C[a] with A[a], B[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.LawlessSuperClass](result)
+  }
+
+  test("Test.UnlawfulSignature.01") {
+    val input =
+      """
+        |class C[a] {
+        |  pub def f(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.UnlawfulSignature](result)
+  }
+
+  test("Test.UnlawfulSignature.02") {
+    val input =
+      """
+        |instance C[Int] {
+        |  pub def f(x: Int): Bool = true
+        |  pub def g(x: Int): Bool = true
+        |}
+        |
+        |class C[a] {
+        |  pub def f(x: a): Bool
+        |  pub def g(x: a): Bool
+        |
+        |  law l: forall (x: a) . C.f(x)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.UnlawfulSignature](result)
+  }
+
+  test("Test.MultipleErrors.01") {
+    val input =
+      """
+        |lawless class Foo[a] {
+        |    pub def bar(): a
+        |}
+        |
+        |instance Foo[String] {
+        |    pub def qux(): Int32 = 2
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.MissingImplementation](result)
+    expectError[InstanceError.ExtraneousDefinition](result)
+  }
+
+  test("Test.IllegalOverride.01") {
+    val input =
+      """
+        |class C[a] {
+        |  pub def f(x: a): Bool
+        |}
+        |
+        |instance C[Int] {
+        |  override pub def f(x: Int): Bool = true
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.IllegalOverride](result)
+  }
+
+  test("Test.UnmarkedOverride.01") {
+    val input =
+      """
+        |class C[a] {
+        |  pub def f(x: a): Bool = true
+        |}
+        |
+        |instance C[Int] {
+        |  pub def f(x: Int): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.UnmarkedOverride](result)
+  }
+
+  test("Test.ComplexErrorSuppressesOtherErrors.01") {
+    val input =
+      """
+        |class C[a] {
+        |  pub def f(x: a): Bool
+        |}
+        |
+        |instance C[Box[String]] {
+        |  pub def g(_x: Box[String]): Bool = false
+        |}
+        |
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.ComplexInstanceType](result)
+    rejectError[InstanceError.ExtraneousDefinition](result)
   }
 }

@@ -20,7 +20,7 @@ def hiss(c: Channel[String], n: Int): Unit & Impure =
     }
 
 /// Start the animal farm...
-def main(_args: Array[String]): String & Impure = {
+def main(_args: Array[String]): Int & Impure = {
     let c1 = chan String 1;
     let c2 = chan String 1;
     let c3 = chan String 1;
@@ -28,9 +28,9 @@ def main(_args: Array[String]): String & Impure = {
     spawn meow(c2, 3);
     spawn hiss(c3, 7);
     select {
-        case m <- c1 => (m: String) |> println
-        case m <- c2 => (m: String) |> println
-        case m <- c3 => (m: String) |> println
+        case m <- c1 => m |> println
+        case m <- c2 => m |> println
+        case m <- c3 => m |> println
     };
     0 // exit code
 }

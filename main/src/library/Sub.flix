@@ -17,7 +17,7 @@
 ///
 /// A type class for subtraction.
 ///
-pub class Sub[a] {
+pub lawless class Sub[a] {
     ///
     /// Returns the difference of `x` and `y`.
     ///
@@ -25,29 +25,29 @@ pub class Sub[a] {
 }
 
 instance Sub[Float32] {
-    def sub(x: Float32, y: Float32): Float32 = $FLOAT32_SUB$(x, y)
+    pub def sub(x: Float32, y: Float32): Float32 = $FLOAT32_SUB$(x, y)
 }
 
 instance Sub[Float64] {
-    def sub(x: Float64, y: Float64): Float64 = $FLOAT64_SUB$(x, y)
+    pub def sub(x: Float64, y: Float64): Float64 = $FLOAT64_SUB$(x, y)
 }
 
 instance Sub[Int8] {
-    def sub(x: Int8, y: Int8): Int8 = $INT8_SUB$(x, y)
+    pub def sub(x: Int8, y: Int8): Int8 = $INT8_SUB$(x, y)
 }
 
 instance Sub[Int16] {
-    def sub(x: Int16, y: Int16): Int16 = $INT16_SUB$(x, y)
+    pub def sub(x: Int16, y: Int16): Int16 = $INT16_SUB$(x, y)
 }
 
 instance Sub[Int32] {
-    def sub(x: Int32, y: Int32): Int32 = $INT32_SUB$(x, y)
+    pub def sub(x: Int32, y: Int32): Int32 = $INT32_SUB$(x, y)
 }
 
 instance Sub[Int64] {
-    def sub(x: Int64, y: Int64): Int64 = $INT64_SUB$(x, y)
+    pub def sub(x: Int64, y: Int64): Int64 = $INT64_SUB$(x, y)
 }
 
 instance Sub[BigInt] {
-    def sub(x: BigInt, y: BigInt): BigInt = $BIGINT_SUB$(x, y)
+    pub def sub(x: BigInt, y: BigInt): BigInt = $BIGINT_SUB$(x, y)
 }

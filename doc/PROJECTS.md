@@ -51,7 +51,7 @@ The aim of this project is to: (1) understand how the semi-naive evaluation algo
 (2) re-design and re-implemented the fixpoint engine in the Flix language to make it faster and easier to maintain.
 
 - Stefano Ceri: What you always wanted to know about Datalog (and never dared to ask)
-- https://flix.dev/programming-flix/#/fixpoints/ 
+- https://doc.flix.dev/fixpoints/
 
 
 

@@ -23,7 +23,9 @@ import ca.uwaterloo.flix.util.vt.TerminalContext
 import flix.runtime.ProxyObject
 import org.scalatest.FunSuite
 
-class FlixTest(name: String, paths: String*)(implicit options: Options = Options.TestWithoutLibrary) extends FunSuite {
+class FlixTest(name: String, paths: List[String], options: Options) extends FunSuite {
+
+  def this(name: String, path: String)(implicit options: Options = Options.TestWithoutLibrary) = this(name, List(path), options)
 
   /**
     * Returns the name of the test suite.
@@ -86,7 +88,7 @@ class FlixTest(name: String, paths: String*)(implicit options: Options = Options
             if (result.isInstanceOf[ProxyObject]) {
               val value = result.asInstanceOf[ProxyObject].getValue
               if (value.isInstanceOf[java.lang.Boolean])
-              assertResult(expected = true)(value)
+                assertResult(expected = true)(value)
             }
           }
         }

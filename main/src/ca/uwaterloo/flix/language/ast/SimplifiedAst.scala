@@ -18,16 +18,14 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, IntroducedBy, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, Source}
 import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift}
 
 object SimplifiedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
-                  latticeOps: Map[Type, SimplifiedAst.LatticeOps],
                   properties: List[SimplifiedAst.Property],
-                  specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -36,8 +34,6 @@ object SimplifiedAst {
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, SimplifiedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression)
-
-  case class LatticeOps(tpe: Type, bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
   sealed trait Expression {
     def tpe: Type
@@ -207,18 +203,6 @@ object SimplifiedAst {
 
     case class Force(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointConstraintSet(cs: List[SimplifiedAst.Constraint], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class FixpointCompose(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class FixpointSolve(exp: SimplifiedAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class FixpointProject(pred: Name.Pred, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class FixpointEntails(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class FixpointFold(pred: Name.Pred, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -227,87 +211,7 @@ object SimplifiedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)
 
-  sealed trait Predicate {
-    def loc: SourceLocation
-  }
-
-  object Predicate {
-
-    sealed trait Head extends SimplifiedAst.Predicate
-
-    object Head {
-
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
-
-      case class Union(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
-
-    }
-
-    sealed trait Body extends SimplifiedAst.Predicate
-
-    object Body {
-
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
-
-      case class Guard(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
-
-    }
-
-  }
-
-  object Term {
-
-    sealed trait Head
-
-    object Head {
-
-      case class QuantVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
-
-      case class CapturedVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
-
-      case class Lit(lit: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
-
-      case class App(exp: SimplifiedAst.Expression, args: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
-
-    }
-
-    sealed trait Body
-
-    object Body {
-
-      case class Wild(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
-
-      case class QuantVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
-
-      case class CapturedVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
-
-      case class Lit(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
-
-    }
-
-  }
-
-  case class Attribute(name: String, tpe: Type)
-
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
-
-  case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body], loc: SourceLocation)
-
-  sealed trait ConstraintParam {
-    def sym: Symbol.VarSym
-
-    def tpe: Type
-
-    def loc: SourceLocation
-  }
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.ConstraintParam
-
-  }
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: SimplifiedAst.Expression)
 

@@ -401,6 +401,37 @@ namespace TestMutList {
         MutList.sameElements(v, MutList.new())
 
     /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fold01(): Bool & Impure =
+        let v: MutList[Unit] = MutList.new();
+        MutList.fold(v) == ()
+
+    @test
+    def fold02(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!("a", v);
+        MutList.fold(v) == "a"
+
+    @test
+    def fold03(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!("a", v);
+        MutList.push!("b", v);
+        MutList.push!("c", v);
+        MutList.fold(v) == "abc"
+
+    @test
+    def fold04(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!(("a", "d"), v);
+        MutList.push!(("b", "e"), v);
+        MutList.push!(("c", "f"), v);
+        MutList.fold(v) == ("abc", "def")
+
+    /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1313,5 +1344,27 @@ namespace TestMutList {
         let v = MutList.range(9, 19);
         let cmp = (x, y) -> if (x > y and x % 2 == 0) GreaterThan else LessThan;
         MutList.maximumBy(cmp, v) == Some(18)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+        Array.sameElements(MutList.toArray(Array.toMutList([1, 2, 3])), [1, 2, 3])
+
+    @test
+    def toArray02(): Bool & Impure =
+        let v = Array.toMutList([1, 2, 3]);
+        let a = MutList.toArray(v);
+        a[1] = 42;
+        MutList.get(1, v) == 2
+
+    @test
+    def toArray03(): Bool & Impure =
+        let v = Array.toMutList([1, 2, 3]);
+        MutList.pop!(v);
+        MutList.pop!(v);
+        Array.length(MutList.toArray(v)) == 1
 
 }

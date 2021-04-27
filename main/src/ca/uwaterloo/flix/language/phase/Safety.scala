@@ -38,7 +38,7 @@ object Safety extends Phase[Root, Root] {
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def): List[CompilationError] = visitExp(def0.exp)
+  private def visitDef(def0: TypedAst.Def): List[CompilationError] = visitExp(def0.impl.exp)
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
@@ -212,15 +212,15 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => cs.flatMap(checkConstraint)
 
-    case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
+    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visitExp(exp)
 
   }
 

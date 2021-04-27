@@ -238,7 +238,7 @@ namespace Test/Exp/Interpolation {
 ///}
 
 instance ToString[Test/Exp/Interpolation.Color] {
-    def toString(c: Test/Exp/Interpolation.Color): String =
+    pub def toString(c: Test/Exp/Interpolation.Color): String =
         use Test/Exp/Interpolation.Color.Red;
         use Test/Exp/Interpolation.Color.Green;
         use Test/Exp/Interpolation.Color.Blue;
@@ -249,8 +249,8 @@ instance ToString[Test/Exp/Interpolation.Color] {
         }
 }
 
-instance ToString[Test/Exp/Interpolation.Option[a]] with [a : ToString] {
-    def toString(o: Test/Exp/Interpolation.Option[a]): String =
+instance ToString[Test/Exp/Interpolation.Option[a]] with ToString[a] {
+    pub def toString(o: Test/Exp/Interpolation.Option[a]): String =
         use Test/Exp/Interpolation.Option.None;
         use Test/Exp/Interpolation.Option.Some;
         match o {
@@ -259,8 +259,8 @@ instance ToString[Test/Exp/Interpolation.Option[a]] with [a : ToString] {
         }
 }
 
-instance ToString[Test/Exp/Interpolation.Result[t, e]] with [t : ToString, e : ToString] {
-    def toString(r: Test/Exp/Interpolation.Result[t, e]): String =
+instance ToString[Test/Exp/Interpolation.Result[t, e]] with ToString[t], ToString[e] {
+    pub def toString(r: Test/Exp/Interpolation.Result[t, e]): String =
         use Test/Exp/Interpolation.Result.Ok;
         use Test/Exp/Interpolation.Result.Err;
         match r {

@@ -17,7 +17,12 @@
 ///
 /// Converts `x` to a string and prints it to standard out.
 ///
-pub def println[a: ToString](x: a): Unit & Impure = x |> ToString.toString |> Console.printLine
+pub def print(x: a): Unit & Impure with ToString[a] = x |> ToString.toString |> Console.print
+
+///
+/// Converts `x` to a string and prints it to standard out followed by a new line.
+///
+pub def println(x: a): Unit & Impure with ToString[a] = x |> ToString.toString |> Console.printLine
 
 namespace Console {
 

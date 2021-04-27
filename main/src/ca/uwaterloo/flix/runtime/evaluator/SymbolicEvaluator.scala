@@ -385,7 +385,7 @@ object SymbolicEvaluator {
               case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, qua, SymVal.Int8(Math.pow(i1, i2).toByte))
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, qua, SymVal.Int16(Math.pow(i1, i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, qua, SymVal.Int32(Math.pow(i1, i2).toInt))
-              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, qua, SymVal.Int64(Math.pow(i1, i2).toLong))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, qua, SymVal.Int64(Math.pow(i1.toDouble, i2.toDouble).toLong))
               case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => throw InternalCompilerException(s"MonoType Error: BigInt does not support Exponentiate.")
 
               // Symbolic semantics.
@@ -831,13 +831,6 @@ object SymbolicEvaluator {
 
       case Expression.Lazy(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.Force(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      case Expression.FixpointConstraintSet(cs, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointProject(pred, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Hole Error.

@@ -17,7 +17,7 @@
 ///
 /// A type class for bitwise left shift.
 ///
-pub class BitwiseShl[a] {
+pub lawless class BitwiseShl[a] {
     ///
     /// Returns `x` shifted left by `n` bits.
     ///
@@ -25,21 +25,21 @@ pub class BitwiseShl[a] {
 }
 
 instance BitwiseShl[Int8] {
-    def shl(x: Int8, n: Int32): Int8 = $INT8_SHL$(x, n)
+    pub def shl(x: Int8, n: Int32): Int8 = $INT8_SHL$(x, n)
 }
 
 instance BitwiseShl[Int16] {
-    def shl(x: Int16, n: Int32): Int16 = $INT16_SHL$(x, n)
+    pub def shl(x: Int16, n: Int32): Int16 = $INT16_SHL$(x, n)
 }
 
 instance BitwiseShl[Int32] {
-    def shl(x: Int32, n: Int32): Int32 = $INT32_SHL$(x, n)
+    pub def shl(x: Int32, n: Int32): Int32 = $INT32_SHL$(x, n)
 }
 
 instance BitwiseShl[Int64] {
-    def shl(x: Int64, n: Int32): Int64 = $INT64_SHL$(x, n)
+    pub def shl(x: Int64, n: Int32): Int64 = $INT64_SHL$(x, n)
 }
 
 instance BitwiseShl[BigInt] {
-    def shl(x: BigInt, n: Int32): BigInt = $BIGINT_SHL$(x, n)
+    pub def shl(x: BigInt, n: Int32): BigInt = $BIGINT_SHL$(x, n)
 }

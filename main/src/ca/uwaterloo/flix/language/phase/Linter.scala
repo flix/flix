@@ -72,7 +72,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * - a non-lint.
     * - a non-test.
     */
-  private def isTarget(defn: TypedAst.Def): Boolean = !isBenchmark(defn.ann) && !isLint(defn.ann) && !isTest(defn.ann)
+  private def isTarget(defn: TypedAst.Def): Boolean = !isBenchmark(defn.spec.ann) && !isLint(defn.spec.ann) && !isTest(defn.spec.ann)
 
   /**
     * Searches for lint instances in the given definition `defn0`.
@@ -80,7 +80,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns [[Nil]] if no lint instances are found.
     */
   private def visitDef(defn: Def, lints: List[Lint])(implicit flix: Flix): List[LinterError] =
-    lints.flatMap(visitExp(defn.exp, _))
+    lints.flatMap(visitExp(defn.impl.exp, _))
 
   /**
     * Searches for instances of the given `lint0` in the given expression `exp0`.
@@ -91,6 +91,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     val recursiveErrors = exp0 match {
 
       case Expression.Unit(_) => Nil
+
+      case Expression.Null(_, _) => Nil
 
       case Expression.True(_) => Nil
 
@@ -114,11 +116,15 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Str(_, _) => Nil
 
+      case Expression.Default(_, _) => Nil
+
       case Expression.Wild(_, _) => Nil
 
       case Expression.Var(_, _, _) => Nil
 
       case Expression.Def(_, _, _) => Nil
+
+      case Expression.Sig(_, _, _) => Nil
 
       case Expression.Hole(_, _, _, _) => Nil
 
@@ -216,19 +222,23 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Spawn(exp, _, _, _) => visitExp(exp, lint0)
 
+      case Expression.Lazy(exp, _, _) => visitExp(exp, lint0)
+
+      case Expression.Force(exp, _, _, _) => visitExp(exp, lint0)
+
       case Expression.FixpointConstraintSet(cs, _, _, _) => cs.flatMap(visitConstraint(_, lint0))
 
-      case Expression.FixpointCompose(exp1, exp2, _, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
+      case Expression.FixpointMerge(exp1, exp2, _, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.FixpointSolve(exp, _, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.FixpointProject(_, exp, _, _, _) => visitExp(exp, lint0)
+      case Expression.FixpointFilter(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.FixpointEntails(exp1, exp2, tpe, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
+      case Expression.FixpointProjectIn(exp, _, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
+      case Expression.FixpointProjectOut(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case _ => Nil
+
     }
 
     tryLint(exp0, lint0) ::: recursiveErrors
@@ -252,7 +262,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitHead(head0: Predicate.Head, lint0: Lint)(implicit flix: Flix): List[LinterError] = head0 match {
     case Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp(_, lint0))
-    case Head.Union(exp, _, _) => visitExp(exp, lint0)
   }
 
   /**
@@ -523,20 +532,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       // NB: We currently do not perform unification inside constraint sets.
       None
 
-    case (Expression.FixpointCompose(exp11, exp12, _, _, _, _), Expression.FixpointCompose(exp21, exp22, _, _, _, _)) =>
+    case (Expression.FixpointMerge(exp11, exp12, _, _, _, _), Expression.FixpointMerge(exp21, exp22, _, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
-    case (Expression.FixpointProject(pred1, exp1, _, _, _), Expression.FixpointProject(pred2, exp2, _, _, _)) if pred1 == pred2 =>
+    case (Expression.FixpointFilter(pred1, exp1, _, _, _), Expression.FixpointFilter(pred2, exp2, _, _, _)) if pred1 == pred2 =>
       unifyExp(exp1, exp2, metaVars)
-
-    case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
-      unifyExp(exp11, exp12, exp21, exp22, metaVars)
-
-    case (Expression.FixpointFold(pred1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(pred2, exp21, exp22, exp23, _, _, _)) if pred1 == pred2 =>
-      unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case _ => None
 
@@ -581,7 +584,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns all lints in the given AST `root`.
     */
   private def lintsOf(root: Root): List[Lint] = root.defs.foldLeft(Nil: List[Lint]) {
-    case (acc, (sym, defn)) if isLint(defn.ann) => lintOf(sym, defn.exp) match {
+    case (acc, (sym, defn)) if isLint(defn.spec.ann) => lintOf(sym, defn.impl.exp) match {
       case None => acc
       case Some(l) => l :: acc
     }
@@ -924,29 +927,26 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
         Expression.FixpointConstraintSet(cs.map(apply), stf, tpe, loc)
 
-      case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
+      case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
-        Expression.FixpointCompose(e1, e2, stf, tpe, eff, loc)
+        Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
 
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+      case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.FixpointProject(pred, e, tpe, eff, loc)
+        Expression.FixpointFilter(pred, e, tpe, eff, loc)
 
-      case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        Expression.FixpointEntails(e1, e2, tpe, eff, loc)
+      case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
 
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        val e3 = apply(exp3)
-        Expression.FixpointFold(pred, e1, e2, e3, tpe, eff, loc)
+      case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
@@ -1023,7 +1023,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     private def apply(head0: Predicate.Head): Predicate.Head = head0 match {
       case Head.Atom(pred, den, terms, tpe, loc) => Head.Atom(pred, den, terms.map(apply), tpe, loc)
-      case Head.Union(exp, tpe, loc) => Head.Union(apply(exp), tpe, loc)
     }
 
     /**

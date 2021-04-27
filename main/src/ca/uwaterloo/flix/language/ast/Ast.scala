@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.nio.file.Path
+import java.util.Objects
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -230,6 +231,16 @@ object Ast {
     def isInline: Boolean = mod contains Modifier.Inline
 
     /**
+      * Returns `true` if these modifiers contain the lawless modifier.
+      */
+    def isLawless: Boolean = mod contains Modifier.Lawless
+
+    /**
+      * Returns `true` if these modifiers contain the override modifier.
+      */
+    def isOverride: Boolean = mod contains Modifier.Override
+
+    /**
       * Returns `true` if these modifiers contain the public modifier.
       */
     def isPublic: Boolean = mod contains Modifier.Public
@@ -243,6 +254,12 @@ object Ast {
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
+
+    /**
+      * Returns `true` if these modifiers contain the unlawful modifier.
+      */
+    def isUnlawful: Boolean = mod contains Modifier.Unlawful
+
   }
 
   /**
@@ -258,6 +275,16 @@ object Ast {
     case object Inline extends Modifier
 
     /**
+      * The lawless modifier.
+      */
+    case object Lawless extends Modifier
+
+    /**
+      * The override modifier.
+      */
+    case object Override extends Modifier
+
+    /**
       * The public modifier.
       */
     case object Public extends Modifier
@@ -271,6 +298,11 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
+
+    /**
+      * The unlawful modifier.
+      */
+    case object Unlawful extends Modifier
 
   }
 
@@ -391,11 +423,24 @@ object Ast {
   /**
     * Represents that the type `arg` must belong to class `sym`.
     */
-  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type)
+  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type, loc: SourceLocation) {
+    override def equals(o: Any): Boolean = o match {
+      case that: TypeConstraint =>
+        this.sym == that.sym && this.arg == that.arg
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(sym, arg)
+  }
 
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
+
+  /**
+    * Represents the super classes and instances available for a particular class.
+    */
+  case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
 
 }

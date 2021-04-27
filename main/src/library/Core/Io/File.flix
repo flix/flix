@@ -20,17 +20,13 @@ use Core/Io/OutputStream.OutputStream;
 use Core/Io/File.File;
 
 instance Eq[File] {
-
-    def eq(x: File, y: File): Bool = {
+    pub def eq(x: File, y: File): Bool = {
         import java.io.File.compareTo(##java.io.File);
         use Core/Io/File.File.File;
         let File(xJ) = x;
         let File(yJ) = y;
         (xJ.compareTo(yJ) as & Pure) == 0
     }
-
-    def neq(x: File, y: File): Bool = not (x == y)
-
 }
 
 namespace Core/Io/File {
@@ -51,7 +47,7 @@ namespace Core/Io/File {
     ///
     pub def newFromFragments(n: Nel[String]): File & Impure = {
         match n {
-            case Nel(base, xs) => List.fold((p, s) -> p.resolve(s), new(base), xs)
+            case Nel(base, xs) => List.foldLeft((p, s) -> p.resolve(s), new(base), xs)
         }
     }
 
@@ -269,7 +265,7 @@ namespace Core/Io/File {
     ///
     /// Evaluates the given function `f` trapping any exception and returning a Result.
     ///
-    def tryWithCatch[a, e](f: Unit -> a & e): Result[a, IOError] & e = try {
+    def tryWithCatch(f: Unit -> a & e): Result[a, IOError] & e = try {
         let res = f();
         Ok(res)
     } catch {

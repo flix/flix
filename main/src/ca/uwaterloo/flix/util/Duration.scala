@@ -48,7 +48,7 @@ class Duration(val d: Long) {
   /**
     * Returns the elapsed time in nanoseconds.
     */
-  def nanoseconds: Double = d
+  def nanoseconds: Double = d.toDouble
 
   /**
     * Returns the elapsed time in microseconds.

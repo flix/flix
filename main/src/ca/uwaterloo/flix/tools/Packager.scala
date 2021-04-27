@@ -141,7 +141,7 @@ object Packager {
     flix.check() match {
       case Validation.Success(_) => ()
       case Validation.Failure(errors) =>
-        implicit val _ = TerminalContext.AnsiTerminal
+        implicit val term = TerminalContext.AnsiTerminal
         errors.foreach(e => println(e.message.fmt))
     }
   }
@@ -178,7 +178,7 @@ object Packager {
     flix.compile() match {
       case Validation.Success(r) => Some(r)
       case Validation.Failure(errors) =>
-        implicit val _ = TerminalContext.AnsiTerminal
+        implicit val term = TerminalContext.AnsiTerminal
         errors.foreach(e => println(e.message.fmt))
         None
     }
@@ -284,7 +284,7 @@ object Packager {
     build(p, o) match {
       case None => // nop
       case Some(compilationResult) =>
-        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))
+        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
     }
   }
 
