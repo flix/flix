@@ -1,10 +1,10 @@
 package flix.runtime;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class GlobalCounter {
-    private static final AtomicInteger globalCounter = new AtomicInteger();
+    private static final AtomicLong globalCounter = new AtomicLong();
 
-    public static int newId() {
+    public static long newId() {
         return globalCounter.getAndIncrement();
     }
 }

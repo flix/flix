@@ -1,4 +1,4 @@
-def newId(): ##GlobalCounter & Impure = 
+def newId(): Int64 & Impure = 
     import new flix.runtime.GlobalCounter() as newGlobalCounter;
     import flix.runtime.GlobalCounter:newId() as javaNewId;
     javaNewId(newGlobalCounter())
@@ -23,11 +23,11 @@ type alias LockConditionPair = {
 }
 
 type alias Channel[a] = {
-    id: Int32,
+    id: Int64,
     channelLock: ReentrantLock,
     bufferSize: Int32,
     unbuffered: Bool,
-    elementQueue: Array[a],
+    elementQueue: MutList[a],
     waitingGetters: MutSet[LockConditionPair],
     waitingSetters: Condition
 }
@@ -49,7 +49,7 @@ def newChannel(bufferSize: Int32): Channel & Impure =
     let reentrantLock = newReentrantLock();
 
     {
-        /// id = ,
+        id = newId(),
         channelLock = reentrantLock,
         bufferSize = bufferSize,
         unbuffered = unbuffered,
