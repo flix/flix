@@ -6,7 +6,8 @@ namespace Bench/Exp/FixpointProjectIn {
     pub def benchmarks(): Array[Benchmark] & Impure = [
         benchmarkProjectInto(),
         benchmarkSelect(),
-        benchmarkSolve()
+        benchmarkSolve(),
+        benchmarkCompile()
     ] |> Array.flatten
 
     pub def benchmarkProjectInto(): Array[Benchmark] & Impure =
@@ -54,6 +55,20 @@ namespace Bench/Exp/FixpointProjectIn {
             defBenchmark("Solve (Closure) (n = ${ 32 ** 2})", () -> { solve p, edges32 }),
             defBenchmark("Solve (Closure) (n = ${ 64 ** 2})", () -> { solve p, edges64 }),
             defBenchmark("Solve (Closure) (n = ${128 ** 2})", () -> { solve p, edges128 })
+        ]
+
+    pub def benchmarkCompile(): Array[Benchmark] & Impure =
+        let mkRules = n -> List.range(1, n) |> List.foldLeft((acc, _) -> acc <+> #{
+                A(x, y, z) :- A(z, y, x).
+                A(x: Int32, y: Int32, z: Int32) :- A(x, y, z), B(x, y, z), C(x, y, z).
+        }, #{});
+        let rules04 = mkRules(2 ** 4);
+        let rules08 = mkRules(2 ** 8);
+        let rules12 = mkRules(2 ** 12);
+        [
+            defBenchmark("Compile Rules (n = ${  2 ** 04})", () -> { solve rules04 }),
+            defBenchmark("Compile Rules (n = ${  2 ** 08})", () -> { solve rules08 }),
+            defBenchmark("Compile Rules (n = ${  2 ** 12})", () -> { solve rules12 })
         ]
 
 }
