@@ -9,6 +9,7 @@ namespace Bench/Exp/Fixpoint {
         benchmarkSolve(),
         benchmarkCrossProduct2(),
         benchmarkCrossProduct3(),
+        benchmarkSolveIntersect(),
         benchmarkCompile()
     ] |> Array.flatten
 
@@ -96,6 +97,21 @@ namespace Bench/Exp/Fixpoint {
             defBenchmark("Solve (Cross Product 3) (n = ${  16 ** 3})", () -> { solve p,  facts16 }),
             defBenchmark("Solve (Cross Product 3) (n = ${  32 ** 3})", () -> { solve p,  facts32 }),
             defBenchmark("Solve (Cross Product 3) (n = ${  64 ** 3})", () -> { solve p,  facts64 })
+        ]
+
+    pub def benchmarkSolveIntersect(): Array[Benchmark] & Impure =
+        let mkA = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into A;
+        let mkB = n -> project (List.range(n / 2, n + n / 2) |> List.map(x -> (0, x))) into B;
+        let p = #{
+            C(0, x) :- A(0, x), B(0, x).
+        };
+        let facts04 = mkA(2 ** 4)  <+> mkB(2 ** 4);
+        let facts08 = mkA(2 ** 8)  <+> mkB(2 ** 8);
+        let facts12 = mkA(2 ** 12) <+> mkB(2 ** 12);
+        [
+            defBenchmark("Solve (Intersect) (n = ${2 **  4})", () -> { solve p, facts04 }),
+            defBenchmark("Solve (Intersect) (n = ${2 **  8})", () -> { solve p, facts08 }),
+            defBenchmark("Solve (Intersect) (n = ${2 ** 12})", () -> { solve p, facts12 })
         ]
 
     pub def benchmarkCompile(): Array[Benchmark] & Impure =
