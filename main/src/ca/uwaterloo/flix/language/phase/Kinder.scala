@@ -214,7 +214,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(expVal, expsVal) {
           case (exp, exps) => KindedAst.Expression.Apply(exp, exps, tpe, eff, loc)
         }
-      case ResolvedAst.Expression.Lambda(fparam, exp, tpe, loc) => ???
+      case ResolvedAst.Expression.Lambda(fparam0, exp0, tpe0, loc) =>
+        val fparamVal = ascribeFparam(fparam0, ascriptions, root)
+        val expVal = visit(exp0)
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(fparamVal, expVal) {
+          case (fparam, exp) => KindedAst.Expression.Lambda(fparam, exp, tpe, loc)
+        }
       case ResolvedAst.Expression.Unary(sop, exp0, tpe0, loc) =>
         val expVal = visit(exp0)
         val tpe = tpe0.ascribedWith(Kind.Star)
@@ -254,7 +260,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           case (exp, rules) => KindedAst.Expression.Match(exp, rules, loc)
         }
       case ResolvedAst.Expression.Choose(star, exps, rules, tpe, loc) => ???
-      case ResolvedAst.Expression.Tag(sym, tag, exp, tpe, loc) => ???
+      case ResolvedAst.Expression.Tag(sym, tag, exp0, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(expVal) {
+          exp => KindedAst.Expression.Tag(sym, tag, exp, tpe, loc)
+        }
       case ResolvedAst.Expression.Tuple(elms0, loc) =>
         val elmsVal = traverse(elms0)(visit)
         mapN(elmsVal) {
@@ -324,23 +335,48 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case ResolvedAst.Expression.Assign(exp1, exp2, loc) => ???
       case ResolvedAst.Expression.Existential(fparam, exp, loc) => ???
       case ResolvedAst.Expression.Universal(fparam, exp, loc) => ???
-      case ResolvedAst.Expression.Ascribe(exp, expectedUnkindedType, expectedEff, tpe, loc) => ???
-      case ResolvedAst.Expression.Cast(exp, declaredUnkindedType, declaredEff, tpe, loc) => ???
+      case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, tpe, loc) => ???
+      case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val declaredTypeVal = traverse(declaredType0)(ascribeType(_, KindMatch.Star, ascriptions, root))
+        val declaredEffVal = traverse(declaredEff0)(ascribeType(_, KindMatch.Bool, ascriptions, root))
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(expVal, declaredTypeVal, declaredEffVal) {
+          case (exp, declaredType, declaredEff) => KindedAst.Expression.Cast(exp, declaredType.headOption, declaredEff.headOption, tpe, loc)
+        }
       case ResolvedAst.Expression.TryCatch(exp, rules, loc) => ???
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) => ???
-      case ResolvedAst.Expression.InvokeMethod(method, exp, args, loc) => ???
-      case ResolvedAst.Expression.InvokeStaticMethod(method, args, loc) => ???
+      case ResolvedAst.Expression.InvokeMethod(method, exp0, args0, loc) =>
+        val expVal = visit(exp0)
+        val argsVal = traverse(args0)(visit)
+        mapN(expVal, argsVal) {
+          case (exp, args) => KindedAst.Expression.InvokeMethod(method, exp, args, loc)
+        }
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args0, loc) =>
+        val argsVal = traverse(args0)(visit)
+        mapN(argsVal) {
+          args => KindedAst.Expression.InvokeStaticMethod(method, args, loc)
+        }
       case ResolvedAst.Expression.GetField(field, exp, loc) => ???
       case ResolvedAst.Expression.PutField(field, exp1, exp2, loc) => ???
-      case ResolvedAst.Expression.GetStaticField(field, loc) => ???
+      case ResolvedAst.Expression.GetStaticField(field, loc) => KindedAst.Expression.GetStaticField(field, loc).toSuccess
       case ResolvedAst.Expression.PutStaticField(field, exp, loc) => ???
       case ResolvedAst.Expression.NewChannel(exp, tpe, loc) => ???
       case ResolvedAst.Expression.GetChannel(exp, tpe, loc) => ???
       case ResolvedAst.Expression.PutChannel(exp1, exp2, tpe, loc) => ???
       case ResolvedAst.Expression.SelectChannel(rules, default, tpe, loc) => ???
       case ResolvedAst.Expression.Spawn(exp, loc) => ???
-      case ResolvedAst.Expression.Lazy(exp, loc) => ???
-      case ResolvedAst.Expression.Force(exp, tpe, loc) => ???
+      case ResolvedAst.Expression.Lazy(exp0, loc) =>
+        val expVal = visit(exp0)
+        mapN(expVal) {
+          exp => KindedAst.Expression.Lazy(exp, loc)
+        }
+      case ResolvedAst.Expression.Force(exp0, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(expVal) {
+          exp => KindedAst.Expression.Force(exp, tpe, loc)
+        }
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tpe, loc) => ???
       case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) => ???
       case ResolvedAst.Expression.FixpointSolve(exp, loc) => ???
@@ -468,10 +504,19 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
     def visit(tpe: UnkindedType, expected: KindMatch): Validation[Type, KindError] = tpe match {
       case UnkindedType.Var(id, text) =>
-        val actual = ascriptions(id)
-        checkKindsMatch(expected, actual) map {
-          _ => Type.Var(id, actual, text = text)
+        ascriptions.get(id) match {
+          case Some(actual) =>
+            checkKindsMatch(expected, actual) map {
+              _ => Type.Var(id, actual, text = text)
+            }
+          case None =>
+            Type.Var(id, KindMatch.toKind(expected), text = text).toSuccess
         }
+      //        val actual = ascriptions(id)
+      //        checkKindsMatch(expected, actual) map {
+      //          _ => Type.Var(id, actual, text = text)
+      //        }
+      // MATT is it right to allow for ascription not found?
       case UnkindedType.Cst(tc0, loc) =>
         val tc = visitTypeConstructor(tc0, root)
         checkKindsMatch(expected, tc.kind) map {
@@ -653,9 +698,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case (acc, ResolvedAst.TypeConstraint(classSym, tpe, _)) =>
           val clazz = root.classes(classSym)
           val kind = getClassKind(clazz)
-          val id = tpe.asInstanceOf[UnkindedType.Var].id // MATT valid cast?
-
-          mergeAscriptions(acc, Map(id -> kind))
+          tpe match {
+              // MATT case docs
+            case UnkindedType.Var(id, _) => mergeAscriptions(acc, Map(id -> kind))
+            case _ => acc.toSuccess
+          }
       }
 
 

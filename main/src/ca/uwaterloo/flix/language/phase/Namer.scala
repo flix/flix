@@ -1575,6 +1575,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val tparams = (fparamTvars ++ returnTvars).distinct.map {
       tvar => NamedAst.TypeParam.Unkinded(tvar, UnkindedType.freshVar(Some(tvar.name)), tvar.loc)
     }
+    // MATT need to use tenv b/c of class sym
     // MATT maybe make a helper for ident -> tparam
 
     NamedAst.TypeParams.Unkinded(tparams).toSuccess // MATT no chance of NameError here
