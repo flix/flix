@@ -25,7 +25,7 @@ namespace Fixpoint {
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
-        case RamStmt.Seq(xs) => RamStmt.Seq(List.map(lowerStmt, xs))
+        case RamStmt.Seq(xs) => RamStmt.Seq(Array.map(lowerStmt, xs)) as & Pure
         case RamStmt.Until(test, body) => RamStmt.Until(test, lowerStmt(body))
         case RamStmt.Comment(_) => stmt
     }
