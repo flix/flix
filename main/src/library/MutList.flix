@@ -76,14 +76,14 @@ namespace MutList {
     ///
     /// Returns `true` if the given element `x` is a member of the given mutable list `v`.
     ///
-    pub def memberOf[a](x: a, v: MutList[a]): Bool & Impure with Eq[a] = exists(y -> y == x, v)
+    pub def memberOf(x: a, v: MutList[a]): Bool & Impure with Eq[a] = exists(y -> y == x, v)
 
     ///
     /// Optionally finds the smallest element of `v` according to the `Order` on `a`.
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def minimum[a](v: MutList[a]): Option[a] & Impure with Order[a] =
+    pub def minimum(v: MutList[a]): Option[a] & Impure with Order[a] =
         reduceLeft(Order.min, v)
 
     ///
@@ -99,7 +99,7 @@ namespace MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def maximum[a](v: MutList[a]): Option[a] & Impure with Order[a] =
+    pub def maximum(v: MutList[a]): Option[a] & Impure with Order[a] =
         reduceLeft(Order.max, v)
 
     ///
@@ -179,20 +179,20 @@ namespace MutList {
     ///
     /// Alias for `IndexOfLeft`
     ///
-    pub def indexOf[a](x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x, v)
+    pub def indexOf(x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x, v)
 
     ///
     /// Optionally returns the position of the first occurrence of `x` in `v`
     /// searching from left to right.
     ///
-    pub def indexOfLeft[a](x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfLeft(x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] =
         let MutList(a, l) = v;
         indexOfLeftHelper(x, deref a, deref l, 0)
 
     ///
     /// Helper function for `indexOfLeft`.
     ///
-    def indexOfLeftHelper[a](x: a, a: Array[a], len: Int32, i: Int32): Option[Int32] & Impure with Eq[a] =
+    def indexOfLeftHelper(x: a, a: Array[a], len: Int32, i: Int32): Option[Int32] & Impure with Eq[a] =
         if (i >= len)
             None
         else
@@ -202,14 +202,14 @@ namespace MutList {
     /// Optionally returns the position of the first occurrence of `x` in `v`
     /// searching from right to left.
     ///
-    pub def indexOfRight[a](x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfRight(x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] =
         let MutList(a, l) = v;
         indexOfRightHelper(x, deref a, (deref l) - 1)
 
     ///
     /// Helper function for `indexOfRight`.
     ///
-    def indexOfRightHelper[a](x: a, a: Array[a], i: Int32): Option[Int32] & Impure with Eq[a] =
+    def indexOfRightHelper(x: a, a: Array[a], i: Int32): Option[Int32] & Impure with Eq[a] =
         if (i < 0)
             None
         else
@@ -364,7 +364,7 @@ namespace MutList {
     ///
     /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
     ///
-    pub def fold[a](v: MutList[a]): a with Monoid[a] = Foldable.fold(v)
+    pub def fold(v: MutList[a]): a with Monoid[a] = Foldable.fold(v)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
@@ -559,7 +559,7 @@ namespace MutList {
     ///
     /// Replaces all occurrences of the `x` with `y` in the given mutable list `v`.
     ///
-    pub def replace![a](x: a, y: a, v: mut MutList[a]): Unit & Impure with Eq[a] =
+    pub def replace!(x: a, y: a, v: mut MutList[a]): Unit & Impure with Eq[a] =
         transform!(e -> if (e == x) y else e, v)
 
     ///
@@ -663,7 +663,7 @@ namespace MutList {
     ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements[a](v1: MutList[a], v2: MutList[a]): Bool & Impure with Eq[a] =
+    pub def sameElements(v1: MutList[a], v2: MutList[a]): Bool & Impure with Eq[a] =
         let MutList(a1, l1) = v1;
         let MutList(a2, l2) = v2;
         let len1 = deref l1;
@@ -673,7 +673,7 @@ namespace MutList {
     ///
     /// Helper function for `sameElements`.
     ///
-    def sameElementsHelper[a](a1: Array[a], a2: Array[a], i: Int32, n: Int32): Bool & Impure with Eq[a] =
+    def sameElementsHelper(a1: Array[a], a2: Array[a], i: Int32, n: Int32): Bool & Impure with Eq[a] =
         if (i >= n)
             true
         else

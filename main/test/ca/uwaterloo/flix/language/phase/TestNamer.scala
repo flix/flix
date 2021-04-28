@@ -906,19 +906,19 @@ class TestNamer extends FunSuite with TestUtils {
   }
 
   test("UndefinedTypeVar.Def.01") {
-    val input = "def f[a](): b = 123"
+    val input = "def f[a: Type](): b = 123"
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Def.02") {
-    val input = "def f[a](x: b): Int = 123"
+    val input = "def f[a: Type](x: b): Int = 123"
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Def.03") {
-    val input = "def f[a, b, c](x: Option[d]): Int = 123"
+    val input = "def f[a: Type, b: Type, c: Type](x: Option[d]): Int = 123"
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
   }
@@ -960,42 +960,6 @@ class TestNamer extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[NameError.UndefinedTypeVar](result)
-  }
-
-  test("MismatchedTypeParamKind.Explicit.01") {
-    val input = "def f[o](g: Int -> o & o): Int = 123"
-    val result = compile(input, DefaultOptions)
-    expectError[NameError.MismatchedTypeParamKinds](result)
-  }
-
-  test("MismatchedTypeParamKind.Explicit.02") {
-    val input = "def f[e](g: Int -> Int & e): e = g(123)"
-    val result = compile(input, DefaultOptions)
-    expectError[NameError.MismatchedTypeParamKinds](result)
-  }
-
-  test("MismatchedTypeParamKind.Explicit.03") {
-    val input = "def f[a](s: #{| a}, r: {| a}): Int = 123"
-    val result = compile(input, DefaultOptions)
-    expectError[NameError.MismatchedTypeParamKinds](result)
-  }
-
-  test("MismatchedTypeParamKind.Explicit.04") {
-    val input = "def f[a](s: #{X(Int) | a}, r: {x: Int | a}): Int = 123"
-    val result = compile(input, DefaultOptions)
-    expectError[NameError.MismatchedTypeParamKinds](result)
-  }
-
-  test("MismatchedTypeParamKind.Explicit.05") {
-    val input = "def f[e](a: e): Int & not e = 123"
-    val result = compile(input, DefaultOptions)
-    expectError[NameError.MismatchedTypeParamKinds](result)
-  }
-
-  test("MismatchedTypeParamKind.Explicit.06") {
-    val input = "def f[a, b, e](g: Option[a -> b & e]): Int & not (a or b) = 123"
-    val result = compile(input, DefaultOptions)
-    expectError[NameError.MismatchedTypeParamKinds](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.01") {

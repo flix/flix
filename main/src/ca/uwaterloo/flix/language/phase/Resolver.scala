@@ -121,7 +121,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       } else {
         // Case 3: Check each superclass for cycles.
         val result = clazz.superClasses.flatMap {
-          superClass => findCycle(classes(superClass), clazz.sym :: path)
+          superClass => findCycle(classes(superClass.sym), clazz.sym :: path)
         }.headOption
 
         if (result.isEmpty) {
@@ -183,10 +183,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- resolveTypeParams(List(tparam0), ns0, root)
         sigsList <- traverse(signatures)(resolve(_, ns0, root))
         // ignore the parameter of the super class; we don't use it
-        superClasses <- traverse(superClasses0)(tconstr => lookupClassForImplementation(tconstr.clazz, ns0, root))
+        superClasses <- traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, ns0, root))
         laws <- traverse(laws0)(resolve(_, ns0, root))
         sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses.map(_.sym), sigs, laws, loc)
+      } yield ResolvedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc)
   }
 
   /**
@@ -854,34 +854,33 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, root))
           } yield ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc)
 
-        case NamedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
+        case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointCompose(e1, e2, loc)
+          } yield ResolvedAst.Expression.FixpointMerge(e1, e2, loc)
 
         case NamedAst.Expression.FixpointSolve(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, loc)
 
-        case NamedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
+        case NamedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(pred, e, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointFilter(pred, e, tvar, loc)
 
-        case NamedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
+        case NamedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.FixpointProjectIn(e, pred, tvar, loc)
+
+        case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointEntails(e1, e2, loc)
+          } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
 
-        case NamedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tvar, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-            e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.FixpointFold(pred, e1, e2, e3, tvar, loc)
       }
 
       visit(exp0, Map.empty)
@@ -968,11 +967,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, root))
           } yield ResolvedAst.Predicate.Head.Atom(pred, den, ts, tvar, loc)
-
-        case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
-          for {
-            e <- Expressions.resolve(exp, tenv0, ns0, root)
-          } yield ResolvedAst.Predicate.Head.Union(e, tvar, loc)
       }
     }
 
@@ -1070,11 +1064,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = {
-    for {
-      clazz <- lookupClass(tconstr0.clazz, ns0, root)
-      tpe <- lookupType(tconstr0.arg, ns0, root)
-    } yield Ast.TypeConstraint(clazz.sym, tpe, SourceLocation.Unknown)
+  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
+      val classVal = lookupClass(clazz0, ns0, root)
+      val tpeVal = lookupType(tpe0, ns0, root)
+
+      mapN(classVal, tpeVal) {
+        case (clazz, tpe) => Ast.TypeConstraint(clazz.sym, tpe, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given superclass constraint `tconstr0`.
+    */
+  def resolveSuperClass(tconstr0: NamedAst.TypeConstraint, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.TypeConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
+      val classVal = lookupClassForImplementation(clazz0, ns0, root)
+      val tpeVal = lookupType(tpe0, ns0, root)
+
+      mapN(classVal, tpeVal) {
+        case (clazz, tpe) => Ast.TypeConstraint(clazz.sym, tpe, loc)
+      }
   }
 
   /**

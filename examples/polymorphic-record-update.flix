@@ -10,7 +10,7 @@ def main2(): Int =
 
 /// Returns the record `r` with a new value of its `y` label.
 /// Preserves (retains) all other labels polymorphically.
-def setY[a](r: {y: Int | a}, v: Int): {y: Int | a} =
+def setY(r: {y: Int | a}, v: Int): {y: Int | a} =
     { y = v | r }
 
 /// Returns the value 0 + 1 + 3 = 4.

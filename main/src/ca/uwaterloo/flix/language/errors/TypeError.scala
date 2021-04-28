@@ -292,4 +292,34 @@ object TypeError {
       vt << Underline("Tip:") << " Add an instance for the type." << NewLine
     }
   }
+
+  /**
+    * An error indicating that the main function's scheme is incorrect.
+    *
+    * @param declaredScheme the erroneous function's scheme.
+    * @param expectedScheme the scheme the main function is expected to have.
+    * @param loc            the location where the error occurred.
+    */
+  case class IllegalMain(declaredScheme: Scheme, expectedScheme: Scheme, loc: SourceLocation) extends TypeError {
+    override def summary: String = "Illegal main."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Main function with wrong type." << NewLine
+      vt << NewLine
+      vt << Code(loc, s"main function with wrong type.") << NewLine
+      vt << NewLine
+      vt << "The main function must have the form:" << NewLine
+      vt << NewLine
+      vt << "  def main(args: Array[String]): Int & Impure = ..." << NewLine
+      vt << NewLine
+      vt << "i.e." << NewLine
+      vt << "- it must return an integer which is the exit code, and" << NewLine
+      vt << "- it must have a side-effect (such as printing to the screen)." << NewLine
+      vt << NewLine
+      vt << "(If the arguments are not needed, then 'args' can be replaced with '_'." << NewLine
+    }
+  }
+
 }

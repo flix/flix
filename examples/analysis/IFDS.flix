@@ -1,29 +1,27 @@
-namespace IFDS {
+// Inputs
+rel EshIntra(node: String, factin: String, factout: String)
+rel EshCallStart(node: String, factin: String, proc: String, factout: String)
+rel EshEndReturn(proc: String, factin: String, node: String, factout: String)
 
-    // Inputs
-    rel EshIntra(node: String, factin: String, factout: String)
-    rel EshCallStart(node: String, factin: String, proc: String, factout: String)
-    rel EshEndReturn(proc: String, factin: String, node: String, factout: String)
+// Call-to-Return edges should be included above in EshIntra
+rel CFG(from: String, to: String)
+rel CallGraph(site: String, proc: String)
+rel StartNode(proc: String, node: String) // TODO: should really be a function
+rel EndNode(proc: String, node: String)
 
-    // Call-to-Return edges should be included above in EshIntra
-    rel CFG(from: String, to: String)
-    rel CallGraph(site: String, proc: String)
-    rel StartNode(proc: String, node: String) // TODO: should really be a function
-    rel EndNode(proc: String, node: String)
+// Internal lattices
+rel PathEdge(factin: String, node: String, fact: String)
+rel SummaryEdge(node: String, factin: String, factout: String)
 
-    // Internal lattices
-    rel PathEdge(factin: String, node: String, fact: String)
-    rel SummaryEdge(node: String, factin: String, factout: String)
+// Output
+rel Results(node: String, fact: String)
 
-    // Output
-    rel Results(node: String, fact: String)
+rel Facts(fact: String)
+rel Identity(node: String)
 
-    rel Facts(fact: String)
-    rel Identity(node: String)
-
-    // Rules
-    @test
-    def test(): #{ EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, PathEdge, SummaryEdge, Results, Facts, Identity } = solve #{
+// Rules
+def main(_: Array[String]): Int32 & Impure =
+    let p = #{
         // intraproc
         PathEdge(d1,m,d3) :-
             PathEdge(d1,n,d2),
@@ -112,7 +110,7 @@ namespace IFDS {
 
         // Entrypoint
         PathEdge("zero","smain","zero").
-
-    }
-
-}
+    };
+    let m = solve p;
+    (m |> Fixpoint.unsafePrint) as & Impure;
+    0

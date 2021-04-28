@@ -56,6 +56,19 @@ def testPut02(): Bool & Impure = Array.put([1, 2], 1, 42)[1] == 42
 def testPut03(): Bool & Impure = Array.put([1, 2, 3], 2, 42)[2] == 42
 
 /////////////////////////////////////////////////////////////////////////////
+// isEmpty                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def testIsEmpty01(): Bool & Impure = Array.isEmpty([])
+
+@test
+def testIsEmpty02(): Bool & Impure = not Array.isEmpty([1])
+
+@test
+def testIsEmpty03(): Bool & Impure = not Array.isEmpty([1, 2, 3])
+
+/////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 

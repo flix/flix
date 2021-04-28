@@ -26,6 +26,19 @@ enum Result[t, e] {
     case Err(e)
 }
 
+instance Boxable[Result[t, e]] with Order[t], ToString[t], Order[e], ToString[e] {
+    pub def box(x: Result[t, e]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Result[t, e], o2 as Result[t, e]);
+        let toString = o -> ToString.toString(o as Result[t, e]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Result[t, e] = match x {
+        case BoxedObject(v, _, _) => v as Result[t, e]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[Result[t, e]] with ToString[t], ToString[e] {
     pub def toString(r: Result[t, e]): String = match r {
         case Ok(t)  => "Ok(${t})"
@@ -108,7 +121,7 @@ namespace Result {
     /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
     ///
     @Time(1) @Space(1)
-    pub def replace[t, e](x: t, y: t, r: Result[t, e]): Result[t, e] with Eq[t] = match r {
+    pub def replace(x: t, y: t, r: Result[t, e]): Result[t, e] with Eq[t] = match r {
         case Ok(v) => Ok(if (v == x) y else v)
         case Err(_) => r
     }
@@ -308,7 +321,7 @@ namespace Result {
     /// Returns a one-element set of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty set.
     ///
     @Time(1) @Space(1)
-    pub def toSet[t, e](r: Result[t, e]): Set[t] with Order[t] = match r {
+    pub def toSet(r: Result[t, e]): Set[t] with Order[t] = match r {
         case Ok(v)  => Set.singleton(v)
         case Err(_) => Set.empty()
     }
@@ -317,7 +330,7 @@ namespace Result {
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Ok((k, v))`. Otherwise returns the empty map.
     ///
     @Time(1) @Space(1)
-    pub def toMap[k, v, e](r: Result[(k, v), e]): Map[k, v] with Order[k] = match r {
+    pub def toMap(r: Result[(k, v), e]): Map[k, v] with Order[k] = match r {
         case Ok((k, v)) => Map.singleton(k, v)
         case Err(_)     => Map.empty()
     }

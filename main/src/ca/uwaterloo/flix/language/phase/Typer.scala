@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.ToFailure
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
@@ -54,6 +54,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * The expected scheme of the `main` function.
+    */
+  private val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
+
+  /**
     * Type checks the given AST root.
     */
   def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
@@ -68,9 +73,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, propertiesVal) {
       case (classes, instances, defs, enums, properties) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        val latticeOps = Map.empty[Type, TypedAst.LatticeOps]
-        val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-        TypedAst.Root(classes, instances, sigs, defs, enums, latticeOps, properties, specialOps, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, properties, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -84,7 +87,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val envInsts = instances.map {
           case ResolvedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
         }
-        (classSym, Ast.ClassContext(clazz.superClasses, envInsts))
+        // ignore the super class parameters since they should all be the same as the class param
+        val superClasses = clazz.superClasses.map(_.sym)
+        (classSym, Ast.ClassContext(superClasses, envInsts))
     }
   }
 
@@ -150,9 +155,27 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitDefn(defn: ResolvedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
-      typeCheckDecl(spec0, exp0, assumedTconstrs, isMain = sym.isMain, root, classEnv) map {
-        case (spec, exp) => TypedAst.Def(sym, spec, exp)
-      }
+      for {
+        // check the main signature before typechecking the def
+        _ <- checkMain(defn, classEnv)
+        res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv)
+        (spec, exp) = res
+      } yield TypedAst.Def(sym, spec, exp)
+  }
+
+  /**
+    * Checks that, if the function is a main function, it has the right type scheme.
+    */
+  private def checkMain(defn: ResolvedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
+    if (!defn.sym.isMain) {
+      return ().toSuccess
+    }
+
+    if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
+      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.spec.loc).toFailure
+    } else {
+      ().toSuccess
+    }
   }
 
   /**
@@ -160,7 +183,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def visitSig(sig: ResolvedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = sig match {
     case ResolvedAst.Sig(sym, spec0, Some(exp0)) =>
-      typeCheckDecl(spec0, exp0, assumedTconstrs, isMain = false, root, classEnv) map {
+      typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv) map {
         case (spec, exp) => TypedAst.Sig(sym, spec, Some(exp))
       }
     case ResolvedAst.Sig(sym, spec0, None) =>
@@ -203,7 +226,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDecl(spec0: ResolvedAst.Spec, exp0: ResolvedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], isMain: Boolean, root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
+  private def typeCheckDecl(spec0: ResolvedAst.Spec, exp0: ResolvedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, eff, loc) =>
 
       ///
@@ -214,13 +237,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp))
 
 
-      val declaredScheme = if (isMain) {
-        // Case 1: This is the main function. Its type signature is fixed.
-        Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
-      } else {
-        // Case 2: Use the declared type.
-        sc.copy(constraints = sc.constraints ++ assumedTconstrs)
-      }
+      // Add the assumed constraints to the declared scheme
+      val declaredScheme = sc.copy(constraints = sc.constraints ++ assumedTconstrs)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -1339,7 +1357,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypeAllowEmptyM(tvar :: constraintTypes, loc)
         } yield (constrs.flatten, resultTyp, Type.Pure)
 
-      case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         //
         //  exp1 : #{...}    exp2 : #{...}
         //  ------------------------------
@@ -1364,7 +1382,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
         //
         //  exp1 : tpe    exp2 : #{ P : a  | b }
         //  -------------------------------------------
@@ -1381,41 +1399,49 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
         //
-        //  exp1 : #{...}    exp2 : #{...}
-        //  ------------------------------
-        //  exp1 |= exp2 : Bool
+        //  exp : F[freshElmType] where F is Foldable
+        //  -------------------------------------------
+        //  project exp into A: #{A(freshElmType) | freshRestSchemaType}
         //
+        val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star)
+        val freshElmTypeVar = Type.freshVar(Kind.Star)
+        val freshPredicateTypeVar = Type.freshVar(Kind.Star)
+        val freshRestSchemaTypeVar = Type.freshVar(Kind.Schema)
+
+        // Require Boxable and Foldable instances.
+        val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
+        val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
+        val boxable = Ast.TypeConstraint(boxableSym, freshElmTypeVar, loc)
+        val foldable = Ast.TypeConstraint(foldableSym, freshTypeConstructorVar, loc)
+
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          expectedType <- unifyTypeM(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar)), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchemaExtend(pred, Type.mkRelation(List(freshElmTypeVar)), freshRestSchemaTypeVar), loc)
+          resultEff = eff
+        } yield (boxable :: foldable :: constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
+        //
+        //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
+        //  exp2: freshRestSchemaVar
+        //  --------------------------------------------------------------------
+        //  FixpointQuery pred, exp1, exp2 : Array[freshTupleVar]
+        //
+        val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Star)
+        val freshTupleVar = Type.freshVar(Kind.Star)
+        val freshRestSchemaVar = Type.freshVar(Kind.Schema)
+
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          schemaType <- unifyTypeM(tpe1, tpe2, mkAnySchemaType(), loc)
-          resultTyp = Type.Bool
+          _ <- unifyTypeM(tpe1, Type.mkSchemaExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar), freshRestSchemaVar), loc)
+          _ <- unifyTypeM(tpe2, freshRestSchemaVar, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar), loc)
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tvar, loc) =>
-        //
-        // exp3 : #{P : a | c}    init : b   exp2 : a' -> b -> b
-        // where a' is the tuple reification of relation a
-        // ---------------------------------------------------
-        // fold P exp1 exp2 exp3 : b
-        //
-        val freshPredicateNameTypeVar = Type.freshVar(Kind.Star ->: Kind.Star)
-        val tupleType = Type.freshVar(Kind.Star)
-        val restRow = Type.freshVar(Kind.Schema)
-        for {
-          (constrs1, initType, eff1) <- visitExp(exp1)
-          (constrs2, fType, eff2) <- visitExp(exp2)
-          (constrs3, constraintsType, eff3) <- visitExp(exp3)
-          // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          constraintsType2 <- unifyTypeM(constraintsType, Type.mkSchemaExtend(pred, Type.Apply(freshPredicateNameTypeVar, tupleType), restRow), loc)
-          // f is of type tupleType -> initType -> initType. It cannot have any effect.
-          fType2 <- unifyTypeM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
-          resultTyp <- unifyTypeM(tvar, initType, loc) // the result of the fold is the same type as init
-          resultEff = Type.mkAnd(eff1, eff2, eff3)
-        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
     }
 
     /**
@@ -1772,12 +1798,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val cs = cs0.map(visitConstraint)
         TypedAst.Expression.FixpointConstraintSet(cs, Stratification.Empty, subst0(tvar), loc)
 
-      case ResolvedAst.Expression.FixpointCompose(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e1.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.FixpointCompose(e1, e2, Stratification.Empty, tpe, eff, loc)
+        TypedAst.Expression.FixpointMerge(e1, e2, Stratification.Empty, tpe, eff, loc)
 
       case ResolvedAst.Expression.FixpointSolve(exp, loc) =>
         val e = visitExp(exp, subst0)
@@ -1785,24 +1811,26 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = e.eff
         TypedAst.Expression.FixpointSolve(e, Stratification.Empty, tpe, eff, loc)
 
-      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
+      case ResolvedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.FixpointProject(pred, e, subst0(tvar), eff, loc)
+        TypedAst.Expression.FixpointFilter(pred, e, subst0(tvar), eff, loc)
 
-      case ResolvedAst.Expression.FixpointEntails(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val eff = e.eff
+        TypedAst.Expression.FixpointProjectIn(e, pred, subst0(tvar), eff, loc)
+
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        val tpe = Type.Bool
+        val stf = Stratification.Empty
+        val tpe = subst0(tvar)
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, loc) =>
-        val e1 = visitExp(init, subst0)
-        val e2 = visitExp(f, subst0)
-        val e3 = visitExp(constraints, subst0)
-        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
-        TypedAst.Expression.FixpointFold(pred, e1, e2, e3, subst0(tvar), eff, loc)
+        val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
+        val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
+        TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
     }
 
     /**
@@ -1984,18 +2012,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))
-
-    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
-      //
-      //  exp : typ
-      //  ------------------------------------------------------------
-      //  union exp : #{ ... }
-      //
-      for {
-        (tconstrs, typ, eff) <- inferExp(exp, root)
-        pureEff <- unifyBoolM(Type.Pure, eff, loc)
-        resultType <- unifyTypeM(tvar, typ, loc)
-      } yield (tconstrs, resultType)
   }
 
   /**
@@ -2005,10 +2021,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     case ResolvedAst.Predicate.Head.Atom(pred, den0, terms, tvar, loc) =>
       val ts = terms.map(t => reassembleExp(t, root, subst0))
       TypedAst.Predicate.Head.Atom(pred, den0, ts, subst0(tvar), loc)
-
-    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
-      val e = reassembleExp(exp, root, subst0)
-      TypedAst.Predicate.Head.Union(e, subst0(tvar), loc)
   }
 
   /**
@@ -2073,8 +2085,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: ResolvedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
+      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
     )
     classes.map(Ast.TypeConstraint(_, tpe, loc))
@@ -2085,8 +2097,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: ResolvedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
+      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("Hash", root),
       PredefinedClasses.lookupClassSym("ToString", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),

@@ -110,7 +110,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
     Declarations.Namespace |
-      Declarations.Constraint |
       Declarations.Def |
       Declarations.Law |
       Declarations.Enum |
@@ -200,20 +199,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
       Documentation ~ Modifiers ~ SP ~ keyword("lat") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Lattice
-    }
-
-    def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
-      def Head: Rule1[ParsedAst.Predicate.Head] = rule {
-        HeadPredicate
-      }
-
-      def Body: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
-        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyPredicate).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.Predicate.Body]]) => o.getOrElse(Seq.empty))
-      }
-
-      rule {
-        optWS ~ SP ~ Head ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
-      }
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
@@ -530,11 +515,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Entails ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Entails ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def Entails: Rule1[ParsedAst.Expression] = rule {
-      Compose ~ optional(optWS ~ atomic("|=") ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.FixpointEntails)
+      Compose ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Compose: Rule1[ParsedAst.Expression] = rule {
@@ -641,8 +622,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
-        FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
+        FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
+        ConstraintSingleton | Interpolation | Literal | Existential | Universal |
         UnaryLambda | FName | Tag | Hole
     }
 
@@ -986,24 +967,72 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("match") ~ optWS ~ Pattern ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LambdaMatch
     }
 
-    def Constraint: Rule1[ParsedAst.Expression] = rule {
-      SP ~ Declarations.Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
+    def ConstraintSingleton: Rule1[ParsedAst.Expression] = rule {
+      SP ~ Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
     }
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Declarations.Constraint) ~ optWS ~ atomic("}") ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
+      SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Constraint) ~ optWS ~ atomic("}") ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
     }
 
-    def FixpointSolve: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("solve") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointSolve
+    def FixpointProject: Rule1[ParsedAst.Expression] = {
+      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
+        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      def ProjectPart: Rule1[Seq[Name.Ident]] = rule {
+        oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      rule {
+        SP ~ keyword("project") ~ WS ~ ExpressionPart ~ WS ~ keyword("into") ~ WS ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointProjectInto
+      }
     }
 
-    def FixpointProject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("project") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
+    def FixpointSolveWithProject: Rule1[ParsedAst.Expression] = {
+      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
+        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      def ProjectPart: Rule1[Option[Seq[Name.Ident]]] = rule {
+        optional(WS ~ keyword("project") ~ WS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS))
+      }
+
+      rule {
+        SP ~ keyword("solve") ~ WS ~ ExpressionPart ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointSolveWithProject
+      }
     }
 
-    def FixpointFold: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("fold") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
+    def FixpointQueryWithSelect: Rule1[ParsedAst.Expression] = {
+      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
+        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = {
+        def SelectOne: Rule1[Seq[ParsedAst.Expression]] = rule {
+          Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+        }
+
+        def SelectMany: Rule1[Seq[ParsedAst.Expression]] = rule {
+          "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+        }
+
+        rule {
+          WS ~ keyword("select") ~ WS ~ (SelectMany | SelectOne)
+        }
+      }
+
+      def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = rule {
+        WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Positive | Predicates.Body.Negative).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      def WherePart: Rule1[Option[ParsedAst.Expression]] = rule {
+        optional(WS ~ keyword("where") ~ WS ~ Expression)
+      }
+
+      rule {
+        SP ~ keyword("query") ~ WS ~ ExpressionPart ~ SelectPart ~ FromPart ~ WherePart ~ SP ~> ParsedAst.Expression.FixpointQueryWithSelect
+      }
     }
 
     // TODO: We should only allow one variant of these.
@@ -1073,10 +1102,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Constraints                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  def Constraint: Rule1[ParsedAst.Constraint] = {
+    def Head: Rule1[ParsedAst.Predicate.Head] = rule {
+      HeadPredicate
+    }
+
+    def Body: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
+      optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyPredicate).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.Predicate.Body]]) => o.getOrElse(Seq.empty))
+    }
+
+    rule {
+      optWS ~ SP ~ Head ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Constraint
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def HeadPredicate: Rule1[ParsedAst.Predicate.Head] = rule {
-    Predicates.Head.Atom | Predicates.Head.Union
+    Predicates.Head.Atom
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
@@ -1089,10 +1135,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
         SP ~ Names.Predicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
-      }
-
-      def Union: Rule1[ParsedAst.Predicate.Head.Union] = rule {
-        SP ~ keyword("union") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Head.Union
       }
 
     }

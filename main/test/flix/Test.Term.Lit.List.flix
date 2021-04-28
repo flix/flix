@@ -1,62 +1,43 @@
 namespace Test/Term/Lit/List {
 
     @test
-    def test01(): #{ R(List[Int]) } =
-        let x = R(Nil).;
-        solve x
+    def testLitList01(): Bool & Impure =
+        let p = #{
+            A(Nil: List[Int32]).
+            B(Nil: List[Int32]).
+            R(x) :- A(x), B(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf(Nil, r)
 
     @test
-    def test02(): #{ R(List[Int]) } =
-        let x = R(1 :: Nil).;
-        solve x
+    def testLitList02(): Bool & Impure =
+        let p = #{
+            A(Nil: List[String]).
+            B(Nil: List[String]).
+            R(x) :- A(x), B(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf(Nil, r)
 
     @test
-    def test03(): #{ R(List[Int]) } =
-        let x = R(Nil).;
-        let y = R(1 :: Nil).;
-        solve x <+> y
+    def testLitList03(): Bool & Impure =
+        let p = #{
+            A(1 :: 2 :: Nil).
+            B(1 :: 2 :: Nil).
+            R(x) :- A(x), B(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf(1 :: 2 :: Nil, r)
 
     @test
-    def test04(): #{ R(List[Int]) } =
-        let x = R(Nil).;
-        let y = R(1 :: Nil).;
-        let z = R(1 :: 2 :: Nil).;
-        solve x <+> y <+> z
-
-    @test
-    def test05(): #{ R(List[Int]) } =
-        let x = R(Nil).;
-        let y = R(1 :: Nil).;
-        let z = R(1 :: 2 :: Nil).;
-        let w = R(1 :: 2 :: 3 :: Nil).;
-        solve x <+> y <+> z <+> w
-
-    enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
-    }
-
-    instance Eq[List[a]] with Eq[a] {
-        pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
-            case (Nil, Nil) => true
-            case (x :: rs, y :: qs) => if (x != y) false else rs == qs
-            case _ => false
-        }
-    }
-
-    instance Hash[List[a]] with Hash[a] {
-        pub def hash(xs: List[a]): Int =
-            foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
-    }
-
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = match xs {
-        case Nil => s
-        case x :: rs => foldLeft(f, f(s, x), rs)
-    }
-
-    instance ToString[List[a]] with ToString[a] {
-        pub def toString(xs: List[a]): String = ???
-    }
+    def testLitList04(): Bool & Impure =
+        let p = #{
+            A("hello" :: "world" :: Nil).
+            B("hello" :: "world" :: Nil).
+            R(x) :- A(x), B(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf("hello" :: "world" :: Nil, r)
 
 }
-

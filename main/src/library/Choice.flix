@@ -17,7 +17,7 @@
 /**
  * The Choice data type.
  */
-pub enum Choice[a, _isAbsent : Bool, _isPresent : Bool] {
+pub enum Choice[a: Type, _isAbsent : Bool, _isPresent : Bool] {
     case Absent
     case Present(a)
 }
@@ -61,7 +61,7 @@ namespace Choice {
     ///
     /// Returns `v` where `c` must be `Present(v)`.
     ///
-    pub def unbox[s](c: Choice[s, false, true]): s =
+    pub def unbox(c: Choice[s, false, true]): s =
         choose c {
             case Present(x) => x
         }
@@ -100,7 +100,7 @@ namespace Choice {
     ///
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-    pub def map[s : Type, t : Type, a : Bool, p : Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
+    pub def map[s: Type, t: Type, a: Bool, p: Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
         choose* c {
             case Absent     => Absent
             case Present(x) => Present(f(x))
@@ -129,7 +129,7 @@ namespace Choice {
     ///
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
     ///
-    pub def invert[s : Type, a : Bool, p : Bool](c: Choice[s, a, p], v: s): Choice[s, p, a] = choose* c {
+    pub def invert[s: Type, a: Bool, p: Bool](c: Choice[s, a, p], v: s): Choice[s, p, a] = choose* c {
         case Absent     => Present(v)
         case Present(_) => Absent
     }

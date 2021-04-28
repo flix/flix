@@ -4,7 +4,7 @@ namespace Test/Def/KindInference {
         case Function(Int -> Int & ef)
     }
 
-    pub def func[ef : Bool](f: Int -> Int & ef, g: Func[ef]): Int = ???
+    pub def func[ef: Bool](f: Int -> Int & ef, g: Func[ef]): Int = ???
 
     @test
     def empty(): Bool = true

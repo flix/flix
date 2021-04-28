@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, SpecialOperator, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -108,26 +107,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       * -   (fst, (Int, Str) -> Int) -> fst$1
       */
     val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
-
-    /**
-      * A function-local set of all eq operations.
-      */
-    val eqOps: mutable.Map[Type, Symbol.DefnSym] = mutable.Map.empty
-
-    /**
-      * A function-local set of all hash operations.
-      */
-    val hashOps: mutable.Map[Type, Symbol.DefnSym] = mutable.Map.empty
-
-    /**
-      * A function-local set of all toString operations.
-      */
-    val toStringOps: mutable.Map[Type, Symbol.DefnSym] = mutable.Map.empty
-
-    /**
-      * A function-local set of all lattice operations.
-      */
-    val latticeOps: mutable.Map[Type, LatticeOps] = mutable.Map.empty
 
     /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
@@ -443,32 +422,23 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.Force(e, subst0(tpe), eff, loc)
 
         case Expression.FixpointConstraintSet(cs0, stf, tpe, loc) =>
-          val cs = cs0.map(visitConstraint(_, env0))
-          Expression.FixpointConstraintSet(cs, stf, subst0(tpe), loc)
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-        case Expression.FixpointCompose(exp1, exp2, stf, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          Expression.FixpointCompose(e1, e2, stf, subst0(tpe), eff, loc)
+        case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
         case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.FixpointSolve(e, stf, subst0(tpe), eff, loc)
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-        case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.FixpointProject(pred, e, subst0(tpe), eff, loc)
+        case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-        case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          Expression.FixpointEntails(e1, e2, subst0(tpe), eff, loc)
+        case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          val e3 = visitExp(exp3, env0)
-          Expression.FixpointFold(pred, e1, e2, e3, subst0(tpe), eff, loc)
+        case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+          throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
       }
 
       /**
@@ -515,91 +485,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           (Pattern.ArrayHeadSpread(freshSym, ps, subst0(tpe), loc),
             if (envs.isEmpty) Map(sym -> freshSym)
             else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
-      }
-
-      /**
-        * Specializes the given constraint `c0` w.r.t. the given environment and current substitution.
-        */
-      def visitConstraint(c0: Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): Constraint = {
-        val Constraint(cparams0, head0, body0, loc) = c0
-        val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
-        val head = visitHeadPredicate(head0, env0 ++ env1)
-        val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
-        Constraint(cparams, head, body, loc)
-      }
-
-      /**
-        * Specializes the given head predicate `h0` w.r.t. the given environment and current substitution.
-        */
-      def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
-        case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-
-          // Populate global map of eq, hash, and toString ops.
-          for (term <- terms) {
-            val tpe = subst0(term.tpe)
-            mkEqOp(tpe)
-            mkHashOp(tpe)
-            mkToStringOp(tpe)
-          }
-
-          // Populate global map of lattice ops.
-          den match {
-            case Denotation.Relational => // nop - no lattice ops.
-            case Denotation.Latticenal =>
-              val tpe = subst0(terms.last.tpe)
-              mkLatticeOps(tpe)
-          }
-
-          val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.Atom(pred, den, ts, subst0(tpe), loc)
-
-        case Predicate.Head.Union(exp, tpe, loc) =>
-          val e = visitExp(exp, env0)
-          Predicate.Head.Union(e, subst0(tpe), loc)
-      }
-
-      /**
-        * Specializes the given body predicate `b0` w.r.t. the given environment and current substitution.
-        */
-      def visitBodyPredicate(b0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = {
-        // TODO: We should change what is allowed here. Probably only variables and constants should be allowed?
-        def visitPatTemporaryToBeRemoved(pat: Pattern): Pattern = pat match {
-          case Pattern.Wild(tpe, loc) => Pattern.Wild(subst0(tpe), loc)
-          case Pattern.Var(sym, tpe, loc) => Pattern.Var(env0(sym), subst0(tpe), loc)
-          case Pattern.Unit(loc) => Pattern.Unit(loc)
-          case Pattern.True(loc) => Pattern.True(loc)
-          case Pattern.False(loc) => Pattern.False(loc)
-          case Pattern.Char(lit, loc) => Pattern.Char(lit, loc)
-          case Pattern.Float32(lit, loc) => Pattern.Float32(lit, loc)
-          case Pattern.Float64(lit, loc) => Pattern.Float64(lit, loc)
-          case Pattern.Int8(lit, loc) => Pattern.Int8(lit, loc)
-          case Pattern.Int16(lit, loc) => Pattern.Int16(lit, loc)
-          case Pattern.Int32(lit, loc) => Pattern.Int32(lit, loc)
-          case Pattern.Int64(lit, loc) => Pattern.Int64(lit, loc)
-          case Pattern.BigInt(lit, loc) => Pattern.BigInt(lit, loc)
-          case Pattern.Str(lit, loc) => Pattern.Str(lit, loc)
-          case Pattern.Tag(sym, tag, p, tpe, loc) => Pattern.Tag(sym, tag, visitPatTemporaryToBeRemoved(p), subst0(tpe), loc)
-          case _ => throw InternalCompilerException(s"Pattern not allowed here $pat.")
-        }
-
-        b0 match {
-          case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-
-            // Populate global map of eq, hash, and toString ops.
-            for (term <- terms) {
-              val tpe = subst0(term.tpe)
-              mkEqOp(tpe)
-              mkHashOp(tpe)
-              mkToStringOp(tpe)
-            }
-
-            val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.Atom(pred, den, polarity, ts, subst0(tpe), loc)
-
-          case Predicate.Body.Guard(exp, loc) =>
-            val e = visitExp(exp, env0)
-            Predicate.Body.Guard(e, loc)
-        }
       }
 
       visitExp(exp0, env0)
@@ -750,62 +635,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Adds the symbol of the `Eq.eq` implementation for the given type `tpe` to the local mutable map (if it does not yet exist).
-      */
-    def mkEqOp(tpe: Type): Unit = {
-      if (!eqOps.contains(tpe)) {
-        val sigType = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-        val sym = getSigSym("Eq", "eq", sigType)
-        eqOps += tpe -> sym
-      }
-    }
-
-    /**
-      * Adds the symbol of the `Hash.hash` implementation for the given type `tpe` to the local mutable map (if it does not yet exist).
-      */
-    def mkHashOp(tpe: Type): Unit = {
-      if (!hashOps.contains(tpe)) {
-        val sigType = Type.mkPureArrow(tpe, Type.Int32)
-        val sym = getSigSym("Hash", "hash", sigType)
-        hashOps += tpe -> sym
-      }
-    }
-
-    /**
-      * Adds the symbol of the `ToString.toString` implementation for the given type `tpe` to the local mutable map (if it does not yet exist).
-      */
-    def mkToStringOp(tpe: Type): Unit = {
-      if (!toStringOps.contains(tpe)) {
-        val sigType = Type.mkPureArrow(tpe, Type.Str)
-        val sym = getSigSym("ToString", "toString", sigType)
-        toStringOps += tpe -> sym
-      }
-    }
-
-    /**
-      * Adds the lattice operations for the given `tpe` to the local mutable map (if it does not yet exist).
-      */
-    def mkLatticeOps(tpe: Type): Unit = {
-      if (!latticeOps.contains(tpe)) {
-        // The types of the lattice ops components.
-        val botTpe = Type.mkPureArrow(Type.Unit, tpe)
-        val equTyp = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-        val leqTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), Type.Bool)
-        val lubTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
-        val glbTpe = Type.mkPureUncurriedArrow(List(tpe, tpe), tpe)
-
-        // The symbols of the lattice ops components.
-        val bot = getSigSym("LowerBound", "minValue", botTpe)
-        val equ = getSigSym("Eq", "eq", equTyp)
-        val leq = getSigSym("PartialOrder", "partialCompare", leqTpe)
-        val lub = getSigSym("JoinLattice", "leastUpperBound", lubTpe)
-        val glb = getSigSym("MeetLattice", "greatestLowerBound", glbTpe)
-
-        latticeOps += tpe -> LatticeOps(tpe, bot, equ, leq, lub, glb)
-      }
-    }
-
-    /**
       * Returns the symbol of the given signature identified by the given `className` and `sigName` specialized to the given type `tpe`.
       */
     def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
@@ -895,33 +724,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
     }
 
-    //
-    // Construct the `ToString.toString` special operator for the main function.
-    //
-    root.defs.get(Symbol.Main) match {
-      case None => // nop - no main.
-      case Some(defn) =>
-        val typeArguments = defn.impl.inferredScheme.base.typeArguments
-        val resultType = typeArguments.last
-      // TODO: Need toString instance on constraint systems etc.
-      // mkToStringOp(resultType)
-    }
-
-    //
-    // Construct the map of special operations.
-    //
-    val specialOps = Map(
-      SpecialOperator.Equality -> eqOps.toMap,
-      SpecialOperator.HashCode -> hashOps.toMap,
-      SpecialOperator.ToString -> toStringOps.toMap
-    )
-
     // Reassemble the AST.
     root.copy(
       defs = specializedDefns.toMap,
       properties = specializedProperties.toList,
-      specialOps = specialOps.toMap,
-      latticeOps = latticeOps.toMap
     ).toSuccess
   }
 

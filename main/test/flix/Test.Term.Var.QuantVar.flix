@@ -1,49 +1,142 @@
-namespace Test/Term/Lit/Var/QuantVar {
+namespace Test/Term/Var/QuantVar {
 
     @test
-    def testQuantVar01(): #{ A(Int) } =
-        let c = A(x) :- A(x).;
-        solve c
+    def testQuantVar01(): Bool & Impure =
+        let p = #{
+            A(1).
+            R(x) :- A(x).
+        };
+        let r = query p select x from R(x);
+        Array.memberOf(1, r)
+
 
     @test
-    def testQuantVar02(): #{ B(Int, String) } =
-        let c = B(x, y) :- B(x, y).;
-        solve c
+    def testQuantVar02(): Bool & Impure =
+        let p = #{
+            A(1, 2).
+            R(x, y) :- A(x, y).
+        };
+        let r = query p select (x, y) from R(x, y);
+        Array.memberOf((1, 2), r)
+
 
     @test
-    def testQuantVar03(): #{ C(Int, String, Bool) } =
-        let c = C(x, y, z) :- C(x, y, z).;
-        solve c
+    def testQuantVar03(): Bool & Impure =
+        let p = #{
+            A(1, 2, 3).
+            R(x, y, z) :- A(x, y, z).
+        };
+        let r = query p select (x, y, z) from R(x, y, z);
+        Array.memberOf((1, 2, 3), r)
+
 
     @test
-    def testQuantVar04(): #{ A(Int), B(Int, String), C(Int, String, Bool) } =
-        let c1 = A(x) :- A(x).;
-        let c2 = B(x, y) :- B(x, y).;
-        let c3 = C(x, y, z) :- C(x, y, z).;
-        solve (c1 <+> c2 <+> c3)
+    def testQuantVar04(): Bool & Impure =
+        let p = #{
+            A(1, 2, 3, 4).
+            R(x, y, z, w) :- A(x, y, z, w).
+        };
+        let r = query p select (x, y, z, w) from R(x, y, z, w);
+        Array.memberOf((1, 2, 3, 4), r)
 
     @test
-    def testQuantVar05(): #{ A(Int), B(Int, String) } =
-        let c = A(x) :- B(x, y).;
-        solve c
+    def testQuantVarOverlap01(): Bool & Impure =
+        let p = #{
+            A(1, 2, 3, 4).
+            A(4, 3, 2, 1).
+            A(1, 1, 1, 1).
+            A(2, 2, 2, 2).
+            R(x, x, z, w) :- A(x, x, z, w).
+        };
+        let r = query p select (x, y, z, w) from R(x, y, z, w);
+        Array.memberOf((1, 1, 1, 1), r) and not Array.memberOf((1, 2, 3, 4), r)
 
     @test
-    def testQuantVar06(): #{ A(Int), C(Int, String, Bool) } =
-        let c = A(x) :- C(x, y, z).;
-        solve c
-    @test
-    def testQuantVar07(): #{ B(Int, String), C(Int, String, Bool) } =
-        let c = B(x, y) :- C(x, y, z).;
-        solve c
+    def testQuantVarOverlap02(): Bool & Impure =
+        let p = #{
+            A(1, 2, 3, 4).
+            A(4, 3, 2, 1).
+            A(1, 1, 1, 1).
+            A(2, 2, 2, 2).
+            R(x, y, y, w) :- A(x, y, y, w).
+        };
+        let r = query p select (x, y, z, w) from R(x, y, z, w);
+        Array.memberOf((1, 1, 1, 1), r) and not Array.memberOf((1, 2, 3, 4), r)
 
     @test
-    def testQuantVar08(): #{ A(Int), B(Int, String), C(Int, String, Bool) } =
-        let c = A(x) :- A(x), B(x, y), C(x, y, z).;
-        solve c
+    def testQuantVarOverlap03(): Bool & Impure =
+        let p = #{
+            A(1, 2, 3, 4).
+            A(4, 3, 2, 1).
+            A(1, 1, 1, 1).
+            A(2, 2, 2, 2).
+            R(x, y, z, z) :- A(x, y, z, z).
+        };
+        let r = query p select (x, y, z, w) from R(x, y, z, w);
+        Array.memberOf((1, 1, 1, 1), r) and not Array.memberOf((1, 2, 3, 4), r)
 
     @test
-    def testQuantVar09(): #{ A(Int), B(Int, String), C(Int, String, Bool) } =
-        let c = C(x, y, z) :- A(x), B(x, y), C(x, y, z).;
-        solve c
+    def testQuantVarOverlap04(): Bool & Impure =
+        let p = #{
+            A(1, 2, 3, 4).
+            A(4, 3, 2, 1).
+            A(1, 1, 1, 1).
+            A(2, 2, 2, 2).
+            R(x, y, z, x) :- A(x, y, z, x).
+        };
+        let r = query p select (x, y, z, w) from R(x, y, z, w);
+        Array.memberOf((1, 1, 1, 1), r) and not Array.memberOf((1, 2, 3, 4), r)
+
+    @test
+    def testQuantVarOverlap05(): Bool & Impure =
+        let p = #{
+            A(1, 2, 3, 4).
+            A(4, 3, 2, 1).
+            A(1, 1, 1, 1).
+            A(2, 2, 2, 2).
+            R(x, x, w, x) :- A(x, x, w, x).
+        };
+        let r = query p select (x, y, z, w) from R(x, y, z, w);
+        Array.memberOf((1, 1, 1, 1), r) and not Array.memberOf((1, 2, 3, 4), r)
+
+    @test
+    def testQuantVarOverlap06(): Bool & Impure =
+        let p = #{
+            A(1, 2, 3, 4).
+            A(4, 3, 2, 1).
+            A(1, 1, 1, 1).
+            A(2, 2, 2, 2).
+            R(x, x, x, x) :- A(x, x, x, x).
+        };
+        let r = query p select (x, y, z, w) from R(x, y, z, w);
+        Array.memberOf((1, 1, 1, 1), r) and not Array.memberOf((1, 2, 3, 4), r)
+
+    @test
+    def testQuantVarMultiOverlap01(): Bool & Impure =
+        let p = #{
+            A(1, 3).
+            A(1, 1).
+            A(2, 2).
+            B(1, 3).
+            B(1, 1).
+            B(2, 2).
+            R(x, y) :- A(x, x), B(y, y).
+        };
+        let r = query p select (x, y) from R(x, y);
+        Array.memberOf((1, 1), r) and not Array.memberOf((1, 3), r)
+
+    @test
+    def testQuantVarMultiOverlap02(): Bool & Impure =
+        let p = #{
+            A(1, 3).
+            A(1, 1).
+            A(2, 2).
+            B(1, 3).
+            B(1, 1).
+            B(2, 2).
+            R(x, x) :- A(x, x), B(x, x).
+        };
+        let r = query p select (x, y) from R(x, y);
+        Array.memberOf((1, 1), r) and not Array.memberOf((1, 3), r)
 
 }

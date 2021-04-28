@@ -286,6 +286,15 @@ object Validation {
     mapN(t1, t2, t3, t4, t5)(Function.untupled(identity))
 
   /**
+    * Sequences over t1, t2, t3, t4, t5, and t6.
+    */
+  def sequenceT[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E]): Validation[(T1, T2, T3, T4, T5, T6), E] =
+    mapN(t1, t2, t3, t4, t5, t6) {
+      case (u1, u2, u3, u4, u5, u6) => (u1, u2, u3, u4, u5, u6)
+    }
+
+  /**
     * Folds Right over `xs` using the function `f` with the initial value `zero`.
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
