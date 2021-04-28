@@ -79,7 +79,7 @@ namespace Channel {
     /// Returns a fresh buffered channel with internal capacity `c`.
     ///
     pub def newWithCapacity(bufferSize: Int): Channel[a] & Impure =
-        let unbuffered = default;
+        let unbuffered = false;
         if (bufferSize < 0) {
             Console.printLine("Channel bufferSize must be positive");
             exit(1)
