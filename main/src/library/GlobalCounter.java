@@ -1,4 +1,4 @@
-package flix.runtime;
+package library;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class GlobalCounter {

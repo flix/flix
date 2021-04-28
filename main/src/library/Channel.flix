@@ -16,17 +16,74 @@
 
 namespace Channel {
 
+    type alias Channel[a] = {
+        id: Int64,
+        channelLock: ReentrantLock,
+        bufferSize: Int32,
+        unbuffered: Bool,
+        elementQueue: MutList[a],
+        waitingGetters: MutSet[LockConditionPair],
+        waitingSetters: Condition
+    }
+
+    type alias Lock = ##java.util.concurrent.locks.Lock
+
+    type alias LockConditionPair = (Lock, Condition)
+
+    type alias ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
+
+    def newReentrantLock(): ReentrantLock & Impure =
+        import new java.util.concurrent.locks.ReentrantLock() as javaNewReentrantLock;
+        javaNewReentrantLock()
+
+    type alias Condition = ##java.util.concurrent.locks.Condition
+
+    def newCondition(reentrantLock: ReentrantLock): Condition & Impure =
+        import java.util.concurrent.locks.ReentrantLock.newCondition() as javaNewCondition;
+        javaNewCondition(reentrantLock)
+
+    def newId(): Int64 & Impure =
+        // import new library.GlobalCounter() as newGlobalCounter;
+        // import library.GlobalCounter:newId() as javaNewId;
+        // javaNewId(newGlobalCounter())
+        0i64
+
     ///
     /// Returns a fresh unbuffered channel.
     ///
     /// An unbuffered channel has an internal capacity of `0`.
     ///
-    pub def new(): Channel[a] & Impure = chan a 0
+    pub def new(): Channel[a] & Impure = newWithCapacity(0)
 
     ///
     /// Returns a fresh buffered channel with internal capacity `c`.
     ///
-    pub def newWithCapacity(c: Int): Channel[a] & Impure = chan a c
+    pub def newWithCapacity(c: Int): Channel[a] & Impure =
+        let unbuffered = default;
+        if (bufferSize < 0) {
+            Console.printLine("Channel bufferSize must be positive");
+            exit(1)
+        } else if (bufferSize == 0) {
+            ref bufferSize := 1;
+            unbuffered := true
+        }
+        else
+            unbuffered := false;
+
+        let mutList = MutList.new();
+        MutList.reserve!(bufferSize, mutList);
+
+        let reentrantLock = newReentrantLock();
+
+        {
+            id = newId(),
+            channelLock = reentrantLock,
+            bufferSize = bufferSize,
+            unbuffered = unbuffered,
+            elementQueue = mutList,
+            waitingGetters = MutSet.empty(),
+            waitingSetters = newCondition(reentrantLock)
+        }
 
     ///
     /// Receives an element from the channel `c`.
