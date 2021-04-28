@@ -54,6 +54,10 @@ object Lowering extends Phase[Root, Root] {
     lazy val Lift4: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4")
     lazy val Lift5: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5")
 
+//    lazy val NewChannel: Symbol.DefnSym = Symbol.mkDefnSym("Channel.new")
+//    lazy val GetChannel: Symbol.DefnSym = Symbol.mkDefnSym("Channel.get")
+//    lazy val PutChannel: Symbol.DefnSym = Symbol.mkDefnSym("Channel.put")
+
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -123,6 +127,8 @@ object Lowering extends Phase[Root, Root] {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
+
+//    lazy val NewChannelType: Type = Type.mkImpureArrow()
   }
 
   /**
