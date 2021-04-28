@@ -1,4 +1,4 @@
-package library;
+package library.Channel;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class GlobalCounter {

@@ -16,15 +16,37 @@
 
 namespace Channel {
 
-    type alias Channel[a] = {
+    // todo: remove this
+    def exit(status: Int32): () & Impure =
+        import java.lang.Runtime:getRuntime();
+        let runtime = getRuntime();
+        import java.lang.Runtime.exit(Int32);
+        runtime.exit(status)
+
+    // todo: Make Channel a tuple instead of a record
+    pub opaque type Channel[a] = {
         id: Int64,
         channelLock: ReentrantLock,
-        bufferSize: Int32,
+        bufferSize: Int,
         unbuffered: Bool,
         elementQueue: MutList[a],
         waitingGetters: MutSet[LockConditionPair],
         waitingSetters: Condition
     }
+
+    /*instance Order[Channel] {
+        pub def compare(x: Channel, y: Channel): Comparison =
+            compare(x.id, y.id)
+    }*/
+
+    instance Eq[Channel] {
+        pub def eq(x: Channel[a], y: Channel[b]): Bool =
+            channelId(x) == channelId(y)
+    }
+
+    def channelId[a](channel: Channel[a]): Int =
+        let Channel(c) = channel;
+        c.id
 
     type alias Lock = ##java.util.concurrent.locks.Lock
 
@@ -43,10 +65,8 @@ namespace Channel {
         javaNewCondition(reentrantLock)
 
     def newId(): Int64 & Impure =
-        // import new library.GlobalCounter() as newGlobalCounter;
-        // import library.GlobalCounter:newId() as javaNewId;
-        // javaNewId(newGlobalCounter())
-        0i64
+        import library.Channel.GlobalCounter:newId() as javaNewId;
+        javaNewId()
 
     ///
     /// Returns a fresh unbuffered channel.
@@ -58,7 +78,7 @@ namespace Channel {
     ///
     /// Returns a fresh buffered channel with internal capacity `c`.
     ///
-    pub def newWithCapacity(c: Int): Channel[a] & Impure =
+    pub def newWithCapacity(bufferSize: Int): Channel[a] & Impure =
         let unbuffered = default;
         if (bufferSize < 0) {
             Console.printLine("Channel bufferSize must be positive");
@@ -75,15 +95,15 @@ namespace Channel {
 
         let reentrantLock = newReentrantLock();
 
-        {
+        Channel({
             id = newId(),
             channelLock = reentrantLock,
             bufferSize = bufferSize,
-            unbuffered = unbuffered,
+            unbuffered = deref unbuffered,
             elementQueue = mutList,
             waitingGetters = MutSet.empty(),
             waitingSetters = newCondition(reentrantLock)
-        }
+        })
 
     ///
     /// Receives an element from the channel `c`.
