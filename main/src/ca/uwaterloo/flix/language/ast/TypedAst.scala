@@ -385,8 +385,6 @@ object TypedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, terms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class Union(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
-
     }
 
     sealed trait Body extends TypedAst.Predicate

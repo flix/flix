@@ -382,7 +382,6 @@ object Indexer {
     */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
     case Head.Atom(pred, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.defOf(pred) ++ visitExps(terms)
-    case Head.Union(exp, _, _) => visitExp(exp)
   }
 
   /**

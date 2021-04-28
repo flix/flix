@@ -967,11 +967,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, root))
           } yield ResolvedAst.Predicate.Head.Atom(pred, den, ts, tvar, loc)
-
-        case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
-          for {
-            e <- Expressions.resolve(exp, tenv0, ns0, root)
-          } yield ResolvedAst.Predicate.Head.Union(e, tvar, loc)
       }
     }
 

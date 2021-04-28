@@ -32,14 +32,14 @@ def getRules(): #{ LabelEdge[l], LabelPath[l] } with Boxable[l] = #{
 
 /// Computes the fixpoint of the two sets of facts with the rules.
 /// Note that polymorphism allow us to use `getRules` with both types of facts.
-def f(): Unit =
+def _f(): Unit =
     let _r1 = solve getEdgesWithColor() <+> getRules();
     let _r2 = solve getEdgesWithNumbers() <+> getRules();
     ()
 
 /// However, the type system ensures that we do not mix facts of
 /// different type:
-def g(): Unit =
+def _g(): Unit =
     /// Uncomment to see that the composition does not type check:
     /// let _r1 = solve getEdgesWithColor() <+> getEdgesWithNumbers();
     ()

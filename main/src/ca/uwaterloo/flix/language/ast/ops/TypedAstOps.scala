@@ -247,7 +247,6 @@ object TypedAstOps {
       */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
       case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Map.empty
-      case Predicate.Head.Union(exp, tpe, loc) => visitExp(exp, env0)
     }
 
     /**
@@ -703,8 +702,6 @@ object TypedAstOps {
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, term) => acc ++ freeVars(term)
       }
-
-    case Head.Union(exp, _, _) => freeVars(exp)
   }
 
   /**
