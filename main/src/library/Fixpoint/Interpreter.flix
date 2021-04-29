@@ -41,7 +41,7 @@ namespace Fixpoint {
         case RamStmt.Assign(lhs, rhs) =>
             MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutMap.empty(), db), db)
         case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
-        case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
+        case RamStmt.Seq(stmts) => Array.foreach(evalStmt(db), stmts)
         case RamStmt.Until(test, body) =>
             if (evalBoolExp(db, ([], []), test)) {
                 ()
