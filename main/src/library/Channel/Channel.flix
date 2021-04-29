@@ -83,6 +83,14 @@ namespace Channel {
 
     type alias LockConditionPair = (Lock, Condition)
 
+    pub def getLock(pair: LockConditionPair): Lock = match pair {
+            case (lock, _)   => lock
+        }
+
+    pub def getCondition(pair: LockConditionPair): Condition = match pair {
+            case (_, cond)   => cond
+        }
+        
     type alias ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
 
     def newReentrantLock(): ReentrantLock & Impure =
