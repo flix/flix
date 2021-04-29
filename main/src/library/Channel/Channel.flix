@@ -34,17 +34,19 @@ namespace Channel {
         waitingSetters: Condition
     }
 
-    /*instance Order[Channel] {
+    /*
+    instance Order[Channel] {
         pub def compare(x: Channel, y: Channel): Comparison =
             compare(x.id, y.id)
-    }*/
+    }
+    */
 
     instance Eq[Channel] {
         pub def eq(x: Channel[a], y: Channel[b]): Bool =
             channelId(x) == channelId(y)
     }
 
-    def channelId[a](channel: Channel[a]): Int =
+    def channelId(channel: Channel[a]): Int =
         let Channel(c) = channel;
         c.id
 
@@ -85,10 +87,10 @@ namespace Channel {
             exit(1)
         } else if (bufferSize == 0) {
             ref bufferSize := 1;
-            unbuffered := true
+            ref unbuffered := true
         }
         else
-            unbuffered := false;
+            ref unbuffered := false;
 
         let mutList = MutList.new();
         MutList.reserve!(bufferSize, mutList);
@@ -99,7 +101,7 @@ namespace Channel {
             id = newId(),
             channelLock = reentrantLock,
             bufferSize = bufferSize,
-            unbuffered = deref unbuffered,
+            unbuffered = unbuffered,
             elementQueue = mutList,
             waitingGetters = MutSet.empty(),
             waitingSetters = newCondition(reentrantLock)
