@@ -23,16 +23,45 @@ namespace Channel {
         import java.lang.Runtime.exit(Int32);
         runtime.exit(status)
 
-    // todo: Make Channel a tuple instead of a record
-    pub opaque type Channel[a] = {
-        id: Int64,
-        channelLock: ReentrantLock,
-        bufferSize: Int,
-        unbuffered: Bool,
-        elementQueue: MutList[a],
-        waitingGetters: MutSet[LockConditionPair],
-        waitingSetters: Condition
-    }
+    /// The tuple corresponds to (id, channelLock, bufferSize, unbuffered, elementQueue, waitingGetters, waitingSetters)
+    pub opaque type Channel[a] = (
+        Int64,
+        ReentrantLock,
+        Int,
+        Bool,
+        MutList[a],
+        MutSet[LockConditionPair],
+        Condition
+    )
+
+    pub def getId(c: Channel[a]): Int64 = match c {
+            case Channel(id, _, _, _, _, _, _)   => id
+        }
+
+    pub def getChannelLock(c: Channel[a]): ReentrantLock = match c {
+            case Channel(_, channelLock, _, _, _, _, _)   => channelLock
+        }
+
+    pub def getBufferSize(c: Channel[a]): Int = match c {
+            case Channel(_, _, bufferSize, _, _, _, _)   => bufferSize
+        }
+
+    pub def getUnbuffered(c: Channel[a]): Bool = match c {
+            case Channel(_, _, _, unbuffered, _, _, _)   => unbuffered
+        }
+
+    pub def getElementQueue(c: Channel[a]): MutList[a] = match c {
+            case Channel(_, _, _, _, elementQueue, _, _)   => elementQueue
+        }
+
+    pub def getWaitingGetters(c: Channel[a]): MutSet[LockConditionPair] = match c {
+            case Channel(_, _, _, _, _, waitingGetters, _)   => waitingGetters
+        }
+
+    pub def getWaitingSetters(c: Channel[a]): Condition = match c {
+            case Channel(_, _, _, _, _, _, waitingSetters)   => waitingSetters
+        }
+
 
     /*
     instance Order[Channel] {
@@ -97,16 +126,15 @@ namespace Channel {
 
         let reentrantLock = newReentrantLock();
 
-        Channel({
-            id = newId(),
-            channelLock = reentrantLock,
-            bufferSize = bufferSize,
-            unbuffered = unbuffered,
-            elementQueue = mutList,
-            waitingGetters = MutSet.empty(),
-            waitingSetters = newCondition(reentrantLock)
-        })
-
+        Channel(
+            0i64,
+            reentrantLock,
+            bufferSize,
+            unbuffered,
+            mutList,
+            MutSet.empty(),
+            newCondition(reentrantLock)
+        )
     ///
     /// Receives an element from the channel `c`.
     ///
