@@ -393,50 +393,50 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
-        (factsOf(p, d) |> Array.map(_ -> () as v)) as & Pure
+        factsOf(_ -> () as v, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
         let f = terms -> unbox(terms[0]);
-        (factsOf(p, d) |> Array.map(f)) as & Pure
+        factsOf(f, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2)] with Boxable[t1], Boxable[t2] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]));
-        (factsOf(p, d) |> Array.map(f)) as & Pure
+        factsOf(f, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]));
-        (factsOf(p, d) |> Array.map(f)) as & Pure
+        factsOf(f, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]));
-        (factsOf(p, d) |> Array.map(f)) as & Pure
+        factsOf(f, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]));
-        (factsOf(p, d) |> Array.map(f)) as & Pure
+        factsOf(f, p, d) as & Pure
 
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(p: PredSym, d: Datalog[v]): Array[Array[v]] & Impure =
+    def factsOf(f: Array[v] -> t & e, p: PredSym, d: Datalog[v]): Array[t] & Impure =
         let Datalog(facts, _) = d;
         restrict(facts, Set#{p}) |>
-        Array.map(factToTuple)
+        Array.map(factToTuple >> f)
 
     ///
     /// Returns the value of the given head term `v`.
