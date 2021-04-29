@@ -90,7 +90,7 @@ namespace Channel {
     pub def getCondition(pair: LockConditionPair): Condition = match pair {
             case (_, cond)   => cond
         }
-        
+
     type alias ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
 
     def newReentrantLock(): ReentrantLock & Impure =
@@ -150,11 +150,65 @@ namespace Channel {
     ///
     pub def get(c: Channel[a]): a & Impure = <- c
 
+    pub def loopOnFullChannel(c: Channel[a], bufferSize: Int): () & Impure = try {
+        import java.util.concurrent.locks.Condition.await();
+        // If channel not full, return
+        if (MutList.length(getElementQueue(c)) < bufferSize) ()
+        // Else, wait
+        else getWaitingSetters(c).await()
+    } catch {
+        case _: ##java.lang.Exception => ()
+    }
+
+
     ///
     /// Sends the element `x` on the channel `c`.
     ///
     /// Equivalent to the expression `c <- x`.
     ///
-    pub def put(c: Channel[a], x: a): Channel[a] & Impure = c <- x
+    pub def put(c: Channel[a], x: a): Channel[a] & Impure =
+        import java.util.concurrent.locks.ReentrantLock.lock() as r_lock;
+        import java.util.concurrent.locks.ReentrantLock.unlock() as r_unlock;
+        import java.util.concurrent.locks.Lock.lock();
+        import java.util.concurrent.locks.Lock.unlock();
+        import java.util.concurrent.locks.Condition.signalAll();
+        import java.util.concurrent.locks.Condition.await();
+
+        getChannelLock(c).r_lock();
+
+        try {
+            // Check if the channel is full
+            loopOnFullChannel(c, getBufferSize(c));
+
+            // There was space to put another element in the channel
+            MutList.push!(x, getElementQueue(c));
+
+            // Signal waitingGetters that there is an element available
+            MutSet.foreach(
+                (pair) -> {
+                    let conditionLock = getLock(pair);
+                    let condition = getCondition(pair);
+                    try {
+                        conditionLock.lock();
+                        condition.signalAll()
+                    } catch {
+                       case _: ##java.lang.Exception => conditionLock.unlock()
+                    };
+                        conditionLock.unlock()
+                },
+                getWaitingGetters(c));
+
+            // Clear waitingGetters.
+            // If a waitingGetter does not receive an element, it can add itself again
+            MutSet.clear!(getWaitingGetters(c));
+
+            // If the channel is unbuffered, wait for the element to be handed off before continuing
+            if (getUnbuffered(c)) getWaitingSetters(c).await()
+            else ()
+        } catch {
+            case _: ##java.lang.Exception => getChannelLock(c).r_unlock()
+        };
+        getChannelLock(c).r_unlock();
+        c
 
 }
