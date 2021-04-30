@@ -32,9 +32,9 @@ namespace Fixpoint/Ram {
         pub def toString(exp: BoolExp[v]): String =
             use Fixpoint.commaSeparate;
             match exp {
-                case Empty(ramSym) => "${ramSym} = ∅"
+                case Empty(ramSym) => "${ramSym} == ∅"
                 case NotMemberOf(terms, ramSym) => "(${commaSeparate(terms)}) ∉ ${ramSym}"
-                case Eq(lhs, rhs) => "${lhs} = ${rhs}"
+                case Eq(lhs, rhs) => "${lhs} == ${rhs}"
                 case Leq(_, lhs, rhs) => "${lhs} ≤ ${rhs}"
                 case Guard0(_) => "<clo>()"
                 case Guard1(_, v) => "<clo>(${v})"
